@@ -289,6 +289,39 @@ function buildActions(data: SysNotifData): Action[] {
   return actions;
 }
 
+// ─── Actor profile resolver (fallback when DB trigger omits actor fields) ─────
+
+function useActorProfile(data: SysNotifData) {
+  const needsFetch = !!(data.actor_id && !data.actor_name && !data.actor_handle && !data.actor_avatar);
+  const [resolved, setResolved] = useState<{
+    name?: string; handle?: string; avatar?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!needsFetch || !data.actor_id) return;
+    let cancelled = false;
+    supabase
+      .from("profiles")
+      .select("display_name, handle, avatar_url")
+      .eq("id", data.actor_id)
+      .maybeSingle()
+      .then(({ data: p }) => {
+        if (cancelled || !p) return;
+        setResolved({ name: p.display_name || undefined, handle: p.handle || undefined, avatar: p.avatar_url || undefined });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [data.actor_id, needsFetch]);
+
+  if (!needsFetch) return data;
+  return {
+    ...data,
+    actor_name: resolved?.name || data.actor_name,
+    actor_handle: resolved?.handle || data.actor_handle,
+    actor_avatar: resolved?.avatar || data.actor_avatar,
+  };
+}
+
 // ─── Read state hook ──────────────────────────────────────────────────────────
 
 const STORAGE_PREFIX = "notif_read_";
@@ -681,10 +714,11 @@ const SYSTEM_TYPES = new Set(["acoin_received", "acoin_sent", "subscription_acti
 
 export function SystemNotificationCard({ data, sentAt }: Props) {
   const { colors, isDark } = useTheme();
-  const cfg = getTypeConfig(data.type);
-  const bodyParts = buildBodyParts(data);
-  const actions = buildActions(data);
-  const { read, markRead } = useNotifRead(data.notif_id);
+  const enrichedData = useActorProfile(data);
+  const cfg = getTypeConfig(enrichedData.type);
+  const bodyParts = buildBodyParts(enrichedData);
+  const actions = buildActions(enrichedData);
+  const { read, markRead } = useNotifRead(enrichedData.notif_id);
   const postThumb = usePostThumbnail(data.post_id, data.post_thumbnail);
   const postContent = usePostContent(data.post_id, data.type);
 
@@ -698,10 +732,10 @@ export function SystemNotificationCard({ data, sentAt }: Props) {
     ]).start();
   }, []);
 
-  const isSystemType = SYSTEM_TYPES.has(data.type);
-  const hasActor = !!(data.actor_avatar || data.actor_name || data.actor_id);
+  const isSystemType = SYSTEM_TYPES.has(enrichedData.type);
+  const hasActor = !!(enrichedData.actor_avatar || enrichedData.actor_name || enrichedData.actor_id);
   const showActorAvatar = hasActor && !isSystemType;
-  const primaryRoute = cfg.primaryRoute?.(data);
+  const primaryRoute = cfg.primaryRoute?.(enrichedData);
 
   const handleCardPress = useCallback(() => {
     markRead();
@@ -734,12 +768,12 @@ export function SystemNotificationCard({ data, sentAt }: Props) {
             {showActorAvatar ? (
               <View>
                 <ActorAvatar
-                  uri={data.actor_avatar}
-                  name={data.actor_name}
+                  uri={enrichedData.actor_avatar}
+                  name={enrichedData.actor_name}
                   badgeIcon={cfg.badgeIcon}
                   badgeBg={cfg.badgeBg}
                 />
-                {data.type === "live_started" && (
+                {enrichedData.type === "live_started" && (
                   <View style={{ position: "absolute", bottom: -8, alignSelf: "center" }}>
                     <LiveBadge />
                   </View>

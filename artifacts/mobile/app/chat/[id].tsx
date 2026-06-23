@@ -2393,23 +2393,69 @@ function ChatScreen() {
   useEffect(() => {
     if (!isAfuChatSystemChat || !user) return;
     let cancelled = false;
-    supabase
-      .from("notifications")
-      .select("id, type, actor_id, actor_name, actor_handle, actor_avatar, entity_id, entity_type, data, title, body, created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(300)
-      .then(({ data: rows }) => {
+
+    (async () => {
+      try {
+        const { data: rows } = await supabase
+          .from("notifications")
+          .select("id, type, actor_id, actor_name, actor_handle, actor_avatar, entity_id, entity_type, data, title, body, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(300);
+
         if (cancelled || !rows) return;
+
+        // ── Resolve missing actor profiles in one batch query ─────────────────
+        // DB triggers store actor_id but often omit actor_name/handle/avatar.
+        // Collect unique actor_ids that are missing profile info, then fetch.
+        const missingIds = [...new Set(
+          rows
+            .filter((r) => r.actor_id && (!r.actor_name && !r.actor_handle))
+            .map((r) => r.actor_id as string)
+        )];
+
+        const profileMap = new Map<string, { display_name: string | null; handle: string | null; avatar_url: string | null }>();
+
+        if (missingIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, display_name, handle, avatar_url")
+            .in("id", missingIds);
+          if (profiles) {
+            for (const p of profiles) {
+              profileMap.set(p.id, { display_name: p.display_name, handle: p.handle, avatar_url: p.avatar_url });
+            }
+          }
+        }
+
+        if (cancelled) return;
+
+        // Merge resolved profile data back into each row
+        const enrichedRows = rows.map((r) => {
+          if (r.actor_id && (!r.actor_name && !r.actor_handle)) {
+            const prof = profileMap.get(r.actor_id);
+            if (prof) {
+              return {
+                ...r,
+                actor_name: prof.display_name || r.actor_name,
+                actor_handle: prof.handle || r.actor_handle,
+                actor_avatar: prof.avatar_url || r.actor_avatar,
+              };
+            }
+          }
+          return r;
+        });
+
         const map = new Map<string, any>();
-        for (const r of rows) {
+        for (const r of enrichedRows) {
           map.set(r.created_at, r);
           const trunc = r.created_at.replace(/\.\d+Z?$/, "");
           if (!map.has(trunc)) map.set(trunc, r);
         }
         setNotifRowsMap(map);
-      })
-      .catch(() => {});
+      } catch {}
+    })();
+
     return () => { cancelled = true; };
   }, [isAfuChatSystemChat, user?.id, messages.length]);
 
