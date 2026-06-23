@@ -363,9 +363,9 @@ export default function SignUpScreen() {
           <View style={{ marginTop: "auto", paddingTop: 32, alignItems: "center", gap: 6 }}>
             <Text style={{ fontSize: 11, fontFamily: "Inter_400Regular", color: mutedColor, textAlign: "center", lineHeight: 17, paddingHorizontal: 8 }}>
               By continuing, you agree to our{" "}
-              <Text style={{ color: accent }} onPress={() => Linking.openURL("https://afuchat.com/terms").catch(() => {})}>Terms</Text>
+              <Text style={{ color: accent }} onPress={() => Platform.OS === "web" ? router.push("/terms" as any) : Linking.openURL("https://afuchat.com/terms").catch(() => {})}>Terms</Text>
               {" "}and{" "}
-              <Text style={{ color: accent }} onPress={() => Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>Privacy Policy</Text>
+              <Text style={{ color: accent }} onPress={() => Platform.OS === "web" ? router.push("/privacy" as any) : Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>Privacy Policy</Text>
             </Text>
             <Text style={{ fontSize: 10.5, fontFamily: "Inter_400Regular", color: isDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.16)" }}>
               © {new Date().getFullYear()} AfuChat Technologies Limited
@@ -429,9 +429,9 @@ export default function SignUpScreen() {
               <Checkbox checked={termsOk} onToggle={() => setTermsOk(p => !p)} isDark={isDark} accent={accent}>
                 <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: mutedColor, lineHeight: 19, flex: 1 }}>
                   I agree to the{" "}
-                  <Text style={{ color: accent, fontFamily: "Inter_500Medium" }} onPress={() => Linking.openURL("https://afuchat.com/terms").catch(() => {})}>Terms of Service</Text>
+                  <Text style={{ color: accent, fontFamily: "Inter_500Medium" }} onPress={() => Platform.OS === "web" ? router.push("/terms" as any) : Linking.openURL("https://afuchat.com/terms").catch(() => {})}>Terms of Service</Text>
                   {" "}and{" "}
-                  <Text style={{ color: accent, fontFamily: "Inter_500Medium" }} onPress={() => Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>Privacy Policy</Text>
+                  <Text style={{ color: accent, fontFamily: "Inter_500Medium" }} onPress={() => Platform.OS === "web" ? router.push("/privacy" as any) : Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>Privacy Policy</Text>
                 </Text>
               </Checkbox>
             </View>

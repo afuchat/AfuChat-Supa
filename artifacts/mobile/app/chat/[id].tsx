@@ -3206,7 +3206,8 @@ function ChatScreen() {
         const sndr = t.sender;
         txLines.push(`  - [ref:${t.id}] ${new Date(t.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}: Received ${t.amount} Nexa from @${sndr?.handle || "unknown"}`);
       });
-      return `USER CONTEXT:\n- Name: ${profile.display_name}\n- Handle: @${profile.handle}\n- Nexa: ${profile.xp || 0}\n- ACoin: ${profile.acoin || 0}\n- Grade: ${profile.current_grade || "Newcomer"}\n- Followers: ${followersCount || 0}, Following: ${followingCount || 0}, Posts: ${postsCount || 0}\n- Premium: ${premium}\nRECENT TRANSACTIONS:\n${txLines.join("\n") || "  None"}`;
+      const afuId = profile.id ? String(parseInt(profile.id.replace(/-/g, "").slice(0, 8), 16) % 100000000).padStart(8, "0") : "00000000";
+      return `USER CONTEXT:\n- Name: ${profile.display_name}\n- Handle: @${profile.handle}\n- AfuID: ${afuId}\n- Profile URL: https://afuchat.com/id/${afuId}\n- Nexa (XP): ${profile.xp || 0}\n- ACoin: ${profile.acoin || 0}\n- Grade: ${profile.current_grade || "Newcomer"}\n- Followers: ${followersCount || 0}, Following: ${followingCount || 0}, Posts: ${postsCount || 0}\n- Premium: ${premium}\nRECENT TRANSACTIONS:\n${txLines.join("\n") || "  None"}`;
     } catch { return ""; }
   }
 
@@ -3767,7 +3768,9 @@ SPECIAL TAGS — append these at the end of your response when relevant:
   · send_acoin: {"handle":"username","amount":50}
   · follow: {"handle":"username"}
   · unfollow: {"handle":"username"}
-  · subscribe: {"tier":"basic"}
+  · subscribe: {"tier":"silver"} — Silver · 500 ACoin (~$5) · 30 days · 50 AI msgs/day, verified badge, ad-free
+  · subscribe: {"tier":"gold"} — Gold · 1200 ACoin (~$12) · 30 days · 200 AI msgs/day, creator tools, priority discover
+  · subscribe: {"tier":"platinum"} — Platinum · 2500 ACoin (~$25) · 30 days · Unlimited AI, elite social, all perks
   · cancel_subscription: {}
   · convert_nexa: {"amount":100}
 

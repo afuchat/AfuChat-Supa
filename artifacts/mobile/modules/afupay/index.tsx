@@ -705,7 +705,7 @@ function ReceiveView({ colors, insets, profile, onBack }: any) {
     const hex = profile.id.replace(/-/g, "");
     return String(parseInt(hex.slice(0, 8), 16) % 100000000).padStart(8, "0");
   }, [profile?.id]);
-  const qrValue = `afuchat://id/${afuId}`;
+  const qrValue = `https://afuchat.com/id/${afuId}`;
   const afuPayId = `afupay:${handle}`;
 
   async function copyId() {

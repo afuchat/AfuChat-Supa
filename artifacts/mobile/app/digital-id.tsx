@@ -172,7 +172,7 @@ export default function DigitalIdScreen() {
     return String(parseInt(hex.slice(0,8), 16) % 100000000).padStart(8, "0");
   }, [profile?.id]);
 
-  const qrValue  = `afuchat://id/${afuId}`;
+  const qrValue  = `https://afuchat.com/id/${afuId}`;
   const issued   = profile?.created_at ? fmtDate(profile.created_at)              : "01/01/2024";
   const expires  = profile?.created_at ? fmtDate(addYears(profile.created_at, 10)) : "01/01/2034";
   const mrzLine1 = mrz1(profile?.display_name ?? "UNKNOWN");
