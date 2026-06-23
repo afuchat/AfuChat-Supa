@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/lib/supabase";
@@ -23,6 +23,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
 import { AvatarViewer } from "@/components/ui/AvatarViewer";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
+import QRPosterSheet from "@/components/ui/QRPosterSheet";
 import Colors from "@/constants/colors";
 import OfflineBanner from "@/components/ui/OfflineBanner";
 import { PrestigeBadge } from "@/components/ui/PrestigeBadge";
@@ -195,7 +196,13 @@ export default function MeScreen() {
   const { isDesktop } = useIsDesktop();
   const { profile, isPremium, subscription, loading, user } = useAuth();
   const [avatarOpen, setAvatarOpen] = useState(false);
+  const [qrPosterOpen, setQrPosterOpen] = useState(false);
   const [notesLoading, setNotesLoading] = useState(false);
+
+  const afuId = useMemo(() => {
+    if (!profile?.id) return "00000000";
+    return String(parseInt(profile.id.replace(/-/g, "").slice(0, 8), 16) % 100000000).padStart(8, "0");
+  }, [profile?.id]);
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [postCount, setPostCount] = useState(0);
@@ -370,7 +377,12 @@ export default function MeScreen() {
 
           {/* Avatar + info row */}
           <View style={s.heroTop}>
-            <TouchableOpacity activeOpacity={0.9} onPress={() => setAvatarOpen(true)}>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => setAvatarOpen(true)}
+              onLongPress={() => { void Haptics.impactAsync(); setQrPosterOpen(true); }}
+              delayLongPress={400}
+            >
               <Avatar
                 uri={profile?.avatar_url}
                 name={profile?.display_name}
@@ -616,6 +628,17 @@ export default function MeScreen() {
         uri={profile?.avatar_url}
         name={profile?.display_name || undefined}
         onClose={() => setAvatarOpen(false)}
+      />
+
+      <QRPosterSheet
+        visible={qrPosterOpen}
+        onClose={() => setQrPosterOpen(false)}
+        displayName={profile?.display_name || "AfuChat User"}
+        handle={profile?.handle || "user"}
+        avatarUrl={profile?.avatar_url || null}
+        afuId={afuId}
+        isVerified={!!profile?.is_verified}
+        isOrgVerified={!!profile?.is_organization_verified}
       />
 
       {/* ── Username Purchase Details Modal ─────────────────────────────── */}

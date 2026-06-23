@@ -241,6 +241,49 @@ Any handle acquired via the Username Market (/username-market) becomes a "bought
 - "Sell my username" → use [ACTION:Username Market:/username-market]
 `;
 
+// ── Verification knowledge ───────────────────────────────────────────────────
+export const VERIFICATION_KNOWLEDGE = `
+## VERIFICATION ON AFUCHAT
+
+### Two types of verified badge
+
+**1. Personal Verification — Blue ✓ Checkmark**
+- Appears next to the name of individual users, creators, journalists, and public figures.
+- Confirms the account is real and belongs to who it claims to be.
+- **How to get it:**
+  - **Fastest route:** Upgrade to Gold or Platinum premium plan — the verified badge is included with both tiers.
+  - **Manual review route:** Notable accounts (celebrities, activists, public officials, journalists) can apply for free. AfuChat reviews the application and may approve without a premium plan.
+- Once granted, the badge stays active as long as your account is in good standing.
+- The badge cannot be transferred — even if you sell your username, the badge remains tied to your account, not the handle.
+
+**2. Organisation Verification — Gold ◆ Business Badge + Square Avatar**
+- Appears on company, brand, NGO, government body, and educational institution profiles.
+- The profile picture is displayed as a **square** (not circular) with a gold outline — visually distinct from personal accounts.
+- **How to get it:** Apply via Settings → Business → Apply for Organisation Verification.
+- Requirements: official business registration, legitimate email domain, minimum presence/follower threshold.
+
+### What Verification Unlocks
+- Higher trust and credibility with other users
+- Elevated ranking in search results
+- Access to advanced analytics (organisation accounts)
+- Unlocks the "Creator" monetisation programme
+- Silver subscription badge is shown separately and does not include verification — only Gold+ includes the checkmark
+
+### Email & Phone Verification (Account Security)
+- Separate from the social verified badge — this is basic account security.
+- **Email verification:** Done at registration (6-digit code to your email). Re-trigger in Settings → Security → Verify Email.
+- **Phone verification:** Optional but recommended — adds 2-step recovery. Settings → Security → Add Phone Number.
+- **Two-factor authentication (2FA):** Settings → Security → Two-Factor Authentication. Strongly recommended.
+
+### Common Questions AfuAI handles about Verification
+- "How do I get verified?" → Explain Gold/Platinum path for speed, manual review for notable accounts. Add [ACTION:Premium Plans:/premium]
+- "Am I verified?" → Check USER CONTEXT — if Premium shows Gold or Platinum, the user has a verified badge.
+- "What is the blue checkmark?" → Explained above.
+- "Difference between Gold/Platinum badge and Org badge?" → Personal = blue circle ✓ · Organisation = gold square ◆
+- "Apply for business/org verification" → [ACTION:Settings:/settings] then navigate to Business section
+- "My badge disappeared" → Ask user to check their subscription status — badge requires active Gold/Platinum plan (or manual approval).
+`;
+
 /**
  * Returns the full platform knowledge block injected into every AfuAI system prompt.
  */
@@ -249,7 +292,8 @@ export function buildNavigationContext(): string {
     PLATFORM_NAV_MAP +
     "\n\n" + PLATFORM_FEATURES_GUIDE +
     "\n\n" + FOUNDER_AND_IDENTITY +
-    "\n\n" + USERNAME_MARKET_KNOWLEDGE
+    "\n\n" + USERNAME_MARKET_KNOWLEDGE +
+    "\n\n" + VERIFICATION_KNOWLEDGE
   );
 }
 
