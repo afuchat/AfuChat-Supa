@@ -6,7 +6,12 @@ import {
   isOnline,
 } from "./offlineStore";
 import { drainQueue } from "./storage/syncQueue";
-import { getPendingLocalMessages, markMessageSynced, getLocalMessageCount, saveMessages } from "./storage/localMessages";
+import {
+  getPendingLocalMessages,
+  markMessageSynced,
+  getLocalMessageCount,
+  saveMessages,
+} from "./storage/localMessages";
 
 let syncing = false;
 
@@ -18,6 +23,23 @@ export async function syncPendingMessages(): Promise<void> {
     // 1. Sync legacy AsyncStorage pending messages
     const pending = await getPendingMessages();
     for (const msg of pending) {
+      // Deduplication: check if a message with the same content+chat+sender
+      // was already inserted (e.g., sent on a previous retry before the ack
+      // arrived). If found, just remove from queue without re-inserting.
+      const { data: existing } = await supabase
+        .from("messages")
+        .select("id")
+        .eq("chat_id", msg.chat_id)
+        .eq("sender_id", msg.sender_id)
+        .eq("encrypted_content", msg.encrypted_content)
+        .gte("sent_at", new Date(Date.now() - 60_000).toISOString())
+        .maybeSingle();
+
+      if (existing) {
+        await removePendingMessage(msg.id);
+        continue;
+      }
+
       const { error } = await supabase.from("messages").insert({
         chat_id: msg.chat_id,
         sender_id: msg.sender_id,
@@ -28,9 +50,24 @@ export async function syncPendingMessages(): Promise<void> {
       }
     }
 
-    // 2. Sync SQLite pending messages (new path)
+    // 2. Sync SQLite pending messages (primary path)
     const localPending = await getPendingLocalMessages();
     for (const msg of localPending) {
+      // Deduplication: same guard as above
+      const { data: existing } = await supabase
+        .from("messages")
+        .select("id")
+        .eq("chat_id", msg.conversation_id)
+        .eq("sender_id", msg.sender_id)
+        .eq("encrypted_content", msg.content)
+        .gte("sent_at", new Date(Date.now() - 60_000).toISOString())
+        .maybeSingle();
+
+      if (existing) {
+        await markMessageSynced(msg.id, existing.id);
+        continue;
+      }
+
       const { data, error } = await supabase
         .from("messages")
         .insert({
@@ -75,6 +112,30 @@ export function addOnlineListener(fn: () => void): () => void {
   };
 }
 
+// ── Periodic retry while online ────────────────────────────────────────────────
+// If the device has pending messages and comes online, we sync immediately.
+// This interval acts as a safety net — it re-tries every 30 s in case the
+// first attempt silently failed (e.g., server was momentarily unreachable).
+let _retryInterval: ReturnType<typeof setInterval> | null = null;
+
+function startRetryInterval(): void {
+  if (_retryInterval) return;
+  _retryInterval = setInterval(async () => {
+    if (!isOnline() || syncing) return;
+    try {
+      const pending = await getPendingLocalMessages();
+      if (pending.length > 0) await syncPendingMessages();
+    } catch {}
+  }, 30_000);
+}
+
+function stopRetryInterval(): void {
+  if (_retryInterval) {
+    clearInterval(_retryInterval);
+    _retryInterval = null;
+  }
+}
+
 export function startOfflineSync(): void {
   if (unsubscribe) return;
 
@@ -89,6 +150,8 @@ export function startOfflineSync(): void {
   if (isOnline()) {
     syncPendingMessages();
   }
+
+  startRetryInterval();
 }
 
 export function stopOfflineSync(): void {
@@ -96,6 +159,7 @@ export function stopOfflineSync(): void {
     unsubscribe();
     unsubscribe = null;
   }
+  stopRetryInterval();
 }
 
 /**
@@ -105,17 +169,20 @@ export function stopOfflineSync(): void {
  *
  * Fire-and-forget — does not affect UI. Skips conversations already cached.
  */
-export async function preloadConversationMessages(chatIds: string[]): Promise<void> {
+export async function preloadConversationMessages(
+  chatIds: string[],
+): Promise<void> {
   if (!isOnline() || chatIds.length === 0) return;
   for (const chatId of chatIds) {
     try {
-      // Skip conversations that already have messages in SQLite
       const count = await getLocalMessageCount(chatId);
       if (count > 0) continue;
 
       const { data } = await supabase
         .from("messages")
-        .select("id, chat_id, sender_id, encrypted_content, sent_at, attachment_url, attachment_type, reply_to_message_id, edited_at, status")
+        .select(
+          "id, chat_id, sender_id, encrypted_content, sent_at, attachment_url, attachment_type, reply_to_message_id, edited_at, status",
+        )
         .eq("chat_id", chatId)
         .order("sent_at", { ascending: false })
         .limit(100);

@@ -48,6 +48,7 @@ import { ToastContainer } from "@/components/ui/ToastContainer";
 import AlertModal from "@/components/ui/AlertModal";
 import OfflineBanner from "@/components/ui/OfflineBanner";
 import { PushNotificationManager } from "@/components/PushNotificationManager";
+import { GlobalInboxListener } from "@/components/GlobalInboxListener";
 import UpdatePrompt from "@/components/UpdatePrompt";
 import { initActivityTracker } from "@/lib/activityTracker";
 import { startOfflineSync } from "@/lib/offlineSync";
@@ -254,6 +255,7 @@ export default function RootLayout() {
                   <CrashReporterUserSync />
                   <PageWatcher />
                   <PushNotificationManager />
+                  <GlobalInboxListener />
                   <UpdatePrompt />
                   <LanguageProvider>
                     <AdvancedFeaturesProvider>

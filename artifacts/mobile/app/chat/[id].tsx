@@ -89,6 +89,7 @@ import { useAdvancedFeatures } from "@/context/AdvancedFeaturesContext";
 import { useDataMode } from "@/context/DataModeContext";
 import { markChatVisited, setActiveChatId, clearActiveChatId } from "@/lib/chatVisited";
 import { getProfileCache, setProfileCache } from "@/lib/profileCache";
+import { subscribeToChat, broadcastToUserInbox } from "@/lib/globalMessageEvents";
 import { askAi, aiSuggestReply, transcribeAudio, getEdgeFnBase, edgeHeaders, aiTransformTone, aiFixText, aiEmojifyText } from "@/lib/aiHelper";
 import { buildNavigationContext, ACTION_ROUTES_GUIDE, detectVoiceNavCommand, pickNavConfirmation } from "@/lib/platformKnowledge";
 import { playNotificationSound as playMgrSound } from "@/lib/soundManager";
@@ -2602,6 +2603,22 @@ function ChatScreen() {
     loadChatInfo();
     loadMessages();
 
+    // ── Fast-path: messages delivered via GlobalInboxListener broadcast ──────
+    // This fires ~20 ms after send (before Postgres Changes arrives).
+    // We render the message immediately and deduplicate when Postgres fires.
+    const unsubFastPath = subscribeToChat(id, (gMsg) => {
+      if (!user || gMsg.sender_id === user.id) return;
+      const cachedSender = getProfileCache(gMsg.sender_id);
+      const senderSnap = cachedSender
+        ? { display_name: cachedSender.display_name, avatar_url: cachedSender.avatar_url ?? null, handle: cachedSender.handle }
+        : { display_name: gMsg.sender_display_name || "User", avatar_url: gMsg.sender_avatar_url ?? null, handle: gMsg.sender_handle || "" };
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === gMsg.id)) return prev;
+        return [{ ...gMsg, sender: senderSnap as any, reactions: [], status: undefined }, ...prev];
+      });
+      playNotificationSound();
+    });
+
     const msgSub = supabase
       .channel(`chat:${id}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `chat_id=eq.${id}` },
@@ -2624,7 +2641,11 @@ function ChatScreen() {
           const _senderSnap = _cachedSender
             ? { display_name: _cachedSender.display_name, avatar_url: _cachedSender.avatar_url ?? null, handle: _cachedSender.handle }
             : { display_name: "User", avatar_url: null, handle: "" };
-          setMessages((prev) => [{ ...newMsg, sender: _senderSnap as any, reactions: [], status: undefined }, ...prev]);
+          setMessages((prev) => {
+            // Deduplicate — broadcast fast-path may have already inserted this message
+            if (prev.some((m) => m.id === newMsg.id)) return prev;
+            return [{ ...newMsg, sender: _senderSnap as any, reactions: [], status: undefined }, ...prev];
+          });
           if (!_cachedSender) {
             supabase.from("profiles").select("display_name, avatar_url, handle").eq("id", newMsg.sender_id).single().then(({ data: _sp }) => {
               if (_sp) {
@@ -2747,6 +2768,7 @@ function ChatScreen() {
       .subscribe();
 
     return () => {
+      unsubFastPath();
       clearActiveChatId();
       supabase.removeChannel(msgSub);
     };
@@ -4523,10 +4545,11 @@ STRICT RULES:
       );
     }
 
-    if (!error && chatInfo) {
-      const recipientIds = chatInfo.member_ids.length > 0
-        ? chatInfo.member_ids
-        : chatInfo.other_id ? [chatInfo.other_id] : [];
+    if (!error && chatInfo && inserted) {
+      const recipientIds = (
+        chatInfo.member_ids.length > 0 ? chatInfo.member_ids : chatInfo.other_id ? [chatInfo.other_id] : []
+      ).filter((rid: string) => rid !== user.id);
+
       if (recipientIds.length > 0) {
         notifyNewMessage({
           recipientIds,
@@ -4537,6 +4560,22 @@ STRICT RULES:
           isGroup: chatInfo.is_group,
           groupName: chatInfo.name || undefined,
         });
+
+        // ── Broadcast fast-path: deliver instantly to every recipient's inbox ─
+        // Recipients subscribed to user-inbox:${recipientId} receive this in
+        // ~20 ms via Supabase Broadcast, before Postgres Changes fires.
+        const broadcastPayload = {
+          id: inserted.id,
+          chat_id: activeChatId,
+          sender_id: user.id,
+          encrypted_content: text,
+          sent_at: new Date().toISOString(),
+          reply_to_message_id: replyTo?.id ?? null,
+          sender_display_name: profile?.display_name || "Someone",
+          sender_avatar_url: profile?.avatar_url ?? null,
+          sender_handle: profile?.handle ?? "",
+        };
+        recipientIds.forEach((rid: string) => broadcastToUserInbox(rid, broadcastPayload));
       }
     }
 
