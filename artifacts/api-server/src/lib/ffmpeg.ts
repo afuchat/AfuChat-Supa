@@ -127,13 +127,14 @@ export async function extractPoster(
  */
 function targetBitrateKbps(codec: Codec, height: RenditionHeight): number {
   // Tuned for social-feed short clips: smallest file that still looks great.
-  // 360p → ~4 MB/min on cellular (was 700, now 550 = saves 21%)
-  // 720p → ~13 MB/min on WiFi  (was 2200, now 1800 = saves 18%)
+  // 360p → ~2.8 MB/min on cellular (was 550, now 380 = saves 31%)
+  // 720p → ~8.6 MB/min on WiFi   (was 1800, now 1150 = saves 36%)
+  // 1080p→ ~15 MB/min             (was 4000, now 2000 = saves 50%)
   // AV1 gets 60% of H.264 budget — same perceived quality at 40% less bandwidth
   const h264Map: Record<RenditionHeight, number> = {
-    360: 550,
-    720: 1800,
-    1080: 4000,
+    360:  380,
+    720:  1150,
+    1080: 2000,
   };
   const base = h264Map[height];
   return codec === "av1" ? Math.round(base * 0.6) : base;
@@ -185,8 +186,8 @@ export function buildEncodeArgs(
       "-keyint_min", "48",
       "-sc_threshold", "0",
       "-c:a", "aac",
-      // 96 kbps is indistinguishable from 128 kbps for speech/music at 360p/720p
-      "-b:a", height <= 360 ? "80k" : "96k",
+      // 80 kbps is sufficient for speech/music in social short clips
+      "-b:a", height <= 360 ? "64k" : "80k",
       "-ac", "2",
       outputPath,
     ];

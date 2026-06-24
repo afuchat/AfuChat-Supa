@@ -50,6 +50,12 @@ import { showAlert } from "@/lib/alert";
 import { uploadToStorage } from "@/lib/mediaUpload";
 import { registerVideoAsset } from "@/lib/videoApi";
 import {
+  compressVideoBeforeUpload,
+  getCameraRecordingQuality,
+  getVideoPickerQuality,
+  getVideoSizeWarning,
+} from "@/lib/videoCompression";
+import {
   startPostUpload,
   updatePostProgress,
   finishPostUpload,
@@ -402,7 +408,7 @@ function CameraPhase({
     try {
       const result = await cameraRef.current.recordAsync({
         maxDuration: maxDur,
-        quality: "720p",
+        quality: getCameraRecordingQuality(),
       });
       if (result?.uri && mounted.current) {
         onCapture(result.uri, elapsedRef.current || 10);
@@ -1439,7 +1445,6 @@ export default function CreateVideoScreen() {
     if (Platform.OS === "web") { webInputRef.current?.click(); return; }
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) { showAlert("Permission required", "Allow access to your media library."); return; }
-    const { getVideoPickerQuality } = await import("@/lib/networkQuality");
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: "videos", allowsEditing: false,
       quality: getVideoPickerQuality(), videoMaxDuration: MAX_DURATION,
@@ -1498,8 +1503,14 @@ export default function CreateVideoScreen() {
         const filePath = `${user.id}/${Date.now()}.${ext}`;
         const resolvedMime = _mime || (ext === "mov" ? "video/quicktime" : `video/${ext}`);
 
+        const compressionMeta = await compressVideoBeforeUpload(
+          _uri,
+          resolvedMime,
+          (status) => updatePostProgress(0.1),
+        );
+
         updatePostProgress(0.2);
-        const { publicUrl, error: upErr } = await uploadToStorage("videos", filePath, _uri, resolvedMime);
+        const { publicUrl, error: upErr } = await uploadToStorage("videos", filePath, compressionMeta.uri, resolvedMime);
         if (upErr || !publicUrl) throw new Error(upErr || "Upload failed");
 
         updatePostProgress(0.65);

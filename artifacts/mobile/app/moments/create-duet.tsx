@@ -22,6 +22,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { showAlert } from "@/lib/alert";
 import { uploadToStorage } from "@/lib/mediaUpload";
+import { compressVideoBeforeUpload, getVideoPickerQuality } from "@/lib/videoCompression";
 import { ListRowSkeleton } from "@/components/ui/Skeleton";
 import { registerVideoAsset } from "@/lib/videoApi";
 
@@ -212,7 +213,7 @@ export default function CreateDuetScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: "videos",
       allowsEditing: false,
-      quality: 0.7,
+      quality: getVideoPickerQuality(),
       videoMaxDuration: MAX_DURATION_SECONDS,
     });
     if (!result.canceled && result.assets[0]) {
@@ -250,8 +251,14 @@ export default function CreateDuetScreen() {
       const filePath = `${user.id}/${Date.now()}_duet.${ext}`;
       const resolvedMime = videoMime || (ext === "mov" ? "video/quicktime" : `video/${ext}`);
 
+      const compressionMeta = await compressVideoBeforeUpload(
+        videoUri,
+        resolvedMime,
+        (status) => setUploadProgress(status),
+      );
+
       setUploadProgress("Uploading your video…");
-      const { publicUrl, error: uploadError } = await uploadToStorage("videos", filePath, videoUri, resolvedMime);
+      const { publicUrl, error: uploadError } = await uploadToStorage("videos", filePath, compressionMeta.uri, resolvedMime);
       if (uploadError || !publicUrl) throw new Error(uploadError || "Upload failed");
 
       setUploadProgress("Uploading thumbnail…");

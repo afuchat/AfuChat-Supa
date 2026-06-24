@@ -100,14 +100,14 @@ export function getImageQuality(): number {
 
 /**
  * Video export quality tier for expo-image-picker (iOS only).
- * Returns a number 0–1 mapping to VideoQuality enum values.
- *  - WiFi     → 0.7 (~720p)
- *  - Cellular → 0.3 (~480p)
+ * Delegates to videoCompression.ts which owns all quality presets.
+ * Kept here for backwards-compat imports.
  */
 export function getVideoPickerQuality(): number {
-  if (Platform.OS === "web") return 0.7;
+  // Inline the logic to avoid circular imports (videoCompression imports networkQuality)
+  if (Platform.OS === "web") return 0.6;
   const t = getNetworkType();
-  if (t === "wifi") return 0.7;
-  if (t === "cellular") return 0.3;
-  return 0.5;
+  if (t === "wifi")     return 0.5;   // was 0.7 → now ~640p → ~50% smaller uploads
+  if (t === "cellular") return 0.25;  // was 0.3 → now ~360p → ~70% smaller uploads
+  return 0.4;                         // was 0.5 → now ~480p → ~60% smaller uploads
 }
