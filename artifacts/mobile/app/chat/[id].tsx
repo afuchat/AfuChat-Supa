@@ -875,7 +875,7 @@ function LensContextCard({ msg, onSuggestionTap }: {
   );
 }
 
-function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, replyPreview, onTapReply, isHighlighted, onTapEnvelope, onTapGift, onImageTap, isPremiumSender, onConfirmExec, onCancelExec, onSuggestionTap, onSenderPress, onReactionPress, onStatusPress, brandColor, goldNameplate }: {
+function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, replyPreview, onTapReply, isHighlighted, onTapEnvelope, onTapGift, onImageTap, isPremiumSender, onConfirmExec, onCancelExec, onSuggestionTap, onSenderPress, onReactionPress, onStatusPress, brandColor, goldNameplate, verifiedStar, statusGlow }: {
   msg: Message;
   isMe: boolean;
   showTail: boolean;
@@ -897,6 +897,8 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   onStatusPress?: (msg: Message) => void;
   brandColor?: string;
   goldNameplate?: boolean;
+  verifiedStar?: boolean;
+  statusGlow?: boolean;
 }) {
   const { colors, isDark } = useTheme();
   const BRAND = brandColor ?? colors.accent;
@@ -1151,7 +1153,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
             replyPreview ? st.bubbleWithReply : null,
             isPending && { opacity: 0.6 },
           ]}>
-          {isPremiumSender && <PremiumBubbleShimmer />}
+          {(isPremiumSender || statusGlow) && <PremiumBubbleShimmer />}
           {!isMe && showName && (
             onSenderPress ? (
               <TouchableOpacity
@@ -1160,12 +1162,12 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                 hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
               >
                 <Text style={[st.senderName, { color: goldNameplate ? "#D4A853" : BRAND }]}>
-                  {msg.sender?.display_name ?? ""}
+                  {msg.sender?.display_name ?? ""}{verifiedStar ? " ⭐" : ""}
                 </Text>
               </TouchableOpacity>
             ) : (
               <Text style={[st.senderName, { color: goldNameplate ? "#D4A853" : BRAND }]}>
-                {msg.sender?.display_name ?? ""}
+                {msg.sender?.display_name ?? ""}{verifiedStar ? " ⭐" : ""}
               </Text>
             )
           )}
@@ -1657,7 +1659,7 @@ function ChatScreen() {
     lensIntro?: string;
   }>();
   const isDraft = id === "new";
-  const { user, profile, isPremium, subscription, refreshProfile } = useAuth();
+  const { user, profile, isPremium, subscription, refreshProfile, equippedGoods } = useAuth();
   const { colors, isDark } = useTheme();
   const { isDesktop } = useIsDesktop();
   const { appearance: chatAppearance, updateAppearance: updateChatAppearance } = useChatAppearance(id as string | undefined);
@@ -1681,20 +1683,37 @@ function ChatScreen() {
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>([]);
   const [goldNameplateIds, setGoldNameplateIds] = useState<Set<string>>(new Set());
+  const [verifiedStarIds, setVerifiedStarIds] = useState<Set<string>>(new Set());
+  const [statusGlowIds, setStatusGlowIds] = useState<Set<string>>(new Set());
+  const [senderRingMap, setSenderRingMap] = useState<Map<string, 'crown'|'void'|'diamond'>>(new Map());
 
   useEffect(() => {
     const senderIds = [...new Set(messages.map((m) => m.sender_id).filter((id) => id && id !== user?.id))];
     if (senderIds.length === 0) return;
     supabase
       .from("status_goods_purchases")
-      .select("user_id")
+      .select("user_id, good_id")
       .in("user_id", senderIds)
-      .eq("good_id", "sg4")
+      .in("good_id", ["sg1", "sg2", "sg3", "sg4", "sg5", "sg8"])
       .eq("equipped", true)
       .then(({ data }) => {
-        if (data && data.length > 0) {
-          setGoldNameplateIds(new Set(data.map((r: any) => r.user_id)));
+        if (!data) return;
+        const nameplates = new Set<string>();
+        const stars = new Set<string>();
+        const glows = new Set<string>();
+        const rings = new Map<string, 'crown'|'void'|'diamond'>();
+        for (const r of data as { user_id: string; good_id: string }[]) {
+          if (r.good_id === "sg4") nameplates.add(r.user_id);
+          if (r.good_id === "sg5") stars.add(r.user_id);
+          if (r.good_id === "sg8") glows.add(r.user_id);
+          if (r.good_id === "sg1" && !rings.has(r.user_id)) rings.set(r.user_id, 'crown');
+          if (r.good_id === "sg2" && !rings.has(r.user_id)) rings.set(r.user_id, 'void');
+          if (r.good_id === "sg3" && !rings.has(r.user_id)) rings.set(r.user_id, 'diamond');
         }
+        setGoldNameplateIds(nameplates);
+        setVerifiedStarIds(stars);
+        setStatusGlowIds(glows);
+        setSenderRingMap(rings);
       });
   }, [messages.length]);
   const [input, setInput] = useState("");
@@ -5874,11 +5893,13 @@ STRICT RULES:
             onStatusPress={isMe ? (m) => setMsgInfoTarget(m) : undefined}
             brandColor={chatAppearance?.bubbleColor}
             goldNameplate={goldNameplateIds.has(item.sender_id)}
+            verifiedStar={verifiedStarIds.has(item.sender_id)}
+            statusGlow={isMe ? equippedGoods.has('sg8') : statusGlowIds.has(item.sender_id)}
           />
         )}
       </View>
     );
-  }, [listData, messages, user, colors, highlightedMsgId, scrollToMessage, advancedFeatures.mini_profile_popup, notifFilter, isAfuChatSystemChat, notifRowsMap, actorProfileCache, groupedNotifMap, chatAppearance?.bubbleColor, goldNameplateIds]);
+  }, [listData, messages, user, colors, highlightedMsgId, scrollToMessage, advancedFeatures.mini_profile_popup, notifFilter, isAfuChatSystemChat, notifRowsMap, actorProfileCache, groupedNotifMap, chatAppearance?.bubbleColor, goldNameplateIds, verifiedStarIds, statusGlowIds, equippedGoods]);
 
   // Single source of truth for the bottom offset.
   // The floatingInputContainer is position:absolute so it cannot rely on

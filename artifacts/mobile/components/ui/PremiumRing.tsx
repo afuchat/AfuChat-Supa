@@ -34,14 +34,27 @@ const Rect = (props: any) => {
 import Colors from "@/constants/colors";
 import { useAppAccent } from "@/context/AppAccentContext";
 
+type RingType = 'premium' | 'crown' | 'void' | 'diamond';
+
+const RING_COLORS: Record<RingType, { primary: string; secondary: string }> = {
+  premium: { primary: Colors.gold,  secondary: "#E8C878" },
+  crown:   { primary: Colors.gold,  secondary: "#E8C878" },
+  void:    { primary: "#7B2FBE",    secondary: "#9F4DDB" },
+  diamond: { primary: "#60CBFF",    secondary: "#A5E8FF" },
+};
+
 type Props = {
   size: number;
   children: React.ReactNode;
   square?: boolean;
+  ringType?: RingType;
 };
 
-export function PremiumRing({ size, children, square }: Props) {
+export function PremiumRing({ size, children, square, ringType = 'premium' }: Props) {
   const { accent } = useAppAccent();
+  const ringColors = RING_COLORS[ringType];
+  const primaryColor = ringColors.primary;
+  const secondaryColor = ringType === 'premium' ? accent : ringColors.secondary;
   const spin = useRef(new Animated.Value(0)).current;
   const pulse = useRef(new Animated.Value(1)).current;
 
@@ -75,7 +88,7 @@ export function PremiumRing({ size, children, square }: Props) {
           position: "absolute", width: outerSize, height: outerSize,
           borderRadius: square ? outerSize * 0.2 : outerSize / 2,
           borderWidth: ring,
-          borderColor: Colors.gold,
+          borderColor: primaryColor,
         }} />
         <View style={{ position: "absolute" }}>{children}</View>
       </Animated.View>
@@ -98,13 +111,13 @@ export function PremiumRing({ size, children, square }: Props) {
       <SvgRoot width={outerSize} height={outerSize}>
         <Rect
           x={ring / 2} y={ring / 2} width={rectW} height={rectH} rx={rx} ry={rx}
-          stroke={Colors.gold} strokeWidth={ring} fill="none"
+          stroke={primaryColor} strokeWidth={ring} fill="none"
           strokeDasharray={`${halfPerim - arcGap} ${halfPerim + arcGap}`}
           strokeDashoffset={0} strokeLinecap="round"
         />
         <Rect
           x={ring / 2} y={ring / 2} width={rectW} height={rectH} rx={rx} ry={rx}
-          stroke={accent} strokeWidth={ring} fill="none"
+          stroke={secondaryColor} strokeWidth={ring} fill="none"
           strokeDasharray={`${halfPerim - arcGap} ${halfPerim + arcGap}`}
           strokeDashoffset={-(halfPerim)} strokeLinecap="round"
         />
@@ -119,14 +132,14 @@ export function PremiumRing({ size, children, square }: Props) {
       <SvgRoot width={outerSize} height={outerSize}>
         <Circle
           cx={center} cy={center} r={radius}
-          stroke={Colors.gold} strokeWidth={ring} fill="none"
+          stroke={primaryColor} strokeWidth={ring} fill="none"
           strokeDasharray={`${halfCirc - arcGap} ${halfCirc + arcGap}`}
           strokeDashoffset={0} strokeLinecap="round"
           rotation={-90} origin={`${center}, ${center}`}
         />
         <Circle
           cx={center} cy={center} r={radius}
-          stroke={accent} strokeWidth={ring} fill="none"
+          stroke={secondaryColor} strokeWidth={ring} fill="none"
           strokeDasharray={`${halfCirc - arcGap} ${halfCirc + arcGap}`}
           strokeDashoffset={-(halfCirc)} strokeLinecap="round"
           rotation={-90} origin={`${center}, ${center}`}

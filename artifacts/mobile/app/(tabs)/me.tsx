@@ -194,7 +194,7 @@ const pc = StyleSheet.create({
 export default function MeScreen() {
   const { colors, accent, isDark } = useTheme();
   const { isDesktop } = useIsDesktop();
-  const { profile, isPremium, subscription, loading, user } = useAuth();
+  const { profile, isPremium, subscription, loading, user, equippedGoods } = useAuth();
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [qrPosterOpen, setQrPosterOpen] = useState(false);
   const [notesLoading, setNotesLoading] = useState(false);
@@ -389,6 +389,11 @@ export default function MeScreen() {
                 size={74}
                 premium={isPremium}
                 square={!!(profile?.is_organization_verified || profile?.is_business_mode)}
+                prestigeRing={
+                  equippedGoods.has('sg1') ? 'crown' :
+                  equippedGoods.has('sg2') ? 'void' :
+                  equippedGoods.has('sg3') ? 'diamond' : null
+                }
               />
               {isPremium && (
                 <View style={s.premiumDot}>
@@ -403,6 +408,7 @@ export default function MeScreen() {
                   {profile?.display_name || "User"}
                 </Text>
                 <VerifiedBadge isVerified={profile?.is_verified} isOrganizationVerified={profile?.is_organization_verified} size={17} />
+                {equippedGoods.has('sg5') && <Text style={{ fontSize: 15 }}>⭐</Text>}
               </View>
 
               <TouchableOpacity
@@ -416,6 +422,13 @@ export default function MeScreen() {
               </TouchableOpacity>
 
               <PrestigeBadge acoin={acoin} size="sm" showLabel />
+
+              {equippedGoods.has('sg7') && (
+                <Text style={{ fontSize: 11, color: Colors.gold, fontFamily: "Inter_600SemiBold", marginTop: 1 }}>🎖️ Royalty of AfuChat</Text>
+              )}
+              {equippedGoods.has('sg6') && (
+                <Text style={{ fontSize: 11, color: "#8B5CF6", fontFamily: "Inter_500Medium", marginTop: 1 }}>🔏 Founder's Seal</Text>
+              )}
 
               {profile?.is_organization_verified && (
                 <View style={[s.businessChip, { backgroundColor: Colors.gold + "20" }]}>

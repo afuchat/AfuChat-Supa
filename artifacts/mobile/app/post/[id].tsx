@@ -485,6 +485,7 @@ export default function PostDetailScreen() {
 
   const [post, setPost] = useState<PostData | null>(null);
   const [authorGoldNameplate, setAuthorGoldNameplate] = useState(false);
+  const [authorVerifiedStar, setAuthorVerifiedStar] = useState(false);
   const [replies, setReplies] = useState<Reply[]>([]);
   const [hasMoreReplies, setHasMoreReplies] = useState(false);
   const [loadingMoreReplies, setLoadingMoreReplies] = useState(false);
@@ -634,12 +635,15 @@ export default function PostDetailScreen() {
     if (authorData?.id) {
       supabase
         .from("status_goods_purchases")
-        .select("id")
+        .select("good_id")
         .eq("user_id", authorData.id)
-        .eq("good_id", "sg4")
+        .in("good_id", ["sg4", "sg5"])
         .eq("equipped", true)
-        .maybeSingle()
-        .then(({ data: np }) => setAuthorGoldNameplate(!!np));
+        .then(({ data: goods }) => {
+          if (!goods) return;
+          setAuthorGoldNameplate(goods.some((g: any) => g.good_id === "sg4"));
+          setAuthorVerifiedStar(goods.some((g: any) => g.good_id === "sg5"));
+        });
     }
 
     // Track view in background — non-blocking so it never delays the UI
@@ -1145,7 +1149,7 @@ export default function PostDetailScreen() {
                       <View style={{ flex: 1 }}>
                         <View style={styles.nameRow}>
                           <TouchableOpacity onPress={() => router.push(`/@${post.author.handle}` as any)}>
-                            <Text style={[styles.authorName, { color: authorGoldNameplate ? "#D4A853" : colors.text }]}>{post.author.display_name}</Text>
+                            <Text style={[styles.authorName, { color: authorGoldNameplate ? "#D4A853" : colors.text }]}>{post.author.display_name}{authorVerifiedStar ? " ⭐" : ""}</Text>
                           </TouchableOpacity>
                           {post.author.is_organization_verified && <Ionicons name="checkmark-circle" size={14} color={Colors.gold} style={{ marginLeft: 4 }} />}
                           {!post.author.is_organization_verified && post.author.is_verified && <Ionicons name="checkmark-circle" size={14} color={colors.accent} style={{ marginLeft: 4 }} />}
@@ -1202,7 +1206,7 @@ export default function PostDetailScreen() {
                     <View style={{ flex: 1 }}>
                       <View style={styles.nameRow}>
                         <TouchableOpacity onPress={() => router.push(`/@${post.author.handle}` as any)}>
-                          <Text style={[styles.authorName, { color: authorGoldNameplate ? "#D4A853" : colors.text }]}>{post.author.display_name}</Text>
+                          <Text style={[styles.authorName, { color: authorGoldNameplate ? "#D4A853" : colors.text }]}>{post.author.display_name}{authorVerifiedStar ? " ⭐" : ""}</Text>
                         </TouchableOpacity>
                         {post.author.is_organization_verified && <Ionicons name="checkmark-circle" size={14} color={Colors.gold} style={{ marginLeft: 4 }} />}
                         {!post.author.is_organization_verified && post.author.is_verified && <Ionicons name="checkmark-circle" size={14} color={colors.accent} style={{ marginLeft: 4 }} />}

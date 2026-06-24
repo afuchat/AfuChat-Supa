@@ -85,6 +85,7 @@ type AuthContextType = {
   profile: Profile | null;
   subscription: Subscription | null;
   isPremium: boolean;
+  equippedGoods: Set<string>;
   loading: boolean;
   linkedAccounts: StoredAccount[];
   signOut: () => Promise<void>;
@@ -102,6 +103,7 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   subscription: null,
   isPremium: false,
+  equippedGoods: new Set(),
   loading: true,
   linkedAccounts: [],
   signOut: async () => {},
@@ -124,6 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // This lets index.tsx route to tabs immediately for previously-logged-in users.
   const [loading, setLoading] = useState(!_syncProfile && !_syncUserId);
   const [linkedAccounts, setLinkedAccounts] = useState<StoredAccount[]>([]);
+  const [equippedGoods, setEquippedGoods] = useState<Set<string>>(new Set());
 
   // ── Guard refs ──────────────────────────────────────────────────────────────
   // Prevent saveCurrentSession from firing during an account switch or link
@@ -146,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const [{ data: profileData }, { data: subData }] = await Promise.all([
+      const [{ data: profileData }, { data: subData }, { data: goodsData }] = await Promise.all([
         supabase
           .from("profiles")
           .select(
@@ -163,6 +166,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase
+          .from("status_goods_purchases")
+          .select("good_id")
+          .eq("user_id", userId)
+          .eq("equipped", true),
       ]);
 
       if (profileData) {
@@ -192,6 +200,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setSubscription(null);
       }
+
+      setEquippedGoods(goodsData ? new Set(goodsData.map((g: any) => g.good_id)) : new Set());
 
       return profileData as Profile | null;
     } catch {
@@ -501,6 +511,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSubscription(null);
       setUser(null);
       setSession(null);
+      setEquippedGoods(new Set());
       clearProfileCache();
       invalidateConversationsPreload();
 
@@ -856,6 +867,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profile,
       subscription,
       isPremium,
+      equippedGoods,
       loading,
       linkedAccounts,
       signOut,
@@ -866,7 +878,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       removeAccount: handleRemoveAccount,
       refreshLinkedAccounts,
     }),
-    [session, user, profile, subscription, isPremium, loading, linkedAccounts, signOut]
+    [session, user, profile, subscription, isPremium, equippedGoods, loading, linkedAccounts, signOut]
   );
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

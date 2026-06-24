@@ -4,6 +4,8 @@ import { Image } from "expo-image";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { PremiumRing } from "./PremiumRing";
 
+type PrestigeRing = 'crown' | 'void' | 'diamond';
+
 type Props = {
   uri?: string | null;
   name?: string;
@@ -12,6 +14,7 @@ type Props = {
   online?: boolean;
   premium?: boolean;
   square?: boolean;
+  prestigeRing?: PrestigeRing | null;
 };
 
 function getInitials(name?: string): string {
@@ -32,7 +35,7 @@ function hashColor(name?: string): string {
   return colors[Math.abs(hash) % colors.length];
 }
 
-export function Avatar({ uri, name, size = 44, style, online, premium, square }: Props) {
+export function Avatar({ uri, name, size = 44, style, online, premium, square, prestigeRing }: Props) {
   const { accent } = useAppAccent();
   const initials = getInitials(name);
   const bgColor = hashColor(name);
@@ -80,10 +83,10 @@ export function Avatar({ uri, name, size = 44, style, online, premium, square }:
   const gap = 2;
   const outerSize = size + (ring + gap) * 2;
 
-  if (premium) {
+  if (premium || prestigeRing) {
     return (
       <View style={[{ width: outerSize, height: outerSize }, style]}>
-        <PremiumRing size={size} square={square}>
+        <PremiumRing size={size} square={square} ringType={prestigeRing ?? 'premium'}>
           {innerNode}
         </PremiumRing>
       </View>
