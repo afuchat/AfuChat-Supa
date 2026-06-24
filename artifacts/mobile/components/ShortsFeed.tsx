@@ -88,6 +88,7 @@ function WebShortsPlayer({
   preloadOnly,
   onTogglePause,
   onEnded,
+  onForceMute,
 }: {
   src: string;
   poster?: string | null;
@@ -97,19 +98,28 @@ function WebShortsPlayer({
   preloadOnly: boolean;
   onTogglePause: () => void;
   onEnded: () => void;
+  onForceMute?: () => void;
 }) {
   const ref = useRef<HTMLVideoElement | null>(null);
   const [showControls, setShowControls] = useState(false);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Drive playback from React state.
+  // YouTube-style: try to play with sound first. If the browser's autoplay
+  // policy blocks unmuted playback (strict first-visit), fall back to muted
+  // automatically and notify the parent so it can persist the forced state.
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     if (active && !paused && !preloadOnly) {
       const playPromise = el.play();
       if (playPromise && typeof (playPromise as any).catch === "function") {
-        (playPromise as any).catch(() => { /* autoplay blocked — user must tap */ });
+        (playPromise as any).catch(() => {
+          // Unmuted autoplay blocked — silently retry muted
+          el.muted = true;
+          el.play().catch(() => {});
+          onForceMute?.();
+        });
       }
     } else {
       el.pause();
@@ -276,6 +286,7 @@ function ShortCard({
   bottomInset,
   globalMuted,
   onToggleGlobalMuted,
+  onForceMute,
   onLike,
   onBookmark,
   onFollow,
@@ -291,6 +302,7 @@ function ShortCard({
   bottomInset: number;
   globalMuted: boolean;
   onToggleGlobalMuted: () => void;
+  onForceMute: () => void;
   onLike: (postId: string, liked: boolean) => void;
   onBookmark: (postId: string, bookmarked: boolean) => void;
   onFollow: (authorId: string) => void;
@@ -353,6 +365,7 @@ function ShortCard({
             muted={globalMuted}
             onTogglePause={handleTogglePause}
             onEnded={() => { /* loop handled natively */ }}
+            onForceMute={onForceMute}
           />
         ) : (
           <NativeShortsPlayer
@@ -463,6 +476,7 @@ function ShortCard({
             muted={globalMuted}
             onTogglePause={handleTogglePause}
             onEnded={() => { /* loop handled natively */ }}
+            onForceMute={onForceMute}
           />
         ) : (
           <NativeShortsPlayer
@@ -711,7 +725,37 @@ export default function ShortsFeed({
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [globalMuted, setGlobalMuted] = useState(true);
+  // On web: persist the muted preference so users don't have to unmute every
+  // session. Default to unmuted — the browser will block unmuted autoplay on a
+  // strict first visit and onForceMute will flip this back to true gracefully.
+  const [globalMuted, setGlobalMuted] = useState<boolean>(() => {
+    if (Platform.OS === "web") {
+      try {
+        const stored = localStorage.getItem("shorts_muted");
+        return stored === null ? false : stored === "true";
+      } catch {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  function handleToggleGlobalMuted() {
+    setGlobalMuted((m) => {
+      const next = !m;
+      if (Platform.OS === "web") {
+        try { localStorage.setItem("shorts_muted", String(next)); } catch {}
+      }
+      return next;
+    });
+  }
+
+  function handleForceMute() {
+    setGlobalMuted(true);
+    if (Platform.OS === "web") {
+      try { localStorage.setItem("shorts_muted", "true"); } catch {}
+    }
+  }
   const [offlineCacheAge, setOfflineCacheAge] = useState<number | null>(null);
   const [showEndPanel, setShowEndPanel] = useState(false);
   const cursorRef = useRef<string | null>(null);
@@ -1161,7 +1205,8 @@ export default function ShortsFeed({
             cardHeight={cardHeight}
             bottomInset={bottomInset}
             globalMuted={globalMuted}
-            onToggleGlobalMuted={() => setGlobalMuted((m) => !m)}
+            onToggleGlobalMuted={handleToggleGlobalMuted}
+            onForceMute={handleForceMute}
             onLike={toggleLike}
             onBookmark={toggleBookmark}
             onFollow={toggleFollow}
