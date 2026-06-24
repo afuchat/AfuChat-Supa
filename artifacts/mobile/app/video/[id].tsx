@@ -404,6 +404,7 @@ function VideoContextMenu({ visible, item, onClose, onShare, onRepost, onDownloa
   if (!visible || !item) return null;
   const ACTIONS: { id: string; label: string; icon: string; bg: string; color: string }[] = [
     ...(Platform.OS !== "web" ? [{ id: "pip", label: pipEnabled ? "Mini Player: On" : "Mini Player: Off", icon: "phone-portrait-outline", bg: pipEnabled ? "#34C759" : "#1C1C1E", color: "#fff" }] : []),
+    { id: "autoscroll",    label: autoScroll ? "Auto-scroll: On" : "Auto-scroll: Off", icon: autoScroll ? "infinite" : "infinite-outline", bg: autoScroll ? "#34C759" : "#8E8E93", color: "#fff" },
     { id: "repost",        label: "Repost",           icon: "repeat",                 bg: "#FF9500",                          color: "#fff"  },
     { id: "share",         label: "Share to",         icon: "share-social",           bg: "#007AFF",                          color: "#fff"  },
     { id: "copylink",      label: "Copy link",        icon: "link",                   bg: "#5856D6",                          color: "#fff"  },
