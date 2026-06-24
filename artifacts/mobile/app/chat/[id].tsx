@@ -1690,41 +1690,51 @@ function ChatScreen() {
   useEffect(() => {
     const senderIds = [...new Set(messages.map((m) => m.sender_id).filter((id) => id && id !== user?.id))];
     if (senderIds.length === 0) return;
-    Promise.all([
-      supabase
-        .from("status_goods_purchases")
-        .select("user_id, good_id")
-        .in("user_id", senderIds)
-        .in("good_id", ["sg1", "sg2", "sg3", "sg4", "sg5", "sg8"])
-        .eq("equipped", true),
-      // Gold/Platinum subscribers automatically get gold names in chatrooms
-      supabase
-        .from("user_subscriptions")
-        .select("user_id, subscription_plans(tier)")
-        .in("user_id", senderIds)
-        .eq("is_active", true),
-    ]).then(([{ data: goodsData }, { data: subData }]) => {
-      const nameplates = new Set<string>();
-      const stars = new Set<string>();
-      const glows = new Set<string>();
-      const rings = new Map<string, 'crown'|'void'|'diamond'>();
-      for (const r of (goodsData || []) as { user_id: string; good_id: string }[]) {
-        if (r.good_id === "sg4") nameplates.add(r.user_id);
-        if (r.good_id === "sg5") stars.add(r.user_id);
-        if (r.good_id === "sg8") glows.add(r.user_id);
-        if (r.good_id === "sg1" && !rings.has(r.user_id)) rings.set(r.user_id, 'crown');
-        if (r.good_id === "sg2" && !rings.has(r.user_id)) rings.set(r.user_id, 'void');
-        if (r.good_id === "sg3" && !rings.has(r.user_id)) rings.set(r.user_id, 'diamond');
-      }
-      // Mark Gold/Platinum subscribers with golden names automatically
-      for (const s of (subData || []) as { user_id: string; subscription_plans: any }[]) {
-        const tier = s.subscription_plans?.tier;
-        if (tier === "gold" || tier === "platinum") nameplates.add(s.user_id);
-      }
-      setGoldNameplateIds(nameplates);
-      setVerifiedStarIds(stars);
-      setStatusGlowIds(glows);
-      setSenderRingMap(rings);
+
+    const nameplates = new Set<string>();
+    const stars = new Set<string>();
+    const glows = new Set<string>();
+    const rings = new Map<string, 'crown'|'void'|'diamond'>();
+
+    // Query 1: status goods (sg4 = gold nameplate, sg5 = verified star, sg8 = glow, sg1-3 = rings)
+    const goodsPromise = supabase
+      .from("status_goods_purchases")
+      .select("user_id, good_id")
+      .in("user_id", senderIds)
+      .in("good_id", ["sg1", "sg2", "sg3", "sg4", "sg5", "sg8"])
+      .eq("equipped", true)
+      .then(({ data }) => {
+        for (const r of (data || []) as { user_id: string; good_id: string }[]) {
+          if (r.good_id === "sg4") nameplates.add(r.user_id);
+          if (r.good_id === "sg5") stars.add(r.user_id);
+          if (r.good_id === "sg8") glows.add(r.user_id);
+          if (r.good_id === "sg1" && !rings.has(r.user_id)) rings.set(r.user_id, 'crown');
+          if (r.good_id === "sg2" && !rings.has(r.user_id)) rings.set(r.user_id, 'void');
+          if (r.good_id === "sg3" && !rings.has(r.user_id)) rings.set(r.user_id, 'diamond');
+        }
+      })
+      .catch(() => {});
+
+    // Query 2: Gold/Platinum subscribers get golden names automatically (independent of Query 1)
+    const subPromise = supabase
+      .from("user_subscriptions")
+      .select("user_id, subscription_plans(tier)")
+      .in("user_id", senderIds)
+      .eq("is_active", true)
+      .then(({ data }) => {
+        for (const s of (data || []) as { user_id: string; subscription_plans: any }[]) {
+          const tier = s.subscription_plans?.tier;
+          if (tier === "gold" || tier === "platinum") nameplates.add(s.user_id);
+        }
+      })
+      .catch(() => {});
+
+    // Apply both results together once both queries settle
+    Promise.allSettled([goodsPromise, subPromise]).then(() => {
+      setGoldNameplateIds(new Set(nameplates));
+      setVerifiedStarIds(new Set(stars));
+      setStatusGlowIds(new Set(glows));
+      setSenderRingMap(new Map(rings));
     });
   }, [messages.length]);
   const [input, setInput] = useState("");
