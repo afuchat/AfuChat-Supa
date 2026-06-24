@@ -1,0 +1,26 @@
+════════════════════════════════════════════
+AfuChat Crash Report
+Time        : 2026-06-24T08:27:37.415Z
+
+App         : AfuChat 2.2.6 (build 233)
+Platform    : android 35
+Device      : TECNO CL6k
+OS          : Android 15
+Dev mode    : true
+
+────────────────  Error  ───────────────────
+Attempting to run JS driven animation on animated node that has been moved to "native" earlier by starting an animation with `useNativeDriver: true`
+
+────────────  JS Stack Trace  ──────────────
+Error: Attempting to run JS driven animation on animated node that has been moved to "native" earlier by starting an animation with `useNativeDriver: true`
+    at start (https://151a6db1-f656-403f-800d-4f5e34a8cec1-00-23hs5xfgt53yb.expo.riker.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle//&platform=android&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.bytecode=1&transform.routerRoot=app&unstable_transformProfile=hermes-stable:457905:26)
+    at apply (native)
+    at anonymous (https://151a6db1-f656-403f-800d-4f5e34a8cec1-00-23hs5xfgt53yb.expo.riker.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle//&platform=android&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.bytecode=1&transform.routerRoot=app&unstable_transformProfile=hermes-stable:413561:21)
+    at start (https://151a6db1-f656-403f-800d-4f5e34a8cec1-00-23hs5xfgt53yb.expo.riker.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle//&platform=android&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.bytecode=1&transform.routerRoot=app&unstable_transformProfile=hermes-stable:461142:71)
+    at animate (https://151a6db1-f656-403f-800d-4f5e34a8cec1-00-23hs5xfgt53yb.expo.riker.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle//&platform=android&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.bytecode=1&transform.routerRoot=app&unstable_transformProfile=hermes-stable:459917:24)
+    at start (https://151a6db1-f656-403f-800d-4f5e34a8cec1-00-23hs5xfgt53yb.expo.riker.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle//&platform=android&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.bytecode=1&transform.routerRoot=app&unstable_transformProfile=hermes-stable:457516:28)
+    at start (https://151a6db1-f656-403f-800d-4f5e34a8cec1-00-23hs5xfgt53yb.expo.riker.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle//&platform=android&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.bytecode=1&transform.routerRoot=app&unstable_transformProfile=hermes-stable:457521:14)
+    at start (https://151a6db1-f656-403f-800d-4f5e34a8cec1-00-23hs5xfgt53yb.expo.riker.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle//&platform=android&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.bytecode=1&transform.routerRoot=app&unstable_transformProfile=hermes-stable:457596:36)
+    at restart (https://151a6db1-f656-403f-800d-4f5e34a8cec1-00-23hs5xfgt53yb.expo.riker.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle//&platform=android&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.bytecode=1&transform.routerRoot=app&unstable_transformProfile=hermes-stable:457708:28)
+    at start (https://151a6db1-f656-403f-800d-4f5e34a8cec1-00-23hs5xfgt53yb.expo.riker.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle//&platform=android&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.bytecode=1&transform.routerRoot=app&unstable_transformProfile=hermes-stable:457719:20)
+    at anonymous (https://151a6db1-f656-403f-800d-4f5e34a8cec1-00-23hs5xfgt53yb.expo.riker.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle//&platform=android&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.bytecode=1&transform.routerRoot=app&unstable_transformProfile=hermes-stable:338015
