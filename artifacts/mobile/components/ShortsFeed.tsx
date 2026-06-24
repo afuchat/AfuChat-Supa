@@ -400,6 +400,7 @@ function ShortCard({
             preloadOnly={preloadOnly}
             muted={globalMuted}
             onTogglePause={handleTogglePause}
+            onDoubleTap={handleLike}
           />
         )}
 

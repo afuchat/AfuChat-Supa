@@ -20,6 +20,7 @@ import React, {
 } from "react";
 import {
   ActivityIndicator,
+  AppState,
   Animated,
   FlatList,
   Keyboard,
@@ -62,6 +63,7 @@ import { notifyPostLike, notifyPostReply } from "@/lib/notifyUser";
 import { RichText } from "@/components/ui/RichText";
 import { encodeId, decodeId, isUuid } from "@/lib/shortId";
 import { getCachedVideoUri, cacheVideo, markVideoWatched, getOfflineVideos } from "@/lib/videoCache";
+import { storage } from "@/lib/storage/mmkv";
 import { recordWatchHistory } from "@/lib/watchHistory";
 import { onShortsRefresh } from "@/lib/shortsRefresh";
 import { getLocalFeedPost } from "@/lib/storage/localFeed";
@@ -423,16 +425,16 @@ const ssStyles = StyleSheet.create({
 
 // ─── VideoContextMenu ─────────────────────────────────────────────────────────
 
-function VideoContextMenu({ visible, item, onClose, onShare, onRepost, onDownload, onCopyLink, onNotInterested, onReport, onPiP, autoScroll, onToggleAutoScroll }: {
+function VideoContextMenu({ visible, item, onClose, onShare, onRepost, onDownload, onCopyLink, onNotInterested, onReport, pipEnabled, onTogglePip, autoScroll, onToggleAutoScroll }: {
   visible: boolean; item: VideoPost | null; onClose: () => void;
   onShare: () => void; onRepost: () => void; onDownload: () => void;
   onCopyLink: () => void; onNotInterested: () => void; onReport: () => void;
-  onPiP: () => void;
+  pipEnabled: boolean; onTogglePip: () => void;
   autoScroll: boolean; onToggleAutoScroll: () => void;
 }) {
   if (!visible || !item) return null;
   const ACTIONS: { id: string; label: string; icon: string; bg: string; color: string }[] = [
-    ...(Platform.OS !== "web" ? [{ id: "pip", label: "Mini player", icon: "phone-portrait-outline", bg: "#1C1C1E", color: "#fff" }] : []),
+    ...(Platform.OS !== "web" ? [{ id: "pip", label: pipEnabled ? "Mini Player: On" : "Mini Player: Off", icon: "phone-portrait-outline", bg: pipEnabled ? "#34C759" : "#1C1C1E", color: "#fff" }] : []),
     { id: "autoscroll",    label: autoScroll ? "Auto-play: On" : "Auto-play: Off", icon: autoScroll ? "play-forward" : "play-forward-outline", bg: autoScroll ? "#34C759" : "#8E8E93", color: "#fff" },
     { id: "repost",        label: "Repost",           icon: "repeat",                 bg: "#FF9500",                          color: "#fff"  },
     { id: "share",         label: "Share to",         icon: "share-social",           bg: "#007AFF",                          color: "#fff"  },
@@ -443,7 +445,7 @@ function VideoContextMenu({ visible, item, onClose, onShare, onRepost, onDownloa
   ];
   const handlers: Record<string, () => void> = {
     repost: onRepost, copylink: onCopyLink, share: onShare,
-    download: onDownload, pip: onPiP, autoscroll: onToggleAutoScroll,
+    download: onDownload, pip: onTogglePip, autoscroll: onToggleAutoScroll,
     notinterested: onNotInterested, report: onReport,
   };
   return (
@@ -644,6 +646,20 @@ const VideoItem = React.memo(function VideoItem({
         }).catch(() => {});
       }
     }
+  }, [isActive]);
+
+  // ── Auto-PiP on home button (AppState background) ──────────────────────
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    const sub = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "background" && isActive) {
+        const pipOn = storage.getBoolean("pip_mode_enabled") ?? false;
+        if (pipOn) {
+          try { videoViewRef.current?.startPictureInPicture?.(); } catch {}
+        }
+      }
+    });
+    return () => sub.remove();
   }, [isActive]);
 
   // ── Player source update ───────────────────────────────────────────────
@@ -1084,6 +1100,9 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
       if (v === "1") { setAutoScroll(true); autoScrollRef.current = true; }
     }).catch(() => {});
   }, []);
+
+  // PiP mode toggle — stored in MMKV (local only, lost on app clear)
+  const [pipEnabled, setPipEnabled] = useState<boolean>(() => storage.getBoolean("pip_mode_enabled") ?? false);
   useEffect(() => {
     videosLenRef.current = videos.length;
     videosRef.current = videos;
@@ -1813,6 +1832,14 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
     });
   }, []);
 
+  const togglePipEnabled = useCallback(() => {
+    setPipEnabled((prev) => {
+      const next = !prev;
+      storage.setBoolean("pip_mode_enabled", next);
+      return next;
+    });
+  }, []);
+
   const squeezedH = Math.round(listHeight * 0.38);
 
   const videoItemProps = React.useMemo(() => ({
@@ -2023,7 +2050,8 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
         onCopyLink={() => menuItem && handleCopyLink(menuItem)}
         onNotInterested={() => { if (menuItem) { setMenuItem(null); handleNotInterested(menuItem); } }}
         onReport={() => menuItem && handleReport(menuItem)}
-        onPiP={() => { setMenuItem(null); setTimeout(() => pipTriggerRef.current?.(), 300); }}
+        pipEnabled={pipEnabled}
+        onTogglePip={() => { togglePipEnabled(); }}
         autoScroll={autoScroll}
         onToggleAutoScroll={() => { toggleAutoScroll(); }}
       />
