@@ -1910,17 +1910,6 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
         </View>
       </View>
 
-      {/* Offline banner — floats below the header row */}
-      {isOffline && (
-        <View style={[mStyles.offlineBanner, { top: insets.top + 52 }]} pointerEvents="none">
-          <View style={mStyles.offlineBannerPill}>
-            <Ionicons name="cloud-offline-outline" size={13} color="#fff" />
-            <Text style={mStyles.offlineBannerText}>
-              {videos.length > 0 ? "Offline · cached videos" : "No internet connection"}
-            </Text>
-          </View>
-        </View>
-      )}
 
       {videos.length === 0 ? (
         <View style={mStyles.emptyState}>

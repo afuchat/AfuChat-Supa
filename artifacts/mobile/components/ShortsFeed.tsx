@@ -983,28 +983,6 @@ export default function ShortsFeed({
 
   return (
     <View style={{ flex: 1 }}>
-    {!online && (
-      <View style={{
-        position: "absolute",
-        top: 12,
-        alignSelf: "center",
-        zIndex: 99,
-        backgroundColor: "rgba(0,0,0,0.65)",
-        paddingHorizontal: 12,
-        paddingVertical: 5,
-        borderRadius: 20,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-      }}>
-        <Ionicons name="cloud-offline-outline" size={14} color="#fff" />
-        <Text style={{ color: "#fff", fontSize: 12, fontFamily: "Inter_600SemiBold" }}>
-          {offlineCacheAge
-            ? `Offline · saved ${new Date(offlineCacheAge).toLocaleDateString()}`
-            : "Offline · cached videos"}
-        </Text>
-      </View>
-    )}
     <FlatList
       ref={listRef}
       data={posts}
