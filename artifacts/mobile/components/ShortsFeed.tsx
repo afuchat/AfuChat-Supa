@@ -85,6 +85,7 @@ function WebShortsPlayer({
   active,
   paused,
   preloadOnly,
+  loop = true,
   onTogglePause,
   onEnded,
 }: {
@@ -93,6 +94,7 @@ function WebShortsPlayer({
   active: boolean;
   paused: boolean;
   preloadOnly: boolean;
+  loop?: boolean;
   onTogglePause: () => void;
   onEnded: () => void;
 }) {
@@ -142,7 +144,7 @@ function WebShortsPlayer({
         src={src}
         poster={poster || undefined}
         playsInline
-        loop
+        loop={loop}
         preload="metadata"
         onClick={handleClick}
         onMouseMove={preloadOnly ? undefined : handlePointer}
@@ -181,25 +183,35 @@ function NativeShortsPlayer({
   active,
   paused,
   preloadOnly,
+  loop = true,
   onTogglePause,
   onDoubleTap,
+  onEnded,
 }: {
   src: string;
   poster?: string | null;
   active: boolean;
   paused: boolean;
   preloadOnly: boolean;
+  loop?: boolean;
   onTogglePause: () => void;
   onDoubleTap?: () => void;
+  onEnded?: () => void;
 }) {
   const player = useVideoPlayer(src ? { uri: src } : null, (p) => {
-    p.loop = true;
+    p.loop = loop;
     p.muted = false;
     if (active && !paused && !preloadOnly) p.play();
   });
   const touchRef = useRef<{ y: number; t: number } | null>(null);
   const lastTapRef = useRef(0);
   const singleTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const endFiredRef = useRef(false);
+
+  // Sync loop setting when it changes
+  React.useEffect(() => {
+    try { player.loop = loop; } catch {}
+  }, [loop]);
 
   // Play / pause control
   React.useEffect(() => {
@@ -214,6 +226,22 @@ function NativeShortsPlayer({
       }
     } catch {}
   }, [active, paused, preloadOnly]);
+
+  // When loop is off, poll for end-of-video so we can fire onEnded
+  React.useEffect(() => {
+    if (loop || !active || !onEnded) { endFiredRef.current = false; return; }
+    endFiredRef.current = false;
+    const timer = setInterval(() => {
+      try {
+        const dur = player.duration;
+        if (dur > 0 && player.currentTime / dur >= 0.97 && !endFiredRef.current) {
+          endFiredRef.current = true;
+          onEnded();
+        }
+      } catch {}
+    }, 100);
+    return () => clearInterval(timer);
+  }, [loop, active, onEnded]);
 
   return (
     <View
@@ -282,6 +310,9 @@ function ShortCard({
   cardWidth,
   cardHeight,
   bottomInset,
+  autoScroll,
+  onToggleAutoScroll,
+  onAutoScrollEnd,
   onLike,
   onBookmark,
   onFollow,
@@ -295,6 +326,9 @@ function ShortCard({
   cardWidth: number;
   cardHeight: number;
   bottomInset: number;
+  autoScroll: boolean;
+  onToggleAutoScroll: () => void;
+  onAutoScrollEnd: () => void;
   onLike: (postId: string, liked: boolean) => void;
   onBookmark: (postId: string, bookmarked: boolean) => void;
   onFollow: (authorId: string) => void;
@@ -354,8 +388,9 @@ function ShortCard({
             active={active}
             paused={paused}
             preloadOnly={preloadOnly}
+            loop={!autoScroll}
             onTogglePause={handleTogglePause}
-            onEnded={() => { /* loop handled natively */ }}
+            onEnded={onAutoScrollEnd}
           />
         ) : (
           <NativeShortsPlayer
@@ -364,8 +399,10 @@ function ShortCard({
             active={active}
             paused={paused}
             preloadOnly={preloadOnly}
+            loop={!autoScroll}
             onTogglePause={handleTogglePause}
             onDoubleTap={handleLike}
+            onEnded={onAutoScrollEnd}
           />
         )}
 
@@ -440,6 +477,29 @@ function ShortCard({
           </View>
         </View>
 
+        {/* Auto-scroll toggle pill — top-left, session only */}
+        <Pressable
+          onPress={onToggleAutoScroll}
+          hitSlop={8}
+          style={{
+            position: "absolute",
+            top: 56,
+            left: 12,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 5,
+            backgroundColor: autoScroll ? "rgba(52,199,89,0.88)" : "rgba(0,0,0,0.45)",
+            borderRadius: 20,
+            paddingHorizontal: 10,
+            paddingVertical: 5,
+          }}
+        >
+          <Ionicons name={autoScroll ? "play-forward" : "play-forward-outline"} size={14} color="#fff" />
+          <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>
+            {autoScroll ? "Auto-scroll: On" : "Auto-scroll"}
+          </Text>
+        </Pressable>
+
       </View>
     );
   }
@@ -455,8 +515,9 @@ function ShortCard({
             active={active}
             paused={paused}
             preloadOnly={preloadOnly}
+            loop={!autoScroll}
             onTogglePause={handleTogglePause}
-            onEnded={() => { /* loop handled natively */ }}
+            onEnded={onAutoScrollEnd}
           />
         ) : (
           <NativeShortsPlayer
@@ -465,7 +526,9 @@ function ShortCard({
             active={active}
             paused={paused}
             preloadOnly={preloadOnly}
+            loop={!autoScroll}
             onTogglePause={handleTogglePause}
+            onEnded={onAutoScrollEnd}
           />
         )}
 
@@ -696,6 +759,8 @@ export default function ShortsFeed({
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [autoScroll, setAutoScroll] = useState(false);
+  const autoScrollRef = useRef(false);
   const [offlineCacheAge, setOfflineCacheAge] = useState<number | null>(null);
   const [showEndPanel, setShowEndPanel] = useState(false);
   const cursorRef = useRef<string | null>(null);
@@ -704,6 +769,9 @@ export default function ShortsFeed({
   postsRef.current = posts;
   const prevOnlineRef = useRef(online);
   const endPanelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeIndexRef = useRef(activeIndex);
+  React.useEffect(() => { activeIndexRef.current = activeIndex; }, [activeIndex]);
+  React.useEffect(() => { autoScrollRef.current = autoScroll; }, [autoScroll]);
 
   useFocusEffect(
     useCallback(() => {
@@ -711,6 +779,8 @@ export default function ShortsFeed({
         activateKeepAwakeAsync?.("shorts-feed")?.catch(() => {});
       }
       return () => {
+        setAutoScroll(false);
+        autoScrollRef.current = false;
         if (Platform.OS !== "web") {
           deactivateKeepAwakeAsync?.("shorts-feed")?.catch(() => {});
         }
@@ -1031,6 +1101,13 @@ export default function ShortsFeed({
     };
   }, []);
 
+  const handleAutoScrollEnd = useCallback(() => {
+    if (!autoScrollRef.current) return;
+    const next = activeIndexRef.current + 1;
+    if (next >= postsRef.current.length) return;
+    listRef.current?.scrollToIndex({ index: next, animated: true });
+  }, []);
+
   async function toggleLike(postId: string, currentlyLiked: boolean) {
     if (!user) { router.push("/(auth)/login" as any); return; }
     // Optimistic update — flip instantly
@@ -1144,6 +1221,9 @@ export default function ShortsFeed({
             cardWidth={cardWidth}
             cardHeight={cardHeight}
             bottomInset={bottomInset}
+            autoScroll={autoScroll}
+            onToggleAutoScroll={() => setAutoScroll((v) => { autoScrollRef.current = !v; return !v; })}
+            onAutoScrollEnd={handleAutoScrollEnd}
             onLike={toggleLike}
             onBookmark={toggleBookmark}
             onFollow={toggleFollow}

@@ -742,7 +742,12 @@ const VideoItem = React.memo(function VideoItem({
             setDurationMs(dur);
             const frac = pos / dur;
             setProgress(frac);
-            if (frac >= 0.97) clearVideoProgress(item.id); else saveVideoProgress(item.id, frac);
+            if (frac >= 0.97) {
+              clearVideoProgress(item.id);
+              if (!videoEndFiredRef.current) { videoEndFiredRef.current = true; onVideoEnd?.(); }
+            } else {
+              saveVideoProgress(item.id, frac);
+            }
           }}
           onBuffering={(b) => {
             setBuffering(b);
@@ -1024,6 +1029,8 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
       return () => {
         setTabFocused(false);
         setForceDark(false);
+        setAutoScroll(false);
+        autoScrollRef.current = false;
         if (Platform.OS !== "web") {
           deactivateKeepAwakeAsync?.("video-feed")?.catch(() => {});
         }
@@ -1061,11 +1068,6 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
   useEffect(() => { videoTabRef.current = videoTab; }, [videoTab]);
   useEffect(() => { activeIndexRef.current = activeIndex; }, [activeIndex]);
   useEffect(() => { autoScrollRef.current = autoScroll; }, [autoScroll]);
-  useEffect(() => {
-    AsyncStorage.getItem("pref:videoAutoScroll").then((v) => {
-      if (v === "1") { setAutoScroll(true); autoScrollRef.current = true; }
-    }).catch(() => {});
-  }, []);
 
   // PiP mode toggle — stored in MMKV (local only, lost on app clear)
   const [pipEnabled, setPipEnabled] = useState<boolean>(() => storage.getBoolean("pip_mode_enabled") ?? false);
@@ -1793,7 +1795,6 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
     setAutoScroll((prev) => {
       const next = !prev;
       autoScrollRef.current = next;
-      AsyncStorage.setItem("pref:videoAutoScroll", next ? "1" : "0").catch(() => {});
       return next;
     });
   }, []);
