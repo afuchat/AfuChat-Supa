@@ -3920,12 +3920,17 @@ PROFILE LOOKUP — you can link directly to any user's profile:
 - For bought/marketplace usernames: every handle always routes to its current owner's profile.
 
 RESPONSE QUALITY RULES:
-- Every response must be at least 500 characters long. Never give a bare one-liner — always explain, add context, or offer next steps to meet the minimum. Navigation confirmations are the only exception.
-- Answer exactly what the user asked. Do not pad with unrelated information or tangents.
-- Write with precision and intelligence: short, purposeful sentences. No filler phrases like "Great question!", "Absolutely!", "Of course!", "Certainly!" — start directly with the answer.
+- Match response length to the complexity of the request:
+  · Simple greeting (hi, hey, hello) → 1-2 sentences max, 50 words max.
+  · Simple question → short, direct answer.
+  · Complex question → detailed, well-organized answer.
+  · Technical/coding → detailed explanation with code.
+  · Guide/tutorial → numbered step-by-step.
+- NEVER pad a short answer to make it longer. If the answer is one sentence, give one sentence.
+- NEVER start with "Great question!", "Absolutely!", "Of course!", "Certainly!" — start directly with the answer.
 - Use formatting (bold, bullets, headers) for factual or structured answers. Plain prose for casual conversation.
 - Tone: professional, warm, sharp. Like a brilliant friend who knows AfuChat inside-out.
-- If the answer is naturally short (e.g. a yes/no fact), expand it by adding: why it matters, how to act on it, a related tip, or a [SUGGEST:...] follow-up — so the response is always substantive.
+- PROACTIVE HELP: After answering, suggest additional help ONLY when directly relevant to the topic. One short suggestion max.
 
 STRICT RULES:
 - NEVER write raw route paths in your text body. If navigation is needed, use [ACTION:...] tags only.
@@ -3952,8 +3957,28 @@ STRICT RULES:
           `\n\nBe specific, expert and genuinely helpful. The user may ask multiple questions about this item.`;
       }
 
+      // Notification patterns sent by the system bot — exclude these from AI context
+      // so the AI doesn't hallucinate about notification content when the user says "hey".
+      const NOTIFICATION_PATTERNS = [
+        /started following you/i,
+        /liked your (post|comment|story|reel)/i,
+        /commented on your/i,
+        /mentioned you in/i,
+        /sent you a gift/i,
+        /sent you \d+ (Nexa|ACoin)/i,
+        /reacted .* to your/i,
+        /replied to your/i,
+        /^\uD83D\uDD14/, // 🔔 bell emoji prefix (notifications)
+        /^🔔/,
+        /^\[NOTIFICATION\]/i,
+        /You have a new follower/i,
+        /new follower/i,
+      ];
+      const isNotificationMessage = (content: string) =>
+        NOTIFICATION_PATTERNS.some(p => p.test(content));
+
       const conversationMessages = currentMessages
-        .filter(m => !m._pending)
+        .filter(m => !m._pending && m.encrypted_content && !isNotificationMessage(m.encrypted_content))
         .slice(0, 10)
         .reverse()
         .map(m => ({ role: m.sender_id === user?.id ? "user" as const : "assistant" as const, content: m.encrypted_content }));
