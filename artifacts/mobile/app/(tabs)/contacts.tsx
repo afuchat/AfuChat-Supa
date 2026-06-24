@@ -21,6 +21,7 @@ import { showAlert } from "@/lib/alert";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
+import UserName from "@/components/ui/UserName";
 import { Separator } from "@/components/ui/Separator";
 import Colors from "@/constants/colors";
 import { ContactRowSkeleton } from "@/components/ui/Skeleton";
@@ -78,10 +79,10 @@ function ContactRow({ item, phonebookName }: { item: Contact; phonebookName?: st
       onPress={startChat}
       activeOpacity={0.7}
     >
-      <Avatar uri={item.avatar_url} name={item.display_name} size={46} square={!!(item.is_organization_verified)} />
+      <Avatar uri={item.avatar_url} name={item.display_name} size={46} square={!!(item.is_organization_verified)} userId={item.id} />
       <View style={styles.rowContent}>
         <View style={styles.nameRow}>
-          <Text style={[styles.name, { color: colors.text }]}>{item.display_name}</Text>
+          <UserName userId={item.id} name={item.display_name} style={[styles.name, { color: colors.text }]} />
           <VerifiedBadge isVerified={item.is_verified} isOrganizationVerified={item.is_organization_verified} size={14} />
         </View>
         <Text style={[styles.handle, { color: colors.textSecondary }]} numberOfLines={1}>
@@ -271,10 +272,10 @@ export default function ContactsScreen() {
           {addLoading && <ActivityIndicator color={colors.accent} style={{ marginTop: 12 }} />}
           {addResult && (
             <View style={styles.addResultRow}>
-              <Avatar uri={addResult.avatar_url} name={addResult.display_name} size={44} />
+              <Avatar uri={addResult.avatar_url} name={addResult.display_name} size={44} userId={addResult.id} />
               <View style={{ flex: 1 }}>
                 <View style={styles.nameRow}>
-                  <Text style={[styles.name, { color: colors.text }]}>{addResult.display_name}</Text>
+                  <UserName userId={addResult.id} name={addResult.display_name} style={[styles.name, { color: colors.text }]} />
                   <VerifiedBadge isVerified={addResult.is_verified} isOrganizationVerified={addResult.is_organization_verified} size={14} />
                 </View>
                 <Text style={[styles.handle, { color: colors.textSecondary }]}>@{addResult.handle}</Text>

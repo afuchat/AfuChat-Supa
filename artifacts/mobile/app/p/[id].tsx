@@ -26,6 +26,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { RichText } from "@/components/ui/RichText";
 import { Avatar } from "@/components/ui/Avatar";
+import UserName from "@/components/ui/UserName";
 import { ImageViewer, useImageViewer } from "@/components/ImageViewer";
 import Colors from "@/constants/colors";
 import { showAlert } from "@/lib/alert";
@@ -212,7 +213,7 @@ function ReplyCard({ item, colors, depth, onReplyTo }: { item: Reply; colors: an
       <View style={{ flexDirection: "row", paddingLeft: 16 + indent, paddingRight: 16, paddingTop: isTopLevel ? 14 : 8, paddingBottom: 2 }}>
         {depth > 0 && <View style={{ width: 2, borderRadius: 1, backgroundColor: threadColor + "50", position: "absolute", left: 16 + indent - 10, top: 0, bottom: 0 }} />}
         <TouchableOpacity onPress={() => router.push(`/@${item.author.handle}` as any)} activeOpacity={0.8} style={{ marginRight: 10, marginTop: 2 }}>
-          <Avatar uri={item.author.avatar_url} name={item.author.display_name} size={avatarSize} square={!!(item.author.is_organization_verified)} />
+          <Avatar uri={item.author.avatar_url} name={item.author.display_name} size={avatarSize} square={!!(item.author.is_organization_verified)} userId={item.author.id} />
           {isTopLevel && (
             <View style={{ position: "absolute", bottom: -2, right: -2, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.background, alignItems: "center", justifyContent: "center" }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#34C759" }} />
@@ -222,7 +223,7 @@ function ReplyCard({ item, colors, depth, onReplyTo }: { item: Reply; colors: an
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 5, flexWrap: "wrap", marginBottom: 3 }}>
             <TouchableOpacity onPress={() => router.push(`/@${item.author.handle}` as any)} activeOpacity={0.8}>
-              <Text style={{ color: colors.text, fontSize: 13, fontFamily: "Inter_700Bold" }} numberOfLines={1}>{item.author.display_name}</Text>
+              <UserName userId={item.author.id} name={item.author.display_name} style={{ color: colors.text, fontSize: 13, fontFamily: "Inter_700Bold" }} numberOfLines={1} />
             </TouchableOpacity>
             {item.author.is_organization_verified && <Ionicons name="checkmark-circle" size={13} color={Colors.gold} />}
             {!item.author.is_organization_verified && item.author.is_verified && <Ionicons name="checkmark-circle" size={13} color={colors.accent} />}
@@ -633,12 +634,12 @@ export default function PostShortLinkScreen() {
                   <View style={[styles.postSection, { backgroundColor: colors.surface }]}>
                     <View style={styles.postHeader}>
                       <TouchableOpacity onPress={() => router.push(`/@${post.author.handle}` as any)}>
-                        <Avatar uri={post.author.avatar_url} name={post.author.display_name} size={46} />
+                        <Avatar uri={post.author.avatar_url} name={post.author.display_name} size={46} userId={post.author.id} />
                       </TouchableOpacity>
                       <View style={{ flex: 1 }}>
                         <View style={styles.nameRow}>
                           <TouchableOpacity onPress={() => router.push(`/@${post.author.handle}` as any)}>
-                            <Text style={[styles.authorName, { color: colors.text }]}>{post.author.display_name}</Text>
+                            <UserName userId={post.author.id} name={post.author.display_name} style={[styles.authorName, { color: colors.text }]} />
                           </TouchableOpacity>
                           {post.author.is_organization_verified && <Ionicons name="checkmark-circle" size={14} color={Colors.gold} style={{ marginLeft: 4 }} />}
                           {!post.author.is_organization_verified && post.author.is_verified && <Ionicons name="checkmark-circle" size={14} color={colors.accent} style={{ marginLeft: 4 }} />}
@@ -681,12 +682,12 @@ export default function PostShortLinkScreen() {
                   <View style={styles.articleContentPad}>
                     <View style={[styles.authorByline, { borderColor: colors.border }]}>
                       <TouchableOpacity onPress={() => router.push(`/@${post.author.handle}` as any)}>
-                        <Avatar uri={post.author.avatar_url} name={post.author.display_name} size={38} />
+                        <Avatar uri={post.author.avatar_url} name={post.author.display_name} size={38} userId={post.author.id} />
                       </TouchableOpacity>
                       <View style={{ flex: 1 }}>
                         <View style={styles.nameRow}>
                           <TouchableOpacity onPress={() => router.push(`/@${post.author.handle}` as any)}>
-                            <Text style={[styles.authorName, { color: colors.text }]}>{post.author.display_name}</Text>
+                            <UserName userId={post.author.id} name={post.author.display_name} style={[styles.authorName, { color: colors.text }]} />
                           </TouchableOpacity>
                           {post.author.is_organization_verified && <Ionicons name="checkmark-circle" size={14} color={Colors.gold} style={{ marginLeft: 4 }} />}
                           {!post.author.is_organization_verified && post.author.is_verified && <Ionicons name="checkmark-circle" size={14} color={colors.accent} style={{ marginLeft: 4 }} />}
@@ -717,12 +718,12 @@ export default function PostShortLinkScreen() {
                 <View style={[styles.postSection, { backgroundColor: colors.surface }]}>
                   <View style={styles.postHeader}>
                     <TouchableOpacity onPress={() => router.push(`/@${post.author.handle}` as any)}>
-                      <Avatar uri={post.author.avatar_url} name={post.author.display_name} size={46} />
+                      <Avatar uri={post.author.avatar_url} name={post.author.display_name} size={46} userId={post.author.id} />
                     </TouchableOpacity>
                     <View style={{ flex: 1 }}>
                       <View style={styles.nameRow}>
                         <TouchableOpacity onPress={() => router.push(`/@${post.author.handle}` as any)}>
-                          <Text style={[styles.authorName, { color: colors.text }]}>{post.author.display_name}</Text>
+                          <UserName userId={post.author.id} name={post.author.display_name} style={[styles.authorName, { color: colors.text }]} />
                         </TouchableOpacity>
                         {post.author.is_organization_verified && <Ionicons name="checkmark-circle" size={14} color={Colors.gold} style={{ marginLeft: 4 }} />}
                         {!post.author.is_organization_verified && post.author.is_verified && <Ionicons name="checkmark-circle" size={14} color={colors.accent} style={{ marginLeft: 4 }} />}

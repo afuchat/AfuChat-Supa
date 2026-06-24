@@ -57,7 +57,7 @@ function MyPostCard({ item, profile, onDelete }: { item: PostItem; profile: any;
       activeOpacity={0.85}
     >
       <View style={styles.cardHeader}>
-        <Avatar uri={profile?.avatar_url} name={profile?.display_name} size={40} />
+        <Avatar uri={profile?.avatar_url} name={profile?.display_name} size={40} userId={user?.id} />
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             <Text style={[styles.cardName, { color: colors.text }]}>{profile?.display_name || "You"}</Text>

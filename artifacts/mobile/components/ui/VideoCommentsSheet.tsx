@@ -45,6 +45,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
+import UserName from "@/components/ui/UserName";
 import { notifyPostReply } from "@/lib/notifyUser";
 import * as Haptics from "@/lib/haptics";
 import { uploadToStorage } from "@/lib/mediaUpload";
@@ -363,11 +364,11 @@ function VideoReplyItem({
           <View style={{ position: "absolute", left: indent - 10, top: 0, bottom: 0, width: 2, borderRadius: 1, backgroundColor: threadColor + "40" }} />
         )}
         <View style={{ marginRight: 10, marginTop: 1 }}>
-          <Avatar uri={r.profile.avatar_url} name={r.profile.display_name} size={isTop ? 36 : 26} />
+          <Avatar uri={r.profile.avatar_url} name={r.profile.display_name} size={isTop ? 36 : 26} userId={r.author_id} />
         </View>
         <View style={{ flex: 1, paddingRight: 8 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 4, flexWrap: "wrap" }}>
-            <Text style={{ color: ri_textPrimary, fontSize: 13, fontFamily: "Inter_700Bold" }}>{r.profile.display_name}</Text>
+            <UserName userId={r.author_id} name={r.profile.display_name} style={{ color: ri_textPrimary, fontSize: 13, fontFamily: "Inter_700Bold" }} />
             {isCreator && (
               <View style={{ backgroundColor: accent + "22", borderRadius: 4, paddingHorizontal: 5, paddingVertical: 1, borderWidth: 1, borderColor: accent + "55" }}>
                 <Text style={{ color: accent, fontSize: 10, fontFamily: "Inter_700Bold" }}>Author</Text>

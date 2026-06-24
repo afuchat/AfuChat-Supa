@@ -5934,7 +5934,7 @@ STRICT RULES:
             }
           }}
         >
-          <Avatar uri={headerAvatar} name={headerTitle} size={38} square={!!(chatInfo?.is_organization_verified)} />
+          <Avatar uri={headerAvatar} name={headerTitle} size={38} square={!!(chatInfo?.is_organization_verified)} userId={(!chatInfo?.is_group && !chatInfo?.is_channel) ? chatInfo?.other_id : undefined} />
           <View style={st.headerInfo}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
               <Text style={[st.headerName, { color: colors.text }]} numberOfLines={1}>{headerTitle}</Text>

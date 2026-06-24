@@ -37,6 +37,8 @@ import {
   type SavedSearch,
 } from "@/lib/searchStore";
 import { trackEvent } from "@/lib/activityTracker";
+import { Avatar } from "@/components/ui/Avatar";
+import UserName from "@/components/ui/UserName";
 import { getPersonalizedTags, getSearchSuggestions } from "@/lib/personalization";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -806,9 +808,7 @@ export default function SearchScreen() {
       <View >
         <TouchableOpacity style={[ss.listRow, { backgroundColor: colors.surface }]} onPress={() => router.push(`/@${per.handle}` as any)} activeOpacity={0.75}>
           <View style={{ position: "relative" }}>
-            {per.avatar_url
-              ? <ExpoImage source={{ uri: per.avatar_url }} style={{ width: 48, height: 48, borderRadius: per.is_organization_verified ? 12 : 24 }} contentFit="cover" cachePolicy="memory-disk" />
-              : <AvatarPlaceholder name={per.display_name} size={48} color={BRAND} />}
+            <Avatar uri={per.avatar_url} name={per.display_name} size={48} square={per.is_organization_verified} userId={per.id} />
             {per.is_verified && (
               <View style={[ss.verifyBadge, { backgroundColor: colors.background }]}>
                 <Ionicons name="checkmark-circle" size={14} color={per.is_organization_verified ? GOLD : BRAND} />
@@ -816,7 +816,7 @@ export default function SearchScreen() {
             )}
           </View>
           <View style={{ flex: 1, gap: 2 }}>
-            <Text style={[ss.rowTitle, { color: colors.text }]} numberOfLines={1}>{per.display_name}</Text>
+            <UserName userId={per.id} name={per.display_name} style={[ss.rowTitle, { color: colors.text }]} numberOfLines={1} />
             <Text style={[ss.rowSub, { color: colors.textMuted }]} numberOfLines={1}>@{per.handle}{per.country ? ` · ${per.country}` : ""}</Text>
             {per.bio ? <Text style={{ fontSize: 12, color: colors.textSecondary, fontFamily: "Inter_400Regular" }} numberOfLines={1}>{per.bio}</Text> : null}
           </View>

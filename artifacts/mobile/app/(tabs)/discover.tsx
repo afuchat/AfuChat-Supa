@@ -390,7 +390,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
               >
                 <View style={{ width: isDesktop ? 44 : 40, height: isDesktop ? 44 : 40, borderRadius: 8, backgroundColor: colors.accent + "20", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                   {item.profile.avatar_url
-                    ? <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={isDesktop ? 44 : 40} square />
+                    ? <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={isDesktop ? 44 : 40} square userId={item.author_id} />
                     : <Text style={{ color: colors.accent, fontFamily: "Inter_700Bold", fontSize: isDesktop ? 18 : 16 }}>{(item.profile.display_name || "O").slice(0, 1).toUpperCase()}</Text>
                   }
                 </View>
@@ -407,10 +407,10 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                     borderColor: colors.accent,
                     padding: 1.5,
                   }}>
-                    <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={isDesktop ? 41 : 37} square={!!(item.is_organization_verified)} />
+                    <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={isDesktop ? 41 : 37} square={!!(item.is_organization_verified)} userId={item.author_id} />
                   </View>
                 ) : (
-                  <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={isDesktop ? 44 : 40} square={!!(item.is_organization_verified)} />
+                  <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={isDesktop ? 44 : 40} square={!!(item.is_organization_verified)} userId={item.author_id} />
                 )}
               </TouchableOpacity>
             )}

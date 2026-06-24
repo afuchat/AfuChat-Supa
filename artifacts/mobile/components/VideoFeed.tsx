@@ -658,7 +658,7 @@ const VideoItem = React.memo(
               activeOpacity={0.85}
             >
               <View style={styles.barAvatarRing}>
-                <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={34} />
+                <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={34} userId={item.author_id} />
               </View>
             </TouchableOpacity>
             <View style={{ flex: 1, minWidth: 0 }}>

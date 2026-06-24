@@ -23,6 +23,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import UserName from "@/components/ui/UserName";
+import RoyaltyBadge from "@/components/ui/RoyaltyBadge";
 import { ProfileNotFoundView } from "@/app/profile-not-found";
 import { ProfilePrivateView } from "@/app/profile-private";
 import { ContactProfileSkeleton } from "@/components/ui/Skeleton";
@@ -460,7 +461,7 @@ export default function ContactScreen() {
               activeOpacity={0.88}
               style={[s.avatarShell, { borderColor: colors.background, marginTop: -(AVATAR_SIZE / 2 + 4) }]}>
               <Avatar uri={profile.avatar_url} name={profile.display_name}
-                size={AVATAR_SIZE} square={isOrg} premium={false} />
+                size={AVATAR_SIZE} square={isOrg} premium={false} userId={profile.id} />
               {ls.online && <View style={[s.onlineDot, { borderColor: colors.background }]} />}
             </TouchableOpacity>
 
@@ -470,6 +471,8 @@ export default function ContactScreen() {
               <VerifiedBadge isVerified={profile.is_verified}
                 isOrganizationVerified={profile.is_organization_verified} size={16} />
             </View>
+
+            <RoyaltyBadge userId={profile.id} />
 
             {/* Handle + online status (only show dot+label when actively online) */}
             <View style={s.handleRow}>

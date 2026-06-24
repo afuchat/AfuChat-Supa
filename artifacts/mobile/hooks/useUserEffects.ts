@@ -4,9 +4,26 @@ import { supabase } from "@/lib/supabase";
 export type UserEffects = {
   goldNameplate: boolean;
   verifiedStar: boolean;
+  crownRing: boolean;
+  voidRing: boolean;
+  diamondRing: boolean;
+  founderSeal: boolean;
+  royaltyTitle: boolean;
+  statusGlow: boolean;
 };
 
-const EFFECT_IDS = ["sg4", "sg5"] as const;
+const EMPTY: UserEffects = {
+  goldNameplate: false,
+  verifiedStar: false,
+  crownRing: false,
+  voidRing: false,
+  diamondRing: false,
+  founderSeal: false,
+  royaltyTitle: false,
+  statusGlow: false,
+};
+
+const EFFECT_IDS = ["sg1", "sg2", "sg3", "sg4", "sg5", "sg6", "sg7", "sg8"] as const;
 
 const cache = new Map<string, UserEffects>();
 const pending = new Map<string, Promise<void>>();
@@ -31,12 +48,18 @@ function fetchEffects(userId: string): Promise<void> {
       cache.set(userId, {
         goldNameplate: ids.has("sg4"),
         verifiedStar: ids.has("sg5"),
+        crownRing: ids.has("sg1"),
+        voidRing: ids.has("sg2"),
+        diamondRing: ids.has("sg3"),
+        founderSeal: ids.has("sg6"),
+        royaltyTitle: ids.has("sg7"),
+        statusGlow: ids.has("sg8"),
       });
       pending.delete(userId);
       notify(userId);
     })
     .catch(() => {
-      cache.set(userId, { goldNameplate: false, verifiedStar: false });
+      cache.set(userId, { ...EMPTY });
       pending.delete(userId);
       notify(userId);
     });
@@ -47,9 +70,7 @@ function fetchEffects(userId: string): Promise<void> {
 
 export function useUserEffects(userId: string | null | undefined): UserEffects {
   const [effects, setEffects] = useState<UserEffects>(() =>
-    userId
-      ? (cache.get(userId) ?? { goldNameplate: false, verifiedStar: false })
-      : { goldNameplate: false, verifiedStar: false }
+    userId ? (cache.get(userId) ?? { ...EMPTY }) : { ...EMPTY }
   );
 
   useEffect(() => {
@@ -62,7 +83,7 @@ export function useUserEffects(userId: string | null | undefined): UserEffects {
 
     let mounted = true;
     const listener = () => {
-      if (mounted) setEffects(cache.get(userId) ?? { goldNameplate: false, verifiedStar: false });
+      if (mounted) setEffects(cache.get(userId) ?? { ...EMPTY });
     };
 
     if (!listeners.has(userId)) listeners.set(userId, new Set());
@@ -81,3 +102,5 @@ export function useUserEffects(userId: string | null | undefined): UserEffects {
 export function invalidateUserEffects(userId: string) {
   cache.delete(userId);
 }
+
+export type { UserEffects as UserEffectsType };

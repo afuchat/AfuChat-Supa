@@ -23,6 +23,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { PostDetailSkeleton } from "@/components/ui/Skeleton";
 import { Avatar } from "@/components/ui/Avatar";
+import UserName from "@/components/ui/UserName";
 import { RichText } from "@/components/ui/RichText";
 import Colors from "@/constants/colors";
 import { showAlert } from "@/lib/alert";
@@ -192,14 +193,12 @@ function ArticleReplyCard({
           }} />
         )}
         <TouchableOpacity onPress={() => router.push(`/@${item.author.handle}` as any)} activeOpacity={0.8} style={{ marginRight: 10, marginTop: 2 }}>
-          <Avatar uri={item.author.avatar_url} name={item.author.display_name} size={avatarSize} square={!!(item.author.is_organization_verified)} />
+          <Avatar uri={item.author.avatar_url} name={item.author.display_name} size={avatarSize} square={!!(item.author.is_organization_verified)} userId={item.author.id} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 5, flexWrap: "wrap", marginBottom: 3 }}>
             <TouchableOpacity onPress={() => router.push(`/@${item.author.handle}` as any)} activeOpacity={0.8}>
-              <Text style={{ color: colors.text, fontSize: 13, fontFamily: "Inter_700Bold" }}>
-                {item.author.display_name}
-              </Text>
+              <UserName userId={item.author.id} name={item.author.display_name} style={{ color: colors.text, fontSize: 13, fontFamily: "Inter_700Bold" }} />
             </TouchableOpacity>
             {item.author.is_organization_verified && (
               <Ionicons name="checkmark-circle" size={13} color={Colors.gold} />
@@ -506,10 +505,10 @@ export default function ArticleDetailScreen() {
               onPress={() => router.push(`/@${article.author.handle}` as any)}
               activeOpacity={0.8}
             >
-              <Avatar uri={article.author.avatar_url} name={article.author.display_name} size={32} square={!!(article.author.is_organization_verified)} />
+              <Avatar uri={article.author.avatar_url} name={article.author.display_name} size={32} square={!!(article.author.is_organization_verified)} userId={article.author.id} />
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                  <Text style={styles.magazineAuthorName}>{article.author.display_name}</Text>
+                  <UserName userId={article.author.id} name={article.author.display_name} style={styles.magazineAuthorName} />
                   {article.author.is_organization_verified && <Ionicons name="checkmark-circle" size={13} color={Colors.gold} />}
                   {!article.author.is_organization_verified && article.author.is_verified && <Ionicons name="checkmark-circle" size={13} color={colors.accent} />}
                 </View>

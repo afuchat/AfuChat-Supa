@@ -17,6 +17,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
+import UserName from "@/components/ui/UserName";
 import { ContactRowSkeleton } from "@/components/ui/Skeleton";
 
 type FollowUser = {
@@ -217,12 +218,10 @@ export default function FollowersScreen() {
           }
         }}
       >
-        <Avatar uri={item.avatar_url} name={item.display_name} size={48} square={!!(item.is_organization_verified)} />
+        <Avatar uri={item.avatar_url} name={item.display_name} size={48} square={!!(item.is_organization_verified)} userId={item.id} />
         <View style={styles.userInfo}>
           <View style={styles.nameRow}>
-            <Text style={[styles.displayName, { color: colors.text }]} numberOfLines={1}>
-              {item.display_name}
-            </Text>
+            <UserName userId={item.id} name={item.display_name} style={[styles.displayName, { color: colors.text }]} numberOfLines={1} />
             {item.is_verified && <VerifiedBadge size={14} />}
             {item.is_organization_verified && (
               <View style={[styles.orgBadge, { backgroundColor: colors.accent + "20" }]}>

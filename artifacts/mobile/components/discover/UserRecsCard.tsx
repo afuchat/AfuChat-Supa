@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { Avatar } from "@/components/ui/Avatar";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
+import UserName from "@/components/ui/UserName";
 import { safeRouter } from "@/lib/navUtils";
 import * as Haptics from "@/lib/haptics";
 
@@ -104,9 +105,9 @@ export function UserRecsCard({ seed = 0, onRequireAuth }: Props) {
             onPress={() => safeRouter.push(`/@${u.handle}` as any)}
             activeOpacity={0.88}
           >
-            <Avatar uri={u.avatar_url} name={u.display_name} size={52} square={u.is_organization_verified} />
+            <Avatar uri={u.avatar_url} name={u.display_name} size={52} square={u.is_organization_verified} userId={u.id} />
             <View style={styles.cardNameRow}>
-              <Text style={[styles.cardName, { color: colors.text }]} numberOfLines={1}>{u.display_name}</Text>
+              <UserName userId={u.id} name={u.display_name} style={[styles.cardName, { color: colors.text }]} numberOfLines={1} />
               <VerifiedBadge isVerified={u.is_verified} isOrganizationVerified={u.is_organization_verified} size={13} />
             </View>
             <Text style={[styles.cardHandle, { color: colors.textMuted }]} numberOfLines={1}>@{u.handle}</Text>

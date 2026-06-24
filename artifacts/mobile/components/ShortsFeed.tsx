@@ -370,7 +370,7 @@ function ShortCard({
             onPress={() => router.push(`/@${item.profile.handle}` as any)}
             style={styles.fullAuthorBlock}
           >
-            <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={40} />
+            <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={40} userId={item.author_id} />
             <View style={styles.fullAuthorText}>
               <Text style={styles.fullHandle} numberOfLines={1}>@{item.profile.handle}</Text>
               {showFollowBtn ? (
@@ -472,7 +472,7 @@ function ShortCard({
             onPress={() => router.push(`/@${item.profile.handle}` as any)}
             style={styles.authorRow}
           >
-            <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={36} />
+            <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={36} userId={item.author_id} />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={styles.authorHandle} numberOfLines={1}>@{item.profile.handle}</Text>
               <UserName userId={item.author_id} name={item.profile.display_name} style={styles.authorName} numberOfLines={1} />

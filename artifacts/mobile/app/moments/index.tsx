@@ -203,7 +203,7 @@ export default function MomentsScreen() {
           storyCount={item.storyCount}
           seenCount={item.seenCount}
         >
-          <Avatar uri={item.avatarUrl} name={item.displayName} size={56} />
+          <Avatar uri={item.avatarUrl} name={item.displayName} size={56} userId={item.userId} />
         </StoryRing>
         <View style={styles.cardInfo}>
           <Text

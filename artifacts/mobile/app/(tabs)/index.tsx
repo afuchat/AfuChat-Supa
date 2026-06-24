@@ -387,7 +387,7 @@ function ChatRow({
             <Ionicons name="bookmark" size={24} color="#fff" />
           </LinearGradient>
         ) : (
-          <Avatar uri={avatar} name={displayName || "Chat"} size={50} square={!!(item.is_organization_verified)} />
+          <Avatar uri={avatar} name={displayName || "Chat"} size={50} square={!!(item.is_organization_verified)} userId={!item.is_group && !item.is_channel ? item.other_id : undefined} />
         )}
         {isOnlineDot && (
           <View style={[styles.onlineDot, { borderColor: colors.surface }]} />

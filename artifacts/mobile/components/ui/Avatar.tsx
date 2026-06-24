@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, ViewStyle } from "react-native";
 import { Image } from "expo-image";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { PremiumRing } from "./PremiumRing";
+import { useUserEffects } from "@/hooks/useUserEffects";
 
 type PrestigeRing = 'crown' | 'void' | 'diamond';
 
@@ -15,6 +16,7 @@ type Props = {
   premium?: boolean;
   square?: boolean;
   prestigeRing?: PrestigeRing | null;
+  userId?: string | null;
 };
 
 function getInitials(name?: string): string {
@@ -35,11 +37,15 @@ function hashColor(name?: string): string {
   return colors[Math.abs(hash) % colors.length];
 }
 
-export function Avatar({ uri, name, size = 44, style, online, premium, square, prestigeRing }: Props) {
+export function Avatar({ uri, name, size = 44, style, online, premium, square, prestigeRing, userId }: Props) {
   const { accent } = useAppAccent();
+  const effects = useUserEffects(userId);
   const initials = getInitials(name);
   const bgColor = hashColor(name);
   const radius = square ? size * 0.2 : size / 2;
+
+  const resolvedRing: PrestigeRing | null = prestigeRing
+    ?? (effects.crownRing ? 'crown' : effects.voidRing ? 'void' : effects.diamondRing ? 'diamond' : null);
 
   const innerNode = (
     <View style={{ width: size, height: size }}>
@@ -83,10 +89,10 @@ export function Avatar({ uri, name, size = 44, style, online, premium, square, p
   const gap = 2;
   const outerSize = size + (ring + gap) * 2;
 
-  if (premium || prestigeRing) {
+  if (premium || resolvedRing) {
     return (
       <View style={[{ width: outerSize, height: outerSize }, style]}>
-        <PremiumRing size={size} square={square} ringType={prestigeRing ?? 'premium'}>
+        <PremiumRing size={size} square={square} ringType={resolvedRing ?? 'premium'}>
           {innerNode}
         </PremiumRing>
       </View>

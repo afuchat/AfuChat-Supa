@@ -889,7 +889,7 @@ const VideoItem = React.memo(function VideoItem({
         <View style={vStyles.bottomBarLeft}>
           <TouchableOpacity onPress={() => router.push(`/@${item.profile.handle}` as any)} activeOpacity={0.85}>
             <View style={[vStyles.avatarRing, { borderColor: accent }]}>
-              <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={36} />
+              <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={36} userId={item.author_id} />
             </View>
           </TouchableOpacity>
           <View style={{ flex: 1, minWidth: 0 }}>

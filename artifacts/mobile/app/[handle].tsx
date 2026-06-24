@@ -28,6 +28,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import UserName from "@/components/ui/UserName";
+import RoyaltyBadge from "@/components/ui/RoyaltyBadge";
 import { ProfileNotFoundView } from "@/app/profile-not-found";
 import { ProfilePrivateView } from "@/app/profile-private";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -170,6 +171,7 @@ function PublicProfileScreen({ handle }: { handle: string }) {
             name={profile.display_name}
             size={80}
             style={{ marginBottom: 14 }}
+            userId={profile.id}
           />
           <View style={pub.nameRow}>
             <UserName userId={profile.id} name={profile.display_name} style={[pub.displayName, { color: colors.text }]} />
@@ -178,6 +180,7 @@ function PublicProfileScreen({ handle }: { handle: string }) {
             )}
           </View>
           <Text style={[pub.handleText, { color: colors.textMuted }]}>@{profile.handle}</Text>
+          <RoyaltyBadge userId={profile.id} />
 
           {profile.bio ? (
             <Text style={[pub.bio, { color: colors.textSecondary }]} numberOfLines={4}>

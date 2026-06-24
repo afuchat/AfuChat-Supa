@@ -27,6 +27,7 @@ import { GlassHeader } from "@/components/ui/GlassHeader";
 import { supabase } from "@/lib/supabase";
 import { uploadToStorage } from "@/lib/mediaUpload";
 import { Avatar } from "@/components/ui/Avatar";
+import UserName from "@/components/ui/UserName";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import { showAlert } from "@/lib/alert";
 import { isOnline } from "@/lib/offlineStore";
@@ -738,13 +739,11 @@ export default function GroupManageScreen() {
                     uri={member.profile.avatar_url}
                     name={member.profile.display_name}
                     size={44}
+                    userId={member.user_id}
                   />
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                      <Text style={[s.memberName, { color: colors.text }]} numberOfLines={1}>
-                        {member.profile.display_name || "Unknown"}
-                        {isMe ? " (you)" : ""}
-                      </Text>
+                      <UserName userId={member.user_id} name={(member.profile.display_name || "Unknown") + (isMe ? " (you)" : "")} style={[s.memberName, { color: colors.text }]} numberOfLines={1} />
                       <VerifiedBadge
                         isVerified={member.profile.is_verified}
                         isOrganizationVerified={member.profile.is_organization_verified}

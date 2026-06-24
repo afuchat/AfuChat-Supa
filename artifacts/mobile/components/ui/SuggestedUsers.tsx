@@ -34,6 +34,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import * as Haptics from "@/lib/haptics";
+import UserName from "@/components/ui/UserName";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type SuggestedUser = {
@@ -210,9 +211,7 @@ function UserCard({
       </View>
 
       {/* Name */}
-      <Text style={[styles.cardName, { color: colors.text }]} numberOfLines={1}>
-        {user.display_name}
-      </Text>
+      <UserName userId={user.id} name={user.display_name} style={[styles.cardName, { color: colors.text }]} numberOfLines={1} />
       <Text style={[styles.cardHandle, { color: colors.textMuted }]} numberOfLines={1}>
         @{user.handle}
       </Text>
