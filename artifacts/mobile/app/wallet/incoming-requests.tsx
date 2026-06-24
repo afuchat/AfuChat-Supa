@@ -126,39 +126,49 @@ export default function IncomingRequestsScreen() {
     if (!user || !profile) return;
     setActingId(req.id);
 
-    // Check balance
-    const { data: myProfile } = await supabase
-      .from("profiles")
-      .select(req.currency === "acoin" ? "acoin" : "xp")
-      .eq("id", user.id)
-      .single();
-
-    const balance = req.currency === "acoin"
-      ? (myProfile as any)?.acoin || 0
-      : (myProfile as any)?.xp || 0;
-
-    if (balance < req.amount) {
-      showAlert(
-        "Insufficient Balance",
-        `You need ${fmtAmt(req.amount)} ${req.currency === "acoin" ? "ACoin" : "Nexa"} to fulfill this request. Your balance: ${fmtAmt(balance)}.`
-      );
-      setActingId(null);
-      return;
-    }
-
     try {
+      // Check live balance
+      const { data: myProfile, error: balErr } = await supabase
+        .from("profiles")
+        .select(req.currency === "acoin" ? "acoin" : "xp")
+        .eq("id", user.id)
+        .single();
+
+      if (balErr) {
+        showAlert("Error", "Could not verify your balance. Please try again.");
+        setActingId(null);
+        return;
+      }
+
+      const balance = req.currency === "acoin"
+        ? (myProfile as any)?.acoin ?? 0
+        : (myProfile as any)?.xp ?? 0;
+
+      if (balance < req.amount) {
+        showAlert(
+          "Insufficient Balance",
+          `You need ${fmtAmt(req.amount)} ${req.currency === "acoin" ? "ACoin" : "Nexa"} to fulfill this request. Your balance: ${fmtAmt(balance)}.`
+        );
+        setActingId(null);
+        return;
+      }
+
       let transferOk = true;
+      let transferErrMsg = "Could not process the transfer. Please try again.";
+
       if (req.currency === "acoin") {
-        const { error: deductErr } = await supabase.rpc("deduct_acoin", {
+        const { data: deductData, error: deductErr } = await supabase.rpc("deduct_acoin", {
           p_user_id: user.id,
           p_amount: req.amount,
         });
-        if (deductErr) { transferOk = false; }
-        else {
+        if (deductErr || (deductData as any)?.success === false) {
+          transferOk = false;
+          transferErrMsg = (deductData as any)?.message || "Deduction failed. Please try again.";
+        } else {
           await supabase.rpc("credit_acoin", {
             p_user_id: req.requester_id,
             p_amount: req.amount,
-          }).catch(() => {});
+          }).then(null, () => {});
         }
       } else {
         // Nexa (XP) transfer: direct update pattern
@@ -167,20 +177,21 @@ export default function IncomingRequestsScreen() {
           .update({ xp: balance - req.amount })
           .eq("id", user.id)
           .gte("xp", req.amount);
-        if (deductErr) { transferOk = false; }
-        else {
+        if (deductErr) {
+          transferOk = false;
+        } else {
           const { data: reqProfile } = await supabase
             .from("profiles").select("xp").eq("id", req.requester_id).single();
           await supabase
             .from("profiles")
-            .update({ xp: ((reqProfile as any)?.xp || 0) + req.amount })
+            .update({ xp: ((reqProfile as any)?.xp ?? 0) + req.amount })
             .eq("id", req.requester_id)
-            .catch(() => {});
+            .then(null, () => {});
         }
       }
 
       if (!transferOk) {
-        showAlert("Transfer Failed", "Could not process the transfer. Please try again.");
+        showAlert("Transfer Failed", transferErrMsg);
         setActingId(null);
         return;
       }
@@ -191,25 +202,26 @@ export default function IncomingRequestsScreen() {
         responded_at: new Date().toISOString(),
       }).eq("id", req.id);
 
-      // Notify requester
+      // Notify requester (fire-and-forget)
       supabase.from("notifications").insert({
         user_id: req.requester_id,
         type: "money_request_accepted",
         actor_id: user.id,
         actor_name: profile.display_name,
         actor_handle: profile.handle,
-        actor_avatar: (profile as any).avatar_url || null,
+        actor_avatar: (profile as any).avatar_url ?? null,
         entity_type: "money_request",
         title: "Request Accepted!",
         body: `@${profile.handle} sent you ${fmtAmt(req.amount)} ${req.currency === "acoin" ? "ACoin" : "Nexa"} 🎉`,
         data: { currency: req.currency, amount: req.amount, request_id: req.id },
         read: false,
-      }).then(() => {}).catch(() => {});
+      }).then(null, () => {});
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       showAlert("Sent!", `You sent ${fmtAmt(req.amount)} ${req.currency === "acoin" ? "ACoin" : "Nexa"} to @${req.requester?.handle || "them"}.`);
       load();
-    } catch {
+    } catch (err) {
+      console.error("[handleAccept] unexpected error:", err);
       showAlert("Error", "Something went wrong. Please try again.");
     }
     setActingId(null);
