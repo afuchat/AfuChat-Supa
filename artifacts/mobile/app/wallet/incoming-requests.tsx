@@ -152,14 +152,12 @@ export default function IncomingRequestsScreen() {
         const { error: deductErr } = await supabase.rpc("deduct_acoin", {
           p_user_id: user.id,
           p_amount: req.amount,
-          p_reason: `money_request:${req.id}`,
         });
         if (deductErr) { transferOk = false; }
         else {
           await supabase.rpc("credit_acoin", {
             p_user_id: req.requester_id,
             p_amount: req.amount,
-            p_reason: `money_request:${req.id}`,
           }).catch(() => {});
         }
       } else {
