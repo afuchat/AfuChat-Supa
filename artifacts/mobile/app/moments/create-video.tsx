@@ -33,6 +33,7 @@ import {
   TouchableOpacity,
   View,
   useWindowDimensions,
+  Modal,
 } from "react-native";
 import { Image as ExpoImage } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
@@ -274,10 +275,13 @@ function FilterDot({ filter, selected, onPress, previewColor }: {
 // ─── RecordButton ─────────────────────────────────────────────────────────────
 
 function RecordButton({
-  isRecording, maxDuration, elapsed, onPress, accent,
+  isRecording, maxDuration, elapsed, onPress, onPressIn, onPressOut, accent,
 }: {
   isRecording: boolean; maxDuration: number; elapsed: number;
-  onPress: () => void; accent: string;
+  onPress: () => void;
+  onPressIn?: () => void;
+  onPressOut?: () => void;
+  accent: string;
 }) {
   const scale = useRef(new Animated.Value(1)).current;
   const innerScale = useRef(new Animated.Value(1)).current;
@@ -295,7 +299,13 @@ function RecordButton({
   const pct = maxDuration > 0 ? Math.min(elapsed / maxDuration, 1) : 0;
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={cs.recordWrap}>
+    <TouchableOpacity
+      onPress={onPress}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      activeOpacity={0.9}
+      style={cs.recordWrap}
+    >
       {/* Progress ring via border arc trick */}
       <View style={cs.progressRingOuter}>
         <View style={[cs.progressRingFill, {
@@ -325,7 +335,7 @@ function CameraPhase({
   onClose,
   soundName,
 }: {
-  onCapture: (uri: string, duration: number) => void;
+  onCapture: (uri: string, duration: number, speed: number) => void;
   onPickFromGallery: () => void;
   onClose: () => void;
   soundName?: string;
@@ -349,22 +359,35 @@ function CameraPhase({
   const [activeFrame, setActiveFrame] = useState(FRAMES[0]);
   const [zoom, setZoom] = useState(0);
   const [showSpeedPicker, setShowSpeedPicker] = useState(false);
+  const [showGrid, setShowGrid] = useState(false);
+  const [beautyMode, setBeautyMode] = useState(false);
 
   const cameraRef = useRef<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const elapsedRef = useRef(0);
   const mounted = useRef(true);
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdActiveRef = useRef(false);
 
   useEffect(() => {
     mounted.current = true;
-    import("expo-camera").then((m) => {
+    import("expo-camera").then(async (m) => {
       setCameraView(() => m.CameraView ?? (m as any).Camera ?? null);
+      // Pre-request permissions on mount so first record tap is instant
+      try {
+        const cam = m.Camera ?? m.CameraView;
+        if (cam?.requestCameraPermissionsAsync) {
+          await cam.requestCameraPermissionsAsync();
+          await cam.requestMicrophonePermissionsAsync?.();
+        }
+      } catch {}
     }).catch(() => setCamAvailable(false));
     return () => {
       mounted.current = false;
       if (timerRef.current) clearInterval(timerRef.current);
       if (countdownRef.current) clearInterval(countdownRef.current);
+      if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
     };
   }, []);
 
@@ -387,13 +410,7 @@ function CameraPhase({
 
   async function doRecord() {
     if (!cameraRef.current || isRecording) return;
-    try {
-      const { Camera } = await import("expo-camera");
-      const cp = await Camera.requestCameraPermissionsAsync();
-      if (!cp.granted) { showAlert("Camera", "Allow camera access to record."); return; }
-      const mp = await Camera.requestMicrophonePermissionsAsync();
-      if (!mp.granted) { showAlert("Microphone", "Allow mic access to record audio."); return; }
-    } catch {}
+    // Permissions are pre-requested on mount — no delay here
 
     setIsRecording(true);
     setElapsed(0);
@@ -411,7 +428,7 @@ function CameraPhase({
         quality: getCameraRecordingQuality(),
       });
       if (result?.uri && mounted.current) {
-        onCapture(result.uri, elapsedRef.current || 10);
+        onCapture(result.uri, elapsedRef.current || 10, speed);
       }
     } catch {}
 
@@ -429,6 +446,28 @@ function CameraPhase({
     if (isRecording) { stopRecord(); return; }
     if (countdown !== null) return;
     startCountdown(() => doRecord());
+  }
+
+  // Hold-to-record: press and hold = start recording immediately (no countdown)
+  function handleRecordPressIn() {
+    if (isRecording || countdown !== null) return;
+    holdActiveRef.current = false;
+    holdTimerRef.current = setTimeout(() => {
+      holdActiveRef.current = true;
+      void Haptics.impactAsync("heavy");
+      doRecord();
+    }, 250);
+  }
+
+  function handleRecordPressOut() {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+    if (holdActiveRef.current && isRecording) {
+      stopRecord();
+      holdActiveRef.current = false;
+    }
   }
 
   const filterOverlay = activeFilter.tint
@@ -466,6 +505,24 @@ function CameraPhase({
             <View style={[StyleSheet.absoluteFill, { backgroundColor: filterOverlay.backgroundColor, opacity: filterOverlay.opacity, pointerEvents: "none" } as any]} />
           )}
 
+          {/* Beauty mode: soft warm glow overlay */}
+          {beautyMode && (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: "#FFE4C8", opacity: 0.12, pointerEvents: "none" } as any]} />
+          )}
+
+          {/* Rule-of-thirds grid */}
+          {showGrid && (
+            <View style={[StyleSheet.absoluteFill, { pointerEvents: "none" } as any]}>
+              <View style={{ position: "absolute", left: "33.33%" as any, top: 0, bottom: 0, width: 1, backgroundColor: "rgba(255,255,255,0.28)" }} />
+              <View style={{ position: "absolute", left: "66.66%" as any, top: 0, bottom: 0, width: 1, backgroundColor: "rgba(255,255,255,0.28)" }} />
+              <View style={{ position: "absolute", top: "33.33%" as any, left: 0, right: 0, height: 1, backgroundColor: "rgba(255,255,255,0.28)" }} />
+              <View style={{ position: "absolute", top: "66.66%" as any, left: 0, right: 0, height: 1, backgroundColor: "rgba(255,255,255,0.28)" }} />
+              {/* Center cross */}
+              <View style={{ position: "absolute", top: "50%" as any, left: "46%" as any, width: "8%" as any, height: 1, backgroundColor: "rgba(255,255,255,0.18)" }} />
+              <View style={{ position: "absolute", left: "50%" as any, top: "46%" as any, width: 1, height: "8%" as any, backgroundColor: "rgba(255,255,255,0.18)" }} />
+            </View>
+          )}
+
           {/* Frame / avatar overlay */}
           {activeFrame.emoji && (
             <View style={[cs.frameWrap, { pointerEvents: "none" } as any]}>
@@ -483,10 +540,33 @@ function CameraPhase({
             </View>
           )}
 
+          {/* Selfie mode indicator */}
+          {facing === "front" && !isRecording && (
+            <View style={[cs.selfieBadge, { top: insets.top + 56, right: insets.right + 14 }]}>
+              <Ionicons name="swap-horizontal-outline" size={12} color="#fff" />
+              <Text style={cs.selfieBadgeText}>Selfie</Text>
+            </View>
+          )}
+
+          {/* Beauty indicator */}
+          {beautyMode && (
+            <View style={[cs.beautyBadge, { top: insets.top + 56 }]}>
+              <Ionicons name="sparkles" size={12} color="#FFD700" />
+              <Text style={cs.beautyBadgeText}>Beauty</Text>
+            </View>
+          )}
+
           {/* Countdown overlay */}
           {countdown !== null && (
             <View style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center", pointerEvents: "none" } as any]}>
               <CountdownNumber n={countdown} />
+            </View>
+          )}
+
+          {/* Hold-to-record hint */}
+          {!isRecording && countdown === null && (
+            <View style={[cs.holdHint, { bottom: H * 0.22 }]}>
+              <Text style={cs.holdHintText}>Hold to record instantly · Tap for countdown</Text>
             </View>
           )}
 
@@ -542,7 +622,7 @@ function CameraPhase({
         <SideBtn
           icon={flash === "torch" ? "flashlight" : flash === "on" ? "flash" : "flash-off"}
           label={flash === "torch" ? "Torch" : flash === "on" ? "Flash" : "Flash"}
-          onPress={() => setFlash((f) => f === "off" ? "on" : f === "on" ? "torch" : "off")}
+          onPress={() => { setFlash((f) => f === "off" ? "on" : f === "on" ? "torch" : "off"); void Haptics.impactAsync("light"); }}
           active={flash !== "off"}
           accent={accent}
         />
@@ -564,6 +644,20 @@ function CameraPhase({
           label="Frame"
           onPress={() => { setShowFrames((v) => !v); setShowFilters(false); }}
           active={showFrames || activeFrame.id !== "none"}
+          accent={accent}
+        />
+        <SideBtn
+          icon="grid-outline"
+          label="Grid"
+          onPress={() => { setShowGrid((v) => !v); void Haptics.selectionAsync(); }}
+          active={showGrid}
+          accent={accent}
+        />
+        <SideBtn
+          icon="sparkles-outline"
+          label="Beauty"
+          onPress={() => { setBeautyMode((v) => !v); void Haptics.impactAsync("light"); }}
+          active={beautyMode}
           accent={accent}
         />
         <SideBtn
@@ -651,23 +745,27 @@ function CameraPhase({
             <Text style={cs.galleryLabel}>Gallery</Text>
           </TouchableOpacity>
 
-          {/* Record button */}
+          {/* Record button — tap for countdown, hold to record instantly */}
           <RecordButton
             isRecording={isRecording}
             maxDuration={maxDur}
             elapsed={elapsed}
             onPress={handleRecordPress}
+            onPressIn={handleRecordPressIn}
+            onPressOut={handleRecordPressOut}
             accent={accent}
           />
 
-          {/* Effects (placeholder for future expansion) */}
+          {/* Beauty / filters toggle */}
           <TouchableOpacity
             style={cs.galleryBtn}
-            onPress={() => { setShowFilters((v) => !v); }}
+            onPress={() => { setBeautyMode((v) => !v); void Haptics.impactAsync("light"); }}
             activeOpacity={0.8}
           >
-            <Ionicons name="sparkles-outline" size={26} color="#fff" />
-            <Text style={cs.galleryLabel}>Effects</Text>
+            <View style={[{ width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: beautyMode ? "rgba(255,215,0,0.2)" : "transparent" }]}>
+              <Ionicons name="sparkles-outline" size={26} color={beautyMode ? "#FFD700" : "#fff"} />
+            </View>
+            <Text style={[cs.galleryLabel, beautyMode && { color: "#FFD700" }]}>Beauty</Text>
           </TouchableOpacity>
         </View>
 
@@ -721,6 +819,7 @@ function EditPhase({
   videoUri, duration, fileSize, videoWidth, videoHeight, videoMime,
   onBack, onPost,
   soundName, soundAlbumArt,
+  capturedSpeed,
 }: {
   videoUri: string; duration: number; fileSize: number;
   videoWidth: number | null; videoHeight: number | null;
@@ -728,6 +827,7 @@ function EditPhase({
   onBack: () => void;
   onPost: (payload: PostPayload) => void;
   soundName?: string; soundAlbumArt?: string;
+  capturedSpeed?: number;
 }) {
   const { colors, accent } = useTheme();
   const insets = useSafeAreaInsets();
@@ -752,6 +852,10 @@ function EditPhase({
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(duration);
   const [brightness, setBrightness] = useState(0);
+  const [contrast, setContrast] = useState(0);
+  const [saturation, setSaturation] = useState(0);
+  const [warmth, setWarmth] = useState(0);
+  const [playbackSpeed, setPlaybackSpeed] = useState(capturedSpeed ?? 1.0);
   const [audience, setAudience] = useState<"public" | "followers" | "private">("public");
   const [step, setStep] = useState<1 | 2>(1);
 
@@ -900,9 +1004,21 @@ function EditPhase({
             shouldPlay
             isLooping
             isMuted={false}
+            playbackRate={playbackSpeed}
           />
           {filterOverlay && (
             <View style={[StyleSheet.absoluteFill, { backgroundColor: filterOverlay.bg, opacity: filterOverlay.op, pointerEvents: "none" } as any]} />
+          )}
+          {/* Brightness overlay (white = brighter, black = darker) */}
+          {brightness !== 0 && (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: brightness > 0 ? "#fff" : "#000", opacity: Math.abs(brightness) * 0.45, pointerEvents: "none" } as any]} />
+          )}
+          {/* Warmth overlay (amber tint) */}
+          {warmth > 0 && (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: "#FF8C00", opacity: warmth * 0.22, pointerEvents: "none" } as any]} />
+          )}
+          {warmth < 0 && (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: "#4080FF", opacity: Math.abs(warmth) * 0.22, pointerEvents: "none" } as any]} />
           )}
 
           {/* Frame overlay */}
@@ -934,13 +1050,22 @@ function EditPhase({
             </DraggableItem>
           ))}
 
-          {/* Sticker overlays */}
+          {/* Sticker overlays — tap to cycle scale */}
           {stickers.map((s) => (
             <DraggableItem
               key={s.id}
               x={s.x} y={s.y}
               containerW={W} containerH={previewH}
               onMove={(nx, ny) => setStickers((prev) => prev.map((x) => x.id === s.id ? { ...x, x: nx, y: ny } : x))}
+              onTap={() => {
+                const sizes = [1, 1.5, 2, 0.7];
+                setStickers((prev) => prev.map((x) => {
+                  if (x.id !== s.id) return x;
+                  const i = sizes.findIndex((sz) => Math.abs(sz - x.scale) < 0.1);
+                  return { ...x, scale: sizes[(i + 1) % sizes.length] };
+                }));
+                void Haptics.selectionAsync();
+              }}
             >
               <Text style={{ fontSize: 40 * s.scale }}>{s.emoji}</Text>
             </DraggableItem>
@@ -1220,9 +1345,47 @@ function EditPhase({
             <View style={{ gap: 16 }}>
               <Text style={es.panelTitle}>Adjustments</Text>
               <AdjustSlider label="Brightness" value={brightness} min={-1} max={1} accent={accent} onChange={setBrightness} />
-              <Text style={{ color: "#555", fontFamily: "Inter_400Regular", fontSize: 12, marginTop: 4 }}>
-                Set audience and caption on the next screen.
-              </Text>
+              <AdjustSlider label="Contrast" value={contrast} min={-1} max={1} accent={accent} onChange={setContrast} />
+              <AdjustSlider label="Saturation" value={saturation} min={-1} max={1} accent={accent} onChange={setSaturation} />
+              <AdjustSlider
+                label="Warmth"
+                value={warmth}
+                min={-1}
+                max={1}
+                accent={accent}
+                onChange={setWarmth}
+                leftLabel="Cool"
+                rightLabel="Warm"
+              />
+              <View style={{ marginTop: 4 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
+                  <Text style={{ color: "#aaa", fontFamily: "Inter_500Medium", fontSize: 13 }}>
+                    Playback Speed
+                  </Text>
+                  <Text style={{ color: accent, fontFamily: "Inter_700Bold", fontSize: 13 }}>
+                    {playbackSpeed === 1 ? "Normal" : `${playbackSpeed}×`}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  {[0.5, 1.0, 1.5, 2.0].map((s) => (
+                    <TouchableOpacity
+                      key={s}
+                      onPress={() => { setPlaybackSpeed(s); void Haptics.selectionAsync(); }}
+                      style={[
+                        es.speedChip,
+                        playbackSpeed === s && { backgroundColor: accent + "22", borderColor: accent },
+                      ]}
+                    >
+                      <Text style={{ color: playbackSpeed === s ? accent : "#888", fontFamily: "Inter_600SemiBold", fontSize: 13 }}>
+                        {s}×
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={{ color: "#555", fontFamily: "Inter_400Regular", fontSize: 11, marginTop: 6 }}>
+                  Preview plays at this speed. Upload sends original.
+                </Text>
+              </View>
             </View>
           )}
         </View>
@@ -1363,8 +1526,10 @@ const ss = StyleSheet.create({
   thumb: { position: "absolute", width: 18, height: 18, borderRadius: 9, top: "50%", marginTop: -9, marginLeft: -9 },
 });
 
-function AdjustSlider({ label, value, min, max, accent, onChange }: {
-  label: string; value: number; min: number; max: number; accent: string; onChange: (v: number) => void;
+function AdjustSlider({ label, value, min, max, accent, onChange, leftLabel, rightLabel }: {
+  label: string; value: number; min: number; max: number; accent: string;
+  onChange: (v: number) => void;
+  leftLabel?: string; rightLabel?: string;
 }) {
   const trackW = useRef(1);
   const pan = useRef(PanResponder.create({
@@ -1381,7 +1546,7 @@ function AdjustSlider({ label, value, min, max, accent, onChange }: {
   })).current;
   const pct = (value - min) / (max - min);
   return (
-    <View style={{ gap: 8 }}>
+    <View style={{ gap: 6 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
         <Text style={{ color: "#aaa", fontFamily: "Inter_500Medium", fontSize: 13 }}>{label}</Text>
         <Text style={{ color: accent, fontFamily: "Inter_700Bold", fontSize: 13 }}>{value > 0 ? "+" : ""}{(value * 100).toFixed(0)}</Text>
@@ -1396,6 +1561,12 @@ function AdjustSlider({ label, value, min, max, accent, onChange }: {
         </View>
         <View style={[ss.thumb, { left: `${pct * 100}%` as any, backgroundColor: accent }]} />
       </View>
+      {(leftLabel || rightLabel) && (
+        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+          {leftLabel && <Text style={{ color: "#555", fontFamily: "Inter_400Regular", fontSize: 11 }}>{leftLabel}</Text>}
+          {rightLabel && <Text style={{ color: "#555", fontFamily: "Inter_400Regular", fontSize: 11 }}>{rightLabel}</Text>}
+        </View>
+      )}
     </View>
   );
 }
@@ -1430,14 +1601,19 @@ export default function CreateVideoScreen() {
   const [fileSize, setFileSize] = useState(0);
   const [videoWidth, setVideoWidth] = useState<number | null>(null);
   const [videoHeight, setVideoHeight] = useState<number | null>(null);
+  const [capturedSpeed, setCapturedSpeed] = useState(1.0);
+
+  // Loading state during gallery pick (OS transcoding can take several seconds)
+  const [isPickingVideo, setIsPickingVideo] = useState(false);
 
   // Web file input
   const webInputRef = useRef<HTMLInputElement | null>(null);
 
-  function handleCapture(uri: string, dur: number) {
+  function handleCapture(uri: string, dur: number, speed: number) {
     setVideoUri(uri); setVideoMime("video/mp4");
     setDuration(dur); setFileSize(0);
     setVideoWidth(null); setVideoHeight(null);
+    setCapturedSpeed(speed || 1.0);
     setPhase("edit");
   }
 
@@ -1445,22 +1621,30 @@ export default function CreateVideoScreen() {
     if (Platform.OS === "web") { webInputRef.current?.click(); return; }
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) { showAlert("Permission required", "Allow access to your media library."); return; }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: "videos", allowsEditing: false,
-      quality: getVideoPickerQuality(), videoMaxDuration: MAX_DURATION,
-    });
-    if (!result.canceled && result.assets[0]) {
-      const a = result.assets[0];
-      const dur = (a.duration || 0) / 1000;
-      if (dur > MAX_DURATION) { showAlert("Too long", `Max ${MAX_DURATION} seconds.`); return; }
-      setVideoUri(a.uri); setVideoMime(a.mimeType || undefined);
-      setDuration(dur); setFileSize(0);
-      setVideoWidth((a as any).width ?? null); setVideoHeight((a as any).height ?? null);
-      try {
-        const info = await FileSystem.getInfoAsync(a.uri);
-        if (info.exists) setFileSize((info as any).size ?? 0);
-      } catch {}
-      setPhase("edit");
+
+    // Show loading overlay immediately — OS picker + transcoding can freeze UI for 3–8s
+    setIsPickingVideo(true);
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: "videos", allowsEditing: false,
+        quality: getVideoPickerQuality(), videoMaxDuration: MAX_DURATION,
+      });
+      if (!result.canceled && result.assets[0]) {
+        const a = result.assets[0];
+        const dur = (a.duration || 0) / 1000;
+        if (dur > MAX_DURATION) { showAlert("Too long", `Max ${MAX_DURATION} seconds.`); return; }
+        setVideoUri(a.uri); setVideoMime(a.mimeType || undefined);
+        setDuration(dur); setFileSize(0);
+        setCapturedSpeed(1.0);
+        setVideoWidth((a as any).width ?? null); setVideoHeight((a as any).height ?? null);
+        try {
+          const info = await FileSystem.getInfoAsync(a.uri);
+          if (info.exists) setFileSize((info as any).size ?? 0);
+        } catch {}
+        setPhase("edit");
+      }
+    } finally {
+      setIsPickingVideo(false);
     }
   }
 
@@ -1599,10 +1783,24 @@ export default function CreateVideoScreen() {
           onBack={() => setPhase(Platform.OS === "web" ? "edit" : "camera")}
           onPost={handlePost}
           soundName={soundName} soundAlbumArt={soundAlbumArt}
+          capturedSpeed={capturedSpeed}
         />
       ) : (
         // Web / no video yet: big pick button
         <WebPickerScreen onPick={handlePickFromGallery} />
+      )}
+
+      {/* Gallery pick loading overlay — shown while OS is transcoding the video */}
+      {isPickingVideo && (
+        <Modal transparent animationType="fade" visible statusBarTranslucent>
+          <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.85)", alignItems: "center", justifyContent: "center", gap: 20 }}>
+            <ActivityIndicator size="large" color="#fff" />
+            <Text style={{ color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 16 }}>Processing video…</Text>
+            <Text style={{ color: "rgba(255,255,255,0.5)", fontFamily: "Inter_400Regular", fontSize: 13, textAlign: "center", paddingHorizontal: 40 }}>
+              Compressing for upload. This may take a few seconds.
+            </Text>
+          </View>
+        </Modal>
       )}
     </>
   );
@@ -1753,6 +1951,25 @@ const cs = StyleSheet.create({
   },
   zoomDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.35)" },
   zoomLabel: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 11 },
+  selfieBadge: {
+    position: "absolute", flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: "rgba(0,0,0,0.45)", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12,
+  },
+  selfieBadgeText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 11 },
+  beautyBadge: {
+    position: "absolute", left: 16, flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: "rgba(255,215,0,0.2)", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12,
+    borderWidth: 1, borderColor: "rgba(255,215,0,0.4)",
+  },
+  beautyBadgeText: { color: "#FFD700", fontFamily: "Inter_600SemiBold", fontSize: 11 },
+  holdHint: {
+    position: "absolute", left: 0, right: 0, alignItems: "center",
+    pointerEvents: "none" as any,
+  },
+  holdHintText: {
+    color: "rgba(255,255,255,0.5)", fontFamily: "Inter_400Regular", fontSize: 12,
+    backgroundColor: "rgba(0,0,0,0.35)", paddingHorizontal: 16, paddingVertical: 6, borderRadius: 12,
+  },
   countdown: {
     fontSize: 120, fontFamily: "Inter_700Bold",
     color: "#fff",
@@ -1878,4 +2095,8 @@ const es = StyleSheet.create({
     gap: 10, paddingVertical: 16, borderRadius: 28, marginTop: 16,
   },
   bigPostBtnText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 17 },
+  speedChip: {
+    flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 10,
+    borderWidth: 1, borderColor: "#333", backgroundColor: "#1A1A1A",
+  },
 });

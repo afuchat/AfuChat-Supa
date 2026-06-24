@@ -12,6 +12,8 @@ interface VideoPreviewProps {
   isLooping?: boolean;
   isMuted?: boolean;
   nativeControls?: boolean;
+  /** Playback speed multiplier: 0.5 = slow-mo, 1 = normal, 2 = fast-forward */
+  playbackRate?: number;
 }
 
 export default function VideoPreview({
@@ -22,10 +24,12 @@ export default function VideoPreview({
   isLooping = true,
   isMuted = false,
   nativeControls = false,
+  playbackRate = 1,
 }: VideoPreviewProps) {
   const player = useVideoPlayer(uri ? { uri } : null, (p) => {
     p.loop = isLooping;
     p.muted = isMuted;
+    p.playbackRate = playbackRate;
     if (shouldPlay) p.play();
   });
 
@@ -34,6 +38,7 @@ export default function VideoPreview({
     player.replaceAsync({ uri }).catch(() => {});
     player.loop = isLooping;
     player.muted = isMuted;
+    player.playbackRate = playbackRate;
     if (shouldPlay) player.play(); else player.pause();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uri]);
@@ -44,6 +49,9 @@ export default function VideoPreview({
 
   useEffect(() => { player.muted = isMuted; }, [isMuted]);
   useEffect(() => { player.loop = isLooping; }, [isLooping]);
+  useEffect(() => {
+    try { player.playbackRate = playbackRate; } catch {}
+  }, [playbackRate]);
 
   return (
     <VideoView
