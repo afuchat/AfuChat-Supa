@@ -84,43 +84,29 @@ function WebShortsPlayer({
   poster,
   active,
   paused,
-  muted,
   preloadOnly,
   onTogglePause,
   onEnded,
-  onForceMute,
 }: {
   src: string;
   poster?: string | null;
   active: boolean;
   paused: boolean;
-  muted: boolean;
   preloadOnly: boolean;
   onTogglePause: () => void;
   onEnded: () => void;
-  onForceMute?: () => void;
 }) {
   const ref = useRef<HTMLVideoElement | null>(null);
   const [showControls, setShowControls] = useState(false);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Drive playback from React state.
-  // YouTube-style: try to play with sound first. If the browser's autoplay
-  // policy blocks unmuted playback (strict first-visit), fall back to muted
-  // automatically and notify the parent so it can persist the forced state.
+  // Drive playback from React state — always unmuted (YouTube-style).
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     if (active && !paused && !preloadOnly) {
-      const playPromise = el.play();
-      if (playPromise && typeof (playPromise as any).catch === "function") {
-        (playPromise as any).catch(() => {
-          // Unmuted autoplay blocked — silently retry muted
-          el.muted = true;
-          el.play().catch(() => {});
-          onForceMute?.();
-        });
-      }
+      el.muted = false;
+      el.play().catch(() => {});
     } else {
       el.pause();
     }
@@ -134,13 +120,6 @@ function WebShortsPlayer({
       try { el.currentTime = 0; } catch { /* ignore */ }
     }
   }, [active]);
-
-  // Keep mute in sync.
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    el.muted = muted;
-  }, [muted]);
 
   function handlePointer() {
     setShowControls(true);
@@ -164,7 +143,6 @@ function WebShortsPlayer({
         poster={poster || undefined}
         playsInline
         loop
-        muted={muted}
         preload="metadata"
         onClick={handleClick}
         onMouseMove={preloadOnly ? undefined : handlePointer}
@@ -202,7 +180,6 @@ function NativeShortsPlayer({
   poster,
   active,
   paused,
-  muted,
   preloadOnly,
   onTogglePause,
   onDoubleTap,
@@ -211,14 +188,13 @@ function NativeShortsPlayer({
   poster?: string | null;
   active: boolean;
   paused: boolean;
-  muted: boolean;
   preloadOnly: boolean;
   onTogglePause: () => void;
   onDoubleTap?: () => void;
 }) {
   const player = useVideoPlayer(src ? { uri: src } : null, (p) => {
     p.loop = true;
-    p.muted = muted;
+    p.muted = false;
     if (active && !paused && !preloadOnly) p.play();
   });
   const touchRef = useRef<{ y: number; t: number } | null>(null);
@@ -231,15 +207,13 @@ function NativeShortsPlayer({
     // deallocated (e.g. rapid list scrolls) or is in an unrecoverable state.
     try {
       if (active && !paused && !preloadOnly) {
-        player.muted = muted;
+        player.muted = false;
         player.play();
       } else {
         player.pause();
       }
     } catch {}
   }, [active, paused, preloadOnly]);
-
-  React.useEffect(() => { try { player.muted = muted; } catch {} }, [muted]);
 
   return (
     <View
@@ -308,9 +282,6 @@ function ShortCard({
   cardWidth,
   cardHeight,
   bottomInset,
-  globalMuted,
-  onToggleGlobalMuted,
-  onForceMute,
   onLike,
   onBookmark,
   onFollow,
@@ -324,9 +295,6 @@ function ShortCard({
   cardWidth: number;
   cardHeight: number;
   bottomInset: number;
-  globalMuted: boolean;
-  onToggleGlobalMuted: () => void;
-  onForceMute: () => void;
   onLike: (postId: string, liked: boolean) => void;
   onBookmark: (postId: string, bookmarked: boolean) => void;
   onFollow: (authorId: string) => void;
@@ -386,10 +354,8 @@ function ShortCard({
             active={active}
             paused={paused}
             preloadOnly={preloadOnly}
-            muted={globalMuted}
             onTogglePause={handleTogglePause}
             onEnded={() => { /* loop handled natively */ }}
-            onForceMute={onForceMute}
           />
         ) : (
           <NativeShortsPlayer
@@ -398,7 +364,6 @@ function ShortCard({
             active={active}
             paused={paused}
             preloadOnly={preloadOnly}
-            muted={globalMuted}
             onTogglePause={handleTogglePause}
             onDoubleTap={handleLike}
           />
@@ -475,14 +440,6 @@ function ShortCard({
           </View>
         </View>
 
-        {/* Top-right mute (subtle) */}
-        <Pressable
-          onPress={onToggleGlobalMuted}
-          style={[styles.muteBtn, { top: 60 }]}
-          hitSlop={8}
-        >
-          <Ionicons name={globalMuted ? "volume-mute" : "volume-high"} size={18} color="#fff" />
-        </Pressable>
       </View>
     );
   }
@@ -498,10 +455,8 @@ function ShortCard({
             active={active}
             paused={paused}
             preloadOnly={preloadOnly}
-            muted={globalMuted}
             onTogglePause={handleTogglePause}
             onEnded={() => { /* loop handled natively */ }}
-            onForceMute={onForceMute}
           />
         ) : (
           <NativeShortsPlayer
@@ -510,7 +465,6 @@ function ShortCard({
             active={active}
             paused={paused}
             preloadOnly={preloadOnly}
-            muted={globalMuted}
             onTogglePause={handleTogglePause}
           />
         )}
@@ -543,14 +497,6 @@ function ShortCard({
           ) : null}
         </View>
 
-        {/* Top-right mute */}
-        <Pressable
-          onPress={onToggleGlobalMuted}
-          style={styles.muteBtn}
-          hitSlop={8}
-        >
-          <Ionicons name={globalMuted ? "volume-mute" : "volume-high"} size={18} color="#fff" />
-        </Pressable>
       </View>
 
       {/* Right-side action rail (sits next to the 9:16 player on desktop) */}
@@ -750,37 +696,6 @@ export default function ShortsFeed({
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
-  // On web: persist the muted preference so users don't have to unmute every
-  // session. Default to unmuted — the browser will block unmuted autoplay on a
-  // strict first visit and onForceMute will flip this back to true gracefully.
-  const [globalMuted, setGlobalMuted] = useState<boolean>(() => {
-    if (Platform.OS === "web") {
-      try {
-        const stored = localStorage.getItem("shorts_muted");
-        return stored === null ? false : stored === "true";
-      } catch {
-        return false;
-      }
-    }
-    return true;
-  });
-
-  function handleToggleGlobalMuted() {
-    setGlobalMuted((m) => {
-      const next = !m;
-      if (Platform.OS === "web") {
-        try { localStorage.setItem("shorts_muted", String(next)); } catch {}
-      }
-      return next;
-    });
-  }
-
-  function handleForceMute() {
-    setGlobalMuted(true);
-    if (Platform.OS === "web") {
-      try { localStorage.setItem("shorts_muted", "true"); } catch {}
-    }
-  }
   const [offlineCacheAge, setOfflineCacheAge] = useState<number | null>(null);
   const [showEndPanel, setShowEndPanel] = useState(false);
   const cursorRef = useRef<string | null>(null);
@@ -1229,9 +1144,6 @@ export default function ShortsFeed({
             cardWidth={cardWidth}
             cardHeight={cardHeight}
             bottomInset={bottomInset}
-            globalMuted={globalMuted}
-            onToggleGlobalMuted={handleToggleGlobalMuted}
-            onForceMute={handleForceMute}
             onLike={toggleLike}
             onBookmark={toggleBookmark}
             onFollow={toggleFollow}
