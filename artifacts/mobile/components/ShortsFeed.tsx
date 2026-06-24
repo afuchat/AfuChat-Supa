@@ -19,8 +19,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   Animated,
   FlatList,
+  Image,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -45,6 +47,7 @@ import { encodeId } from "@/lib/shortId";
 import { getPreferredVideoHeight } from "@/lib/networkQuality";
 import { cacheShortsTab, getCachedShortsTab } from "@/lib/offlineStore";
 import { getCachedVideoUri, markVideoWatched, cacheVideo } from "@/lib/videoCache";
+import { showToast } from "@/lib/toast";
 
 type ShortPost = {
   id: string;
@@ -572,6 +575,121 @@ function ShortCard({
 /*                              Feed list                                  */
 /* ─────────────────────────────────────────────────────────────────────── */
 
+/* ─────────────────────────────────────────────────────────────────────── */
+/*                     Offline end-of-cache panel                          */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+function CountdownRing({ seconds, total = 5 }: { seconds: number; total?: number }) {
+  const SIZE = 56;
+  const color = seconds <= 2 ? "#ff6b6b" : "#fff";
+  const borderColor = seconds <= 2 ? "rgba(255,80,80,0.35)" : "rgba(255,255,255,0.18)";
+  return (
+    <View style={[endStyles.ringWrap, {
+      width: SIZE, height: SIZE, borderRadius: SIZE / 2,
+      borderWidth: 3, borderColor,
+    }]}>
+      <Text style={[endStyles.ringNum, { color }]}>{seconds}</Text>
+    </View>
+  );
+}
+
+function OfflineEndPanel({
+  posts,
+  onReplay,
+  onDismiss,
+}: {
+  posts: ShortPost[];
+  onReplay: () => void;
+  onDismiss: () => void;
+}) {
+  const slideY = useRef(new Animated.Value(360)).current;
+  const bgOpacity = useRef(new Animated.Value(0)).current;
+  const [countdown, setCountdown] = useState(5);
+  const numScale = useRef(new Animated.Value(1)).current;
+  const didAutoPlay = useRef(false);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(slideY, { toValue: 0, tension: 70, friction: 13, useNativeDriver: true }),
+      Animated.timing(bgOpacity, { toValue: 1, duration: 280, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  useEffect(() => {
+    if (countdown <= 0) {
+      if (!didAutoPlay.current) { didAutoPlay.current = true; onReplay(); }
+      return;
+    }
+    Animated.sequence([
+      Animated.timing(numScale, { toValue: 1.4, duration: 130, useNativeDriver: true }),
+      Animated.spring(numScale, { toValue: 1, tension: 220, friction: 9, useNativeDriver: true }),
+    ]).start();
+    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [countdown]);
+
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+      <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.78)", opacity: bgOpacity }]} pointerEvents="none" />
+      <Animated.View style={[endStyles.panel, { transform: [{ translateY: slideY }] }]}>
+        {/* Dismiss */}
+        <Pressable onPress={onDismiss} style={endStyles.dismissBtn} hitSlop={10}>
+          <Ionicons name="close" size={20} color="rgba(255,255,255,0.55)" />
+        </Pressable>
+
+        {/* Header */}
+        <View style={endStyles.header}>
+          <View style={endStyles.iconWrap}>
+            <Ionicons name="albums-outline" size={22} color="#fff" />
+          </View>
+          <Text style={endStyles.titleText}>End of cached shorts</Text>
+          <Text style={endStyles.subtitleText}>
+            {`${posts.length} video${posts.length === 1 ? "" : "s"} saved · replaying from the top`}
+          </Text>
+        </View>
+
+        {/* Thumbnails strip */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ marginVertical: 16 }}
+          contentContainerStyle={endStyles.thumbStrip}
+        >
+          {posts.map((p, i) => (
+            <View key={p.id} style={endStyles.thumbCard}>
+              {p.image_url ? (
+                <Image source={{ uri: p.image_url }} style={endStyles.thumbImg} resizeMode="cover" />
+              ) : (
+                <View style={[endStyles.thumbImg, endStyles.thumbFallback]}>
+                  <Ionicons name="videocam" size={18} color="rgba(255,255,255,0.35)" />
+                </View>
+              )}
+              {i === 0 && (
+                <View style={endStyles.thumbFirst}>
+                  <Ionicons name="play" size={8} color="#fff" />
+                </View>
+              )}
+              <Text style={endStyles.thumbHandle} numberOfLines={1}>@{p.profile.handle}</Text>
+            </View>
+          ))}
+        </ScrollView>
+
+        {/* Bottom: countdown + replay button */}
+        <View style={endStyles.bottomRow}>
+          <CountdownRing seconds={countdown} />
+          <View style={{ flex: 1, gap: 6 }}>
+            <Text style={endStyles.replayHint}>Playing again in {countdown}s</Text>
+            <Pressable onPress={onReplay} style={endStyles.replayBtn} hitSlop={4}>
+              <Ionicons name="play" size={13} color="#000" />
+              <Text style={endStyles.replayBtnText}>Play again now</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Animated.View>
+    </View>
+  );
+}
+
 export default function ShortsFeed({
   topInset = 0,
   bottomInset = 0,
@@ -595,10 +713,13 @@ export default function ShortsFeed({
   const [activeIndex, setActiveIndex] = useState(0);
   const [globalMuted, setGlobalMuted] = useState(true);
   const [offlineCacheAge, setOfflineCacheAge] = useState<number | null>(null);
+  const [showEndPanel, setShowEndPanel] = useState(false);
   const cursorRef = useRef<string | null>(null);
   const loadMoreInFlight = useRef(false);
   const postsRef = useRef<ShortPost[]>([]);
   postsRef.current = posts;
+  const prevOnlineRef = useRef(online);
+  const endPanelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -803,6 +924,43 @@ export default function ShortsFeed({
   }, [hasMore, online, user, fetchFollowingIds, buildShortPosts, PAGE_SIZE]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Offline toast — fires once when the feed transitions online → offline
+  useEffect(() => {
+    const wasOnline = prevOnlineRef.current;
+    prevOnlineRef.current = online;
+    if (wasOnline && !online && postsRef.current.length > 0) {
+      showToast(
+        `Watching offline · ${postsRef.current.length} cached video${postsRef.current.length === 1 ? "" : "s"}`,
+        { type: "info", duration: 3500, icon: "cloud-offline-outline" },
+      );
+    }
+    // Reconnected: dismiss end panel if it was showing
+    if (!wasOnline && online) {
+      setShowEndPanel(false);
+    }
+  }, [online]);
+
+  // End-of-cache panel — triggers 1.2s after landing on the last cached video offline
+  useEffect(() => {
+    if (endPanelTimerRef.current) clearTimeout(endPanelTimerRef.current);
+    if (!online && postsRef.current.length > 0 && activeIndex >= postsRef.current.length - 1) {
+      endPanelTimerRef.current = setTimeout(() => setShowEndPanel(true), 1200);
+    } else {
+      setShowEndPanel(false);
+    }
+    return () => { if (endPanelTimerRef.current) clearTimeout(endPanelTimerRef.current); };
+  }, [activeIndex, online, posts.length]);
+
+  const handleReplay = useCallback(() => {
+    setShowEndPanel(false);
+    setActiveIndex(0);
+    listRef.current?.scrollToIndex({ index: 0, animated: true });
+  }, []);
+
+  const handleDismissEndPanel = useCallback(() => {
+    setShowEndPanel(false);
+  }, []);
 
   // Auto-save viewed video + prefetch next for offline access (native only)
   useEffect(() => {
@@ -1032,9 +1190,152 @@ export default function ShortsFeed({
       ) : null}
       style={{ flex: 1, backgroundColor: isFullscreen ? "#000" : colors.background }}
     />
+    {showEndPanel && (
+      <OfflineEndPanel
+        posts={posts}
+        onReplay={handleReplay}
+        onDismiss={handleDismissEndPanel}
+      />
+    )}
     </View>
   );
 }
+
+/* ── End-of-cache panel styles ──────────────────────────────────────────── */
+const endStyles = StyleSheet.create({
+  panel: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(14,14,18,0.97)",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingTop: 20,
+    paddingBottom: 32,
+    paddingHorizontal: 20,
+    ...Platform.select({
+      web: { boxShadow: "0 -8px 40px rgba(0,0,0,0.55)" } as any,
+      default: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.5,
+        shadowRadius: 24,
+        elevation: 24,
+      },
+    }),
+  },
+  dismissBtn: {
+    position: "absolute",
+    top: 16,
+    right: 18,
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+  header: { alignItems: "center", gap: 6, marginBottom: 4 },
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  titleText: {
+    color: "#fff",
+    fontSize: 17,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.1,
+  },
+  subtitleText: {
+    color: "rgba(255,255,255,0.45)",
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    textAlign: "center",
+  },
+  thumbStrip: { gap: 8, paddingHorizontal: 2 },
+  thumbCard: { width: 72, alignItems: "center", gap: 5 },
+  thumbImg: {
+    width: 72,
+    height: 96,
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+  thumbFallback: {
+    backgroundColor: "#1e1e26",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  thumbFirst: {
+    position: "absolute",
+    top: 6,
+    left: 6,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "rgba(255,255,255,0.85)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  thumbHandle: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 10,
+    fontFamily: "Inter_400Regular",
+    textAlign: "center",
+    maxWidth: 72,
+  },
+  bottomRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    paddingTop: 4,
+  },
+  ringWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  ringTrack: {
+    position: "absolute",
+    borderWidth: 3,
+    borderColor: "rgba(255,255,255,0.15)",
+  },
+  ringFill: {
+    position: "absolute",
+    borderWidth: 3,
+    borderTopColor: "transparent",
+    borderRightColor: "transparent",
+  },
+  ringNum: {
+    fontSize: 20,
+    fontFamily: "Inter_700Bold",
+    position: "absolute",
+  },
+  replayHint: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+  },
+  replayBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    backgroundColor: "#fff",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  replayBtnText: {
+    color: "#000",
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
+});
 
 const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 80 },
