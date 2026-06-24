@@ -69,14 +69,14 @@ async function callNotify(params: NotifyParams) {
         .eq("actor_id", actorId)
         .is("actor_name", null)
         .gte("created_at", since)
-        .catch(() => {});
+        .then(() => {}).catch(() => {});
     }
 
     // Also insert our own row in case the DB trigger didn't fire
     supabase
       .from("notifications")
       .insert(notifPayload)
-      .catch(() => {});
+      .then(() => {}).catch(() => {});
   }
 }
 
