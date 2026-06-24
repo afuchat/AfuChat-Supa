@@ -5710,7 +5710,7 @@ STRICT RULES:
   }
 
   function shouldShowName(index: number): boolean {
-    if (!chatInfo?.is_group) return false;
+    if (!chatInfo?.is_group && !chatInfo?.is_channel) return false;
     // Show sender name on the TOP message of each group (oldest in sequence).
     // In the inverted list that's when the message ABOVE (index + 1, older)
     // belongs to a different sender.
@@ -5988,7 +5988,17 @@ STRICT RULES:
           <Avatar uri={headerAvatar} name={headerTitle} size={38} square={!!(chatInfo?.is_organization_verified)} userId={(!chatInfo?.is_group && !chatInfo?.is_channel) ? chatInfo?.other_id : undefined} />
           <View style={st.headerInfo}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <Text style={[st.headerName, { color: colors.text }]} numberOfLines={1}>{headerTitle}</Text>
+              {(!chatInfo?.is_group && !chatInfo?.is_channel && chatInfo?.other_id) ? (
+                <UserName
+                  userId={chatInfo.other_id}
+                  name={headerTitle}
+                  style={[st.headerName, { color: colors.text }]}
+                  numberOfLines={1}
+                  suppressStar
+                />
+              ) : (
+                <Text style={[st.headerName, { color: colors.text }]} numberOfLines={1}>{headerTitle}</Text>
+              )}
               <VerifiedBadge isVerified={chatInfo?.is_verified} isOrganizationVerified={chatInfo?.is_organization_verified} size={16} />
             </View>
             {(typingUsers.length > 0 || isAfuAiTyping) ? (
