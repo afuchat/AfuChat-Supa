@@ -66,6 +66,7 @@ import { showAlert } from "@/lib/alert";
 import { generateGroupInviteLink } from "@/lib/groupInvite";
 import { showToast as globalShowToast } from "@/lib/toast";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
+import UserName from "@/components/ui/UserName";
 
 import { notifyNewMessage, notifyGiftReceived } from "@/lib/notifyUser";
 import {
@@ -1161,14 +1162,18 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                 activeOpacity={0.65}
                 hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
               >
-                <Text style={[st.senderName, { color: goldNameplate ? "#D4A853" : BRAND }]}>
-                  {msg.sender?.display_name ?? ""}{verifiedStar ? " ⭐" : ""}
-                </Text>
+                <UserName
+                  userId={msg.sender_id}
+                  name={msg.sender?.display_name ?? ""}
+                  style={[st.senderName, { color: BRAND }]}
+                />
               </TouchableOpacity>
             ) : (
-              <Text style={[st.senderName, { color: goldNameplate ? "#D4A853" : BRAND }]}>
-                {msg.sender?.display_name ?? ""}{verifiedStar ? " ⭐" : ""}
-              </Text>
+              <UserName
+                userId={msg.sender_id}
+                name={msg.sender?.display_name ?? ""}
+                style={[st.senderName, { color: BRAND }]}
+              />
             )
           )}
 
