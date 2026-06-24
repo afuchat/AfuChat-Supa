@@ -393,7 +393,7 @@ router.get("/oauth/authorize", async (req: Request, res: Response) => {
   };
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.send(renderConsentPage({
+  return res.send(renderConsentPage({
     clientName:    app.name,
     clientLogo:    app.logo_url,
     clientWebsite: app.website_url,
@@ -535,7 +535,7 @@ router.post("/oauth/authorize", async (req: Request, res: Response) => {
   const callbackUrl = new URL(redirect_uri);
   callbackUrl.searchParams.set("code",  code);
   if (state) callbackUrl.searchParams.set("state", state);
-  res.redirect(callbackUrl.toString());
+  return res.redirect(callbackUrl.toString());
 });
 
 // ── POST /oauth/token ─────────────────────────────────────────────────────────
@@ -667,7 +667,7 @@ router.post("/oauth/token", async (req: Request, res: Response) => {
     });
   }
 
-  res.status(400).json({ error: "unsupported_grant_type" });
+  return res.status(400).json({ error: "unsupported_grant_type" });
 });
 
 // ── GET /oauth/userinfo ───────────────────────────────────────────────────────
@@ -711,7 +711,7 @@ router.get("/oauth/userinfo", async (req: Request, res: Response) => {
   if (scopes.includes("email")   && email) { info.email = email; info.email_verified = true; }
   if (scopes.includes("phone")   && phone) { info.phone_number = phone; info.phone_number_verified = true; }
 
-  res.json(info);
+  return res.json(info);
 });
 
 // ── GET /oauth/developer ───────────────────────────────────────────────────────
@@ -774,7 +774,7 @@ router.post("/oauth/apps", requireSupabaseAuth as any, async (req: Request, res:
   }).select("id,client_id,name,redirect_uris,scopes").single();
 
   if (error) return res.status(500).json({ error: error.message });
-  res.status(201).json({ ...data, client_secret: clientSecret });
+  return res.status(201).json({ ...data, client_secret: clientSecret });
 });
 
 // ── DELETE /oauth/apps/:appId ─────────────────────────────────────────────────
@@ -786,7 +786,7 @@ router.delete("/oauth/apps/:appId", requireSupabaseAuth as any, async (req: Requ
     .eq("id", req.params.appId)
     .eq("owner_id", userId);
   if (error) return res.status(500).json({ error: error.message });
-  res.json({ ok: true });
+  return res.json({ ok: true });
 });
 
 // ── GET /oauth/connected-apps (user revoke screen) ────────────────────────────
@@ -815,7 +815,7 @@ router.delete("/oauth/connected-apps/:consentId", requireSupabaseAuth as any, as
     admin.from("oauth_refresh_tokens").update({ revoked: true }).eq("user_id", userId).eq("client_id", consent.client_id),
     admin.from("oauth_consents").delete().eq("id", req.params.consentId).eq("user_id", userId),
   ]);
-  res.json({ ok: true });
+  return res.json({ ok: true });
 });
 
 export default router;

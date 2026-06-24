@@ -461,7 +461,7 @@ const BOTTOM_BAR_H = 64; // height of the WeChat-style horizontal action bar
 const VideoItem = React.memo(function VideoItem({
   item, isActive, isNearActive, screenH, screenW, isFollowing, isSelf,
   onLike, onBookmark, onOpenComments, onShare, onFollow, onRecordView, onOpenMenu,
-  navOffset = 0, tabFocused = true, commentsOpen = false, squeezedH = 0,
+  navOffset = 0, tabFocused = true, onVideoEnd, commentsOpen = false, squeezedH = 0,
 }: {
   item: VideoPost; isActive: boolean; isNearActive: boolean; screenH: number; screenW: number;
   isFollowing: boolean; isSelf: boolean;
