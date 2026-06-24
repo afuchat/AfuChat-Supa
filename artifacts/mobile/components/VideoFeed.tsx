@@ -658,9 +658,7 @@ const VideoItem = React.memo(
               onPress={() => router.push(`/@${item.profile.handle}` as any)}
               activeOpacity={0.85}
             >
-              <View style={styles.barAvatarRing}>
-                <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={34} userId={item.author_id} />
-              </View>
+              <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={34} userId={item.author_id} />
             </TouchableOpacity>
             <View style={{ flex: 1, minWidth: 0 }}>
               <TouchableOpacity
@@ -1780,12 +1778,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     minWidth: 0,
-  },
-  barAvatarRing: {
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.3)",
-    borderRadius: 20,
-    padding: 1,
   },
   barHandle: {
     color: "#fff",
