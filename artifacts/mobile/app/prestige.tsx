@@ -24,6 +24,7 @@ import Colors from "@/constants/colors";
 import { showAlert } from "@/lib/alert";
 import { PRESTIGE_TIERS, getPrestigeTier, getNextPrestigeTier, prestigeProgress } from "@/lib/prestige";
 import { Avatar } from "@/components/ui/Avatar";
+import { invalidateUserEffects } from "@/hooks/useUserEffects";
 import { ListRowSkeleton } from "@/components/ui/Skeleton";
 
 const { width: SCREEN_W } = Dimensions.get("window");
@@ -233,6 +234,10 @@ export default function PrestigeScreen() {
     if (error) { showAlert("Error", error.message); return; }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setPurchases((prev) => prev.map((pp) => pp.id === p.id ? { ...pp, equipped: next } : pp));
+    if (user?.id) {
+      invalidateUserEffects(user.id);
+      refreshProfile();
+    }
   }
 
   const glowOpacity = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 0.85] });

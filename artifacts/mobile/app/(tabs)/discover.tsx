@@ -41,6 +41,7 @@ import { PostSkeleton } from "@/components/ui/Skeleton";
 import { useContextMenu, ContextMenu } from "@/components/desktop/ContextMenu";
 import { VideoThumbnail } from "@/components/ui/VideoThumbnail";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
+import UserName from "@/components/ui/UserName";
 import OfflineBanner from "@/components/ui/OfflineBanner";
 import PostUploadBanner from "@/components/ui/PostUploadBanner";
 import { isOnline, onConnectivityChange } from "@/lib/offlineStore";
@@ -419,9 +420,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                 <>
                   <View style={[styles.nameRow, { flex: 1 }]}>
                     <TouchableOpacity onPress={() => safeRouter.push(`/company/${item.org_slug}` as any)} activeOpacity={0.7}>
-                      <Text style={[styles.cardHandle, { color: colors.text, fontSize: isDesktop ? 14 : 13, flexShrink: 1 }]} numberOfLines={1}>
-                        {item.profile.display_name}
-                      </Text>
+                      <UserName userId={item.author_id} name={item.profile.display_name} style={[styles.cardHandle, { color: colors.text, fontSize: isDesktop ? 14 : 13, flexShrink: 1 }]} numberOfLines={1} />
                     </TouchableOpacity>
                     {item.org_verified ? <VerifiedBadge isVerified={false} isOrganizationVerified size={isDesktop ? 14 : 12} /> : null}
                     <View style={{ backgroundColor: colors.accent + "15", borderRadius: 4, paddingHorizontal: 5, paddingVertical: 1 }}>
@@ -450,9 +449,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                 /* ── Person: bold display name / @handle subtitle / bio ── */
                 <>
                   <View style={[styles.nameRow, { flex: 1 }]}>
-                    <Text style={[styles.cardHandle, { color: colors.text, fontSize: isDesktop ? 14 : 13, fontFamily: "Inter_700Bold", flexShrink: 1 }]} numberOfLines={1}>
-                      {item.profile.display_name || item.profile.handle}
-                    </Text>
+                    <UserName userId={item.author_id} name={item.profile.display_name || item.profile.handle} style={[styles.cardHandle, { color: colors.text, fontSize: isDesktop ? 14 : 13, fontFamily: "Inter_700Bold", flexShrink: 1 }]} numberOfLines={1} />
                     <VerifiedBadge isVerified={item.is_verified} isOrganizationVerified={item.is_organization_verified} size={isDesktop ? 14 : 12} />
                     <View style={{ flex: 1 }} />
                     {showFollowBtn && (

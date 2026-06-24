@@ -37,6 +37,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
+import UserName from "@/components/ui/UserName";
 import { useResolvedVideoSource } from "@/hooks/useResolvedVideoSource";
 import { sharePost } from "@/lib/share";
 import { encodeId } from "@/lib/shortId";
@@ -474,7 +475,7 @@ function ShortCard({
             <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={36} />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={styles.authorHandle} numberOfLines={1}>@{item.profile.handle}</Text>
-              <Text style={styles.authorName} numberOfLines={1}>{item.profile.display_name}</Text>
+              <UserName userId={item.author_id} name={item.profile.display_name} style={styles.authorName} numberOfLines={1} />
             </View>
             {showFollowBtn ? (
               <Pressable

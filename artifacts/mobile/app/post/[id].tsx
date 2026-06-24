@@ -35,6 +35,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { RichText } from "@/components/ui/RichText";
 import { Avatar } from "@/components/ui/Avatar";
+import UserName from "@/components/ui/UserName";
 import { ImageViewer, useImageViewer } from "@/components/ImageViewer";
 import Colors from "@/constants/colors";
 import { showAlert } from "@/lib/alert";
@@ -358,7 +359,7 @@ function ReplyCard({
           {/* Header row */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4, flexWrap: "wrap", marginBottom: 2 }}>
             <TouchableOpacity onPress={() => router.push(`/@${item.author.handle}` as any)} activeOpacity={0.8}>
-              <Text style={{ color: colors.text, fontSize: 13, fontFamily: "Inter_700Bold" }} numberOfLines={1}>{item.author.display_name}</Text>
+              <UserName userId={item.author.id} name={item.author.display_name} style={{ color: colors.text, fontSize: 13, fontFamily: "Inter_700Bold" }} numberOfLines={1} />
             </TouchableOpacity>
             {item.author.is_organization_verified && <Ionicons name="checkmark-circle" size={12} color={Colors.gold} />}
             {!item.author.is_organization_verified && item.author.is_verified && <Ionicons name="checkmark-circle" size={12} color={colors.accent} />}

@@ -22,6 +22,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
+import UserName from "@/components/ui/UserName";
 import { ProfileNotFoundView } from "@/app/profile-not-found";
 import { ProfilePrivateView } from "@/app/profile-private";
 import { ContactProfileSkeleton } from "@/components/ui/Skeleton";
@@ -465,9 +466,7 @@ export default function ContactScreen() {
 
             {/* Name + verified badge */}
             <View style={s.nameRow}>
-              <Text style={[s.displayName, { color: colors.text }]} numberOfLines={1}>
-                {profile.display_name}
-              </Text>
+              <UserName userId={profile.id} name={profile.display_name} style={[s.displayName, { color: colors.text }]} numberOfLines={1} />
               <VerifiedBadge isVerified={profile.is_verified}
                 isOrganizationVerified={profile.is_organization_verified} size={16} />
             </View>

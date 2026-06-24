@@ -27,6 +27,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
+import UserName from "@/components/ui/UserName";
 import { ProfileNotFoundView } from "@/app/profile-not-found";
 import { ProfilePrivateView } from "@/app/profile-private";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -171,7 +172,7 @@ function PublicProfileScreen({ handle }: { handle: string }) {
             style={{ marginBottom: 14 }}
           />
           <View style={pub.nameRow}>
-            <Text style={[pub.displayName, { color: colors.text }]}>{profile.display_name}</Text>
+            <UserName userId={profile.id} name={profile.display_name} style={[pub.displayName, { color: colors.text }]} />
             {(profile.is_verified || profile.is_organization_verified) && (
               <VerifiedBadge size={19} />
             )}
