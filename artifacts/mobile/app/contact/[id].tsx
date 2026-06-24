@@ -1037,7 +1037,8 @@ const s = StyleSheet.create({
     height: AVATAR_SIZE + 6,
     borderRadius: AVATAR_SIZE / 2 + 3,
     borderWidth: 3,
-    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
   },
   onlineDot: {
     position: "absolute", bottom: 5, right: 5,
