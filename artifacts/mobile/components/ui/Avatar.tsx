@@ -48,8 +48,9 @@ export function Avatar({ uri, name, size = 44, style, online, premium, square, p
   const resolvedRing: PrestigeRing | null = prestigeRing
     ?? (effects.crownRing ? 'crown' : effects.voidRing ? 'void' : effects.diamondRing ? 'diamond' : null);
 
-  // If a status effect ring is active, ignore the premium prop entirely to avoid duplicate rings
-  const showRing = resolvedRing !== null || (premium && resolvedRing === null);
+  // When userId is provided, effects are the sole source of truth for rings.
+  // The premium prop is only honoured when no userId is known (e.g. anonymous/system avatars).
+  const showRing = resolvedRing !== null || (!userId && !!premium);
 
   const innerNode = (
     <View style={{ width: size, height: size }}>
