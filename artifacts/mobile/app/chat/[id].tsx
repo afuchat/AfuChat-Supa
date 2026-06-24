@@ -2489,6 +2489,27 @@ function ChatScreen() {
     // Inline enrichment — mirrors the logic in renderMessage
     function enrichOne(msg: Message) {
       let notif = tryParseSysNotif(msg.encrypted_content || "");
+      // Enrich _sys_notif messages whose stored JSON has actor_id but no name yet
+      // (happens when DB stored the message before actor info was populated)
+      if (notif && notif.actor_id && !notif.actor_name && !notif.actor_handle) {
+        const sentMs = new Date(msg.sent_at).getTime();
+        const notifRow =
+          notifRowsMap.get(msg.sent_at) ||
+          notifRowsMap.get(msg.sent_at.replace(/\.\d+Z?$/, "")) ||
+          (() => {
+            for (const [, r] of notifRowsMap) {
+              if (r.type === notif!.type && Math.abs(new Date(r.created_at).getTime() - sentMs) < 3000) return r;
+            }
+            return null;
+          })();
+        const cachedProf = actorProfileCache.get(notif.actor_id);
+        notif = {
+          ...notif,
+          actor_name: notifRow?.actor_name || cachedProf?.display_name || notif.actor_name,
+          actor_handle: notifRow?.actor_handle || cachedProf?.handle || notif.actor_handle,
+          actor_avatar: notifRow?.actor_avatar || cachedProf?.avatar_url || notif.actor_avatar,
+        };
+      }
       if (!notif && msg.sender_id === AFUCHAT_SYSTEM_ID) {
         try {
           const raw = JSON.parse(msg.encrypted_content || "{}");
@@ -5680,6 +5701,28 @@ STRICT RULES:
     let sysNotifData = item.sender_id === AFUCHAT_SYSTEM_ID
       ? tryParseSysNotif(item.encrypted_content || "")
       : null;
+
+    // Enrich _sys_notif messages that have actor_id but no name yet
+    // (stored JSON may have actor_id with null actor_name from an old DB trigger)
+    if (sysNotifData && sysNotifData.actor_id && !sysNotifData.actor_name && !sysNotifData.actor_handle) {
+      const sentMs = new Date(item.sent_at).getTime();
+      const notifRow =
+        notifRowsMap.get(item.sent_at) ||
+        notifRowsMap.get(item.sent_at.replace(/\.\d+Z?$/, "")) ||
+        (() => {
+          for (const [, r] of notifRowsMap) {
+            if (r.type === sysNotifData!.type && Math.abs(new Date(r.created_at).getTime() - sentMs) < 3000) return r;
+          }
+          return null;
+        })();
+      const cachedProf = sysNotifData.actor_id ? actorProfileCache.get(sysNotifData.actor_id) : undefined;
+      sysNotifData = {
+        ...sysNotifData,
+        actor_name: notifRow?.actor_name || cachedProf?.display_name || sysNotifData.actor_name,
+        actor_handle: notifRow?.actor_handle || cachedProf?.handle || sysNotifData.actor_handle,
+        actor_avatar: notifRow?.actor_avatar || cachedProf?.avatar_url || sysNotifData.actor_avatar,
+      };
+    }
 
     // Enrich raw push-payload messages ({"type":"new_like","body":"","data":{}}) with
     // actor details and entity info from the notifications table
