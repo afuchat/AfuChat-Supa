@@ -54,6 +54,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { Avatar } from "@/components/ui/Avatar";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
+import UserName from "@/components/ui/UserName";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { useTheme } from "@/hooks/useTheme";
 import { notifyPostLike, notifyNewFollow } from "@/lib/notifyUser";
@@ -667,7 +668,13 @@ const VideoItem = React.memo(
                 activeOpacity={0.85}
               >
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-                  <Text style={styles.barHandle} numberOfLines={1}>@{item.profile.handle}</Text>
+                  <UserName
+                    userId={item.author_id}
+                    name={`@${item.profile.handle}`}
+                    style={styles.barHandle}
+                    numberOfLines={1}
+                    suppressStar
+                  />
                   <VerifiedBadge
                     isVerified={item.profile.is_verified}
                     isOrganizationVerified={item.profile.is_organization_verified}
