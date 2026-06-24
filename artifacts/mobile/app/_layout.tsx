@@ -23,8 +23,14 @@ import { StatusBar } from "expo-status-bar";
 import * as Font from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { useTheme } from "@/hooks/useTheme";
-import { getCachedUserId } from "@/lib/offlineStore";
+import {
+  getCachedUserId,
+  onConnectivityChange,
+  isOnline,
+  getCachedShortsTab,
+} from "@/lib/offlineStore";
 import { preloadConversations } from "@/lib/conversationsPreload";
+import { showActionToast, dismissToast, showToast } from "@/lib/toast";
 
 import { handleIncomingUrl } from "@/lib/deepLinkHandler";
 import { verifyDeepLinks } from "@/lib/deepLinkVerifier";
