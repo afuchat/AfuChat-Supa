@@ -37,32 +37,47 @@ function fetchEffects(userId: string): Promise<void> {
   if (cache.has(userId)) return Promise.resolve();
   if (pending.has(userId)) return pending.get(userId)!;
 
-  const promise = supabase
+  const goodsPromise = supabase
     .from("status_goods_purchases")
     .select("good_id")
     .eq("user_id", userId)
     .eq("equipped", true)
     .in("good_id", EFFECT_IDS)
+    .then(({ data }) => data ?? [])
+    .catch(() => [] as any[]);
+
+  const subPromise = supabase
+    .from("user_subscriptions")
+    .select("subscription_plans(tier)")
+    .eq("user_id", userId)
+    .eq("is_active", true)
     .then(({ data }) => {
-      const ids = new Set((data ?? []).map((d: any) => d.good_id as string));
-      cache.set(userId, {
-        goldNameplate: ids.has("sg4"),
-        verifiedStar: ids.has("sg5"),
-        crownRing: ids.has("sg1"),
-        voidRing: ids.has("sg2"),
-        diamondRing: ids.has("sg3"),
-        founderSeal: ids.has("sg6"),
-        royaltyTitle: ids.has("sg7"),
-        statusGlow: ids.has("sg8"),
+      return (data ?? []).some((s: any) => {
+        const tier = s.subscription_plans?.tier;
+        return tier === "gold" || tier === "platinum";
       });
-      pending.delete(userId);
-      notify(userId);
     })
-    .catch(() => {
-      cache.set(userId, { ...EMPTY });
-      pending.delete(userId);
-      notify(userId);
+    .catch(() => false);
+
+  const promise = Promise.all([goodsPromise, subPromise]).then(([goodsData, isPremiumSubscriber]) => {
+    const ids = new Set((goodsData as any[]).map((d: any) => d.good_id as string));
+    cache.set(userId, {
+      goldNameplate: ids.has("sg4") || isPremiumSubscriber,
+      verifiedStar: ids.has("sg5"),
+      crownRing: ids.has("sg1"),
+      voidRing: ids.has("sg2"),
+      diamondRing: ids.has("sg3"),
+      founderSeal: ids.has("sg6"),
+      royaltyTitle: ids.has("sg7"),
+      statusGlow: ids.has("sg8"),
     });
+    pending.delete(userId);
+    notify(userId);
+  }).catch(() => {
+    cache.set(userId, { ...EMPTY });
+    pending.delete(userId);
+    notify(userId);
+  });
 
   pending.set(userId, promise);
   return promise;

@@ -55,6 +55,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Avatar } from "@/components/ui/Avatar";
 import { SmartSheet } from "@/components/ui/SmartSheet";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
+import UserName from "@/components/ui/UserName";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { useTheme } from "@/hooks/useTheme";
 import { notifyPostLike, notifyPostReply } from "@/lib/notifyUser";
@@ -888,9 +889,7 @@ const VideoItem = React.memo(function VideoItem({
         {/* Left: avatar · @handle · slim Follow button below handle (no display name) */}
         <View style={vStyles.bottomBarLeft}>
           <TouchableOpacity onPress={() => router.push(`/@${item.profile.handle}` as any)} activeOpacity={0.85}>
-            <View style={[vStyles.avatarRing, { borderColor: accent }]}>
-              <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={36} userId={item.author_id} />
-            </View>
+            <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={36} userId={item.author_id} />
           </TouchableOpacity>
           <View style={{ flex: 1, minWidth: 0 }}>
             <TouchableOpacity
@@ -898,7 +897,13 @@ const VideoItem = React.memo(function VideoItem({
               activeOpacity={0.85}
             >
               <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-                <Text style={vStyles.barHandle} numberOfLines={1}>@{item.profile.handle}</Text>
+                <UserName
+                  userId={item.author_id}
+                  name={`@${item.profile.handle}`}
+                  style={vStyles.barHandle}
+                  numberOfLines={1}
+                  suppressStar
+                />
                 <VerifiedBadge
                   isVerified={item.profile.is_verified}
                   isOrganizationVerified={item.profile.is_organization_verified}
@@ -973,7 +978,6 @@ const vStyles = StyleSheet.create({
   },
   bottomBarLeft: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8, overflow: "hidden" },
   bottomBarRight: { flexDirection: "row", alignItems: "center", gap: 18, flexShrink: 0 },
-  avatarRing: { borderWidth: 2, borderRadius: 22, padding: 1 },
   barHandle: { color: "#fff", fontSize: 13, fontFamily: "Inter_700Bold", ...VS_SHADOW },
   barName: { color: "rgba(255,255,255,0.5)", fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 1 },
   followBtn: { alignSelf: "flex-start", marginTop: 3, paddingHorizontal: 10, paddingVertical: 2, borderRadius: 99, borderWidth: 1, borderColor: "#fff" },
