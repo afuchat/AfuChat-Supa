@@ -35,10 +35,15 @@ export type OfflineVideoEntry = {
   url: string;
   fileUri: string;
   fileSize: number;
-  cachedAt: number;   // first-download timestamp (stored_at)
-  watchedAt?: number; // last time user watched this video
+  cachedAt: number;    // first-download timestamp (stored_at)
+  watchedAt?: number;  // last time user watched this video
   title: string;
   thumbnail: string | null;
+  // Author info (saved since db v13) — may be undefined for old entries
+  authorId?: string;
+  authorHandle?: string;
+  authorName?: string;
+  authorAvatar?: string | null;
 };
 
 // ─── In-memory maps ────────────────────────────────────────────────────────────
@@ -85,10 +90,31 @@ async function dbGetEntry(postId: string): Promise<OfflineVideoEntry | null> {
       cachedAt: row.stored_at,
       title: row.title ?? "",
       thumbnail: row.thumbnail ?? null,
+      authorId: row.author_id ?? undefined,
+      authorHandle: row.author_handle ?? undefined,
+      authorName: row.author_name ?? undefined,
+      authorAvatar: row.author_avatar ?? undefined,
     };
   } catch {
     return null;
   }
+}
+
+function rowToEntry(row: any): OfflineVideoEntry {
+  return {
+    postId: row.post_id,
+    url: row.url,
+    fileUri: row.file_uri,
+    fileSize: row.file_size,
+    cachedAt: row.stored_at,
+    watchedAt: row.watched_at ?? row.stored_at,
+    title: row.title ?? "",
+    thumbnail: row.thumbnail ?? null,
+    authorId: row.author_id ?? undefined,
+    authorHandle: row.author_handle ?? undefined,
+    authorName: row.author_name ?? undefined,
+    authorAvatar: row.author_avatar ?? undefined,
+  };
 }
 
 async function dbGetAll(): Promise<OfflineVideoEntry[]> {
@@ -97,16 +123,7 @@ async function dbGetAll(): Promise<OfflineVideoEntry[]> {
     const rows = await db.getAllAsync<any>(
       "SELECT * FROM video_registry ORDER BY COALESCE(watched_at, stored_at) DESC",
     );
-    return rows.map((row) => ({
-      postId: row.post_id,
-      url: row.url,
-      fileUri: row.file_uri,
-      fileSize: row.file_size,
-      cachedAt: row.stored_at,
-      watchedAt: row.watched_at ?? row.stored_at,
-      title: row.title ?? "",
-      thumbnail: row.thumbnail ?? null,
-    }));
+    return rows.map(rowToEntry);
   } catch {
     return [];
   }
@@ -119,16 +136,7 @@ async function dbGetRecent(sinceMs: number): Promise<OfflineVideoEntry[]> {
       "SELECT * FROM video_registry WHERE COALESCE(watched_at, stored_at) >= ? ORDER BY COALESCE(watched_at, stored_at) DESC",
       [sinceMs],
     );
-    return rows.map((row) => ({
-      postId: row.post_id,
-      url: row.url,
-      fileUri: row.file_uri,
-      fileSize: row.file_size,
-      cachedAt: row.stored_at,
-      watchedAt: row.watched_at ?? row.stored_at,
-      title: row.title ?? "",
-      thumbnail: row.thumbnail ?? null,
-    }));
+    return rows.map(rowToEntry);
   } catch {
     return [];
   }
@@ -138,23 +146,28 @@ async function dbSaveEntry(entry: OfflineVideoEntry): Promise<void> {
   try {
     const db = await getDB();
     const now = Date.now();
-    // stored_at is set only on first insert (INSERT OR IGNORE path),
-    // watched_at is always updated so re-watches bump the timestamp.
     await db.runAsync(
       `INSERT INTO video_registry
-         (post_id, url, file_uri, file_size, title, thumbnail, stored_at, watched_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         (post_id, url, file_uri, file_size, title, thumbnail, stored_at, watched_at,
+          author_id, author_handle, author_name, author_avatar)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(post_id) DO UPDATE SET
-         url       = excluded.url,
-         file_uri  = excluded.file_uri,
-         file_size = excluded.file_size,
-         title     = excluded.title,
-         thumbnail = excluded.thumbnail,
-         watched_at = ?`,
+         url          = excluded.url,
+         file_uri     = excluded.file_uri,
+         file_size    = excluded.file_size,
+         title        = excluded.title,
+         thumbnail    = excluded.thumbnail,
+         watched_at   = ?,
+         author_id    = COALESCE(excluded.author_id, author_id),
+         author_handle= COALESCE(excluded.author_handle, author_handle),
+         author_name  = COALESCE(excluded.author_name, author_name),
+         author_avatar= COALESCE(excluded.author_avatar, author_avatar)`,
       [
         entry.postId, entry.url, entry.fileUri, entry.fileSize,
         entry.title, entry.thumbnail, now, now,
-        now, // second bind for the ON CONFLICT watched_at = ?
+        entry.authorId ?? null, entry.authorHandle ?? null,
+        entry.authorName ?? null, entry.authorAvatar ?? null,
+        now, // ON CONFLICT watched_at = ?
       ],
     );
   } catch {
@@ -163,11 +176,14 @@ async function dbSaveEntry(entry: OfflineVideoEntry): Promise<void> {
       const db2 = await getDB();
       await db2.runAsync(
         `INSERT OR REPLACE INTO video_registry
-           (post_id, url, file_uri, file_size, title, thumbnail, stored_at, watched_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+           (post_id, url, file_uri, file_size, title, thumbnail, stored_at, watched_at,
+            author_id, author_handle, author_name, author_avatar)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           entry.postId, entry.url, entry.fileUri, entry.fileSize,
           entry.title, entry.thumbnail, entry.cachedAt || Date.now(), Date.now(),
+          entry.authorId ?? null, entry.authorHandle ?? null,
+          entry.authorName ?? null, entry.authorAvatar ?? null,
         ],
       );
     } catch {}
@@ -257,15 +273,23 @@ export function cacheVideo(url: string): Promise<string | null> {
  * Called when a user watches a video. Saves it permanently to device storage.
  * Idempotent — if already stored, updates metadata only (no extra download).
  * The video is NEVER re-downloaded if already on device.
+ *
+ * Works on both WiFi and cellular — once a video is watched it should always
+ * be available offline. Pre-fetching (cacheVideo) still skips cellular.
  */
 export async function markVideoWatched(
   postId: string,
   url: string,
-  meta: { title: string; thumbnail: string | null },
+  meta: {
+    title: string;
+    thumbnail: string | null;
+    authorId?: string;
+    authorHandle?: string;
+    authorName?: string;
+    authorAvatar?: string | null;
+  },
 ): Promise<void> {
   if (Platform.OS === "web" || !url || !postId) return;
-  // On cellular, skip the full download entirely — streaming is enough
-  if (isCellular()) return;
   if (saveInProgress.has(postId)) return;
   saveInProgress.add(postId);
 
@@ -285,6 +309,10 @@ export async function markVideoWatched(
         cachedAt: Date.now(),
         title: meta.title,
         thumbnail: meta.thumbnail,
+        authorId: meta.authorId,
+        authorHandle: meta.authorHandle,
+        authorName: meta.authorName,
+        authorAvatar: meta.authorAvatar,
       });
       return;
     }
@@ -327,6 +355,10 @@ export async function markVideoWatched(
     await dbSaveEntry({
       postId, url, fileUri, fileSize,
       cachedAt: Date.now(), title: meta.title, thumbnail: meta.thumbnail,
+      authorId: meta.authorId,
+      authorHandle: meta.authorHandle,
+      authorName: meta.authorName,
+      authorAvatar: meta.authorAvatar,
     });
   } catch {
   } finally {

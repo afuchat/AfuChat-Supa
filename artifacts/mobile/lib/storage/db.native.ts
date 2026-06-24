@@ -250,4 +250,14 @@ async function runMigrations(db: DB) {
     `);
     await db.runAsync("UPDATE schema_version SET version = 12");
   }
+
+  // ── v13: Author metadata on video_registry for offline feed display ────────────
+  if (currentVersion < 13) {
+    const safe = async (sql: string) => { try { await db.execAsync(sql); } catch {} };
+    await safe("ALTER TABLE video_registry ADD COLUMN author_id TEXT");
+    await safe("ALTER TABLE video_registry ADD COLUMN author_handle TEXT");
+    await safe("ALTER TABLE video_registry ADD COLUMN author_name TEXT");
+    await safe("ALTER TABLE video_registry ADD COLUMN author_avatar TEXT");
+    await db.runAsync("UPDATE schema_version SET version = 13");
+  }
 }

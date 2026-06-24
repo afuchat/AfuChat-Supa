@@ -61,7 +61,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { notifyPostLike, notifyPostReply } from "@/lib/notifyUser";
 import { RichText } from "@/components/ui/RichText";
 import { encodeId, decodeId, isUuid } from "@/lib/shortId";
-import { getCachedVideoUri, cacheVideo, markVideoWatched } from "@/lib/videoCache";
+import { getCachedVideoUri, cacheVideo, markVideoWatched, getOfflineVideos } from "@/lib/videoCache";
 import { recordWatchHistory } from "@/lib/watchHistory";
 import { onShortsRefresh } from "@/lib/shortsRefresh";
 import { getLocalFeedPost } from "@/lib/storage/localFeed";
@@ -70,7 +70,7 @@ import { trackEvent } from "@/lib/activityTracker";
 import { saveVideoProgress, clearVideoProgress } from "@/lib/videoProgress";
 import { useResolvedVideoSource } from "@/hooks/useResolvedVideoSource";
 import { getPostVideoManifest, pickBestSource } from "@/lib/videoApi";
-import { getPreferredVideoHeight } from "@/lib/networkQuality";
+import { getPreferredVideoHeight, isOffline as checkIsOffline, subscribeToNetworkChanges } from "@/lib/networkQuality";
 import { ChatBubbleSkeleton, ShortsFeedSkeleton } from "@/components/ui/Skeleton";
 import SignInPromptModal from "@/components/ui/SignInPromptModal";
 import {
@@ -630,6 +630,10 @@ const VideoItem = React.memo(function VideoItem({
         markVideoWatched(item.id, item.video_url, {
           title,
           thumbnail: item.image_url ?? null,
+          authorId: item.author_id,
+          authorHandle: item.profile?.handle,
+          authorName: item.profile?.display_name,
+          authorAvatar: item.profile?.avatar_url,
         }).catch(() => {
           offlineSaved.current = false;
         });
@@ -1023,6 +1027,10 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
   const [tabFocused, setTabFocused] = useState(true);
   const [autoScroll, setAutoScroll] = useState(false);
   const autoScrollRef = useRef(false);
+  // Offline state — updated reactively by NetInfo
+  const [isOffline, setIsOffline] = useState(false);
+  // true while the currently displayed feed is from local SQLite cache
+  const isOfflineFeedRef = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -1083,6 +1091,22 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
   }, [videos]);
   useEffect(() => { userRef.current = user; }, [user]);
 
+  // ── Offline connectivity tracking ─────────────────────────────────────────
+  useEffect(() => {
+    // Seed initial state synchronously from the cached NetInfo value
+    setIsOffline(checkIsOffline());
+    return subscribeToNetworkChanges((offline) => {
+      setIsOffline(offline);
+      // Came back online while serving cached content → reload live feed
+      if (!offline && isOfflineFeedRef.current) {
+        isOfflineFeedRef.current = false;
+        fetchVideos(videoTabRef.current).catch(() => setLoading(false));
+      }
+    });
+  // fetchVideos is stable (dep is only `id`) — safe to omit here
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Web: hide scrollbar CSS
   useEffect(() => {
     if (Platform.OS !== "web") return;
@@ -1103,6 +1127,36 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
       document.body.style.overflow = prevBody;
       document.documentElement.style.overflow = prevHtml;
     };
+  }, []);
+
+  // ── Offline feed builder ──────────────────────────────────────────────────
+  // Converts the SQLite video registry into VideoPost objects using local file
+  // paths as video_url so they play without any network access.
+  const buildOfflineFeed = useCallback(async (): Promise<VideoPost[]> => {
+    const entries = await getOfflineVideos();
+    return entries
+      .filter((e) => !!e.fileUri)
+      .map((e): VideoPost => ({
+        id: e.postId,
+        author_id: e.authorId ?? "offline",
+        content: e.title ?? "",
+        video_url: e.fileUri,         // ← local file path, plays without network
+        image_url: e.thumbnail ?? null,
+        created_at: new Date(e.cachedAt).toISOString(),
+        view_count: 0,
+        audio_name: null,
+        profile: {
+          display_name: e.authorName ?? "Cached video",
+          handle: e.authorHandle ?? "offline",
+          avatar_url: e.authorAvatar ?? null,
+          is_verified: false,
+          is_organization_verified: false,
+        },
+        liked: false,
+        bookmarked: false,
+        likeCount: 0,
+        replyCount: 0,
+      }));
   }, []);
 
   // ── Data fetching ──────────────────────────────────────────────────────────
@@ -1152,6 +1206,23 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
 
     const currentUser = userRef.current;
     let followingIds: string[] = [];
+
+    // ── Offline fast-path ─────────────────────────────────────────────────────
+    // If we have no network, skip all Supabase calls and serve cached videos.
+    if (checkIsOffline()) {
+      if (!isLoadMore) {
+        const offlineVids = await buildOfflineFeed();
+        if (offlineVids.length > 0) {
+          setVideos(offlineVids);
+          isOfflineFeedRef.current = true;
+        }
+        setLoading(false);
+      } else {
+        loadingMoreRef.current = false;
+        setLoadingMore(false);
+      }
+      return;
+    }
 
     try {
     if (tab === "following" && currentUser) {
@@ -1376,14 +1447,25 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
       }
     }
 
+    isOfflineFeedRef.current = false;
     if (isLoadMore) { loadingMoreRef.current = false; setLoadingMore(false); }
     else setLoading(false);
     } catch (networkErr: any) {
-      // Network unavailable (offline) — keep whatever is already shown.
-      // If nothing is loaded yet, loading will resolve to the empty state.
+      // Network unavailable — try offline cache before giving up.
       console.warn("[VideoFeed] offline or network error:", networkErr?.message ?? networkErr);
-      if (isLoadMore) { loadingMoreRef.current = false; setLoadingMore(false); }
-      else setLoading(false);
+      if (!isLoadMore) {
+        try {
+          const offlineVids = await buildOfflineFeed();
+          if (offlineVids.length > 0) {
+            setVideos(offlineVids);
+            isOfflineFeedRef.current = true;
+          }
+        } catch {}
+        setLoading(false);
+      } else {
+        loadingMoreRef.current = false;
+        setLoadingMore(false);
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]); // user intentionally omitted — read via userRef so auth refreshes never reset the feed
@@ -1828,14 +1910,28 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
         </View>
       </View>
 
+      {/* Offline banner — floats below the header row */}
+      {isOffline && (
+        <View style={[mStyles.offlineBanner, { top: insets.top + 52 }]} pointerEvents="none">
+          <View style={mStyles.offlineBannerPill}>
+            <Ionicons name="cloud-offline-outline" size={13} color="#fff" />
+            <Text style={mStyles.offlineBannerText}>
+              {videos.length > 0 ? "Offline · cached videos" : "No internet connection"}
+            </Text>
+          </View>
+        </View>
+      )}
+
       {videos.length === 0 ? (
         <View style={mStyles.emptyState}>
           <View style={mStyles.emptyIcon}>
-            <Ionicons name="videocam-outline" size={44} color="rgba(255,255,255,0.25)" />
+            <Ionicons name={isOffline ? "cloud-offline-outline" : "videocam-outline"} size={44} color="rgba(255,255,255,0.25)" />
           </View>
-          <Text style={mStyles.emptyTitle}>No videos yet</Text>
+          <Text style={mStyles.emptyTitle}>{isOffline ? "You're offline" : "No videos yet"}</Text>
           <Text style={mStyles.emptySubtitle}>
-            {videoTab === "following" ? "Follow creators to see their videos here" : "Videos will appear here soon"}
+            {isOffline
+              ? "Watch some videos first so they can be saved for offline viewing"
+              : videoTab === "following" ? "Follow creators to see their videos here" : "Videos will appear here soon"}
           </Text>
         </View>
       ) : Platform.OS === "web" ? (
@@ -1986,4 +2082,7 @@ const mStyles = StyleSheet.create({
   emptySubtitle: { color: "rgba(255,255,255,0.35)", fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 20 },
   toast: { position: "absolute", bottom: 90, left: 0, right: 0, alignItems: "center" },
   toastText: { color: "#fff", fontSize: 13, fontFamily: "Inter_500Medium", backgroundColor: "rgba(0,0,0,0.7)", paddingHorizontal: 18, paddingVertical: 10, borderRadius: 24, overflow: "hidden" },
+  offlineBanner: { position: "absolute", left: 0, right: 0, alignItems: "center", zIndex: 30 },
+  offlineBannerPill: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(0,0,0,0.72)", paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: "rgba(255,255,255,0.12)" },
+  offlineBannerText: { color: "rgba(255,255,255,0.85)", fontSize: 12, fontFamily: "Inter_500Medium" },
 });

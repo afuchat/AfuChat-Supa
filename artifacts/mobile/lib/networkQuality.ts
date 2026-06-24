@@ -13,6 +13,7 @@ export type NetworkType = "wifi" | "cellular" | "unknown";
 
 // Cached value — updated by the subscriber below
 let _type: NetworkType = "unknown";
+let _connected: boolean | null = null;
 let _subscribed = false;
 
 function ensureSubscribed() {
@@ -20,9 +21,11 @@ function ensureSubscribed() {
   _subscribed = true;
   NetInfo.fetch().then((s) => {
     _type = s.type === "wifi" ? "wifi" : s.type === "cellular" ? "cellular" : "unknown";
+    _connected = s.isConnected;
   });
   NetInfo.addEventListener((state) => {
     _type = state.type === "wifi" ? "wifi" : state.type === "cellular" ? "cellular" : "unknown";
+    _connected = state.isConnected;
   });
 }
 
@@ -40,6 +43,31 @@ export function isWifi(): boolean {
 
 export function isCellular(): boolean {
   return getNetworkType() === "cellular";
+}
+
+/**
+ * Returns true when the device has no internet connection.
+ * Uses the cached NetInfo state — zero async overhead.
+ * On web always returns false (browser handles connectivity itself).
+ */
+export function isOffline(): boolean {
+  if (Platform.OS === "web") return false;
+  // _connected starts as null (not yet known) — treat as online until proven otherwise
+  return _connected === false;
+}
+
+/**
+ * Subscribe to connectivity changes.
+ * Calls `callback(offline)` immediately on the next NetInfo event.
+ * Returns an unsubscribe function — call it in useEffect cleanup.
+ */
+export function subscribeToNetworkChanges(callback: (offline: boolean) => void): () => void {
+  if (Platform.OS === "web") return () => {};
+  ensureSubscribed();
+  const unsub = NetInfo.addEventListener((state) => {
+    callback(state.isConnected === false);
+  });
+  return unsub;
 }
 
 /**
