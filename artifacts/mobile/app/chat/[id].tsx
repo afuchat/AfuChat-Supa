@@ -1824,6 +1824,7 @@ function ChatScreen() {
   const [showAppearanceSheet, setShowAppearanceSheet] = useState(false);
   const notifPillAnim = useRef(new Animated.Value(80)).current;
   const [notifRowsMap, setNotifRowsMap] = useState<Map<string, any>>(new Map());
+  const [actorProfileCache, setActorProfileCache] = useState<Map<string, { display_name: string | null; handle: string | null; avatar_url: string | null }>>(new Map());
   const [muteUntil, setMuteUntil] = useState<string | null | undefined>(undefined);
   const [showMutePicker, setShowMutePicker] = useState(false);
   // null = muted forever; ISO string = muted until that time; undefined = not loaded / not muted
@@ -2389,7 +2390,10 @@ function ChatScreen() {
     };
   }, []);
 
-  // ── Fetch notifications table rows to enrich raw push-payload messages ───────
+  // ── Fetch notifications table rows + resolve all actor profiles ──────────────
+  // DB triggers often insert notifications with actor_id but no name/avatar.
+  // We batch-resolve ALL actor_ids (from notification rows AND raw message
+  // content) in one profiles query so every notification card shows a real name.
   useEffect(() => {
     if (!isAfuChatSystemChat || !user) return;
     let cancelled = false;
@@ -2403,24 +2407,37 @@ function ChatScreen() {
           .order("created_at", { ascending: false })
           .limit(300);
 
-        if (cancelled || !rows) return;
+        if (cancelled) return;
 
-        // ── Resolve missing actor profiles in one batch query ─────────────────
-        // DB triggers store actor_id but often omit actor_name/handle/avatar.
-        // Collect unique actor_ids that are missing profile info, then fetch.
-        const missingIds = [...new Set(
-          rows
-            .filter((r) => r.actor_id && (!r.actor_name && !r.actor_handle))
-            .map((r) => r.actor_id as string)
-        )];
+        // Collect actor_ids that still need profile resolution:
+        // 1. from notification rows (actor_id set, name missing)
+        const notifActorIds = new Set<string>();
+        for (const r of rows || []) {
+          if (r.actor_id && (!r.actor_name && !r.actor_handle)) {
+            notifActorIds.add(r.actor_id);
+          }
+        }
+
+        // 2. from raw message content of system chat messages
+        //    (DB trigger may store actor_id only inside the JSON payload)
+        const msgActorIds = new Set<string>();
+        for (const msg of messages) {
+          if (msg.sender_id !== AFUCHAT_SYSTEM_ID) continue;
+          try {
+            const raw = JSON.parse(msg.encrypted_content || "{}");
+            const aid = raw.actor_id || raw.data?.actorId || raw.data?.actor_id;
+            if (aid && typeof aid === "string") msgActorIds.add(aid);
+          } catch {}
+        }
+
+        const allMissingIds = [...new Set([...notifActorIds, ...msgActorIds])];
 
         const profileMap = new Map<string, { display_name: string | null; handle: string | null; avatar_url: string | null }>();
-
-        if (missingIds.length > 0) {
+        if (allMissingIds.length > 0) {
           const { data: profiles } = await supabase
             .from("profiles")
             .select("id, display_name, handle, avatar_url")
-            .in("id", missingIds);
+            .in("id", allMissingIds);
           if (profiles) {
             for (const p of profiles) {
               profileMap.set(p.id, { display_name: p.display_name, handle: p.handle, avatar_url: p.avatar_url });
@@ -2430,16 +2447,16 @@ function ChatScreen() {
 
         if (cancelled) return;
 
-        // Merge resolved profile data back into each row
-        const enrichedRows = rows.map((r) => {
+        // Merge resolved profile data into notification rows
+        const enrichedRows = (rows || []).map((r) => {
           if (r.actor_id && (!r.actor_name && !r.actor_handle)) {
             const prof = profileMap.get(r.actor_id);
             if (prof) {
               return {
                 ...r,
-                actor_name: prof.display_name || r.actor_name,
-                actor_handle: prof.handle || r.actor_handle,
-                actor_avatar: prof.avatar_url || r.actor_avatar,
+                actor_name: prof.display_name ?? r.actor_name,
+                actor_handle: prof.handle ?? r.actor_handle,
+                actor_avatar: prof.avatar_url ?? r.actor_avatar,
               };
             }
           }
@@ -2453,6 +2470,10 @@ function ChatScreen() {
           if (!map.has(trunc)) map.set(trunc, r);
         }
         setNotifRowsMap(map);
+
+        // Store the actor profile cache for use in enrichOne when notification
+        // rows have no actor_id at all (actor_id lives only in message content)
+        setActorProfileCache(profileMap);
       } catch {}
     })();
 
@@ -2482,15 +2503,23 @@ function ChatScreen() {
                 }
                 return null;
               })();
+
+            // Resolve actor from: notifRow → raw content → actorProfileCache
+            const rawActorId = notifRow?.actor_id || raw.actor_id || raw.data?.actorId || raw.data?.actor_id;
+            const cachedProf = rawActorId ? actorProfileCache.get(rawActorId) : undefined;
+            const actorName = notifRow?.actor_name || cachedProf?.display_name || undefined;
+            const actorHandle = notifRow?.actor_handle || cachedProf?.handle || undefined;
+            const actorAvatar = notifRow?.actor_avatar || cachedProf?.avatar_url || undefined;
+
             notif = {
               _sys_notif: true as const,
               type: (notifRow?.type || raw.type) as string,
               title: notifRow?.title || raw.title || "",
               body: notifRow?.body || raw.body || "",
-              actor_id: notifRow?.actor_id,
-              actor_name: notifRow?.actor_name,
-              actor_handle: notifRow?.actor_handle,
-              actor_avatar: notifRow?.actor_avatar,
+              actor_id: rawActorId,
+              actor_name: actorName,
+              actor_handle: actorHandle,
+              actor_avatar: actorAvatar,
               entity_id: notifRow?.entity_id,
               entity_type: notifRow?.entity_type,
               post_id: notifRow?.entity_type === "post" ? notifRow?.entity_id : (raw.data?.postId ?? undefined),
@@ -2564,7 +2593,7 @@ function ChatScreen() {
     }
 
     return result;
-  }, [isAfuChatSystemChat, messages, notifRowsMap]);
+  }, [isAfuChatSystemChat, messages, notifRowsMap, actorProfileCache]);
 
   const checkMessageGating = useCallback(async () => {
     if (!user) return;
@@ -5668,15 +5697,20 @@ STRICT RULES:
               }
               return null;
             })();
+
+          // Resolve actor from: notifRow → raw content → actorProfileCache
+          const rawActorId = notifRow?.actor_id || raw.actor_id || raw.data?.actorId || raw.data?.actor_id;
+          const cachedProf = rawActorId ? actorProfileCache.get(rawActorId) : undefined;
+
           sysNotifData = {
             _sys_notif: true as const,
             type: (notifRow?.type || raw.type) as string,
             title: notifRow?.title || raw.title || "",
             body: notifRow?.body || raw.body || "",
-            actor_id: notifRow?.actor_id,
-            actor_name: notifRow?.actor_name,
-            actor_handle: notifRow?.actor_handle,
-            actor_avatar: notifRow?.actor_avatar,
+            actor_id: rawActorId,
+            actor_name: notifRow?.actor_name || cachedProf?.display_name || undefined,
+            actor_handle: notifRow?.actor_handle || cachedProf?.handle || undefined,
+            actor_avatar: notifRow?.actor_avatar || cachedProf?.avatar_url || undefined,
             entity_id: notifRow?.entity_id,
             entity_type: notifRow?.entity_type,
             post_id: notifRow?.entity_type === "post" ? notifRow?.entity_id : (raw.data?.postId ?? undefined),
@@ -5782,7 +5816,7 @@ STRICT RULES:
         )}
       </View>
     );
-  }, [listData, messages, user, colors, highlightedMsgId, scrollToMessage, advancedFeatures.mini_profile_popup, notifFilter, isAfuChatSystemChat, notifRowsMap, groupedNotifMap, chatAppearance?.bubbleColor]);
+  }, [listData, messages, user, colors, highlightedMsgId, scrollToMessage, advancedFeatures.mini_profile_popup, notifFilter, isAfuChatSystemChat, notifRowsMap, actorProfileCache, groupedNotifMap, chatAppearance?.bubbleColor]);
 
   // Single source of truth for the bottom offset.
   // The floatingInputContainer is position:absolute so it cannot rely on

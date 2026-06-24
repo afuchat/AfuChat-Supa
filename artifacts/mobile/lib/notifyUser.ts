@@ -15,13 +15,16 @@ type NotifyParams = {
   categoryIdentifier?: string;
   notificationType?: string;
   actorId?: string;
+  actorName?: string;
+  actorHandle?: string;
+  actorAvatar?: string;
   postId?: string | null;
   referenceId?: string | null;
   referenceType?: string | null;
 };
 
 async function callNotify(params: NotifyParams) {
-  const { userId, title, body, data, categoryIdentifier } = params;
+  const { userId, title, body, data, categoryIdentifier, notificationType, actorId, actorName, actorHandle, actorAvatar, postId, referenceId, referenceType } = params;
 
   // ── Client-side edge function call for immediate delivery ───────────────────
   // Runs in the background — does not block the caller.
@@ -33,6 +36,47 @@ async function callNotify(params: NotifyParams) {
       .catch((err: unknown) =>
         console.warn("[Notify] Edge function call failed:", err),
       );
+  }
+
+  // ── Upsert notification row with full actor info ─────────────────────────────
+  // DB triggers insert notifications with actor_id only (no name/avatar).
+  // We insert/upsert here so the system chat always shows the real actor name.
+  // Uses a short-window update strategy: update any matching row created in the
+  // last 5s, OR insert a new row if none exists yet.
+  if (notificationType && userId) {
+    const notifPayload: Record<string, any> = {
+      user_id: userId,
+      type: notificationType,
+      title: title || "",
+      body: body || "",
+    };
+    if (actorId) notifPayload.actor_id = actorId;
+    if (actorName) notifPayload.actor_name = actorName;
+    if (actorHandle) notifPayload.actor_handle = actorHandle;
+    if (actorAvatar) notifPayload.actor_avatar = actorAvatar;
+    if (postId) { notifPayload.entity_id = postId; notifPayload.entity_type = "post"; }
+    else if (referenceId) { notifPayload.entity_id = referenceId; notifPayload.entity_type = referenceType || ""; }
+    if (data) notifPayload.data = data;
+
+    // Try to backfill actor name on a row the DB trigger may have just created
+    if (actorId && actorName) {
+      const since = new Date(Date.now() - 8_000).toISOString();
+      supabase
+        .from("notifications")
+        .update({ actor_name: actorName, ...(actorHandle ? { actor_handle: actorHandle } : {}), ...(actorAvatar ? { actor_avatar: actorAvatar } : {}) })
+        .eq("user_id", userId)
+        .eq("type", notificationType)
+        .eq("actor_id", actorId)
+        .is("actor_name", null)
+        .gte("created_at", since)
+        .catch(() => {});
+    }
+
+    // Also insert our own row in case the DB trigger didn't fire
+    supabase
+      .from("notifications")
+      .insert(notifPayload)
+      .catch(() => {});
   }
 }
 
@@ -77,6 +121,8 @@ export async function notifyNewFollow(params: {
   targetUserId: string;
   followerName: string;
   followerUserId: string;
+  followerHandle?: string;
+  followerAvatar?: string;
 }) {
   callNotify({
     userId: params.targetUserId,
@@ -90,6 +136,9 @@ export async function notifyNewFollow(params: {
     },
     notificationType: "new_follower",
     actorId: params.followerUserId,
+    actorName: params.followerName,
+    actorHandle: params.followerHandle,
+    actorAvatar: params.followerAvatar,
   });
 }
 
@@ -112,6 +161,7 @@ export async function notifyPostLike(params: {
     },
     notificationType: "new_like",
     actorId: params.likerUserId,
+    actorName: params.likerName,
     postId: params.postId,
   });
 }
@@ -140,6 +190,7 @@ export async function notifyPostReply(params: {
     },
     notificationType: "new_reply",
     actorId: params.replierUserId,
+    actorName: params.replierName,
     postId: params.postId,
   });
 }
@@ -162,6 +213,7 @@ export async function notifyGiftReceived(params: {
     },
     notificationType: "gift",
     actorId: params.senderUserId,
+    actorName: params.senderName,
   });
 }
 
@@ -185,6 +237,7 @@ export async function notifyMention(params: {
     },
     notificationType: "new_mention",
     actorId: params.mentionedByUserId,
+    actorName: params.mentionedBy,
     postId: params.postId,
   });
 }
@@ -213,6 +266,7 @@ export async function notifyOrderPlaced(params: {
     },
     notificationType: "order_placed",
     actorId: params.buyerUserId,
+    actorName: params.buyerName,
     referenceId: params.orderId,
     referenceType: "order",
   });
@@ -238,6 +292,7 @@ export async function notifyOrderShipped(params: {
     },
     notificationType: "order_shipped",
     actorId: params.sellerUserId,
+    actorName: params.sellerName,
     referenceId: params.orderId,
     referenceType: "order",
   });
@@ -264,6 +319,7 @@ export async function notifyDeliveryConfirmed(params: {
     },
     notificationType: "escrow_released",
     actorId: params.buyerUserId,
+    actorName: params.buyerName,
     referenceId: params.orderId,
     referenceType: "order",
   });
@@ -289,6 +345,7 @@ export async function notifyDisputeRaised(params: {
     },
     notificationType: "dispute_raised",
     actorId: params.buyerUserId,
+    actorName: params.buyerName,
     referenceId: params.orderId,
     referenceType: "order",
   });
@@ -337,6 +394,7 @@ export async function notifyOrderReview(params: {
     },
     notificationType: "shop_review",
     actorId: params.buyerUserId,
+    actorName: params.buyerName,
     referenceId: params.orderId,
     referenceType: "order",
   });
@@ -437,6 +495,7 @@ export async function notifyLiveStream(params: {
       },
       notificationType: "live_started",
       actorId: params.streamerId,
+      actorName: params.streamerName,
       referenceId: params.channelId,
       referenceType: "channel",
     });
@@ -527,6 +586,7 @@ export async function notifyMissedCall(params: {
     },
     notificationType: "missed_call",
     actorId: params.callerId,
+    actorName: params.callerName,
     referenceId: params.callId,
     referenceType: "call",
   });
