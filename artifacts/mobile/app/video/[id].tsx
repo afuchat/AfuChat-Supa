@@ -785,7 +785,7 @@ const VideoItem = React.memo(function VideoItem({
           ref={videoViewRef}
           player={player}
           style={StyleSheet.absoluteFill}
-          contentFit="contain"
+          contentFit="cover"
           nativeControls={false}
           allowsPictureInPicture={Platform.OS !== "web"}
           onPictureInPictureStart={() => setInPip(true)}

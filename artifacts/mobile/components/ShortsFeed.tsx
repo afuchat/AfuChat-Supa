@@ -205,6 +205,7 @@ function NativeShortsPlayer({
   muted,
   preloadOnly,
   onTogglePause,
+  onDoubleTap,
 }: {
   src: string;
   poster?: string | null;
@@ -213,6 +214,7 @@ function NativeShortsPlayer({
   muted: boolean;
   preloadOnly: boolean;
   onTogglePause: () => void;
+  onDoubleTap?: () => void;
 }) {
   const player = useVideoPlayer(src ? { uri: src } : null, (p) => {
     p.loop = true;
@@ -220,6 +222,8 @@ function NativeShortsPlayer({
     if (active && !paused && !preloadOnly) p.play();
   });
   const touchRef = useRef<{ y: number; t: number } | null>(null);
+  const lastTapRef = useRef(0);
+  const singleTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Play / pause control
   React.useEffect(() => {
@@ -251,14 +255,34 @@ function NativeShortsPlayer({
         if (!start) return;
         const dy = Math.abs(e.nativeEvent.pageY - start.y);
         const dt = Date.now() - start.t;
-        if (dy < 12 && dt < 350) onTogglePause();
+        if (dy < 12 && dt < 350) {
+          // Tap detected — check for double-tap
+          const now = Date.now();
+          if (onDoubleTap && now - lastTapRef.current < 300) {
+            // Double-tap: cancel pending single-tap and fire like
+            if (singleTapTimerRef.current) {
+              clearTimeout(singleTapTimerRef.current);
+              singleTapTimerRef.current = null;
+            }
+            lastTapRef.current = 0;
+            onDoubleTap();
+          } else {
+            // Potential single-tap: wait 300 ms to rule out second tap
+            lastTapRef.current = now;
+            singleTapTimerRef.current = setTimeout(() => {
+              singleTapTimerRef.current = null;
+              lastTapRef.current = 0;
+              onTogglePause();
+            }, 300);
+          }
+        }
       }}
       onResponderTerminate={() => { touchRef.current = null; }}
     >
       <VideoView
         player={player}
         style={StyleSheet.absoluteFill}
-        contentFit="contain"
+        contentFit="cover"
         nativeControls={false}
       />
       {!preloadOnly && paused && (
