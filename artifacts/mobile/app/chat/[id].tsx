@@ -1690,31 +1690,42 @@ function ChatScreen() {
   useEffect(() => {
     const senderIds = [...new Set(messages.map((m) => m.sender_id).filter((id) => id && id !== user?.id))];
     if (senderIds.length === 0) return;
-    supabase
-      .from("status_goods_purchases")
-      .select("user_id, good_id")
-      .in("user_id", senderIds)
-      .in("good_id", ["sg1", "sg2", "sg3", "sg4", "sg5", "sg8"])
-      .eq("equipped", true)
-      .then(({ data }) => {
-        if (!data) return;
-        const nameplates = new Set<string>();
-        const stars = new Set<string>();
-        const glows = new Set<string>();
-        const rings = new Map<string, 'crown'|'void'|'diamond'>();
-        for (const r of data as { user_id: string; good_id: string }[]) {
-          if (r.good_id === "sg4") nameplates.add(r.user_id);
-          if (r.good_id === "sg5") stars.add(r.user_id);
-          if (r.good_id === "sg8") glows.add(r.user_id);
-          if (r.good_id === "sg1" && !rings.has(r.user_id)) rings.set(r.user_id, 'crown');
-          if (r.good_id === "sg2" && !rings.has(r.user_id)) rings.set(r.user_id, 'void');
-          if (r.good_id === "sg3" && !rings.has(r.user_id)) rings.set(r.user_id, 'diamond');
-        }
-        setGoldNameplateIds(nameplates);
-        setVerifiedStarIds(stars);
-        setStatusGlowIds(glows);
-        setSenderRingMap(rings);
-      });
+    Promise.all([
+      supabase
+        .from("status_goods_purchases")
+        .select("user_id, good_id")
+        .in("user_id", senderIds)
+        .in("good_id", ["sg1", "sg2", "sg3", "sg4", "sg5", "sg8"])
+        .eq("equipped", true),
+      // Gold/Platinum subscribers automatically get gold names in chatrooms
+      supabase
+        .from("user_subscriptions")
+        .select("user_id, subscription_plans(tier)")
+        .in("user_id", senderIds)
+        .eq("is_active", true),
+    ]).then(([{ data: goodsData }, { data: subData }]) => {
+      const nameplates = new Set<string>();
+      const stars = new Set<string>();
+      const glows = new Set<string>();
+      const rings = new Map<string, 'crown'|'void'|'diamond'>();
+      for (const r of (goodsData || []) as { user_id: string; good_id: string }[]) {
+        if (r.good_id === "sg4") nameplates.add(r.user_id);
+        if (r.good_id === "sg5") stars.add(r.user_id);
+        if (r.good_id === "sg8") glows.add(r.user_id);
+        if (r.good_id === "sg1" && !rings.has(r.user_id)) rings.set(r.user_id, 'crown');
+        if (r.good_id === "sg2" && !rings.has(r.user_id)) rings.set(r.user_id, 'void');
+        if (r.good_id === "sg3" && !rings.has(r.user_id)) rings.set(r.user_id, 'diamond');
+      }
+      // Mark Gold/Platinum subscribers with golden names automatically
+      for (const s of (subData || []) as { user_id: string; subscription_plans: any }[]) {
+        const tier = s.subscription_plans?.tier;
+        if (tier === "gold" || tier === "platinum") nameplates.add(s.user_id);
+      }
+      setGoldNameplateIds(nameplates);
+      setVerifiedStarIds(stars);
+      setStatusGlowIds(glows);
+      setSenderRingMap(rings);
+    });
   }, [messages.length]);
   const [input, setInput] = useState("");
   // Show skeleton immediately on open; setLoading(false) is called once messages are ready.
