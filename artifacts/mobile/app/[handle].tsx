@@ -170,6 +170,7 @@ function PublicProfileScreen({ handle }: { handle: string }) {
             uri={profile.avatar_url}
             name={profile.display_name}
             size={80}
+            square={!!(profile.is_organization_verified)}
             style={{ marginBottom: 14 }}
             userId={profile.id}
           />
