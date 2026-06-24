@@ -21,6 +21,8 @@ import * as Sharing from "expo-sharing";
 import { showToast } from "@/lib/toast";
 import QRCode from "@/components/ui/QRCode";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
+import AfuLogo from "@/components/ui/AfuLogo";
+import { useTheme } from "@/hooks/useTheme";
 
 let ViewShot: any = ({ children, style, ...rest }: any) => <View style={style} {...rest}>{children}</View>;
 let captureRef: ((ref: any, opts?: any) => Promise<string>) | null = null;
@@ -34,8 +36,6 @@ let MediaLibrary: any = null;
 try { MediaLibrary = require("expo-media-library"); } catch (_) {}
 
 const BRAND = "#1f95ff";
-const CARD_BG = "#0a1628";
-const CARD_GRAD_TOP = "#0d1e38";
 
 type Props = {
   visible: boolean;
@@ -53,17 +53,22 @@ export default function QRPosterSheet({
   displayName, handle, avatarUrl,
   afuId, isVerified, isOrgVerified,
 }: Props) {
+  const { colors, isDark, accent } = useTheme();
   const posterRef = useRef<any>(null);
   const [saving, setSaving] = useState(false);
 
   const qrUrl = `https://afuchat.com/id/${afuId}`;
+
+  const sheetBg      = isDark ? colors.backgroundSecondary : colors.backgroundSecondary;
+  const cardBg       = isDark ? "#0a1628" : "#0a1628";
+  const cardTop      = isDark ? "#0d1e38" : "#0d1e38";
 
   async function capture(): Promise<string | null> {
     if (Platform.OS === "web") {
       const el = posterRef.current as HTMLElement | null;
       if (!el) return null;
       const h2c = (await import("html2canvas")).default;
-      const canvas = await h2c(el, { useCORS: true, allowTaint: false, backgroundColor: CARD_BG, scale: 3, logging: false });
+      const canvas = await h2c(el, { useCORS: true, allowTaint: false, backgroundColor: cardBg, scale: 3, logging: false });
       return canvas.toDataURL("image/png");
     }
     if (!captureRef || !posterRef.current) return null;
@@ -86,7 +91,7 @@ export default function QRPosterSheet({
         if (ok) await Sharing.shareAsync(uri, { mimeType: "image/png" });
         else showToast("Sharing not available on this device");
       }
-    } catch (e) {
+    } catch {
       showToast("Share failed");
     } finally {
       setSaving(false);
@@ -118,14 +123,18 @@ export default function QRPosterSheet({
         activeOpacity={1}
         onPress={onClose}
       />
-      <View style={s.sheet}>
-        {/* Handle bar */}
-        <View style={s.handleRow}>
-          <View style={s.handle} />
+      <View style={[s.sheet, { backgroundColor: sheetBg }]}>
+        {/* Top row: drag handle + back button */}
+        <View style={s.topRow}>
+          <TouchableOpacity style={[s.backBtn, { backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }]} onPress={onClose}>
+            <Ionicons name="chevron-down" size={20} color={colors.text} />
+          </TouchableOpacity>
+          <View style={[s.handle, { backgroundColor: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)" }]} />
+          <View style={s.topRowSpacer} />
         </View>
 
-        <Text style={s.sheetTitle}>Your AfuChat QR Poster</Text>
-        <Text style={s.sheetSub}>Long-press or share with anyone — they can scan it to find you instantly.</Text>
+        <Text style={[s.sheetTitle, { color: colors.text }]}>Your AfuChat QR Poster</Text>
+        <Text style={[s.sheetSub, { color: colors.textMuted }]}>Long-press or share with anyone — they can scan it to find you instantly.</Text>
 
         {/* Poster card — this gets captured */}
         <View style={s.posterWrap}>
@@ -135,10 +144,10 @@ export default function QRPosterSheet({
             style={s.poster}
           >
             {/* Background */}
-            <View style={s.posterBg}>
-              {/* Top brand strip */}
-              <View style={s.brandStrip}>
-                <View style={s.logoMark}><Text style={s.logoMarkText}>A</Text></View>
+            <View style={[s.posterBg, { backgroundColor: cardBg }]}>
+              {/* Top brand strip with actual logo */}
+              <View style={[s.brandStrip, { backgroundColor: cardTop }]}>
+                <AfuLogo size={26} forceTheme="dark" style={{ marginRight: 2 }} />
                 <Text style={s.brandName}>AfuChat</Text>
               </View>
 
@@ -181,7 +190,7 @@ export default function QRPosterSheet({
         {/* Action buttons */}
         <View style={s.btnRow}>
           <TouchableOpacity
-            style={[s.btn, s.btnPrimary]}
+            style={[s.btn, { backgroundColor: accent }]}
             onPress={handleShare}
             disabled={saving}
           >
@@ -194,18 +203,14 @@ export default function QRPosterSheet({
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[s.btn, s.btnSecondary]}
+            style={[s.btn, s.btnSecondary, { borderColor: accent + "55" }]}
             onPress={handleSave}
             disabled={saving}
           >
-            <Ionicons name="download-outline" size={18} color={BRAND} />
-            <Text style={s.btnTextSecondary}>Save Image</Text>
+            <Ionicons name="download-outline" size={18} color={accent} />
+            <Text style={[s.btnTextSecondary, { color: accent }]}>Save Image</Text>
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity style={s.closeBtn} onPress={onClose}>
-          <Text style={s.closeBtnText}>Close</Text>
-        </TouchableOpacity>
       </View>
     </Modal>
   );
@@ -221,22 +226,39 @@ const s = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#111827",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingBottom: 36,
     paddingHorizontal: 20,
   },
-  handleRow: { alignItems: "center", paddingTop: 12, paddingBottom: 4 },
-  handle: { width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.15)" },
-  sheetTitle: { fontSize: 17, fontWeight: "700", color: "#fff", textAlign: "center", marginTop: 8 },
-  sheetSub: { fontSize: 13, color: "rgba(255,255,255,0.45)", textAlign: "center", marginTop: 4, marginBottom: 20, lineHeight: 19 },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingTop: 14,
+    paddingBottom: 8,
+  },
+  backBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  handle: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+    marginHorizontal: 12,
+  },
+  topRowSpacer: { width: 34 },
+
+  sheetTitle: { fontSize: 17, fontWeight: "700", textAlign: "center", marginTop: 4 },
+  sheetSub: { fontSize: 13, textAlign: "center", marginTop: 4, marginBottom: 20, lineHeight: 19 },
 
   posterWrap: { alignItems: "center", marginBottom: 20 },
   poster: { borderRadius: 20, overflow: "hidden" },
   posterBg: {
     width: 280,
-    backgroundColor: CARD_BG,
     borderRadius: 20,
     alignItems: "center",
     paddingBottom: 24,
@@ -247,18 +269,15 @@ const s = StyleSheet.create({
   brandStrip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingTop: 16,
-    paddingBottom: 20,
+    gap: 6,
+    paddingTop: 14,
+    paddingBottom: 14,
     width: "100%",
-    paddingHorizontal: 18,
-    backgroundColor: CARD_GRAD_TOP,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(31,149,255,0.12)",
     marginBottom: 20,
   },
-  logoMark: { width: 26, height: 26, borderRadius: 8, backgroundColor: BRAND, alignItems: "center", justifyContent: "center" },
-  logoMarkText: { color: "#fff", fontSize: 15, fontWeight: "800" },
   brandName: { color: "#fff", fontSize: 15, fontWeight: "700", letterSpacing: 0.5 },
 
   avatarWrap: { position: "relative", marginBottom: 12 },
@@ -284,13 +303,9 @@ const s = StyleSheet.create({
   posterScan: { fontSize: 11, color: "rgba(255,255,255,0.5)", letterSpacing: 0.4, marginBottom: 4 },
   posterUrl: { fontSize: 10, color: BRAND + "88", letterSpacing: 0.3, fontFamily: "monospace" as any },
 
-  btnRow: { flexDirection: "row", gap: 12, marginBottom: 12 },
+  btnRow: { flexDirection: "row", gap: 12 },
   btn: { flex: 1, height: 48, borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
-  btnPrimary: { backgroundColor: BRAND },
-  btnSecondary: { backgroundColor: "transparent", borderWidth: 1, borderColor: BRAND + "55" },
+  btnSecondary: { backgroundColor: "transparent", borderWidth: 1 },
   btnTextPrimary: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  btnTextSecondary: { color: BRAND, fontWeight: "600", fontSize: 15 },
-
-  closeBtn: { alignItems: "center", paddingVertical: 10 },
-  closeBtnText: { color: "rgba(255,255,255,0.35)", fontSize: 14 },
+  btnTextSecondary: { fontWeight: "600", fontSize: 15 },
 });
