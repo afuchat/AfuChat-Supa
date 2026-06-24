@@ -53,6 +53,7 @@ import { SplashScreenView } from "@/components/ui/SplashScreenView";
 import { ToastContainer } from "@/components/ui/ToastContainer";
 import AlertModal from "@/components/ui/AlertModal";
 import OfflineBanner from "@/components/ui/OfflineBanner";
+import OfflineVideoToast from "@/components/ui/OfflineVideoToast";
 import { PushNotificationManager } from "@/components/PushNotificationManager";
 import { GlobalInboxListener } from "@/components/GlobalInboxListener";
 import UpdatePrompt from "@/components/UpdatePrompt";
@@ -268,6 +269,7 @@ export default function RootLayout() {
                       <ChatPreferencesProvider>
                         <MiniAppRuntimeProvider>
                           <OfflineBanner />
+                          <OfflineVideoToast />
                           <Stack
                             screenOptions={{
                               headerShown: false,
