@@ -36,12 +36,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { Avatar } from "@/components/ui/Avatar";
 import UserName from "@/components/ui/UserName";
 import { useResolvedVideoSource } from "@/hooks/useResolvedVideoSource";
 import { sharePost } from "@/lib/share";
 import { encodeId } from "@/lib/shortId";
 import { getPreferredVideoHeight } from "@/lib/networkQuality";
+import { cacheShortsTab, getCachedShortsTab } from "@/lib/offlineStore";
+import { getCachedVideoUri, markVideoWatched, cacheVideo } from "@/lib/videoCache";
 
 type ShortPost = {
   id: string;
@@ -57,6 +60,7 @@ type ShortPost = {
   replyCount: number;
   bookmarked: boolean;
   following: boolean;
+  localUri?: string;
 };
 
 export type ShortsFilter = "for_you" | "following";
@@ -291,13 +295,16 @@ function ShortCard({
   activeToggleRef?: React.MutableRefObject<(() => void) | null>;
 }) {
   const { colors } = useTheme();
+  const online = useOnlineStatus();
   const [paused, setPaused] = useState(false);
   const heartScale = useRef(new Animated.Value(1)).current;
   // Use network-aware quality: cellular gets 360p to protect data,
   // WiFi gets up to 720p. Desktop card always uses 720p (typically WiFi).
   const targetHeight = layout === "fullscreen" ? getPreferredVideoHeight() : 720;
-  const resolved = useResolvedVideoSource(item.id, item.video_url, { targetHeight });
-  const src = resolved.uri || item.video_url;
+  // Use local file as fallback when available; skip manifest fetch when offline
+  const fallbackUrl = item.localUri || item.video_url;
+  const resolved = useResolvedVideoSource(online ? item.id : null, fallbackUrl, { targetHeight });
+  const src = resolved.uri || fallbackUrl;
   const isFullscreen = layout === "fullscreen";
 
   function handleTogglePause() {
@@ -578,6 +585,7 @@ export default function ShortsFeed({
 }) {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const online = useOnlineStatus();
   const { width: winW, height: winH } = useWindowDimensions();
 
   const [posts, setPosts] = useState<ShortPost[]>([]);
@@ -586,8 +594,11 @@ export default function ShortsFeed({
   const [hasMore, setHasMore] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [globalMuted, setGlobalMuted] = useState(true);
+  const [offlineCacheAge, setOfflineCacheAge] = useState<number | null>(null);
   const cursorRef = useRef<string | null>(null);
   const loadMoreInFlight = useRef(false);
+  const postsRef = useRef<ShortPost[]>([]);
+  postsRef.current = posts;
 
   useFocusEffect(
     useCallback(() => {
@@ -682,6 +693,28 @@ export default function ShortsFeed({
     setLoading(true);
     cursorRef.current = null;
     setHasMore(true);
+    setOfflineCacheAge(null);
+
+    if (!online) {
+      // Offline: serve from cache; resolve local file URIs
+      const cached = await getCachedShortsTab(filter);
+      if (cached?.posts?.length) {
+        const withLocal = await Promise.all(
+          cached.posts.map(async (p: ShortPost) => {
+            const localUri = await getCachedVideoUri(p.video_url).catch(() => null);
+            return localUri ? { ...p, localUri } : null;
+          })
+        );
+        const playable = withLocal.filter(Boolean) as ShortPost[];
+        setPosts(playable);
+        if (cached.cachedAt) setOfflineCacheAge(cached.cachedAt);
+      } else {
+        setPosts([]);
+      }
+      setHasMore(false);
+      setLoading(false);
+      return;
+    }
 
     const followingAuthorIds = await fetchFollowingIds();
     if (followingAuthorIds !== null && followingAuthorIds.length === 0) {
@@ -720,10 +753,13 @@ export default function ShortsFeed({
     const mapped = await buildShortPosts(data, user);
     setPosts(mapped);
     setLoading(false);
-  }, [user, filter, fetchFollowingIds, buildShortPosts]);
+
+    // Persist to cache for offline access
+    cacheShortsTab(filter, mapped).catch(() => {});
+  }, [user, filter, online, fetchFollowingIds, buildShortPosts]);
 
   const loadMore = useCallback(async () => {
-    if (loadMoreInFlight.current || !hasMore || !cursorRef.current) return;
+    if (!online || loadMoreInFlight.current || !hasMore || !cursorRef.current) return;
     loadMoreInFlight.current = true;
     setLoadingMore(true);
     try {
@@ -764,9 +800,30 @@ export default function ShortsFeed({
       setLoadingMore(false);
       loadMoreInFlight.current = false;
     }
-  }, [hasMore, user, fetchFollowingIds, buildShortPosts, PAGE_SIZE]);
+  }, [hasMore, online, user, fetchFollowingIds, buildShortPosts, PAGE_SIZE]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Auto-save viewed video + prefetch next for offline access (native only)
+  useEffect(() => {
+    if (Platform.OS === "web" || !online) return;
+    const item = postsRef.current[activeIndex];
+    if (!item) return;
+    const timer = setTimeout(() => {
+      markVideoWatched(item.id, item.video_url, {
+        title: item.content || item.id,
+        thumbnail: item.image_url,
+        authorId: item.author_id,
+        authorHandle: item.profile.handle,
+        authorName: item.profile.display_name,
+        authorAvatar: item.profile.avatar_url,
+      }).catch(() => {});
+      // Prefetch next video silently so it's ready offline
+      const next = postsRef.current[activeIndex + 1];
+      if (next) cacheVideo(next.video_url).catch(() => {});
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [activeIndex, online]);
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 }).current;
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -898,25 +955,56 @@ export default function ShortsFeed({
   if (posts.length === 0) {
     return (
       <View style={[styles.loading, { backgroundColor: isFullscreen ? "#000" : colors.background }]}>
-        <Ionicons name="videocam-outline" size={48} color={isFullscreen ? "rgba(255,255,255,0.6)" : colors.textMuted} />
+        <Ionicons
+          name={online ? "videocam-outline" : "cloud-offline-outline"}
+          size={48}
+          color={isFullscreen ? "rgba(255,255,255,0.6)" : colors.textMuted}
+        />
         <Text style={{
           color: isFullscreen ? "#fff" : colors.text,
           fontFamily: "Inter_600SemiBold", fontSize: 16, marginTop: 12,
         }}>
-          {filter === "following" ? "No shorts from people you follow" : "No shorts yet"}
+          {!online
+            ? "No cached shorts"
+            : filter === "following" ? "No shorts from people you follow" : "No shorts yet"}
         </Text>
         <Text style={{
           color: isFullscreen ? "rgba(255,255,255,0.6)" : colors.textMuted,
           fontFamily: "Inter_400Regular", fontSize: 13,
           marginTop: 4, textAlign: "center", paddingHorizontal: 32,
         }}>
-          {filter === "following" ? "Follow creators to see their shorts here." : "Be the first to post a short video."}
+          {!online
+            ? "Watch shorts while online to save them for offline playback."
+            : filter === "following" ? "Follow creators to see their shorts here." : "Be the first to post a short video."}
         </Text>
       </View>
     );
   }
 
   return (
+    <View style={{ flex: 1 }}>
+    {!online && (
+      <View style={{
+        position: "absolute",
+        top: 12,
+        alignSelf: "center",
+        zIndex: 99,
+        backgroundColor: "rgba(0,0,0,0.65)",
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        borderRadius: 20,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+      }}>
+        <Ionicons name="cloud-offline-outline" size={14} color="#fff" />
+        <Text style={{ color: "#fff", fontSize: 12, fontFamily: "Inter_600SemiBold" }}>
+          {offlineCacheAge
+            ? `Offline · saved ${new Date(offlineCacheAge).toLocaleDateString()}`
+            : "Offline · cached videos"}
+        </Text>
+      </View>
+    )}
     <FlatList
       ref={listRef}
       data={posts}
@@ -964,8 +1052,9 @@ export default function ShortsFeed({
           <View style={{ width: 48, height: 6, borderRadius: 3, backgroundColor: isFullscreen ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.1)" }} />
         </View>
       ) : null}
-      style={{ backgroundColor: isFullscreen ? "#000" : colors.background }}
+      style={{ flex: 1, backgroundColor: isFullscreen ? "#000" : colors.background }}
     />
+    </View>
   );
 }
 

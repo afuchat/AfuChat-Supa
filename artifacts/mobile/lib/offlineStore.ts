@@ -17,6 +17,8 @@ const CACHE_KEYS = {
   FEED_CURSOR_FOR_YOU: "feed_cursor_for_you_v3",
   FEED_CURSOR_FOLLOWING: "feed_cursor_following_v3",
   WALLET: "offline_wallet",
+  SHORTS_FOR_YOU: "shorts_feed_cache_for_you_v1",
+  SHORTS_FOLLOWING: "shorts_feed_cache_following_v1",
 };
 
 export type PendingMessage = {
@@ -231,6 +233,26 @@ export async function getCachedWallet(): Promise<{ acoin: number; transactions: 
   try {
     const raw = await AsyncStorage.getItem(CACHE_KEYS.WALLET);
     return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function cacheShortsTab(tab: "for_you" | "following", posts: any[]): Promise<void> {
+  try {
+    const key = tab === "for_you" ? CACHE_KEYS.SHORTS_FOR_YOU : CACHE_KEYS.SHORTS_FOLLOWING;
+    await AsyncStorage.setItem(key, JSON.stringify({ posts, cachedAt: Date.now() }));
+  } catch {}
+}
+
+export async function getCachedShortsTab(tab: "for_you" | "following"): Promise<{ posts: any[]; cachedAt: number } | null> {
+  try {
+    const key = tab === "for_you" ? CACHE_KEYS.SHORTS_FOR_YOU : CACHE_KEYS.SHORTS_FOLLOWING;
+    const raw = await AsyncStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.posts?.length) return null;
+    return { posts: parsed.posts, cachedAt: parsed.cachedAt || 0 };
   } catch {
     return null;
   }
