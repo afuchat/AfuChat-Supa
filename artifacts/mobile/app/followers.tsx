@@ -17,7 +17,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
-import { PrestigeBadge } from "@/components/ui/PrestigeBadge";
 import { ContactRowSkeleton } from "@/components/ui/Skeleton";
 
 type FollowUser = {
@@ -230,7 +229,6 @@ export default function FollowersScreen() {
                 <Ionicons name="business" size={10} color={colors.accent} />
               </View>
             )}
-            <PrestigeBadge acoin={item.acoin ?? 0} size="sm" />
           </View>
           <Text style={[styles.handle, { color: colors.textMuted }]} numberOfLines={1}>
             @{item.handle}

@@ -26,7 +26,6 @@ import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import QRPosterSheet from "@/components/ui/QRPosterSheet";
 import Colors from "@/constants/colors";
 import OfflineBanner from "@/components/ui/OfflineBanner";
-import { PrestigeBadge } from "@/components/ui/PrestigeBadge";
 import { showAlert } from "@/lib/alert";
 import { isOnline } from "@/lib/offlineStore";
 import { showToast } from "@/lib/toast";
@@ -408,7 +407,6 @@ export default function MeScreen() {
                   {profile?.display_name || "User"}
                 </Text>
                 <VerifiedBadge isVerified={profile?.is_verified} isOrganizationVerified={profile?.is_organization_verified} size={17} />
-                {equippedGoods.has('sg5') && <Text style={{ fontSize: 15 }}>⭐</Text>}
               </View>
 
               <TouchableOpacity
@@ -420,15 +418,6 @@ export default function MeScreen() {
                 <Text style={[s.heroHandle, { color: colors.textMuted }]}>@{profile?.handle || "handle"}</Text>
                 <Ionicons name="information-circle-outline" size={13} color={colors.textMuted} style={{ opacity: 0.6 }} />
               </TouchableOpacity>
-
-              <PrestigeBadge acoin={acoin} size="sm" showLabel />
-
-              {equippedGoods.has('sg7') && (
-                <Text style={{ fontSize: 11, color: Colors.gold, fontFamily: "Inter_600SemiBold", marginTop: 1 }}>🎖️ Royalty of AfuChat</Text>
-              )}
-              {equippedGoods.has('sg6') && (
-                <Text style={{ fontSize: 11, color: "#8B5CF6", fontFamily: "Inter_500Medium", marginTop: 1 }}>🔏 Founder's Seal</Text>
-              )}
 
               {profile?.is_organization_verified && (
                 <View style={[s.businessChip, { backgroundColor: Colors.gold + "20" }]}>

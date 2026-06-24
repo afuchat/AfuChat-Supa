@@ -86,7 +86,6 @@ const SHOP_CATEGORIES = [
 
 const ALL_GOODS = SHOP_CATEGORIES.flatMap((c) => c.items);
 
-type LeaderboardPeriod = "all_time" | "weekly" | "monthly";
 type Tab = "overview" | "shop" | "ranks" | "history";
 
 export default function PrestigeScreen() {
@@ -104,8 +103,6 @@ export default function PrestigeScreen() {
   const [purchasing,       setPurchasing]        = useState<string | null>(null);
   const [refreshing,       setRefreshing]        = useState(false);
   const [activeTab,        setActiveTab]         = useState<Tab>("overview");
-  const [lbPeriod,         setLbPeriod]          = useState<LeaderboardPeriod>("all_time");
-  const [lbTierFilter,     setLbTierFilter]      = useState<string | null>(null);
   const [profileStats,     setProfileStats]      = useState<{ posts: number; messages: number; friends: number; stories: number; reactions: number } | null>(null);
 
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -240,9 +237,6 @@ export default function PrestigeScreen() {
 
   const glowOpacity = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 0.85] });
 
-  const filteredRichList = lbTierFilter
-    ? richList.filter((u) => getPrestigeTier(u.acoin || 0).id === lbTierFilter)
-    : richList;
 
   const TABS: { id: Tab; label: string; icon: string }[] = [
     { id: "overview", label: "Overview", icon: "layers-outline" },
@@ -644,62 +638,27 @@ export default function PrestigeScreen() {
               </View>
             )}
 
-            {/* Period filters */}
-            <View style={s.filterRow}>
-              {(["all_time", "weekly", "monthly"] as LeaderboardPeriod[]).map((p) => (
-                <TouchableOpacity
-                  key={p}
-                  style={[s.filterChip, lbPeriod === p && { backgroundColor: tier.color + "20", borderColor: tier.color }]}
-                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setLbPeriod(p); }}
-                >
-                  <Text style={[s.filterChipText, { color: lbPeriod === p ? tier.color : colors.textMuted }]}>
-                    {p === "all_time" ? "All Time" : p === "weekly" ? "This Week" : "This Month"}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* Tier filters */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 4 }}>
-              <TouchableOpacity
-                style={[s.tierFilterChip, !lbTierFilter && { backgroundColor: tier.color + "20", borderColor: tier.color }]}
-                onPress={() => setLbTierFilter(null)}
-              >
-                <Text style={[s.tierFilterText, { color: !lbTierFilter ? tier.color : colors.textMuted }]}>All Tiers</Text>
-              </TouchableOpacity>
-              {PRESTIGE_TIERS.slice().reverse().map((t) => (
-                <TouchableOpacity
-                  key={t.id}
-                  style={[s.tierFilterChip, lbTierFilter === t.id && { backgroundColor: t.color + "20", borderColor: t.color }]}
-                  onPress={() => setLbTierFilter(lbTierFilter === t.id ? null : t.id)}
-                >
-                  <Text style={{ fontSize: 13 }}>{t.emoji}</Text>
-                  <Text style={[s.tierFilterText, { color: lbTierFilter === t.id ? t.color : colors.textMuted }]}>{t.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
             {/* Podium — top 3 */}
-            {!loadingList && filteredRichList.length >= 3 && (
+            {!loadingList && richList.length >= 3 && (
               <View style={s.podiumWrap}>
-                <PodiumCard user={filteredRichList[1]} rank={2} isMe={filteredRichList[1]?.id === user?.id} myTier={tier} colors={colors} onPress={() => router.push(`/@${filteredRichList[1].handle}` as any)} />
-                <PodiumCard user={filteredRichList[0]} rank={1} isMe={filteredRichList[0]?.id === user?.id} myTier={tier} colors={colors} onPress={() => router.push(`/@${filteredRichList[0].handle}` as any)} />
-                <PodiumCard user={filteredRichList[2]} rank={3} isMe={filteredRichList[2]?.id === user?.id} myTier={tier} colors={colors} onPress={() => router.push(`/@${filteredRichList[2].handle}` as any)} />
+                <PodiumCard user={richList[1]} rank={2} isMe={richList[1]?.id === user?.id} myTier={tier} colors={colors} onPress={() => router.push(`/@${richList[1].handle}` as any)} />
+                <PodiumCard user={richList[0]} rank={1} isMe={richList[0]?.id === user?.id} myTier={tier} colors={colors} onPress={() => router.push(`/@${richList[0].handle}` as any)} />
+                <PodiumCard user={richList[2]} rank={3} isMe={richList[2]?.id === user?.id} myTier={tier} colors={colors} onPress={() => router.push(`/@${richList[2].handle}` as any)} />
               </View>
             )}
 
             {/* Full list */}
             {loadingList ? (
               <View style={{ gap: 8 }}>{[1,2,3,4,5].map((k) => <ListRowSkeleton key={k} />)}</View>
-            ) : filteredRichList.length === 0 ? (
+            ) : richList.length === 0 ? (
               <View style={s.empty}>
                 <Text style={{ fontSize: 40 }}>🏆</Text>
-                <Text style={[s.emptyTitle, { color: colors.text }]}>No users in this tier yet</Text>
+                <Text style={[s.emptyTitle, { color: colors.text }]}>No users yet</Text>
               </View>
             ) : (
               <>
                 <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                  {filteredRichList.slice(3).map((u, idx) => {
+                  {richList.slice(3).map((u, idx) => {
                     const uTier = getPrestigeTier(u.acoin || 0);
                     const isMe  = u.id === user?.id;
                     const rank  = idx + 4;
@@ -731,7 +690,7 @@ export default function PrestigeScreen() {
                 </View>
 
                 {/* Near You */}
-                {nearYou.length > 0 && !lbTierFilter && (
+                {nearYou.length > 0 && (
                   <>
                     <SectionHeader title="NEAR YOUR RANK" subtitle={`Users close to your position #${myRank}`} colors={colors} />
                     <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -969,13 +928,6 @@ const s = StyleSheet.create({
   myRankName: { fontSize: 15, fontFamily: "Inter_700Bold" },
   myRankAcoin: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
   myRankTierLabel: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
-
-  // Filters
-  filterRow: { flexDirection: "row", gap: 8 },
-  filterChip: { flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: "rgba(128,128,128,0.25)" },
-  filterChipText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
-  tierFilterChip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: "rgba(128,128,128,0.25)" },
-  tierFilterText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
 
   // Leaderboard
   podiumWrap: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center", gap: 8, paddingTop: 8 },
