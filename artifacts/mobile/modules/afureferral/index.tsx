@@ -482,11 +482,7 @@ function LeaderboardTab({ accent, currentUserId }: { accent: string; currentUser
     (async () => {
       setLoading(true);
       try {
-        const { data } = await supabase
-          .from("referral_stats")
-          .select("referrer_id, handle, display_name, avatar_url, total_referrals, total_platinum_days_given, last_referral_at")
-          .order("total_referrals", { ascending: false })
-          .limit(50);
+        const { data } = await supabase.rpc("get_referral_leaderboard");
 
         if (data) {
           setEntries(data as LeaderEntry[]);
