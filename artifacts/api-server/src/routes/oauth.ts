@@ -597,7 +597,7 @@ router.post("/oauth/token", async (req: Request, res: Response) => {
     const atExpiry     = new Date(Date.now() + 60 * 60 * 1000);       // 1 hour
     const rtExpiry     = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
-    const { data: at } = await admin.from("oauth_access_tokens").insert({
+    const { data: at, error: atErr } = await admin.from("oauth_access_tokens").insert({
       token:      accessToken,
       client_id,
       user_id:    authCode.user_id,
@@ -605,9 +605,13 @@ router.post("/oauth/token", async (req: Request, res: Response) => {
       expires_at: atExpiry.toISOString(),
     }).select("id").single();
 
+    if (atErr || !at) {
+      return res.status(500).json({ error: "server_error", error_description: "Failed to create access token" });
+    }
+
     await admin.from("oauth_refresh_tokens").insert({
       token:           refreshToken,
-      access_token_id: at?.id,
+      access_token_id: at.id,
       client_id,
       user_id:         authCode.user_id,
       scopes:          authCode.scopes,
@@ -650,12 +654,16 @@ router.post("/oauth/token", async (req: Request, res: Response) => {
     const atExp  = new Date(Date.now() + 60 * 60 * 1000);
     const rtExp  = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-    const { data: atRow } = await admin.from("oauth_access_tokens").insert({
+    const { data: atRow, error: atRowErr } = await admin.from("oauth_access_tokens").insert({
       token: newAt, client_id, user_id: rt.user_id, scopes: rt.scopes, expires_at: atExp.toISOString(),
     }).select("id").single();
 
+    if (atRowErr || !atRow) {
+      return res.status(500).json({ error: "server_error", error_description: "Failed to create access token" });
+    }
+
     await admin.from("oauth_refresh_tokens").insert({
-      token: newRt, access_token_id: atRow?.id, client_id, user_id: rt.user_id, scopes: rt.scopes, expires_at: rtExp.toISOString(),
+      token: newRt, access_token_id: atRow.id, client_id, user_id: rt.user_id, scopes: rt.scopes, expires_at: rtExp.toISOString(),
     });
 
     return res.json({
@@ -775,6 +783,39 @@ router.post("/oauth/apps", requireSupabaseAuth as any, async (req: Request, res:
 
   if (error) return res.status(500).json({ error: error.message });
   return res.status(201).json({ ...data, client_secret: clientSecret });
+});
+
+// ── PUT /oauth/apps/:appId ─────────────────────────────────────────────────────
+router.put("/oauth/apps/:appId", requireSupabaseAuth as any, async (req: Request, res: Response) => {
+  const userId = (req as any).authUserId as string;
+  const { name, description, logo_url, website_url, redirect_uris, scopes } = req.body as {
+    name?: string; description?: string; logo_url?: string; website_url?: string;
+    redirect_uris?: string[]; scopes?: string[];
+  };
+
+  const patch: Record<string, unknown> = {};
+  if (name              !== undefined) patch.name          = name.trim();
+  if (description       !== undefined) patch.description   = description?.trim() || null;
+  if (logo_url          !== undefined) patch.logo_url      = logo_url?.trim() || null;
+  if (website_url       !== undefined) patch.website_url   = website_url?.trim() || null;
+  if (Array.isArray(redirect_uris))    patch.redirect_uris = redirect_uris;
+  if (Array.isArray(scopes))           patch.scopes        = scopes;
+
+  if (Object.keys(patch).length === 0) {
+    return res.status(400).json({ error: "no fields to update" });
+  }
+
+  const admin = getAdminClient();
+  const { data, error } = await admin.from("oauth_apps")
+    .update(patch)
+    .eq("id", req.params.appId)
+    .eq("owner_id", userId)
+    .select("id,client_id,name,description,logo_url,website_url,redirect_uris,scopes,is_active")
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+  if (!data) return res.status(404).json({ error: "app not found or access denied" });
+  return res.json(data);
 });
 
 // ── DELETE /oauth/apps/:appId ─────────────────────────────────────────────────
