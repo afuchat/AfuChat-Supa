@@ -484,6 +484,7 @@ export default function PostDetailScreen() {
   const insets = useSafeAreaInsets();
 
   const [post, setPost] = useState<PostData | null>(null);
+  const [authorGoldNameplate, setAuthorGoldNameplate] = useState(false);
   const [replies, setReplies] = useState<Reply[]>([]);
   const [hasMoreReplies, setHasMoreReplies] = useState(false);
   const [loadingMoreReplies, setLoadingMoreReplies] = useState(false);
@@ -610,6 +611,7 @@ export default function PostDetailScreen() {
 
     const viewCount = data.view_count || 0;
 
+    const authorData = (data as any).profiles;
     setPost({
       id: data.id,
       content: data.content,
@@ -622,12 +624,23 @@ export default function PostDetailScreen() {
       created_at: data.created_at,
       view_count: viewCount,
       visibility: (data as any).visibility || "public",
-      author: (data as any).profiles,
+      author: authorData,
       liked: !!(myLikeRes as any).data,
       likeCount: likeCountRes.count || 0,
       replyCount: replyCountRes.count || 0,
     });
     setLoading(false);
+
+    if (authorData?.id) {
+      supabase
+        .from("status_goods_purchases")
+        .select("id")
+        .eq("user_id", authorData.id)
+        .eq("good_id", "sg4")
+        .eq("equipped", true)
+        .maybeSingle()
+        .then(({ data: np }) => setAuthorGoldNameplate(!!np));
+    }
 
     // Track view in background — non-blocking so it never delays the UI
     if (user && !(myViewRes as any).data) {
@@ -1132,7 +1145,7 @@ export default function PostDetailScreen() {
                       <View style={{ flex: 1 }}>
                         <View style={styles.nameRow}>
                           <TouchableOpacity onPress={() => router.push(`/@${post.author.handle}` as any)}>
-                            <Text style={[styles.authorName, { color: colors.text }]}>{post.author.display_name}</Text>
+                            <Text style={[styles.authorName, { color: authorGoldNameplate ? "#D4A853" : colors.text }]}>{post.author.display_name}</Text>
                           </TouchableOpacity>
                           {post.author.is_organization_verified && <Ionicons name="checkmark-circle" size={14} color={Colors.gold} style={{ marginLeft: 4 }} />}
                           {!post.author.is_organization_verified && post.author.is_verified && <Ionicons name="checkmark-circle" size={14} color={colors.accent} style={{ marginLeft: 4 }} />}
@@ -1189,7 +1202,7 @@ export default function PostDetailScreen() {
                     <View style={{ flex: 1 }}>
                       <View style={styles.nameRow}>
                         <TouchableOpacity onPress={() => router.push(`/@${post.author.handle}` as any)}>
-                          <Text style={[styles.authorName, { color: colors.text }]}>{post.author.display_name}</Text>
+                          <Text style={[styles.authorName, { color: authorGoldNameplate ? "#D4A853" : colors.text }]}>{post.author.display_name}</Text>
                         </TouchableOpacity>
                         {post.author.is_organization_verified && <Ionicons name="checkmark-circle" size={14} color={Colors.gold} style={{ marginLeft: 4 }} />}
                         {!post.author.is_organization_verified && post.author.is_verified && <Ionicons name="checkmark-circle" size={14} color={colors.accent} style={{ marginLeft: 4 }} />}

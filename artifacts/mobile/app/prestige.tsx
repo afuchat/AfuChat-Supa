@@ -34,6 +34,12 @@ type Purchase = { id: string; good_id: string; good_name: string; good_emoji: st
 const TIER_ID_ORDER = ["bronze", "silver", "gold", "diamond", "obsidian", "legend"];
 function tierIndex(id: string) { return TIER_ID_ORDER.indexOf(id); }
 
+function fmtAcoin(n: number): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2).replace(/\.?0+$/, "") + "M";
+  if (n >= 1_000)     return (n / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+  return String(n);
+}
+
 // ── Status Goods — grouped by category with WHERE the effect appears ──────────
 const SHOP_CATEGORIES = [
   {
@@ -121,8 +127,8 @@ export default function PrestigeScreen() {
     }).start();
 
     Animated.loop(Animated.sequence([
-      Animated.timing(pulseAnim, { toValue: 1.07, duration: 2000, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
-      Animated.timing(pulseAnim, { toValue: 1.0,  duration: 2000, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
+      Animated.timing(pulseAnim, { toValue: 1.07, duration: 2000, useNativeDriver: false, easing: Easing.inOut(Easing.ease) }),
+      Animated.timing(pulseAnim, { toValue: 1.0,  duration: 2000, useNativeDriver: false, easing: Easing.inOut(Easing.ease) }),
     ])).start();
 
     Animated.loop(Animated.sequence([
@@ -367,7 +373,7 @@ export default function PrestigeScreen() {
                   <Text style={[s.roadmapEmoji, { opacity: isUnlocked ? 1 : 0.35 }]}>{t.emoji}</Text>
                   <Text style={[s.roadmapLabel, { color: isActive ? t.color : isUnlocked ? colors.textSecondary : colors.textMuted }]}>{t.label}</Text>
                   <Text style={[s.roadmapMin, { color: isActive ? t.color + "BB" : colors.textMuted }]}>
-                    {t.minAcoin >= 1000 ? `${(t.minAcoin / 1000).toFixed(0)}K AC` : "Free"}
+                    {t.minAcoin >= 1000 ? `${fmtAcoin(t.minAcoin)} AC` : "Free"}
                   </Text>
                   {isActive && <View style={[s.activeIndicator, { backgroundColor: t.color }]} />}
                   {!isUnlocked && <Ionicons name="lock-closed" size={9} color={colors.textMuted} style={s.roadmapLock} />}
@@ -574,7 +580,7 @@ export default function PrestigeScreen() {
                               <Text style={[s.tierRequiredText, { color: itemTier.color }]}>{itemTier.emoji} {itemTier.label}+</Text>
                             </View>
                             <Text style={[s.shopCardPrice, { color: Colors.gold }]}>
-                              🪙 {item.acoin >= 1000 ? `${(item.acoin / 1000).toFixed(item.acoin % 1000 === 0 ? 0 : 1)}K` : item.acoin}
+                              🪙 {fmtAcoin(item.acoin)}
                             </Text>
 
                             {owned && ownedPurchase ? (
@@ -716,7 +722,7 @@ export default function PrestigeScreen() {
                           </View>
                           <View style={{ alignItems: "flex-end", gap: 2 }}>
                             <Text style={{ fontSize: 16 }}>{uTier.emoji}</Text>
-                            <Text style={[s.richAcoin, { color: Colors.gold }]}>{(u.acoin || 0) >= 1000 ? `${((u.acoin || 0) / 1000).toFixed(1)}K` : u.acoin} 🪙</Text>
+                            <Text style={[s.richAcoin, { color: Colors.gold }]}>{fmtAcoin(u.acoin || 0)} 🪙</Text>
                           </View>
                         </TouchableOpacity>
                       </View>
@@ -840,7 +846,7 @@ function PodiumCard({ user, rank, isMe, myTier, colors, onPress }: { user: RichU
       </View>
       <Text style={[s.podiumName, { color: isMe ? myTier.color : colors.text, fontSize: big ? 13 : 11 }]} numberOfLines={1}>{user.display_name}</Text>
       <Text style={[s.podiumAcoin, { color, fontSize: big ? 12 : 10 }]}>
-        {(user.acoin || 0) >= 1000 ? `${((user.acoin || 0) / 1000).toFixed(1)}K` : user.acoin} 🪙
+        {fmtAcoin(user.acoin || 0)} 🪙
       </Text>
       <View style={[s.podiumBase, { height: big ? 56 : 40, backgroundColor: color + "20", borderColor: color + "44" }]}>
         <Text style={[s.podiumRank, { color, fontSize: big ? 22 : 18 }]}>#{rank}</Text>

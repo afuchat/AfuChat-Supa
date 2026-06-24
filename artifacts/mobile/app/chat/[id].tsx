@@ -875,7 +875,7 @@ function LensContextCard({ msg, onSuggestionTap }: {
   );
 }
 
-function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, replyPreview, onTapReply, isHighlighted, onTapEnvelope, onTapGift, onImageTap, isPremiumSender, onConfirmExec, onCancelExec, onSuggestionTap, onSenderPress, onReactionPress, onStatusPress, brandColor }: {
+function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, replyPreview, onTapReply, isHighlighted, onTapEnvelope, onTapGift, onImageTap, isPremiumSender, onConfirmExec, onCancelExec, onSuggestionTap, onSenderPress, onReactionPress, onStatusPress, brandColor, goldNameplate }: {
   msg: Message;
   isMe: boolean;
   showTail: boolean;
@@ -896,6 +896,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   onReactionPress?: (msg: Message, emoji: string) => void;
   onStatusPress?: (msg: Message) => void;
   brandColor?: string;
+  goldNameplate?: boolean;
 }) {
   const { colors, isDark } = useTheme();
   const BRAND = brandColor ?? colors.accent;
@@ -1158,12 +1159,12 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                 activeOpacity={0.65}
                 hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
               >
-                <Text style={[st.senderName, { color: BRAND }]}>
+                <Text style={[st.senderName, { color: goldNameplate ? "#D4A853" : BRAND }]}>
                   {msg.sender?.display_name ?? ""}
                 </Text>
               </TouchableOpacity>
             ) : (
-              <Text style={[st.senderName, { color: BRAND }]}>
+              <Text style={[st.senderName, { color: goldNameplate ? "#D4A853" : BRAND }]}>
                 {msg.sender?.display_name ?? ""}
               </Text>
             )
@@ -1679,6 +1680,23 @@ function ChatScreen() {
   }, [chatPrefs.sounds_enabled]);
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>([]);
+  const [goldNameplateIds, setGoldNameplateIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const senderIds = [...new Set(messages.map((m) => m.sender_id).filter((id) => id && id !== user?.id))];
+    if (senderIds.length === 0) return;
+    supabase
+      .from("status_goods_purchases")
+      .select("user_id")
+      .in("user_id", senderIds)
+      .eq("good_id", "sg4")
+      .eq("equipped", true)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setGoldNameplateIds(new Set(data.map((r: any) => r.user_id)));
+        }
+      });
+  }, [messages.length]);
   const [input, setInput] = useState("");
   // Show skeleton immediately on open; setLoading(false) is called once messages are ready.
   const [loading, setLoading] = useState(true);
@@ -5855,11 +5873,12 @@ STRICT RULES:
             onReactionPress={addReaction}
             onStatusPress={isMe ? (m) => setMsgInfoTarget(m) : undefined}
             brandColor={chatAppearance?.bubbleColor}
+            goldNameplate={goldNameplateIds.has(item.sender_id)}
           />
         )}
       </View>
     );
-  }, [listData, messages, user, colors, highlightedMsgId, scrollToMessage, advancedFeatures.mini_profile_popup, notifFilter, isAfuChatSystemChat, notifRowsMap, actorProfileCache, groupedNotifMap, chatAppearance?.bubbleColor]);
+  }, [listData, messages, user, colors, highlightedMsgId, scrollToMessage, advancedFeatures.mini_profile_popup, notifFilter, isAfuChatSystemChat, notifRowsMap, actorProfileCache, groupedNotifMap, chatAppearance?.bubbleColor, goldNameplateIds]);
 
   // Single source of truth for the bottom offset.
   // The floatingInputContainer is position:absolute so it cannot rely on
