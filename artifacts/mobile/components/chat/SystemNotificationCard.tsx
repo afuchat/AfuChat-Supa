@@ -516,8 +516,8 @@ function LiveBadge() {
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.2, duration: 600, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 600, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1.2, duration: 600, useNativeDriver: Platform.OS !== "web" }),
+        Animated.timing(pulse, { toValue: 1, duration: 600, useNativeDriver: Platform.OS !== "web" }),
       ])
     ).start();
   }, []);
@@ -586,8 +586,8 @@ export function GroupedSystemNotificationCard({ data, sentAt }: { data: GroupedS
   const slideAnim = useRef(new Animated.Value(8)).current;
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 280, delay: 40, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 280, delay: 40, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 280, delay: 40, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 280, delay: 40, useNativeDriver: Platform.OS !== "web" }),
     ]).start();
   }, []);
 
@@ -727,8 +727,8 @@ export function SystemNotificationCard({ data, sentAt }: Props) {
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 280, delay: 40, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 280, delay: 40, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 280, delay: 40, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 280, delay: 40, useNativeDriver: Platform.OS !== "web" }),
     ]).start();
   }, []);
 

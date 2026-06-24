@@ -264,22 +264,22 @@ function SwipeCard({
   const panResponder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => isTop,
     onMoveShouldSetPanResponder: (_, g) => isTop && (Math.abs(g.dx) > 4 || Math.abs(g.dy) > 4),
-    onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], { useNativeDriver: true }),
+    onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], { useNativeDriver: Platform.OS !== "web" }),
     onPanResponderRelease: (_, g) => {
       if (g.dy < -SWIPE_THRESHOLD) flyOut("up");
       else if (g.dx > SWIPE_THRESHOLD) flyOut("right");
       else if (g.dx < -SWIPE_THRESHOLD) flyOut("left");
       else if (Math.abs(g.dx) < 8 && Math.abs(g.dy) < 8) {
         onTap();
-        Animated.spring(pan, { toValue: { x: 0, y: 0 }, useNativeDriver: true }).start();
-      } else Animated.spring(pan, { toValue: { x: 0, y: 0 }, useNativeDriver: true }).start();
+        Animated.spring(pan, { toValue: { x: 0, y: 0 }, useNativeDriver: Platform.OS !== "web" }).start();
+      } else Animated.spring(pan, { toValue: { x: 0, y: 0 }, useNativeDriver: Platform.OS !== "web" }).start();
     },
   }), [isTop]);
 
   function flyOut(dir: "left" | "right" | "up") {
     Haptics.impactAsync();
     const toVal = dir === "right" ? { x: SW * 1.5, y: 0 } : dir === "left" ? { x: -SW * 1.5, y: 0 } : { x: 0, y: -SH * 1.5 };
-    Animated.timing(pan, { toValue: toVal, duration: SWIPE_OUT_DURATION, useNativeDriver: true }).start(() => {
+    Animated.timing(pan, { toValue: toVal, duration: SWIPE_OUT_DURATION, useNativeDriver: Platform.OS !== "web" }).start(() => {
       pan.setValue({ x: 0, y: 0 });
       if (dir === "right") onSwipeRight();
       else if (dir === "left") onSwipeLeft();
@@ -376,7 +376,7 @@ function MatchModal({ match, onClose, onMessage }: { match: MatchRecord; onClose
   const age = calcAge(match.other.date_of_birth);
 
   useEffect(() => {
-    Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, tension: 80, friction: 6 }).start();
+    Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: Platform.OS !== "web", tension: 80, friction: 6 }).start();
   }, []);
 
   return (

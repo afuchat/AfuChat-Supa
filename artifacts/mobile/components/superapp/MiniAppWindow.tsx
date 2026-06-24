@@ -3,6 +3,7 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -138,12 +139,12 @@ export default function MiniAppWindow({ app, onClose, onMinimize, children }: Pr
           damping: 26,
           stiffness: 260,
           mass: 0.9,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== "web",
         }),
         Animated.timing(backdropOpacity, {
           toValue: 0.55,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== "web",
         }),
       ]).start();
     } else {
@@ -152,12 +153,12 @@ export default function MiniAppWindow({ app, onClose, onMinimize, children }: Pr
           toValue: screenHeight,
           duration: 260,
           easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== "web",
         }),
         Animated.timing(backdropOpacity, {
           toValue: 0,
           duration: 220,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== "web",
         }),
       ]).start(({ finished }) => {
         if (finished) setShowing(false);

@@ -229,7 +229,7 @@ function ContactPickerSheet({ visible, gradient, eventName, onClose, onSelect }:
     if (visible) {
       setSearch("");
       setLoading(true);
-      Animated.spring(slideAnim, { toValue: 0, tension: 65, friction: 12, useNativeDriver: true }).start();
+      Animated.spring(slideAnim, { toValue: 0, tension: 65, friction: 12, useNativeDriver: Platform.OS !== "web" }).start();
 
       getLocalContacts().then((local) => {
         if (local.length > 0) {
@@ -268,7 +268,7 @@ function ContactPickerSheet({ visible, gradient, eventName, onClose, onSelect }:
         setLoading(false);
       }
     } else {
-      Animated.timing(slideAnim, { toValue: SCREEN_H, duration: 220, useNativeDriver: true }).start();
+      Animated.timing(slideAnim, { toValue: SCREEN_H, duration: 220, useNativeDriver: Platform.OS !== "web" }).start();
     }
   }, [visible]);
 
@@ -400,15 +400,15 @@ export function HomeBanner() {
 
   const animateIn = useCallback(() => {
     Animated.parallel([
-      Animated.spring(slideAnim,   { toValue: 0,   tension: 120, friction: 14, useNativeDriver: true }),
-      Animated.timing(opacityAnim, { toValue: 1,   duration: 220, useNativeDriver: true }),
+      Animated.spring(slideAnim,   { toValue: 0,   tension: 120, friction: 14, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(opacityAnim, { toValue: 1,   duration: 220, useNativeDriver: Platform.OS !== "web" }),
     ]).start();
   }, [slideAnim, opacityAnim]);
 
   const animateOut = useCallback((cb?: () => void) => {
     Animated.parallel([
-      Animated.timing(slideAnim,   { toValue: -72, duration: 220, useNativeDriver: true }),
-      Animated.timing(opacityAnim, { toValue: 0,   duration: 180, useNativeDriver: true }),
+      Animated.timing(slideAnim,   { toValue: -72, duration: 220, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(opacityAnim, { toValue: 0,   duration: 180, useNativeDriver: Platform.OS !== "web" }),
     ]).start(cb);
   }, [slideAnim, opacityAnim]);
 

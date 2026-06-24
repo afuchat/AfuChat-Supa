@@ -531,7 +531,7 @@ const VideoItem = React.memo(function VideoItem({
     const targetH = commentsOpen ? (squeezedH || screenH * 0.38) : (screenH - BOTTOM_BAR_H);
     Animated.parallel([
       Animated.timing(videoAreaAnim, { toValue: targetH, duration: 320, useNativeDriver: false }),
-      Animated.timing(overlayOpacity, { toValue: commentsOpen ? 0 : 1, duration: commentsOpen ? 180 : 300, useNativeDriver: true }),
+      Animated.timing(overlayOpacity, { toValue: commentsOpen ? 0 : 1, duration: commentsOpen ? 180 : 300, useNativeDriver: USE_NATIVE }),
     ]).start();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [commentsOpen]);

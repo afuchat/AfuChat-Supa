@@ -117,8 +117,8 @@ function PulsingDot({ color, size = 10 }: { color: string; size?: number }) {
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(anim, { toValue: 1.5, duration: 800, useNativeDriver: true }),
-        Animated.timing(anim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 1.5, duration: 800, useNativeDriver: Platform.OS !== "web" }),
+        Animated.timing(anim, { toValue: 1, duration: 800, useNativeDriver: Platform.OS !== "web" }),
       ])
     );
     loop.start();
@@ -152,7 +152,7 @@ function RadarAnimation({ color }: { color: string }) {
       Animated.loop(
         Animated.sequence([
           Animated.delay(i * 500),
-          Animated.timing(r, { toValue: 1, duration: 2200, useNativeDriver: true }),
+          Animated.timing(r, { toValue: 1, duration: 2200, useNativeDriver: Platform.OS !== "web" }),
         ])
       )
     );
@@ -1034,13 +1034,13 @@ const UserRow = React.memo(function UserRow({
         toValue: 0,
         duration: 320,
         delay,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== "web",
       }),
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 320,
         delay,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== "web",
       }),
     ]).start();
   }, []);

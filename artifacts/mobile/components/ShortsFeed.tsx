@@ -658,8 +658,8 @@ function OfflineEndPanel({
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(slideY, { toValue: 0, tension: 70, friction: 13, useNativeDriver: true }),
-      Animated.timing(bgOpacity, { toValue: 1, duration: 280, useNativeDriver: true }),
+      Animated.spring(slideY, { toValue: 0, tension: 70, friction: 13, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(bgOpacity, { toValue: 1, duration: 280, useNativeDriver: Platform.OS !== "web" }),
     ]).start();
   }, []);
 
@@ -669,16 +669,16 @@ function OfflineEndPanel({
       return;
     }
     Animated.sequence([
-      Animated.timing(numScale, { toValue: 1.4, duration: 130, useNativeDriver: true }),
-      Animated.spring(numScale, { toValue: 1, tension: 220, friction: 9, useNativeDriver: true }),
+      Animated.timing(numScale, { toValue: 1.4, duration: 130, useNativeDriver: Platform.OS !== "web" }),
+      Animated.spring(numScale, { toValue: 1, tension: 220, friction: 9, useNativeDriver: Platform.OS !== "web" }),
     ]).start();
     const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => clearTimeout(t);
   }, [countdown]);
 
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.78)", opacity: bgOpacity }]} pointerEvents="none" />
+    <View style={[StyleSheet.absoluteFill, { pointerEvents: "box-none" }]}>
+      <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.78)", opacity: bgOpacity, pointerEvents: "none" }]} />
       <Animated.View style={[endStyles.panel, { transform: [{ translateY: slideY }] }]}>
         {/* Dismiss */}
         <Pressable onPress={onDismiss} style={endStyles.dismissBtn} hitSlop={10}>

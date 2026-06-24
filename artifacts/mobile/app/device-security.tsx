@@ -101,11 +101,11 @@ function PinKeypad({
   function shake() {
     Vibration.vibrate(200);
     Animated.sequence([
-      Animated.timing(shakeX, { toValue: -10, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue:  10, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue:  -8, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue:   8, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue:   0, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeX, { toValue: -10, duration: 50, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(shakeX, { toValue:  10, duration: 50, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(shakeX, { toValue:  -8, duration: 50, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(shakeX, { toValue:   8, duration: 50, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(shakeX, { toValue:   0, duration: 50, useNativeDriver: Platform.OS !== "web" }),
     ]).start();
     setError(true);
     setTimeout(() => { setError(false); setDigits([]); }, 800);

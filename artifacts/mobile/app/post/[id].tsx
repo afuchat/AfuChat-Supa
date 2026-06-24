@@ -88,8 +88,8 @@ function WaveformBars({ heights, progress, accent, animating }: { heights: numbe
       loopRef.current = Animated.loop(
         Animated.stagger(40, pulseAnims.map((a) =>
           Animated.sequence([
-            Animated.timing(a, { toValue: 1.5 + Math.random() * 0.5, duration: 200 + Math.random() * 200, useNativeDriver: true }),
-            Animated.timing(a, { toValue: 1, duration: 200, useNativeDriver: true }),
+            Animated.timing(a, { toValue: 1.5 + Math.random() * 0.5, duration: 200 + Math.random() * 200, useNativeDriver: Platform.OS !== "web" }),
+            Animated.timing(a, { toValue: 1, duration: 200, useNativeDriver: Platform.OS !== "web" }),
           ]),
         )),
       );
@@ -187,8 +187,8 @@ function RecordingBar({ elapsed, onStop, accent, colors }: { elapsed: number; on
 
   useEffect(() => {
     const loop = Animated.loop(Animated.sequence([
-      Animated.timing(pulseAnim, { toValue: 1.4, duration: 600, useNativeDriver: true }),
-      Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.timing(pulseAnim, { toValue: 1.4, duration: 600, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: Platform.OS !== "web" }),
     ]));
     loop.start();
     return () => loop.stop();

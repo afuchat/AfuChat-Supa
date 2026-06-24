@@ -395,7 +395,7 @@ export default function ViewStoryScreen() {
     setPaused(true);
     setShowViewers(true);
     setLoadingViewers(true);
-    Animated.spring(slideAnim, { toValue: 1, useNativeDriver: true, friction: 10 }).start();
+    Animated.spring(slideAnim, { toValue: 1, useNativeDriver: Platform.OS !== "web", friction: 10 }).start();
 
     const { data } = await supabase
       .from("story_views")
@@ -417,7 +417,7 @@ export default function ViewStoryScreen() {
   }, [story, isOwner, slideAnim]);
 
   const closeViewers = useCallback(() => {
-    Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, friction: 10 }).start(() => {
+    Animated.spring(slideAnim, { toValue: 0, useNativeDriver: Platform.OS !== "web", friction: 10 }).start(() => {
       setShowViewers(false);
       setPaused(false);
     });

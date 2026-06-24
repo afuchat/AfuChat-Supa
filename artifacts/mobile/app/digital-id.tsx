@@ -187,7 +187,7 @@ export default function DigitalIdScreen() {
       toValue: next,
       duration: 600,
       easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== "web",
     }).start();
     setShowBack(!showBack);
   }

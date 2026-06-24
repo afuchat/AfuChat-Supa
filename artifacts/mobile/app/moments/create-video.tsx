@@ -246,8 +246,8 @@ function FilterDot({ filter, selected, onPress, previewColor }: {
   const scale = useRef(new Animated.Value(1)).current;
   function press() {
     Animated.sequence([
-      Animated.spring(scale, { toValue: 0.86, tension: 300, friction: 8, useNativeDriver: true }),
-      Animated.spring(scale, { toValue: 1, tension: 200, friction: 8, useNativeDriver: true }),
+      Animated.spring(scale, { toValue: 0.86, tension: 300, friction: 8, useNativeDriver: Platform.OS !== "web" }),
+      Animated.spring(scale, { toValue: 1, tension: 200, friction: 8, useNativeDriver: Platform.OS !== "web" }),
     ]).start();
     void Haptics.selectionAsync();
     onPress();
@@ -288,11 +288,11 @@ function RecordButton({
 
   useEffect(() => {
     if (isRecording) {
-      Animated.spring(scale, { toValue: 1.14, tension: 160, friction: 8, useNativeDriver: true }).start();
-      Animated.spring(innerScale, { toValue: 0.52, tension: 160, friction: 8, useNativeDriver: true }).start();
+      Animated.spring(scale, { toValue: 1.14, tension: 160, friction: 8, useNativeDriver: Platform.OS !== "web" }).start();
+      Animated.spring(innerScale, { toValue: 0.52, tension: 160, friction: 8, useNativeDriver: Platform.OS !== "web" }).start();
     } else {
-      Animated.spring(scale, { toValue: 1, tension: 160, friction: 8, useNativeDriver: true }).start();
-      Animated.spring(innerScale, { toValue: 1, tension: 160, friction: 8, useNativeDriver: true }).start();
+      Animated.spring(scale, { toValue: 1, tension: 160, friction: 8, useNativeDriver: Platform.OS !== "web" }).start();
+      Animated.spring(innerScale, { toValue: 1, tension: 160, friction: 8, useNativeDriver: Platform.OS !== "web" }).start();
     }
   }, [isRecording]);
 
@@ -789,8 +789,8 @@ function CountdownNumber({ n }: { n: number }) {
   useEffect(() => {
     scale.setValue(2); op.setValue(0);
     Animated.parallel([
-      Animated.spring(scale, { toValue: 1, tension: 120, friction: 8, useNativeDriver: true }),
-      Animated.timing(op, { toValue: 1, duration: 200, useNativeDriver: true }),
+      Animated.spring(scale, { toValue: 1, tension: 120, friction: 8, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(op, { toValue: 1, duration: 200, useNativeDriver: Platform.OS !== "web" }),
     ]).start();
   }, [n]);
   return (

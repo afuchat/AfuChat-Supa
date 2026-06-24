@@ -128,8 +128,8 @@ export default function CreatePostScreen() {
     if (!user) return;
 
     Animated.sequence([
-      Animated.timing(postBtnScale, { toValue: 0.92, duration: 80, useNativeDriver: true }),
-      Animated.spring(postBtnScale, { toValue: 1, tension: 200, friction: 10, useNativeDriver: true }),
+      Animated.timing(postBtnScale, { toValue: 0.92, duration: 80, useNativeDriver: Platform.OS !== "web" }),
+      Animated.spring(postBtnScale, { toValue: 1, tension: 200, friction: 10, useNativeDriver: Platform.OS !== "web" }),
     ]).start();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 

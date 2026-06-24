@@ -172,8 +172,8 @@ function WaveformBars({
           40,
           pulseAnims.map((a) =>
             Animated.sequence([
-              Animated.timing(a, { toValue: 1.5 + Math.random() * 0.5, duration: 200 + Math.random() * 200, useNativeDriver: true }),
-              Animated.timing(a, { toValue: 1, duration: 200, useNativeDriver: true }),
+              Animated.timing(a, { toValue: 1.5 + Math.random() * 0.5, duration: 200 + Math.random() * 200, useNativeDriver: Platform.OS !== "web" }),
+              Animated.timing(a, { toValue: 1, duration: 200, useNativeDriver: Platform.OS !== "web" }),
             ]),
           ),
         ),
@@ -462,8 +462,8 @@ function RecordingBar({
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.4, duration: 600, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1.4, duration: 600, useNativeDriver: Platform.OS !== "web" }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: Platform.OS !== "web" }),
       ]),
     );
     loop.start();
@@ -583,14 +583,14 @@ export function VideoCommentsSheet({
     if (visible) {
       isFullSheetRef.current = false;
       animSheetH.setValue(peekSHRef.current || 400);
-      Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true, tension: 60, friction: 11 }).start();
+      Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: Platform.OS !== "web", tension: 60, friction: 11 }).start();
     } else {
       sheetTranslateY.setValue(1000);
     }
   }, [visible]);
 
   function dismissSheet() {
-    Animated.timing(sheetTranslateY, { toValue: 1000, duration: 220, useNativeDriver: true }).start(() => onClose());
+    Animated.timing(sheetTranslateY, { toValue: 1000, duration: 220, useNativeDriver: Platform.OS !== "web" }).start(() => onClose());
   }
 
   const sheetPan = useRef(PanResponder.create({

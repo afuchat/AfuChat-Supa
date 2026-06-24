@@ -80,13 +80,13 @@ export function SplashScreenView({ ready, onDone }: Props) {
           toValue: 0,
           duration: 380,
           delay: 120,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== "web",
         }),
         Animated.timing(scale, {
           toValue: 1.08,
           duration: 380,
           delay: 120,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== "web",
         }),
       ]).start(() => onDoneRef.current());
     }

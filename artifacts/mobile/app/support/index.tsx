@@ -129,11 +129,11 @@ export default function SupportCenter() {
 
   useEffect(() => {
     if (submitted) {
-      Animated.spring(successAnim, { toValue: 1, useNativeDriver: true, tension: 60 }).start();
+      Animated.spring(successAnim, { toValue: 1, useNativeDriver: Platform.OS !== "web", tension: 60 }).start();
       const pulse = Animated.loop(
         Animated.sequence([
-          Animated.timing(aiPulse, { toValue: 1.08, duration: 900, useNativeDriver: true }),
-          Animated.timing(aiPulse, { toValue: 1, duration: 900, useNativeDriver: true }),
+          Animated.timing(aiPulse, { toValue: 1.08, duration: 900, useNativeDriver: Platform.OS !== "web" }),
+          Animated.timing(aiPulse, { toValue: 1, duration: 900, useNativeDriver: Platform.OS !== "web" }),
         ])
       );
       pulse.start();

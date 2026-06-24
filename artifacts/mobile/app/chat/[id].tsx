@@ -298,7 +298,7 @@ function PremiumBubbleShimmer() {
   useEffect(() => {
     const anim = Animated.loop(
       Animated.sequence([
-        Animated.timing(shimmer, { toValue: 1, duration: 1400, useNativeDriver: true }),
+        Animated.timing(shimmer, { toValue: 1, duration: 1400, useNativeDriver: Platform.OS !== "web" }),
         Animated.delay(3800),
       ])
     );
@@ -391,7 +391,7 @@ function SmartReplyBar({ messages, myId, input, onSend, colors }: {
   const show = replies.length > 0 && !input.trim();
 
   useEffect(() => {
-    Animated.timing(fadeAnim, { toValue: show ? 1 : 0, duration: 180, useNativeDriver: true }).start();
+    Animated.timing(fadeAnim, { toValue: show ? 1 : 0, duration: 180, useNativeDriver: Platform.OS !== "web" }).start();
   }, [show]);
 
   if (!lastOtherMsg) return null;
@@ -443,8 +443,8 @@ function TypingBubble({ names, colors }: { names: string[]; colors: any }) {
       Animated.loop(
         Animated.sequence([
           Animated.delay(delay),
-          Animated.timing(dot, { toValue: -5, duration: 300, useNativeDriver: true }),
-          Animated.timing(dot, { toValue: 0, duration: 300, useNativeDriver: true }),
+          Animated.timing(dot, { toValue: -5, duration: 300, useNativeDriver: Platform.OS !== "web" }),
+          Animated.timing(dot, { toValue: 0, duration: 300, useNativeDriver: Platform.OS !== "web" }),
           Animated.delay(600),
         ])
       );
@@ -489,9 +489,9 @@ function BottomSheet({ visible, onClose, children }: { visible: boolean; onClose
 
   useEffect(() => {
     if (visible) {
-      Animated.spring(translateY, { toValue: 0, useNativeDriver: true, damping: 22, stiffness: 260 }).start();
+      Animated.spring(translateY, { toValue: 0, useNativeDriver: Platform.OS !== "web", damping: 22, stiffness: 260 }).start();
     } else {
-      Animated.timing(translateY, { toValue: screenHeight, duration: 220, useNativeDriver: true }).start();
+      Animated.timing(translateY, { toValue: screenHeight, duration: 220, useNativeDriver: Platform.OS !== "web" }).start();
     }
   }, [visible, screenHeight]);
 
@@ -501,9 +501,9 @@ function BottomSheet({ visible, onClose, children }: { visible: boolean; onClose
       onPanResponderMove: (_, g) => { if (g.dy > 0) translateY.setValue(g.dy); },
       onPanResponderRelease: (_, g) => {
         if (g.dy > 80 || g.vy > 0.4) {
-          Animated.timing(translateY, { toValue: screenHeight, duration: 200, useNativeDriver: true }).start(() => onClose());
+          Animated.timing(translateY, { toValue: screenHeight, duration: 200, useNativeDriver: Platform.OS !== "web" }).start(() => onClose());
         } else {
-          Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start();
+          Animated.spring(translateY, { toValue: 0, useNativeDriver: Platform.OS !== "web" }).start();
         }
       },
     })
@@ -977,12 +977,12 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
       },
       onPanResponderRelease: (_, gs) => {
         const triggered = isMe ? gs.dx <= -SWIPE_THRESHOLD : gs.dx >= SWIPE_THRESHOLD;
-        Animated.spring(swipeX, { toValue: 0, tension: 120, friction: 14, useNativeDriver: true }).start();
+        Animated.spring(swipeX, { toValue: 0, tension: 120, friction: 14, useNativeDriver: Platform.OS !== "web" }).start();
         if (triggered) onReply(msg);
         swipeTriggered.current = false;
       },
       onPanResponderTerminate: () => {
-        Animated.spring(swipeX, { toValue: 0, tension: 120, friction: 14, useNativeDriver: true }).start();
+        Animated.spring(swipeX, { toValue: 0, tension: 120, friction: 14, useNativeDriver: Platform.OS !== "web" }).start();
         swipeTriggered.current = false;
       },
     })
@@ -1084,7 +1084,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
 
   const fadeIn = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.timing(fadeIn, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+    Animated.timing(fadeIn, { toValue: 1, duration: 180, useNativeDriver: Platform.OS !== "web" }).start();
   }, []);
 
   if (isRedEnvelope) {
@@ -1901,7 +1901,7 @@ function ChatScreen() {
       notifPillAnim.setValue(80);
       Animated.spring(notifPillAnim, {
         toValue: 0,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== "web",
         speed: 18,
         bounciness: 5,
       }).start();
@@ -5738,7 +5738,7 @@ STRICT RULES:
       Animated.timing(scrollBtnOpacity, {
         toValue: shouldShow ? 1 : 0,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== "web",
       }).start();
       if (!shouldShow) setNewMsgCount(0);
     }

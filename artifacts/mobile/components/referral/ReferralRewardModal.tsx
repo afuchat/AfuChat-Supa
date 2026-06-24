@@ -53,19 +53,19 @@ function Star({ x, delay, color }: StarProps) {
       Animated.sequence([
         Animated.delay(delay),
         Animated.parallel([
-          Animated.timing(translateY, { toValue: -120, duration: 2600, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+          Animated.timing(translateY, { toValue: -120, duration: 2600, easing: Easing.out(Easing.quad), useNativeDriver: Platform.OS !== "web" }),
           Animated.sequence([
-            Animated.timing(opacity,    { toValue: 1, duration: 400, useNativeDriver: true }),
-            Animated.timing(opacity,    { toValue: 0, duration: 1400, delay: 800, useNativeDriver: true }),
+            Animated.timing(opacity,    { toValue: 1, duration: 400, useNativeDriver: Platform.OS !== "web" }),
+            Animated.timing(opacity,    { toValue: 0, duration: 1400, delay: 800, useNativeDriver: Platform.OS !== "web" }),
           ]),
           Animated.sequence([
-            Animated.timing(scale, { toValue: 1, duration: 500, useNativeDriver: true }),
-            Animated.timing(scale, { toValue: 0.3, duration: 1000, delay: 600, useNativeDriver: true }),
+            Animated.timing(scale, { toValue: 1, duration: 500, useNativeDriver: Platform.OS !== "web" }),
+            Animated.timing(scale, { toValue: 0.3, duration: 1000, delay: 600, useNativeDriver: Platform.OS !== "web" }),
           ]),
         ]),
         Animated.parallel([
-          Animated.timing(translateY, { toValue: 60, duration: 0, useNativeDriver: true }),
-          Animated.timing(opacity, { toValue: 0, duration: 0, useNativeDriver: true }),
+          Animated.timing(translateY, { toValue: 60, duration: 0, useNativeDriver: Platform.OS !== "web" }),
+          Animated.timing(opacity, { toValue: 0, duration: 0, useNativeDriver: Platform.OS !== "web" }),
         ]),
       ])
     );
@@ -121,8 +121,8 @@ export function ReferralRewardModal({
 
     // Entrance
     Animated.parallel([
-      Animated.spring(cardScale,   { toValue: 1, damping: 13, stiffness: 110, useNativeDriver: true }),
-      Animated.timing(cardOpacity, { toValue: 1, duration: 260, useNativeDriver: true }),
+      Animated.spring(cardScale,   { toValue: 1, damping: 13, stiffness: 110, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(cardOpacity, { toValue: 1, duration: 260, useNativeDriver: Platform.OS !== "web" }),
     ]).start();
 
     // Crown pulse — starts after card is in
@@ -130,12 +130,12 @@ export function ReferralRewardModal({
       Animated.loop(
         Animated.sequence([
           Animated.parallel([
-            Animated.timing(crownScale, { toValue: 1.14, duration: 800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-            Animated.timing(crownGlow,  { toValue: 1,    duration: 800, useNativeDriver: true }),
+            Animated.timing(crownScale, { toValue: 1.14, duration: 800, easing: Easing.inOut(Easing.sin), useNativeDriver: Platform.OS !== "web" }),
+            Animated.timing(crownGlow,  { toValue: 1,    duration: 800, useNativeDriver: Platform.OS !== "web" }),
           ]),
           Animated.parallel([
-            Animated.timing(crownScale, { toValue: 1,    duration: 800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-            Animated.timing(crownGlow,  { toValue: 0,    duration: 800, useNativeDriver: true }),
+            Animated.timing(crownScale, { toValue: 1,    duration: 800, easing: Easing.inOut(Easing.sin), useNativeDriver: Platform.OS !== "web" }),
+            Animated.timing(crownGlow,  { toValue: 0,    duration: 800, useNativeDriver: Platform.OS !== "web" }),
           ]),
         ])
       ).start();
@@ -144,8 +144,8 @@ export function ReferralRewardModal({
     // Badge slides up
     setTimeout(() => {
       Animated.parallel([
-        Animated.spring(badgeY,    { toValue: 0, damping: 11, stiffness: 100, useNativeDriver: true }),
-        Animated.timing(badgeOpac, { toValue: 1, duration: 350, useNativeDriver: true }),
+        Animated.spring(badgeY,    { toValue: 0, damping: 11, stiffness: 100, useNativeDriver: Platform.OS !== "web" }),
+        Animated.timing(badgeOpac, { toValue: 1, duration: 350, useNativeDriver: Platform.OS !== "web" }),
       ]).start();
     }, 500);
   }, [visible]);

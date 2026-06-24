@@ -159,16 +159,16 @@ function Gift3DCard({
   const showTrend = (rarity === "rare" || rarity === "epic" || rarity === "legendary") && priceChange !== 0;
 
   function handlePressIn() {
-    Animated.spring(scale, { toValue: 0.93, useNativeDriver: true, tension: 180, friction: 8 }).start();
+    Animated.spring(scale, { toValue: 0.93, useNativeDriver: Platform.OS !== "web", tension: 180, friction: 8 }).start();
   }
   function handlePressOut() {
-    Animated.spring(scale, { toValue: selected ? 1.06 : 1, useNativeDriver: true, tension: 180, friction: 8 }).start();
+    Animated.spring(scale, { toValue: selected ? 1.06 : 1, useNativeDriver: Platform.OS !== "web", tension: 180, friction: 8 }).start();
   }
 
   useEffect(() => {
     Animated.spring(scale, {
       toValue: selected ? 1.06 : 1,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== "web",
       tension: 180,
       friction: 8,
     }).start();
@@ -226,14 +226,14 @@ export default function GiftPickerSheet({
 
   useEffect(() => {
     if (visible) {
-      Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true, tension: 60, friction: 11 }).start();
+      Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: Platform.OS !== "web", tension: 60, friction: 11 }).start();
     } else {
       sheetTranslateY.setValue(1000);
     }
   }, [visible]);
 
   function dismissSheet() {
-    Animated.timing(sheetTranslateY, { toValue: 1000, duration: 220, useNativeDriver: true }).start(() => onClose());
+    Animated.timing(sheetTranslateY, { toValue: 1000, duration: 220, useNativeDriver: Platform.OS !== "web" }).start(() => onClose());
   }
 
   const sheetPan = useRef(PanResponder.create({
@@ -242,9 +242,9 @@ export default function GiftPickerSheet({
     onPanResponderMove: (_, g) => { if (g.dy > 0) sheetTranslateY.setValue(g.dy); },
     onPanResponderRelease: (_, g) => {
       if (g.dy > 80 || g.vy > 0.5) {
-        Animated.timing(sheetTranslateY, { toValue: 1000, duration: 220, useNativeDriver: true }).start(() => onClose());
+        Animated.timing(sheetTranslateY, { toValue: 1000, duration: 220, useNativeDriver: Platform.OS !== "web" }).start(() => onClose());
       } else {
-        Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true, tension: 80, friction: 12 }).start();
+        Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: Platform.OS !== "web", tension: 80, friction: 12 }).start();
       }
     },
   })).current;

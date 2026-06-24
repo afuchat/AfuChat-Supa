@@ -436,7 +436,7 @@ function DetailModal({ achievement, onClose }: { achievement: Achievement | null
   const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(opacity, { toValue: achievement ? 1 : 0, duration: 180, useNativeDriver: true }).start();
+    Animated.timing(opacity, { toValue: achievement ? 1 : 0, duration: 180, useNativeDriver: Platform.OS !== "web" }).start();
   }, [achievement]);
 
   if (!achievement) return null;

@@ -161,11 +161,11 @@ function PostImages({
     heartOpacity.setValue(0);
     heartScale.setValue(0.3);
     Animated.parallel([
-      Animated.timing(heartOpacity, { toValue: 1, duration: 120, useNativeDriver: true }),
-      Animated.spring(heartScale,   { toValue: 1, speed: 50, bounciness: 14, useNativeDriver: true }),
+      Animated.timing(heartOpacity, { toValue: 1, duration: 120, useNativeDriver: Platform.OS !== "web" }),
+      Animated.spring(heartScale,   { toValue: 1, speed: 50, bounciness: 14, useNativeDriver: Platform.OS !== "web" }),
     ]).start(() => {
       setTimeout(() => {
-        Animated.timing(heartOpacity, { toValue: 0, duration: 380, useNativeDriver: true }).start();
+        Animated.timing(heartOpacity, { toValue: 0, duration: 380, useNativeDriver: Platform.OS !== "web" }).start();
       }, 500);
     });
     onDoubleTap();
@@ -256,8 +256,8 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
   const animateHeart = useCallback(() => {
     heartScale.setValue(1);
     Animated.sequence([
-      Animated.spring(heartScale, { toValue: 1.4, useNativeDriver: true, speed: 50, bounciness: 14 }),
-      Animated.spring(heartScale, { toValue: 1,   useNativeDriver: true, speed: 22, bounciness: 4  }),
+      Animated.spring(heartScale, { toValue: 1.4, useNativeDriver: Platform.OS !== "web", speed: 50, bounciness: 14 }),
+      Animated.spring(heartScale, { toValue: 1,   useNativeDriver: Platform.OS !== "web", speed: 22, bounciness: 4  }),
     ]).start();
   }, [heartScale]);
 

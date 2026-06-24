@@ -137,10 +137,9 @@ export default function OfflineVideoToast() {
 
   return (
     <Animated.View
-      pointerEvents="box-none"
       style={[
         st.wrapper,
-        { top, opacity, transform: [{ translateY }, { scale }] },
+        { top, opacity, transform: [{ translateY }, { scale }], pointerEvents: "box-none" },
       ]}
     >
       <View style={st.card}>
