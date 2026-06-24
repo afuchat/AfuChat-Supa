@@ -1,9 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Animated,
   Dimensions,
-  Easing,
   Platform,
   RefreshControl,
   ScrollView,
@@ -106,10 +104,6 @@ export default function PrestigeScreen() {
   const [activeTab,        setActiveTab]         = useState<Tab>("overview");
   const [profileStats,     setProfileStats]      = useState<{ posts: number; messages: number; friends: number; stories: number; reactions: number } | null>(null);
 
-  const progressAnim = useRef(new Animated.Value(0)).current;
-  const pulseAnim    = useRef(new Animated.Value(1)).current;
-  const glowAnim     = useRef(new Animated.Value(0)).current;
-
   const acoin    = profile?.acoin || 0;
   const tier     = getPrestigeTier(acoin);
   const nextTier = getNextPrestigeTier(acoin);
@@ -118,22 +112,6 @@ export default function PrestigeScreen() {
   const ownedIds    = new Set(purchases.map((p) => p.good_id));
   const equippedIds = new Set(purchases.filter((p) => p.equipped).map((p) => p.good_id));
 
-  useEffect(() => {
-    Animated.timing(progressAnim, {
-      toValue: progress, duration: 1400, delay: 300,
-      easing: Easing.out(Easing.cubic), useNativeDriver: false,
-    }).start();
-
-    Animated.loop(Animated.sequence([
-      Animated.timing(pulseAnim, { toValue: 1.07, duration: 2000, useNativeDriver: false, easing: Easing.inOut(Easing.ease) }),
-      Animated.timing(pulseAnim, { toValue: 1.0,  duration: 2000, useNativeDriver: false, easing: Easing.inOut(Easing.ease) }),
-    ])).start();
-
-    Animated.loop(Animated.sequence([
-      Animated.timing(glowAnim, { toValue: 1, duration: 2400, useNativeDriver: false, easing: Easing.inOut(Easing.ease) }),
-      Animated.timing(glowAnim, { toValue: 0, duration: 2400, useNativeDriver: false, easing: Easing.inOut(Easing.ease) }),
-    ])).start();
-  }, []);
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -240,7 +218,6 @@ export default function PrestigeScreen() {
     }
   }
 
-  const glowOpacity = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 0.85] });
 
 
   const TABS: { id: Tab; label: string; icon: string }[] = [
@@ -277,14 +254,13 @@ export default function PrestigeScreen() {
 
           {/* Avatar + tier ring */}
           <View style={s.avatarWrap}>
-            <Animated.View
+            <View
               style={[
                 s.tierRing,
                 {
                   borderColor: tier.color,
                   shadowColor: tier.glowColor,
-                  shadowOpacity: glowOpacity as any,
-                  transform: [{ scale: pulseAnim }],
+                  shadowOpacity: 0.6,
                 },
               ]}
             />
@@ -328,10 +304,10 @@ export default function PrestigeScreen() {
                 <Text style={s.progressTo}>{nextTier.emoji} {nextTier.label}</Text>
               </View>
               <View style={s.progressTrack}>
-                <Animated.View
+                <View
                   style={[
                     s.progressFill,
-                    { width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] }), backgroundColor: tier.color },
+                    { width: `${Math.round(progress * 100)}%` as any, backgroundColor: tier.color },
                   ]}
                 />
               </View>

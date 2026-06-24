@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from "react";
-import { Animated, View } from "react-native";
+import React from "react";
+import { View } from "react-native";
 import { useAppAccent } from "@/context/AppAccentContext";
 
 let _svgMod: any = null;
@@ -43,21 +43,6 @@ export function StoryRing({ size, storyCount, seenCount, children }: Props) {
   const center = outerSize / 2;
 
   const hasUnseen = storyCount > seenCount;
-  const spin = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (hasUnseen) {
-      const anim = Animated.loop(
-        Animated.timing(spin, { toValue: 1, duration: 6000, useNativeDriver: true })
-      );
-      anim.start();
-      return () => anim.stop();
-    } else {
-      spin.setValue(0);
-    }
-  }, [hasUnseen]);
-
-  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] });
 
   if (storyCount === 0) {
     return <View style={{ padding: strokeWidth + 2 }}>{children}</View>;
@@ -106,18 +91,11 @@ export function StoryRing({ size, storyCount, seenCount, children }: Props) {
 
   return (
     <View style={{ width: outerSize, height: outerSize, alignItems: "center", justifyContent: "center" }}>
-      <Animated.View
-        style={{
-          position: "absolute",
-          width: outerSize,
-          height: outerSize,
-          transform: hasUnseen ? [{ rotate }] : undefined,
-        }}
-      >
+      <View style={{ position: "absolute", width: outerSize, height: outerSize }}>
         <SvgRoot width={outerSize} height={outerSize}>
           {segments}
         </SvgRoot>
-      </Animated.View>
+      </View>
       {children}
     </View>
   );

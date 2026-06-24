@@ -1,6 +1,5 @@
-import React, { useEffect, useRef } from "react";
-import { Animated, Platform, View } from "react-native";
-const ND = Platform.OS !== "web";
+import React from "react";
+import { Platform, View } from "react-native";
 
 let _svgMod: any = null;
 function getSvgMod() {
@@ -55,25 +54,6 @@ export function PremiumRing({ size, children, square, ringType = 'premium' }: Pr
   const ringColors = RING_COLORS[ringType];
   const primaryColor = ringColors.primary;
   const secondaryColor = ringType === 'premium' ? accent : ringColors.secondary;
-  const spin = useRef(new Animated.Value(0)).current;
-  const pulse = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    const spinAnim = Animated.loop(
-      Animated.timing(spin, { toValue: 1, duration: 3200, useNativeDriver: ND })
-    );
-    const pulseAnim = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.06, duration: 1200, useNativeDriver: ND }),
-        Animated.timing(pulse, { toValue: 1, duration: 1200, useNativeDriver: ND }),
-      ])
-    );
-    spinAnim.start();
-    pulseAnim.start();
-    return () => { spinAnim.stop(); pulseAnim.stop(); };
-  }, []);
-
-  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] });
 
   const ring = 2.5;
   const gap = 2;
@@ -83,7 +63,7 @@ export function PremiumRing({ size, children, square, ringType = 'premium' }: Pr
 
   if (!hasSvg() || Platform.OS === "web") {
     return (
-      <Animated.View style={{ width: outerSize, height: outerSize, alignItems: "center", justifyContent: "center", transform: [{ scale: pulse }] }}>
+      <View style={{ width: outerSize, height: outerSize, alignItems: "center", justifyContent: "center" }}>
         <View style={{
           position: "absolute", width: outerSize, height: outerSize,
           borderRadius: square ? outerSize * 0.2 : outerSize / 2,
@@ -91,7 +71,7 @@ export function PremiumRing({ size, children, square, ringType = 'premium' }: Pr
           borderColor: primaryColor,
         }} />
         <View style={{ position: "absolute" }}>{children}</View>
-      </Animated.View>
+      </View>
     );
   }
 
@@ -149,13 +129,13 @@ export function PremiumRing({ size, children, square, ringType = 'premium' }: Pr
   }
 
   return (
-    <Animated.View style={{ width: outerSize, height: outerSize, alignItems: "center", justifyContent: "center", transform: [{ scale: pulse }] }}>
-      <Animated.View style={{ position: "absolute", width: outerSize, height: outerSize, transform: [{ rotate }] }}>
+    <View style={{ width: outerSize, height: outerSize, alignItems: "center", justifyContent: "center" }}>
+      <View style={{ position: "absolute", width: outerSize, height: outerSize }}>
         {ringShape}
-      </Animated.View>
+      </View>
       <View style={{ position: "absolute" }}>
         {children}
       </View>
-    </Animated.View>
+    </View>
   );
 }

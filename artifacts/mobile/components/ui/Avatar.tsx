@@ -44,8 +44,12 @@ export function Avatar({ uri, name, size = 44, style, online, premium, square, p
   const bgColor = hashColor(name);
   const radius = square ? size * 0.2 : size / 2;
 
+  // Status effect rings take full priority — suppress premium ring when one is active
   const resolvedRing: PrestigeRing | null = prestigeRing
     ?? (effects.crownRing ? 'crown' : effects.voidRing ? 'void' : effects.diamondRing ? 'diamond' : null);
+
+  // If a status effect ring is active, ignore the premium prop entirely to avoid duplicate rings
+  const showRing = resolvedRing !== null || (premium && resolvedRing === null);
 
   const innerNode = (
     <View style={{ width: size, height: size }}>
@@ -89,7 +93,7 @@ export function Avatar({ uri, name, size = 44, style, online, premium, square, p
   const gap = 2;
   const outerSize = size + (ring + gap) * 2;
 
-  if (premium || resolvedRing) {
+  if (showRing) {
     return (
       <View style={[{ width: outerSize, height: outerSize }, style]}>
         <PremiumRing size={size} square={square} ringType={resolvedRing ?? 'premium'}>
