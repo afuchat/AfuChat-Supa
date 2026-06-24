@@ -403,7 +403,7 @@ export default function MeScreen() {
 
             <View style={{ flex: 1, gap: 3 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-                <Text style={[s.heroName, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
+                <Text style={[s.heroName, { color: equippedGoods.has('sg4') ? Colors.gold : colors.text }]} numberOfLines={1} ellipsizeMode="tail">
                   {profile?.display_name || "User"}
                 </Text>
                 <VerifiedBadge isVerified={profile?.is_verified} isOrganizationVerified={profile?.is_organization_verified} size={17} />

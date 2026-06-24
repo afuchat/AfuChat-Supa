@@ -89,7 +89,7 @@ const ALL_GOODS = SHOP_CATEGORIES.flatMap((c) => c.items);
 type Tab = "overview" | "shop" | "ranks" | "history";
 
 export default function PrestigeScreen() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, equippedGoods } = useAuth();
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -299,7 +299,7 @@ export default function PrestigeScreen() {
           {/* Stats row */}
           <View style={s.heroStats}>
             <View style={s.heroStatItem}>
-              <Text style={s.heroStatValue}>{acoin.toLocaleString()}</Text>
+              <Text style={s.heroStatValue}>{fmtAcoin(acoin)}</Text>
               <Text style={s.heroStatLabel}>🪙 ACoin</Text>
             </View>
             <View style={s.heroStatDivider} />
@@ -628,8 +628,8 @@ export default function PrestigeScreen() {
                 </View>
                 <Avatar uri={profile?.avatar_url} name={profile?.display_name || ""} size={40} />
                 <View style={{ flex: 1 }}>
-                  <Text style={[s.myRankName, { color: colors.text }]}>{profile?.display_name}</Text>
-                  <Text style={[s.myRankAcoin, { color: Colors.gold }]}>{acoin.toLocaleString()} 🪙</Text>
+                  <Text style={[s.myRankName, { color: equippedGoods.has('sg4') ? Colors.gold : colors.text }]}>{profile?.display_name}</Text>
+                  <Text style={[s.myRankAcoin, { color: Colors.gold }]}>{fmtAcoin(acoin)} 🪙</Text>
                 </View>
                 <View style={{ alignItems: "flex-end", gap: 2 }}>
                   <Text style={{ fontSize: 22 }}>{tier.emoji}</Text>
