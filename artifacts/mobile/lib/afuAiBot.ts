@@ -4,7 +4,22 @@ import { buildNavigationContext, ACTION_ROUTES_GUIDE } from "@/lib/platformKnowl
 
 export const AFUAI_BOT_ID = "c7ec234e-1ae8-499c-8318-6a592c5f81bb";
 
+// Module-level dedup: if ensureAfuAiChat is called concurrently for the same
+// user (e.g. from onboarding AND onAuthStateChange firing at the same time),
+// the second call reuses the first call's in-flight promise instead of racing.
+const _inFlight = new Map<string, Promise<void>>();
+
 export async function ensureAfuAiChat(userId: string, displayName?: string): Promise<void> {
+  const existing = _inFlight.get(userId);
+  if (existing) return existing;
+
+  const promise = _ensureAfuAiChatInner(userId, displayName);
+  _inFlight.set(userId, promise);
+  promise.finally(() => _inFlight.delete(userId));
+  return promise;
+}
+
+async function _ensureAfuAiChatInner(userId: string, displayName?: string): Promise<void> {
   try {
     const { data: chatId, error } = await supabase.rpc("get_or_create_direct_chat", {
       other_user_id: AFUAI_BOT_ID,
@@ -12,6 +27,8 @@ export async function ensureAfuAiChat(userId: string, displayName?: string): Pro
 
     if (error || !chatId) return;
 
+    // Quick pre-check to avoid an unnecessary AI call when the message already exists.
+    // The real guard is the atomic DB function below — this just saves an LLM round-trip.
     const { count } = await supabase
       .from("messages")
       .select("id", { count: "exact", head: true })
@@ -31,10 +48,12 @@ export async function ensureAfuAiChat(userId: string, displayName?: string): Pro
       greeting = `Hey ${name}! 👋 I'm AfuAI — ask me anything, anytime. Welcome to AfuChat!`;
     }
 
-    await supabase.from("messages").insert({
-      chat_id: chatId,
-      sender_id: AFUAI_BOT_ID,
-      encrypted_content: greeting,
+    // Atomic insert: the DB function uses an advisory lock + NOT EXISTS check so
+    // only one message is ever inserted even if two calls reach this point concurrently.
+    await supabase.rpc("send_afu_ai_welcome", {
+      p_chat_id: chatId,
+      p_sender_id: AFUAI_BOT_ID,
+      p_content: greeting,
     });
   } catch (_) {}
 }
