@@ -40,6 +40,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { Avatar } from "@/components/ui/Avatar";
+import UserName from "@/components/ui/UserName";
 import { StoryRing } from "@/components/ui/StoryRing";
 import { Separator } from "@/components/ui/Separator";
 import Colors from "@/constants/colors";
@@ -402,12 +403,21 @@ function ChatRow({
             {item.is_archived && (
               <Ionicons name="archive" size={12} color={colors.textMuted} style={{ marginRight: 4 }} />
             )}
-            <Text
-              style={[styles.name, { color: colors.text, fontFamily: hasUnread ? "Inter_700Bold" : "Inter_600SemiBold" }]}
-              numberOfLines={1}
-            >
-              {displayName || "Chat"}
-            </Text>
+            {(!item.is_group && !item.is_channel && item.other_id) ? (
+              <UserName
+                userId={item.other_id}
+                name={displayName || "Chat"}
+                style={[styles.name, { color: colors.text, fontFamily: hasUnread ? "Inter_700Bold" : "Inter_600SemiBold" }]}
+                numberOfLines={1}
+              />
+            ) : (
+              <Text
+                style={[styles.name, { color: colors.text, fontFamily: hasUnread ? "Inter_700Bold" : "Inter_600SemiBold" }]}
+                numberOfLines={1}
+              >
+                {displayName || "Chat"}
+              </Text>
+            )}
             {!item.is_group && (
               <VerifiedBadge isVerified={item.is_verified} isOrganizationVerified={item.is_organization_verified} size={14} />
             )}

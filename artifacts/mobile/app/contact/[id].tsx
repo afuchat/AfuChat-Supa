@@ -459,7 +459,7 @@ export default function ContactScreen() {
             <TouchableOpacity
               onPress={() => setAvatarModalVisible(true)}
               activeOpacity={0.88}
-              style={[s.avatarShell, { borderColor: colors.background, marginTop: -(AVATAR_SIZE / 2 + 4) }]}>
+              style={[s.avatarShell, { borderColor: colors.background, marginTop: -(AVATAR_SIZE / 2 + 4), borderRadius: isOrg ? AVATAR_SIZE * 0.22 + 3 : AVATAR_SIZE / 2 + 3 }]}>
               <Avatar uri={profile.avatar_url} name={profile.display_name}
                 size={AVATAR_SIZE} square={isOrg} premium={false} userId={profile.id} />
               {ls.online && <View style={[s.onlineDot, { borderColor: colors.background }]} />}
