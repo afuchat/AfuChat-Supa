@@ -388,30 +388,19 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                 onPress={() => safeRouter.push(`/company/${item.org_slug}` as any)}
                 activeOpacity={0.8}
               >
-                <View style={{ width: isDesktop ? 44 : 40, height: isDesktop ? 44 : 40, borderRadius: 8, backgroundColor: colors.accent + "20", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                  {item.profile.avatar_url
-                    ? <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={isDesktop ? 44 : 40} square userId={item.author_id} />
-                    : <Text style={{ color: colors.accent, fontFamily: "Inter_700Bold", fontSize: isDesktop ? 18 : 16 }}>{(item.profile.display_name || "O").slice(0, 1).toUpperCase()}</Text>
-                  }
-                </View>
+                {item.profile.avatar_url
+                  ? <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={isDesktop ? 44 : 40} square userId={item.author_id} />
+                  : <View style={{ width: isDesktop ? 44 : 40, height: isDesktop ? 44 : 40, borderRadius: 8, backgroundColor: colors.accent + "20", alignItems: "center", justifyContent: "center" }}>
+                      <Text style={{ color: colors.accent, fontFamily: "Inter_700Bold", fontSize: isDesktop ? 18 : 16 }}>{(item.profile.display_name || "O").slice(0, 1).toUpperCase()}</Text>
+                    </View>
+                }
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
                 onPress={() => safeRouter.push({ pathname: "/contact/[id]", params: { id: item.author_id, init_name: item.profile.display_name, init_handle: item.profile.handle, init_avatar: item.profile.avatar_url ?? "", init_verified: item.is_verified ? "1" : "0", init_org_verified: item.is_organization_verified ? "1" : "0" } } as any)}
                 activeOpacity={0.8}
               >
-                {(item.is_verified || item.is_organization_verified) ? (
-                  <View style={{
-                    borderRadius: item.is_organization_verified ? 10 : (isDesktop ? 25 : 23),
-                    borderWidth: 1.5,
-                    borderColor: colors.accent,
-                    padding: 1.5,
-                  }}>
-                    <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={isDesktop ? 41 : 37} square={!!(item.is_organization_verified)} userId={item.author_id} />
-                  </View>
-                ) : (
-                  <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={isDesktop ? 44 : 40} square={!!(item.is_organization_verified)} userId={item.author_id} />
-                )}
+                <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={isDesktop ? 44 : 40} square={!!(item.is_organization_verified)} userId={item.author_id} />
               </TouchableOpacity>
             )}
             <View style={{ flex: 1, gap: 0, paddingTop: 10 }}>
