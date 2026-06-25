@@ -479,17 +479,12 @@ const VideoItem = React.memo(function VideoItem({
   const videoViewRef = useRef<VideoView>(null);
   const videoEndFiredRef = useRef(false);
   const [inPip, setInPip] = useState(false);
-  // Stable refs for inPip + paused so the polling timer (which only depends
-  // on isActive) can read their latest values without becoming stale.
+  // Stable refs — let effects and callbacks always read current values
+  // without being listed as deps (avoids stale closures on the hot path).
   const inPipRef = useRef(false);
   const pausedRef = useRef(false);
-  // Tracks whether the native app is currently in the foreground.
-  // Derived from AppState — does NOT cause re-renders (ref, not state).
-  // useFocusEffect only fires on navigation events, NOT on home-button press,
-  // so this ref is the only reliable way to know the app is backgrounded.
-  const appActiveRef = useRef(AppState.currentState === "active");
-  // Set to true when PiP stops so the tabFocused effect doesn't reset the
-  // poster / position before the app finishes returning to the foreground.
+  // Set to true when PiP stops so the tabFocused effect skips the poster
+  // reset until the app has fully returned to the foreground.
   const justExitedPipRef = useRef(false);
   const [paused, setPaused] = useState(false);
   const [buffering, setBuffering] = useState(false);
@@ -634,83 +629,29 @@ const VideoItem = React.memo(function VideoItem({
     }
   }, [isActive]);
 
-  // ── Comprehensive AppState handler ─────────────────────────────────────
-  // Root cause: useFocusEffect only fires on React Navigation events (screen
-  // swaps), NOT when the home button is pressed. So tabFocused stays `true`
-  // even when the app is in the background. This AppState listener is the
-  // only reliable place to handle background ↔ foreground transitions.
-  useEffect(() => {
-    if (Platform.OS === "web") return;
-    let bgPauseTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const sub = AppState.addEventListener("change", (nextState) => {
-      const nowFg = nextState === "active";
-      appActiveRef.current = nowFg;
-
-      if (!nowFg) {
-        // ── App going to background ────────────────────────────────────
-        if (isActive) {
-          // Attempt PiP; the OS silently ignores if permission denied.
-          try { videoViewRef.current?.startPictureInPicture?.(); } catch {}
-        }
-        // Safety net: if PiP hasn't started within 400 ms, pause to
-        // prevent audio playing invisibly in the background.
-        if (bgPauseTimer) clearTimeout(bgPauseTimer);
-        bgPauseTimer = setTimeout(() => {
-          bgPauseTimer = null;
-          if (!inPipRef.current) {
-            try { player.pause(); } catch {}
-          }
-        }, 400);
-      } else {
-        // ── App returned to foreground ────────────────────────────────
-        if (bgPauseTimer) { clearTimeout(bgPauseTimer); bgPauseTimer = null; }
-        justExitedPipRef.current = false;
-        // Resume the active video only if the user didn't manually pause it
-        // (pausedRef reflects the last play/pause action including PiP controls).
-        if (isActive && !pausedRef.current && !inPipRef.current) {
-          // Small delay lets the PiP window animation finish before we call play.
-          setTimeout(() => {
-            try { if (!inPipRef.current) player.play(); } catch {}
-          }, 80);
-        }
-      }
-    });
-
-    return () => {
-      sub.remove();
-      if (bgPauseTimer) clearTimeout(bgPauseTimer);
-    };
-  }, [isActive]);
-
-  // ── PiP native-control sync via playingChange event ─────────────────────
-  // The JS polling timer (setInterval) is throttled/suspended when the app is
-  // in the background. expo-video's native "playingChange" event fires via the
-  // native bridge even while JS is suspended, so it's the only reliable way to
-  // keep React's `paused` state in sync with what the user does in the PiP
-  // overlay (play / pause buttons on the floating window).
-  useEffect(() => {
-    if (Platform.OS === "web") return;
-    const sub = (player as any).addListener?.("playingChange", (payload: any) => {
-      if (!inPipRef.current) return;
-      const isPlaying: boolean = payload?.isPlaying ?? payload?.playing ?? player.playing;
-      const shouldBePaused = !isPlaying;
-      if (shouldBePaused !== pausedRef.current) {
-        pausedRef.current = shouldBePaused;
-        setPaused(shouldBePaused);
-      }
-    });
-    return () => { try { sub?.remove?.(); } catch {} };
-  // player is stable across renders (useVideoPlayer returns the same instance)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ── Mute non-active players to prevent audio bleed ─────────────────────
-  // All players are initialised with muted:false. Near-active (preloaded)
-  // players must be muted so any race that causes a brief play() doesn't
-  // produce a second audio stream alongside the active video (or PiP audio).
+  // ── Mute non-active (preloaded) players ─────────────────────────────────
+  // Prevents any audio bleed from the 1-2 near-active buffered videos when
+  // the active video plays or enters PiP.
   useEffect(() => {
     try { player.muted = !isActive; } catch {}
+  }, [isActive]);
+
+  // ── AppState: resume on foreground return ───────────────────────────────
+  // useFocusEffect fires only on navigation events, NOT the home button, so
+  // this listener is the only place to catch app→foreground transitions and
+  // resume the video after the user returns (from PiP or from background).
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    const sub = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active" && isActive && !inPipRef.current && !pausedRef.current) {
+        // Brief delay so the PiP-window closing animation fully completes
+        // before we call play — avoids a stutter on the returning frame.
+        setTimeout(() => {
+          try { if (!inPipRef.current) player.play(); } catch {}
+        }, 100);
+      }
+    });
+    return () => sub.remove();
   }, [isActive]);
 
   // ── Player source update ───────────────────────────────────────────────
