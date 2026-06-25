@@ -1177,7 +1177,18 @@ export default function DiscoverScreen() {
             const brandNew = mapped.filter((p) => !prevIds.has(p.id));
             if (brandNew.length > 0) {
               pendingPostsRef.current = [...brandNew, ...pendingPostsRef.current.filter((p) => !prevIds.has(p.id))];
-              setNewPostAuthors((prev) => prev.length > 0 ? prev : [{ id: "_bg_", avatar_url: null, display_name: `${brandNew.length} new post${brandNew.length !== 1 ? "s" : ""}` }]);
+              setNewPostAuthors((prev) => {
+                if (prev.length > 0) return prev;
+                const seen = new Set<string>();
+                const authors: { id: string; avatar_url: string | null; display_name: string }[] = [];
+                for (const p of brandNew) {
+                  if (!p.author_id || seen.has(p.author_id)) continue;
+                  seen.add(p.author_id);
+                  authors.push({ id: p.author_id, avatar_url: p.profile?.avatar_url ?? null, display_name: p.profile?.display_name || "User" });
+                  if (authors.length >= 5) break;
+                }
+                return authors;
+              });
             }
           } else if (followNewerThan && mapped.length > 0) {
             setPosts((prev) => {
@@ -1545,7 +1556,18 @@ export default function DiscoverScreen() {
           const brandNew = merged.filter((p) => !prevIds.has(p.id));
           if (brandNew.length > 0) {
             pendingPostsRef.current = [...brandNew, ...pendingPostsRef.current.filter((p) => !prevIds.has(p.id))];
-            setNewPostAuthors((prev) => prev.length > 0 ? prev : [{ id: "_bg_", avatar_url: null, display_name: `${brandNew.length} new post${brandNew.length !== 1 ? "s" : ""}` }]);
+            setNewPostAuthors((prev) => {
+              if (prev.length > 0) return prev;
+              const seen = new Set<string>();
+              const authors: { id: string; avatar_url: string | null; display_name: string }[] = [];
+              for (const p of brandNew) {
+                if (!p.author_id || seen.has(p.author_id)) continue;
+                seen.add(p.author_id);
+                authors.push({ id: p.author_id, avatar_url: p.profile?.avatar_url ?? null, display_name: p.profile?.display_name || "User" });
+                if (authors.length >= 5) break;
+              }
+              return authors;
+            });
           }
         } else if (fyNewerThan && merged.length > 0) {
           setPosts((prev) => {
@@ -2383,37 +2405,22 @@ export default function DiscoverScreen() {
         >
           {/* Arrow up icon */}
           <Ionicons name="arrow-up" size={14} color="#fff" style={{ marginRight: -2 }} />
-          {/* Overlapping avatar stack — up to 3 visible */}
-          {(() => {
-            const realAuthors = popupSnapshot.filter((a) => a.id !== "_bg_").slice(0, 3);
-            if (realAuthors.length === 0) {
-              return (
-                <View style={styles.newPostsBgIcon}>
-                  <Ionicons name="sparkles" size={13} color="#fff" />
-                </View>
-              );
-            }
-            const extraCount = (popupSnapshot.filter((a) => a.id !== "_bg_").length) - 3;
-            return (
-              <View style={styles.newPostsAvatars}>
-                {realAuthors.map((a, i) => (
-                  <View key={a.id} style={[styles.newPostsAvatarWrap, { marginLeft: i > 0 ? -11 : 0, zIndex: 10 - i }]}>
-                    <Avatar uri={a.avatar_url} name={a.display_name} size={30} userId={a.id} />
-                  </View>
-                ))}
-                {extraCount > 0 && (
-                  <View style={[styles.newPostsExtraCount, { marginLeft: -11, zIndex: 7, backgroundColor: colors.accent }]}>
-                    <Text style={styles.newPostsExtraText}>+{extraCount}</Text>
-                  </View>
-                )}
+          {/* Overlapping avatar stack — up to 3, then +N badge */}
+          <View style={styles.newPostsAvatars}>
+            {popupSnapshot.slice(0, 3).map((a, i) => (
+              <View key={a.id} style={[styles.newPostsAvatarWrap, { marginLeft: i > 0 ? -11 : 0, zIndex: 10 - i }]}>
+                <Avatar uri={a.avatar_url} name={a.display_name} size={30} userId={a.id} />
               </View>
-            );
-          })()}
+            ))}
+            {popupSnapshot.length > 3 && (
+              <View style={[styles.newPostsExtraCount, { marginLeft: -11, zIndex: 7, backgroundColor: colors.accent }]}>
+                <Text style={styles.newPostsExtraText}>+{popupSnapshot.length - 3}</Text>
+              </View>
+            )}
+          </View>
           {/* Label */}
           <Text style={styles.newPostsPillLabel}>
-            {popupSnapshot.filter((a) => a.id !== "_bg_").length > 0
-              ? `${pendingPostsRef.current.length > 1 ? `${pendingPostsRef.current.length} ` : ""}posted`
-              : "new posts"}
+            {popupSnapshot.length > 1 ? `${popupSnapshot.length} posted` : "posted"}
           </Text>
         </TouchableOpacity>
       </Animated.View>
