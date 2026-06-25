@@ -914,18 +914,14 @@ export default function DiscoverScreen() {
     }).start();
   }
 
-  // Attach a JS listener to the animated scroll value so we can decide
-  // when to show/hide the header without touching FlatList's onScroll.
+  // Header is now permanently fixed — no scroll-hide behaviour.
+  // Keep scrollYAnim listener only to track prevScrollY for future use.
   useEffect(() => {
     const id = scrollYAnim.addListener(({ value }) => {
-      const dy = value - prevScrollYRef.current;
       prevScrollYRef.current = value;
-      if (value <= 20) { revealHeader(); return; }
-      if (dy > 4)  hideHeader(headerHeight);
-      else if (dy < -4) revealHeader();
     });
     return () => scrollYAnim.removeListener(id);
-  }, [headerHeight]);   // re-subscribe when headerHeight is known
+  }, []);
 
   // The Animated.event passed to FlatList — compatible with onEndReached.
   const onFeedScroll = Animated.event(
@@ -1962,28 +1958,26 @@ export default function DiscoverScreen() {
       <PostUploadBanner />
       <DesktopFeedLayout>
 
-      {/* ── Scroll-aware header (absolutely positioned so it can slide away) ── */}
-      <Animated.View
+      {/* ── Fixed header ── */}
+      <View
         onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
-        style={[
-          styles.headerBlock,
-          {
-            transform: [{ translateY: headerOffset }],
-          },
-        ]}
+        style={styles.headerBlock}
       >
         {/* Flat header background */}
         <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? "#0F0F0F" : "#F5F0E8", zIndex: 0 }]} />
 
-        {/* ── Row 1: wordmark + actions ── */}
+        {/* ── Row 1: centered wordmark + right actions ── */}
         <View style={[styles.headerTop, { paddingTop: insets.top + 6 }]}>
-          {/* Brand wordmark */}
+          {/* Left spacer — mirrors right actions width so wordmark is truly centred */}
+          <View style={styles.headerSpacer} />
+
+          {/* Brand wordmark — centred */}
           <View style={styles.wordmarkRow}>
             <Text style={[styles.wordmarkText, { color: colors.text }]}>Afu</Text>
             <Text style={[styles.wordmarkText, { color: colors.accent }]}>Chat</Text>
           </View>
 
-          {/* Right actions — always has search; sign-in shown when logged out */}
+          {/* Right actions */}
           <View style={styles.headerActions}>
             {!user && (
               <TouchableOpacity
@@ -1994,7 +1988,6 @@ export default function DiscoverScreen() {
                 <Text style={[styles.signInText, { color: colors.textSecondary }]}>Sign in</Text>
               </TouchableOpacity>
             )}
-
             <TouchableOpacity
               onPress={() => {
                 Haptics.selectionAsync();
@@ -2063,7 +2056,7 @@ export default function DiscoverScreen() {
             <Text style={[styles.bgRefreshText, { color: colors.accent }]}>Updating feed…</Text>
           </View>
         )}
-      </Animated.View>
+      </View>
       {/* ────────────────────────────────────────────────────────────────── */}
 
       {_PagerView && !isDesktop ? (
@@ -2442,8 +2435,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingBottom: 6,
+  },
+  headerSpacer: {
+    flex: 1,
   },
   wordmarkRow: {
     flexDirection: "row",
@@ -2455,8 +2451,10 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   headerActions: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "flex-end",
     gap: 6,
   },
   signInBtn: {
