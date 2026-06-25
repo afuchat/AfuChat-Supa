@@ -934,7 +934,6 @@ function EditPhase({
   })).current;
 
   function handlePost() {
-    if (!caption.trim()) { showAlert("Caption required", "Add a caption before posting."); return; }
     onPost({
       videoUri, videoMime, duration: trimEnd - trimStart,
       fileSize, videoWidth, videoHeight,
@@ -985,8 +984,7 @@ function EditPhase({
         ) : (
           <TouchableOpacity
             onPress={handlePost}
-            disabled={!caption.trim()}
-            style={[es.postBtn, { backgroundColor: caption.trim() ? accent : "#333" }]}
+            style={[es.postBtn, { backgroundColor: accent }]}
           >
             <Text style={es.postBtnText}>Post</Text>
           </TouchableOpacity>
@@ -1567,8 +1565,7 @@ function EditPhase({
           {/* ── Post button ── */}
           <TouchableOpacity
             onPress={handlePost}
-            disabled={!caption.trim()}
-            style={[es.bigPostBtn, { backgroundColor: caption.trim() ? accent : "#222", marginHorizontal: 16, marginTop: 20 }]}
+            style={[es.bigPostBtn, { backgroundColor: accent, marginHorizontal: 16, marginTop: 20 }]}
             activeOpacity={0.85}
           >
             <Ionicons name="send" size={18} color="#fff" />
