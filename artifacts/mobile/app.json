@@ -135,12 +135,10 @@
             "kotlinVersion": "2.1.21",
             "enableProguardInReleaseBuilds": true,
             "enableShrinkResources": true,
-            "enableMinifyInReleaseBuilds": true,
-            "newArchEnabled": false
+            "enableMinifyInReleaseBuilds": true
           },
           "ios": {
-            "deploymentTarget": "15.1",
-            "newArchEnabled": false
+            "deploymentTarget": "15.1"
           }
         }
       ],
