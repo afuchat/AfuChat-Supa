@@ -22,7 +22,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { showAlert } from "@/lib/alert";
 import { uploadToStorage } from "@/lib/mediaUpload";
-import { compressVideoBeforeUpload, getVideoPickerQuality } from "@/lib/videoCompression";
+import { compressVideoBeforeUpload, getCompressionEstimate, getVideoPickerQuality } from "@/lib/videoCompression";
+import { CompressionCard } from "@/components/ui/CompressionPreview";
 import { ListRowSkeleton } from "@/components/ui/Skeleton";
 import { registerVideoAsset } from "@/lib/videoApi";
 
@@ -517,6 +518,12 @@ export default function CreateDuetScreen() {
               Your duet will appear side-by-side with the original video in the feed. It will be public on your profile.
             </Text>
           </View>
+
+          {/* Compression preview */}
+          {fileSize > 0 && (() => {
+            const est = getCompressionEstimate(fileSize);
+            return est ? <CompressionCard est={est} style={{ marginTop: 4 }} /> : null;
+          })()}
 
           {loading && uploadProgress ? (
             <View style={s.progressRow}>

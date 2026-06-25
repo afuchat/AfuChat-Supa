@@ -53,9 +53,11 @@ import { registerVideoAsset } from "@/lib/videoApi";
 import {
   compressVideoBeforeUpload,
   getCameraRecordingQuality,
+  getCompressionEstimate,
   getVideoPickerQuality,
   getVideoSizeWarning,
 } from "@/lib/videoCompression";
+import { CompressionBadge, CompressionCard } from "@/components/ui/CompressionPreview";
 import {
   startPostUpload,
   updatePostProgress,
@@ -1080,12 +1082,18 @@ function EditPhase({
                 <Text style={es.badgeText}>{fmtTime(duration)}</Text>
               </View>
             )}
-            {fileSize > 0 && (
-              <View style={[es.badge, fileSize > WARN_SIZE_MB * 1024 * 1024 && { backgroundColor: "rgba(255,60,0,0.75)" }]}>
-                <Ionicons name="cloud-upload-outline" size={11} color="#fff" />
-                <Text style={es.badgeText}>{fmtBytes(fileSize)}</Text>
-              </View>
-            )}
+            {fileSize > 0 && (() => {
+              const est = getCompressionEstimate(fileSize);
+              if (est) {
+                return <CompressionBadge est={est} />;
+              }
+              return (
+                <View style={[es.badge, fileSize > WARN_SIZE_MB * 1024 * 1024 && { backgroundColor: "rgba(255,60,0,0.75)" }]}>
+                  <Ionicons name="cloud-upload-outline" size={11} color="#fff" />
+                  <Text style={es.badgeText}>{fmtBytes(fileSize)}</Text>
+                </View>
+              );
+            })()}
           </View>
         </View>
 
@@ -1482,6 +1490,14 @@ function EditPhase({
               multiline maxLength={500}
             />
           </View>
+
+          {/* ── Compression preview card ── */}
+          {fileSize > 0 && (() => {
+            const est = getCompressionEstimate(fileSize);
+            return est ? (
+              <CompressionCard est={est} style={{ marginHorizontal: 16, marginBottom: 12 }} />
+            ) : null;
+          })()}
 
           {/* ── Post button ── */}
           <TouchableOpacity
