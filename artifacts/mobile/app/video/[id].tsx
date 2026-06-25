@@ -484,6 +484,11 @@ const VideoItem = React.memo(function VideoItem({
   // Set to true when PiP stops so the tabFocused effect skips the poster
   // reset until the app has fully returned to the foreground.
   const justExitedPipRef = useRef(false);
+  // True while the PiP→fullscreen resize animation is running (~400 ms).
+  // We draw an opaque black cover during this window so the user never sees
+  // the VideoView at PiP dimensions before it resizes to fill the screen.
+  const [pipExiting, setPipExiting] = useState(false);
+  const pipExitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [paused, setPaused] = useState(false);
   const [buffering, setBuffering] = useState(false);
   const [showBuffering, setShowBuffering] = useState(false);
@@ -530,6 +535,11 @@ const VideoItem = React.memo(function VideoItem({
     }, 500);
     return () => { if (cacheDelayRef.current) { clearTimeout(cacheDelayRef.current); cacheDelayRef.current = null; } };
   }, [isNearActive]);
+
+  // Cleanup PiP-exit cover timer on unmount
+  useEffect(() => {
+    return () => { if (pipExitTimerRef.current) { clearTimeout(pipExitTimerRef.current); pipExitTimerRef.current = null; } };
+  }, []);
 
   // Squeeze video up when comments open (TikTok/Shorts style)
   useEffect(() => {
@@ -815,6 +825,15 @@ const VideoItem = React.memo(function VideoItem({
             // sees it during the same render cycle and skips the poster reset.
             justExitedPipRef.current = true;
             setInPip(false);
+            // Show opaque cover while Android animates the PiP window back to
+            // full screen (~400 ms).  Without this the user sees the VideoView
+            // still at PiP dimensions on a black background.
+            if (pipExitTimerRef.current) clearTimeout(pipExitTimerRef.current);
+            setPipExiting(true);
+            pipExitTimerRef.current = setTimeout(() => {
+              setPipExiting(false);
+              pipExitTimerRef.current = null;
+            }, 500);
             // Capture what the native player's play state was right now —
             // this reflects any play/pause the user triggered via PiP controls.
             // Then ALWAYS pause directly. Two outcomes:
@@ -847,6 +866,11 @@ const VideoItem = React.memo(function VideoItem({
         borderBottomRightRadius: commentsOpen ? 20 : 0,
       }}>
         {videoElement}
+
+        {/* PiP-exit cover: hides the VideoView while Android animates it back to full size */}
+        {pipExiting && (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: "#000", pointerEvents: "none" } as any]} />
+        )}
 
         {/* Poster thumbnail: persists until first frame renders, eliminates black flash on swipe */}
         {item.image_url && !videoStarted && (
