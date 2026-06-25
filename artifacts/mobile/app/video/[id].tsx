@@ -394,16 +394,14 @@ const ssStyles = StyleSheet.create({
 
 // ─── VideoContextMenu ─────────────────────────────────────────────────────────
 
-function VideoContextMenu({ visible, item, onClose, onShare, onRepost, onDownload, onCopyLink, onNotInterested, onReport, onPiP, autoScroll, onToggleAutoScroll }: {
+function VideoContextMenu({ visible, item, onClose, onShare, onRepost, onDownload, onCopyLink, onNotInterested, onReport, autoScroll, onToggleAutoScroll }: {
   visible: boolean; item: VideoPost | null; onClose: () => void;
   onShare: () => void; onRepost: () => void; onDownload: () => void;
   onCopyLink: () => void; onNotInterested: () => void; onReport: () => void;
-  onPiP: () => void;
   autoScroll: boolean; onToggleAutoScroll: () => void;
 }) {
   if (!visible || !item) return null;
   const ACTIONS: { id: string; label: string; icon: string; bg: string; color: string }[] = [
-    ...(Platform.OS !== "web" ? [{ id: "pip", label: "Mini Player", icon: "phone-portrait-outline", bg: "#1C1C1E", color: "#fff" }] : []),
     { id: "autoscroll",    label: autoScroll ? "Auto-scroll: On" : "Auto-scroll: Off", icon: autoScroll ? "infinite" : "infinite-outline", bg: autoScroll ? "#34C759" : "#8E8E93", color: "#fff" },
     { id: "repost",        label: "Repost",           icon: "repeat",                 bg: "#FF9500",                          color: "#fff"  },
     { id: "share",         label: "Share to",         icon: "share-social",           bg: "#007AFF",                          color: "#fff"  },
@@ -414,7 +412,7 @@ function VideoContextMenu({ visible, item, onClose, onShare, onRepost, onDownloa
   ];
   const handlers: Record<string, () => void> = {
     repost: onRepost, copylink: onCopyLink, share: onShare,
-    download: onDownload, pip: onPiP, autoscroll: onToggleAutoScroll,
+    download: onDownload, autoscroll: onToggleAutoScroll,
     notinterested: onNotInterested, report: onReport,
   };
   return (
@@ -468,7 +466,7 @@ const VideoItem = React.memo(function VideoItem({
   onLike: (id: string, liked: boolean) => void; onBookmark: (id: string, bookmarked: boolean) => void;
   onOpenComments: (id: string) => void; onShare: (item: VideoPost) => void;
   onFollow: (authorId: string, isFollowing: boolean) => void; onRecordView: (postId: string) => void;
-  onOpenMenu: (item: VideoPost, startPiP: () => void) => void;
+  onOpenMenu: (item: VideoPost) => void;
   navOffset?: number; tabFocused?: boolean; onVideoEnd?: () => void;
   commentsOpen?: boolean; squeezedH?: number;
 }) {
@@ -835,7 +833,7 @@ const VideoItem = React.memo(function VideoItem({
       <TapHandler
         onTap={handleTap}
         onDoubleTap={triggerDoubleTapLike}
-        onLongPress={() => onOpenMenu(item, () => { try { videoViewRef.current?.startPictureInPicture?.(); } catch {} })}
+        onLongPress={() => onOpenMenu(item)}
       />
     </View>
   );
@@ -1824,9 +1822,7 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
   // ── Derived callbacks — must be declared before any early return ───────────
 
   const onShare = useCallback((item: VideoPost) => setShareSheetItem(item), []);
-  const pipTriggerRef = useRef<() => void>(() => {});
-  const onOpenMenu = useCallback((item: VideoPost, startPiP: () => void) => {
-    pipTriggerRef.current = startPiP;
+  const onOpenMenu = useCallback((item: VideoPost) => {
     setMenuItem(item);
   }, []);
 
@@ -2060,7 +2056,6 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
         onCopyLink={() => menuItem && handleCopyLink(menuItem)}
         onNotInterested={() => { if (menuItem) { setMenuItem(null); handleNotInterested(menuItem); } }}
         onReport={() => menuItem && handleReport(menuItem)}
-        onPiP={() => { pipTriggerRef.current(); }}
         autoScroll={autoScroll}
         onToggleAutoScroll={() => { toggleAutoScroll(); }}
       />
