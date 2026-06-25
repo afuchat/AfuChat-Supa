@@ -17,6 +17,7 @@ import React, {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import {
   ActivityIndicator,
@@ -64,6 +65,8 @@ import {
   updatePostStatus,
   finishPostUpload,
   failPostUpload,
+  subscribePostUpload,
+  getPostUploadState,
 } from "@/lib/postUploadStore";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -130,7 +133,7 @@ const AUDIO_BG_COLORS: Record<string, string> = {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Phase = "camera" | "edit";
+type Phase = "camera" | "edit" | "posting";
 type EditTab = "filters" | "text" | "stickers" | "trim" | "adjust";
 
 type TextOverlay = {
@@ -1673,6 +1676,10 @@ export default function CreateVideoScreen() {
 
   const [phase, setPhase] = useState<Phase>(Platform.OS === "web" ? "edit" : "camera");
 
+  // Posting phase data
+  const [postingThumb, setPostingThumb] = useState<string | null>(null);
+  const [postingCaption, setPostingCaption] = useState("");
+
   // Video state (set when captured or picked)
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [videoMime, setVideoMime] = useState<string | undefined>();
@@ -1753,8 +1760,10 @@ export default function CreateVideoScreen() {
       soundName: _sound, audience: _aud,
     } = payload;
 
-    if (router.canDismiss()) router.dismissAll();
-    else router.replace("/(tabs)/chats");
+    // Show inline posting phase — do NOT dismiss yet
+    setPostingThumb(_thumb);
+    setPostingCaption(_cap);
+    setPhase("posting");
 
     const compressionEst = _size > 0 ? getCompressionEstimate(_size) : null;
     startPostUpload("video", _cap.slice(0, 80), compressionEst ? {
@@ -1860,7 +1869,9 @@ export default function CreateVideoScreen() {
         />
       )}
 
-      {phase === "camera" && Platform.OS !== "web" ? (
+      {phase === "posting" ? (
+        <PostingPhase thumbnailUri={postingThumb} caption={postingCaption} />
+      ) : phase === "camera" && Platform.OS !== "web" ? (
         <CameraPhase
           onCapture={handleCapture}
           onPickFromGallery={handlePickFromGallery}
@@ -1894,6 +1905,222 @@ export default function CreateVideoScreen() {
         </Modal>
       )}
     </>
+  );
+}
+
+function PostingPhase({ thumbnailUri, caption }: { thumbnailUri: string | null; caption: string }) {
+  const { accent } = useTheme();
+  const insets = useSafeAreaInsets();
+  const upload = useSyncExternalStore(subscribePostUpload, getPostUploadState, getPostUploadState);
+
+  const isDone    = upload?.done ?? false;
+  const isFailed  = upload?.failed ?? false;
+  const progress  = upload?.progress ?? 0.05;
+  const pct       = Math.round(progress * 100);
+  const est       = upload?.compressionEstimate;
+  const isCompressing = !isDone && !isFailed && !!upload?.label?.match(/compress/i);
+
+  useEffect(() => {
+    if (!isDone) return;
+    const t = setTimeout(() => {
+      if (router.canDismiss()) router.dismissAll();
+      else router.replace("/(tabs)/discover" as any);
+    }, 1800);
+    return () => clearTimeout(t);
+  }, [isDone]);
+
+  const stage =
+    isFailed    ? "failed"
+    : isDone    ? "done"
+    : pct < 20  ? "compressing"
+    : pct < 65  ? "uploading"
+    : pct < 85  ? "thumbnail"
+    : "saving";
+
+  const stageLabel: Record<string, string> = {
+    compressing: "Compressing video…",
+    uploading:   "Uploading to cloud…",
+    thumbnail:   "Generating thumbnail…",
+    saving:      "Saving your post…",
+    done:        "Video Posted!",
+    failed:      "Upload failed",
+  };
+
+  const barColor = isDone ? "#22C55E" : isFailed ? "#EF4444" : isCompressing ? "#FACC15" : accent;
+
+  const STAGES = [
+    { key: "compressing", label: "Compress", from: 5,  to: 20  },
+    { key: "uploading",   label: "Upload",   from: 20, to: 65  },
+    { key: "thumbnail",   label: "Thumbnail",from: 65, to: 85  },
+    { key: "saving",      label: "Save",     from: 85, to: 100 },
+  ];
+
+  return (
+    <View style={{ flex: 1, backgroundColor: "#000" }}>
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+
+      {/* ── 3-step stepper ── */}
+      <View style={{ paddingTop: insets.top + 20, paddingHorizontal: 32 }}>
+        <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+          {(["Enhance", "Details", "Publishing"] as const).map((label, i) => {
+            const isLast   = i === 2;
+            const complete = isDone ? true : i < 2;
+            const active   = i === 2 && !isDone && !isFailed;
+            const failed   = i === 2 && isFailed;
+            return (
+              <React.Fragment key={label}>
+                <View style={{ alignItems: "center", gap: 5 }}>
+                  <View style={{
+                    width: 26, height: 26, borderRadius: 13,
+                    backgroundColor: complete ? "#22C55E" : failed ? "#EF4444" : active ? accent : "#222",
+                    alignItems: "center", justifyContent: "center",
+                  }}>
+                    {complete && !active ? (
+                      <Ionicons name="checkmark" size={14} color="#fff" />
+                    ) : failed ? (
+                      <Ionicons name="close" size={14} color="#fff" />
+                    ) : active ? (
+                      <ActivityIndicator size={12} color="#fff" />
+                    ) : (
+                      <Text style={{ color: "#666", fontSize: 11, fontFamily: "Inter_600SemiBold" }}>{i + 1}</Text>
+                    )}
+                  </View>
+                  <Text style={{
+                    fontSize: 10, fontFamily: "Inter_500Medium",
+                    color: complete ? "#22C55E" : failed ? "#EF4444" : active ? "#fff" : "#444",
+                  }}>{label}</Text>
+                </View>
+                {!isLast && (
+                  <View style={{ flex: 1, height: 1.5, marginTop: 12, marginHorizontal: 6, backgroundColor: i < 2 ? "#22C55E" : "#222" }} />
+                )}
+              </React.Fragment>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* ── Content ── */}
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 28, gap: 28 }}>
+
+        {/* Thumbnail + caption */}
+        <View style={{ alignItems: "center", gap: 10 }}>
+          {thumbnailUri ? (
+            <ExpoImage
+              source={{ uri: thumbnailUri }}
+              style={{ width: 90, height: 120, borderRadius: 12 }}
+              contentFit="cover"
+            />
+          ) : (
+            <View style={{ width: 90, height: 120, borderRadius: 12, backgroundColor: "#111", alignItems: "center", justifyContent: "center" }}>
+              <Ionicons name="videocam" size={36} color="#444" />
+            </View>
+          )}
+          {!!caption && (
+            <Text style={{ color: "#888", fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center", maxWidth: 260 }} numberOfLines={2}>
+              {caption}
+            </Text>
+          )}
+        </View>
+
+        {/* ── Success ── */}
+        {isDone && (
+          <View style={{ alignItems: "center", gap: 14 }}>
+            <View style={{ width: 76, height: 76, borderRadius: 38, backgroundColor: "#22C55E18", alignItems: "center", justifyContent: "center" }}>
+              <Ionicons name="checkmark-circle" size={52} color="#22C55E" />
+            </View>
+            <Text style={{ color: "#fff", fontSize: 22, fontFamily: "Inter_700Bold" }}>Video Posted!</Text>
+            <Text style={{ color: "#555", fontSize: 13, fontFamily: "Inter_400Regular" }}>Taking you back…</Text>
+          </View>
+        )}
+
+        {/* ── Failed ── */}
+        {isFailed && (
+          <View style={{ alignItems: "center", gap: 14 }}>
+            <Ionicons name="alert-circle" size={56} color="#EF4444" />
+            <Text style={{ color: "#EF4444", fontSize: 18, fontFamily: "Inter_600SemiBold" }}>Upload failed</Text>
+            {upload?.errorMessage ? (
+              <Text style={{ color: "#666", fontSize: 12, fontFamily: "Inter_400Regular", textAlign: "center", paddingHorizontal: 20 }}>
+                {upload.errorMessage}
+              </Text>
+            ) : null}
+            <TouchableOpacity
+              onPress={() => { if (router.canDismiss()) router.dismissAll(); else router.replace("/(tabs)/discover" as any); }}
+              style={{ marginTop: 8, paddingHorizontal: 28, paddingVertical: 11, borderRadius: 22, borderWidth: 1, borderColor: "#333" }}
+              activeOpacity={0.75}
+            >
+              <Text style={{ color: "#fff", fontFamily: "Inter_500Medium", fontSize: 14 }}>Go Back</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ── In progress ── */}
+        {!isDone && !isFailed && (
+          <View style={{ width: "100%", gap: 18 }}>
+            {/* Stage + percentage */}
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <Text style={{ color: "#fff", fontSize: 16, fontFamily: "Inter_600SemiBold" }}>
+                {stageLabel[stage]}
+              </Text>
+              <Text style={{ color: barColor, fontSize: 16, fontFamily: "Inter_700Bold" }}>{pct}%</Text>
+            </View>
+
+            {/* Progress bar */}
+            <View style={{ height: 7, borderRadius: 4, backgroundColor: "#181818", overflow: "hidden" }}>
+              <View style={{ height: 7, borderRadius: 4, backgroundColor: barColor, width: `${pct}%` as any }} />
+            </View>
+
+            {/* Stage labels */}
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              {STAGES.map((s) => {
+                const active = pct >= s.from && pct < s.to;
+                const done   = pct >= s.to;
+                return (
+                  <Text key={s.key} style={{
+                    fontSize: 10,
+                    fontFamily: done ? "Inter_600SemiBold" : "Inter_400Regular",
+                    color: done ? "#22C55E" : active ? "#fff" : "#333",
+                  }}>
+                    {s.label}
+                  </Text>
+                );
+              })}
+            </View>
+
+            {/* Compression card */}
+            {est && (
+              <View style={{ borderRadius: 14, backgroundColor: "#0c0c0c", borderWidth: 1, borderColor: "#1c1c1c", padding: 16, gap: 12, marginTop: 4 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Ionicons name="flash" size={13} color="#FACC15" />
+                  <Text style={{ color: "#666", fontSize: 12, fontFamily: "Inter_500Medium" }}>
+                    {isCompressing ? "Reducing file size…" : "Compression complete"}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+                  <View style={{ gap: 3 }}>
+                    <Text style={{ color: "#444", fontSize: 11, fontFamily: "Inter_400Regular" }}>Original</Text>
+                    <Text style={{ color: "#777", fontSize: 22, fontFamily: "Inter_700Bold" }}>{est.originalLabel}</Text>
+                  </View>
+                  <Ionicons name="arrow-forward" size={15} color="#333" />
+                  <View style={{ gap: 3 }}>
+                    <Text style={{ color: "#4ADE80", fontSize: 11, fontFamily: "Inter_400Regular" }}>After</Text>
+                    <Text style={{ color: "#4ADE80", fontSize: 22, fontFamily: "Inter_700Bold" }}>{est.estimatedLabel}</Text>
+                  </View>
+                  <View style={{
+                    marginLeft: "auto" as any,
+                    borderRadius: 20, borderWidth: 1,
+                    borderColor: "#4ADE8044", backgroundColor: "#4ADE8010",
+                    paddingHorizontal: 12, paddingVertical: 5,
+                    alignSelf: "center",
+                  }}>
+                    <Text style={{ color: "#4ADE80", fontSize: 15, fontFamily: "Inter_700Bold" }}>-{est.savingsPct}%</Text>
+                  </View>
+                </View>
+              </View>
+            )}
+          </View>
+        )}
+      </View>
+    </View>
   );
 }
 
