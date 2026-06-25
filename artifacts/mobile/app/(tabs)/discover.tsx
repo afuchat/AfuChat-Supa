@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Animated,
   FlatList,
+  Image as RNImage,
   InteractionManager,
   KeyboardAvoidingView,
   Modal,
@@ -2394,7 +2395,7 @@ export default function DiscoverScreen() {
         </TouchableOpacity>
       </Animated.View>
 
-      {/* ── Floating "new posts" pill (X / Twitter style) ───────────────────── */}
+      {/* ── Floating "new posts" pill ── */}
       <Animated.View
         style={[
           styles.newPostsFloatingWrap,
@@ -2402,35 +2403,44 @@ export default function DiscoverScreen() {
             top: headerHeight + 10,
             transform: [{ translateY: popupSlide }],
             opacity: popupOpacity,
-            pointerEvents: popupSnapshot.length > 0 ? "box-none" : "none",
+            pointerEvents: popupSnapshot.length > 0 ? "auto" : "none",
           } as any,
         ]}
       >
-        <TouchableOpacity
-          style={[styles.newPostsPillBtn, { backgroundColor: colors.accent }]}
+        <Pressable
+          style={({ pressed }) => [
+            styles.newPostsPillBtn,
+            { backgroundColor: colors.accent, opacity: pressed ? 0.75 : 1 },
+          ]}
           onPress={handleShowNewPosts}
-          activeOpacity={0.82}
         >
-          {/* Arrow up icon */}
-          <Ionicons name="arrow-up" size={14} color="#fff" style={{ marginRight: -2 }} />
-          {/* Overlapping avatar stack — up to 3, then +N badge */}
+          <Ionicons name="arrow-up" size={14} color="#fff" />
+          {/* Up to 3 plain avatar circles — no Avatar component, no rings */}
           <View style={styles.newPostsAvatars}>
             {popupSnapshot.slice(0, 3).map((a, i) => (
-              <View key={a.id} style={[styles.newPostsAvatarWrap, { marginLeft: i > 0 ? -11 : 0, zIndex: 10 - i }]}>
-                <Avatar uri={a.avatar_url} name={a.display_name} size={30} />
+              <View
+                key={a.id}
+                style={[styles.newPostsAvatarCircle, { marginLeft: i > 0 ? -10 : 0, zIndex: 10 - i }]}
+              >
+                {a.avatar_url ? (
+                  <Image
+                    source={{ uri: a.avatar_url }}
+                    style={{ width: 28, height: 28, borderRadius: 14 }}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                  />
+                ) : (
+                  <View style={styles.newPostsAvatarFallback}>
+                    <Text style={styles.newPostsAvatarInitial}>
+                      {(a.display_name?.[0] ?? "?").toUpperCase()}
+                    </Text>
+                  </View>
+                )}
               </View>
             ))}
-            {popupSnapshot.length > 3 && (
-              <View style={[styles.newPostsExtraCount, { marginLeft: -11, zIndex: 7, backgroundColor: colors.accent }]}>
-                <Text style={styles.newPostsExtraText}>+{popupSnapshot.length - 3}</Text>
-              </View>
-            )}
           </View>
-          {/* Label */}
-          <Text style={styles.newPostsPillLabel}>
-            {popupSnapshot.length > 1 ? `${popupSnapshot.length} posted` : "posted"}
-          </Text>
-        </TouchableOpacity>
+          <Text style={styles.newPostsPillLabel}>new posts</Text>
+        </Pressable>
       </Animated.View>
     </View>
   );
