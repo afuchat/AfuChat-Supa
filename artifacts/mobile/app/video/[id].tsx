@@ -32,6 +32,7 @@ import {
   Share,
   StatusBar,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -401,55 +402,84 @@ function VideoContextMenu({ visible, item, onClose, onShare, onRepost, onDownloa
   autoScroll: boolean; onToggleAutoScroll: () => void;
 }) {
   if (!visible || !item) return null;
-  const ACTIONS: { id: string; label: string; icon: string; bg: string; color: string }[] = [
-    { id: "autoscroll",    label: autoScroll ? "Auto-scroll: On" : "Auto-scroll: Off", icon: autoScroll ? "infinite" : "infinite-outline", bg: autoScroll ? "#34C759" : "#8E8E93", color: "#fff" },
-    { id: "repost",        label: "Repost",           icon: "repeat",                 bg: "#FF9500",                          color: "#fff"  },
-    { id: "share",         label: "Share to",         icon: "share-social",           bg: "#007AFF",                          color: "#fff"  },
-    { id: "copylink",      label: "Copy link",        icon: "link",                   bg: "#5856D6",                          color: "#fff"  },
-    { id: "download",      label: "Save",             icon: "download-outline",       bg: "#5856D6",                          color: "#fff"  },
-    { id: "notinterested", label: "Not interested",   icon: "heart-dislike-outline",  bg: "#f0f0f0",                          color: "#555"  },
-    { id: "report",        label: "Report",           icon: "flag-outline",           bg: "#FFEBEE",                          color: "#FF3B30"},
-  ];
-  const handlers: Record<string, () => void> = {
-    repost: onRepost, copylink: onCopyLink, share: onShare,
-    download: onDownload, autoscroll: onToggleAutoScroll,
-    notinterested: onNotInterested, report: onReport,
-  };
+
+  function tap(fn: () => void) { onClose(); setTimeout(fn, 180); }
+
   return (
-    <SmartSheet visible={visible} onClose={onClose} peekFraction={0.70}>
-      <View style={cmStyles.previewRow}>
-        <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={34} />
+    <SmartSheet visible={visible} onClose={onClose} peekFraction={0.62} backgroundColor="#fff">
+      {/* Header — avatar + handle + caption */}
+      <View style={cmStyles.header}>
+        <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={38} />
         <View style={{ flex: 1 }}>
-          <Text style={cmStyles.previewHandle}>@{item.profile.handle}</Text>
-          {!!item.content && <Text style={cmStyles.previewCaption} numberOfLines={1}>{item.content}</Text>}
+          <Text style={cmStyles.handle}>@{item.profile.handle}</Text>
+          {!!item.content && (
+            <Text style={cmStyles.caption} numberOfLines={1}>{item.content}</Text>
+          )}
         </View>
-        <TouchableOpacity onPress={onClose} hitSlop={10}>
-          <Ionicons name="close" size={22} color="#666" />
+        <TouchableOpacity onPress={onClose} hitSlop={12}>
+          <Ionicons name="close" size={22} color="#999" />
         </TouchableOpacity>
       </View>
-      <View style={cmStyles.divider} />
-      <View style={cmStyles.grid}>
-        {ACTIONS.map((opt) => (
-          <TouchableOpacity key={opt.id} style={cmStyles.gridItem} onPress={() => { onClose(); setTimeout(handlers[opt.id], 200); }}>
-            <View style={[cmStyles.iconCircle, { backgroundColor: opt.bg }]}>
-              <Ionicons name={opt.icon as any} size={24} color={opt.color} />
-            </View>
-            <Text style={cmStyles.gridLabel}>{opt.label}</Text>
-          </TouchableOpacity>
-        ))}
+
+      <View style={cmStyles.sep} />
+
+      {/* Group 1 — sharing actions */}
+      <TouchableOpacity style={cmStyles.row} onPress={() => tap(onRepost)} activeOpacity={0.65}>
+        <Ionicons name="repeat-outline" size={22} color="#111" style={cmStyles.rowIcon} />
+        <Text style={cmStyles.rowLabel}>Repost</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={cmStyles.row} onPress={() => tap(onShare)} activeOpacity={0.65}>
+        <Ionicons name="arrow-redo-outline" size={22} color="#111" style={cmStyles.rowIcon} />
+        <Text style={cmStyles.rowLabel}>Share to</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={cmStyles.row} onPress={() => tap(onCopyLink)} activeOpacity={0.65}>
+        <Ionicons name="link-outline" size={22} color="#111" style={cmStyles.rowIcon} />
+        <Text style={cmStyles.rowLabel}>Copy link</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={cmStyles.row} onPress={() => tap(onDownload)} activeOpacity={0.65}>
+        <Ionicons name="download-outline" size={22} color="#111" style={cmStyles.rowIcon} />
+        <Text style={cmStyles.rowLabel}>Save</Text>
+      </TouchableOpacity>
+
+      <View style={cmStyles.sep} />
+
+      {/* Group 2 — playback controls */}
+      <View style={cmStyles.row}>
+        <Ionicons name="infinite-outline" size={22} color="#111" style={cmStyles.rowIcon} />
+        <Text style={cmStyles.rowLabel}>Auto scroll</Text>
+        <Switch
+          value={autoScroll}
+          onValueChange={() => { onToggleAutoScroll(); }}
+          trackColor={{ false: "#ddd", true: "#111" }}
+          thumbColor="#fff"
+          style={cmStyles.toggle}
+        />
       </View>
+
+      <View style={cmStyles.sep} />
+
+      {/* Group 3 — negative actions */}
+      <TouchableOpacity style={cmStyles.row} onPress={() => tap(onNotInterested)} activeOpacity={0.65}>
+        <Ionicons name="eye-off-outline" size={22} color="#111" style={cmStyles.rowIcon} />
+        <Text style={cmStyles.rowLabel}>Not interested</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={[cmStyles.row, cmStyles.rowLast]} onPress={() => tap(onReport)} activeOpacity={0.65}>
+        <Ionicons name="flag-outline" size={22} color="#FF3B30" style={cmStyles.rowIcon} />
+        <Text style={[cmStyles.rowLabel, { color: "#FF3B30" }]}>Report</Text>
+      </TouchableOpacity>
     </SmartSheet>
   );
 }
 const cmStyles = StyleSheet.create({
-  previewRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingBottom: 12, paddingHorizontal: 20 },
-  previewHandle: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#111" },
-  previewCaption: { fontSize: 12, fontFamily: "Inter_400Regular", color: "#888", marginTop: 2 },
-  divider: { height: 1, backgroundColor: "#f0f0f0", marginBottom: 14, marginHorizontal: 20 },
-  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 4, paddingHorizontal: 20 },
-  gridItem: { width: "30%", alignItems: "center", gap: 7, paddingVertical: 10 },
-  iconCircle: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center" },
-  gridLabel: { fontSize: 11, fontFamily: "Inter_500Medium", color: "#333", textAlign: "center" },
+  header:    { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 18, paddingBottom: 14 },
+  handle:    { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#111" },
+  caption:   { fontSize: 12, fontFamily: "Inter_400Regular", color: "#888", marginTop: 2 },
+  sep:       { height: StyleSheet.hairlineWidth, backgroundColor: "#e8e8e8", marginVertical: 4 },
+  row:       { flexDirection: "row", alignItems: "center", paddingHorizontal: 18, paddingVertical: 15, minHeight: 52 },
+  rowLast:   { marginBottom: 8 },
+  rowIcon:   { marginRight: 16, width: 24, textAlign: "center" },
+  rowLabel:  { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular", color: "#111" },
+  toggle:    { marginLeft: "auto" },
 });
 
 // ─── VideoItem ────────────────────────────────────────────────────────────────
