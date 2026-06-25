@@ -411,19 +411,19 @@ function VideoContextMenu({ visible, item, onClose, onShare, onRepost, onDownloa
 
       {/* Group 1 — sharing actions */}
       <TouchableOpacity style={cmStyles.row} onPress={() => tap(onRepost)} activeOpacity={0.65}>
-        <Ionicons name="repeat-outline" size={22} color="#111" style={cmStyles.rowIcon} />
+        <Ionicons name="repeat" size={24} color="#111" style={cmStyles.rowIcon} />
         <Text style={cmStyles.rowLabel}>Repost</Text>
       </TouchableOpacity>
       <TouchableOpacity style={cmStyles.row} onPress={() => tap(onShare)} activeOpacity={0.65}>
-        <Ionicons name="arrow-redo-outline" size={22} color="#111" style={cmStyles.rowIcon} />
+        <Ionicons name="arrow-redo" size={24} color="#111" style={cmStyles.rowIcon} />
         <Text style={cmStyles.rowLabel}>Share to</Text>
       </TouchableOpacity>
       <TouchableOpacity style={cmStyles.row} onPress={() => tap(onCopyLink)} activeOpacity={0.65}>
-        <Ionicons name="link-outline" size={22} color="#111" style={cmStyles.rowIcon} />
+        <Ionicons name="link" size={24} color="#111" style={cmStyles.rowIcon} />
         <Text style={cmStyles.rowLabel}>Copy link</Text>
       </TouchableOpacity>
       <TouchableOpacity style={cmStyles.row} onPress={() => tap(onDownload)} activeOpacity={0.65}>
-        <Ionicons name="download-outline" size={22} color="#111" style={cmStyles.rowIcon} />
+        <Ionicons name="download" size={24} color="#111" style={cmStyles.rowIcon} />
         <Text style={cmStyles.rowLabel}>Save</Text>
       </TouchableOpacity>
 
@@ -431,7 +431,7 @@ function VideoContextMenu({ visible, item, onClose, onShare, onRepost, onDownloa
 
       {/* Group 2 — playback controls */}
       <View style={cmStyles.row}>
-        <Ionicons name="infinite-outline" size={22} color="#111" style={cmStyles.rowIcon} />
+        <Ionicons name="infinite" size={24} color="#111" style={cmStyles.rowIcon} />
         <Text style={cmStyles.rowLabel}>Auto scroll</Text>
         <Switch
           value={autoScroll}
@@ -446,11 +446,11 @@ function VideoContextMenu({ visible, item, onClose, onShare, onRepost, onDownloa
 
       {/* Group 3 — negative actions */}
       <TouchableOpacity style={cmStyles.row} onPress={() => tap(onNotInterested)} activeOpacity={0.65}>
-        <Ionicons name="eye-off-outline" size={22} color="#111" style={cmStyles.rowIcon} />
+        <Ionicons name="eye-off" size={24} color="#111" style={cmStyles.rowIcon} />
         <Text style={cmStyles.rowLabel}>Not interested</Text>
       </TouchableOpacity>
       <TouchableOpacity style={[cmStyles.row, cmStyles.rowLast]} onPress={() => tap(onReport)} activeOpacity={0.65}>
-        <Ionicons name="flag-outline" size={22} color="#FF3B30" style={cmStyles.rowIcon} />
+        <Ionicons name="flag" size={24} color="#FF3B30" style={cmStyles.rowIcon} />
         <Text style={[cmStyles.rowLabel, { color: "#FF3B30" }]}>Report</Text>
       </TouchableOpacity>
     </SmartSheet>
