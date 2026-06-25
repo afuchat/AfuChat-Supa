@@ -1814,22 +1814,30 @@ export default function DiscoverScreen() {
 
   function handleShowNewPosts() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Dismiss the pill immediately
     setNewPostAuthors([]);
     newPostAuthorIdsRef.current.clear();
-    if (pendingPostsRef.current.length > 0) {
-      const pending = pendingPostsRef.current;
-      pendingPostsRef.current = [];
+
+    const pending = pendingPostsRef.current;
+    pendingPostsRef.current = [];
+
+    if (pending.length > 0) {
+      // Instantly prepend cached pending posts then scroll to top
       setPosts((prev) => {
         const existIds = new Set(prev.map((p) => p.id));
         const fresh = pending.filter((p) => !existIds.has(p.id));
         return fresh.length > 0 ? [...fresh, ...prev] : prev;
       });
-      setTimeout(() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true }), 60);
+      // Small delay so the list re-renders before we scroll
+      setTimeout(() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true }), 120);
+      // Background-refresh silently to pick up any posts that arrived after the pill was shown
+      loadPosts(feedTab, true);
     } else {
+      // No cached posts — do a foreground refresh and scroll once it settles
       setRefreshing(true);
       setHasMore(true);
       loadPosts(feedTab);
-      setTimeout(() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true }), 60);
+      setTimeout(() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true }), 400);
     }
   }
 
@@ -2409,7 +2417,7 @@ export default function DiscoverScreen() {
           <View style={styles.newPostsAvatars}>
             {popupSnapshot.slice(0, 3).map((a, i) => (
               <View key={a.id} style={[styles.newPostsAvatarWrap, { marginLeft: i > 0 ? -11 : 0, zIndex: 10 - i }]}>
-                <Avatar uri={a.avatar_url} name={a.display_name} size={30} userId={a.id} />
+                <Avatar uri={a.avatar_url} name={a.display_name} size={30} />
               </View>
             ))}
             {popupSnapshot.length > 3 && (
