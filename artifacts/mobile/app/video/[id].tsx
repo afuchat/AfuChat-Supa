@@ -479,6 +479,10 @@ const VideoItem = React.memo(function VideoItem({
   const videoViewRef = useRef<VideoView>(null);
   const videoEndFiredRef = useRef(false);
   const [inPip, setInPip] = useState(false);
+  // Stable refs for inPip + paused so the polling timer (which only depends
+  // on isActive) can read their latest values without becoming stale.
+  const inPipRef = useRef(false);
+  const pausedRef = useRef(false);
   // Set to true when PiP stops so the tabFocused effect doesn't reset the
   // poster / position before the app finishes returning to the foreground.
   const justExitedPipRef = useRef(false);
@@ -651,6 +655,10 @@ const VideoItem = React.memo(function VideoItem({
     });
   }, [playbackUri, shouldMountVideo]);
 
+  // Keep refs in sync with state so the polling timer can read them stably.
+  useEffect(() => { inPipRef.current = inPip; }, [inPip]);
+  useEffect(() => { pausedRef.current = paused; }, [paused]);
+
   // ── Play / pause control ───────────────────────────────────────────────
   useEffect(() => {
     // player.play() / player.pause() throw when the AVPlayer has been
@@ -658,9 +666,9 @@ const VideoItem = React.memo(function VideoItem({
     // background audio session conflicts, etc.).
     try {
       if (!shouldMountVideo) { player.pause(); return; }
-      // Keep playing when PiP is active — the user backgrounded the app
-      // intentionally to watch in PiP, so never pause during PiP.
-      if (inPip) { player.play(); return; }
+      // When PiP is active honour the paused state — this lets the native
+      // PiP play/pause button work correctly instead of being overridden.
+      if (inPip) { if (paused) { player.pause(); } else { player.play(); } return; }
       if (!isActive || paused || preloadOnly || !tabFocused) { player.pause(); } else { player.play(); }
     } catch {}
   }, [isActive, paused, preloadOnly, tabFocused, shouldMountVideo, inPip]);
@@ -676,6 +684,15 @@ const VideoItem = React.memo(function VideoItem({
       // A silent swallow here is intentional: one failed tick is harmless,
       // and the interval cleans up on unmount via the return below.
       try {
+        // Sync paused state from native player while PiP is active so that
+        // the native PiP overlay play/pause button is reflected in React state.
+        if (inPipRef.current) {
+          const nativePlaying = player.playing;
+          if (nativePlaying === pausedRef.current) {
+            pausedRef.current = !nativePlaying;
+            setPaused(!nativePlaying);
+          }
+        }
         if (player.playing && !videoStartedRef.current) {
           videoStartedRef.current = true;
           setVideoStarted(true);
@@ -787,8 +804,8 @@ const VideoItem = React.memo(function VideoItem({
           style={StyleSheet.absoluteFill}
           contentFit="cover"
           nativeControls={false}
-          allowsPictureInPicture={Platform.OS !== "web"}
-          startsPictureInPictureAutomatically={Platform.OS !== "web"}
+          allowsPictureInPicture={isActive && Platform.OS !== "web"}
+          startsPictureInPictureAutomatically={isActive && Platform.OS !== "web"}
           onPictureInPictureStart={() => {
             justExitedPipRef.current = false;
             setInPip(true);
@@ -798,6 +815,9 @@ const VideoItem = React.memo(function VideoItem({
             // sees it during the same render cycle and skips the poster reset.
             justExitedPipRef.current = true;
             setInPip(false);
+            // Sync paused state from native player so any play/pause the user
+            // triggered via the PiP overlay is reflected when the app resumes.
+            try { setPaused(!player.playing); } catch {}
           }}
         />
       ) : <View style={[StyleSheet.absoluteFill, { backgroundColor: "#000" }]} />}
