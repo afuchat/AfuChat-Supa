@@ -406,21 +406,7 @@ function VideoContextMenu({ visible, item, onClose, onShare, onRepost, onDownloa
   function tap(fn: () => void) { onClose(); setTimeout(fn, 180); }
 
   return (
-    <SmartSheet visible={visible} onClose={onClose} peekFraction={0.62} backgroundColor="#fff">
-      {/* Header — avatar + handle + caption */}
-      <View style={cmStyles.header}>
-        <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={38} />
-        <View style={{ flex: 1 }}>
-          <Text style={cmStyles.handle}>@{item.profile.handle}</Text>
-          {!!item.content && (
-            <Text style={cmStyles.caption} numberOfLines={1}>{item.content}</Text>
-          )}
-        </View>
-        <TouchableOpacity onPress={onClose} hitSlop={12}>
-          <Ionicons name="close" size={22} color="#999" />
-        </TouchableOpacity>
-      </View>
-
+    <SmartSheet visible={visible} onClose={onClose} peekFraction={0.55} backgroundColor="#fff">
       <View style={cmStyles.sep} />
 
       {/* Group 1 — sharing actions */}
@@ -471,14 +457,11 @@ function VideoContextMenu({ visible, item, onClose, onShare, onRepost, onDownloa
   );
 }
 const cmStyles = StyleSheet.create({
-  header:    { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 18, paddingBottom: 14 },
-  handle:    { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#111" },
-  caption:   { fontSize: 12, fontFamily: "Inter_400Regular", color: "#888", marginTop: 2 },
-  sep:       { height: StyleSheet.hairlineWidth, backgroundColor: "#e8e8e8", marginVertical: 4 },
-  row:       { flexDirection: "row", alignItems: "center", paddingHorizontal: 18, paddingVertical: 15, minHeight: 52 },
+  sep:       { height: StyleSheet.hairlineWidth, backgroundColor: "#e8e8e8", marginVertical: 2 },
+  row:       { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16, minHeight: 56 },
   rowLast:   { marginBottom: 8 },
-  rowIcon:   { marginRight: 16, width: 24, textAlign: "center" },
-  rowLabel:  { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular", color: "#111" },
+  rowIcon:   { marginRight: 18, width: 24, textAlign: "center" },
+  rowLabel:  { flex: 1, fontSize: 16, fontFamily: "Inter_700Bold", color: "#111" },
   toggle:    { marginLeft: "auto" },
 });
 
