@@ -1925,37 +1925,61 @@ export default function DiscoverScreen() {
   }, [user?.id]);
   // ─────────────────────────────────────────────────────────────────────────────
 
+  // ── Pill state management ──────────────────────────────────────────────────
+  // recordDismissal=true  → starts the 2-min cooldown (user tapped the pill)
+  // recordDismissal=false → just clears UI state (tab switch, pull-to-refresh)
   function _resetPill(recordDismissal = true) {
     setNewPostAuthors([]);
     newPostAuthorIdsRef.current.clear();
     pendingPostsRef.current = [];
     setPendingCount(0);
     if (recordDismissal) pillDismissedAtRef.current = Date.now();
+    else pillDismissedAtRef.current = 0; // reset so poller can fire immediately after a manual refresh
   }
 
+  // ── Pill tap handler ───────────────────────────────────────────────────────
+  // Production-grade instant-reveal pattern:
+  //   1. Deduplicate the buffer synchronously against postsRef (no setState yet)
+  //   2. Dismiss pill + start cooldown
+  //   3. Advance the polling watermark immediately — next poll won't resurface these posts
+  //   4. Jump to offset 0 INSTANTLY (animated: false) — user's eyes land on top before React re-renders
+  //   5. Prepend fresh posts — they appear at offset 0 on the very next frame the user is already watching
+  // No setTimeout, no requestAnimationFrame, no loadPosts call.
   function handleShowNewPosts() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    const pending = [...pendingPostsRef.current];
-    // Dismiss pill and start cooldown — no feed refresh triggered here
+    // ① Snapshot + eagerly deduplicate against the live feed (postsRef = no stale closure)
+    const existIds = new Set(postsRef.current.map((p) => p.id));
+    const fresh = pendingPostsRef.current.filter((p) => !existIds.has(p.id));
+
+    // ② Dismiss pill and arm the cooldown clock
     _resetPill(true);
 
-    if (pending.length > 0) {
-      // Silently prepend buffered posts — list position doesn't move until
-      // the smooth animated scroll fires. Zero visual shake.
-      setPosts((prev) => {
-        const existIds = new Set(prev.map((p) => p.id));
-        const fresh = pending.filter((p) => !existIds.has(p.id));
-        return fresh.length > 0 ? [...fresh, ...prev] : prev;
-      });
-      // Smooth scroll to top — deferred one frame so the prepend settles first
-      requestAnimationFrame(() => {
-        setTimeout(() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true }), 80);
-      });
-    } else {
-      // Nothing buffered — just scroll to top, poller will surface new posts later
+    if (fresh.length === 0) {
+      // Nothing truly new — just snap the user back to the top
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+      return;
     }
+
+    // ③ Advance the watermark NOW so the next poll interval treats these posts as seen.
+    //    (The useEffect on `posts` would also do this, but doing it synchronously here
+    //     prevents any poll that fires in the same 60-second window from re-surfacing them.)
+    const watermark = fresh[0]?.created_at; // fresh is sorted newest-first from the poll
+    if (watermark) newestPostAtRef.current = watermark;
+
+    // ④ Instantly jump to top — zero delay, user's viewport is at position 0
+    //    BEFORE React even processes the prepend below.
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+
+    // ⑤ Prepend fresh posts into the feed.
+    //    Because the scroll already landed at offset 0, these new items
+    //    appear exactly where the user is looking on the very next render frame.
+    setPosts((prev) => {
+      // Re-check against latest prev in case another setState raced in
+      const prevIds = new Set(prev.map((p) => p.id));
+      const deduped = fresh.filter((p) => !prevIds.has(p.id));
+      return deduped.length > 0 ? [...deduped, ...prev] : prev;
+    });
   }
 
   const toggleBookmark = useCallback(async (postId: string) => {
