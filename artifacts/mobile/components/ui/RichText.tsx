@@ -313,9 +313,20 @@ export function RichText({
                 {span.text}
               </Text>
             );
+          case "hashtag":
+            return (
+              <Text
+                key={i}
+                style={[styles.bold, { color: inheritedColor }]}
+                onPress={() => handlePress(span)}
+                selectable={selectable}
+                suppressHighlighting
+              >
+                {span.text}
+              </Text>
+            );
           case "email":
           case "mention":
-          case "hashtag":
             return (
               <Text
                 key={i}
