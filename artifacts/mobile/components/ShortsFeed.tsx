@@ -87,6 +87,7 @@ function WebShortsPlayer({
   preloadOnly,
   loop = true,
   onTogglePause,
+  onDoubleTap,
   onEnded,
 }: {
   src: string;
@@ -96,11 +97,14 @@ function WebShortsPlayer({
   preloadOnly: boolean;
   loop?: boolean;
   onTogglePause: () => void;
+  onDoubleTap?: () => void;
   onEnded: () => void;
 }) {
   const ref = useRef<HTMLVideoElement | null>(null);
   const [showControls, setShowControls] = useState(false);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastClickRef = useRef(0);
+  const singleClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Drive playback from React state — always unmuted (YouTube-style).
   useEffect(() => {
@@ -123,18 +127,37 @@ function WebShortsPlayer({
     }
   }, [active]);
 
+  // Clean up all pending timers on unmount to prevent state-after-unmount crashes.
+  useEffect(() => {
+    return () => {
+      if (hideTimer.current) { clearTimeout(hideTimer.current); hideTimer.current = null; }
+      if (singleClickTimerRef.current) { clearTimeout(singleClickTimerRef.current); singleClickTimerRef.current = null; }
+    };
+  }, []);
+
   function handlePointer() {
     setShowControls(true);
     if (hideTimer.current) clearTimeout(hideTimer.current);
-    hideTimer.current = setTimeout(() => setShowControls(false), 1500);
+    hideTimer.current = setTimeout(() => { hideTimer.current = null; setShowControls(false); }, 1500);
   }
 
-  // Stop click bubbling so the parent layout can never end up double-handling
-  // the same press (which previously made pause/play look stuck).
+  // Double-click → like; single click (after 300 ms confirm) → pause/play.
   function handleClick(e: any) {
     if (preloadOnly) return;
     if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-    onTogglePause();
+    const now = Date.now();
+    if (onDoubleTap && now - lastClickRef.current < 300) {
+      if (singleClickTimerRef.current) { clearTimeout(singleClickTimerRef.current); singleClickTimerRef.current = null; }
+      lastClickRef.current = 0;
+      onDoubleTap();
+    } else {
+      lastClickRef.current = now;
+      singleClickTimerRef.current = setTimeout(() => {
+        singleClickTimerRef.current = null;
+        lastClickRef.current = 0;
+        onTogglePause();
+      }, 300);
+    }
   }
 
   return (
@@ -207,6 +230,13 @@ function NativeShortsPlayer({
   const lastTapRef = useRef(0);
   const singleTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const endFiredRef = useRef(false);
+
+  // Clean up pending tap timer on unmount so we never call setState after unmount.
+  React.useEffect(() => {
+    return () => {
+      if (singleTapTimerRef.current) { clearTimeout(singleTapTimerRef.current); singleTapTimerRef.current = null; }
+    };
+  }, []);
 
   // Sync loop setting when it changes
   React.useEffect(() => {
@@ -302,7 +332,7 @@ function NativeShortsPlayer({
 /*                          Single Short card                              */
 /* ─────────────────────────────────────────────────────────────────────── */
 
-function ShortCard({
+const ShortCard = React.memo(function ShortCard({
   item,
   active,
   preloadOnly,
@@ -339,6 +369,8 @@ function ShortCard({
   const online = useOnlineStatus();
   const [paused, setPaused] = useState(false);
   const heartScale = useRef(new Animated.Value(1)).current;
+  const doubleTapOpacity = useRef(new Animated.Value(0)).current;
+  const doubleTapScale = useRef(new Animated.Value(0.3)).current;
   // Use network-aware quality: cellular gets 360p to protect data,
   // WiFi gets up to 720p. Desktop card always uses 720p (typically WiFi).
   const targetHeight = layout === "fullscreen" ? getPreferredVideoHeight() : 720;
@@ -353,9 +385,22 @@ function ShortCard({
   }
 
   function handleLike() {
+    // Like-button bounce
     Animated.sequence([
       Animated.timing(heartScale, { toValue: 0.7, duration: 80, useNativeDriver: Platform.OS !== "web" }),
       Animated.spring(heartScale, { toValue: 1, tension: 300, friction: 8, useNativeDriver: Platform.OS !== "web" }),
+    ]).start();
+    // Double-tap heart burst (centre overlay)
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(doubleTapOpacity, { toValue: 1, duration: 80, useNativeDriver: Platform.OS !== "web" }),
+        Animated.spring(doubleTapScale, { toValue: 1, tension: 200, friction: 8, useNativeDriver: Platform.OS !== "web" }),
+      ]),
+      Animated.delay(500),
+      Animated.parallel([
+        Animated.timing(doubleTapOpacity, { toValue: 0, duration: 250, useNativeDriver: Platform.OS !== "web" }),
+        Animated.timing(doubleTapScale, { toValue: 0.3, duration: 250, useNativeDriver: Platform.OS !== "web" }),
+      ]),
     ]).start();
     onLike(item.id, item.liked);
   }
@@ -390,6 +435,7 @@ function ShortCard({
             preloadOnly={preloadOnly}
             loop={!autoScroll}
             onTogglePause={handleTogglePause}
+            onDoubleTap={handleLike}
             onEnded={onAutoScrollEnd}
           />
         ) : (
@@ -405,6 +451,22 @@ function ShortCard({
             onEnded={onAutoScrollEnd}
           />
         )}
+
+        {/* Double-tap heart burst — centred, pointer-events:none so it never blocks taps */}
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              justifyContent: "center",
+              alignItems: "center",
+              opacity: doubleTapOpacity,
+              transform: [{ scale: doubleTapScale }],
+              pointerEvents: "none",
+            } as any,
+          ]}
+        >
+          <Ionicons name="heart" size={100} color="#FF3B30" />
+        </Animated.View>
 
         {/* Caption above bottom bar */}
         {item.content ? (
@@ -617,7 +679,7 @@ function ShortCard({
       </View>
     </View>
   );
-}
+});
 
 /* ─────────────────────────────────────────────────────────────────────── */
 /*                              Feed list                                  */
@@ -1108,7 +1170,7 @@ export default function ShortsFeed({
     listRef.current?.scrollToIndex({ index: next, animated: true });
   }, []);
 
-  async function toggleLike(postId: string, currentlyLiked: boolean) {
+  const toggleLike = useCallback(async (postId: string, currentlyLiked: boolean) => {
     if (!user) { router.push("/(auth)/login" as any); return; }
     // Optimistic update — flip instantly
     setPosts((prev) =>
@@ -1121,11 +1183,8 @@ export default function ShortsFeed({
     if (currentlyLiked) {
       const { error } = await supabase.from("post_acknowledgments").delete().eq("post_id", postId).eq("user_id", user.id);
       if (error) {
-        // Revert on failure
         setPosts((prev) =>
-          prev.map((p) =>
-            p.id === postId ? { ...p, liked: true, likeCount: p.likeCount + 1 } : p
-          )
+          prev.map((p) => p.id === postId ? { ...p, liked: true, likeCount: p.likeCount + 1 } : p)
         );
       }
     } else {
@@ -1134,17 +1193,14 @@ export default function ShortsFeed({
         { onConflict: "post_id,user_id", ignoreDuplicates: true }
       );
       if (error) {
-        // Revert on failure
         setPosts((prev) =>
-          prev.map((p) =>
-            p.id === postId ? { ...p, liked: false, likeCount: Math.max(0, p.likeCount - 1) } : p
-          )
+          prev.map((p) => p.id === postId ? { ...p, liked: false, likeCount: Math.max(0, p.likeCount - 1) } : p)
         );
       }
     }
-  }
+  }, [user]);
 
-  async function toggleBookmark(postId: string, currentlyBookmarked: boolean) {
+  const toggleBookmark = useCallback(async (postId: string, currentlyBookmarked: boolean) => {
     if (!user) { router.push("/(auth)/login" as any); return; }
     if (currentlyBookmarked) {
       await supabase.from("post_bookmarks").delete().eq("post_id", postId).eq("user_id", user.id);
@@ -1157,15 +1213,52 @@ export default function ShortsFeed({
     setPosts((prev) => prev.map((p) =>
       p.id === postId ? { ...p, bookmarked: !currentlyBookmarked } : p,
     ));
-  }
+  }, [user]);
 
-  async function toggleFollow(authorId: string) {
+  const toggleFollow = useCallback(async (authorId: string) => {
     if (!user) { router.push("/(auth)/login" as any); return; }
     await supabase
       .from("follows")
       .upsert({ follower_id: user.id, following_id: authorId }, { onConflict: "follower_id,following_id" });
     setPosts((prev) => prev.map((p) => p.author_id === authorId ? { ...p, following: true } : p));
-  }
+  }, [user]);
+
+  const handleToggleAutoScroll = useCallback(() => {
+    setAutoScroll((v) => { autoScrollRef.current = !v; return !v; });
+  }, []);
+
+  const keyExtractor = useCallback((item: ShortPost) => item.id, []);
+
+  const getItemLayout = useCallback((_: any, index: number) => ({
+    length: cardHeight, offset: cardHeight * index, index,
+  }), [cardHeight]);
+
+  const renderItem = useCallback(({ item, index }: { item: ShortPost; index: number }) => {
+    // Mount active card + 2 neighbours so swipe animation is instant
+    const distance = Math.abs(index - activeIndex);
+    const preloadOnly = distance > 0 && distance <= 2;
+    return (
+      <ShortCard
+        item={item}
+        active={index === activeIndex}
+        preloadOnly={preloadOnly}
+        layout={layout}
+        cardWidth={cardWidth}
+        cardHeight={cardHeight}
+        bottomInset={bottomInset}
+        autoScroll={autoScroll}
+        onToggleAutoScroll={handleToggleAutoScroll}
+        onAutoScrollEnd={handleAutoScrollEnd}
+        onLike={toggleLike}
+        onBookmark={toggleBookmark}
+        onFollow={toggleFollow}
+        currentUserId={user?.id}
+        activeToggleRef={activeToggleRef}
+      />
+    );
+  }, [activeIndex, layout, cardWidth, cardHeight, bottomInset, autoScroll,
+      handleToggleAutoScroll, handleAutoScrollEnd, toggleLike, toggleBookmark,
+      toggleFollow, user?.id, activeToggleRef]);
 
   if (loading) {
     return <ShortsFeedSkeleton dark={isFullscreen} />;
@@ -1205,33 +1298,8 @@ export default function ShortsFeed({
     <FlatList
       ref={listRef}
       data={posts}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item, index }) => {
-        // Mount the active card and its 2 neighbours so swipes feel instant —
-        // neighbours render hidden but with preload="auto" so the first frame
-        // is ready by the time the user gets there.
-        const distance = Math.abs(index - activeIndex);
-        const preloadOnly = distance > 0 && distance <= 2;
-        return (
-          <ShortCard
-            item={item}
-            active={index === activeIndex}
-            preloadOnly={preloadOnly}
-            layout={layout}
-            cardWidth={cardWidth}
-            cardHeight={cardHeight}
-            bottomInset={bottomInset}
-            autoScroll={autoScroll}
-            onToggleAutoScroll={() => setAutoScroll((v) => { autoScrollRef.current = !v; return !v; })}
-            onAutoScrollEnd={handleAutoScrollEnd}
-            onLike={toggleLike}
-            onBookmark={toggleBookmark}
-            onFollow={toggleFollow}
-            currentUserId={user?.id}
-            activeToggleRef={activeToggleRef}
-          />
-        );
-      }}
+      keyExtractor={keyExtractor}
+      renderItem={renderItem}
       snapToAlignment="start"
       snapToInterval={cardHeight}
       disableIntervalMomentum
@@ -1239,10 +1307,11 @@ export default function ShortsFeed({
       showsVerticalScrollIndicator={false}
       onViewableItemsChanged={onViewableItemsChanged}
       viewabilityConfig={viewabilityConfig}
-      getItemLayout={(_, index) => ({ length: cardHeight, offset: cardHeight * index, index })}
-      windowSize={5}
-      initialNumToRender={3}
-      maxToRenderPerBatch={3}
+      getItemLayout={getItemLayout}
+      windowSize={3}
+      initialNumToRender={2}
+      maxToRenderPerBatch={2}
+      updateCellsBatchingPeriod={50}
       onEndReached={loadMore}
       onEndReachedThreshold={0.4}
       ListFooterComponent={loadingMore ? (
