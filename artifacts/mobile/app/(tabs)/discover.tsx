@@ -1704,17 +1704,52 @@ export default function DiscoverScreen() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "posts" }, (payload: any) => {
         const newPost = payload.new;
         if (!newPost) return;
+        if (newPost.visibility && newPost.visibility !== "public") return;
         const authorId = newPost.author_id;
         if (!authorId || authorId === user?.id) return;
-        if (newPostAuthorIdsRef.current.has(authorId)) return;
-        newPostAuthorIdsRef.current.add(authorId);
-        supabase.from("profiles").select("display_name, avatar_url").eq("id", authorId).single()
-          .then(({ data: prof }) => {
+        // Fetch author profile + full post in parallel so pill click instantly prepends
+        Promise.all([
+          supabase.from("profiles").select("display_name, avatar_url, handle, is_verified, is_organization_verified").eq("id", authorId).single(),
+          supabase.from("posts").select("id, author_id, content, image_url, images, created_at, view_count, visibility, is_verified, is_organization_verified, like_count, reply_count, post_type, article_title, article_body, video_url, duration_seconds").eq("id", newPost.id).single(),
+        ]).then(([{ data: prof }, { data: fullPost }]) => {
+          if (!prof || !fullPost) return;
+          const mappedPost: PostItem = {
+            id: fullPost.id,
+            author_id: fullPost.author_id,
+            content: fullPost.content ?? "",
+            image_url: fullPost.image_url,
+            images: Array.isArray(fullPost.images) ? fullPost.images : fullPost.image_url ? [fullPost.image_url] : [],
+            created_at: fullPost.created_at,
+            view_count: fullPost.view_count ?? 0,
+            visibility: fullPost.visibility ?? "public",
+            is_verified: prof.is_verified ?? false,
+            is_organization_verified: prof.is_organization_verified ?? false,
+            profile: { display_name: prof.display_name || "User", handle: prof.handle || "user", avatar_url: prof.avatar_url || null, bio: null },
+            liked: false,
+            likeCount: fullPost.like_count ?? 0,
+            replyCount: fullPost.reply_count ?? 0,
+            score: 0,
+            bookmarked: false,
+            post_type: fullPost.post_type ?? "text",
+            article_title: fullPost.article_title ?? null,
+            article_body: fullPost.article_body ?? null,
+            video_url: fullPost.video_url ?? null,
+            duration_seconds: fullPost.duration_seconds ?? null,
+            isFollowing: false,
+          };
+          // Only add to pending if we haven't seen this author yet in this batch
+          if (!newPostAuthorIdsRef.current.has(authorId)) {
+            newPostAuthorIdsRef.current.add(authorId);
+            pendingPostsRef.current = [mappedPost, ...pendingPostsRef.current.filter((p) => p.id !== mappedPost.id)];
             setNewPostAuthors((prev) => {
               if (prev.length >= 5) return prev;
-              return [...prev, { id: authorId, avatar_url: prof?.avatar_url || null, display_name: prof?.display_name || "User" }];
+              return [...prev, { id: authorId, avatar_url: prof.avatar_url || null, display_name: prof.display_name || "User" }];
             });
-          });
+          } else {
+            // Same author posted again — just prepend the post silently
+            pendingPostsRef.current = [mappedPost, ...pendingPostsRef.current.filter((p) => p.id !== mappedPost.id)];
+          }
+        });
       })
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "posts" }, (payload: any) => {
         const deletedId = payload.old?.id;
@@ -2341,7 +2376,7 @@ export default function DiscoverScreen() {
         style={[
           styles.newPostsFloatingWrap,
           {
-            top: headerHeight + 6,
+            top: headerHeight + 10,
             transform: [{ translateY: popupSlide }],
             opacity: popupOpacity,
             pointerEvents: popupSnapshot.length > 0 ? "box-none" : "none",
@@ -2351,23 +2386,41 @@ export default function DiscoverScreen() {
         <TouchableOpacity
           style={[styles.newPostsPillBtn, { backgroundColor: colors.accent }]}
           onPress={handleShowNewPosts}
-          activeOpacity={0.85}
+          activeOpacity={0.82}
         >
-          <Ionicons name="arrow-up" size={15} color="#fff" />
-          <View style={styles.newPostsAvatars}>
-            {popupSnapshot.filter((a) => a.id !== "_bg_").slice(0, 3).map((a, i) => (
-              <View key={a.id} style={[styles.newPostsAvatarWrap, { marginLeft: i > 0 ? -10 : 0, zIndex: 3 - i }]}>
-                <Avatar uri={a.avatar_url} name={a.display_name} size={28} />
+          {/* Arrow up icon */}
+          <Ionicons name="arrow-up" size={14} color="#fff" style={{ marginRight: -2 }} />
+          {/* Overlapping avatar stack — up to 3 visible */}
+          {(() => {
+            const realAuthors = popupSnapshot.filter((a) => a.id !== "_bg_").slice(0, 3);
+            if (realAuthors.length === 0) {
+              return (
+                <View style={styles.newPostsBgIcon}>
+                  <Ionicons name="sparkles" size={13} color="#fff" />
+                </View>
+              );
+            }
+            const extraCount = (popupSnapshot.filter((a) => a.id !== "_bg_").length) - 3;
+            return (
+              <View style={styles.newPostsAvatars}>
+                {realAuthors.map((a, i) => (
+                  <View key={a.id} style={[styles.newPostsAvatarWrap, { marginLeft: i > 0 ? -11 : 0, zIndex: 10 - i }]}>
+                    <Avatar uri={a.avatar_url} name={a.display_name} size={30} userId={a.id} />
+                  </View>
+                ))}
+                {extraCount > 0 && (
+                  <View style={[styles.newPostsExtraCount, { marginLeft: -11, zIndex: 7, backgroundColor: colors.accent }]}>
+                    <Text style={styles.newPostsExtraText}>+{extraCount}</Text>
+                  </View>
+                )}
               </View>
-            ))}
-            {popupSnapshot.every((a) => a.id === "_bg_") && (
-              <View style={styles.newPostsBgIcon}>
-                <Ionicons name="sparkles" size={14} color="#fff" />
-              </View>
-            )}
-          </View>
+            );
+          })()}
+          {/* Label */}
           <Text style={styles.newPostsPillLabel}>
-            {popupSnapshot.filter((a) => a.id !== "_bg_").length > 0 ? "posted" : "new posts"}
+            {popupSnapshot.filter((a) => a.id !== "_bg_").length > 0
+              ? `${pendingPostsRef.current.length > 1 ? `${pendingPostsRef.current.length} ` : ""}posted`
+              : "new posts"}
           </Text>
         </TouchableOpacity>
       </Animated.View>
@@ -2735,13 +2788,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 999,
-    paddingVertical: 9,
-    paddingLeft: 14,
-    paddingRight: 18,
-    gap: 8,
+    paddingVertical: 8,
+    paddingLeft: 12,
+    paddingRight: 16,
+    gap: 7,
     ...Platform.select({
-      web: { boxShadow: "0 2px 12px rgba(0,0,0,0.22)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.22, shadowRadius: 8, elevation: 6 },
+      web: { boxShadow: "0 4px 18px rgba(0,0,0,0.30)" } as any,
+      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.30, shadowRadius: 12, elevation: 8 },
     }),
   },
   newPostsAvatars: {
@@ -2749,15 +2802,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   newPostsAvatarWrap: {
-    borderRadius: 14,
-    borderWidth: 2,
+    borderRadius: 16,
+    borderWidth: 2.5,
     borderColor: "#fff",
     overflow: "hidden",
   },
+  newPostsExtraCount: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 2.5,
+    borderColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  newPostsExtraText: {
+    color: "#fff",
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: -0.3,
+  },
   newPostsBgIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.5)",
     alignItems: "center",
@@ -2767,6 +2835,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 14,
     fontFamily: "Inter_600SemiBold",
+    letterSpacing: -0.2,
   },
 });
 
