@@ -2137,13 +2137,15 @@ export default function DiscoverScreen() {
                     <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); setNewPostAuthors([]); newPostAuthorIdsRef.current.clear(); pendingPostsRef.current = []; loadPosts(feedTab); }} tintColor={colors.accent} />
                   }
                   ListFooterComponent={
-                    loadingMore ? (
-                      <View style={{ padding: 8, gap: 8 }}>{[1,2,3,4,5].map(i => <PostSkeleton key={i} />)}</View>
-                    ) : !hasMore && filteredPosts.length > 0 ? (
+                    !hasMore && filteredPosts.length > 0 ? (
                       <View style={[styles.endOfFeed, { borderTopColor: colors.border }]}>
                         <View style={[styles.endOfFeedDot, { backgroundColor: colors.border }]} />
                         <Text style={[styles.endOfFeedText, { color: colors.textMuted }]}>You're all caught up</Text>
                         <View style={[styles.endOfFeedDot, { backgroundColor: colors.border }]} />
+                      </View>
+                    ) : loadingMore ? (
+                      <View style={styles.footerSpinnerRow}>
+                        <ActivityIndicator size="small" color={colors.accent} />
                       </View>
                     ) : null
                   }
@@ -2207,13 +2209,15 @@ export default function DiscoverScreen() {
                     <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); setNewPostAuthors([]); newPostAuthorIdsRef.current.clear(); pendingPostsRef.current = []; loadPosts(feedTab); }} tintColor={colors.accent} />
                   }
                   ListFooterComponent={
-                    loadingMore ? (
-                      <View style={{ padding: 8, gap: 8 }}>{[1,2,3,4,5].map(i => <PostSkeleton key={i} />)}</View>
-                    ) : !hasMore && filteredPosts.length > 0 ? (
+                    !hasMore && filteredPosts.length > 0 ? (
                       <View style={[styles.endOfFeed, { borderTopColor: colors.border }]}>
                         <View style={[styles.endOfFeedDot, { backgroundColor: colors.border }]} />
                         <Text style={[styles.endOfFeedText, { color: colors.textMuted }]}>You're all caught up</Text>
                         <View style={[styles.endOfFeedDot, { backgroundColor: colors.border }]} />
+                      </View>
+                    ) : loadingMore ? (
+                      <View style={styles.footerSpinnerRow}>
+                        <ActivityIndicator size="small" color={colors.accent} />
                       </View>
                     ) : null
                   }
@@ -2277,13 +2281,15 @@ export default function DiscoverScreen() {
               <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); setNewPostAuthors([]); newPostAuthorIdsRef.current.clear(); pendingPostsRef.current = []; loadPosts(feedTab); }} tintColor={colors.accent} />
             }
             ListFooterComponent={
-              loadingMore ? (
-                <View style={{ padding: 8, gap: 8 }}>{[1,2,3,4,5].map(i => <PostSkeleton key={i} />)}</View>
-              ) : !hasMore && filteredPosts.length > 0 ? (
+              !hasMore && filteredPosts.length > 0 ? (
                 <View style={[styles.endOfFeed, { borderTopColor: colors.border }]}>
                   <View style={[styles.endOfFeedDot, { backgroundColor: colors.border }]} />
                   <Text style={[styles.endOfFeedText, { color: colors.textMuted }]}>You're all caught up</Text>
                   <View style={[styles.endOfFeedDot, { backgroundColor: colors.border }]} />
+                </View>
+              ) : loadingMore ? (
+                <View style={styles.footerSpinnerRow}>
+                  <ActivityIndicator size="small" color={colors.accent} />
                 </View>
               ) : null
             }
@@ -2291,6 +2297,19 @@ export default function DiscoverScreen() {
         )
       )}
       </DesktopFeedLayout>
+      {/* Sticky "loading more" pill — always visible regardless of scroll position */}
+      {loadingMore && (
+        <View
+          pointerEvents="none"
+          style={[styles.loadMorePill, { bottom: insets.bottom + (Platform.OS === "web" ? 108 : 90) }]}
+        >
+          <View style={styles.loadMorePillInner}>
+            <ActivityIndicator size="small" color="#fff" />
+            <Text style={styles.loadMorePillText}>Loading more…</Text>
+          </View>
+        </View>
+      )}
+
       {user && (
         <TouchableOpacity
           ref={fabRef}
@@ -2500,6 +2519,36 @@ const styles = StyleSheet.create({
   tabRow: {
     flexDirection: "row",
     paddingHorizontal: 4,
+  },
+  loadMorePill: {
+    position: "absolute",
+    alignSelf: "center",
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    zIndex: 50,
+    pointerEvents: "none" as any,
+  },
+  loadMorePillInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(0,0,0,0.72)",
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+    borderRadius: 24,
+  },
+  loadMorePillText: {
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+    color: "#fff",
+  },
+  footerSpinnerRow: {
+    alignItems: "center",
+    paddingVertical: 24,
   },
   endOfFeed: {
     flexDirection: "row",
