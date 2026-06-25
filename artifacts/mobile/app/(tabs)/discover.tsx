@@ -920,7 +920,22 @@ export default function DiscoverScreen() {
     const id = scrollYAnim.addListener(({ value }) => {
       const dy = value - prevScrollYRef.current;
       prevScrollYRef.current = value;
-      if (value <= 20) { revealHeader(); return; }
+      isScrolledDownRef.current = value > 100;
+      if (value <= 20) {
+        revealHeader();
+        if (pendingPostsRef.current.length > 0) {
+          const pending = pendingPostsRef.current;
+          pendingPostsRef.current = [];
+          setPosts((prev) => {
+            const existIds = new Set(prev.map((p) => p.id));
+            const fresh = pending.filter((p) => !existIds.has(p.id));
+            return fresh.length > 0 ? [...fresh, ...prev] : prev;
+          });
+          setNewPostAuthors([]);
+          newPostAuthorIdsRef.current.clear();
+        }
+        return;
+      }
       if (dy > 4)  hideHeader(headerHeight);
       else if (dy < -4) revealHeader();
     });
@@ -956,6 +971,8 @@ export default function DiscoverScreen() {
   }).current;
   const [newPostAuthors, setNewPostAuthors] = useState<{ id: string; avatar_url: string | null; display_name: string }[]>([]);
   const newPostAuthorIdsRef = useRef<Set<string>>(new Set());
+  const pendingPostsRef = useRef<PostItem[]>([]);
+  const isScrolledDownRef = useRef(false);
   // Floating "new posts" popup animation
   const popupSlide = useRef(new Animated.Value(-80)).current;
   const popupOpacity = useRef(new Animated.Value(0)).current;
@@ -1178,8 +1195,19 @@ export default function DiscoverScreen() {
         }
 
         if (isRefresh) {
+          tabPostsCache.current[activeTab] = mapped;
+          tabCacheTimestamp.current[activeTab] = Date.now();
+          cacheFeedTab(activeTab, mapped);
+          saveFeedPosts(mapped, activeTab as LocalFeedTab).catch(() => {});
           // Delta sync: prepend new posts to existing local posts (don't wipe them)
-          if (followNewerThan && mapped.length > 0) {
+          if (background && isScrolledDownRef.current) {
+            const prevIds = new Set(postsRef.current.map((p) => p.id));
+            const brandNew = mapped.filter((p) => !prevIds.has(p.id));
+            if (brandNew.length > 0) {
+              pendingPostsRef.current = [...brandNew, ...pendingPostsRef.current.filter((p) => !prevIds.has(p.id))];
+              setNewPostAuthors((prev) => prev.length > 0 ? prev : [{ id: "_bg_", avatar_url: null, display_name: `${brandNew.length} new post${brandNew.length !== 1 ? "s" : ""}` }]);
+            }
+          } else if (followNewerThan && mapped.length > 0) {
             setPosts((prev) => {
               const existingIds = new Set(prev.map((p) => p.id));
               const brandNew = mapped.filter((p) => !existingIds.has(p.id));
@@ -1188,10 +1216,6 @@ export default function DiscoverScreen() {
           } else if (!followNewerThan) {
             setPosts(mapped);
           }
-          tabPostsCache.current[activeTab] = mapped;
-          tabCacheTimestamp.current[activeTab] = Date.now();
-          cacheFeedTab(activeTab, mapped);
-          saveFeedPosts(mapped, activeTab as LocalFeedTab).catch(() => {});
         } else {
           setPosts((prev) => { const ids = new Set(prev.map((p) => p.id)); return [...prev, ...mapped.filter((i) => !ids.has(i.id))]; });
         }
@@ -1539,8 +1563,19 @@ export default function DiscoverScreen() {
       }
 
       if (isRefresh) {
-        // Delta sync: prepend new posts to existing local posts (don't wipe them)
-        if (fyNewerThan && merged.length > 0) {
+        tabPostsCache.current[activeTab] = merged;
+        tabCacheTimestamp.current[activeTab] = Date.now();
+        cacheFeedTab(activeTab, merged);
+        cacheMoments(merged);
+        saveFeedPosts(merged, activeTab as LocalFeedTab).catch(() => {});
+        if (background && isScrolledDownRef.current) {
+          const prevIds = new Set(postsRef.current.map((p) => p.id));
+          const brandNew = merged.filter((p) => !prevIds.has(p.id));
+          if (brandNew.length > 0) {
+            pendingPostsRef.current = [...brandNew, ...pendingPostsRef.current.filter((p) => !prevIds.has(p.id))];
+            setNewPostAuthors((prev) => prev.length > 0 ? prev : [{ id: "_bg_", avatar_url: null, display_name: `${brandNew.length} new post${brandNew.length !== 1 ? "s" : ""}` }]);
+          }
+        } else if (fyNewerThan && merged.length > 0) {
           setPosts((prev) => {
             const prevIds = new Set(prev.map((p) => p.id));
             const brandNew = merged.filter((p) => !prevIds.has(p.id));
@@ -1549,11 +1584,6 @@ export default function DiscoverScreen() {
         } else if (!fyNewerThan) {
           setPosts(merged);
         }
-        tabPostsCache.current[activeTab] = merged;
-        tabCacheTimestamp.current[activeTab] = Date.now();
-        cacheFeedTab(activeTab, merged);
-        cacheMoments(merged);
-        saveFeedPosts(merged, activeTab as LocalFeedTab).catch(() => {});
       } else {
         setPosts((prev) => {
           const existingIds = new Set(prev.map((p) => p.id));
@@ -1607,6 +1637,7 @@ export default function DiscoverScreen() {
     setFollowingEmpty(false);
     setNewPostAuthors([]);
     newPostAuthorIdsRef.current.clear();
+    pendingPostsRef.current = [];
 
     if (cached.length > 0) {
       setPosts(cached);
@@ -1757,9 +1788,19 @@ export default function DiscoverScreen() {
     setNewPostAuthors([]);
     newPostAuthorIdsRef.current.clear();
     flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-    setRefreshing(true);
-    setHasMore(true);
-    loadPosts(feedTab);
+    if (pendingPostsRef.current.length > 0) {
+      const pending = pendingPostsRef.current;
+      pendingPostsRef.current = [];
+      setPosts((prev) => {
+        const existIds = new Set(prev.map((p) => p.id));
+        const fresh = pending.filter((p) => !existIds.has(p.id));
+        return fresh.length > 0 ? [...fresh, ...prev] : prev;
+      });
+    } else {
+      setRefreshing(true);
+      setHasMore(true);
+      loadPosts(feedTab);
+    }
   }
 
   const toggleBookmark = useCallback(async (postId: string) => {
@@ -2057,7 +2098,7 @@ export default function DiscoverScreen() {
                   updateCellsBatchingPeriod={50}
                   removeClippedSubviews={Platform.OS !== "web"}
                   refreshControl={
-                    <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); setNewPostAuthors([]); newPostAuthorIdsRef.current.clear(); loadPosts(feedTab); }} tintColor={colors.accent} />
+                    <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); setNewPostAuthors([]); newPostAuthorIdsRef.current.clear(); pendingPostsRef.current = []; loadPosts(feedTab); }} tintColor={colors.accent} />
                   }
                   ListFooterComponent={
                     loadingMore ? (
@@ -2127,7 +2168,7 @@ export default function DiscoverScreen() {
                   updateCellsBatchingPeriod={50}
                   removeClippedSubviews={Platform.OS !== "web"}
                   refreshControl={
-                    <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); setNewPostAuthors([]); newPostAuthorIdsRef.current.clear(); loadPosts(feedTab); }} tintColor={colors.accent} />
+                    <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); setNewPostAuthors([]); newPostAuthorIdsRef.current.clear(); pendingPostsRef.current = []; loadPosts(feedTab); }} tintColor={colors.accent} />
                   }
                   ListFooterComponent={
                     loadingMore ? (
@@ -2197,7 +2238,7 @@ export default function DiscoverScreen() {
             updateCellsBatchingPeriod={50}
             removeClippedSubviews={Platform.OS !== "web"}
             refreshControl={
-              <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); setNewPostAuthors([]); newPostAuthorIdsRef.current.clear(); loadPosts(feedTab); }} tintColor={colors.accent} />
+              <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); setNewPostAuthors([]); newPostAuthorIdsRef.current.clear(); pendingPostsRef.current = []; loadPosts(feedTab); }} tintColor={colors.accent} />
             }
             ListFooterComponent={
               loadingMore ? (
@@ -2337,21 +2378,46 @@ export default function DiscoverScreen() {
           onPress={handleShowNewPosts}
           activeOpacity={0.9}
         >
-          <View style={styles.newPostsAvatars}>
-            {popupSnapshot.slice(0, 3).map((a, i) => (
-              <View key={a.id} style={[styles.newPostsAvatarWrap, { marginLeft: i > 0 ? -8 : 0, zIndex: 3 - i }]}>
-                <Avatar uri={a.avatar_url} name={a.display_name} size={30} />
-              </View>
-            ))}
-          </View>
-          <View style={{ flex: 1, marginLeft: 10, marginRight: 4 }}>
-            <Text style={[styles.newPostsPopupTitle, { color: colors.text }]} numberOfLines={1}>
-              {popupSnapshot.length === 1 ? popupSnapshot[0].display_name : `${popupSnapshot.length} people`}
-            </Text>
-            <Text style={[styles.newPostsPopupSub, { color: colors.textMuted }]}>
-              just posted · tap to refresh
-            </Text>
-          </View>
+          {(() => {
+            const realAuthors = popupSnapshot.filter((a) => a.id !== "_bg_");
+            const bgEntry = popupSnapshot.find((a) => a.id === "_bg_");
+            if (realAuthors.length > 0) {
+              return (
+                <>
+                  <View style={styles.newPostsAvatars}>
+                    {realAuthors.slice(0, 3).map((a, i) => (
+                      <View key={a.id} style={[styles.newPostsAvatarWrap, { marginLeft: i > 0 ? -8 : 0, zIndex: 3 - i }]}>
+                        <Avatar uri={a.avatar_url} name={a.display_name} size={30} />
+                      </View>
+                    ))}
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 10, marginRight: 4 }}>
+                    <Text style={[styles.newPostsPopupTitle, { color: colors.text }]} numberOfLines={1}>
+                      {realAuthors.length === 1 ? realAuthors[0].display_name : `${realAuthors.length} people`}
+                    </Text>
+                    <Text style={[styles.newPostsPopupSub, { color: colors.textMuted }]}>
+                      new posts · tap to see
+                    </Text>
+                  </View>
+                </>
+              );
+            }
+            return (
+              <>
+                <View style={[styles.newPostsAvatarWrap, { backgroundColor: colors.accent + "22", borderRadius: 15, width: 30, height: 30, alignItems: "center", justifyContent: "center" }]}>
+                  <Ionicons name="sparkles-outline" size={16} color={colors.accent} />
+                </View>
+                <View style={{ flex: 1, marginLeft: 10, marginRight: 4 }}>
+                  <Text style={[styles.newPostsPopupTitle, { color: colors.text }]} numberOfLines={1}>
+                    {bgEntry?.display_name ?? "New posts"}
+                  </Text>
+                  <Text style={[styles.newPostsPopupSub, { color: colors.textMuted }]}>
+                    tap to see
+                  </Text>
+                </View>
+              </>
+            );
+          })()}
           <View style={[styles.newPostsPopupBadge, { backgroundColor: colors.accent }]}>
             <Ionicons name="arrow-up" size={13} color="#fff" />
           </View>
