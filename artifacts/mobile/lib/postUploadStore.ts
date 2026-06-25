@@ -38,6 +38,13 @@ export function updatePostProgress(progress: number): void {
   notify();
 }
 
+/** Update both progress value and the caption label simultaneously. */
+export function updatePostStatus(progress: number, label: string): void {
+  if (!_state) return;
+  _state = { ..._state, progress, label };
+  notify();
+}
+
 export function finishPostUpload(): void {
   if (!_state) return;
   _state = { ..._state, progress: 1, done: true };

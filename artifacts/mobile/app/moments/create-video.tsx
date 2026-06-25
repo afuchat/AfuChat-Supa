@@ -59,6 +59,7 @@ import {
 import {
   startPostUpload,
   updatePostProgress,
+  updatePostStatus,
   finishPostUpload,
   failPostUpload,
 } from "@/lib/postUploadStore";
@@ -1690,7 +1691,14 @@ export default function CreateVideoScreen() {
         const compressionMeta = await compressVideoBeforeUpload(
           _uri,
           resolvedMime,
-          (status) => updatePostProgress(0.1),
+          (status) => {
+            // Map compression progress text ("Compressing… 47%") to
+            // the 0.05–0.18 slice of the overall upload progress bar.
+            const match = status.match(/(\d+)%/);
+            const pct = match ? parseInt(match[1], 10) : 0;
+            const mapped = 0.05 + (pct / 100) * 0.13;
+            updatePostStatus(mapped, status);
+          },
         );
 
         updatePostProgress(0.2);

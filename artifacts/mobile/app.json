@@ -143,6 +143,7 @@
         }
       ],
       "./plugins/withProguardRules",
+      "react-native-compressor",
       "expo-secure-store",
       "expo-sqlite",
       [

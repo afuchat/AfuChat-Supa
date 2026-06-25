@@ -39,13 +39,15 @@ export default function PostUploadBanner() {
               ? `${isVideo ? "Video" : "Post"} published!`
               : isFailed
               ? `${isVideo ? "Video" : "Post"} upload failed`
+              : upload.label?.startsWith("Compressing")
+              ? "Compressing video…"
               : `Posting your ${isVideo ? "video" : "post"}…`}
           </Text>
           {isFailed && upload.errorMessage ? (
             <Text style={[s.caption, { color: "#EF4444" }]} numberOfLines={2}>
               {upload.errorMessage}
             </Text>
-          ) : upload.label ? (
+          ) : upload.label && !upload.label.startsWith("Compressing") ? (
             <Text style={[s.caption, { color: colors.textMuted }]} numberOfLines={1}>
               {upload.label}
             </Text>

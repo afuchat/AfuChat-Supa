@@ -87,6 +87,7 @@
     "html2canvas": "^1.4.1",
     "libphonenumber-js": "^1.12.42",
     "qrcode": "^1.5.4",
+    "react-native-compressor": "^1.6.0",
     "react-native-mmkv": "^3.2.0",
     "react-native-pager-view": "8.0.0",
     "react-native-url-polyfill": "^3.0.0",

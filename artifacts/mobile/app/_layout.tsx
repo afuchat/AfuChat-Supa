@@ -243,6 +243,50 @@ export default function RootLayout() {
     startSyncQueue();
   }, []);
 
+  // ── Offline action toast ─────────────────────────────────────────────────
+  // When the user loses connectivity, show a prominent action toast with a
+  // "Watch now" button that navigates to /shorts (cached offline videos).
+  // When connectivity is restored, dismiss it and confirm "Back online".
+  useEffect(() => {
+    const TOAST_ID = "connectivity";
+
+    async function fireOfflineToast() {
+      let videoCount = 0;
+      try {
+        const cached = await getCachedShortsTab("for_you");
+        videoCount = cached?.posts?.length ?? 0;
+      } catch {}
+
+      const msg = videoCount > 0
+        ? `You're offline · ${videoCount} video${videoCount === 1 ? "" : "s"} ready`
+        : "You're offline";
+
+      showActionToast(
+        msg,
+        videoCount > 0 ? "Watch now" : "",
+        () => router.push("/shorts" as any),
+        { type: "warning", duration: 0, id: TOAST_ID, icon: "wifi-outline" },
+      );
+    }
+
+    // Fire immediately if already offline at mount
+    if (!isOnline()) {
+      fireOfflineToast();
+    }
+
+    // Listen for subsequent changes
+    const unsub = onConnectivityChange((online) => {
+      if (online) {
+        dismissToast(TOAST_ID);
+        showToast("Back online", { type: "success", duration: 2500, icon: "wifi" });
+      } else {
+        fireOfflineToast();
+      }
+    });
+
+    return unsub;
+  }, []);
+
   if (!fontsReady) return null;
 
   return (
