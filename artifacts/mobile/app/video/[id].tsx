@@ -483,6 +483,11 @@ const VideoItem = React.memo(function VideoItem({
   // on isActive) can read their latest values without becoming stale.
   const inPipRef = useRef(false);
   const pausedRef = useRef(false);
+  // Tracks whether the native app is currently in the foreground.
+  // Derived from AppState — does NOT cause re-renders (ref, not state).
+  // useFocusEffect only fires on navigation events, NOT on home-button press,
+  // so this ref is the only reliable way to know the app is backgrounded.
+  const appActiveRef = useRef(AppState.currentState === "active");
   // Set to true when PiP stops so the tabFocused effect doesn't reset the
   // poster / position before the app finishes returning to the foreground.
   const justExitedPipRef = useRef(false);
@@ -629,18 +634,83 @@ const VideoItem = React.memo(function VideoItem({
     }
   }, [isActive]);
 
-  // ── Auto-PiP on home button (AppState background) ──────────────────────
-  // Always attempt PiP when the app is backgrounded — the OS will silently
-  // ignore the call if the user has denied PiP permission in device Settings.
-  // No toggle needed: if the device allows PiP it happens automatically.
+  // ── Comprehensive AppState handler ─────────────────────────────────────
+  // Root cause: useFocusEffect only fires on React Navigation events (screen
+  // swaps), NOT when the home button is pressed. So tabFocused stays `true`
+  // even when the app is in the background. This AppState listener is the
+  // only reliable place to handle background ↔ foreground transitions.
   useEffect(() => {
     if (Platform.OS === "web") return;
+    let bgPauseTimer: ReturnType<typeof setTimeout> | null = null;
+
     const sub = AppState.addEventListener("change", (nextState) => {
-      if (nextState === "background" && isActive) {
-        try { videoViewRef.current?.startPictureInPicture?.(); } catch {}
+      const nowFg = nextState === "active";
+      appActiveRef.current = nowFg;
+
+      if (!nowFg) {
+        // ── App going to background ────────────────────────────────────
+        if (isActive) {
+          // Attempt PiP; the OS silently ignores if permission denied.
+          try { videoViewRef.current?.startPictureInPicture?.(); } catch {}
+        }
+        // Safety net: if PiP hasn't started within 400 ms, pause to
+        // prevent audio playing invisibly in the background.
+        if (bgPauseTimer) clearTimeout(bgPauseTimer);
+        bgPauseTimer = setTimeout(() => {
+          bgPauseTimer = null;
+          if (!inPipRef.current) {
+            try { player.pause(); } catch {}
+          }
+        }, 400);
+      } else {
+        // ── App returned to foreground ────────────────────────────────
+        if (bgPauseTimer) { clearTimeout(bgPauseTimer); bgPauseTimer = null; }
+        justExitedPipRef.current = false;
+        // Resume the active video only if the user didn't manually pause it
+        // (pausedRef reflects the last play/pause action including PiP controls).
+        if (isActive && !pausedRef.current && !inPipRef.current) {
+          // Small delay lets the PiP window animation finish before we call play.
+          setTimeout(() => {
+            try { if (!inPipRef.current) player.play(); } catch {}
+          }, 80);
+        }
       }
     });
-    return () => sub.remove();
+
+    return () => {
+      sub.remove();
+      if (bgPauseTimer) clearTimeout(bgPauseTimer);
+    };
+  }, [isActive]);
+
+  // ── PiP native-control sync via playingChange event ─────────────────────
+  // The JS polling timer (setInterval) is throttled/suspended when the app is
+  // in the background. expo-video's native "playingChange" event fires via the
+  // native bridge even while JS is suspended, so it's the only reliable way to
+  // keep React's `paused` state in sync with what the user does in the PiP
+  // overlay (play / pause buttons on the floating window).
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    const sub = (player as any).addListener?.("playingChange", (payload: any) => {
+      if (!inPipRef.current) return;
+      const isPlaying: boolean = payload?.isPlaying ?? payload?.playing ?? player.playing;
+      const shouldBePaused = !isPlaying;
+      if (shouldBePaused !== pausedRef.current) {
+        pausedRef.current = shouldBePaused;
+        setPaused(shouldBePaused);
+      }
+    });
+    return () => { try { sub?.remove?.(); } catch {} };
+  // player is stable across renders (useVideoPlayer returns the same instance)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Mute non-active players to prevent audio bleed ─────────────────────
+  // All players are initialised with muted:false. Near-active (preloaded)
+  // players must be muted so any race that causes a brief play() doesn't
+  // produce a second audio stream alongside the active video (or PiP audio).
+  useEffect(() => {
+    try { player.muted = !isActive; } catch {}
   }, [isActive]);
 
   // ── Player source update ───────────────────────────────────────────────
@@ -684,15 +754,6 @@ const VideoItem = React.memo(function VideoItem({
       // A silent swallow here is intentional: one failed tick is harmless,
       // and the interval cleans up on unmount via the return below.
       try {
-        // Sync paused state from native player while PiP is active so that
-        // the native PiP overlay play/pause button is reflected in React state.
-        if (inPipRef.current) {
-          const nativePlaying = player.playing;
-          if (nativePlaying === pausedRef.current) {
-            pausedRef.current = !nativePlaying;
-            setPaused(!nativePlaying);
-          }
-        }
         if (player.playing && !videoStartedRef.current) {
           videoStartedRef.current = true;
           setVideoStarted(true);
@@ -815,9 +876,16 @@ const VideoItem = React.memo(function VideoItem({
             // sees it during the same render cycle and skips the poster reset.
             justExitedPipRef.current = true;
             setInPip(false);
-            // Sync paused state from native player so any play/pause the user
-            // triggered via the PiP overlay is reflected when the app resumes.
-            try { setPaused(!player.playing); } catch {}
+            // Capture what the native player's play state was right now —
+            // this reflects any play/pause the user triggered via PiP controls.
+            // Then ALWAYS pause directly. Two outcomes:
+            //   (a) User dismissed PiP while app in BG → stays paused, no BG audio.
+            //   (b) User tapped PiP to return to app → AppState "active" fires and
+            //       resumes only if pausedRef.current is false (not manually paused).
+            const wasPlaying = (() => { try { return player.playing; } catch { return false; } })();
+            pausedRef.current = !wasPlaying;
+            setPaused(!wasPlaying);
+            try { player.pause(); } catch {}
           }}
         />
       ) : <View style={[StyleSheet.absoluteFill, { backgroundColor: "#000" }]} />}
