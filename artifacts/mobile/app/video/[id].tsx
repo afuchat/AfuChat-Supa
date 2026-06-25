@@ -479,6 +479,9 @@ const VideoItem = React.memo(function VideoItem({
   const videoViewRef = useRef<VideoView>(null);
   const videoEndFiredRef = useRef(false);
   const [inPip, setInPip] = useState(false);
+  // Set to true when PiP stops so the tabFocused effect doesn't reset the
+  // poster / position before the app finishes returning to the foreground.
+  const justExitedPipRef = useRef(false);
   const [paused, setPaused] = useState(false);
   const [buffering, setBuffering] = useState(false);
   const [showBuffering, setShowBuffering] = useState(false);
@@ -552,14 +555,21 @@ const VideoItem = React.memo(function VideoItem({
   // Skip this when PiP is active — the video should keep playing in the PiP window.
   useEffect(() => {
     if (!tabFocused) {
-      if (inPip) return; // PiP keeps playing; never reset poster or pause
+      // Skip the poster reset while PiP is active OR while the app is still
+      // animating back from PiP — otherwise `inPip` flipping to false before
+      // `tabFocused` flips to true would show a black frame / restart the video.
+      if (inPip || justExitedPipRef.current) return;
       setVideoStarted(false);
       videoStartedRef.current = false;
       if (Platform.OS === "web" && webVideoRef.current) {
         webVideoRef.current.pause();
       }
-    } else if (isActive && Platform.OS === "web" && webVideoRef.current && !paused) {
-      webVideoRef.current.play().catch(() => {});
+    } else {
+      // App fully regained focus — the PiP-exit bridge is no longer needed.
+      justExitedPipRef.current = false;
+      if (isActive && Platform.OS === "web" && webVideoRef.current && !paused) {
+        webVideoRef.current.play().catch(() => {});
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabFocused, inPip]);
@@ -779,8 +789,16 @@ const VideoItem = React.memo(function VideoItem({
           nativeControls={false}
           allowsPictureInPicture={Platform.OS !== "web"}
           startsPictureInPictureAutomatically={Platform.OS !== "web"}
-          onPictureInPictureStart={() => setInPip(true)}
-          onPictureInPictureStop={() => setInPip(false)}
+          onPictureInPictureStart={() => {
+            justExitedPipRef.current = false;
+            setInPip(true);
+          }}
+          onPictureInPictureStop={() => {
+            // Raise the flag BEFORE clearing inPip so the tabFocused effect
+            // sees it during the same render cycle and skips the poster reset.
+            justExitedPipRef.current = true;
+            setInPip(false);
+          }}
         />
       ) : <View style={[StyleSheet.absoluteFill, { backgroundColor: "#000" }]} />}
 
