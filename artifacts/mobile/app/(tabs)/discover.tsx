@@ -960,6 +960,10 @@ export default function DiscoverScreen() {
   const [newPostAuthors, setNewPostAuthors] = useState<{ id: string; avatar_url: string | null; display_name: string }[]>([]);
   const newPostAuthorIdsRef = useRef<Set<string>>(new Set());
   const pendingPostsRef = useRef<PostItem[]>([]);
+  const [pendingCount, setPendingCount] = useState(0);
+  // Ref tracking the newest post's created_at currently shown in feed (for polling)
+  const newestPostAtRef = useRef<string | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Floating "new posts" popup animation
   const popupSlide = useRef(new Animated.Value(-80)).current;
   const popupOpacity = useRef(new Animated.Value(0)).current;
@@ -968,6 +972,13 @@ export default function DiscoverScreen() {
 
   useEffect(() => { postsRef.current = posts; }, [posts]);
   useEffect(() => { feedTabRef.current = feedTab; }, [feedTab]);
+
+  // Keep newestPostAtRef pointed at the latest post currently rendered in the feed.
+  // This is what the poller uses to ask "are there posts newer than this?"
+  useEffect(() => {
+    const first = posts.find(p => p.created_at);
+    if (first) newestPostAtRef.current = first.created_at;
+  }, [posts]);
 
   // Animate the floating "new posts" popup in when new authors arrive,
   // out when the list is cleared (refresh, tab switch, etc.).
@@ -1639,6 +1650,7 @@ export default function DiscoverScreen() {
     setNewPostAuthors([]);
     newPostAuthorIdsRef.current.clear();
     pendingPostsRef.current = [];
+    setPendingCount(0);
 
     if (cached.length > 0) {
       setPosts(cached);
@@ -1726,56 +1738,6 @@ export default function DiscoverScreen() {
   useEffect(() => {
     const channel = supabase
       .channel("discover-posts-realtime")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "posts" }, (payload: any) => {
-        const newPost = payload.new;
-        if (!newPost) return;
-        if (newPost.visibility && newPost.visibility !== "public") return;
-        const authorId = newPost.author_id;
-        if (!authorId || authorId === user?.id) return;
-        // Fetch author profile + full post in parallel so pill click instantly prepends
-        Promise.all([
-          supabase.from("profiles").select("display_name, avatar_url, handle, is_verified, is_organization_verified").eq("id", authorId).single(),
-          supabase.from("posts").select("id, author_id, content, image_url, images, created_at, view_count, visibility, is_verified, is_organization_verified, like_count, reply_count, post_type, article_title, article_body, video_url, duration_seconds").eq("id", newPost.id).single(),
-        ]).then(([{ data: prof }, { data: fullPost }]) => {
-          if (!prof || !fullPost) return;
-          const mappedPost: PostItem = {
-            id: fullPost.id,
-            author_id: fullPost.author_id,
-            content: fullPost.content ?? "",
-            image_url: fullPost.image_url,
-            images: Array.isArray(fullPost.images) ? fullPost.images : fullPost.image_url ? [fullPost.image_url] : [],
-            created_at: fullPost.created_at,
-            view_count: fullPost.view_count ?? 0,
-            visibility: fullPost.visibility ?? "public",
-            is_verified: prof.is_verified ?? false,
-            is_organization_verified: prof.is_organization_verified ?? false,
-            profile: { display_name: prof.display_name || "User", handle: prof.handle || "user", avatar_url: prof.avatar_url || null, bio: null },
-            liked: false,
-            likeCount: fullPost.like_count ?? 0,
-            replyCount: fullPost.reply_count ?? 0,
-            score: 0,
-            bookmarked: false,
-            post_type: fullPost.post_type ?? "text",
-            article_title: fullPost.article_title ?? null,
-            article_body: fullPost.article_body ?? null,
-            video_url: fullPost.video_url ?? null,
-            duration_seconds: fullPost.duration_seconds ?? null,
-            isFollowing: false,
-          };
-          // Only add to pending if we haven't seen this author yet in this batch
-          if (!newPostAuthorIdsRef.current.has(authorId)) {
-            newPostAuthorIdsRef.current.add(authorId);
-            pendingPostsRef.current = [mappedPost, ...pendingPostsRef.current.filter((p) => p.id !== mappedPost.id)];
-            setNewPostAuthors((prev) => {
-              if (prev.length >= 5) return prev;
-              return [...prev, { id: authorId, avatar_url: prof.avatar_url || null, display_name: prof.display_name || "User" }];
-            });
-          } else {
-            // Same author posted again — just prepend the post silently
-            pendingPostsRef.current = [mappedPost, ...pendingPostsRef.current.filter((p) => p.id !== mappedPost.id)];
-          }
-        });
-      })
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "posts" }, (payload: any) => {
         const deletedId = payload.old?.id;
         if (deletedId) {
@@ -1819,32 +1781,174 @@ export default function DiscoverScreen() {
     return () => { supabase.removeChannel(channel); };
   }, [user?.id]);
 
-  function handleShowNewPosts() {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Dismiss the pill immediately
+  // ── Twitter/X-style background poller ──────────────────────────────────────
+  // Every 60 s the poller silently queries for posts newer than the newest one
+  // currently visible. If any are found they go into pendingPostsRef and the
+  // floating pill appears. The feed list itself is NOT touched until the user
+  // taps the pill — so the current reading position never shifts unexpectedly.
+  useEffect(() => {
+    const POLL_INTERVAL_MS = 60_000;
+
+    const poll = async () => {
+      if (!isOnline()) return;
+      const newestAt = newestPostAtRef.current;
+      if (!newestAt) return;
+      // Don't stack up if a pill is already visible
+      if (pendingPostsRef.current.length > 0) return;
+
+      const activeTab = feedTabRef.current;
+      const fySelect = `
+        id, author_id, content, image_url, created_at, view_count, like_count, visibility,
+        post_type, article_title, article_body, video_url,
+        profiles!posts_author_id_fkey(display_name, handle, avatar_url, is_verified, is_organization_verified),
+        post_images(image_url, display_order),
+        video_assets!posts_video_asset_id_fkey(duration_seconds)
+      `;
+
+      let newPostsData: any[] = [];
+
+      if (activeTab === "for_you") {
+        const { data } = await supabase
+          .from("posts")
+          .select(fySelect)
+          .eq("visibility", "public")
+          .gt("created_at", newestAt)
+          .neq("author_id", user?.id ?? "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")
+          .order("created_at", { ascending: false })
+          .limit(20);
+        newPostsData = data ?? [];
+      } else if (activeTab === "following" && user?.id) {
+        const { data: followData } = await supabase
+          .from("follows")
+          .select("following_id")
+          .eq("follower_id", user.id)
+          .limit(500);
+        const followingIds = (followData ?? []).map((f: any) => f.following_id);
+        if (followingIds.length > 0) {
+          const { data } = await supabase
+            .from("posts")
+            .select(fySelect)
+            .in("author_id", followingIds)
+            .in("visibility", ["public", "followers"])
+            .gt("created_at", newestAt)
+            .order("created_at", { ascending: false })
+            .limit(20);
+          newPostsData = data ?? [];
+        }
+      }
+
+      if (!newPostsData.length) return;
+
+      // Map to PostItem
+      const mappedPosts: PostItem[] = newPostsData.map((p: any) => ({
+        id: p.id,
+        author_id: p.author_id,
+        content: p.content ?? "",
+        image_url: p.image_url,
+        images: (p.post_images ?? [])
+          .sort((a: any, b: any) => a.display_order - b.display_order)
+          .map((i: any) => i.image_url),
+        created_at: p.created_at,
+        view_count: p.view_count ?? 0,
+        visibility: p.visibility ?? "public",
+        is_verified: p.profiles?.is_verified ?? false,
+        is_organization_verified: p.profiles?.is_organization_verified ?? false,
+        profile: {
+          display_name: p.profiles?.display_name || "User",
+          handle: p.profiles?.handle || "user",
+          avatar_url: p.profiles?.avatar_url || null,
+          bio: null,
+        },
+        liked: false,
+        likeCount: p.like_count ?? 0,
+        replyCount: 0,
+        score: 0,
+        bookmarked: false,
+        post_type: p.post_type ?? "text",
+        article_title: p.article_title ?? null,
+        article_body: p.article_body ?? null,
+        video_url: p.video_url ?? null,
+        duration_seconds: (() => {
+          const arr = Array.isArray(p.video_assets) ? p.video_assets : (p.video_assets ? [p.video_assets] : []);
+          return arr.length > 0 ? (arr[0].duration_seconds ?? null) : null;
+        })(),
+        isFollowing: activeTab === "following",
+      }));
+
+      // Deduplicate against current feed and existing pending buffer
+      const existingIds = new Set([
+        ...postsRef.current.map((p) => p.id),
+        ...pendingPostsRef.current.map((p) => p.id),
+      ]);
+      const trulyNew = mappedPosts.filter((p) => !existingIds.has(p.id));
+      if (!trulyNew.length) return;
+
+      // Buffer the new posts — they'll be prepended when the user taps the pill
+      pendingPostsRef.current = [...trulyNew, ...pendingPostsRef.current];
+      setPendingCount(pendingPostsRef.current.length);
+
+      // Collect unique author profiles for the pill avatars (max 5)
+      const seen = new Set(newPostAuthorIdsRef.current);
+      const newAuthors: { id: string; avatar_url: string | null; display_name: string }[] = [];
+      for (const post of trulyNew) {
+        if (!seen.has(post.author_id)) {
+          seen.add(post.author_id);
+          newPostAuthorIdsRef.current.add(post.author_id);
+          newAuthors.push({
+            id: post.author_id,
+            avatar_url: post.profile.avatar_url,
+            display_name: post.profile.display_name,
+          });
+        }
+      }
+      if (newAuthors.length > 0) {
+        setNewPostAuthors((prev) => {
+          const combined = [...prev, ...newAuthors.filter((a) => !prev.some((p) => p.id === a.id))];
+          return combined.slice(0, 5);
+        });
+      }
+    };
+
+    pollIntervalRef.current = setInterval(poll, POLL_INTERVAL_MS);
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
+  // Re-run when user changes so we get the right `user?.id` closure
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  function _resetPill() {
     setNewPostAuthors([]);
     newPostAuthorIdsRef.current.clear();
-
-    const pending = pendingPostsRef.current;
     pendingPostsRef.current = [];
+    setPendingCount(0);
+  }
+
+  function handleShowNewPosts() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    const pending = [...pendingPostsRef.current];
+    _resetPill();
 
     if (pending.length > 0) {
-      // Instantly prepend cached pending posts then scroll to top
+      // Silently prepend the buffered posts — list position doesn't move until
+      // the smooth animated scroll fires. Zero visual "shake".
       setPosts((prev) => {
         const existIds = new Set(prev.map((p) => p.id));
         const fresh = pending.filter((p) => !existIds.has(p.id));
         return fresh.length > 0 ? [...fresh, ...prev] : prev;
       });
-      // Small delay so the list re-renders before we scroll
-      setTimeout(() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true }), 120);
-      // Background-refresh silently to pick up any posts that arrived after the pill was shown
+      // Smooth scroll to top — deferred one frame so the prepend settles first
+      requestAnimationFrame(() => {
+        setTimeout(() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true }), 80);
+      });
+      // Background-refresh to pick up anything that arrived since the last poll
       loadPosts(feedTab, true);
     } else {
-      // No cached posts — do a foreground refresh and scroll once it settles
-      setRefreshing(true);
-      setHasMore(true);
-      loadPosts(feedTab);
-      setTimeout(() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true }), 400);
+      // Nothing buffered — background refresh + smooth scroll
+      loadPosts(feedTab, true);
+      setTimeout(() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true }), 350);
     }
   }
 
@@ -2140,7 +2244,7 @@ export default function DiscoverScreen() {
                   updateCellsBatchingPeriod={50}
                   removeClippedSubviews={Platform.OS !== "web"}
                   refreshControl={
-                    <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); setNewPostAuthors([]); newPostAuthorIdsRef.current.clear(); pendingPostsRef.current = []; loadPosts(feedTab); }} tintColor={colors.accent} />
+                    <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(); loadPosts(feedTab); }} tintColor={colors.accent} />
                   }
                   ListFooterComponent={
                     !hasMore && filteredPosts.length > 0 ? (
@@ -2212,7 +2316,7 @@ export default function DiscoverScreen() {
                   updateCellsBatchingPeriod={50}
                   removeClippedSubviews={Platform.OS !== "web"}
                   refreshControl={
-                    <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); setNewPostAuthors([]); newPostAuthorIdsRef.current.clear(); pendingPostsRef.current = []; loadPosts(feedTab); }} tintColor={colors.accent} />
+                    <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(); loadPosts(feedTab); }} tintColor={colors.accent} />
                   }
                   ListFooterComponent={
                     !hasMore && filteredPosts.length > 0 ? (
@@ -2284,7 +2388,7 @@ export default function DiscoverScreen() {
             updateCellsBatchingPeriod={50}
             removeClippedSubviews={Platform.OS !== "web"}
             refreshControl={
-              <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); setNewPostAuthors([]); newPostAuthorIdsRef.current.clear(); pendingPostsRef.current = []; loadPosts(feedTab); }} tintColor={colors.accent} />
+              <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(); loadPosts(feedTab); }} tintColor={colors.accent} />
             }
             ListFooterComponent={
               !hasMore && filteredPosts.length > 0 ? (
@@ -2464,7 +2568,9 @@ export default function DiscoverScreen() {
               </View>
             ))}
           </View>
-          <Text style={styles.newPostsPillLabel}>new posts</Text>
+          <Text style={styles.newPostsPillLabel}>
+            {pendingCount > 1 ? `${pendingCount} new posts` : "new posts"}
+          </Text>
         </Pressable>
       </Animated.View>
     </View>
@@ -2878,6 +2984,28 @@ const styles = StyleSheet.create({
   newPostsAvatars: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  newPostsAvatarCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: "#fff",
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.25)",
+  },
+  newPostsAvatarFallback: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  newPostsAvatarInitial: {
+    color: "#fff",
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
   },
   newPostsAvatarWrap: {
     borderRadius: 16,
