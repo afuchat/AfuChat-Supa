@@ -394,16 +394,16 @@ const ssStyles = StyleSheet.create({
 
 // ─── VideoContextMenu ─────────────────────────────────────────────────────────
 
-function VideoContextMenu({ visible, item, onClose, onShare, onRepost, onDownload, onCopyLink, onNotInterested, onReport, pipEnabled, onTogglePip, autoScroll, onToggleAutoScroll }: {
+function VideoContextMenu({ visible, item, onClose, onShare, onRepost, onDownload, onCopyLink, onNotInterested, onReport, onPiP, autoScroll, onToggleAutoScroll }: {
   visible: boolean; item: VideoPost | null; onClose: () => void;
   onShare: () => void; onRepost: () => void; onDownload: () => void;
   onCopyLink: () => void; onNotInterested: () => void; onReport: () => void;
-  pipEnabled: boolean; onTogglePip: () => void;
+  onPiP: () => void;
   autoScroll: boolean; onToggleAutoScroll: () => void;
 }) {
   if (!visible || !item) return null;
   const ACTIONS: { id: string; label: string; icon: string; bg: string; color: string }[] = [
-    ...(Platform.OS !== "web" ? [{ id: "pip", label: pipEnabled ? "Mini Player: On" : "Mini Player: Off", icon: "phone-portrait-outline", bg: pipEnabled ? "#34C759" : "#1C1C1E", color: "#fff" }] : []),
+    ...(Platform.OS !== "web" ? [{ id: "pip", label: "Mini Player", icon: "phone-portrait-outline", bg: "#1C1C1E", color: "#fff" }] : []),
     { id: "autoscroll",    label: autoScroll ? "Auto-scroll: On" : "Auto-scroll: Off", icon: autoScroll ? "infinite" : "infinite-outline", bg: autoScroll ? "#34C759" : "#8E8E93", color: "#fff" },
     { id: "repost",        label: "Repost",           icon: "repeat",                 bg: "#FF9500",                          color: "#fff"  },
     { id: "share",         label: "Share to",         icon: "share-social",           bg: "#007AFF",                          color: "#fff"  },
@@ -414,7 +414,7 @@ function VideoContextMenu({ visible, item, onClose, onShare, onRepost, onDownloa
   ];
   const handlers: Record<string, () => void> = {
     repost: onRepost, copylink: onCopyLink, share: onShare,
-    download: onDownload, pip: onTogglePip, autoscroll: onToggleAutoScroll,
+    download: onDownload, pip: onPiP, autoscroll: onToggleAutoScroll,
     notinterested: onNotInterested, report: onReport,
   };
   return (
@@ -549,10 +549,10 @@ const VideoItem = React.memo(function VideoItem({
   }, [screenH]);
 
   // Pause and show poster when app/tab loses focus; resume seamlessly on return.
-  // Resetting videoStarted shows the poster image immediately so there's no black
-  // frame while the AVPlayer re-syncs after the screen regains focus.
+  // Skip this when PiP is active — the video should keep playing in the PiP window.
   useEffect(() => {
     if (!tabFocused) {
+      if (inPip) return; // PiP keeps playing; never reset poster or pause
       setVideoStarted(false);
       videoStartedRef.current = false;
       if (Platform.OS === "web" && webVideoRef.current) {
@@ -562,7 +562,7 @@ const VideoItem = React.memo(function VideoItem({
       webVideoRef.current.play().catch(() => {});
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tabFocused]);
+  }, [tabFocused, inPip]);
 
   // Reset when leaving viewport; record view when becoming active
   useEffect(() => {
@@ -616,14 +616,14 @@ const VideoItem = React.memo(function VideoItem({
   }, [isActive]);
 
   // ── Auto-PiP on home button (AppState background) ──────────────────────
+  // Always attempt PiP when the app is backgrounded — the OS will silently
+  // ignore the call if the user has denied PiP permission in device Settings.
+  // No toggle needed: if the device allows PiP it happens automatically.
   useEffect(() => {
     if (Platform.OS === "web") return;
     const sub = AppState.addEventListener("change", (nextState) => {
       if (nextState === "background" && isActive) {
-        const pipOn = storage.getBoolean("pip_mode_enabled") ?? false;
-        if (pipOn) {
-          try { videoViewRef.current?.startPictureInPicture?.(); } catch {}
-        }
+        try { videoViewRef.current?.startPictureInPicture?.(); } catch {}
       }
     });
     return () => sub.remove();
@@ -648,9 +648,12 @@ const VideoItem = React.memo(function VideoItem({
     // background audio session conflicts, etc.).
     try {
       if (!shouldMountVideo) { player.pause(); return; }
+      // Keep playing when PiP is active — the user backgrounded the app
+      // intentionally to watch in PiP, so never pause during PiP.
+      if (inPip) { player.play(); return; }
       if (!isActive || paused || preloadOnly || !tabFocused) { player.pause(); } else { player.play(); }
     } catch {}
-  }, [isActive, paused, preloadOnly, tabFocused, shouldMountVideo]);
+  }, [isActive, paused, preloadOnly, tabFocused, shouldMountVideo, inPip]);
 
   // ── Progress + started + buffering polling (100 ms) ────────────────────
   useEffect(() => {
@@ -775,6 +778,7 @@ const VideoItem = React.memo(function VideoItem({
           contentFit="cover"
           nativeControls={false}
           allowsPictureInPicture={Platform.OS !== "web"}
+          startsPictureInPictureAutomatically={Platform.OS !== "web"}
           onPictureInPictureStart={() => setInPip(true)}
           onPictureInPictureStop={() => setInPip(false)}
         />
@@ -1069,8 +1073,7 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
   useEffect(() => { activeIndexRef.current = activeIndex; }, [activeIndex]);
   useEffect(() => { autoScrollRef.current = autoScroll; }, [autoScroll]);
 
-  // PiP mode toggle — stored in MMKV (local only, lost on app clear)
-  const [pipEnabled, setPipEnabled] = useState<boolean>(() => storage.getBoolean("pip_mode_enabled") ?? false);
+  // PiP is always-on — no toggle needed. Auto-starts on home button press.
   useEffect(() => {
     videosLenRef.current = videos.length;
     videosRef.current = videos;
@@ -1799,13 +1802,6 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
     });
   }, []);
 
-  const togglePipEnabled = useCallback(() => {
-    setPipEnabled((prev) => {
-      const next = !prev;
-      storage.setBoolean("pip_mode_enabled", next);
-      return next;
-    });
-  }, []);
 
   const squeezedH = Math.round(listHeight * 0.38);
 
@@ -2017,8 +2013,7 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
         onCopyLink={() => menuItem && handleCopyLink(menuItem)}
         onNotInterested={() => { if (menuItem) { setMenuItem(null); handleNotInterested(menuItem); } }}
         onReport={() => menuItem && handleReport(menuItem)}
-        pipEnabled={pipEnabled}
-        onTogglePip={() => { togglePipEnabled(); }}
+        onPiP={() => { pipTriggerRef.current(); }}
         autoScroll={autoScroll}
         onToggleAutoScroll={() => { toggleAutoScroll(); }}
       />
