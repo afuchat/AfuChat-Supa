@@ -1763,7 +1763,6 @@ export default function DiscoverScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setNewPostAuthors([]);
     newPostAuthorIdsRef.current.clear();
-    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     if (pendingPostsRef.current.length > 0) {
       const pending = pendingPostsRef.current;
       pendingPostsRef.current = [];
@@ -1772,10 +1771,12 @@ export default function DiscoverScreen() {
         const fresh = pending.filter((p) => !existIds.has(p.id));
         return fresh.length > 0 ? [...fresh, ...prev] : prev;
       });
+      setTimeout(() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true }), 60);
     } else {
       setRefreshing(true);
       setHasMore(true);
       loadPosts(feedTab);
+      setTimeout(() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true }), 60);
     }
   }
 
@@ -2335,9 +2336,7 @@ export default function DiscoverScreen() {
         </TouchableOpacity>
       </Animated.View>
 
-      {/* ── Floating "new posts" popup ─────────────────────────────────────── */}
-      {/* Absolutely positioned above the feed; slides in from the top when   */}
-      {/* Realtime delivers a new post from someone the user follows.          */}
+      {/* ── Floating "new posts" pill (X / Twitter style) ───────────────────── */}
       <Animated.View
         style={[
           styles.newPostsFloatingWrap,
@@ -2350,53 +2349,26 @@ export default function DiscoverScreen() {
         ]}
       >
         <TouchableOpacity
-          style={[styles.newPostsFloatingCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+          style={[styles.newPostsPillBtn, { backgroundColor: colors.accent }]}
           onPress={handleShowNewPosts}
-          activeOpacity={0.9}
+          activeOpacity={0.85}
         >
-          {(() => {
-            const realAuthors = popupSnapshot.filter((a) => a.id !== "_bg_");
-            const bgEntry = popupSnapshot.find((a) => a.id === "_bg_");
-            if (realAuthors.length > 0) {
-              return (
-                <>
-                  <View style={styles.newPostsAvatars}>
-                    {realAuthors.slice(0, 3).map((a, i) => (
-                      <View key={a.id} style={[styles.newPostsAvatarWrap, { marginLeft: i > 0 ? -8 : 0, zIndex: 3 - i }]}>
-                        <Avatar uri={a.avatar_url} name={a.display_name} size={30} />
-                      </View>
-                    ))}
-                  </View>
-                  <View style={{ flex: 1, marginLeft: 10, marginRight: 4 }}>
-                    <Text style={[styles.newPostsPopupTitle, { color: colors.text }]} numberOfLines={1}>
-                      {realAuthors.length === 1 ? realAuthors[0].display_name : `${realAuthors.length} people`}
-                    </Text>
-                    <Text style={[styles.newPostsPopupSub, { color: colors.textMuted }]}>
-                      new posts · tap to see
-                    </Text>
-                  </View>
-                </>
-              );
-            }
-            return (
-              <>
-                <View style={[styles.newPostsAvatarWrap, { backgroundColor: colors.accent + "22", borderRadius: 15, width: 30, height: 30, alignItems: "center", justifyContent: "center" }]}>
-                  <Ionicons name="sparkles-outline" size={16} color={colors.accent} />
-                </View>
-                <View style={{ flex: 1, marginLeft: 10, marginRight: 4 }}>
-                  <Text style={[styles.newPostsPopupTitle, { color: colors.text }]} numberOfLines={1}>
-                    {bgEntry?.display_name ?? "New posts"}
-                  </Text>
-                  <Text style={[styles.newPostsPopupSub, { color: colors.textMuted }]}>
-                    tap to see
-                  </Text>
-                </View>
-              </>
-            );
-          })()}
-          <View style={[styles.newPostsPopupBadge, { backgroundColor: colors.accent }]}>
-            <Ionicons name="arrow-up" size={13} color="#fff" />
+          <Ionicons name="arrow-up" size={15} color="#fff" />
+          <View style={styles.newPostsAvatars}>
+            {popupSnapshot.filter((a) => a.id !== "_bg_").slice(0, 3).map((a, i) => (
+              <View key={a.id} style={[styles.newPostsAvatarWrap, { marginLeft: i > 0 ? -10 : 0, zIndex: 3 - i }]}>
+                <Avatar uri={a.avatar_url} name={a.display_name} size={28} />
+              </View>
+            ))}
+            {popupSnapshot.every((a) => a.id === "_bg_") && (
+              <View style={styles.newPostsBgIcon}>
+                <Ionicons name="sparkles" size={14} color="#fff" />
+              </View>
+            )}
           </View>
+          <Text style={styles.newPostsPillLabel}>
+            {popupSnapshot.filter((a) => a.id !== "_bg_").length > 0 ? "posted" : "new posts"}
+          </Text>
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -2751,50 +2723,50 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: "Inter_600SemiBold",
   },
+  // Floating pill (X / Twitter style)
+  newPostsFloatingWrap: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    zIndex: 200,
+  },
+  newPostsPillBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 999,
+    paddingVertical: 9,
+    paddingLeft: 14,
+    paddingRight: 18,
+    gap: 8,
+    ...Platform.select({
+      web: { boxShadow: "0 2px 12px rgba(0,0,0,0.22)" } as any,
+      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.22, shadowRadius: 8, elevation: 6 },
+    }),
+  },
   newPostsAvatars: {
     flexDirection: "row",
     alignItems: "center",
   },
   newPostsAvatarWrap: {
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 2,
     borderColor: "#fff",
     overflow: "hidden",
   },
-  // Floating popup card
-  newPostsFloatingWrap: {
-    position: "absolute",
-    left: 16,
-    right: 16,
-    zIndex: 200,
-  },
-  newPostsFloatingCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    ...Platform.select({
-      web: { boxShadow: "0 4px 16px rgba(0,0,0,0.15)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8 },
-    }),
-  },
-  newPostsPopupTitle: {
-    fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
-  },
-  newPostsPopupSub: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    marginTop: 1,
-  },
-  newPostsPopupBadge: {
+  newPostsBgIcon: {
     width: 28,
     height: 28,
     borderRadius: 14,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.5)",
     alignItems: "center",
     justifyContent: "center",
+  },
+  newPostsPillLabel: {
+    color: "#fff",
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
   },
 });
 
