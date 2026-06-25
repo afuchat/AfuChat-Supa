@@ -1756,7 +1756,12 @@ export default function CreateVideoScreen() {
     if (router.canDismiss()) router.dismissAll();
     else router.replace("/(tabs)/chats");
 
-    startPostUpload("video", _cap.slice(0, 80));
+    const compressionEst = _size > 0 ? getCompressionEstimate(_size) : null;
+    startPostUpload("video", _cap.slice(0, 80), compressionEst ? {
+      originalLabel: compressionEst.originalLabel,
+      estimatedLabel: compressionEst.estimatedLabel,
+      savingsPct: compressionEst.savingsPct,
+    } : undefined);
 
     (async () => {
       try {

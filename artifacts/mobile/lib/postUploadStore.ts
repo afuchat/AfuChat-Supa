@@ -1,5 +1,11 @@
 export type PostUploadType = "video" | "post";
 
+export type UploadCompressionEstimate = {
+  originalLabel: string;
+  estimatedLabel: string;
+  savingsPct: number;
+};
+
 export type PostUploadState = {
   type: PostUploadType;
   progress: number;
@@ -7,6 +13,7 @@ export type PostUploadState = {
   done: boolean;
   failed: boolean;
   errorMessage?: string;
+  compressionEstimate?: UploadCompressionEstimate;
 };
 
 let _state: PostUploadState | null = null;
@@ -27,8 +34,8 @@ export function subscribePostUpload(fn: () => void): () => void {
   };
 }
 
-export function startPostUpload(type: PostUploadType, label: string): void {
-  _state = { type, progress: 0.05, label, done: false, failed: false };
+export function startPostUpload(type: PostUploadType, label: string, compressionEstimate?: UploadCompressionEstimate): void {
+  _state = { type, progress: 0.05, label, done: false, failed: false, compressionEstimate };
   notify();
 }
 
