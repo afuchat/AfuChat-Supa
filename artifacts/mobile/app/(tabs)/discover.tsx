@@ -792,7 +792,13 @@ export default function DiscoverScreen() {
   const imgViewer = useImageViewer();
 
   const filteredPosts = useMemo(() => {
-    return posts.filter(p => !dismissedIds.has(p.id) && !suppressedAuthors.has(p.author_id));
+    const seen = new Set<string>();
+    return posts.filter(p => {
+      if (dismissedIds.has(p.id) || suppressedAuthors.has(p.author_id)) return false;
+      if (seen.has(p.id)) return false;
+      seen.add(p.id);
+      return true;
+    });
   }, [posts, dismissedIds, suppressedAuthors]);
 
   const PREMIUM_VARIANTS: Array<"ai" | "creator" | "wallet"> = ["ai", "creator", "wallet"];
@@ -2442,7 +2448,7 @@ export default function DiscoverScreen() {
                 style={[styles.newPostsAvatarCircle, { marginLeft: i > 0 ? -10 : 0, zIndex: 10 - i }]}
               >
                 {a.avatar_url ? (
-                  <Image
+                  <ExpoImage
                     source={{ uri: a.avatar_url }}
                     style={{ width: 28, height: 28, borderRadius: 14 }}
                     contentFit="cover"
