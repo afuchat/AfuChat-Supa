@@ -985,14 +985,6 @@ export default function DiscoverScreen() {
       Animated.spring(popupSlide, { toValue: 0, useNativeDriver: _useND, tension: 70, friction: 10 }),
       Animated.timing(popupOpacity, { toValue: 1, duration: 180, useNativeDriver: _useND }),
     ]).start();
-    // Auto-dismiss after 5.5 s
-    popupTimerRef.current = setTimeout(() => {
-      Animated.parallel([
-        Animated.timing(popupSlide, { toValue: -80, duration: 280, useNativeDriver: _useND }),
-        Animated.timing(popupOpacity, { toValue: 0, duration: 280, useNativeDriver: _useND }),
-      ]).start();
-    }, 5500);
-    return () => { if (popupTimerRef.current) clearTimeout(popupTimerRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newPostAuthors.length]);
 
@@ -2350,7 +2342,7 @@ export default function DiscoverScreen() {
         style={[
           styles.newPostsFloatingWrap,
           {
-            top: insets.top + 10,
+            top: headerHeight + 6,
             transform: [{ translateY: popupSlide }],
             opacity: popupOpacity,
             pointerEvents: popupSnapshot.length > 0 ? "box-none" : "none",
