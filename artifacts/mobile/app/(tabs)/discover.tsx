@@ -920,22 +920,7 @@ export default function DiscoverScreen() {
     const id = scrollYAnim.addListener(({ value }) => {
       const dy = value - prevScrollYRef.current;
       prevScrollYRef.current = value;
-      isScrolledDownRef.current = value > 100;
-      if (value <= 20) {
-        revealHeader();
-        if (pendingPostsRef.current.length > 0) {
-          const pending = pendingPostsRef.current;
-          pendingPostsRef.current = [];
-          setPosts((prev) => {
-            const existIds = new Set(prev.map((p) => p.id));
-            const fresh = pending.filter((p) => !existIds.has(p.id));
-            return fresh.length > 0 ? [...fresh, ...prev] : prev;
-          });
-          setNewPostAuthors([]);
-          newPostAuthorIdsRef.current.clear();
-        }
-        return;
-      }
+      if (value <= 20) { revealHeader(); return; }
       if (dy > 4)  hideHeader(headerHeight);
       else if (dy < -4) revealHeader();
     });
@@ -972,7 +957,6 @@ export default function DiscoverScreen() {
   const [newPostAuthors, setNewPostAuthors] = useState<{ id: string; avatar_url: string | null; display_name: string }[]>([]);
   const newPostAuthorIdsRef = useRef<Set<string>>(new Set());
   const pendingPostsRef = useRef<PostItem[]>([]);
-  const isScrolledDownRef = useRef(false);
   // Floating "new posts" popup animation
   const popupSlide = useRef(new Animated.Value(-80)).current;
   const popupOpacity = useRef(new Animated.Value(0)).current;
@@ -1200,7 +1184,7 @@ export default function DiscoverScreen() {
           cacheFeedTab(activeTab, mapped);
           saveFeedPosts(mapped, activeTab as LocalFeedTab).catch(() => {});
           // Delta sync: prepend new posts to existing local posts (don't wipe them)
-          if (background && isScrolledDownRef.current) {
+          if (background) {
             const prevIds = new Set(postsRef.current.map((p) => p.id));
             const brandNew = mapped.filter((p) => !prevIds.has(p.id));
             if (brandNew.length > 0) {
@@ -1568,7 +1552,7 @@ export default function DiscoverScreen() {
         cacheFeedTab(activeTab, merged);
         cacheMoments(merged);
         saveFeedPosts(merged, activeTab as LocalFeedTab).catch(() => {});
-        if (background && isScrolledDownRef.current) {
+        if (background) {
           const prevIds = new Set(postsRef.current.map((p) => p.id));
           const brandNew = merged.filter((p) => !prevIds.has(p.id));
           if (brandNew.length > 0) {
