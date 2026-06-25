@@ -964,6 +964,9 @@ export default function DiscoverScreen() {
   // Ref tracking the newest post's created_at currently shown in feed (for polling)
   const newestPostAtRef = useRef<string | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Timestamp of the last pill dismissal — poller won't show pill again until cooldown expires
+  const pillDismissedAtRef = useRef<number>(0);
+  const PILL_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
   // Floating "new posts" popup animation
   const popupSlide = useRef(new Animated.Value(-80)).current;
   const popupOpacity = useRef(new Animated.Value(0)).current;
@@ -1647,10 +1650,12 @@ export default function DiscoverScreen() {
 
     setHasMore(true);
     setFollowingEmpty(false);
+    // Tab switch: clear pill without starting the cooldown
     setNewPostAuthors([]);
     newPostAuthorIdsRef.current.clear();
     pendingPostsRef.current = [];
     setPendingCount(0);
+    pillDismissedAtRef.current = 0;
 
     if (cached.length > 0) {
       setPosts(cached);
@@ -1795,6 +1800,8 @@ export default function DiscoverScreen() {
       if (!newestAt) return;
       // Don't stack up if a pill is already visible
       if (pendingPostsRef.current.length > 0) return;
+      // Respect the cooldown after pill dismissal
+      if (Date.now() - pillDismissedAtRef.current < PILL_COOLDOWN_MS) return;
 
       const activeTab = feedTabRef.current;
       const fySelect = `
@@ -1918,22 +1925,24 @@ export default function DiscoverScreen() {
   }, [user?.id]);
   // ─────────────────────────────────────────────────────────────────────────────
 
-  function _resetPill() {
+  function _resetPill(recordDismissal = true) {
     setNewPostAuthors([]);
     newPostAuthorIdsRef.current.clear();
     pendingPostsRef.current = [];
     setPendingCount(0);
+    if (recordDismissal) pillDismissedAtRef.current = Date.now();
   }
 
   function handleShowNewPosts() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     const pending = [...pendingPostsRef.current];
-    _resetPill();
+    // Dismiss pill and start cooldown — no feed refresh triggered here
+    _resetPill(true);
 
     if (pending.length > 0) {
-      // Silently prepend the buffered posts — list position doesn't move until
-      // the smooth animated scroll fires. Zero visual "shake".
+      // Silently prepend buffered posts — list position doesn't move until
+      // the smooth animated scroll fires. Zero visual shake.
       setPosts((prev) => {
         const existIds = new Set(prev.map((p) => p.id));
         const fresh = pending.filter((p) => !existIds.has(p.id));
@@ -1943,12 +1952,9 @@ export default function DiscoverScreen() {
       requestAnimationFrame(() => {
         setTimeout(() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true }), 80);
       });
-      // Background-refresh to pick up anything that arrived since the last poll
-      loadPosts(feedTab, true);
     } else {
-      // Nothing buffered — background refresh + smooth scroll
-      loadPosts(feedTab, true);
-      setTimeout(() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true }), 350);
+      // Nothing buffered — just scroll to top, poller will surface new posts later
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     }
   }
 
@@ -2244,7 +2250,7 @@ export default function DiscoverScreen() {
                   updateCellsBatchingPeriod={50}
                   removeClippedSubviews={Platform.OS !== "web"}
                   refreshControl={
-                    <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(); loadPosts(feedTab); }} tintColor={colors.accent} />
+                    <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
                   }
                   ListFooterComponent={
                     !hasMore && filteredPosts.length > 0 ? (
@@ -2316,7 +2322,7 @@ export default function DiscoverScreen() {
                   updateCellsBatchingPeriod={50}
                   removeClippedSubviews={Platform.OS !== "web"}
                   refreshControl={
-                    <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(); loadPosts(feedTab); }} tintColor={colors.accent} />
+                    <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
                   }
                   ListFooterComponent={
                     !hasMore && filteredPosts.length > 0 ? (
@@ -2388,7 +2394,7 @@ export default function DiscoverScreen() {
             updateCellsBatchingPeriod={50}
             removeClippedSubviews={Platform.OS !== "web"}
             refreshControl={
-              <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(); loadPosts(feedTab); }} tintColor={colors.accent} />
+              <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
             }
             ListFooterComponent={
               !hasMore && filteredPosts.length > 0 ? (
