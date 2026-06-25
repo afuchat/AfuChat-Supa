@@ -861,6 +861,7 @@ function EditPhase({
   const [playbackSpeed, setPlaybackSpeed] = useState(capturedSpeed ?? 1.0);
   const [audience, setAudience] = useState<"public" | "followers" | "private">("public");
   const [step, setStep] = useState<1 | 2>(1);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Thumbnail generation
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1405,81 +1406,8 @@ function EditPhase({
         {step === 2 && (
         <View style={{ gap: 0, paddingTop: 8 }}>
 
-          {/* Cover thumbnail */}
-          <View style={{ marginHorizontal: 16, marginBottom: 16, gap: 10 }}>
-            <Text style={[es.panelTitle, { color: "#ccc" }]}>Cover</Text>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-              {thumbnailUri ? (
-                <ExpoImage
-                  source={{ uri: thumbnailUri }}
-                  style={{ width: 88, height: 62, borderRadius: 8, backgroundColor: "#222" }}
-                  contentFit="cover"
-                />
-              ) : (
-                <View style={{ width: 88, height: 62, borderRadius: 8, backgroundColor: "#222", alignItems: "center", justifyContent: "center" }}>
-                  <Ionicons name="image-outline" size={22} color="#444" />
-                </View>
-              )}
-              <View style={{ flex: 1, gap: 4 }}>
-                <Text style={{ color: "#ccc", fontSize: 13, fontFamily: "Inter_500Medium" }}>
-                  Frame at {fmtTime(thumbTime)}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setStep(1)}
-                  style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
-                >
-                  <Ionicons name="cut-outline" size={13} color={accent} />
-                  <Text style={{ color: accent, fontSize: 12, fontFamily: "Inter_500Medium" }}>
-                    Go back to Trim to adjust
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
-          {/* Audience */}
-          <View style={{ marginHorizontal: 16, marginBottom: 16, gap: 8 }}>
-            <Text style={[es.panelTitle, { color: "#ccc" }]}>Audience</Text>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              {(["public", "followers", "private"] as const).map((a) => (
-                <TouchableOpacity
-                  key={a}
-                  onPress={() => { setAudience(a); void Haptics.selectionAsync(); }}
-                  style={[es.audienceBtn, audience === a && { backgroundColor: accent + "22", borderColor: accent }]}
-                >
-                  <Ionicons
-                    name={a === "public" ? "globe-outline" : a === "followers" ? "people-outline" : "lock-closed-outline"}
-                    size={14} color={audience === a ? accent : "#666"}
-                  />
-                  <Text style={[es.audienceBtnText, { color: audience === a ? accent : "#666" }]}>
-                    {a === "public" ? "Everyone" : a === "followers" ? "Followers" : "Only Me"}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* ── Sound banner ── */}
-          {soundName && !soundDismissed && (
-            <View style={[es.soundBanner, { backgroundColor: "#1A1A1A", borderColor: "#333" }]}>
-              {soundAlbumArt
-                ? <ExpoImage source={{ uri: soundAlbumArt }} style={es.soundArt} contentFit="cover" />
-                : <View style={[es.soundArt, { backgroundColor: accent + "22", alignItems: "center", justifyContent: "center" }]}>
-                    <Ionicons name="musical-notes" size={16} color={accent} />
-                  </View>
-              }
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: "#888", fontSize: 11, fontFamily: "Inter_500Medium" }}>Sound</Text>
-                <Text style={{ color: "#fff", fontSize: 13, fontFamily: "Inter_600SemiBold" }} numberOfLines={1}>{soundName}</Text>
-              </View>
-              <TouchableOpacity onPress={() => setSoundDismissed(true)} hitSlop={8}>
-                <Ionicons name="close-circle" size={18} color="#555" />
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* ── Caption ── */}
-          <View style={[es.captionWrap, { backgroundColor: "#1A1A1A", borderColor: "#333" }]}>
+          {/* ── Caption — primary field ── */}
+          <View style={[es.captionWrap, { backgroundColor: "#1A1A1A", borderColor: "#333", marginBottom: 4 }]}>
             <Ionicons name="pencil-outline" size={17} color="#666" style={{ marginTop: 3 }} />
             <TextInput
               style={[es.captionInput, { color: "#fff" }]}
@@ -1488,22 +1416,156 @@ function EditPhase({
               value={caption}
               onChangeText={setCaption}
               multiline maxLength={500}
+              autoFocus
             />
           </View>
 
-          {/* ── Compression preview card ── */}
+          {/* ── Video size / compression — always visible ── */}
           {fileSize > 0 && (() => {
             const est = getCompressionEstimate(fileSize);
-            return est ? (
-              <CompressionCard est={est} style={{ marginHorizontal: 16, marginBottom: 12 }} />
-            ) : null;
+            if (est) {
+              return (
+                <View style={es.sizeCard}>
+                  <View style={es.sizeCardHeader}>
+                    <Ionicons name="flash" size={16} color="#FACC15" />
+                    <Text style={es.sizeCardTitle}>Auto-optimized before upload</Text>
+                  </View>
+                  <View style={es.sizeCardRow}>
+                    <View style={es.sizeBlock}>
+                      <Text style={es.sizeLabelMuted}>Original</Text>
+                      <Text style={es.sizeValueBig}>{est.originalLabel}</Text>
+                    </View>
+                    <Ionicons name="arrow-forward" size={18} color="#555" />
+                    <View style={es.sizeBlock}>
+                      <Text style={[es.sizeLabelMuted, { color: "#4ADE80" }]}>After upload</Text>
+                      <Text style={[es.sizeValueBig, { color: "#4ADE80" }]}>{est.estimatedLabel}</Text>
+                    </View>
+                    <View style={es.savingsBadge}>
+                      <Text style={es.savingsBadgeText}>-{est.savingsPct}%</Text>
+                    </View>
+                  </View>
+                  <Text style={es.sizeCardNote}>Your video is automatically compressed to save data and upload faster.</Text>
+                </View>
+              );
+            }
+            return (
+              <View style={[es.sizeCard, { flexDirection: "row", alignItems: "center", gap: 10 }]}>
+                <Ionicons name="cloud-upload-outline" size={20} color="#888" />
+                <View style={{ flex: 1 }}>
+                  <Text style={es.sizeCardTitle}>File size: {fmtBytes(fileSize)}</Text>
+                  <Text style={es.sizeCardNote}>Will be uploaded as-is.</Text>
+                </View>
+              </View>
+            );
           })()}
+
+          {/* ── Options — collapsed by default ── */}
+          <TouchableOpacity
+            style={es.advancedToggle}
+            onPress={() => { setShowAdvanced((v) => !v); void Haptics.selectionAsync(); }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="options-outline" size={16} color="#888" />
+            <Text style={es.advancedToggleText}>Options</Text>
+            <View style={es.advancedPills}>
+              <View style={[es.advPill, { backgroundColor: audience === "public" ? "#FFFFFF12" : accent + "22" }]}>
+                <Ionicons
+                  name={audience === "public" ? "globe-outline" : audience === "followers" ? "people-outline" : "lock-closed-outline"}
+                  size={11} color={audience === "public" ? "#888" : accent}
+                />
+                <Text style={[es.advPillText, { color: audience === "public" ? "#888" : accent }]}>
+                  {audience === "public" ? "Everyone" : audience === "followers" ? "Followers" : "Only Me"}
+                </Text>
+              </View>
+              {soundName && !soundDismissed && (
+                <View style={[es.advPill, { backgroundColor: accent + "22" }]}>
+                  <Ionicons name="musical-notes" size={11} color={accent} />
+                  <Text style={[es.advPillText, { color: accent }]} numberOfLines={1}>Sound</Text>
+                </View>
+              )}
+            </View>
+            <Ionicons name={showAdvanced ? "chevron-up" : "chevron-down"} size={15} color="#666" />
+          </TouchableOpacity>
+
+          {showAdvanced && (
+            <View style={es.advancedPanel}>
+
+              {/* Audience */}
+              <View style={{ gap: 8 }}>
+                <Text style={es.optionLabel}>Who can see this</Text>
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  {(["public", "followers", "private"] as const).map((a) => (
+                    <TouchableOpacity
+                      key={a}
+                      onPress={() => { setAudience(a); void Haptics.selectionAsync(); }}
+                      style={[es.audienceBtn, audience === a && { backgroundColor: accent + "22", borderColor: accent }]}
+                    >
+                      <Ionicons
+                        name={a === "public" ? "globe-outline" : a === "followers" ? "people-outline" : "lock-closed-outline"}
+                        size={14} color={audience === a ? accent : "#666"}
+                      />
+                      <Text style={[es.audienceBtnText, { color: audience === a ? accent : "#666" }]}>
+                        {a === "public" ? "Everyone" : a === "followers" ? "Followers" : "Only Me"}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Cover thumbnail */}
+              <View style={{ gap: 8, marginTop: 14 }}>
+                <Text style={es.optionLabel}>Cover frame</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                  {thumbnailUri ? (
+                    <ExpoImage
+                      source={{ uri: thumbnailUri }}
+                      style={{ width: 72, height: 52, borderRadius: 6, backgroundColor: "#222" }}
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <View style={{ width: 72, height: 52, borderRadius: 6, backgroundColor: "#222", alignItems: "center", justifyContent: "center" }}>
+                      <Ionicons name="image-outline" size={20} color="#444" />
+                    </View>
+                  )}
+                  <TouchableOpacity
+                    onPress={() => setStep(1)}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="cut-outline" size={13} color={accent} />
+                    <Text style={{ color: accent, fontSize: 12, fontFamily: "Inter_500Medium" }}>
+                      Adjust in Trim tab
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Sound banner */}
+              {soundName && !soundDismissed && (
+                <View style={[es.soundBanner, { backgroundColor: "#222", borderColor: "#333", marginTop: 14 }]}>
+                  {soundAlbumArt
+                    ? <ExpoImage source={{ uri: soundAlbumArt }} style={es.soundArt} contentFit="cover" />
+                    : <View style={[es.soundArt, { backgroundColor: accent + "22", alignItems: "center", justifyContent: "center" }]}>
+                        <Ionicons name="musical-notes" size={16} color={accent} />
+                      </View>
+                  }
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: "#888", fontSize: 11, fontFamily: "Inter_500Medium" }}>Sound</Text>
+                    <Text style={{ color: "#fff", fontSize: 13, fontFamily: "Inter_600SemiBold" }} numberOfLines={1}>{soundName}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setSoundDismissed(true)} hitSlop={8}>
+                    <Ionicons name="close-circle" size={18} color="#555" />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          )}
 
           {/* ── Post button ── */}
           <TouchableOpacity
             onPress={handlePost}
             disabled={!caption.trim()}
-            style={[es.bigPostBtn, { backgroundColor: caption.trim() ? accent : "#222", marginHorizontal: 16 }]}
+            style={[es.bigPostBtn, { backgroundColor: caption.trim() ? accent : "#222", marginHorizontal: 16, marginTop: 20 }]}
             activeOpacity={0.85}
           >
             <Ionicons name="send" size={18} color="#fff" />
@@ -2123,4 +2185,43 @@ const es = StyleSheet.create({
     flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 10,
     borderWidth: 1, borderColor: "#333", backgroundColor: "#1A1A1A",
   },
+  sizeCard: {
+    marginHorizontal: 16, marginTop: 8, marginBottom: 4,
+    backgroundColor: "#111", borderRadius: 14,
+    borderWidth: 1, borderColor: "#2a2a2a",
+    padding: 14, gap: 10,
+  },
+  sizeCardHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
+  sizeCardTitle: { color: "#ddd", fontFamily: "Inter_600SemiBold", fontSize: 13 },
+  sizeCardRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  sizeBlock: { gap: 2 },
+  sizeLabelMuted: { color: "#666", fontFamily: "Inter_400Regular", fontSize: 11 },
+  sizeValueBig: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 18 },
+  savingsBadge: {
+    marginLeft: "auto" as any,
+    backgroundColor: "#4ADE8022", borderRadius: 20,
+    paddingHorizontal: 10, paddingVertical: 4,
+    borderWidth: 1, borderColor: "#4ADE8055",
+  },
+  savingsBadgeText: { color: "#4ADE80", fontFamily: "Inter_700Bold", fontSize: 13 },
+  sizeCardNote: { color: "#555", fontFamily: "Inter_400Regular", fontSize: 11, lineHeight: 16 },
+  advancedToggle: {
+    flexDirection: "row", alignItems: "center",
+    marginHorizontal: 16, marginTop: 10, paddingVertical: 12,
+    gap: 8, borderTopWidth: 0.5, borderTopColor: "#222",
+  },
+  advancedToggleText: { color: "#888", fontFamily: "Inter_500Medium", fontSize: 13 },
+  advancedPills: { flex: 1, flexDirection: "row", gap: 6 },
+  advPill: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12,
+  },
+  advPillText: { fontFamily: "Inter_500Medium", fontSize: 11 },
+  advancedPanel: {
+    marginHorizontal: 16, marginTop: 4, marginBottom: 4,
+    backgroundColor: "#111", borderRadius: 14,
+    borderWidth: 1, borderColor: "#1E1E1E",
+    padding: 16,
+  },
+  optionLabel: { color: "#666", fontFamily: "Inter_600SemiBold", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 },
 });

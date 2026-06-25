@@ -480,16 +480,20 @@ export default function CreatePostScreen() {
 
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 6, backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <TouchableOpacity style={styles.bottomAction} onPress={pickImage}>
-          <Ionicons name="image-outline" size={22} color={images.length > 0 ? colors.accent : colors.textSecondary} />
+          <Ionicons name="image-outline" size={21} color={images.length > 0 ? colors.accent : colors.textSecondary} />
+          <Text style={[styles.bottomActionLabel, { color: images.length > 0 ? colors.accent : colors.textSecondary }]}>Photo</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.bottomAction} onPress={() => setShowMentionModal(true)}>
-          <Ionicons name="at-outline" size={22} color={colors.textSecondary} />
+          <Ionicons name="at-outline" size={21} color={colors.textSecondary} />
+          <Text style={[styles.bottomActionLabel, { color: colors.textSecondary }]}>Mention</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.bottomAction} onPress={() => setShowLocationModal(true)}>
-          <Ionicons name="location-outline" size={22} color={locationTag ? colors.accent : colors.textSecondary} />
+          <Ionicons name="location-outline" size={21} color={locationTag ? colors.accent : colors.textSecondary} />
+          <Text style={[styles.bottomActionLabel, { color: locationTag ? colors.accent : colors.textSecondary }]}>Location</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.bottomAction} onPress={() => setShowLangModal(true)}>
-          <Ionicons name="globe-outline" size={22} color={langCode ? colors.accent : colors.textSecondary} />
+          <Ionicons name="globe-outline" size={21} color={langCode ? colors.accent : colors.textSecondary} />
+          <Text style={[styles.bottomActionLabel, { color: langCode ? colors.accent : colors.textSecondary }]}>Language</Text>
         </TouchableOpacity>
         <View style={{ flex: 1 }} />
         {images.length > 0 && (
@@ -834,8 +838,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   bottomAction: {
-    padding: 10,
+    padding: 8,
+    alignItems: "center",
+    gap: 2,
   },
+  bottomActionLabel: { fontSize: 10, fontFamily: "Inter_500Medium" },
   imgCount: { fontSize: 12, fontFamily: "Inter_500Medium" },
   modalOverlay: {
     flex: 1,
