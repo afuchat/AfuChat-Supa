@@ -1789,6 +1789,7 @@ function ChatScreen() {
   const typingMapRef = useRef<Map<string, string>>(new Map());
   const typingTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const msgSubDroppedRef = useRef(false);
   const [isAfuAiTyping, setIsAfuAiTyping] = useState(false);
   const [showAfuAiMenu, setShowAfuAiMenu] = useState(false);
   const [notifFilter, setNotifFilter] = useState<"all"|"social"|"shop"|"payments"|"other">("all");
@@ -2924,7 +2925,21 @@ function ChatScreen() {
           );
         }
       )
-      .subscribe();
+      .subscribe((status: string) => {
+        if (status === "SUBSCRIBED") {
+          if (msgSubDroppedRef.current) {
+            // Reconnected after a drop — re-fetch to catch any missed messages
+            msgSubDroppedRef.current = false;
+            loadMessages();
+          }
+        } else if (
+          status === "CLOSED" ||
+          status === "CHANNEL_ERROR" ||
+          status === "TIMED_OUT"
+        ) {
+          msgSubDroppedRef.current = true;
+        }
+      });
 
     return () => {
       unsubFastPath();

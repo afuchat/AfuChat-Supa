@@ -12,6 +12,8 @@
  *  3. Shows an animated in-app banner when a message arrives in a chat the
  *     user is NOT currently viewing.
  *  4. Swipe-to-dismiss and tap-to-open-chat are supported.
+ *  5. Auto-reconnects on CLOSED / CHANNEL_ERROR with exponential backoff
+ *     (max 15 s) so the ~20 ms fast path survives network hiccups.
  */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -106,71 +108,107 @@ export function GlobalInboxListener() {
     }),
   ).current;
 
-  // ── Message handler ────────────────────────────────────────────────────────
-  const handlePayload = useCallback(
-    (payload: any) => {
-      const msg = payload as IncomingMessage;
-      if (!msg?.id || !msg?.chat_id || !msg?.sender_id) return;
-      if (msg.sender_id === user?.id) return;
+  // ── Message handler — stored in a ref so the subscription effect never
+  //    needs to re-run (and tear down the channel) just because showBanner
+  //    got a new reference. ──────────────────────────────────────────────────
+  const showBannerRef = useRef(showBanner);
+  showBannerRef.current = showBanner;
+  const userIdRef = useRef(user?.id);
+  userIdRef.current = user?.id;
 
-      // Deduplicate — broadcast may fire more than once if sender re-tries
-      if (recentIds.current.has(msg.id)) return;
-      recentIds.current.add(msg.id);
-      setTimeout(() => recentIds.current.delete(msg.id), 15_000);
+  const handlePayload = useCallback((payload: any) => {
+    const msg = payload as IncomingMessage;
+    if (!msg?.id || !msg?.chat_id || !msg?.sender_id) return;
+    if (msg.sender_id === userIdRef.current) return;
 
-      // Emit to global event bus → chat/[id].tsx fast path picks it up
-      emitIncomingMessage(msg);
+    // Deduplicate — broadcast may fire more than once if sender re-tries
+    if (recentIds.current.has(msg.id)) return;
+    recentIds.current.add(msg.id);
+    setTimeout(() => recentIds.current.delete(msg.id), 15_000);
 
-      // No banner if user is already viewing that chat
-      if (getActiveChatId() === msg.chat_id) return;
+    // Emit to global event bus → chat/[id].tsx fast path picks it up
+    emitIncomingMessage(msg);
 
-      const senderName = msg.sender_display_name || "Someone";
+    // No banner if user is already viewing that chat
+    if (getActiveChatId() === msg.chat_id) return;
 
-      let preview = "New message";
-      if (msg.encrypted_content) {
-        preview = msg.encrypted_content.slice(0, 80);
-      } else if (msg.attachment_type) {
-        const icons: Record<string, string> = {
-          image: "📷 Photo",
-          video: "🎥 Video",
-          audio: "🎵 Voice message",
-          file: "📎 File",
-          gif: "🎞 GIF",
-        };
-        preview = icons[msg.attachment_type] ?? "📎 Attachment";
-      }
+    const senderName = msg.sender_display_name || "Someone";
 
-      showBanner({
-        chatId: msg.chat_id,
-        senderName,
-        senderAvatar: msg.sender_avatar_url ?? null,
-        preview,
-      });
-    },
-    [user?.id, showBanner],
-  );
+    let preview = "New message";
+    if (msg.encrypted_content) {
+      preview = msg.encrypted_content.slice(0, 80);
+    } else if (msg.attachment_type) {
+      const icons: Record<string, string> = {
+        image: "📷 Photo",
+        video: "🎥 Video",
+        audio: "🎵 Voice message",
+        file: "📎 File",
+        gif: "🎞 GIF",
+      };
+      preview = icons[msg.attachment_type] ?? "📎 Attachment";
+    }
 
-  // ── Supabase Broadcast subscription ───────────────────────────────────────
+    showBannerRef.current({
+      chatId: msg.chat_id,
+      senderName,
+      senderAvatar: msg.sender_avatar_url ?? null,
+      preview,
+    });
+  }, []); // stable — never recreated; reads userId via ref
+
+  // ── Supabase Broadcast subscription with auto-reconnect ────────────────────
+  // Only depends on user?.id — handlePayload is stable (via ref pattern above).
+  // This prevents the channel from tearing down and re-creating every time
+  // unrelated state changes cause showBanner to get a new reference.
   useEffect(() => {
     if (!user?.id) return;
 
-    const channel = supabase
-      .channel(`user-inbox:${user.id}`, {
-        config: { broadcast: { self: false } },
-      })
-      .on("broadcast", { event: "new_message" }, ({ payload }) => {
-        handlePayload(payload);
-      })
-      .subscribe((status) => {
-        // If subscription drops unexpectedly, Supabase will auto-reconnect.
-        // We log only in dev to aid debugging.
-        if (__DEV__ && status !== "SUBSCRIBED") {
-          console.log(`[GlobalInboxListener] channel status: ${status}`);
-        }
-      });
+    let destroyed = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let retryCount = 0;
+    let currentChannel: ReturnType<typeof supabase.channel> | null = null;
+
+    const connect = () => {
+      if (destroyed) return;
+
+      const ch = supabase
+        .channel(`user-inbox:${user.id}`, {
+          config: { broadcast: { self: false } },
+        })
+        .on("broadcast", { event: "new_message" }, ({ payload }) => {
+          handlePayload(payload);
+        })
+        .subscribe((status: string) => {
+          if (status === "SUBSCRIBED") {
+            // Connected — reset backoff counter
+            retryCount = 0;
+          } else if (
+            status === "CLOSED" ||
+            status === "CHANNEL_ERROR" ||
+            status === "TIMED_OUT"
+          ) {
+            // Connection dropped — reconnect with exponential backoff (max 15 s)
+            if (currentChannel) {
+              supabase.removeChannel(currentChannel).catch(() => {});
+              currentChannel = null;
+            }
+            if (!destroyed) {
+              const delay = Math.min(500 * Math.pow(2, retryCount), 15_000);
+              retryCount = Math.min(retryCount + 1, 6);
+              reconnectTimer = setTimeout(connect, delay);
+            }
+          }
+        });
+
+      currentChannel = ch;
+    };
+
+    connect();
 
     return () => {
-      supabase.removeChannel(channel);
+      destroyed = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (currentChannel) supabase.removeChannel(currentChannel).catch(() => {});
     };
   }, [user?.id, handlePayload]);
 

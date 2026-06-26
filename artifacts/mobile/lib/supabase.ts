@@ -51,4 +51,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: Platform.OS === "web",
     flowType: "pkce",
   },
+  realtime: {
+    heartbeatIntervalMs: 15_000,
+    reconnectAfterMs: (tries: number) => Math.min(500 * tries, 5_000),
+  },
 });
