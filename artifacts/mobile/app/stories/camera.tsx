@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  LayoutChangeEvent,
   Platform,
   StyleSheet,
   Text,
@@ -16,6 +17,9 @@ import { useAppAccent } from "@/context/AppAccentContext";
 import { showAlert } from "@/lib/alert";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { DesktopCameraFallback } from "@/components/desktop/DesktopCameraFallback";
+import FilterSelector from "@/components/camera/FilterSelector";
+import FaceFilterOverlay from "@/components/camera/FaceFilterOverlay";
+import { FilterId } from "@/components/camera/filterDefs";
 
 type CameraMode = "photo" | "video";
 
@@ -53,16 +57,21 @@ function useWebCamera() {
     setReady(false);
   }, []);
 
-  const capture = useCallback((): string | null => {
+  const capture = useCallback((filterCanvas?: HTMLCanvasElement | null): string | null => {
     const video = videoRef.current;
     if (!video) return null;
+    const w = Math.min(video.videoWidth, 1280);
+    const h = Math.min(video.videoHeight, 720);
     const canvas = document.createElement("canvas");
-    canvas.width = Math.min(video.videoWidth, 1280);
-    canvas.height = Math.min(video.videoHeight, 720);
+    canvas.width = w;
+    canvas.height = h;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/jpeg", 0.8);
+    ctx.drawImage(video, 0, 0, w, h);
+    if (filterCanvas) {
+      ctx.drawImage(filterCanvas, 0, 0, w, h);
+    }
+    return canvas.toDataURL("image/jpeg", 0.85);
   }, []);
 
   const flip = useCallback(() => {
@@ -80,11 +89,14 @@ function WebCameraScreen() {
   const { videoRef, ready, start, stop, capture, flip } = useWebCamera();
   const [processing, setProcessing] = useState(false);
   const [permDenied, setPermDenied] = useState(false);
+  const [filter, setFilter] = useState<FilterId>("normal");
+  const [dims, setDims] = useState({ w: 0, h: 0 });
+  const filterCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        await start("environment");
+        await start("user");
       } catch {
         setPermDenied(true);
       }
@@ -92,11 +104,17 @@ function WebCameraScreen() {
     return () => stop();
   }, []);
 
+  const onLayout = useCallback((e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    setDims({ w: width, h: height });
+  }, []);
+
   const takePicture = useCallback(() => {
     if (processing) return;
     setProcessing(true);
     try {
-      const dataUri = capture();
+      const canvas = filterCanvasRef.current;
+      const dataUri = capture(canvas);
       if (dataUri) {
         router.push({ pathname: "/stories/create", params: { mediaUri: dataUri, mediaType: "image" } });
       } else {
@@ -139,7 +157,7 @@ function WebCameraScreen() {
         <View style={st.permWrap}>
           <Ionicons name="camera-outline" size={56} color="rgba(255,255,255,0.5)" />
           <Text style={st.permText}>Camera access is needed to take photos for stories.</Text>
-          <TouchableOpacity style={[st.permBtn, { backgroundColor: accent }]} onPress={() => { setPermDenied(false); start("environment"); }}>
+          <TouchableOpacity style={[st.permBtn, { backgroundColor: accent }]} onPress={() => { setPermDenied(false); start("user"); }}>
             <Text style={st.permBtnText}>Try Again</Text>
           </TouchableOpacity>
           <TouchableOpacity style={st.permSecondary} onPress={openGallery}>
@@ -155,7 +173,7 @@ function WebCameraScreen() {
   }
 
   return (
-    <View style={[st.root, { backgroundColor: "#000" }]}>
+    <View style={[st.root, { backgroundColor: "#000" }]} onLayout={onLayout}>
       <video
         ref={videoRef as any}
         autoPlay
@@ -164,15 +182,29 @@ function WebCameraScreen() {
         style={{ width: "100%", height: "100%", objectFit: "cover" } as any}
       />
 
+      {dims.w > 0 && (
+        <FaceFilterOverlay
+          videoRef={videoRef}
+          filter={filter}
+          width={dims.w}
+          height={dims.h}
+        />
+      )}
+
       <View style={[st.topBar, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => router.back()} style={st.topBtn}>
           <Ionicons name="arrow-back" size={26} color="#fff" />
         </TouchableOpacity>
         <View style={{ flex: 1 }} />
+        <TouchableOpacity onPress={flip} style={st.topBtn}>
+          <Ionicons name="camera-reverse-outline" size={22} color="#fff" />
+        </TouchableOpacity>
         <TouchableOpacity onPress={openGallery} style={st.topBtn}>
           <Ionicons name="grid-outline" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
+
+      <FilterSelector selected={filter} onSelect={setFilter} />
 
       <View style={[st.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
         <TouchableOpacity style={st.galleryThumb} onPress={openGallery}>
@@ -194,9 +226,7 @@ function WebCameraScreen() {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={st.flipBtn} onPress={flip}>
-          <Ionicons name="camera-reverse-outline" size={28} color="#fff" />
-        </TouchableOpacity>
+        <View style={st.flipBtn} />
       </View>
 
       <View style={[st.modeBar, { bottom: insets.bottom + 4 }]}>
@@ -226,10 +256,11 @@ function NativeCameraScreen() {
   const [camPermission, requestCamPermission] = useCameraPermissions();
   const [micPermission, requestMicPermission] = useMicrophonePermissions();
   const [mode, setMode] = useState<CameraMode>("photo");
-  const [facing, setFacing] = useState<"front" | "back">("back");
+  const [facing, setFacing] = useState<"front" | "back">("front");
   const [flash, setFlash] = useState<"off" | "on">("off");
   const [recording, setRecording] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [filter, setFilter] = useState<FilterId>("normal");
 
   useFocusEffect(
     useCallback(() => {
@@ -340,6 +371,8 @@ function NativeCameraScreen() {
         mode={mode === "video" ? "video" : "picture"}
       />
 
+      <FaceFilterOverlay filter={filter} />
+
       <View style={[st.topBar, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => router.back()} style={st.topBtn}>
           <Ionicons name="arrow-back" size={26} color="#fff" />
@@ -355,6 +388,8 @@ function NativeCameraScreen() {
           <Ionicons name="grid-outline" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
+
+      <FilterSelector selected={filter} onSelect={setFilter} />
 
       <View style={[st.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
         <TouchableOpacity style={st.galleryThumb} onPress={openGallery}>

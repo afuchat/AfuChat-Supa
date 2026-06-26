@@ -54,6 +54,7 @@
     "zod-validation-error": "^3.4.0"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "^0.10.35",
     "@nkzw/create-context-hook": "^1.1.0",
     "@react-native-community/netinfo": "~11.5.2",
     "@react-native-google-signin/google-signin": "^16.1.2",
