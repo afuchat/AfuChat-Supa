@@ -1,10 +1,11 @@
 import React from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassHeader } from "@/components/ui/GlassHeader";
+import { useAdvancedFeatures } from "@/context/AdvancedFeaturesContext";
 
 // ─── Section ──────────────────────────────────────────────────────────────────
 function Section({
@@ -72,8 +73,9 @@ function Row({
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function PrivacySettingsScreen() {
-  const { colors } = useTheme();
+  const { colors, accent } = useTheme();
   const insets = useSafeAreaInsets();
+  const { features: adv, setFeature } = useAdvancedFeatures();
 
   return (
     <View style={[s.root, { backgroundColor: colors.backgroundSecondary }]}>
@@ -159,6 +161,45 @@ export default function PrivacySettingsScreen() {
             colors={colors}
           />
         </Section>
+
+        {/* ── MESSAGING PRIVACY ────────────────────────────────────────── */}
+        <Section title="MESSAGING PRIVACY" colors={colors}>
+          <View style={s.toggleRow}>
+            <View style={[s.iconWrap, { backgroundColor: "#8E8E93" + "18" }]}>
+              <Ionicons name="chatbox-ellipses-outline" size={18} color="#8E8E93" />
+            </View>
+            <View style={s.rowText}>
+              <Text style={[s.rowLabel, { color: colors.text }]}>Auto-Reply</Text>
+              <Text style={[s.rowSub, { color: colors.textMuted }]}>
+                Automatically reply when you're away or in focus mode
+              </Text>
+            </View>
+            <Switch
+              value={adv.auto_reply_enabled}
+              onValueChange={(v) => setFeature("auto_reply_enabled", v)}
+              trackColor={{ true: accent, false: colors.separator }}
+              thumbColor="#fff"
+            />
+          </View>
+          <View style={[s.divider, { backgroundColor: colors.separator }]} />
+          <View style={s.toggleRow}>
+            <View style={[s.iconWrap, { backgroundColor: "#FF3B30" + "18" }]}>
+              <Ionicons name="timer-outline" size={18} color="#FF3B30" />
+            </View>
+            <View style={s.rowText}>
+              <Text style={[s.rowLabel, { color: colors.text }]}>Temporary Chats</Text>
+              <Text style={[s.rowSub, { color: colors.textMuted }]}>
+                Start chats that auto-delete after a set time (disappearing messages)
+              </Text>
+            </View>
+            <Switch
+              value={adv.temp_chat_enabled}
+              onValueChange={(v) => setFeature("temp_chat_enabled", v)}
+              trackColor={{ true: accent, false: colors.separator }}
+              thumbColor="#fff"
+            />
+          </View>
+        </Section>
       </ScrollView>
     </View>
   );
@@ -173,6 +214,7 @@ const s = StyleSheet.create({
   card: { borderRadius: 18, overflow: "hidden" },
 
   row: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 13, gap: 12 },
+  toggleRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 13, gap: 12 },
   iconWrap: { width: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   rowText: { flex: 1 },
   rowLabel: { fontSize: 15, fontFamily: "Inter_500Medium" },

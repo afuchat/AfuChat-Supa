@@ -28,6 +28,7 @@ import {
 } from "@/context/ChatPreferencesContext";
 import { requestGalleryPermissionOnce } from "@/lib/storage/chatAttachmentCache";
 import { useAppAccent } from "@/context/AppAccentContext";
+import { useAdvancedFeatures } from "@/context/AdvancedFeaturesContext";
 
 const FONT_SIZES = [13, 15, 17, 19];
 const MEDIA_QUALITIES: MediaQuality[] = ["Auto", "High", "Low"];
@@ -38,6 +39,7 @@ export default function ChatSettingsScreen() {
   const insets = useSafeAreaInsets();
   const { prefs, loading, updatePref } = useChatPreferences();
   const { setAppTheme } = useAppAccent();
+  const { features: adv, setFeature } = useAdvancedFeatures();
   const [clearing, setClearing] = useState(false);
   const [backingUp, setBackingUp] = useState(false);
 
@@ -278,6 +280,64 @@ export default function ChatSettingsScreen() {
               <TogRow colors={colors} themeColor={themeColor} icon="phone-portrait-outline" bg={themeColor}
                 label="Haptic Feedback" desc="Vibrate when you send or receive messages"
                 value={prefs.send_haptics} onChange={(v) => updatePref("send_haptics", v)} />
+            </>
+          )}
+        </View>
+
+        {/* ── SMART FEATURES ───────────────────────────────── */}
+        <SectionTitle label="SMART FEATURES" />
+        <View style={[s.group, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <TogRow colors={colors} themeColor={themeColor} icon="folder-outline" bg="#007AFF"
+            label="Chat Folders"
+            desc="Organise chats into Personal, Groups, Channels and Unread tabs"
+            value={adv.chat_folders} onChange={(v) => setFeature("chat_folders", v)} />
+          <Sep color={colors.border} />
+          <TogRow colors={colors} themeColor={themeColor} icon="mic-outline" bg="#34C759"
+            label="Voice to Text"
+            desc="Transcribe voice messages to text with a tap"
+            value={adv.voice_to_text} onChange={(v) => setFeature("voice_to_text", v)} />
+          <Sep color={colors.border} />
+          <TogRow colors={colors} themeColor={themeColor} icon="volume-high-outline" bg="#5856D6"
+            label="Text to Speech"
+            desc="Have received messages read aloud to you"
+            value={adv.text_to_speech} onChange={(v) => setFeature("text_to_speech", v)} />
+          <Sep color={colors.border} />
+          <TogRow colors={colors} themeColor={themeColor} icon="sparkles-outline" bg="#FF2D55"
+            label="Chat Summary"
+            desc="AI-generated summary of any conversation from the ⋮ menu"
+            value={adv.chat_summary} onChange={(v) => setFeature("chat_summary", v)} />
+          <Sep color={colors.border} />
+          <TogRow colors={colors} themeColor={themeColor} icon="language-outline" bg="#FF9500"
+            label="Message Translation"
+            desc="Translate any message to your preferred language"
+            value={adv.message_translation} onChange={(v) => setFeature("message_translation", v)} />
+          <Sep color={colors.border} />
+          <TogRow colors={colors} themeColor={themeColor} icon="at-outline" bg="#5856D6"
+            label="User Tagging"
+            desc="Tag people in group chats with @mention"
+            value={adv.user_tagging} onChange={(v) => setFeature("user_tagging", v)} />
+          <Sep color={colors.border} />
+          <TogRow colors={colors} themeColor={themeColor} icon="person-circle-outline" bg="#FF9500"
+            label="Mini Profile Popup"
+            desc="Tap an avatar in chat to see a quick profile preview"
+            value={adv.mini_profile_popup} onChange={(v) => setFeature("mini_profile_popup", v)} />
+          <Sep color={colors.border} />
+          <TogRow colors={colors} themeColor={themeColor} icon="create-outline" bg="#34C759"
+            label="Message Edit History"
+            desc="See the original text of edited messages"
+            value={adv.message_edit_history} onChange={(v) => setFeature("message_edit_history", v)} />
+          <Sep color={colors.border} />
+          <TogRow colors={colors} themeColor={themeColor} icon="pin-outline" bg="#8E8E93"
+            label="Offline Drafts"
+            desc="Save unsent messages locally so you never lose them"
+            value={adv.offline_drafts} onChange={(v) => setFeature("offline_drafts", v)} />
+          {Platform.OS !== "web" && (
+            <>
+              <Sep color={colors.border} />
+              <TogRow colors={colors} themeColor={themeColor} icon="cloud-upload-outline" bg="#007AFF"
+                label="Drag & Drop Upload"
+                desc="Drag files directly into the chat to send them"
+                value={adv.drag_drop_upload} onChange={(v) => setFeature("drag_drop_upload", v)} />
             </>
           )}
         </View>

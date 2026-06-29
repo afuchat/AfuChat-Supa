@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "@/lib/haptics";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
+import { useAdvancedFeatures } from "@/context/AdvancedFeaturesContext";
 import { useTheme } from "@/hooks/useTheme";
 import { getSoundMode, setSoundMode, playNotificationSound, SoundMode } from "@/lib/soundManager";
 import { GlassHeader } from "@/components/ui/GlassHeader";
@@ -363,6 +364,7 @@ export default function NotificationSettingsScreen() {
   const { colors, accent } = useTheme();
   const { user }   = useAuth();
   const insets     = useSafeAreaInsets();
+  const { features: adv, setFeature } = useAdvancedFeatures();
 
   const [prefs, setPrefs]               = useState<Prefs>(defaults);
   const [soundMode, setSoundModeState]  = useState<SoundMode>("device");
@@ -584,6 +586,43 @@ export default function NotificationSettingsScreen() {
           <PrefRow label="Gifts"         field="push_gifts"    sub="When someone sends you a gift" />
           <PrefRow label="Mentions"      field="push_mentions" sub="When you're mentioned in a post" />
           <PrefRow label="Replies"       field="push_replies"  sub="When someone replies to your post" />
+        </GlassCard>
+
+        {/* ── Focus & Smart Alerts ─────────────────────────────────── */}
+        <Text style={[st.section, { color: colors.textMuted }]}>FOCUS & SMART ALERTS</Text>
+        <GlassCard style={{ marginHorizontal: 16, borderRadius: 20, overflow: "hidden" }} variant="medium">
+          <View style={[st.row, { borderBottomColor: colors.border }]}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[st.rowLabel, { color: colors.text }]}>Smart Notifications</Text>
+              <Text style={[st.rowSub, { color: colors.textMuted }]}>Intelligent filtering to surface only important alerts</Text>
+            </View>
+            <Switch value={adv.smart_notifications} onValueChange={(v) => setFeature("smart_notifications", v)}
+              trackColor={{ true: accent, false: colors.border }} thumbColor="#fff" />
+          </View>
+          <View style={[st.row, { borderBottomColor: colors.border }]}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[st.rowLabel, { color: colors.text }]}>Focus Mode</Text>
+              <Text style={[st.rowSub, { color: colors.textMuted }]}>Pause all non-urgent notifications and appear offline</Text>
+            </View>
+            <Switch value={adv.focus_mode} onValueChange={(v) => setFeature("focus_mode", v)}
+              trackColor={{ true: accent, false: colors.border }} thumbColor="#fff" />
+          </View>
+          <View style={[st.row, { borderBottomColor: colors.border }]}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[st.rowLabel, { color: colors.text }]}>Message Reminders</Text>
+              <Text style={[st.rowSub, { color: colors.textMuted }]}>Set a reminder to reply to any message later</Text>
+            </View>
+            <Switch value={adv.message_reminders} onValueChange={(v) => setFeature("message_reminders", v)}
+              trackColor={{ true: accent, false: colors.border }} thumbColor="#fff" />
+          </View>
+          <View style={[st.row, { borderBottomColor: colors.border }]}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[st.rowLabel, { color: colors.text }]}>Keyword Alerts</Text>
+              <Text style={[st.rowSub, { color: colors.textMuted }]}>Get notified when specific words appear in a chat</Text>
+            </View>
+            <Switch value={adv.keyword_alerts} onValueChange={(v) => setFeature("keyword_alerts", v)}
+              trackColor={{ true: accent, false: colors.border }} thumbColor="#fff" />
+          </View>
         </GlassCard>
 
         {/* ── Quiet hours ──────────────────────────────────────────── */}
