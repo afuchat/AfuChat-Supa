@@ -435,4 +435,36 @@ async function runMigrations(db: DB) {
     await db.runAsync("UPDATE schema_version SET version = 12");
   }
 
+  // ── v13: User-defined chat folders ────────────────────────────────────────
+  // Previously stored in AsyncStorage ("chat_folders_v1"). Migration from
+  // AsyncStorage runs lazily on first read inside chatFolders.ts.
+  if (currentVersion < 13) {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS chat_folders (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        icon TEXT NOT NULL DEFAULT '📁',
+        filter TEXT NOT NULL DEFAULT 'personal',
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_chat_folders_sort ON chat_folders(sort_order ASC, created_at ASC);
+    `);
+    await db.runAsync("UPDATE schema_version SET version = 13");
+  }
+
+  // ── v14: Per-video watch progress ─────────────────────────────────────────
+  // Previously stored in AsyncStorage. Migration runs lazily inside
+  // videoProgress.ts on first read.
+  if (currentVersion < 14) {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS video_progress (
+        post_id TEXT PRIMARY KEY,
+        fraction REAL NOT NULL DEFAULT 0,
+        updated_at INTEGER NOT NULL
+      );
+    `);
+    await db.runAsync("UPDATE schema_version SET version = 14");
+  }
+
 }

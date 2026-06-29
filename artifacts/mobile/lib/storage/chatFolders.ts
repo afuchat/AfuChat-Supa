@@ -6,8 +6,10 @@
 // ("chat_folders_v1") are imported into SQLite and the key is deleted so the
 // migration never runs again.
 //
-// Callers use the same public API as before — only the storage backend changed.
+// On web: the DB is a no-op stub (app is mobile-only). An in-memory array is
+// used as a session-scoped fallback so the UI still works in the web preview.
 
+import { Platform } from "react-native";
 import { getDB } from "./db";
 
 export type FolderFilter = "personal" | "groups" | "channels" | "unread";
@@ -19,6 +21,10 @@ export type ChatFolder = {
   filter: FolderFilter;
   createdAt: number;
 };
+
+// ─── Web in-memory fallback ────────────────────────────────────────────────────
+
+let _webFolders: ChatFolder[] = [];
 
 // ─── One-time migration from AsyncStorage → SQLite ─────────────────────────────
 
@@ -55,6 +61,7 @@ async function migrateFromAsyncStorage(): Promise<void> {
 // ─── Public API ────────────────────────────────────────────────────────────────
 
 export async function loadFolders(): Promise<ChatFolder[]> {
+  if (Platform.OS === "web") return [..._webFolders];
   try {
     await migrateFromAsyncStorage();
     const db = await getDB();
@@ -68,6 +75,10 @@ export async function loadFolders(): Promise<ChatFolder[]> {
 }
 
 export async function saveFolders(folders: ChatFolder[]): Promise<void> {
+  if (Platform.OS === "web") {
+    _webFolders = [...folders];
+    return;
+  }
   try {
     const db = await getDB();
     await db.execAsync("DELETE FROM chat_folders");
@@ -90,6 +101,10 @@ export async function createFolder(
     id: Math.random().toString(36).slice(2) + Date.now().toString(36),
     createdAt: Date.now(),
   };
+  if (Platform.OS === "web") {
+    _webFolders = [..._webFolders, folder];
+    return folder;
+  }
   try {
     const db = await getDB();
     const countRow = await db.getFirstAsync<{ c: number }>("SELECT COUNT(*) as c FROM chat_folders");
@@ -107,6 +122,12 @@ export async function updateFolder(
   id: string,
   updates: Partial<Pick<ChatFolder, "name" | "icon" | "filter">>,
 ): Promise<void> {
+  if (Platform.OS === "web") {
+    _webFolders = _webFolders.map((f) =>
+      f.id === id ? { ...f, ...updates } : f,
+    );
+    return;
+  }
   try {
     const db = await getDB();
     if (updates.name !== undefined) {
@@ -122,6 +143,10 @@ export async function updateFolder(
 }
 
 export async function deleteFolder(id: string): Promise<void> {
+  if (Platform.OS === "web") {
+    _webFolders = _webFolders.filter((f) => f.id !== id);
+    return;
+  }
   try {
     const db = await getDB();
     await db.runAsync("DELETE FROM chat_folders WHERE id = ?", [id]);
@@ -130,6 +155,10 @@ export async function deleteFolder(id: string): Promise<void> {
 
 /** Delete ALL folders for the signed-in user. Called on account switch/sign-out. */
 export async function clearAllFolders(): Promise<void> {
+  if (Platform.OS === "web") {
+    _webFolders = [];
+    return;
+  }
   try {
     const db = await getDB();
     await db.execAsync("DELETE FROM chat_folders");
