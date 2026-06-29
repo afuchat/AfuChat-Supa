@@ -7937,6 +7937,62 @@ STRICT RULES:
                   onPress={() => { setShowChatOptions(false); handleChatSummaryFull(); }} />
               )}
               <DdDivider colors={colors} />
+              {/* Mute / Unmute */}
+              <DdRow
+                colors={colors}
+                icon={isMuted ? "notifications-off-outline" : "notifications-outline"}
+                label={isMuted ? "Unmute Notifications" : "Mute Notifications"}
+                sub={isMuted ? (muteLabel() || undefined) : undefined}
+                onPress={() => {
+                  if (isMuted) {
+                    handleUnmuteChat();
+                    setShowChatOptions(false);
+                  } else {
+                    setShowChatOptions(false);
+                    setShowMutePicker(true);
+                  }
+                }}
+              />
+              {/* Disappearing Messages */}
+              {!(chatInfo?.is_channel) && (
+                <DdRow
+                  colors={colors}
+                  icon="timer-outline"
+                  label="Disappearing Messages"
+                  sub={disappearingEnabled
+                    ? (() => {
+                        const labels: Record<number, string> = { 300: "5 min", 3600: "1 hr", 86400: "24 hrs", 604800: "7 days", 2419200: "4 weeks" };
+                        return `On · ${labels[disappearingTimer] ?? "On"}`;
+                      })()
+                    : "Off"}
+                  onPress={() => {
+                    setShowChatOptions(false);
+                    router.push({
+                      pathname: "/chat-info/[id]",
+                      params: {
+                        id: id as string,
+                        name: headerTitle,
+                        avatar: headerAvatar ?? "",
+                        otherId: chatInfo?.other_id ?? "",
+                        isGroup: chatInfo?.is_group ? "1" : "0",
+                        isChannel: chatInfo?.is_channel ? "1" : "0",
+                      },
+                    });
+                  }}
+                />
+              )}
+              {/* Per-chat appearance */}
+              <DdRow
+                colors={colors}
+                icon="color-palette-outline"
+                label="Chat Appearance"
+                sub="Wallpaper & bubble colour"
+                onPress={() => {
+                  setShowChatOptions(false);
+                  router.push({ pathname: "/chat-info/appearance/[id]", params: { id: id as string, displayName: headerTitle } } as any);
+                }}
+              />
+              <DdDivider colors={colors} />
               {/* Single entry → dedicated per-chat settings page */}
               <DdRow colors={colors} icon="information-circle-outline" label="Chat Info & Settings"
                 onPress={() => {
