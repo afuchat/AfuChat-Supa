@@ -362,6 +362,14 @@ export default function SettingsScreen() {
             accent={accent}
           />
           <Row
+            icon="sparkles-outline"
+            label="Advanced Features"
+            sublabel="Folders, transcription, AI tools & more"
+            onPress={() => router.push("/settings/advanced")}
+            colors={colors}
+            accent={accent}
+          />
+          <Row
             icon="person-remove-outline"
             label="Blocked Users"
             sublabel="Manage people you've blocked"
