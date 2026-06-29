@@ -554,10 +554,6 @@ const styles = StyleSheet.create({
     padding: 16,
     justifyContent: "space-between",
     minHeight: 170,
-    ...Platform.select({
-      web: { boxShadow: "0 6px 20px rgba(0,0,0,0.18)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.18, shadowRadius: 12, elevation: 6 },
-    }),
   },
   featCardInner: {
     flexDirection: "row",
@@ -617,10 +613,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    ...Platform.select({
-      web: { boxShadow: "0 4px 12px rgba(0,0,0,0.15)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
-    }),
   },
   badge: {
     position: "absolute",

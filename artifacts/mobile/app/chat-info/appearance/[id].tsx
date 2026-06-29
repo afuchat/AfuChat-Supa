@@ -248,10 +248,6 @@ const s = StyleSheet.create({
   colorSwatchActive: {
     borderWidth: 3,
     borderColor: "#fff",
-    ...Platform.select({
-      web: { boxShadow: "0 0 0 3px rgba(0,0,0,0.22)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 4 },
-    }),
   },
   colorLabel: {
     fontSize: 10,

@@ -124,11 +124,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#1a2940",
     borderRadius: 24,
     overflow: "hidden",
-    elevation: 10,
-    ...Platform.select({
-      web: { boxShadow: "0 5px 14px rgba(0,0,0,0.4)" } as any,
-      default: { shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 14, shadowOffset: { width: 0, height: 5 } },
-    }),
     alignSelf: "flex-end",
   },
   phoneScreen: {
@@ -193,11 +188,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#4a7fb5",
     alignItems: "center",
     justifyContent: "center",
-    elevation: 6,
-    ...Platform.select({
-      web: { boxShadow: "0 2px 8px rgba(0,0,0,0.3)" } as any,
-      default: { shadowColor: "#000", shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
-    }),
     gap: 2,
   },
   badgeTitle: {
@@ -224,11 +214,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexDirection: "row",
     gap: 3,
-    elevation: 6,
-    ...Platform.select({
-      web: { boxShadow: "0 2px 8px rgba(0,0,0,0.18)" } as any,
-      default: { shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
-    }),
   },
   viewsBadgeText: { fontSize: 14, fontFamily: "Inter_700Bold" },
 

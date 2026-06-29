@@ -2509,10 +2509,6 @@ const selStyles = StyleSheet.create({
     borderWidth: 0.5,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    ...Platform.select({
-      web: { boxShadow: "0 4px 12px rgba(0,0,0,0.15)" } as any,
-      default: { shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8 },
-    }),
     alignItems: "center",
   },
   deleteBtn: {
@@ -2552,10 +2548,6 @@ const styles = StyleSheet.create({
     zIndex: 20,
     borderRadius: 16,
     borderWidth: 0.5,
-    ...Platform.select({
-      web: { boxShadow: "0 2px 10px rgba(0,0,0,0.16)" } as any,
-      default: { shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.16, shadowRadius: 10, elevation: 8 },
-    }),
   },
   folderTabBarContent: {
     paddingHorizontal: 6,
@@ -2757,10 +2749,6 @@ const styles = StyleSheet.create({
     borderRadius: 27,
     alignItems: "center",
     justifyContent: "center",
-    ...Platform.select({
-      web: { boxShadow: "0 4px 8px rgba(0,0,0,0.25)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 6 },
-    }),
   },
   cameraFab: {
     position: "absolute",

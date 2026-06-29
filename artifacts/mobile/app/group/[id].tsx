@@ -140,14 +140,8 @@ const bsDesktop = StyleSheet.create({
     paddingBottom: 24,
     maxHeight: "80vh" as any,
     ...Platform.select({
-      web: { boxShadow: "0 8px 40px rgba(0,0,0,0.25)", overflowY: "auto" } as any,
-      default: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.25,
-        shadowRadius: 20,
-        elevation: 12,
-      },
+      web: { overflowY: "auto" } as any,
+      default: {},
     }),
   },
 });

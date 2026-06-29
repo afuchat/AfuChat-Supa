@@ -495,15 +495,16 @@ function Sep({ color }: { color: string }) {
 }
 
 function TogRow({
-  colors, themeColor, icon, label, desc, value, onChange,
+  colors, themeColor, icon, bg, label, desc, value, onChange,
 }: {
   colors: any; themeColor: string; icon: string; bg?: string;
   label: string; desc?: string; value: boolean; onChange: (v: boolean) => void;
 }) {
+  const itemColor = bg ?? themeColor;
   return (
     <View style={s.row}>
-      <View style={[s.iconWrap, { backgroundColor: themeColor + "18" }]}>
-        <Ionicons name={icon as any} size={18} color={themeColor} />
+      <View style={[s.iconWrap, { backgroundColor: itemColor + "18" }]}>
+        <Ionicons name={icon as any} size={18} color={itemColor} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[s.rowLabel, { color: colors.text }]}>{label}</Text>
@@ -537,10 +538,6 @@ const s = StyleSheet.create({
     borderWidth: 0.5,
     overflow: "hidden",
     padding: 16,
-    ...Platform.select({
-      web: { boxShadow: "0 2px 8px rgba(0,0,0,0.06)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
-    }),
   },
 
   group: {
@@ -548,10 +545,6 @@ const s = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 0.5,
     overflow: "hidden",
-    ...Platform.select({
-      web: { boxShadow: "0 2px 8px rgba(0,0,0,0.06)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
-    }),
   },
 
   cardHeaderRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 },
@@ -565,9 +558,6 @@ const s = StyleSheet.create({
   swatch: {
     width: 44, height: 44, borderRadius: 22,
     alignItems: "center", justifyContent: "center",
-    ...Platform.select({
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.18, shadowRadius: 4, elevation: 3 },
-    }),
   },
   swatchActive: { borderWidth: 3, borderColor: "#fff", transform: [{ scale: 1.12 }] },
 

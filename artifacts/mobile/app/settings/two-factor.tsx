@@ -903,7 +903,7 @@ const s = StyleSheet.create({
   enrollCardSub:    { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2, lineHeight: 17 },
   instructionList:  { gap: 10 },
 
-  qrWrap: { alignSelf: "center", padding: 18, borderRadius: 18, elevation: 4, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
+  qrWrap: { alignSelf: "center", padding: 18, borderRadius: 18 },
 
   secretToggle:     { flexDirection: "row", alignItems: "center", gap: 7, padding: 10, borderRadius: 10, borderWidth: 1, alignSelf: "center" },
   secretToggleText: { fontSize: 13, fontFamily: "Inter_500Medium" },

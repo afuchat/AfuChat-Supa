@@ -301,7 +301,7 @@ const st = StyleSheet.create({
   statsRow: { flexDirection: "row", gap: 10, padding: 16 },
   statCard: {
     flex: 1, alignItems: "center", gap: 6, paddingVertical: 16,
-    borderRadius: 18, ...Platform.select({ web: { boxShadow: "0 2px 8px rgba(0,0,0,0.05)" } as any, default: { shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 } }),
+    borderRadius: 18,
   },
   statVal: { fontSize: 17, fontFamily: "Inter_700Bold" },
   statLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
@@ -319,7 +319,6 @@ const st = StyleSheet.create({
   orderCard: {
     marginHorizontal: 16, marginBottom: 12, borderRadius: 18,
     padding: 16, gap: 12,
-    ...Platform.select({ web: { boxShadow: "0 2px 10px rgba(0,0,0,0.05)" } as any, default: { shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 2 }, elevation: 3 } }),
   },
   orderCardTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   shopRow: { flexDirection: "row", alignItems: "center", gap: 8, flex: 1 },

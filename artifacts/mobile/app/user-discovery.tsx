@@ -1293,10 +1293,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     overflow: "hidden",
-    ...Platform.select({
-      web: { boxShadow: "0 4px 12px rgba(0,0,0,0.12)" } as any,
-      default: { shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 8 },
-    }),
     minWidth: 160,
   },
   sortMenuItem: {

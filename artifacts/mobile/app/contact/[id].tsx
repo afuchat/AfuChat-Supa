@@ -981,18 +981,8 @@ export default function ContactScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const cardShadow = Platform.select({
-  web:     { boxShadow: "0 2px 16px rgba(0,0,0,0.10)" } as any,
-  ios:     { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 12 },
-  android: { elevation: 3 },
-  default: {},
-});
-const cardShadowDark = Platform.select({
-  web:     { boxShadow: "0 2px 16px rgba(0,0,0,0.40)" } as any,
-  ios:     { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.40, shadowRadius: 12 },
-  android: { elevation: 4 },
-  default: {},
-});
+const cardShadow = {};
+const cardShadowDark = {};
 
 const s = StyleSheet.create({
   root: { flex: 1 },
@@ -1118,10 +1108,6 @@ const s = StyleSheet.create({
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
-    ...Platform.select({
-      web: { boxShadow: "0 2px 12px rgba(0,0,0,0.07)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 8, elevation: 3 },
-    }),
   },
   expandHeader: {
     flexDirection: "row",

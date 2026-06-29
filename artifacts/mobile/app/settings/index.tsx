@@ -488,10 +488,6 @@ const s = StyleSheet.create({
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.55)", alignItems: "center", justifyContent: "center", zIndex: 100 },
   overlayCard: {
     borderRadius: 24, padding: 32, alignItems: "center", gap: 14, minWidth: 240,
-    ...Platform.select({
-      web: { boxShadow: "0 8px 24px rgba(0,0,0,0.2)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 12 },
-    }),
   },
   overlayTitle: { fontSize: 17, fontFamily: "Inter_600SemiBold", textAlign: "center" },
   overlaySub:   { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 18 },

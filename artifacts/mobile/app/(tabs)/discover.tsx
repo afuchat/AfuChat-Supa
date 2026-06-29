@@ -2892,10 +2892,6 @@ const styles = StyleSheet.create({
     borderRadius: 27,
     alignItems: "center",
     justifyContent: "center",
-    ...Platform.select({
-      web: { boxShadow: "0 4px 8px rgba(0,0,0,0.25)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 6 },
-    }),
   },
   postTypeBadge: {
     flexDirection: "row",
@@ -2980,10 +2976,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     marginVertical: 8,
     gap: 6,
-    ...Platform.select({
-      web: { boxShadow: "0 2px 6px rgba(0,0,0,0.2)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 6, elevation: 4 },
-    }),
   },
   newPostsPillText: {
     color: "#fff",
@@ -3006,10 +2998,6 @@ const styles = StyleSheet.create({
     paddingLeft: 12,
     paddingRight: 16,
     gap: 7,
-    ...Platform.select({
-      web: { boxShadow: "0 4px 18px rgba(0,0,0,0.30)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.30, shadowRadius: 12, elevation: 8 },
-    }),
   },
   newPostsAvatars: {
     flexDirection: "row",
@@ -3087,16 +3075,6 @@ const snackStyles = StyleSheet.create({
     borderRadius: 16,
     gap: 12,
     zIndex: 999,
-    ...Platform.select({
-      web: { boxShadow: "0 4px 20px rgba(0,0,0,0.28)" } as any,
-      default: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.28,
-        shadowRadius: 12,
-        elevation: 8,
-      },
-    }),
   },
   label: {
     flex: 1,

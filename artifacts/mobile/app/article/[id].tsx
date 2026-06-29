@@ -132,7 +132,7 @@ function ArticleBody({ body, displayBody, bodyStyle }: { body: string; displayBo
 }
 
 const articleBodyStyles = StyleSheet.create({
-  inlineImgWrap: { borderRadius: 14, overflow: "hidden", width: "100%", elevation: 2 },
+  inlineImgWrap: { borderRadius: 14, overflow: "hidden", width: "100%" },
   inlineImg: { width: "100%", aspectRatio: 16 / 9 },
   sectionHeading: { fontSize: 20, fontFamily: "Inter_700Bold", lineHeight: 28 },
 });

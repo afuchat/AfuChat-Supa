@@ -269,7 +269,6 @@ const s = StyleSheet.create({
     position: "absolute",
     top: 8,
     right: 8,
-    ...(Platform.OS !== "web" ? { shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 4, elevation: 4 } : {}),
   },
   uploadOverlay: {
     ...StyleSheet.absoluteFillObject,

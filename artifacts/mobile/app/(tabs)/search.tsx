@@ -1896,10 +1896,6 @@ const ss = StyleSheet.create({
     paddingBottom: 6,
     zIndex: 20,
     overflow: "visible" as any,
-    ...Platform.select({
-      web: { boxShadow: "0 1px 4px rgba(0,0,0,0.04)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 2 },
-    }),
   },
 
   aiToggle: {
@@ -1992,10 +1988,6 @@ const ss = StyleSheet.create({
   contentCard: {
     borderRadius: 14,
     padding: 14,
-    ...Platform.select({
-      web: { boxShadow: "0 1px 4px rgba(0,0,0,0.05)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-    }),
   },
 
   postImage: {
