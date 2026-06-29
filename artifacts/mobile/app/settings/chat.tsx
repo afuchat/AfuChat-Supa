@@ -130,8 +130,8 @@ export default function ChatSettingsScreen() {
         <SectionTitle label="ACCENT COLOUR" />
         <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={s.cardHeaderRow}>
-            <View style={[s.iconBadge, { backgroundColor: themeColor }]}>
-              <Ionicons name="color-palette" size={16} color="#fff" />
+            <View style={[s.iconWrap, { backgroundColor: themeColor + "18" }]}>
+              <Ionicons name="color-palette" size={18} color={themeColor} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[s.cardTitle, { color: colors.text }]}>App Accent</Text>
@@ -185,8 +185,8 @@ export default function ChatSettingsScreen() {
         {/* Bubble style */}
         <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border, marginBottom: 10 }]}>
           <View style={s.cardHeaderRow}>
-            <View style={[s.iconBadge, { backgroundColor: themeColor }]}>
-              <Ionicons name="chatbubble" size={16} color="#fff" />
+            <View style={[s.iconWrap, { backgroundColor: themeColor + "18" }]}>
+              <Ionicons name="chatbubble" size={18} color={themeColor} />
             </View>
             <Text style={[s.cardTitle, { color: colors.text }]}>Bubble Style</Text>
           </View>
@@ -213,11 +213,11 @@ export default function ChatSettingsScreen() {
         {/* Font size */}
         <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border, marginBottom: 10 }]}>
           <View style={s.cardHeaderRow}>
-            <View style={[s.iconBadge, { backgroundColor: "#FF9500" }]}>
-              <Ionicons name="text" size={16} color="#fff" />
+            <View style={[s.iconWrap, { backgroundColor: themeColor + "18" }]}>
+              <Ionicons name="text" size={18} color={themeColor} />
             </View>
             <Text style={[s.cardTitle, { color: colors.text, flex: 1 }]}>Font Size</Text>
-            <Text style={[s.accentPillText, { color: "#FF9500" }]}>{prefs.font_size}px</Text>
+            <Text style={[s.accentPillText, { color: themeColor }]}>{prefs.font_size}px</Text>
           </View>
           <View style={s.fontRow}>
             {FONT_SIZES.map((sz) => {
@@ -354,8 +354,8 @@ export default function ChatSettingsScreen() {
             value={prefs.autoplay_gifs} onChange={(v) => updatePref("autoplay_gifs", v)} />
           <Sep color={colors.border} />
           <View style={s.row}>
-            <View style={[s.iconBadge, { backgroundColor: "#FF9500" }]}>
-              <Ionicons name="image" size={16} color="#fff" />
+            <View style={[s.iconWrap, { backgroundColor: themeColor + "18" }]}>
+              <Ionicons name="image" size={18} color={themeColor} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[s.rowLabel, { color: colors.text }]}>Upload Quality</Text>
@@ -377,8 +377,8 @@ export default function ChatSettingsScreen() {
             <>
               <Sep color={colors.border} />
               <View style={s.row}>
-                <View style={[s.iconBadge, { backgroundColor: "#34C759" }]}>
-                  <Ionicons name="download" size={16} color="#fff" />
+                <View style={[s.iconWrap, { backgroundColor: themeColor + "18" }]}>
+                  <Ionicons name="download" size={18} color={themeColor} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[s.rowLabel, { color: colors.text }]}>Save to Gallery</Text>
@@ -442,10 +442,10 @@ export default function ChatSettingsScreen() {
             <>
               <Sep color={colors.border} />
               <TouchableOpacity style={s.row} onPress={handleBackupNow} activeOpacity={0.7} disabled={backingUp}>
-                <View style={[s.iconBadge, { backgroundColor: "#5856D6" }]}>
+                <View style={[s.iconWrap, { backgroundColor: themeColor + "18" }]}>
                   {backingUp
-                    ? <ActivityIndicator size="small" color="#fff" />
-                    : <Ionicons name="refresh" size={16} color="#fff" />}
+                    ? <ActivityIndicator size="small" color={themeColor} />
+                    : <Ionicons name="refresh" size={18} color={themeColor} />}
                 </View>
                 <Text style={[s.rowLabel, { color: colors.text, flex: 1 }]}>Back Up Now</Text>
                 <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
@@ -495,15 +495,15 @@ function Sep({ color }: { color: string }) {
 }
 
 function TogRow({
-  colors, themeColor, icon, bg, label, desc, value, onChange,
+  colors, themeColor, icon, label, desc, value, onChange,
 }: {
-  colors: any; themeColor: string; icon: string; bg: string;
+  colors: any; themeColor: string; icon: string; bg?: string;
   label: string; desc?: string; value: boolean; onChange: (v: boolean) => void;
 }) {
   return (
     <View style={s.row}>
-      <View style={[s.iconBadge, { backgroundColor: bg }]}>
-        <Ionicons name={icon as any} size={16} color="#fff" />
+      <View style={[s.iconWrap, { backgroundColor: themeColor + "18" }]}>
+        <Ionicons name={icon as any} size={18} color={themeColor} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[s.rowLabel, { color: colors.text }]}>{label}</Text>
@@ -608,8 +608,12 @@ const s = StyleSheet.create({
     paddingVertical: 13,
     gap: 12,
   },
+  iconWrap: {
+    width: 34, height: 34, borderRadius: 10,
+    alignItems: "center", justifyContent: "center",
+  },
   iconBadge: {
-    width: 32, height: 32, borderRadius: 9,
+    width: 34, height: 34, borderRadius: 10,
     alignItems: "center", justifyContent: "center",
   },
   rowLabel: { fontSize: 15, fontFamily: "Inter_500Medium" },
