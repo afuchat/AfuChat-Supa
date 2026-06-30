@@ -22,8 +22,8 @@ import * as ImagePicker from "expo-image-picker";
 
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { GlassHeader } from "@/components/ui/GlassHeader";
+import { SmartSheet } from "@/components/ui/SmartSheet";
 import { supabase } from "@/lib/supabase";
 import { uploadToStorage } from "@/lib/mediaUpload";
 import { Avatar } from "@/components/ui/Avatar";
@@ -68,83 +68,6 @@ type Follower = {
   is_verified: boolean;
   is_organization_verified: boolean;
 };
-
-// ─── Bottom sheet ─────────────────────────────────────────────────────────────
-
-function BottomSheet({
-  visible,
-  onClose,
-  children,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  const { isDesktop } = useIsDesktop();
-  if (!visible) return null;
-
-  if (Platform.OS === "web" && isDesktop) {
-    return (
-      <Modal transparent animationType="none" onRequestClose={onClose}>
-        <TouchableOpacity
-          style={bsDesktop.backdrop}
-          activeOpacity={1}
-          onPress={onClose}
-        >
-          <TouchableOpacity activeOpacity={1} onPress={() => {}}>
-            <View style={bsDesktop.popup}>{children}</View>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
-    );
-  }
-
-  return (
-    <Modal transparent animationType="none" onRequestClose={onClose}>
-      <TouchableOpacity style={bs.overlay} activeOpacity={1} onPress={onClose} />
-      <View style={bs.sheet}>{children}</View>
-    </Modal>
-  );
-}
-
-const bs = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)" },
-  sheet: {
-    position: "absolute",
-    bottom: 0,
-    left: 8,
-    right: 8,
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 6,
-    paddingBottom: 40,
-    maxHeight: "80%",
-  },
-});
-
-const bsDesktop = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 32,
-  },
-  popup: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    width: "100%",
-    maxWidth: 480,
-    paddingTop: 8,
-    paddingBottom: 24,
-    maxHeight: "80vh" as any,
-    ...Platform.select({
-      web: { overflowY: "auto" } as any,
-      default: {},
-    }),
-  },
-});
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
@@ -939,143 +862,161 @@ export default function GroupManageScreen() {
       </Modal>
 
       {/* ── Member action sheet ─── */}
-      <BottomSheet visible={showMemberSheet} onClose={() => setShowMemberSheet(false)}>
-        <View style={{ backgroundColor: sheetBg, borderTopLeftRadius: 20, borderTopRightRadius: 20 }}>
-          {selectedMember && (
-            <>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderBottomColor: sheetBorder }}>
-                <Avatar
-                  uri={selectedMember.profile.avatar_url}
-                  name={selectedMember.profile.display_name}
-                  size={44}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 15, fontFamily: "Inter_600SemiBold", color: colors.text }}>
-                    {selectedMember.profile.display_name}
-                  </Text>
-                  <Text style={{ fontSize: 13, color: colors.textMuted }}>@{selectedMember.profile.handle}</Text>
-                </View>
-              </View>
-
-              <TouchableOpacity
-                style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 16, paddingVertical: 14 }}
-                onPress={() => {
-                  setShowMemberSheet(false);
-                  router.push(`/@${selectedMember.profile.handle}` as any);
-                }}
-              >
-                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: "#007AFF18", alignItems: "center", justifyContent: "center" }}>
-                  <Ionicons name="person-outline" size={18} color="#007AFF" />
-                </View>
-                <Text style={{ fontSize: 15, fontFamily: "Inter_500Medium", color: colors.text }}>View Profile</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 16, paddingVertical: 14 }}
-                onPress={() => toggleAdminRole(selectedMember)}
-              >
-                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.accent + "18", alignItems: "center", justifyContent: "center" }}>
-                  <Ionicons name={selectedMember.is_admin ? "shield-outline" : "shield"} size={18} color={colors.accent} />
-                </View>
-                <Text style={{ fontSize: 15, fontFamily: "Inter_500Medium", color: colors.text }}>
-                  {selectedMember.is_admin ? "Remove Admin" : "Make Admin"}
+      <SmartSheet
+        visible={showMemberSheet}
+        onClose={() => setShowMemberSheet(false)}
+        backgroundColor={sheetBg}
+        peekFraction={0.5}
+      >
+        {selectedMember && (
+          <>
+            {/* Member header */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 20, paddingVertical: 16 }}>
+              <Avatar
+                uri={selectedMember.profile.avatar_url}
+                name={selectedMember.profile.display_name}
+                size={44}
+              />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontFamily: "Inter_600SemiBold", color: colors.text }}>
+                  {selectedMember.profile.display_name}
                 </Text>
-              </TouchableOpacity>
+                <Text style={{ fontSize: 13, color: colors.textMuted }}>@{selectedMember.profile.handle}</Text>
+              </View>
+            </View>
 
-              <TouchableOpacity
-                style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 16, paddingVertical: 14 }}
-                onPress={() => removeMember(selectedMember.user_id, selectedMember.profile.display_name)}
-              >
-                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: "#FF3B3018", alignItems: "center", justifyContent: "center" }}>
-                  <Ionicons name="person-remove-outline" size={18} color="#FF3B30" />
-                </View>
-                <Text style={{ fontSize: 15, fontFamily: "Inter_500Medium", color: "#FF3B30" }}>Remove from {typeLabel}</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      </BottomSheet>
+            <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: sheetBorder, marginVertical: 2 }} />
+
+            <TouchableOpacity
+              style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16, minHeight: 56 }}
+              activeOpacity={0.65}
+              onPress={() => {
+                setShowMemberSheet(false);
+                router.push(`/@${selectedMember.profile.handle}` as any);
+              }}
+            >
+              <Ionicons name="person-outline" size={24} color={colors.text} style={{ marginRight: 18, width: 24, textAlign: "center" }} />
+              <Text style={{ fontSize: 16, fontFamily: "Inter_700Bold", color: colors.text, flex: 1 }}>View Profile</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16, minHeight: 56 }}
+              activeOpacity={0.65}
+              onPress={() => toggleAdminRole(selectedMember)}
+            >
+              <Ionicons
+                name={selectedMember.is_admin ? "shield-outline" : "shield"}
+                size={24}
+                color={colors.accent}
+                style={{ marginRight: 18, width: 24, textAlign: "center" }}
+              />
+              <Text style={{ fontSize: 16, fontFamily: "Inter_700Bold", color: colors.text, flex: 1 }}>
+                {selectedMember.is_admin ? "Remove Admin" : "Make Admin"}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: sheetBorder, marginVertical: 2 }} />
+
+            <TouchableOpacity
+              style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16, minHeight: 56 }}
+              activeOpacity={0.65}
+              onPress={() => removeMember(selectedMember.user_id, selectedMember.profile.display_name)}
+            >
+              <Ionicons name="person-remove-outline" size={24} color="#FF3B30" style={{ marginRight: 18, width: 24, textAlign: "center" }} />
+              <Text style={{ fontSize: 16, fontFamily: "Inter_700Bold", color: "#FF3B30", flex: 1 }}>
+                Remove from {typeLabel}
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </SmartSheet>
 
       {/* ── Add members sheet ─── */}
-      <BottomSheet visible={showAddSheet} onClose={() => { if (!addSaving) setShowAddSheet(false); }}>
-        <View style={{ backgroundColor: sheetBg, borderTopLeftRadius: 20, borderTopRightRadius: 20 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12, borderBottomColor: sheetBorder }}>
-            <Text style={{ fontSize: 16, fontFamily: "Inter_700Bold", color: colors.text }}>
-              Add Members
-            </Text>
-            <TouchableOpacity
-              style={[
-                { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 14 },
-                { backgroundColor: addSelected.size > 0 ? colors.accent : colors.inputBg },
-              ]}
-              onPress={confirmAddMembers}
-              disabled={addSaving || addSelected.size === 0}
-            >
-              {addSaving ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <Text style={{ color: addSelected.size > 0 ? "#fff" : colors.textMuted, fontFamily: "Inter_600SemiBold", fontSize: 14 }}>
-                  Add {addSelected.size > 0 ? `(${addSelected.size})` : ""}
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          {addLoading ? (
-            <View style={{ padding: 40, alignItems: "center" }}>
-              <ActivityIndicator color={colors.accent} />
-            </View>
-          ) : addCandidates.length === 0 ? (
-            <View style={{ padding: 32, alignItems: "center", gap: 8 }}>
-              <Ionicons name="people-outline" size={40} color={colors.textMuted} />
-              <Text style={{ color: colors.textMuted, fontFamily: "Inter_400Regular", textAlign: "center" }}>
-                All your contacts are already in this {typeLabel.toLowerCase()}
+      <SmartSheet
+        visible={showAddSheet}
+        onClose={() => { if (!addSaving) setShowAddSheet(false); }}
+        backgroundColor={sheetBg}
+        peekFraction={0.72}
+      >
+        {/* Header */}
+        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16, minHeight: 56 }}>
+          <Text style={{ fontSize: 16, fontFamily: "Inter_700Bold", color: colors.text, flex: 1 }}>
+            Add Members
+          </Text>
+          <TouchableOpacity
+            style={[
+              { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 14 },
+              { backgroundColor: addSelected.size > 0 ? colors.accent : colors.inputBg },
+            ]}
+            onPress={confirmAddMembers}
+            disabled={addSaving || addSelected.size === 0}
+          >
+            {addSaving ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={{ color: addSelected.size > 0 ? "#fff" : colors.textMuted, fontFamily: "Inter_600SemiBold", fontSize: 14 }}>
+                Add {addSelected.size > 0 ? `(${addSelected.size})` : ""}
               </Text>
-            </View>
-          ) : (
-            <FlatList
-              data={addCandidates}
-              keyExtractor={(item) => item.id}
-              style={{ maxHeight: 400 }}
-              renderItem={({ item }) => {
-                const sel = addSelected.has(item.id);
-                return (
-                  <TouchableOpacity
-                    style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, gap: 12 }}
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      setAddSelected((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(item.id)) next.delete(item.id);
-                        else next.add(item.id);
-                        return next;
-                      });
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Avatar uri={item.avatar_url} name={item.display_name} size={44} />
-                    <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                        <Text style={{ fontSize: 15, fontFamily: "Inter_500Medium", color: colors.text }} numberOfLines={1}>
-                          {item.display_name}
-                        </Text>
-                        <VerifiedBadge isVerified={item.is_verified} isOrganizationVerified={item.is_organization_verified} size={13} />
-                      </View>
-                      <Text style={{ fontSize: 13, color: colors.textMuted }}>@{item.handle}</Text>
-                    </View>
-                    <View style={[
-                      { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
-                      sel ? { backgroundColor: colors.accent, borderColor: colors.accent } : { borderColor: colors.border },
-                    ]}>
-                      {sel && <Ionicons name="checkmark" size={14} color="#fff" />}
-                    </View>
-                  </TouchableOpacity>
-                );
-              }}
-            />
-          )}
+            )}
+          </TouchableOpacity>
         </View>
-      </BottomSheet>
+
+        <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: sheetBorder, marginVertical: 2 }} />
+
+        {addLoading ? (
+          <View style={{ padding: 40, alignItems: "center" }}>
+            <ActivityIndicator color={colors.accent} />
+          </View>
+        ) : addCandidates.length === 0 ? (
+          <View style={{ padding: 32, alignItems: "center", gap: 8 }}>
+            <Ionicons name="people-outline" size={40} color={colors.textMuted} />
+            <Text style={{ color: colors.textMuted, fontFamily: "Inter_400Regular", textAlign: "center" }}>
+              All your contacts are already in this {typeLabel.toLowerCase()}
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={addCandidates}
+            keyExtractor={(item) => item.id}
+            style={{ maxHeight: 400 }}
+            renderItem={({ item }) => {
+              const sel = addSelected.has(item.id);
+              return (
+                <TouchableOpacity
+                  style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingVertical: 14, gap: 14 }}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setAddSelected((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(item.id)) next.delete(item.id);
+                      else next.add(item.id);
+                      return next;
+                    });
+                  }}
+                  activeOpacity={0.65}
+                >
+                  <Avatar uri={item.avatar_url} name={item.display_name} size={44} />
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      <Text style={{ fontSize: 15, fontFamily: "Inter_600SemiBold", color: colors.text }} numberOfLines={1}>
+                        {item.display_name}
+                      </Text>
+                      <VerifiedBadge isVerified={item.is_verified} isOrganizationVerified={item.is_organization_verified} size={13} />
+                    </View>
+                    <Text style={{ fontSize: 13, color: colors.textMuted }}>@{item.handle}</Text>
+                  </View>
+                  <View style={[
+                    { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, alignItems: "center", justifyContent: "center" },
+                    sel ? { backgroundColor: colors.accent, borderColor: colors.accent } : { borderColor: colors.border },
+                  ]}>
+                    {sel && <Ionicons name="checkmark" size={14} color="#fff" />}
+                  </View>
+                </TouchableOpacity>
+              );
+            }}
+          />
+        )}
+      </SmartSheet>
     </View>
   );
 }

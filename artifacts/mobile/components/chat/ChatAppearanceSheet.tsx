@@ -1,17 +1,14 @@
 import React, { useCallback } from "react";
 import {
-  Modal,
-  Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { ChatAppearance } from "@/lib/chatAppearance";
+import { SmartSheet } from "@/components/ui/SmartSheet";
 
 // ── Palettes ──────────────────────────────────────────────────────────────────
 
@@ -31,18 +28,18 @@ const BUBBLE_COLORS = [
 ] as const;
 
 const BG_OPTIONS = [
-  { key: "default", label: "Default", value: undefined },
-  { key: "cream",   label: "Cream",   value: "#FFF8E7" },
-  { key: "mint",    label: "Mint",    value: "#E8F5E9" },
-  { key: "blush",   label: "Blush",   value: "#FCE4EC" },
-  { key: "lavender",label: "Lavender",value: "#EDE7F6" },
-  { key: "sky",     label: "Sky",     value: "#E3F2FD" },
-  { key: "slate",   label: "Slate",   value: "#ECEFF1" },
-  { key: "sand",    label: "Sand",    value: "#FFF3E0" },
-  { key: "dark1",   label: "Dark",    value: "#1A1A2E" },
-  { key: "dark2",   label: "Ink",     value: "#0D1117" },
-  { key: "forest",  label: "Forest",  value: "#1B2A1F" },
-  { key: "midnight",label: "Night",   value: "#0A0E1A" },
+  { key: "default",  label: "Default", value: undefined },
+  { key: "cream",    label: "Cream",   value: "#FFF8E7" },
+  { key: "mint",     label: "Mint",    value: "#E8F5E9" },
+  { key: "blush",    label: "Blush",   value: "#FCE4EC" },
+  { key: "lavender", label: "Lavender",value: "#EDE7F6" },
+  { key: "sky",      label: "Sky",     value: "#E3F2FD" },
+  { key: "slate",    label: "Slate",   value: "#ECEFF1" },
+  { key: "sand",     label: "Sand",    value: "#FFF3E0" },
+  { key: "dark1",    label: "Dark",    value: "#1A1A2E" },
+  { key: "dark2",    label: "Ink",     value: "#0D1117" },
+  { key: "forest",   label: "Forest",  value: "#1B2A1F" },
+  { key: "midnight", label: "Night",   value: "#0A0E1A" },
 ] as const;
 
 // ── Preview ───────────────────────────────────────────────────────────────────
@@ -57,19 +54,16 @@ function BubblePreview({ bubbleColor, bgColor, defaultBubble, defaultBg }: {
   const resolvedBg = bgColor ?? defaultBg;
   return (
     <View style={[pv.wrap, { backgroundColor: resolvedBg }]}>
-      {/* incoming */}
       <View style={pv.rowLeft}>
         <View style={[pv.bubble, pv.incoming]}>
           <Text style={pv.incomingText}>Hey, how are you? 👋</Text>
         </View>
       </View>
-      {/* outgoing */}
       <View style={pv.rowRight}>
         <View style={[pv.bubble, { backgroundColor: resolvedBubble }]}>
           <Text style={pv.outgoingText}>Doing great, thanks! 😊</Text>
         </View>
       </View>
-      {/* incoming 2 */}
       <View style={pv.rowLeft}>
         <View style={[pv.bubble, pv.incoming]}>
           <Text style={pv.incomingText}>Nice! Want to catch up? ☕</Text>
@@ -80,11 +74,11 @@ function BubblePreview({ bubbleColor, bgColor, defaultBubble, defaultBg }: {
 }
 
 const pv = StyleSheet.create({
-  wrap:       { borderRadius: 14, padding: 14, gap: 8, overflow: "hidden" },
-  rowLeft:    { flexDirection: "row", alignSelf: "flex-start" },
-  rowRight:   { flexDirection: "row", alignSelf: "flex-end" },
-  bubble:     { borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, maxWidth: 220 },
-  incoming:   { backgroundColor: "#E0E0E0" },
+  wrap:         { borderRadius: 14, padding: 14, gap: 8, overflow: "hidden" },
+  rowLeft:      { flexDirection: "row", alignSelf: "flex-start" },
+  rowRight:     { flexDirection: "row", alignSelf: "flex-end" },
+  bubble:       { borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, maxWidth: 220 },
+  incoming:     { backgroundColor: "#E0E0E0" },
   incomingText: { fontSize: 13, color: "#333", fontFamily: "Inter_400Regular" },
   outgoingText: { fontSize: 13, color: "#FFF", fontFamily: "Inter_400Regular" },
 });
@@ -135,7 +129,6 @@ interface Props {
 
 export default function ChatAppearanceSheet({ visible, chatId: _chatId, appearance, onUpdate, onClose }: Props) {
   const { colors } = useTheme();
-  const { height: screenH } = useWindowDimensions();
 
   const currentBubble = appearance?.bubbleColor;
   const currentBg     = appearance?.bgColor;
@@ -158,87 +151,82 @@ export default function ChatAppearanceSheet({ visible, chatId: _chatId, appearan
 
   const hasCustom = !!(currentBubble || currentBg);
 
-  if (!visible) return null;
-
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.overlay} onPress={onClose} />
-      <View style={[styles.sheet, { backgroundColor: colors.surface, maxHeight: screenH * 0.82 }]}>
-        {/* Handle */}
-        <View style={[styles.handle, { backgroundColor: colors.border }]} />
+    <SmartSheet
+      visible={visible}
+      onClose={onClose}
+      backgroundColor={colors.surface}
+      peekFraction={0.75}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: colors.text }]}>Chat Appearance</Text>
+        <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={10}>
+          <Ionicons name="close" size={22} color={colors.textMuted} />
+        </TouchableOpacity>
+      </View>
 
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>Chat Appearance</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={10}>
-            <Ionicons name="close" size={22} color={colors.textMuted} />
-          </TouchableOpacity>
+      <View style={styles.content}>
+        {/* Live preview */}
+        <BubblePreview
+          bubbleColor={currentBubble}
+          bgColor={currentBg}
+          defaultBubble={colors.accent}
+          defaultBg={colors.background}
+        />
+
+        {/* Bubble colour */}
+        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>BUBBLE COLOUR</Text>
+        <View style={styles.swatchGrid}>
+          {BUBBLE_COLORS.map((c) => (
+            <Swatch
+              key={c.key}
+              color={c.value}
+              label={c.label}
+              selected={currentBubble === c.value}
+              defaultColor={colors.accent}
+              accent={colors.accent}
+              onPress={() => setBubble(c.value)}
+            />
+          ))}
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-          {/* Live preview */}
-          <BubblePreview
-            bubbleColor={currentBubble}
-            bgColor={currentBg}
-            defaultBubble={colors.accent}
-            defaultBg={colors.background}
-          />
+        {/* Background colour */}
+        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>BACKGROUND</Text>
+        <View style={styles.swatchGrid}>
+          {BG_OPTIONS.map((c) => (
+            <Swatch
+              key={c.key}
+              color={c.value}
+              label={c.label}
+              selected={currentBg === c.value}
+              defaultColor={colors.background}
+              accent={colors.accent}
+              onPress={() => setBg(c.value)}
+            />
+          ))}
+        </View>
 
-          {/* Bubble colour */}
-          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>BUBBLE COLOUR</Text>
-          <View style={styles.swatchGrid}>
-            {BUBBLE_COLORS.map((c) => (
-              <Swatch
-                key={c.key}
-                color={c.value}
-                label={c.label}
-                selected={currentBubble === c.value}
-                defaultColor={colors.accent}
-                accent={colors.accent}
-                onPress={() => setBubble(c.value)}
-              />
-            ))}
-          </View>
-
-          {/* Background colour */}
-          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>BACKGROUND</Text>
-          <View style={styles.swatchGrid}>
-            {BG_OPTIONS.map((c) => (
-              <Swatch
-                key={c.key}
-                color={c.value}
-                label={c.label}
-                selected={currentBg === c.value}
-                defaultColor={colors.background}
-                accent={colors.accent}
-                onPress={() => setBg(c.value)}
-              />
-            ))}
-          </View>
-
-          {/* Reset */}
-          {hasCustom && (
-            <TouchableOpacity style={[styles.resetBtn, { borderColor: colors.border }]} onPress={resetAll} activeOpacity={0.7}>
-              <Ionicons name="refresh-outline" size={16} color={colors.textMuted} />
-              <Text style={[styles.resetText, { color: colors.textMuted }]}>Reset to Default</Text>
-            </TouchableOpacity>
-          )}
-        </ScrollView>
+        {/* Reset */}
+        {hasCustom && (
+          <TouchableOpacity style={[styles.resetBtn, { borderColor: colors.border }]} onPress={resetAll} activeOpacity={0.7}>
+            <Ionicons name="refresh-outline" size={24} color={colors.text} style={styles.resetIcon} />
+            <Text style={[styles.resetText, { color: colors.text }]}>Reset to Default</Text>
+          </TouchableOpacity>
+        )}
       </View>
-    </Modal>
+    </SmartSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay:      { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.45)" },
-  sheet:        { position: "absolute", bottom: 0, left: 0, right: 0, borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: "hidden" },
-  handle:       { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginTop: 10 },
-  header:       { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingTop: 14, paddingBottom: 6 },
+  header:       { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingTop: 8, paddingBottom: 6 },
   title:        { flex: 1, fontSize: 17, fontFamily: "Inter_700Bold" },
   closeBtn:     { padding: 4 },
   content:      { paddingHorizontal: 20, paddingBottom: 36, gap: 16 },
   sectionTitle: { fontSize: 11, fontFamily: "Inter_600SemiBold", letterSpacing: 0.8, marginTop: 6, marginBottom: 2 },
   swatchGrid:   { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  resetBtn:     { flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "center", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, borderWidth: 1, marginTop: 8 },
-  resetText:    { fontSize: 14, fontFamily: "Inter_400Regular" },
+  resetBtn:     { flexDirection: "row", alignItems: "center", alignSelf: "center", paddingHorizontal: 20, paddingVertical: 14, minHeight: 56 },
+  resetIcon:    { marginRight: 18, width: 24, textAlign: "center" },
+  resetText:    { fontSize: 16, fontFamily: "Inter_700Bold" },
 });

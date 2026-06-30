@@ -8,7 +8,6 @@
 import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Modal,
   Platform,
   StyleSheet,
   Text,
@@ -23,6 +22,7 @@ import QRCode from "@/components/ui/QRCode";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import AfuLogo from "@/components/ui/AfuLogo";
 import { useTheme } from "@/hooks/useTheme";
+import { SmartSheet } from "@/components/ui/SmartSheet";
 
 let ViewShot: any = ({ children, style, ...rest }: any) => <View style={style} {...rest}>{children}</View>;
 let captureRef: ((ref: any, opts?: any) => Promise<string>) | null = null;
@@ -59,9 +59,9 @@ export default function QRPosterSheet({
 
   const qrUrl = `https://afuchat.com/id/${afuId}`;
 
-  const sheetBg      = isDark ? colors.backgroundSecondary : colors.backgroundSecondary;
-  const cardBg       = isDark ? "#0a1628" : "#0a1628";
-  const cardTop      = isDark ? "#0d1e38" : "#0d1e38";
+  const sheetBg = isDark ? colors.backgroundSecondary : colors.backgroundSecondary;
+  const cardBg  = "#0a1628";
+  const cardTop = "#0d1e38";
 
   async function capture(): Promise<string | null> {
     if (Platform.OS === "web") {
@@ -117,22 +117,8 @@ export default function QRPosterSheet({
   }
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <TouchableOpacity
-        style={s.backdrop}
-        activeOpacity={1}
-        onPress={onClose}
-      />
-      <View style={[s.sheet, { backgroundColor: sheetBg }]}>
-        {/* Top row: drag handle + back button */}
-        <View style={s.topRow}>
-          <TouchableOpacity style={[s.backBtn, { backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }]} onPress={onClose}>
-            <Ionicons name="chevron-down" size={20} color={colors.text} />
-          </TouchableOpacity>
-          <View style={[s.handle, { backgroundColor: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)" }]} />
-          <View style={s.topRowSpacer} />
-        </View>
-
+    <SmartSheet visible={visible} onClose={onClose} peekFraction={0.85} backgroundColor={sheetBg}>
+      <View style={s.content}>
         <Text style={[s.sheetTitle, { color: colors.text }]}>Your AfuChat QR Poster</Text>
         <Text style={[s.sheetSub, { color: colors.textMuted }]}>Long-press or share with anyone — they can scan it to find you instantly.</Text>
 
@@ -143,15 +129,12 @@ export default function QRPosterSheet({
             options={{ format: "png", quality: 1, result: "tmpfile" }}
             style={s.poster}
           >
-            {/* Background */}
             <View style={[s.posterBg, { backgroundColor: cardBg }]}>
-              {/* Top brand strip with actual logo */}
               <View style={[s.brandStrip, { backgroundColor: cardTop }]}>
                 <AfuLogo size={26} forceTheme="dark" style={{ marginRight: 2 }} />
                 <Text style={s.brandName}>AfuChat</Text>
               </View>
 
-              {/* Avatar */}
               <View style={s.avatarWrap}>
                 {avatarUrl ? (
                   <Image
@@ -172,11 +155,9 @@ export default function QRPosterSheet({
                 )}
               </View>
 
-              {/* Name + handle */}
               <Text style={s.posterName} numberOfLines={1}>{displayName}</Text>
               <Text style={s.posterHandle}>@{handle}</Text>
 
-              {/* QR code */}
               <View style={s.qrWrap}>
                 <QRCode value={qrUrl} size={130} color="#0a1628" backgroundColor="#ffffff" />
               </View>
@@ -188,75 +169,50 @@ export default function QRPosterSheet({
         </View>
 
         {/* Action buttons */}
-        <View style={s.btnRow}>
-          <TouchableOpacity
-            style={[s.btn, { backgroundColor: accent }]}
-            onPress={handleShare}
-            disabled={saving}
-          >
-            {saving ? <ActivityIndicator color="#fff" size="small" /> : (
-              <>
-                <Ionicons name="share-social-outline" size={18} color="#fff" />
-                <Text style={s.btnTextPrimary}>Share</Text>
-              </>
-            )}
-          </TouchableOpacity>
+        <View style={[s.sep, { backgroundColor: colors.border }]} />
 
-          <TouchableOpacity
-            style={[s.btn, s.btnSecondary, { borderColor: accent + "55" }]}
-            onPress={handleSave}
-            disabled={saving}
-          >
-            <Ionicons name="download-outline" size={18} color={accent} />
-            <Text style={[s.btnTextSecondary, { color: accent }]}>Save Image</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={s.actionRow}
+          onPress={handleShare}
+          disabled={saving}
+          activeOpacity={0.65}
+        >
+          {saving ? (
+            <ActivityIndicator color={accent} size="small" style={s.actionIcon} />
+          ) : (
+            <Ionicons name="share-social-outline" size={24} color={accent} style={s.actionIcon} />
+          )}
+          <Text style={[s.actionLabel, { color: accent }]}>Share</Text>
+        </TouchableOpacity>
+
+        <View style={[s.sep, { backgroundColor: colors.border }]} />
+
+        <TouchableOpacity
+          style={s.actionRow}
+          onPress={handleSave}
+          disabled={saving}
+          activeOpacity={0.65}
+        >
+          <Ionicons name="download-outline" size={24} color={colors.text} style={s.actionIcon} />
+          <Text style={[s.actionLabel, { color: colors.text }]}>Save Image</Text>
+        </TouchableOpacity>
+
+        <View style={[s.sep, { backgroundColor: colors.border }]} />
       </View>
-    </Modal>
+    </SmartSheet>
   );
 }
 
 const s = StyleSheet.create({
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.6)",
+  content: {
+    paddingHorizontal: 0,
   },
-  sheet: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingBottom: 36,
-    paddingHorizontal: 20,
-  },
-  topRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingTop: 14,
-    paddingBottom: 8,
-  },
-  backBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  handle: {
-    flex: 1,
-    height: 4,
-    borderRadius: 2,
-    marginHorizontal: 12,
-  },
-  topRowSpacer: { width: 34 },
 
-  sheetTitle: { fontSize: 17, fontWeight: "700", textAlign: "center", marginTop: 4 },
-  sheetSub: { fontSize: 13, textAlign: "center", marginTop: 4, marginBottom: 20, lineHeight: 19 },
+  sheetTitle: { fontSize: 17, fontFamily: "Inter_700Bold", textAlign: "center", marginTop: 4, paddingHorizontal: 20 },
+  sheetSub:   { fontSize: 13, textAlign: "center", marginTop: 4, marginBottom: 20, lineHeight: 19, paddingHorizontal: 20 },
 
   posterWrap: { alignItems: "center", marginBottom: 20 },
-  poster: { borderRadius: 20, overflow: "hidden" },
+  poster:     { borderRadius: 20, overflow: "hidden" },
   posterBg: {
     width: 280,
     borderRadius: 20,
@@ -281,12 +237,12 @@ const s = StyleSheet.create({
   brandName: { color: "#fff", fontSize: 15, fontWeight: "700", letterSpacing: 0.5 },
 
   avatarWrap: { position: "relative", marginBottom: 12 },
-  avatar: { width: 80, height: 80, borderRadius: 40, borderWidth: 2.5, borderColor: BRAND + "60" },
+  avatar:     { width: 80, height: 80, borderRadius: 40, borderWidth: 2.5, borderColor: BRAND + "60" },
   avatarFallback: { backgroundColor: BRAND + "22", alignItems: "center", justifyContent: "center" },
-  avatarInitial: { fontSize: 32, fontWeight: "700", color: BRAND },
-  badgeWrap: { position: "absolute", bottom: 0, right: -2 },
+  avatarInitial:  { fontSize: 32, fontWeight: "700", color: BRAND },
+  badgeWrap:      { position: "absolute", bottom: 0, right: -2 },
 
-  posterName: { fontSize: 18, fontWeight: "700", color: "#fff", textAlign: "center", paddingHorizontal: 16 },
+  posterName:   { fontSize: 18, fontWeight: "700", color: "#fff", textAlign: "center", paddingHorizontal: 16 },
   posterHandle: { fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 3, marginBottom: 16 },
 
   qrWrap: {
@@ -294,18 +250,16 @@ const s = StyleSheet.create({
     padding: 10,
     borderRadius: 14,
     marginBottom: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    ...Platform.select({
+      web: { boxShadow: "0 2px 8px rgba(0,0,0,0.3)" } as any,
+      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+    }),
   },
   posterScan: { fontSize: 11, color: "rgba(255,255,255,0.5)", letterSpacing: 0.4, marginBottom: 4 },
-  posterUrl: { fontSize: 10, color: BRAND + "88", letterSpacing: 0.3, fontFamily: "monospace" as any },
+  posterUrl:  { fontSize: 10, color: BRAND + "88", letterSpacing: 0.3, fontFamily: "monospace" as any },
 
-  btnRow: { flexDirection: "row", gap: 12 },
-  btn: { flex: 1, height: 48, borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
-  btnSecondary: { backgroundColor: "transparent", borderWidth: 1 },
-  btnTextPrimary: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  btnTextSecondary: { fontWeight: "600", fontSize: 15 },
+  sep:        { height: StyleSheet.hairlineWidth, marginVertical: 2 },
+  actionRow:  { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16, minHeight: 56 },
+  actionIcon: { marginRight: 18, width: 24, textAlign: "center" },
+  actionLabel:{ flex: 1, fontSize: 16, fontFamily: "Inter_700Bold" },
 });
