@@ -53,6 +53,7 @@ import { ChatLoadingSkeleton, ChatBubbleSkeleton } from "@/components/ui/Skeleto
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useChatAppearance } from "@/lib/chatAppearance";
 import ChatAppearanceSheet from "@/components/chat/ChatAppearanceSheet";
+import { SmartSheet } from "@/components/ui/SmartSheet";
 import { supabase, supabaseUrl as SUPA_URL, supabaseAnonKey as SUPA_KEY } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
@@ -7185,21 +7186,50 @@ STRICT RULES:
         currentChatId={chatInfo && !chatInfo.is_group && chatInfo.other_id === miniProfileUserId ? chatInfo.other_id : null}
       />
 
-      <Modal visible={!!showReactions} transparent animationType="none" onRequestClose={() => { setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); setShowMoreEmojis(false); }}>
-        <View style={st.reactModalOverlay}>
-          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => { setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); setShowMoreEmojis(false); }} />
+      {/* ── Message actions bottom sheet ─────────────────────────── */}
+      <SmartSheet
+        visible={!!showReactions}
+        onClose={() => { setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); setShowMoreEmojis(false); }}
+        backgroundColor={colors.surface}
+        peekFraction={0.72}
+      >
+        {/* Emoji picker row */}
+        <View style={st.reactEmojiRow}>
+          {REACTION_EMOJIS.map((emoji) => {
+            const alreadyReacted = showReactions?.reactions?.some((r) => r.emoji === emoji && r.myReaction);
+            return (
+              <TouchableOpacity
+                key={emoji}
+                style={[st.reactEmojiPillBtn, alreadyReacted && { backgroundColor: BRAND + "22", transform: [{ scale: 1.18 }] }]}
+                onPress={() => {
+                  if (!showReactions) return;
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  addReaction(showReactions, emoji);
+                  setShowReactions(null);
+                  setShowMoreEmojis(false);
+                }}
+              >
+                <Text style={st.reactEmojiPillText}>{emoji}</Text>
+                {alreadyReacted && <View style={[st.reactEmojiActiveDot, { backgroundColor: BRAND }]} />}
+              </TouchableOpacity>
+            );
+          })}
+          <TouchableOpacity
+            style={[st.reactEmojiPillBtn, showMoreEmojis && { backgroundColor: colors.inputBg }]}
+            onPress={() => setShowMoreEmojis((v) => !v)}
+          >
+            <Ionicons name={showMoreEmojis ? "chevron-up" : "add"} size={22} color="#111" />
+          </TouchableOpacity>
+        </View>
 
-          {/* ── WhatsApp-style floating emoji pill ───────────────────── */}
-          <View style={[st.reactEmojiPill, { backgroundColor: colors.surface }]}>
-            {REACTION_EMOJIS.map((emoji) => {
+        {showMoreEmojis && (
+          <View style={st.reactMoreGridInline}>
+            {REACTION_EMOJIS_ADVANCED.filter((e) => !REACTION_EMOJIS.includes(e)).map((emoji) => {
               const alreadyReacted = showReactions?.reactions?.some((r) => r.emoji === emoji && r.myReaction);
               return (
                 <TouchableOpacity
                   key={emoji}
-                  style={[
-                    st.reactEmojiPillBtn,
-                    alreadyReacted && { backgroundColor: BRAND + "22", transform: [{ scale: 1.18 }] },
-                  ]}
+                  style={[st.reactMoreGridBtn, alreadyReacted && { backgroundColor: BRAND + "22" }]}
                   onPress={() => {
                     if (!showReactions) return;
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -7213,239 +7243,176 @@ STRICT RULES:
                 </TouchableOpacity>
               );
             })}
-            <TouchableOpacity
-              style={[st.reactEmojiPillBtn, showMoreEmojis && { backgroundColor: colors.inputBg }]}
-              onPress={() => setShowMoreEmojis((v) => !v)}
-            >
-              <Ionicons name={showMoreEmojis ? "chevron-up" : "add"} size={20} color={colors.textMuted} />
-            </TouchableOpacity>
           </View>
+        )}
 
-          {/* ── Expanded emoji grid (10 extra emojis) ───────────────── */}
-          {showMoreEmojis && (
-            <View style={[st.reactMoreGrid, { backgroundColor: colors.surface }]}>
-              {REACTION_EMOJIS_ADVANCED.filter((e) => !REACTION_EMOJIS.includes(e)).map((emoji) => {
-                const alreadyReacted = showReactions?.reactions?.some((r) => r.emoji === emoji && r.myReaction);
-                return (
-                  <TouchableOpacity
-                    key={emoji}
-                    style={[st.reactMoreGridBtn, alreadyReacted && { backgroundColor: BRAND + "22" }]}
-                    onPress={() => {
-                      if (!showReactions) return;
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      addReaction(showReactions, emoji);
-                      setShowReactions(null);
-                      setShowMoreEmojis(false);
-                    }}
-                  >
-                    <Text style={st.reactEmojiPillText}>{emoji}</Text>
-                    {alreadyReacted && <View style={[st.reactEmojiActiveDot, { backgroundColor: BRAND }]} />}
-                  </TouchableOpacity>
-                );
-              })}
+        <View style={[st.reactRowSep, { backgroundColor: colors.border }]} />
+
+        {/* Reply */}
+        <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) { setReplyTo(showReactions); setTimeout(() => chatInputRef.current?.focus(), 50); setShowReactions(null); } }}>
+          <Ionicons name="arrow-undo" size={24} color="#111" style={st.reactRowIcon} />
+          <Text style={st.reactRowLabel}>Reply</Text>
+        </TouchableOpacity>
+
+        {/* Copy Text */}
+        {showReactions && (() => {
+          const txt = showReactions.encrypted_content?.trim();
+          const isGift = !txt || txt.startsWith("🎁 ") || txt.startsWith("🧧") || txt.includes("|giftId:");
+          if (isGift) return null;
+          return (
+            <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={async () => { await Clipboard.setStringAsync(txt); setShowReactions(null); showAlert("Copied", "Message text copied to clipboard."); }}>
+              <Ionicons name="copy-outline" size={24} color="#111" style={st.reactRowIcon} />
+              <Text style={st.reactRowLabel}>Copy Text</Text>
+            </TouchableOpacity>
+          );
+        })()}
+
+        {/* Forward */}
+        <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) { openForward(showReactions); setShowReactions(null); } }}>
+          <Ionicons name="arrow-redo" size={24} color="#111" style={st.reactRowIcon} />
+          <Text style={st.reactRowLabel}>Forward</Text>
+        </TouchableOpacity>
+
+        {/* Star Message */}
+        {showReactions && (() => {
+          const txt = showReactions.encrypted_content?.trim();
+          const isGift = !txt || txt.startsWith("🎁 ") || txt.startsWith("🧧") || txt.includes("|giftId:");
+          if (isGift) return null;
+          return (
+            <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) handleStarMessage(showReactions); }}>
+              <Ionicons name="star-outline" size={24} color="#111" style={st.reactRowIcon} />
+              <Text style={st.reactRowLabel}>Star Message</Text>
+            </TouchableOpacity>
+          );
+        })()}
+
+        {/* Save to Phone */}
+        {showReactions?.attachment_url && showReactions.attachment_type !== "video" && Platform.OS !== "web" && (
+          <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) handleSaveToPhone(showReactions); }}>
+            <Ionicons name="download-outline" size={24} color="#111" style={st.reactRowIcon} />
+            <Text style={st.reactRowLabel}>Save to Phone</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Translate */}
+        <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) openTranslatePicker(showReactions); }}>
+          <Ionicons name="language-outline" size={24} color="#111" style={st.reactRowIcon} />
+          <Text style={st.reactRowLabel}>Translate</Text>
+          <Ionicons name="chevron-forward" size={18} color="#111" />
+        </TouchableOpacity>
+
+        {/* Edit (own non-gift messages) */}
+        {showReactions?.sender_id === user?.id && !showReactions?.attachment_url && !showReactions?.encrypted_content.startsWith("🎁 ") && !showReactions?.encrypted_content.startsWith("🧧") && !showReactions?.encrypted_content.includes("|giftId:") && (
+          <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) startEditMessage(showReactions); }}>
+            <Ionicons name="pencil-outline" size={24} color="#111" style={st.reactRowIcon} />
+            <Text style={st.reactRowLabel}>Edit</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Message Info */}
+        {showReactions?.sender_id === user?.id && (
+          <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { setMsgInfoTarget(showReactions); setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); }}>
+            <Ionicons name="information-circle-outline" size={24} color="#111" style={st.reactRowIcon} />
+            <Text style={st.reactRowLabel}>Message Info</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* View Edit History */}
+        {advancedFeatures.message_edit_history && showReactions?.edited_at && (
+          <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) handleViewEditHistory(showReactions); }}>
+            <Ionicons name="time-outline" size={24} color="#111" style={st.reactRowIcon} />
+            <Text style={st.reactRowLabel}>View Edit History</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Remind Me */}
+        {advancedFeatures.message_reminders && showReactions?.encrypted_content && !showReactions.encrypted_content.startsWith("🎁 ") && !showReactions.encrypted_content.startsWith("🧧") && !["📷 Photo", "🎥 Video", "GIF"].includes(showReactions.encrypted_content) && (
+          <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { setReminderMsg(showReactions); setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); }}>
+            <Ionicons name="alarm-outline" size={24} color="#111" style={st.reactRowIcon} />
+            <Text style={st.reactRowLabel}>Remind Me</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Share to Feed */}
+        {advancedFeatures.chat_to_post && showReactions && (() => {
+          const txt = showReactions.encrypted_content?.trim();
+          const isGift = !txt || txt.startsWith("🎁 ") || txt.startsWith("🧧") || txt.includes("|giftId:");
+          if (isGift) return null;
+          return (
+            <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); router.push({ pathname: "/create-post", params: { prefill: txt } } as any); }}>
+              <Ionicons name="share-social-outline" size={24} color="#111" style={st.reactRowIcon} />
+              <Text style={st.reactRowLabel}>Share to Feed</Text>
+            </TouchableOpacity>
+          );
+        })()}
+
+        {/* Separator before destructive */}
+        <View style={[st.reactRowSep, { backgroundColor: colors.border }]} />
+
+        {/* Delete (own messages) */}
+        {showReactions?.sender_id === user?.id && (
+          <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) handleDeleteMessage(showReactions); }}>
+            <Ionicons name="trash-outline" size={24} color="#FF3B30" style={st.reactRowIcon} />
+            <Text style={[st.reactRowLabel, { color: "#FF3B30" }]}>Delete</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Report Message (others' messages) */}
+        {showReactions?.sender_id !== user?.id && (
+          <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) handleReportMessage(showReactions); }}>
+            <Ionicons name="flag-outline" size={24} color="#FF3B30" style={st.reactRowIcon} />
+            <Text style={[st.reactRowLabel, { color: "#FF3B30" }]}>Report Message</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* AI Features — group/channel chats only */}
+        {(chatInfo?.is_group || chatInfo?.is_channel) && (
+          <>
+            <View style={[st.reactRowSep, { backgroundColor: colors.border }]} />
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 20, paddingVertical: 10 }}>
+              <Ionicons name="sparkles" size={12} color={colors.accent} />
+              <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: colors.accent, textTransform: "uppercase", letterSpacing: 0.5 }}>AI Features</Text>
             </View>
-          )}
+            {showReactions && showReactions.encrypted_content.length >= 500 && (
+              <TouchableOpacity style={[st.reactRow, { opacity: aiLoading && aiResultType === "summary" ? 0.5 : 1 }]} activeOpacity={0.65} disabled={aiLoading} onPress={() => { if (showReactions) handleAiSummarize(showReactions); }}>
+                <Ionicons name="document-text-outline" size={24} color="#111" style={st.reactRowIcon} />
+                <Text style={st.reactRowLabel}>Summarize Message</Text>
+                {aiLoading && aiResultType === "summary" && <ActivityIndicator color={colors.accent} size="small" />}
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={[st.reactRow, { opacity: aiLoading && aiResultType === "replies" ? 0.5 : 1 }]} activeOpacity={0.65} disabled={aiLoading} onPress={handleAiSuggestReply}>
+              <Ionicons name="chatbubbles-outline" size={24} color="#111" style={st.reactRowIcon} />
+              <Text style={st.reactRowLabel}>Smart Replies</Text>
+              {aiLoading && aiResultType === "replies" && <ActivityIndicator color={colors.accent} size="small" />}
+            </TouchableOpacity>
 
-          {/* ── Actions card ─────────────────────────────────────────── */}
-          <View style={[st.reactModalContainer, { backgroundColor: colors.surface }]}>
-            <View style={[st.reactModalDivider, { backgroundColor: colors.border, marginTop: 0, marginBottom: 4 }]} />
-            <TouchableOpacity style={st.reactModalAction} onPress={() => { if (showReactions) { setReplyTo(showReactions); setTimeout(() => chatInputRef.current?.focus(), 50); setShowReactions(null); } }}>
-              <Ionicons name="arrow-undo" size={20} color={colors.text} />
-              <Text style={[st.reactModalActionText, { color: colors.text }]}>Reply</Text>
-            </TouchableOpacity>
-            {showReactions && (() => {
-              const txt = showReactions.encrypted_content?.trim();
-              const isGift = !txt || txt.startsWith("🎁 ") || txt.startsWith("🧧") || txt.includes("|giftId:");
-              if (isGift) return null;
-              return (
-                <TouchableOpacity
-                  style={st.reactModalAction}
-                  onPress={async () => {
-                    await Clipboard.setStringAsync(txt);
-                    setShowReactions(null);
-                    showAlert("Copied", "Message text copied to clipboard.");
-                  }}
-                >
-                  <Ionicons name="copy-outline" size={20} color={colors.text} />
-                  <Text style={[st.reactModalActionText, { color: colors.text }]}>Copy Text</Text>
-                </TouchableOpacity>
-              );
-            })()}
-            <TouchableOpacity
-              style={st.reactModalAction}
-              onPress={() => { if (showReactions) { openForward(showReactions); setShowReactions(null); } }}
-            >
-              <Ionicons name="arrow-redo" size={20} color={colors.text} />
-              <Text style={[st.reactModalActionText, { color: colors.text }]}>Forward</Text>
-            </TouchableOpacity>
-            {showReactions && (() => {
-              const txt = showReactions.encrypted_content?.trim();
-              const isGift = !txt || txt.startsWith("🎁 ") || txt.startsWith("🧧") || txt.includes("|giftId:");
-              if (isGift) return null;
-              return (
-                <TouchableOpacity
-                  style={st.reactModalAction}
-                  onPress={() => { if (showReactions) handleStarMessage(showReactions); }}
-                >
-                  <Ionicons name="star-outline" size={20} color={Colors.gold} />
-                  <Text style={[st.reactModalActionText, { color: colors.text }]}>Star Message</Text>
-                </TouchableOpacity>
-              );
-            })()}
-            {showReactions && showReactions.attachment_url && showReactions.attachment_type !== "video" && Platform.OS !== "web" && (
-              <TouchableOpacity
-                style={st.reactModalAction}
-                onPress={() => { if (showReactions) handleSaveToPhone(showReactions); }}
-              >
-                <Ionicons name="download-outline" size={20} color={colors.text} />
-                <Text style={[st.reactModalActionText, { color: colors.text }]}>Save to Phone</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              style={st.reactModalAction}
-              onPress={() => { if (showReactions) openTranslatePicker(showReactions); }}
-            >
-              <Ionicons name="language-outline" size={20} color={colors.text} />
-              <Text style={[st.reactModalActionText, { color: colors.text }]}>Translate</Text>
-              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} style={{ marginLeft: "auto" }} />
-            </TouchableOpacity>
-            {showReactions && showReactions.sender_id === user?.id && !showReactions.attachment_url && !showReactions.encrypted_content.startsWith("🎁 ") && !showReactions.encrypted_content.startsWith("🧧") && !showReactions.encrypted_content.includes("|giftId:") && (
-              <TouchableOpacity
-                style={st.reactModalAction}
-                onPress={() => { if (showReactions) startEditMessage(showReactions); }}
-              >
-                <Ionicons name="pencil-outline" size={20} color={colors.text} />
-                <Text style={[st.reactModalActionText, { color: colors.text }]}>Edit</Text>
-              </TouchableOpacity>
-            )}
-            {showReactions && showReactions.sender_id === user?.id && (
-              <TouchableOpacity
-                style={st.reactModalAction}
-                onPress={() => { setMsgInfoTarget(showReactions); setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); }}
-              >
-                <Ionicons name="information-circle-outline" size={20} color={colors.text} />
-                <Text style={[st.reactModalActionText, { color: colors.text }]}>Message Info</Text>
-              </TouchableOpacity>
-            )}
-            {advancedFeatures.message_edit_history && showReactions && showReactions.edited_at && (
-              <TouchableOpacity
-                style={st.reactModalAction}
-                onPress={() => { if (showReactions) handleViewEditHistory(showReactions); }}
-              >
-                <Ionicons name="time-outline" size={20} color={colors.textMuted} />
-                <Text style={[st.reactModalActionText, { color: colors.text }]}>View Edit History</Text>
-              </TouchableOpacity>
-            )}
-            {showReactions && showReactions.sender_id === user?.id && (
-              <TouchableOpacity
-                style={st.reactModalAction}
-                onPress={() => { if (showReactions) handleDeleteMessage(showReactions); }}
-              >
-                <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-                <Text style={[st.reactModalActionText, { color: "#FF3B30" }]}>Delete</Text>
-              </TouchableOpacity>
-            )}
-            {showReactions && showReactions.sender_id !== user?.id && (
-              <TouchableOpacity
-                style={st.reactModalAction}
-                onPress={() => { if (showReactions) handleReportMessage(showReactions); }}
-              >
-                <Ionicons name="flag-outline" size={20} color="#FF3B30" />
-                <Text style={[st.reactModalActionText, { color: "#FF3B30" }]}>Report Message</Text>
-              </TouchableOpacity>
-            )}
-            {advancedFeatures.message_reminders && showReactions && showReactions.encrypted_content && !showReactions.encrypted_content.startsWith("🎁 ") && !showReactions.encrypted_content.startsWith("🧧") && !["📷 Photo", "🎥 Video", "GIF"].includes(showReactions.encrypted_content) && (
-              <TouchableOpacity
-                style={st.reactModalAction}
-                onPress={() => { setReminderMsg(showReactions); setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); }}
-              >
-                <Ionicons name="alarm-outline" size={20} color={colors.accent} />
-                <Text style={[st.reactModalActionText, { color: colors.text }]}>Remind Me</Text>
-              </TouchableOpacity>
-            )}
-            {advancedFeatures.chat_to_post && showReactions && (() => {
-              const txt = showReactions.encrypted_content?.trim();
-              const isGift = !txt || txt.startsWith("🎁 ") || txt.startsWith("🧧") || txt.includes("|giftId:");
-              if (isGift) return null;
-              return (
-                <TouchableOpacity
-                  style={st.reactModalAction}
-                  onPress={() => {
-                    setShowReactions(null);
-                    setAiResult(null);
-                    setAiResultType(null);
-                    setAiReplies([]);
-                    router.push({ pathname: "/create-post", params: { prefill: txt } } as any);
-                  }}
-                >
-                  <Ionicons name="share-social-outline" size={20} color="#34C759" />
-                  <Text style={[st.reactModalActionText, { color: colors.text }]}>Share to Feed</Text>
-                </TouchableOpacity>
-              );
-            })()}
-
-            {(chatInfo?.is_group || chatInfo?.is_channel) && (
-              <>
-                <View style={[st.reactModalDivider, { backgroundColor: colors.border }]} />
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 4 }}>
+            {aiResult && aiResultType === "summary" && (
+              <View style={{ marginHorizontal: 20, marginTop: 4, marginBottom: 8, backgroundColor: colors.accent + "0A", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.accent + "18" }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
                   <Ionicons name="sparkles" size={12} color={colors.accent} />
-                  <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: colors.accent, textTransform: "uppercase", letterSpacing: 0.5 }}>AI Features</Text>
+                  <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: colors.accent, textTransform: "uppercase", letterSpacing: 0.5 }}>Summary</Text>
                 </View>
-                {showReactions && showReactions.encrypted_content.length >= 500 && (
-                  <TouchableOpacity
-                    style={[st.reactModalAction, { opacity: aiLoading && aiResultType === "summary" ? 0.5 : 1 }]}
-                    disabled={aiLoading}
-                    onPress={() => { if (showReactions) handleAiSummarize(showReactions); }}
-                  >
-                    <Ionicons name="document-text-outline" size={20} color={colors.accent} />
-                    <Text style={[st.reactModalActionText, { color: colors.text }]}>Summarize Message</Text>
-                    {aiLoading && aiResultType === "summary" && <ActivityIndicator color={colors.accent} size="small" style={{ marginLeft: "auto" }} />}
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                  style={[st.reactModalAction, { opacity: aiLoading && aiResultType === "replies" ? 0.5 : 1 }]}
-                  disabled={aiLoading}
-                  onPress={handleAiSuggestReply}
-                >
-                  <Ionicons name="chatbubbles-outline" size={20} color="#D4A853" />
-                  <Text style={[st.reactModalActionText, { color: colors.text }]}>Smart Replies</Text>
-                  {aiLoading && aiResultType === "replies" && <ActivityIndicator color="#D4A853" size="small" style={{ marginLeft: "auto" }} />}
-                </TouchableOpacity>
-
-                {aiResult && aiResultType === "summary" && (
-                  <View style={{ marginTop: 6, backgroundColor: colors.accent + "0A", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.accent + "18" }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
-                      <Ionicons name="sparkles" size={12} color={colors.accent} />
-                      <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: colors.accent, textTransform: "uppercase", letterSpacing: 0.5 }}>Summary</Text>
-                    </View>
-                    <Text style={{ fontSize: 14, color: colors.text, fontFamily: "Inter_400Regular", lineHeight: 20 }}>{aiResult}</Text>
-                  </View>
-                )}
-
-                {aiReplies.length > 0 && aiResultType === "replies" && (
-                  <View style={{ marginTop: 6, gap: 6 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                      <Ionicons name="flash" size={12} color="#D4A853" />
-                      <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: "#D4A853", textTransform: "uppercase", letterSpacing: 0.5 }}>Tap to use</Text>
-                    </View>
-                    {aiReplies.map((reply, i) => (
-                      <TouchableOpacity
-                        key={i}
-                        onPress={() => { setInput(reply); setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                        style={{ backgroundColor: colors.inputBg, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: "#D4A853" + "25", flexDirection: "row", alignItems: "center", gap: 8 }}
-                        activeOpacity={0.6}
-                      >
-                        <Text style={{ flex: 1, fontSize: 14, color: colors.text, fontFamily: "Inter_400Regular", lineHeight: 19 }}>{reply}</Text>
-                        <Ionicons name="arrow-forward-circle" size={16} color="#D4A853" style={{ opacity: 0.5 }} />
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-              </>
+                <Text style={{ fontSize: 14, color: colors.text, fontFamily: "Inter_400Regular", lineHeight: 20 }}>{aiResult}</Text>
+              </View>
             )}
-          </View>
-        </View>
-      </Modal>
+
+            {aiReplies.length > 0 && aiResultType === "replies" && (
+              <View style={{ marginHorizontal: 20, marginTop: 4, marginBottom: 8, gap: 6 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                  <Ionicons name="flash" size={12} color="#D4A853" />
+                  <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: "#D4A853", textTransform: "uppercase", letterSpacing: 0.5 }}>Tap to use</Text>
+                </View>
+                {aiReplies.map((reply, i) => (
+                  <TouchableOpacity key={i} onPress={() => { setInput(reply); setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} style={{ backgroundColor: colors.inputBg, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: "#D4A853" + "25", flexDirection: "row", alignItems: "center", gap: 8 }} activeOpacity={0.6}>
+                    <Text style={{ flex: 1, fontSize: 14, color: colors.text, fontFamily: "Inter_400Regular", lineHeight: 19 }}>{reply}</Text>
+                    <Ionicons name="arrow-forward-circle" size={16} color="#D4A853" style={{ opacity: 0.5 }} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </>
+        )}
+      </SmartSheet>
 
       <ChatAppearanceSheet
         visible={showAppearanceSheet}
@@ -8876,6 +8843,13 @@ const st = StyleSheet.create({
     ...Platform.select({ web: { boxShadow: "0 4px 12px rgba(0,0,0,0.18)" } as any, default: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.18, shadowRadius: 12 } }),
   },
   reactMoreGridBtn: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
+
+  reactEmojiRow:       { flexDirection: "row", justifyContent: "center", alignItems: "center", paddingVertical: 12, paddingHorizontal: 8, gap: 2 },
+  reactMoreGridInline: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", paddingHorizontal: 8, paddingBottom: 8, gap: 4 },
+  reactRowSep:         { height: StyleSheet.hairlineWidth, marginVertical: 2 },
+  reactRow:            { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16, minHeight: 56 },
+  reactRowIcon:        { marginRight: 18, width: 24, textAlign: "center" },
+  reactRowLabel:       { flex: 1, fontSize: 16, fontFamily: "Inter_700Bold", color: "#111" },
 
   sheetActionRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 4 },
   sheetActionText: { fontSize: 16, fontFamily: "Inter_500Medium" },
