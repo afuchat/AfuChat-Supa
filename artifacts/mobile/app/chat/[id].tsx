@@ -646,16 +646,52 @@ function AiRichContent({ content, colors: c, isUser }: { content: string; colors
   const textColor = isUser ? "#fff" : c.text;
   if (isUser) return <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18, color: "#fff" }}>{stripMd(content)}</Text>;
   const segs = parseAiRichText(content);
+  const prevType = (i: number) => (i > 0 ? segs[i - 1].type : "");
   return (
-    <View style={{ gap: 1 }}>
+    <View style={{ gap: 0 }}>
       {segs.map((seg, i) => {
-        if (seg.type === "heading") return <Text key={i} style={{ color: textColor, fontFamily: "Inter_700Bold", fontSize: seg.level === 1 ? 14 : seg.level === 2 ? 13 : 13, marginTop: 3 }}><AiInlineText text={seg.text} color={textColor} /></Text>;
-        if (seg.type === "codeblock") return <ScrollView key={i} horizontal showsHorizontalScrollIndicator={false} style={{ backgroundColor: c.inputBg || "#1e1e1e", borderRadius: 8, padding: 8, marginVertical: 3 }}><Text style={{ fontFamily: "monospace", fontSize: 12, color: "#1f95ff" }}>{seg.text}</Text></ScrollView>;
-        if (seg.type === "bullet") return <View key={i} style={{ flexDirection: "row", gap: 5, paddingLeft: (seg.indent || 0) * 12 }}><Text style={{ color: "#1f95ff", fontSize: 12, lineHeight: 18 }}>●</Text><Text style={{ color: textColor, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18, flex: 1 }}><AiInlineText text={seg.text} color={textColor} /></Text></View>;
-        if (seg.type === "numbered") return <View key={i} style={{ flexDirection: "row", gap: 5 }}><Text style={{ color: "#1f95ff", fontSize: 12, fontWeight: "600", lineHeight: 18, minWidth: 16 }}>{seg.num}.</Text><Text style={{ color: textColor, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18, flex: 1 }}><AiInlineText text={seg.text} color={textColor} /></Text></View>;
-        if (seg.type === "divider") return <View key={i} style={{ height: 1, backgroundColor: c.border, marginVertical: 4 }} />;
-        if (seg.text === "\n") return <View key={i} style={{ height: 4 }} />;
-        return <Text key={i} style={{ color: textColor, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 }}><AiInlineText text={seg.text} color={textColor} /></Text>;
+        const prev = prevType(i);
+        if (seg.type === "heading") {
+          return (
+            <Text key={i} style={{ color: textColor, fontFamily: "Inter_700Bold", fontSize: seg.level === 1 ? 15 : 14, marginTop: i === 0 ? 0 : 10, marginBottom: 2 }}>
+              <AiInlineText text={seg.text} color={textColor} />
+            </Text>
+          );
+        }
+        if (seg.type === "codeblock") {
+          return (
+            <ScrollView key={i} horizontal showsHorizontalScrollIndicator={false} style={{ backgroundColor: c.inputBg || "#1e1e1e", borderRadius: 8, padding: 8, marginTop: 6, marginBottom: 2 }}>
+              <Text style={{ fontFamily: "monospace", fontSize: 12, color: "#1f95ff" }}>{seg.text}</Text>
+            </ScrollView>
+          );
+        }
+        if (seg.type === "bullet") {
+          return (
+            <View key={i} style={{ flexDirection: "row", gap: 7, paddingLeft: (seg.indent || 0) * 12, marginTop: prev === "text" || prev === "heading" ? 6 : 3 }}>
+              <Text style={{ color: "#1f95ff", fontSize: 11, lineHeight: 20, marginTop: 1 }}>●</Text>
+              <Text style={{ color: textColor, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20, flex: 1 }}>
+                <AiInlineText text={seg.text} color={textColor} />
+              </Text>
+            </View>
+          );
+        }
+        if (seg.type === "numbered") {
+          return (
+            <View key={i} style={{ flexDirection: "row", gap: 7, marginTop: prev === "text" || prev === "heading" ? 6 : 4 }}>
+              <Text style={{ color: "#1f95ff", fontSize: 12, fontFamily: "Inter_600SemiBold", lineHeight: 20, minWidth: 18 }}>{seg.num}.</Text>
+              <Text style={{ color: textColor, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20, flex: 1 }}>
+                <AiInlineText text={seg.text} color={textColor} />
+              </Text>
+            </View>
+          );
+        }
+        if (seg.type === "divider") return <View key={i} style={{ height: 1, backgroundColor: c.border, marginVertical: 6 }} />;
+        if (seg.text === "\n") return <View key={i} style={{ height: 6 }} />;
+        return (
+          <Text key={i} style={{ color: textColor, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20, marginTop: (prev === "bullet" || prev === "numbered") ? 4 : 0 }}>
+            <AiInlineText text={seg.text} color={textColor} />
+          </Text>
+        );
       })}
     </View>
   );
@@ -3967,17 +4003,19 @@ PROFILE LOOKUP — you can link directly to any user's profile:
 - For bought/marketplace usernames: every handle always routes to its current owner's profile.
 
 RESPONSE QUALITY RULES:
-- Match response length to the complexity of the request:
-  · Simple greeting (hi, hey, hello) → 1-2 sentences max, 50 words max.
-  · Simple question → short, direct answer.
-  · Complex question → detailed, well-organized answer.
-  · Technical/coding → detailed explanation with code.
-  · Guide/tutorial → numbered step-by-step.
-- NEVER pad a short answer to make it longer. If the answer is one sentence, give one sentence.
-- NEVER start with "Great question!", "Absolutely!", "Of course!", "Certainly!" — start directly with the answer.
-- Use formatting (bold, bullets, headers) for factual or structured answers. Plain prose for casual conversation.
-- Tone: professional, warm, sharp. Like a brilliant friend who knows AfuChat inside-out.
-- PROACTIVE HELP: After answering, suggest additional help ONLY when directly relevant to the topic. One short suggestion max.
+- BREVITY FIRST — match length to complexity:
+  · Greeting / small talk → 1 sentence max.
+  · Simple question → 1-2 sentences, direct answer only.
+  · Factual / how-to → max 5 short bullets or steps, no prose padding.
+  · Complex / technical → use headers + short bullets. Still concise.
+- HARD LIMITS: 150 words for most answers. Never exceed 250 words unless writing code or a document.
+- NEVER pad. If the answer is one line, write one line.
+- NEVER start with "Great question!", "Absolutely!", "Of course!", "Certainly!" — start with the answer.
+- LISTS MUST USE LINE BREAKS — each bullet/numbered item on its OWN line. Never write "1. A 2. B 3. C" on a single line.
+- PER LIST ITEM: one short phrase or one sentence max (≤ 15 words). Do NOT explain each item in depth.
+- Use formatting (bold, bullets, headers) only for structured content. Plain prose for casual chat.
+- Tone: sharp, warm, direct. Like a brilliant friend — not a textbook.
+- PROACTIVE HELP: one short follow-up suggestion max, only when clearly useful.
 
 STRICT RULES:
 - NEVER write raw route paths in your text body. If navigation is needed, use [ACTION:...] tags only.
