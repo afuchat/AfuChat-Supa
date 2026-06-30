@@ -2,8 +2,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useState, useEffect, useCallback } from "react";
 
 export interface ChatAppearance {
-  bubbleColor?: string;
-  bgColor?: string;
+  bubbleColor?: string;  // hex — outgoing bubble tint
+  bgColor?: string;      // hex — chat background
+  fontSize?: number;     // per-chat override: 13 | 15 | 17 | 19
+  wallpaper?: string;    // pattern: "none" | "dots" | "lines" | "grid" | "diamonds"
 }
 
 const storeKey = (chatId: string) => `afu_chat_appearance_${chatId}`;
@@ -41,7 +43,7 @@ export function useChatAppearance(chatId: string | undefined) {
     async (next: ChatAppearance | null) => {
       if (!chatId) return;
       setAppearance(next);
-      if (next && (next.bubbleColor || next.bgColor)) {
+      if (next && Object.values(next).some((v) => v !== undefined)) {
         await saveChatAppearance(chatId, next);
       } else {
         await clearChatAppearance(chatId);

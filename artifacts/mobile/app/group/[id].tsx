@@ -180,23 +180,73 @@ export default function GroupManageScreen() {
   // Member search
   const [memberSearch, setMemberSearch] = useState("");
 
-  // Mute (uses same AsyncStorage key as the chat screen)
-  const [isMuted, setIsMuted] = useState(false);
+  // Mute — backed by Supabase chat_mutes table
+  const [isMuted,        setIsMuted]        = useState(false);
+  const [muteUntil,      setMuteUntil]      = useState<string | null | undefined>(undefined);
+  const [showMutePicker, setShowMutePicker] = useState(false);
 
   const sheetBg = isDark ? "#1C1C1E" : "#fff";
   const sheetBorder = isDark ? "#2C2C2E" : "#E5E5EA";
 
-  // ── Load mute state from AsyncStorage (same key as chat screen) ─────────────
+  // ── Load mute state from Supabase ────────────────────────────────────────────
 
   useEffect(() => {
-    if (!id) return;
-    AsyncStorage.getItem(`afu_muted_${id}`).then((v) => setIsMuted(v === "1")).catch(() => {});
-  }, [id]);
+    if (!id || !user) return;
+    const now = new Date().toISOString();
+    supabase
+      .from("chat_mutes")
+      .select("muted_until")
+      .eq("user_id", user.id)
+      .eq("chat_id", id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data) { setIsMuted(false); return; }
+        const mu = data.muted_until ?? null;
+        setMuteUntil(mu);
+        setIsMuted(mu === null || mu > now);
+      })
+      .catch(() => {});
+  }, [id, user?.id]);
+
+  function muteLabel(): string {
+    if (!isMuted || muteUntil === undefined) return "";
+    if (muteUntil === null) return "Muted forever";
+    const diff = new Date(muteUntil).getTime() - Date.now();
+    if (diff <= 0) return "";
+    const h = Math.floor(diff / 3_600_000);
+    const m = Math.floor((diff % 3_600_000) / 60_000);
+    if (h >= 24 * 6) return `Muted for ${Math.floor(h / 24)}d`;
+    if (h > 0) return `Muted for ${h}h ${m}m`;
+    return `Muted for ${m}m`;
+  }
+
+  async function handleMute(hours: number | null) {
+    if (!id || !user) return;
+    const val = hours === null ? null : new Date(Date.now() + hours * 3_600_000).toISOString();
+    setIsMuted(true);
+    setMuteUntil(val);
+    setShowMutePicker(false);
+    await supabase
+      .from("chat_mutes")
+      .upsert(
+        { user_id: user.id, chat_id: id, muted_until: val, created_at: new Date().toISOString() },
+        { onConflict: "user_id,chat_id" },
+      )
+      .catch(() => {});
+  }
 
   async function toggleMute() {
-    const next = !isMuted;
-    setIsMuted(next);
-    if (id) await AsyncStorage.setItem(`afu_muted_${id}`, next ? "1" : "0").catch(() => {});
+    if (isMuted) {
+      // Unmute immediately
+      if (!id || !user) return;
+      setIsMuted(false);
+      setMuteUntil(undefined);
+      setShowMutePicker(false);
+      await supabase.from("chat_mutes").delete().eq("user_id", user.id).eq("chat_id", id).catch(() => {});
+    } else {
+      // Show duration picker
+      setShowMutePicker(true);
+    }
   }
 
   // ── Data loading ────────────────────────────────────────────────────────────
@@ -650,20 +700,50 @@ export default function GroupManageScreen() {
             </TouchableOpacity>
           )}
 
-          <TouchableOpacity
-            style={s.actionBtn}
-            onPress={toggleMute}
-            activeOpacity={0.7}
-          >
-            <View style={[s.actionIconWrap, { backgroundColor: isMuted ? "#8E8E9318" : "#FF950018" }]}>
-              <Ionicons
-                name={isMuted ? "notifications-off-outline" : "notifications-outline"}
-                size={22}
-                color={isMuted ? "#8E8E93" : "#FF9500"}
-              />
-            </View>
-            <Text style={[s.actionLabel, { color: colors.text }]}>{isMuted ? "Unmute" : "Mute"}</Text>
-          </TouchableOpacity>
+          <View>
+            <TouchableOpacity
+              style={s.actionBtn}
+              onPress={toggleMute}
+              activeOpacity={0.7}
+            >
+              <View style={[s.actionIconWrap, { backgroundColor: isMuted ? "#8E8E9318" : "#FF950018" }]}>
+                <Ionicons
+                  name={isMuted ? "notifications-off-outline" : "notifications-outline"}
+                  size={22}
+                  color={isMuted ? "#8E8E93" : "#FF9500"}
+                />
+              </View>
+              <Text style={[s.actionLabel, { color: colors.text }]}>{isMuted ? "Unmute" : "Mute"}</Text>
+              {isMuted && !!muteLabel() && (
+                <Text style={{ fontSize: 9, color: "#8E8E93", fontFamily: "Inter_400Regular", textAlign: "center", marginTop: 1 }}>
+                  {muteLabel()}
+                </Text>
+              )}
+            </TouchableOpacity>
+            {showMutePicker && !isMuted && (
+              <View style={[s.mutePicker, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                {[
+                  { label: "1 hour",  hours: 1    },
+                  { label: "8 hours", hours: 8    },
+                  { label: "24 hours",hours: 24   },
+                  { label: "1 week",  hours: 168  },
+                  { label: "Always",  hours: null },
+                ].map((o) => (
+                  <TouchableOpacity
+                    key={o.label}
+                    style={[s.muteOption, { borderTopColor: colors.border }]}
+                    onPress={() => handleMute(o.hours)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={{ fontSize: 13, fontFamily: "Inter_500Medium", color: colors.text }}>{o.label}</Text>
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity style={[s.muteOption, { borderTopColor: colors.border }]} onPress={() => setShowMutePicker(false)} activeOpacity={0.7}>
+                  <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: colors.textMuted }}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
 
           <TouchableOpacity
             style={s.actionBtn}
@@ -1097,6 +1177,25 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   actionLabel: { fontSize: 12, fontFamily: "Inter_500Medium" },
+
+  mutePicker: {
+    position: "absolute",
+    top: "100%",
+    left: "50%",
+    transform: [{ translateX: -80 }],
+    width: 160,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
+    zIndex: 100,
+    elevation: 8,
+  },
+  muteOption: {
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+  },
 
   settingRow: {
     flexDirection: "row",

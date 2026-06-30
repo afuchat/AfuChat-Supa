@@ -97,6 +97,7 @@ import { playNotificationSound as playMgrSound } from "@/lib/soundManager";
 import { AFUAI_BOT_ID } from "@/lib/afuAiBot";
 import { AFUCHAT_SYSTEM_ID } from "@/lib/afuSystemChat";
 import { SystemNotificationCard, GroupedSystemNotificationCard, tryParseSysNotif, type GroupedSysNotifData } from "@/components/chat/SystemNotificationCard";
+import WallpaperOverlay from "@/components/chat/WallpaperOverlay";
 import { getDailyUsage, recordDailyUsage } from "@/lib/featureUsage";
 import EmojiStickerPicker from "@/components/chat/EmojiStickerPicker";
 import GiftPickerSheet, { DbGift } from "@/components/gifts/GiftPickerSheet";
@@ -106,6 +107,8 @@ import FormatToolbar from "@/components/chat/FormatToolbar";
 import MiniProfilePopup from "@/components/chat/MiniProfilePopup";
 import { VoiceWaveform } from "@/components/chat/VoiceWaveform";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
+
+const ChatFontSizeCtx = React.createContext<number>(14);
 
 // ── Lazy-load Reanimated ──────────────────────────────────────────────────────
 // On Android Expo Go builds the native worklet runtime throws a Java
@@ -905,6 +908,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   const BRAND = brandColor ?? colors.accent;
   const { preferredLang, voiceToText, textToSpeech } = useLanguage();
   const { themeColors: chatTheme, bubbleRadius: chatRadius, prefs: chatPrefsLocal } = useChatPreferences();
+  const _perChatFont = React.useContext(ChatFontSizeCtx);
   const { features: msgBubbleFeatures } = useAdvancedFeatures();
   const [translated, setTranslated] = useState<string | null>(null);
   const [translating, setTranslating] = useState(false);
@@ -1209,7 +1213,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                   </View>
                 </TouchableOpacity>
               {hasTextContent && (
-                <RichText style={[st.bubbleText, { color: textColor, marginTop: 3, fontSize: chatPrefsLocal?.font_size ?? 14, lineHeight: (chatPrefsLocal?.font_size ?? 14) + 5 }]} linkColor={isMe ? "#FFFFFF" : BRAND} selectable={true}>{displayText}</RichText>
+                <RichText style={[st.bubbleText, { color: textColor, marginTop: 3, fontSize: _perChatFont, lineHeight: _perChatFont + 5 }]} linkColor={isMe ? "#FFFFFF" : BRAND} selectable={true}>{displayText}</RichText>
               )}
             </>
           ) : hasVideo ? (
@@ -1245,7 +1249,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                 </TouchableOpacity>
               )}
               {showTranscript && transcript && (
-                <Text style={[st.bubbleText, { color: textColor, marginTop: 3, fontStyle: "italic", fontSize: chatPrefsLocal?.font_size ?? 14, lineHeight: (chatPrefsLocal?.font_size ?? 14) + 5 }]}>{transcript}</Text>
+                <Text style={[st.bubbleText, { color: textColor, marginTop: 3, fontStyle: "italic", fontSize: _perChatFont, lineHeight: _perChatFont + 5 }]}>{transcript}</Text>
               )}
             </TouchableOpacity>
           ) : hasFile ? (
@@ -1316,7 +1320,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                     </View>
                   </View>
                   {storyDisplayText && !isShared ? (
-                    <Text style={[st.bubbleText, { color: textColor, marginTop: 3, fontSize: chatPrefsLocal?.font_size ?? 14, lineHeight: (chatPrefsLocal?.font_size ?? 14) + 5 }]}>
+                    <Text style={[st.bubbleText, { color: textColor, marginTop: 3, fontSize: _perChatFont, lineHeight: _perChatFont + 5 }]}>
                       {storyDisplayText}
                     </Text>
                   ) : null}
@@ -1375,7 +1379,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                    Using bubbleColor (not opacity/transparent) is the only reliably
                    invisible technique on Android — nested Text opacity leaks through. */
                 (()=>{
-                  const _fontSize  = chatPrefsLocal?.font_size ?? 14;
+                  const _fontSize  = _perChatFont;
                   const _lineH     = _fontSize + 5;
                   const _timeStr   = formatMsgTime(msg.sent_at);
                   const _tsWidth = (msg.edited_at ? 38 : 0) + (isMe ? 72 : 52);
@@ -1441,8 +1445,8 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                       <RichText
                         style={[st.bubbleText, {
                           color: textColor,
-                          fontSize: chatPrefsLocal?.font_size ?? 14,
-                          lineHeight: (chatPrefsLocal?.font_size ?? 14) + 5,
+                          fontSize: _perChatFont,
+                          lineHeight: _perChatFont + 5,
                         }]}
                         linkColor={isMe ? "#FFFFFF" : BRAND}
                         selectable={true}
@@ -1671,6 +1675,7 @@ function ChatScreen() {
   const BRAND = chatAppearance?.bubbleColor ?? colors.accent;
   const { textToSpeech: ttsEnabled } = useLanguage();
   const { prefs: chatPrefs, themeColors: chatThemeColors, bubbleRadius: chatBubbleRadius } = useChatPreferences();
+  const effectiveChatFontSize = chatAppearance?.fontSize ?? chatPrefs?.font_size ?? 14;
   const { features: advancedFeatures } = useAdvancedFeatures();
   const advancedFeaturesRef = useRef(advancedFeatures);
   advancedFeaturesRef.current = advancedFeatures;
@@ -5980,7 +5985,9 @@ STRICT RULES:
       : insets.bottom;
 
   return (
+    <ChatFontSizeCtx.Provider value={effectiveChatFontSize}>
     <View style={[st.root, { backgroundColor: chatAppearance?.bgColor ?? colors.background }]}>
+      <WallpaperOverlay wallpaper={chatAppearance?.wallpaper} dark={isDark} />
       {Platform.OS !== "web" && <OfflineBanner />}
       <View style={[st.header, { backgroundColor: colors.surface, paddingTop: insets.top + 4, borderBottomColor: colors.border }]}>
         {!isDesktop && (
@@ -8394,6 +8401,7 @@ STRICT RULES:
         </View>
       </Modal>
     </View>
+    </ChatFontSizeCtx.Provider>
   );
 }
 
