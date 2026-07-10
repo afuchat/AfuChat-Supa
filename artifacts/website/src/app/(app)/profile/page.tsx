@@ -2,6 +2,7 @@
 
 import { CheckCircle, Zap, Coins, Star, Calendar } from "lucide-react";
 import { useAuth } from "../../../contexts/AuthContext";
+import ClientAuthGuard from "../../../components/ClientAuthGuard";
 
 const GRADE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   Newcomer: { bg: "bg-gray-100", text: "text-gray-600", border: "border-gray-200" },
@@ -26,6 +27,7 @@ export default function ProfilePage() {
     : null;
 
   return (
+    <ClientAuthGuard>
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-xl px-4 py-8">
         <h1 className="mb-6 text-xl font-bold text-[#000]">My Profile</h1>
@@ -124,5 +126,6 @@ export default function ProfilePage() {
         </div>
       </div>
     </div>
+    </ClientAuthGuard>
   );
 }
