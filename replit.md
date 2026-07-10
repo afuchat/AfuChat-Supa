@@ -100,6 +100,10 @@ Keys currently in app_settings (✓ = confirmed present):
 - `OPENAI_API_KEY` — Whisper transcription + DALL-E image generation
 - `RUNWARE_API_KEY`, `AIMLAPI_KEY`, `FREEPIK_API_KEY` — optional image providers
 
+## Deployment domains
+- This mobile app's web export is served at **web.afuchat.com** (not afuchat.com — that's the separate marketing site in `artifacts/afuchat-website`).
+- Shared Supabase auth cookie logic (`.afuchat.com` domain) treats both `afuchat.com` and `web.afuchat.com` as "real" hosts — see `isProdHost()` in `artifacts/mobile/lib/supabase.ts`.
+
 ## User preferences
 - Use pnpm for package management (enforced by preinstall hook)
 - API server must be built before starting (`pnpm run build` in `artifacts/api-server`)
