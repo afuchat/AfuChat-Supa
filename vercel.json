@@ -1,71 +1,17 @@
 {
   "installCommand": "pnpm install",
-  "buildCommand": "cd artifacts/mobile && EXPO_NO_DOTENV=1 node_modules/.bin/expo export --platform web --output-dir dist --clear",
-  "outputDirectory": "artifacts/mobile/dist",
-  "framework": null,
-  "rewrites": [
-    {
-      "source": "/@:handle",
-      "missing": [{ "type": "query", "key": "_s" }],
-      "destination": "/api/profile?handle=:handle"
-    },
-    {
-      "source": "/p/:id",
-      "missing": [{ "type": "query", "key": "_s" }],
-      "destination": "/api/og?type=post&id=:id"
-    },
-    {
-      "source": "/post/:id",
-      "missing": [{ "type": "query", "key": "_s" }],
-      "destination": "/api/post?id=:id"
-    },
-    {
-      "source": "/video/:id/embed",
-      "destination": "/api/embed?id=:id"
-    },
-    {
-      "source": "/video/:id",
-      "missing": [{ "type": "query", "key": "_s" }],
-      "destination": "/api/og?type=video&id=:id"
-    },
-    {
-      "source": "/article/:id",
-      "missing": [{ "type": "query", "key": "_s" }],
-      "destination": "/api/article?id=:id"
-    },
-    {
-      "source": "/:handle",
-      "missing": [{ "type": "query", "key": "_s" }],
-      "destination": "/api/handle?handle=:handle"
-    },
-    {
-      "source": "/((?!_expo|assets|favicon\\.ico|favicon\\.png|metadata\\.json|manifest\\.json|logo\\.png|robots\\.txt|sitemap\\.xml|api/).*)",
-      "destination": "/index.html"
-    }
-  ],
+  "buildCommand": "cd artifacts/website && pnpm run build",
+  "outputDirectory": "artifacts/website/.next",
+  "framework": "nextjs",
   "headers": [
     {
-      "source": "/_expo/static/(.*)",
+      "source": "/_next/static/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     },
     {
-      "source": "/assets/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
-    },
-    {
-      "source": "/video/:id/embed",
-      "headers": [
-        { "key": "X-Frame-Options", "value": "ALLOWALL" },
-        { "key": "Content-Security-Policy", "value": "frame-ancestors *" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" }
-      ]
-    },
-    {
-      "source": "/((?!video/[^/]+/embed).*)",
+      "source": "/(.*)",
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "X-XSS-Protection", "value": "1; mode=block" },
