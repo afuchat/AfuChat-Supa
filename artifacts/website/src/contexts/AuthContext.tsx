@@ -14,6 +14,7 @@ export type Profile = {
   is_organization_verified: boolean | null;
   xp: number | null;
   acoin: number | null;
+  current_grade: string | null;
 };
 
 type AuthContextValue = {
@@ -35,7 +36,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function loadProfile(userId: string) {
     const { data } = await supabase
       .from("profiles")
-      .select("id, handle, display_name, avatar_url, bio, is_verified, is_organization_verified, xp, acoin")
+      .select(
+        "id, handle, display_name, avatar_url, bio, is_verified, is_organization_verified, xp, acoin, current_grade",
+      )
       .eq("id", userId)
       .single();
     setProfile((data as Profile) ?? null);
@@ -83,4 +86,8 @@ export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
+}
+
+export function useAuthOptional(): AuthContextValue | null {
+  return useContext(AuthContext);
 }

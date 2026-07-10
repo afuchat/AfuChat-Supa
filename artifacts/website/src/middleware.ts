@@ -4,14 +4,10 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY, MOBILE_WEB_ORIGIN } from "./lib/env";
 import { cookieOptionsFor } from "./lib/supabase/cookieOptions";
 
 const MOBILE_UA_RE = /Android|iPhone|iPod|iPad|Mobile|Windows Phone/i;
-const PUBLIC_PATHS = ["/login"];
+
+const AUTH_REQUIRED_PATHS = ["/chats", "/profile"];
 
 export async function middleware(request: NextRequest) {
-  // ── 1. Bounce phones/small tablets to the Expo web build ─────────────────
-  // This desktop client is built for wide screens; narrow devices get a
-  // better experience on the existing mobile web app. Checked via UA only
-  // (no viewport info is available server-side) and skippable with
-  // ?forceDesktop=1 for testing.
   const userAgent = request.headers.get("user-agent") ?? "";
   const forceDesktop = request.nextUrl.searchParams.get("forceDesktop") === "1";
   if (!forceDesktop && MOBILE_UA_RE.test(userAgent)) {
@@ -21,7 +17,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(target);
   }
 
-  // ── 2. Refresh the shared Supabase session cookie ─────────────────────────
   let response = NextResponse.next({ request });
   const hostname = request.nextUrl.hostname;
   const options = cookieOptionsFor(hostname);
@@ -44,19 +39,28 @@ export async function middleware(request: NextRequest) {
   });
 
   const { data } = await supabase.auth.getUser();
-  const isPublicPath = PUBLIC_PATHS.some((p) => request.nextUrl.pathname.startsWith(p));
+  const { pathname } = request.nextUrl;
 
-  if (!data.user && !isPublicPath) {
+  const requiresAuth = AUTH_REQUIRED_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
+
+  if (!data.user && requiresAuth) {
     const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
-  if (data.user && request.nextUrl.pathname === "/login") {
-    return NextResponse.redirect(new URL("/chats", request.url));
+
+  if (data.user && pathname === "/login") {
+    const next = request.nextUrl.searchParams.get("next");
+    return NextResponse.redirect(new URL(next ?? "/feed", request.url));
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };
