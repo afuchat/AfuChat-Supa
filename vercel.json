@@ -1,6 +1,6 @@
 {
   "installCommand": "pnpm install",
-  "buildCommand": "bash scripts/build-web.sh",
+  "buildCommand": "cd artifacts/mobile && EXPO_NO_DOTENV=1 node_modules/.bin/expo export --platform web --output-dir dist --clear",
   "outputDirectory": "artifacts/mobile/dist",
   "framework": null,
   "rewrites": [
