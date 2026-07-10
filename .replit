@@ -45,6 +45,10 @@ args = "API Server"
 task = "workflow.run"
 args = "EAS Build Watch"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Desktop Website"
+
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
@@ -80,6 +84,18 @@ outputType = "console"
 task = "shell.exec"
 args = "bash artifacts/mobile/scripts/watch-builds.sh"
 
+[[workflows.workflow]]
+name = "Desktop Website"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd artifacts/website && NEXT_PUBLIC_MOBILE_WEB_ORIGIN=https://$REPLIT_DEV_DOMAIN pnpm run dev"
+waitForPort = 5173
+
+[workflows.workflow.metadata]
+outputType = "console"
+
 [[ports]]
 localPort = 3000
 externalPort = 3000
@@ -91,6 +107,10 @@ externalPort = 80
 [[ports]]
 localPort = 5001
 externalPort = 3002
+
+[[ports]]
+localPort = 5173
+externalPort = 5173
 
 [deployment]
 deploymentTarget = "autoscale"
