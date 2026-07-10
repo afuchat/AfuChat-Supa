@@ -1,7 +1,23 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
 import { Platform } from "react-native";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./env";
+
+// ─── Shared-auth cookie domain (web only) ───────────────────────────────────
+// Mirrors artifacts/afuchat-website/src/lib/supabase.ts EXACTLY so a session
+// created on afuchat.com (marketing site) or web.afuchat.com (this app, when
+// exported to web) is visible on both — see
+// docs: shared-auth-with-web-app.md.
+//
+// The cookie domain must only be set when actually running on a real
+// afuchat.com subdomain; on localhost/preview/staging hosts (e.g. Replit dev
+// domains) leave it unset so the browser doesn't reject the cookie.
+function isProdHost(): boolean {
+  if (Platform.OS !== "web" || typeof window === "undefined") return false;
+  const host = window.location?.hostname ?? "";
+  return host === "afuchat.com" || host.endsWith(".afuchat.com");
+}
 
 export const supabaseUrl = SUPABASE_URL;
 export const supabaseAnonKey = SUPABASE_ANON_KEY;
@@ -43,16 +59,36 @@ if (typeof console !== "undefined" && typeof console.error === "function") {
   };
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    storage: AsyncStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: Platform.OS === "web",
-    flowType: "pkce",
-  },
-  realtime: {
-    heartbeatIntervalMs: 15_000,
-    reconnectAfterMs: (tries: number) => Math.min(500 * tries, 5_000),
-  },
-});
+export const supabase =
+  Platform.OS === "web"
+    ? createBrowserClient(supabaseUrl, supabaseAnonKey, {
+        cookieOptions: {
+          domain: isProdHost() ? ".afuchat.com" : undefined,
+          path: "/",
+          sameSite: "lax",
+          secure: isProdHost(),
+        },
+        auth: {
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: true,
+          flowType: "pkce",
+        },
+        realtime: {
+          heartbeatIntervalMs: 15_000,
+          reconnectAfterMs: (tries: number) => Math.min(500 * tries, 5_000),
+        },
+      })
+    : createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          storage: AsyncStorage,
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: false,
+          flowType: "pkce",
+        },
+        realtime: {
+          heartbeatIntervalMs: 15_000,
+          reconnectAfterMs: (tries: number) => Math.min(500 * tries, 5_000),
+        },
+      });
