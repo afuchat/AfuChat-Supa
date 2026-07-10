@@ -2,8 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { MessageCircle } from "lucide-react";
 import { createClient } from "../../lib/supabase/client";
+import Logo from "../../components/Logo";
 
 export default function LoginPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -42,21 +42,19 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f5f6f8] px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-black/5 bg-white p-8 shadow-sm">
-        <div className="mb-8 flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand text-white">
-            <MessageCircle size={18} strokeWidth={2.5} />
-          </div>
+    <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg)] px-4">
+      <div className="w-full max-w-sm rounded-2xl border border-border/60 bg-bg-secondary p-8 shadow-sm">
+        <div className="mb-8 flex items-center gap-2.5">
+          <Logo size={36} />
           <span className="text-lg font-semibold">
             Afu<span className="text-brand">Chat</span>
           </span>
         </div>
 
-        <h1 className="mb-1 text-xl font-semibold text-[#14161a]">
+        <h1 className="mb-1 text-xl font-semibold text-text">
           {mode === "signin" ? "Sign in to your workspace" : "Create your account"}
         </h1>
-        <p className="mb-6 text-sm text-[#6b7280]">
+        <p className="mb-6 text-sm text-text-secondary">
           {mode === "signin" ? "Use your AfuChat account." : "Same account works on mobile and desktop."}
         </p>
 
@@ -67,7 +65,7 @@ export default function LoginPage() {
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-black/10 px-3 py-2.5 text-sm outline-none focus:border-brand"
+            className="w-full rounded-lg border border-border px-3 py-2.5 text-sm outline-none focus:border-brand"
           />
           <input
             type="password"
@@ -76,10 +74,10 @@ export default function LoginPage() {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-black/10 px-3 py-2.5 text-sm outline-none focus:border-brand"
+            className="w-full rounded-lg border border-border px-3 py-2.5 text-sm outline-none focus:border-brand"
           />
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-sm text-error">{error}</p>}
 
           <button
             type="submit"
@@ -95,7 +93,7 @@ export default function LoginPage() {
             setError(null);
             setMode(mode === "signin" ? "signup" : "signin");
           }}
-          className="mt-4 w-full text-center text-sm text-[#6b7280] hover:text-[#14161a]"
+          className="mt-4 w-full text-center text-sm text-text-secondary hover:text-text"
         >
           {mode === "signin" ? "Need an account? Sign up" : "Already have an account? Sign in"}
         </button>

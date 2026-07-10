@@ -127,11 +127,11 @@ export default function ChatsClient({ activeChatId }: { activeChatId?: string })
 
   return (
     <div className="flex h-full">
-      <div className="w-80 flex-none overflow-y-auto border-r border-black/5 bg-white">
-        <div className="border-b border-black/5 px-4 py-4">
-          <h1 className="text-lg font-semibold text-[#14161a]">Chats</h1>
+      <div className="w-80 flex-none overflow-y-auto border-r border-border/60 bg-bg-secondary">
+        <div className="border-b border-border/60 px-4 py-4">
+          <h1 className="text-lg font-semibold text-text">Chats</h1>
         </div>
-        {chats.length === 0 && <p className="px-4 py-6 text-sm text-[#6b7280]">No conversations yet.</p>}
+        {chats.length === 0 && <p className="px-4 py-6 text-sm text-text-secondary">No conversations yet.</p>}
         {chats.map((chat) => {
           const title = chatTitle(chat, user?.id);
           const isActive = chat.id === activeChatId;
@@ -140,10 +140,10 @@ export default function ChatsClient({ activeChatId }: { activeChatId?: string })
               key={chat.id}
               onClick={() => router.push(`/chats/${chat.id}`)}
               className={`flex w-full items-center gap-3 px-4 py-3 text-left transition ${
-                isActive ? "bg-brand/10" : "hover:bg-black/[0.03]"
+                isActive ? "bg-brand/10" : "hover:bg-bg-secondary/60"
               }`}
             >
-              <div className="flex h-10 w-10 flex-none items-center justify-center overflow-hidden rounded-full bg-black/5 text-sm font-semibold text-[#4b5563]">
+              <div className="flex h-10 w-10 flex-none items-center justify-center overflow-hidden rounded-full bg-bg-tertiary text-sm font-semibold text-text-secondary">
                 {chat.avatar_url ? (
                   <img src={chat.avatar_url} alt="" className="h-full w-full object-cover" />
                 ) : (
@@ -151,8 +151,8 @@ export default function ChatsClient({ activeChatId }: { activeChatId?: string })
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-[#14161a]">{title}</p>
-                <p className="truncate text-xs text-[#6b7280]">
+                <p className="truncate text-sm font-medium text-text">{title}</p>
+                <p className="truncate text-xs text-text-secondary">
                   {new Date(chat.updated_at).toLocaleDateString()}
                 </p>
               </div>
@@ -163,15 +163,15 @@ export default function ChatsClient({ activeChatId }: { activeChatId?: string })
 
       <div className="flex flex-1 flex-col">
         {!activeChatId && (
-          <div className="flex flex-1 items-center justify-center text-sm text-[#6b7280]">
+          <div className="flex flex-1 items-center justify-center text-sm text-text-secondary">
             Select a conversation to start chatting.
           </div>
         )}
 
         {activeChatId && (
           <>
-            <div className="border-b border-black/5 bg-white px-5 py-4">
-              <p className="text-sm font-medium text-[#14161a]">
+            <div className="border-b border-border/60 bg-bg-secondary px-5 py-4">
+              <p className="text-sm font-medium text-text">
                 {activeChat ? chatTitle(activeChat, user?.id) : "Conversation"}
               </p>
             </div>
@@ -184,7 +184,7 @@ export default function ChatsClient({ activeChatId }: { activeChatId?: string })
                     <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                       <div
                         className={`max-w-md rounded-2xl px-3.5 py-2 text-sm ${
-                          mine ? "bg-brand text-white" : "bg-white text-[#14161a] shadow-sm"
+                          mine ? "bg-brand text-white" : "bg-bg-tertiary text-text shadow-sm"
                         }`}
                       >
                         {m.encrypted_content}
@@ -196,7 +196,7 @@ export default function ChatsClient({ activeChatId }: { activeChatId?: string })
               </div>
             </div>
 
-            <div className="border-t border-black/5 bg-white px-5 py-4">
+            <div className="border-t border-border/60 bg-bg-secondary px-5 py-4">
               <div className="flex items-center gap-2">
                 <input
                   value={draft}
@@ -205,7 +205,7 @@ export default function ChatsClient({ activeChatId }: { activeChatId?: string })
                     if (e.key === "Enter") handleSend();
                   }}
                   placeholder="Message…"
-                  className="flex-1 rounded-full border border-black/10 px-4 py-2.5 text-sm outline-none focus:border-brand"
+                  className="flex-1 rounded-full border border-border px-4 py-2.5 text-sm outline-none focus:border-brand"
                 />
                 <button
                   onClick={handleSend}

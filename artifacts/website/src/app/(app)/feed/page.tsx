@@ -48,18 +48,18 @@ export default function FeedPage() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-2xl py-8">
-        <h1 className="mb-6 px-4 text-xl font-semibold text-[#14161a]">Feed</h1>
+        <h1 className="mb-6 px-4 text-xl font-semibold text-text">Feed</h1>
 
-        {loading && <p className="px-4 text-sm text-[#6b7280]">Loading posts…</p>}
+        {loading && <p className="px-4 text-sm text-text-secondary">Loading posts…</p>}
         {!loading && posts.length === 0 && (
-          <p className="px-4 text-sm text-[#6b7280]">No public posts yet.</p>
+          <p className="px-4 text-sm text-text-secondary">No public posts yet.</p>
         )}
 
         <div className="space-y-3 px-4">
           {posts.map((post) => (
-            <article key={post.id} className="rounded-xl border border-black/5 bg-white p-4 shadow-sm">
+            <article key={post.id} className="rounded-xl border border-border/60 bg-bg-secondary p-4 shadow-sm">
               <div className="mb-2 flex items-center gap-2.5">
-                <div className="flex h-9 w-9 flex-none items-center justify-center overflow-hidden rounded-full bg-black/5 text-xs font-semibold text-[#4b5563]">
+                <div className="flex h-9 w-9 flex-none items-center justify-center overflow-hidden rounded-full bg-bg-tertiary text-xs font-semibold text-text-secondary">
                   {post.profiles?.avatar_url ? (
                     <img src={post.profiles.avatar_url} alt="" className="h-full w-full object-cover" />
                   ) : (
@@ -67,23 +67,23 @@ export default function FeedPage() {
                   )}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-[#14161a]">
+                  <p className="text-sm font-medium text-text">
                     {post.profiles?.display_name ?? "Unknown"}
                   </p>
-                  <p className="text-xs text-[#6b7280]">
+                  <p className="text-xs text-text-secondary">
                     @{post.profiles?.handle ?? "unknown"} · {new Date(post.created_at).toLocaleDateString()}
                   </p>
                 </div>
               </div>
 
               {post.content && (
-                <p className="mb-3 whitespace-pre-wrap text-sm text-[#14161a]">{post.content}</p>
+                <p className="mb-3 whitespace-pre-wrap text-sm text-text">{post.content}</p>
               )}
               {post.image_url && (
                 <img src={post.image_url} alt="" className="mb-3 max-h-96 w-full rounded-lg object-cover" />
               )}
 
-              <div className="flex items-center gap-5 text-xs text-[#6b7280]">
+              <div className="flex items-center gap-5 text-xs text-text-secondary">
                 <span className="flex items-center gap-1.5">
                   <Heart size={14} /> {post.like_count ?? 0}
                 </span>

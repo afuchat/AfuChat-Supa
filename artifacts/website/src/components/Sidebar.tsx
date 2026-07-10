@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MessageCircle, Newspaper, User, LogOut } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import Logo from "./Logo";
 
 const NAV_ITEMS = [
   { href: "/chats", label: "Chats", icon: MessageCircle },
@@ -16,11 +17,9 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex w-60 flex-none flex-col border-r border-black/5 bg-white">
-      <div className="flex items-center gap-2 px-5 py-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white">
-          <MessageCircle size={16} strokeWidth={2.5} />
-        </div>
+    <aside className="flex w-60 flex-none flex-col border-r border-border/60 bg-bg-secondary">
+      <div className="flex items-center gap-2.5 px-5 py-5">
+        <Logo size={28} />
         <span className="text-[15px] font-semibold">
           Afu<span className="text-brand">Chat</span>
         </span>
@@ -34,7 +33,7 @@ export default function Sidebar() {
               key={href}
               href={href}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-                isActive ? "bg-brand/10 text-brand" : "text-[#4b5563] hover:bg-black/5"
+                isActive ? "bg-brand/10 text-brand" : "text-text-secondary hover:bg-bg-tertiary"
               }`}
             >
               <Icon size={18} />
@@ -44,9 +43,9 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t border-black/5 p-3">
+      <div className="border-t border-border/60 p-3">
         <div className="flex items-center gap-2 rounded-lg px-2 py-2">
-          <div className="flex h-8 w-8 flex-none items-center justify-center overflow-hidden rounded-full bg-black/5 text-xs font-semibold text-[#4b5563]">
+          <div className="flex h-8 w-8 flex-none items-center justify-center overflow-hidden rounded-full bg-bg-tertiary text-xs font-semibold text-text-secondary">
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
             ) : (
@@ -54,17 +53,17 @@ export default function Sidebar() {
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-[#14161a]">
+            <p className="truncate text-sm font-medium text-text">
               {profile?.display_name ?? "Loading…"}
             </p>
-            <p className="truncate text-xs text-[#6b7280]">
+            <p className="truncate text-xs text-text-secondary">
               {profile?.handle ? `@${profile.handle}` : ""}
             </p>
           </div>
           <button
             onClick={signOut}
             title="Sign out"
-            className="rounded-lg p-1.5 text-[#6b7280] hover:bg-black/5 hover:text-[#14161a]"
+            className="rounded-lg p-1.5 text-text-secondary hover:bg-bg-tertiary hover:text-text"
           >
             <LogOut size={16} />
           </button>
