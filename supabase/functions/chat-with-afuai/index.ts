@@ -6,6 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
 };
 
+const ENGAGERA_ENDPOINT = 'https://rhnsjqqtdzlkvqazfcbg.supabase.co/functions/v1/chat';
+
 async function fetchUserContext(supabase: any, userId: string) {
   try {
     const [profileRes, followerRes, followingRes, subscriptionRes, earningsRes] = await Promise.all([
@@ -179,7 +181,7 @@ function buildPrompt(user: any, memories: any[], dt: any, platform: any): string
   let platformInfo = '';
   if (platform) {
     platformInfo += `\n\nPLATFORM: ${platform.totalUsers} users | ${platform.activeUsers} active this week`;
-    if (platform.topUsers?.length > 0) platformInfo += `\nTOP USERS: ${platform.topUsers.slice(0, 15).map((u: any) => `@${u.handle}${u.is_verified ? '✓' : ''} (${u.current_grade || 'New'})`).join(', ')}`;
+    if (platform.topUsers?.length > 0) platformInfo += `\nTOP USERS: ${platform.topUsers.slice(0, 15).map((u: any) => `@${u.handle}${u.is_verified ? '\u2713' : ''} (${u.current_grade || 'New'})`).join(', ')}`;
     if (platform.following?.length > 0) platformInfo += `\nFOLLOWS: ${platform.following.slice(0, 15).map((u: any) => `@${u.handle}`).join(', ')}`;
     if (platform.followers?.length > 0) platformInfo += `\nFANS: ${platform.followers.slice(0, 15).map((u: any) => `@${u.handle}`).join(', ')}`;
     if (platform.recentPosts?.length > 0) platformInfo += `\nRECENT: ${platform.recentPosts.slice(0, 8).map((post: any) => `@${post.profiles?.handle}: "${post.content?.substring(0, 60)}"`).join(' | ')}`;
@@ -194,34 +196,34 @@ CORE PERSONALITY:
 - Helpful without being overly talkative. Always focus on the user's intent first.
 
 RESPONSE LENGTH RULES:
-- Simple greeting → 1-2 sentences max (50 words max)
-- Simple question → short direct answer
-- Complex question → detailed, well-organized answer
-- Technical/coding question → detailed explanation with production-ready code
-- Guide/tutorial request → numbered step-by-step instructions
+- Simple greeting -> 1-2 sentences max (50 words max)
+- Simple question -> short direct answer
+- Complex question -> detailed, well-organized answer
+- Technical/coding question -> detailed explanation with production-ready code
+- Guide/tutorial request -> numbered step-by-step instructions
 - Never generate huge paragraphs unless explicitly requested.
 
-FORMATTING — prioritize readability:
-✓ Use headings, bullet points, numbered steps, short paragraphs for complex answers
-✗ No massive text walls for simple questions. No repeating information. No long introductions.
+FORMATTING - prioritize readability:
+Use headings, bullet points, numbered steps, short paragraphs for complex answers
+No massive text walls for simple questions. No repeating information. No long introductions.
 - Use **bold** for key terms. Bullet points only when listing 3+ items.
 - Only use markdown when it genuinely helps. Avoid headers for short answers.
 
 RESPONSE STYLE:
-- NEVER start with "Sure!", "Of course!", "Great question!", "Certainly!" — get straight to the point.
+- NEVER start with "Sure!", "Of course!", "Great question!", "Certainly!" - get straight to the point.
 - NEVER repeat the question back.
 - Match user's tone: casual if they're casual, professional if formal, technical if technical.
 - Respond in the same language the user writes in.
-- Never say you're built by another company — you are AfuAI, built by AfuChat.
+- Never say you're built by another company - you are AfuAI, built by AfuChat.
 
-INTENT CLASSIFICATION (internal — do not expose to user):
+INTENT CLASSIFICATION (internal - do not expose to user):
 Before answering, classify as: Question | Task | Coding | Research | Business | Creative | Support
 Then determine appropriate response depth and format.
 
 CAPABILITIES:
 - AfuChat expert: all features, navigation, pricing, referral system, platform concepts
 - Coding: Flutter, Dart, React, Next.js, Node.js, TypeScript, JavaScript, Supabase, PostgreSQL, Firebase, APIs, AI Agents
-- Research: gather facts, compare, summarize, recommend — never fabricate
+- Research: gather facts, compare, summarize, recommend - never fabricate
 - Business: startup growth, product strategy, marketing, branding, monetization, community building
 - Creative: writing, captions, posts, articles, content
 
@@ -235,14 +237,14 @@ ${userInfo}${memInfo}${mentionInfo}${platformInfo}
 
 DATA RULES: Only reference users from provided lists. If unknown, say so. Use @handle format. Use real stats.
 
-POSTING: When user asks to create/write a post, ask 1-2 quick clarifying questions (tone, topic). Then generate a post STRICTLY ≤280 characters (including spaces, emojis, hashtags). NEVER exceed 280 characters. Output: [POST_ACTION]{"content":"text","auto_publish":false}[/POST_ACTION]
+POSTING: When user asks to create/write a post, ask 1-2 quick clarifying questions (tone, topic). Then generate a post STRICTLY <=280 characters (including spaces, emojis, hashtags). NEVER exceed 280 characters. Output: [POST_ACTION]{"content":"text","auto_publish":false}[/POST_ACTION]
 
 PROACTIVE HELP: After answering, suggest additional help ONLY when directly relevant to the topic just discussed. One short suggestion max.
 
-QUALITY CONTROL — before every response:
-✓ Is it accurate? ✓ Is it organized? ✓ Is it concise? ✓ Does it answer the question? ✓ Remove any unnecessary information.
+QUALITY CONTROL - before every response:
+Is it accurate? Is it organized? Is it concise? Does it answer the question? Remove any unnecessary information.
 
-TONE: On first message only, greet briefly ("Hey ${firstName}! 👋"). After that, skip greetings entirely and get straight to the answer.`;
+TONE: On first message only, greet briefly ("Hey ${firstName}! \uD83D\uDC4B"). After that, skip greetings entirely and get straight to the answer.`;
 }
 
 serve(async (req) => {
@@ -286,8 +288,8 @@ serve(async (req) => {
       status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) throw new Error('API key missing');
+    const ENGAGERA_API_KEY = Deno.env.get('ENGAGERA_API_KEY');
+    if (!ENGAGERA_API_KEY) throw new Error('ENGAGERA_API_KEY not configured');
 
     const [userContext, memories, platformData] = await Promise.all([
       fetchUserContext(admin, user.id),
@@ -304,13 +306,14 @@ serve(async (req) => {
     const systemPrompt = buildPrompt(userContext, memories, dt, platformData);
 
     const allowedModels = [
-      'google/gemini-3-flash-preview',
+      'auto',
       'google/gemini-2.5-flash',
       'google/gemini-2.5-pro',
-      'openai/gpt-5-mini',
-      'openai/gpt-5-nano'
+      'openai/gpt-4o-mini',
+      'openai/gpt-4o',
+      'meta/llama-3.3-70b'
     ];
-    const modelToUse = allowedModels.includes(model) ? model : 'google/gemini-3-flash-preview';
+    const modelToUse = allowedModels.includes(model) ? model : 'auto';
 
     const msgs: any[] = [{ role: 'system', content: systemPrompt }];
 
@@ -323,36 +326,39 @@ serve(async (req) => {
     }
 
     let enhancedMsg = message;
-    if (webResults) enhancedMsg = `${message}\n\n🌐 WEB RESULTS:\n${webResults}\n\nUse above to answer.`;
+    if (webResults) enhancedMsg = `${message}\n\n\uD83C\uDF10 WEB RESULTS:\n${webResults}\n\nUse above to answer.`;
     msgs.push({ role: 'user', content: enhancedMsg });
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch(ENGAGERA_ENDPOINT, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+      headers: {
+        'Authorization': `Bearer ${ENGAGERA_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({ model: modelToUse, messages: msgs, max_tokens: 1024 })
     });
 
     if (!response.ok) {
       const err = await response.text();
-      console.error('AI error:', response.status, err);
+      console.error('Engagera error:', response.status, err);
       if (response.status === 429) return new Response(JSON.stringify({ error: 'Rate limited, try again shortly' }), {
         status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
       if (response.status === 402) return new Response(JSON.stringify({ error: 'AI credits depleted' }), {
         status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
-      throw new Error(`AI error: ${response.status}`);
+      throw new Error(`Engagera error: ${response.status}`);
     }
 
     const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content;
-    if (!reply) throw new Error('Invalid AI response');
+    const reply = data.message?.content;
+    if (!reply) throw new Error('Invalid Engagera response');
 
     const thought = [
       `User: "${message.substring(0, 60)}${message.length > 60 ? '...' : ''}"`,
       userContext?.profile ? `Checking @${userContext.profile.handle}'s data...` : null,
       platformData ? `Loaded ${platformData.totalUsers} users, ${platformData.recentPosts?.length || 0} posts` : null,
-      webResults ? '🌐 Web search completed.' : null,
+      webResults ? '\uD83C\uDF10 Web search completed.' : null,
       memories.length > 0 ? `Retrieved ${memories.length} memories.` : null,
       'Generating response...'
     ].filter(Boolean).join('\n');

@@ -1,39 +1,21 @@
 /**
  * AI Support Auto-Responder
  *
- * Generates a draft reply for newly-created support tickets using a
- * Groq → Gemini fallback chain (same provider order as the afu-ai-reply
- * edge function). The draft is inserted as sender_type = 'ai' so staff
- * can review, edit, and send it — or dismiss it entirely.
- *
- * Chain order:
- *   1. Groq  — llama-3.3-70b-versatile → llama-3.1-8b-instant → mixtral-8x7b-32768
- *   2. Gemini — gemini-2.0-flash → gemini-1.5-flash-8b
+ * Generates a draft reply for newly-created support tickets using the
+ * Engagera API (engagera.afuchat.com). The draft is inserted as
+ * sender_type = 'ai' so staff can review, edit, and send it — or dismiss
+ * it entirely.
  */
 
-import OpenAI from "openai";
 import { logger } from "../lib/logger";
 import { createClient } from "@supabase/supabase-js";
 import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from "../lib/constants";
 
-function getGroqKey(): string {
-  return process.env.GROQ_API_KEY || "";
-}
-function getGeminiKey(): string {
-  return process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_KEY || "";
-}
+const ENGAGERA_ENDPOINT = "https://rhnsjqqtdzlkvqazfcbg.supabase.co/functions/v1/chat";
 
-const GROQ_MODELS = [
-  "llama-3.3-70b-versatile",
-  "llama-3.1-8b-instant",
-  "mixtral-8x7b-32768",
-  "gemma2-9b-it",
-];
-
-const GEMINI_MODELS = [
-  "gemini-2.0-flash",
-  "gemini-1.5-flash-8b",
-];
+function getEngageraKey(): string {
+  return process.env.ENGAGERA_API_KEY || "";
+}
 
 const CATEGORY_CONTEXT: Record<string, string> = {
   account: "Account & Login issues — common causes: forgotten password, phone number change, 2FA problems, account lockout, or profile recovery.",
@@ -55,102 +37,61 @@ Context for this ticket category: ${ctx}
 Your task: Write a helpful, warm, and professional first response to the user's support request.
 
 Guidelines:
-- Open with genuine empathy for their situation (2–3 words max, no generic "I hope this message finds you well")
+- Open with genuine empathy for their situation (2-3 words max, no generic "I hope this message finds you well")
 - Acknowledge the specific issue they described
-- Provide 2–4 actionable troubleshooting steps or information relevant to their exact problem
+- Provide 2-4 actionable troubleshooting steps or information relevant to their exact problem
 - If it's a payment/ACoins issue, reassure them their funds are safe
 - If it's a technical issue, include at least one self-service step (restart app, clear cache, check connection)
 - End with: "If this doesn't resolve your issue, our human support team will follow up shortly."
 - Tone: warm, concise, helpful — like a knowledgeable friend, not a corporate bot
-- Length: 80–180 words
-- Do NOT use markdown headers or bullet point symbols (•, -, *) — use numbered steps only when listing actions
+- Length: 80-180 words
+- Do NOT use markdown headers or bullet point symbols (-, *) — use numbered steps only when listing actions
 - Do NOT promise refunds or account actions — those require human review
 - Sign off as: "AfuChat Support Team"`;
 }
 
-async function callGroq(
+async function callEngagera(
   systemPrompt: string,
   userMessage: string,
 ): Promise<string | null> {
-  const GROQ_API_KEY = getGroqKey();
-  if (!GROQ_API_KEY) return null;
+  const key = getEngageraKey();
+  if (!key) {
+    logger.warn("[ai-draft] ENGAGERA_API_KEY not set — skipping");
+    return null;
+  }
 
-  const client = new OpenAI({
-    apiKey: GROQ_API_KEY,
-    baseURL: "https://api.groq.com/openai/v1",
-  });
-
-  for (const model of GROQ_MODELS) {
-    try {
-      const resp = await client.chat.completions.create({
-        model,
+  try {
+    const resp = await fetch(ENGAGERA_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "auto",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userMessage },
         ],
         max_tokens: 350,
-        temperature: 0.6,
-      });
-      const text = resp.choices[0]?.message?.content?.trim();
-      if (text) {
-        logger.info({ model }, "[ai-draft] Groq generated draft");
-        return text;
-      }
-    } catch (err: any) {
-      const status = err?.status ?? err?.response?.status;
-      if (status === 429 || status === 503) {
-        logger.warn({ model, status }, "[ai-draft] Groq model unavailable, trying next");
-        continue;
-      }
-      logger.warn({ model, err: err?.message }, "[ai-draft] Groq error");
+      }),
+      signal: AbortSignal.timeout(20000),
+    });
+
+    if (!resp.ok) {
+      const body = await resp.text();
+      logger.warn({ status: resp.status, body }, "[ai-draft] Engagera error");
+      return null;
     }
-  }
-  return null;
-}
 
-async function callGemini(
-  systemPrompt: string,
-  userMessage: string,
-): Promise<string | null> {
-  const GEMINI_API_KEY = getGeminiKey();
-  if (!GEMINI_API_KEY) return null;
-
-  for (const model of GEMINI_MODELS) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-      const resp = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: `${systemPrompt}\n\n---\nUser's ticket:\n${userMessage}` }],
-            },
-          ],
-          generationConfig: {
-            maxOutputTokens: 350,
-            temperature: 0.6,
-          },
-        }),
-        signal: AbortSignal.timeout(15000),
-      });
-
-      if (!resp.ok) {
-        const body = await resp.text();
-        logger.warn({ model, status: resp.status, body }, "[ai-draft] Gemini error");
-        continue;
-      }
-
-      const data: any = await resp.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-      if (text) {
-        logger.info({ model }, "[ai-draft] Gemini generated draft");
-        return text;
-      }
-    } catch (err: any) {
-      logger.warn({ model, err: err?.message }, "[ai-draft] Gemini error");
+    const data: any = await resp.json();
+    const text = data?.message?.content?.trim();
+    if (text) {
+      logger.info("[ai-draft] Engagera generated draft");
+      return text;
     }
+  } catch (err: any) {
+    logger.warn({ err: err?.message }, "[ai-draft] Engagera request failed");
   }
   return null;
 }
@@ -177,7 +118,6 @@ export async function generateAiDraft(input: AiDraftInput): Promise<boolean> {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // Guard: skip if an AI draft already exists for this ticket
   const { data: existing } = await admin
     .from("support_messages")
     .select("id")
@@ -196,21 +136,16 @@ export async function generateAiDraft(input: AiDraftInput): Promise<boolean> {
   let draft: string | null = null;
 
   try {
-    // Try Groq first, then Gemini
-    draft = await callGroq(systemPrompt, userPrompt);
-    if (!draft) {
-      draft = await callGemini(systemPrompt, userPrompt);
-    }
+    draft = await callEngagera(systemPrompt, userPrompt);
   } catch (err) {
     logger.error({ err }, "[ai-draft] Unexpected error during generation");
   }
 
   if (!draft) {
-    logger.warn({ ticketId: input.ticketId }, "[ai-draft] All providers failed — no draft generated");
+    logger.warn({ ticketId: input.ticketId }, "[ai-draft] Engagera failed — no draft generated");
     return false;
   }
 
-  // Insert AI draft as a message
   const { error } = await admin.from("support_messages").insert({
     ticket_id: input.ticketId,
     sender_id: null,
@@ -220,7 +155,7 @@ export async function generateAiDraft(input: AiDraftInput): Promise<boolean> {
     metadata: {
       ai_draft: true,
       generated_at: new Date().toISOString(),
-      provider: getGroqKey() ? "groq_or_gemini" : "gemini",
+      provider: "engagera",
     },
   });
 
@@ -229,14 +164,12 @@ export async function generateAiDraft(input: AiDraftInput): Promise<boolean> {
     return false;
   }
 
-  // Mark ticket as having an AI draft for staff dashboard
   await admin
     .from("support_tickets")
     .update({ has_ai_draft: true })
     .eq("id", input.ticketId)
     .then(({ error: e }) => {
       if (e) {
-        // Column may not exist yet — non-fatal, draft is still inserted
         logger.info({ ticketId: input.ticketId }, "[ai-draft] has_ai_draft column not yet present (non-fatal)");
       }
     });
