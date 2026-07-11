@@ -12,6 +12,7 @@ type StatsMap = Record<string, GiftStat>;
 export function useGiftPrices() {
   const [statsMap, setStatsMap] = useState<StatsMap>({});
   const mapRef = useRef<StatsMap>({});
+  const channelName = useRef(`gift_statistics_realtime_${Math.random().toString(36).slice(2)}`);
 
   const loadStats = useCallback(async () => {
     const { data } = await supabase
@@ -35,7 +36,7 @@ export function useGiftPrices() {
     loadStats();
 
     const channel = supabase
-      .channel("gift_statistics_realtime")
+      .channel(channelName.current)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "gift_statistics" },

@@ -349,7 +349,7 @@ function NavItem({ icon, active, onClick, tooltip, badge }: { icon: React.ReactN
           ${active ? 'bg-[#2a2a2a] text-white shadow-sm' : 'text-gray-500 hover:bg-[#2a2a2a]/50 hover:text-gray-300'}
         `}
       >
-        {React.cloneElement(icon as React.ReactElement, { className: "w-5 h-5" })}
+        {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: "w-5 h-5" })}
         
         {badge && (
           <div className="absolute -top-1 -right-1 bg-[#1f95ff] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center border-2 border-[#141414]">
