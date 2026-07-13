@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="artifacts/mobile/assets/images/logo.png" alt="AfuChat Logo" width="120" />
+  <img src="https://github.com/afuchat1/AfuChat-Supa/blob/master/artifacts%2Fmobile%2Fassets%2Fimages%2Ficon.png" alt="AfuChat Logo" width="120" />
   <h1>AfuChat</h1>
   
   <!-- Language & Runtime Banners -->
