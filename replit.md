@@ -1,5 +1,13 @@
 # AfuChat — Project Overview
 
+## Replit setup status (verified 2026-07-14)
+- **Dependencies**: installed via `pnpm install` at workspace root (all packages resolved, postinstall patches applied)
+- **Mobile app** (port 5000): running — Expo web bundled, React app initialises, all 82 route tests pass
+- **API server** (port 3000): running — `app_settings` loaded from Supabase (9 keys), video encoder active
+- **Desktop website** (port 5173): running — Next.js serving live AfuChat feed with real Supabase data
+- **`ACCOUNT_PURGE_SECRET`**: added to `.replit` env vars (admin endpoint protection)
+- **Supabase credentials** fetched via Management API using `SUPABASE_ACCESS_TOKEN`; public values hardcoded in source as fallbacks, service role key in `.replit` env vars
+
 ## What this is
 AfuChat is a social mobile app (React Native/Expo) with an Express API backend. The app includes messaging, posts, stories, video, payments (Pesapal), AI chat, and more.
 
