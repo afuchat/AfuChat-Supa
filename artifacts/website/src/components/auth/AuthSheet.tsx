@@ -335,9 +335,8 @@ function ModeTabs({ mode, onSwitch }: { mode: AuthMode; onSwitch: (m: AuthMode) 
 
 function SocialButtons() {
   return (
-    <div className="mt-4 space-y-2.5">
+    <div className="mt-4">
       <SocialBtn icon={<GoogleIcon />} label="Continue with Google" />
-      <SocialBtn icon={<AppleIcon />}  label="Continue with Apple" />
     </div>
   );
 }
