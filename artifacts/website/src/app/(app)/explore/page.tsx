@@ -160,29 +160,6 @@ export default function ExplorePage() {
           <p className="text-sm text-[#5a5040]">Discover creators, connect with people, and grow your network.</p>
         </div>
 
-        <div className="mb-6 grid grid-cols-3 gap-4">
-          <div className="rounded-2xl border border-[#ddd7c9] bg-[#ede8dc] p-5">
-            <div className="mb-1 flex items-center gap-2 text-[#1f95ff]">
-              <Users size={18} />
-              <span className="text-xs font-semibold uppercase tracking-wide text-[#8c7f6a]">Members</span>
-            </div>
-            <p className="text-3xl font-bold text-[#000]">{stats.totalUsers.toLocaleString()}</p>
-          </div>
-          <div className="rounded-2xl border border-[#ddd7c9] bg-[#ede8dc] p-5">
-            <div className="mb-1 flex items-center gap-2 text-[#1f95ff]">
-              <TrendingUp size={18} />
-              <span className="text-xs font-semibold uppercase tracking-wide text-[#8c7f6a]">Public Posts</span>
-            </div>
-            <p className="text-3xl font-bold text-[#000]">{stats.recentPosts.toLocaleString()}</p>
-          </div>
-          <div className="rounded-2xl border border-[#ddd7c9] bg-[#ede8dc] p-5">
-            <div className="mb-1 flex items-center gap-2 text-[#1f95ff]">
-              <Star size={18} />
-              <span className="text-xs font-semibold uppercase tracking-wide text-[#8c7f6a]">Top Grade</span>
-            </div>
-            <p className="text-3xl font-bold text-[#000]">Diamond</p>
-          </div>
-        </div>
 
         <div className="mb-6 flex items-center gap-3 rounded-2xl border border-[#ddd7c9] bg-[#ede8dc] px-4 py-3">
           <Search size={17} className="flex-none text-[#8c7f6a]" />
