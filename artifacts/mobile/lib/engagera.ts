@@ -14,15 +14,15 @@ let _initPromise: Promise<Engagera> | null = null;
 async function _init(): Promise<Engagera> {
   const { data, error } = await supabase
     .from("app_settings")
-    .select("engagera_api_key")
-    .limit(1)
+    .select("value")
+    .eq("key", "ENGAGERA_API_KEY")
     .maybeSingle();
 
-  if (error || !data?.engagera_api_key) {
+  if (error || !data?.value) {
     throw new Error("Engagera API key not found in app_settings");
   }
 
-  _client = new Engagera({ apiKey: data.engagera_api_key });
+  _client = new Engagera({ apiKey: data.value });
   return _client;
 }
 
