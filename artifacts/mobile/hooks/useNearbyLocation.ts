@@ -68,19 +68,6 @@ export function useNearbyLocation(): UseNearbyLocationResult {
     setLocating(true);
     setError(null);
 
-    if (Platform.OS === "web") {
-      const ip = await getCoordsByIp();
-      if (ip) {
-        setCoords(ip);
-        setPermissionStatus("granted");
-      } else {
-        setError("Could not detect your location. Please check your connection.");
-        setPermissionStatus("denied");
-      }
-      setLocating(false);
-      return ip;
-    }
-
     const { status: existing } = await Location.getForegroundPermissionsAsync();
     let granted = existing === "granted";
 

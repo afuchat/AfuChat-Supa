@@ -15,7 +15,7 @@ import { router } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/hooks/useTheme";
 
-const USE_NATIVE = Platform.OS !== "web";
+const USE_NATIVE = true;
 
 type TrendingSound = {
   name: string;

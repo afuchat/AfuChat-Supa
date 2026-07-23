@@ -46,8 +46,7 @@ export function ExpandableText({
   }, [displayText]);
 
   useEffect(() => {
-    if (Platform.OS === "web" && !measured) {
-      setMeasured(true);
+    if (      setMeasured(true);
       const lines = Math.ceil((displayText || "").length / WEB_CHARS_PER_LINE);
       if (lines > maxLines) setNeedsExpander(true);
     }
@@ -69,7 +68,7 @@ export function ExpandableText({
 
   return (
     <View>
-      {!measured && Platform.OS !== "web" && (
+      {!measured && (
         <Text
           key={displayText}
           style={[style, st.hidden]}

@@ -159,9 +159,6 @@ function SpoilerSpan({
       style={{
         color: textColor,
         opacity: revealed ? 1 : 0.45,
-        ...(Platform.OS === "web"
-          ? { borderRadius: 3, backgroundColor: textColor + "30" }
-          : {}),
       }}
     >
       {revealed ? text : mask}

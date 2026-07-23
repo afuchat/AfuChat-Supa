@@ -1,9 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 // PagerView gives true native 1:1 finger-tracking on Android/iOS.
-// Lazy-required so web builds never touch the native module.
-const _PagerView: any = Platform.OS !== "web"
-  ? (() => { try { return require("react-native-pager-view").default; } catch { return null; } })()
-  : null;
+const _PagerView: any = (() => { try { return require("react-native-pager-view").default; } catch { return null; } })();
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   ActivityIndicator,
@@ -23,12 +20,8 @@ import {
 } from "react-native";
 
 import AfuLogo from "@/components/ui/AfuLogo";
-// FlashList v2 module-level code crashes React Native Web (text-node errors).
-// Use a dynamic require that only runs on native so the module never loads on web.
 const SafeFlashList: typeof import("react-native").FlatList =
-  Platform.OS === "web"
-    ? (FlatList as any)
-    : (require("@shopify/flash-list").FlashList as any);
+  (require("@shopify/flash-list").FlashList as any);
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { Redirect, router, useFocusEffect, useNavigation, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -259,8 +252,8 @@ function TypingDots({ color }: { color: string }) {
       Animated.loop(
         Animated.sequence([
           Animated.delay(i * 150),
-          Animated.timing(dot, { toValue: -4, duration: 280, useNativeDriver: Platform.OS !== "web" }),
-          Animated.timing(dot, { toValue: 0,  duration: 280, useNativeDriver: Platform.OS !== "web" }),
+          Animated.timing(dot, { toValue: -4, duration: 280, useNativeDriver: true }),
+          Animated.timing(dot, { toValue: 0,  duration: 280, useNativeDriver: true }),
           Animated.delay(300),
         ])
       )
@@ -863,14 +856,14 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     setStoriesExpanded(true);
     Animated.parallel([
       Animated.spring(storiesHeightAnim, { toValue: 1, useNativeDriver: false, speed: 18, bounciness: 4 }),
-      Animated.timing(compactAvatarAnim, { toValue: 0, duration: 160, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(compactAvatarAnim, { toValue: 0, duration: 160, useNativeDriver: true }),
     ]).start();
   }, [storiesHeightAnim, compactAvatarAnim]);
 
   const collapseStories = useCallback(() => {
     Animated.parallel([
       Animated.spring(storiesHeightAnim, { toValue: 0, useNativeDriver: false, speed: 24, bounciness: 0 }),
-      Animated.timing(compactAvatarAnim, { toValue: 1, duration: 180, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(compactAvatarAnim, { toValue: 1, duration: 180, useNativeDriver: true }),
     ]).start(() => {
       storiesExpandedRef.current = false;
       setStoriesExpanded(false);
@@ -891,11 +884,11 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
 
     if (dy > 6 && y > 60 && !fabHidden.current) {
       fabHidden.current = true;
-      Animated.spring(fabAnim, { toValue: 0, useNativeDriver: Platform.OS !== "web", speed: 24, bounciness: 0 }).start();
+      Animated.spring(fabAnim, { toValue: 0, useNativeDriver: true, speed: 24, bounciness: 0 }).start();
       if (storiesExpandedRef.current) collapseStories();
     } else if (dy < -4 && fabHidden.current) {
       fabHidden.current = false;
-      Animated.spring(fabAnim, { toValue: 1, useNativeDriver: Platform.OS !== "web", speed: 20, bounciness: 6 }).start();
+      Animated.spring(fabAnim, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 6 }).start();
     }
   }, [fabAnim, expandStories, collapseStories]);
 
@@ -2247,7 +2240,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               {
                 backgroundColor: isDark ? "rgba(20,20,26,0.93)" : "rgba(252,252,255,0.93)",
                 borderColor: isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)",
-                ...(Platform.OS !== "web" ? { shadowColor: "#000" } : {}),
+                ...{ shadowColor: "#000" },
               },
             ]}
           >
@@ -2397,7 +2390,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               bottom: insets.bottom + 90,
               backgroundColor: colors.surface,
               borderColor: colors.border,
-              ...(Platform.OS !== "web" ? { shadowColor: "#000" } : {}),
+              ...{ shadowColor: "#000" },
               pointerEvents: "box-none",
             },
           ]}
@@ -2420,7 +2413,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
 
       {user && panelMode && (
         <TouchableOpacity
-          style={[styles.fab, { backgroundColor: colors.accent, bottom: Platform.OS === "web" ? 104 : 24, right: 24 }]}
+          style={[styles.fab, { backgroundColor: colors.accent, bottom: 24, right: 24 }]}
           onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/chat/new" as any); }}
           activeOpacity={0.85}
         >

@@ -34,9 +34,7 @@ import {
 } from "@/lib/appLock";
 
 let LocalAuthentication: typeof import("expo-local-authentication") | null = null;
-if (Platform.OS !== "web") {
-  try { LocalAuthentication = require("expo-local-authentication"); } catch {}
-}
+try { LocalAuthentication = require("expo-local-authentication"); } catch {}
 
 type DeviceSession = {
   id: string;
@@ -101,11 +99,11 @@ function PinKeypad({
   function shake() {
     Vibration.vibrate(200);
     Animated.sequence([
-      Animated.timing(shakeX, { toValue: -10, duration: 50, useNativeDriver: Platform.OS !== "web" }),
-      Animated.timing(shakeX, { toValue:  10, duration: 50, useNativeDriver: Platform.OS !== "web" }),
-      Animated.timing(shakeX, { toValue:  -8, duration: 50, useNativeDriver: Platform.OS !== "web" }),
-      Animated.timing(shakeX, { toValue:   8, duration: 50, useNativeDriver: Platform.OS !== "web" }),
-      Animated.timing(shakeX, { toValue:   0, duration: 50, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(shakeX, { toValue: -10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeX, { toValue:  10, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeX, { toValue:  -8, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeX, { toValue:   8, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeX, { toValue:   0, duration: 50, useNativeDriver: true }),
     ]).start();
     setError(true);
     setTimeout(() => { setError(false); setDigits([]); }, 800);
@@ -404,10 +402,6 @@ export default function DeviceSecurityScreen() {
   }
 
   const otherDeviceCount = sessions.filter((s) => !s.is_current).length;
-
-  if (Platform.OS === "web") {
-    return <MobileOnlyView title="Device Security" />;
-  }
 
   return (
     <View style={[styles.root, { backgroundColor: colors.backgroundSecondary, paddingTop: insets.top }]}>

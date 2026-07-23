@@ -113,7 +113,6 @@ export default function ContactsScreen() {
   const [phonebookNames, setPhonebookNames] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
-    if (Platform.OS === "web") return;
     getAllPhonebookNames().then(setPhonebookNames).catch(() => {});
   }, []);
 
@@ -318,7 +317,7 @@ export default function ContactsScreen() {
                 <Text style={[styles.actionLabel, { color: colors.text }]}>New Channel</Text>
                 <Ionicons name="chevron-forward" size={16} color={colors.textMuted} style={{ marginLeft: "auto" }} />
               </TouchableOpacity>
-              {Platform.OS !== "web" && (
+              {(
                 <>
                   <Separator indent={58} />
                   <TouchableOpacity

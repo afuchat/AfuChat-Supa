@@ -60,7 +60,7 @@ export async function compressImageForUpload(
   sourceUri: string,
   opts: CompressionOptions = {},
 ): Promise<CompressionResult | null> {
-  if (Platform.OS === "web" || !sourceUri) return null;
+  if (!sourceUri) return null;
 
   const format = opts.format ?? "webp";
   const quality = opts.quality ?? getAdaptiveQuality();

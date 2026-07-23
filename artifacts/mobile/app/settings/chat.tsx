@@ -270,7 +270,7 @@ export default function ChatSettingsScreen() {
           <TogRow colors={colors} themeColor={themeColor} icon="happy-outline"
             label="Emoji Reactions" desc="Let others react to your messages with emojis"
             value={prefs.reactions_enabled} onChange={(v) => updatePref("reactions_enabled", v)} />
-          {Platform.OS !== "web" && (
+          {(
             <>
               <Sep color={colors.border} />
               <TogRow colors={colors} themeColor={themeColor} icon="return-down-back"
@@ -331,7 +331,7 @@ export default function ChatSettingsScreen() {
             label="Offline Drafts"
             desc="Save unsent messages locally so you never lose them"
             value={adv.offline_drafts} onChange={(v) => setFeature("offline_drafts", v)} />
-          {Platform.OS !== "web" && (
+          {(
             <>
               <Sep color={colors.border} />
               <TogRow colors={colors} themeColor={themeColor} icon="cloud-upload-outline"
@@ -373,7 +373,7 @@ export default function ChatSettingsScreen() {
               ))}
             </View>
           </View>
-          {Platform.OS !== "web" && (
+          {(
             <>
               <Sep color={colors.border} />
               <View style={s.row}>
@@ -418,7 +418,7 @@ export default function ChatSettingsScreen() {
           <TogRow colors={colors} themeColor={themeColor} icon="lock-closed"
             label="Chat Lock" desc="Require Face ID / fingerprint to open chats"
             value={prefs.chat_lock} onChange={(v) => updatePref("chat_lock", v)} />
-          {Platform.OS !== "web" && (
+          {(
             <>
               <Sep color={colors.border} />
               <TogRow colors={colors} themeColor={themeColor} icon="eye-off"

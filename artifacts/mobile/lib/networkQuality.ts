@@ -7,7 +7,6 @@
  */
 
 import NetInfo from "@react-native-community/netinfo";
-import { Platform } from "react-native";
 
 export type NetworkType = "wifi" | "cellular" | "unknown";
 
@@ -17,7 +16,7 @@ let _connected: boolean | null = null;
 let _subscribed = false;
 
 function ensureSubscribed() {
-  if (_subscribed || Platform.OS === "web") return;
+  if (_subscribed) return;
   _subscribed = true;
   NetInfo.fetch().then((s) => {
     _type = s.type === "wifi" ? "wifi" : s.type === "cellular" ? "cellular" : "unknown";
@@ -33,7 +32,6 @@ ensureSubscribed();
 
 /** Current network type (synchronous, cached). */
 export function getNetworkType(): NetworkType {
-  if (Platform.OS === "web") return "wifi";
   return _type;
 }
 
@@ -51,7 +49,6 @@ export function isCellular(): boolean {
  * On web always returns false (browser handles connectivity itself).
  */
 export function isOffline(): boolean {
-  if (Platform.OS === "web") return false;
   // _connected starts as null (not yet known) — treat as online until proven otherwise
   return _connected === false;
 }
@@ -62,7 +59,6 @@ export function isOffline(): boolean {
  * Returns an unsubscribe function — call it in useEffect cleanup.
  */
 export function subscribeToNetworkChanges(callback: (offline: boolean) => void): () => void {
-  if (Platform.OS === "web") return () => {};
   ensureSubscribed();
   const unsub = NetInfo.addEventListener((state) => {
     callback(state.isConnected === false);
@@ -77,7 +73,6 @@ export function subscribeToNetworkChanges(callback: (offline: boolean) => void):
  *  - Unknown   → 480p  (safe middle ground)
  */
 export function getPreferredVideoHeight(): 360 | 480 | 720 {
-  if (Platform.OS === "web") return 720;
   const t = getNetworkType();
   if (t === "wifi") return 720;
   if (t === "cellular") return 360;
@@ -91,7 +86,6 @@ export function getPreferredVideoHeight(): 360 | 480 | 720 {
  *  - Unknown   → 0.75
  */
 export function getImageQuality(): number {
-  if (Platform.OS === "web") return 0.85;
   const t = getNetworkType();
   if (t === "wifi") return 0.85;
   if (t === "cellular") return 0.6;
@@ -105,7 +99,6 @@ export function getImageQuality(): number {
  */
 export function getVideoPickerQuality(): number {
   // Inline the logic to avoid circular imports (videoCompression imports networkQuality)
-  if (Platform.OS === "web") return 0.6;
   const t = getNetworkType();
   if (t === "wifi")     return 0.5;   // was 0.7 → now ~640p → ~50% smaller uploads
   if (t === "cellular") return 0.25;  // was 0.3 → now ~360p → ~70% smaller uploads

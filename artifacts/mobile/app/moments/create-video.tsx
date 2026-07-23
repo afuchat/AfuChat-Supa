@@ -71,7 +71,7 @@ import {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const IS_NATIVE = Platform.OS !== "web";
+const IS_NATIVE = true;
 const MAX_DURATION = 90;
 const WARN_SIZE_MB = 80;
 
@@ -252,8 +252,8 @@ function FilterDot({ filter, selected, onPress, previewColor }: {
   const scale = useRef(new Animated.Value(1)).current;
   function press() {
     Animated.sequence([
-      Animated.spring(scale, { toValue: 0.86, tension: 300, friction: 8, useNativeDriver: Platform.OS !== "web" }),
-      Animated.spring(scale, { toValue: 1, tension: 200, friction: 8, useNativeDriver: Platform.OS !== "web" }),
+      Animated.spring(scale, { toValue: 0.86, tension: 300, friction: 8, useNativeDriver: true }),
+      Animated.spring(scale, { toValue: 1, tension: 200, friction: 8, useNativeDriver: true }),
     ]).start();
     void Haptics.selectionAsync();
     onPress();
@@ -294,11 +294,11 @@ function RecordButton({
 
   useEffect(() => {
     if (isRecording) {
-      Animated.spring(scale, { toValue: 1.14, tension: 160, friction: 8, useNativeDriver: Platform.OS !== "web" }).start();
-      Animated.spring(innerScale, { toValue: 0.52, tension: 160, friction: 8, useNativeDriver: Platform.OS !== "web" }).start();
+      Animated.spring(scale, { toValue: 1.14, tension: 160, friction: 8, useNativeDriver: true }).start();
+      Animated.spring(innerScale, { toValue: 0.52, tension: 160, friction: 8, useNativeDriver: true }).start();
     } else {
-      Animated.spring(scale, { toValue: 1, tension: 160, friction: 8, useNativeDriver: Platform.OS !== "web" }).start();
-      Animated.spring(innerScale, { toValue: 1, tension: 160, friction: 8, useNativeDriver: Platform.OS !== "web" }).start();
+      Animated.spring(scale, { toValue: 1, tension: 160, friction: 8, useNativeDriver: true }).start();
+      Animated.spring(innerScale, { toValue: 1, tension: 160, friction: 8, useNativeDriver: true }).start();
     }
   }, [isRecording]);
 
@@ -795,8 +795,8 @@ function CountdownNumber({ n }: { n: number }) {
   useEffect(() => {
     scale.setValue(2); op.setValue(0);
     Animated.parallel([
-      Animated.spring(scale, { toValue: 1, tension: 120, friction: 8, useNativeDriver: Platform.OS !== "web" }),
-      Animated.timing(op, { toValue: 1, duration: 200, useNativeDriver: Platform.OS !== "web" }),
+      Animated.spring(scale, { toValue: 1, tension: 120, friction: 8, useNativeDriver: true }),
+      Animated.timing(op, { toValue: 1, duration: 200, useNativeDriver: true }),
     ]).start();
   }, [n]);
   return (
@@ -1671,7 +1671,7 @@ export default function CreateVideoScreen() {
   const { user } = useAuth();
   const { soundName, soundAlbumArt } = useLocalSearchParams<{ soundName?: string; soundAlbumArt?: string }>();
 
-  const [phase, setPhase] = useState<Phase>(Platform.OS === "web" ? "edit" : "camera");
+  const [phase, setPhase] = useState<Phase>("camera");
 
   // Posting phase data
   const [postingThumb, setPostingThumb] = useState<string | null>(null);
@@ -1855,8 +1855,7 @@ export default function CreateVideoScreen() {
 
   return (
     <>
-      {Platform.OS === "web" && (
-        // @ts-ignore
+      {        // @ts-ignore
         <input
           ref={webInputRef as any}
           type="file"
@@ -1868,7 +1867,7 @@ export default function CreateVideoScreen() {
 
       {phase === "posting" ? (
         <PostingPhase thumbnailUri={postingThumb} caption={postingCaption} />
-      ) : phase === "camera" && Platform.OS !== "web" ? (
+      ) : phase === "camera" ? (
         <CameraPhase
           onCapture={handleCapture}
           onPickFromGallery={handlePickFromGallery}
@@ -1879,7 +1878,7 @@ export default function CreateVideoScreen() {
         <EditPhase
           videoUri={videoUri} duration={duration} fileSize={fileSize}
           videoWidth={videoWidth} videoHeight={videoHeight} videoMime={videoMime}
-          onBack={() => setPhase(Platform.OS === "web" ? "edit" : "camera")}
+          onBack={() => setPhase("camera")}
           onPost={handlePost}
           soundName={soundName} soundAlbumArt={soundAlbumArt}
           capturedSpeed={capturedSpeed}

@@ -15,7 +15,6 @@ export function usePhonebookNames(): Map<string, string> {
   const [names, setNames] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
-    if (Platform.OS === "web") return;
     getAllPhonebookNames().then(setNames).catch(() => {});
   }, []);
 

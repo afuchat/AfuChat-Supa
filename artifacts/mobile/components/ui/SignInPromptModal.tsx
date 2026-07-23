@@ -27,14 +27,14 @@ export default function SignInPromptModal({ visible, onDismiss }: Props) {
 
   useEffect(() => {
     if (visible) {
-      Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: Platform.OS !== "web", tension: 60, friction: 11 }).start();
+      Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true, tension: 60, friction: 11 }).start();
     } else {
       sheetTranslateY.setValue(1000);
     }
   }, [visible]);
 
   function dismissSheet() {
-    Animated.timing(sheetTranslateY, { toValue: 1000, duration: 220, useNativeDriver: Platform.OS !== "web" }).start(() => onDismiss());
+    Animated.timing(sheetTranslateY, { toValue: 1000, duration: 220, useNativeDriver: true }).start(() => onDismiss());
   }
 
   const sheetPan = useRef(PanResponder.create({
@@ -43,9 +43,9 @@ export default function SignInPromptModal({ visible, onDismiss }: Props) {
     onPanResponderMove: (_, g) => { if (g.dy > 0) sheetTranslateY.setValue(g.dy); },
     onPanResponderRelease: (_, g) => {
       if (g.dy > 80 || g.vy > 0.5) {
-        Animated.timing(sheetTranslateY, { toValue: 1000, duration: 220, useNativeDriver: Platform.OS !== "web" }).start(() => onDismiss());
+        Animated.timing(sheetTranslateY, { toValue: 1000, duration: 220, useNativeDriver: true }).start(() => onDismiss());
       } else {
-        Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: Platform.OS !== "web", tension: 80, friction: 12 }).start();
+        Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true, tension: 80, friction: 12 }).start();
       }
     },
   })).current;

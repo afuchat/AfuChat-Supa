@@ -97,7 +97,6 @@ export async function handleNotificationAction(
 
       // ── Snooze — schedule a local reminder in 1 hour ──────────────
       case "snooze_1h": {
-        if (Platform.OS === "web") return;
         try {
           const Notifications = require("expo-notifications");
           await Notifications.scheduleNotificationAsync({

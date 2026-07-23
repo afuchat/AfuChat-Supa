@@ -41,8 +41,8 @@ const STATS = [
 ] as const;
 
 const LINKS = [
-  { icon: "document-text-outline", label: "Terms of Service",   onPress: () => Platform.OS === "web" ? router.push("/terms" as any) : Linking.openURL("https://afuchat.com/terms").catch(() => {}) },
-  { icon: "shield-outline",        label: "Privacy Policy",     onPress: () => Platform.OS === "web" ? router.push("/privacy" as any) : Linking.openURL("https://afuchat.com/privacy").catch(() => {}) },
+  { icon: "document-text-outline", label: "Terms of Service",   onPress: () => Linking.openURL("https://afuchat.com/terms").catch(() => {}) },
+  { icon: "shield-outline",        label: "Privacy Policy",     onPress: () => Linking.openURL("https://afuchat.com/privacy").catch(() => {}) },
   { icon: "help-buoy-outline",     label: "Help & Support",     onPress: () => router.push("/support" as any) },
   { icon: "globe-outline",         label: "Visit afuchat.com",  onPress: () => Linking.openURL("https://afuchat.com").catch(() => {}) },
   { icon: "mail-outline",          label: "Contact Us",         onPress: () => Linking.openURL("mailto:hello@afuchat.com").catch(() => {}) },

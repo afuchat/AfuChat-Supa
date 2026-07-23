@@ -108,7 +108,6 @@ export function reportCrash(report: CrashReport): void {
 // ─── Internal helpers ──────────────────────────────────────────────────────────
 
 function _checkIsStandalone(): boolean {
-  if (Platform.OS === "web") return false;
   try {
     const Constants = require("expo-constants").default;
     const env = Constants?.executionEnvironment;

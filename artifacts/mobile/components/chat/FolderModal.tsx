@@ -55,7 +55,7 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
       setFilter(initial?.filter ?? "personal");
       Animated.spring(slideAnim, {
         toValue: 0,
-        useNativeDriver: Platform.OS !== "web",
+        useNativeDriver: true,
         speed: 22,
         bounciness: 3,
       }).start();
@@ -63,7 +63,7 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
       Animated.timing(slideAnim, {
         toValue: 500,
         duration: 200,
-        useNativeDriver: Platform.OS !== "web",
+        useNativeDriver: true,
       }).start();
     }
   }, [visible, initial, slideAnim]);

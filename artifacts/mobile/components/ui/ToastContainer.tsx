@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-const ND = Platform.OS !== "web";
+const ND = true;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { dismissToast, registerToastListener, type ToastItem } from "@/lib/toast";

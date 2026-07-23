@@ -1,13 +1,6 @@
-import { Platform } from "react-native";
-
-// ─── Web-safe MMKV wrapper ─────────────────────────────────────────────────────
-// On native (Android/iOS): uses react-native-mmkv 3.x (stable JSI bridge) —
-// synchronous key-value store compatible with SDK 55 on both Old and New
-// Architecture.  Deliberately NOT using v4/Nitro-Modules because Nitro's C++
-// initialisation races against the Android JNI load order on standalone builds,
-// causing an unrecoverable native crash before any JS error handler can catch it.
-// On web / Expo Go: falls back to a synchronous in-memory store backed by
-// localStorage so the same API works everywhere without conditional imports.
+// ─── MMKV wrapper ──────────────────────────────────────────────────────────────
+// Native (Android/iOS): uses react-native-mmkv (JSI, synchronous).
+// Expo Go fallback: in-memory store (MMKV module is not available in Expo Go).
 
 type MMKVLike = {
   set(key: string, value: string | number | boolean): void;
@@ -20,59 +13,17 @@ type MMKVLike = {
   clearAll(): void;
 };
 
-function createWebStore(): MMKVLike {
-  const PREFIX = "afu_mmkv_";
+function createMemoryStore(): MMKVLike {
   const mem = new Map<string, string | number | boolean>();
-
-  if (typeof localStorage !== "undefined") {
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && k.startsWith(PREFIX)) {
-        try {
-          const raw = localStorage.getItem(k)!;
-          const parsed = JSON.parse(raw);
-          mem.set(k.slice(PREFIX.length), parsed);
-        } catch {}
-      }
-    }
-  }
-
-  function persist(key: string, value: string | number | boolean) {
-    try {
-      localStorage.setItem(PREFIX + key, JSON.stringify(value));
-    } catch {}
-  }
-
   return {
-    set(key, value) {
-      mem.set(key, value);
-      persist(key, value);
-    },
-    getString(key) {
-      const v = mem.get(key);
-      return typeof v === "string" ? v : undefined;
-    },
-    getNumber(key) {
-      const v = mem.get(key);
-      return typeof v === "number" ? v : undefined;
-    },
-    getBoolean(key) {
-      const v = mem.get(key);
-      return typeof v === "boolean" ? v : undefined;
-    },
-    delete(key) {
-      mem.delete(key);
-      try { localStorage.removeItem(PREFIX + key); } catch {}
-    },
+    set(key, value) { mem.set(key, value); },
+    getString(key) { const v = mem.get(key); return typeof v === "string" ? v : undefined; },
+    getNumber(key) { const v = mem.get(key); return typeof v === "number" ? v : undefined; },
+    getBoolean(key) { const v = mem.get(key); return typeof v === "boolean" ? v : undefined; },
+    delete(key) { mem.delete(key); },
     contains(key) { return mem.has(key); },
     getAllKeys() { return Array.from(mem.keys()); },
-    clearAll() {
-      const keys = Array.from(mem.keys());
-      mem.clear();
-      keys.forEach((k) => {
-        try { localStorage.removeItem(PREFIX + k); } catch {}
-      });
-    },
+    clearAll() { mem.clear(); },
   };
 }
 
@@ -106,8 +57,8 @@ function isExpoGo(): boolean {
 function getStore(): MMKVLike {
   if (_store) return _store;
 
-  if (Platform.OS === "web" || isExpoGo()) {
-    _store = createWebStore();
+  if (isExpoGo()) {
+    _store = createMemoryStore();
     return _store;
   }
 
@@ -115,7 +66,7 @@ function getStore(): MMKVLike {
     const { MMKV } = require("react-native-mmkv") as any;
     _store = new MMKV({ id: "afuchat-store" });
   } catch {
-    _store = createWebStore();
+    _store = createMemoryStore();
   }
   return _store!;
 }

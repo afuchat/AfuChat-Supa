@@ -87,7 +87,7 @@ const cb = StyleSheet.create({
 function GlassModal({ visible, onClose, isDark, children }: { visible: boolean; onClose: () => void; isDark: boolean; children: React.ReactNode }) {
   const opacity = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.timing(opacity, { toValue: visible ? 1 : 0, duration: 220, useNativeDriver: Platform.OS !== "web" }).start();
+    Animated.timing(opacity, { toValue: visible ? 1 : 0, duration: 220, useNativeDriver: true }).start();
   }, [visible]);
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
@@ -167,8 +167,6 @@ export default function SignUpScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const { width: SW } = useWindowDimensions();
-  const isWeb = Platform.OS === "web";
-
   // Only redirect already-logged-in users when this screen first mounts.
   // Do NOT react to `user` becoming set during the sign-up flow itself —
   // the sign-up handlers navigate explicitly. Reacting to [user] caused a
@@ -203,16 +201,16 @@ export default function SignUpScreen() {
   function goToEmail() {
     setStep("email");
     Animated.parallel([
-      Animated.spring(landingX, { toValue: -SW, useNativeDriver: !isWeb, tension: 200, friction: 28 }),
-      Animated.spring(formX, { toValue: 0, useNativeDriver: !isWeb, tension: 200, friction: 28 }),
+      Animated.spring(landingX, { toValue: -SW, useNativeDriver: true, tension: 200, friction: 28 }),
+      Animated.spring(formX, { toValue: 0, useNativeDriver: true, tension: 200, friction: 28 }),
     ]).start();
   }
 
   function goToLanding() {
     setStep("landing");
     Animated.parallel([
-      Animated.spring(landingX, { toValue: 0, useNativeDriver: !isWeb, tension: 200, friction: 28 }),
-      Animated.spring(formX, { toValue: SW, useNativeDriver: !isWeb, tension: 200, friction: 28 }),
+      Animated.spring(landingX, { toValue: 0, useNativeDriver: true, tension: 200, friction: 28 }),
+      Animated.spring(formX, { toValue: SW, useNativeDriver: true, tension: 200, friction: 28 }),
     ]).start();
   }
 
@@ -297,7 +295,7 @@ export default function SignUpScreen() {
   }
 
   function handleGoogle() {
-    Platform.OS === "web" ? webGoogleSignIn() : nativeGoogleSignIn();
+    nativeGoogleSignIn();
   }
 
   return (
@@ -363,9 +361,9 @@ export default function SignUpScreen() {
           <View style={{ marginTop: "auto", paddingTop: 32, alignItems: "center", gap: 6 }}>
             <Text style={{ fontSize: 11, fontFamily: "Inter_400Regular", color: mutedColor, textAlign: "center", lineHeight: 17, paddingHorizontal: 8 }}>
               By continuing, you agree to our{" "}
-              <Text style={{ color: accent }} onPress={() => Platform.OS === "web" ? router.push("/terms" as any) : Linking.openURL("https://afuchat.com/terms").catch(() => {})}>Terms</Text>
+              <Text style={{ color: accent }} onPress={() => Linking.openURL("https://afuchat.com/terms").catch(() => {})}>Terms</Text>
               {" "}and{" "}
-              <Text style={{ color: accent }} onPress={() => Platform.OS === "web" ? router.push("/privacy" as any) : Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>Privacy Policy</Text>
+              <Text style={{ color: accent }} onPress={() => Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>Privacy Policy</Text>
             </Text>
             <Text style={{ fontSize: 10.5, fontFamily: "Inter_400Regular", color: isDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.16)" }}>
               © {new Date().getFullYear()} AfuChat Technologies Limited
@@ -429,9 +427,9 @@ export default function SignUpScreen() {
               <Checkbox checked={termsOk} onToggle={() => setTermsOk(p => !p)} isDark={isDark} accent={accent}>
                 <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: mutedColor, lineHeight: 19, flex: 1 }}>
                   I agree to the{" "}
-                  <Text style={{ color: accent, fontFamily: "Inter_500Medium" }} onPress={() => Platform.OS === "web" ? router.push("/terms" as any) : Linking.openURL("https://afuchat.com/terms").catch(() => {})}>Terms of Service</Text>
+                  <Text style={{ color: accent, fontFamily: "Inter_500Medium" }} onPress={() => Linking.openURL("https://afuchat.com/terms").catch(() => {})}>Terms of Service</Text>
                   {" "}and{" "}
-                  <Text style={{ color: accent, fontFamily: "Inter_500Medium" }} onPress={() => Platform.OS === "web" ? router.push("/privacy" as any) : Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>Privacy Policy</Text>
+                  <Text style={{ color: accent, fontFamily: "Inter_500Medium" }} onPress={() => Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>Privacy Policy</Text>
                 </Text>
               </Checkbox>
             </View>

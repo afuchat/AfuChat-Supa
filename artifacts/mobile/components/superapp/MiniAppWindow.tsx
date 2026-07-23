@@ -139,12 +139,12 @@ export default function MiniAppWindow({ app, onClose, onMinimize, children }: Pr
           damping: 26,
           stiffness: 260,
           mass: 0.9,
-          useNativeDriver: Platform.OS !== "web",
+          useNativeDriver: true,
         }),
         Animated.timing(backdropOpacity, {
           toValue: 0.55,
           duration: 200,
-          useNativeDriver: Platform.OS !== "web",
+          useNativeDriver: true,
         }),
       ]).start();
     } else {
@@ -153,12 +153,12 @@ export default function MiniAppWindow({ app, onClose, onMinimize, children }: Pr
           toValue: screenHeight,
           duration: 260,
           easing: Easing.out(Easing.cubic),
-          useNativeDriver: Platform.OS !== "web",
+          useNativeDriver: true,
         }),
         Animated.timing(backdropOpacity, {
           toValue: 0,
           duration: 220,
-          useNativeDriver: Platform.OS !== "web",
+          useNativeDriver: true,
         }),
       ]).start(({ finished }) => {
         if (finished) setShowing(false);

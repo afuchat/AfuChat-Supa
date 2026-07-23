@@ -19,9 +19,7 @@ import {
 let Audio: typeof import("expo-av").Audio | null = null;
 type AudioSound = import("expo-av/build/Audio/Sound").Sound;
 type AudioRecording = import("expo-av/build/Audio/Recording").Recording;
-if (Platform.OS !== "web") {
-  try { Audio = require("expo-av").Audio; } catch {}
-}
+try { Audio = require("expo-av").Audio; } catch {}
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { PostDetailSkeleton } from "@/components/ui/Skeleton";
@@ -50,7 +48,7 @@ import { getLocalFeedPost } from "@/lib/storage/localFeed";
 import { uploadToStorage } from "@/lib/mediaUpload";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const USE_NATIVE = Platform.OS !== "web";
+const USE_NATIVE = true;
 const MAX_CHARS = 500;
 const MAX_VOICE_SECS = 60;
 const WAVEFORM_BARS = 30;
@@ -89,8 +87,8 @@ function WaveformBars({ heights, progress, accent, animating }: { heights: numbe
       loopRef.current = Animated.loop(
         Animated.stagger(40, pulseAnims.map((a) =>
           Animated.sequence([
-            Animated.timing(a, { toValue: 1.5 + Math.random() * 0.5, duration: 200 + Math.random() * 200, useNativeDriver: Platform.OS !== "web" }),
-            Animated.timing(a, { toValue: 1, duration: 200, useNativeDriver: Platform.OS !== "web" }),
+            Animated.timing(a, { toValue: 1.5 + Math.random() * 0.5, duration: 200 + Math.random() * 200, useNativeDriver: true }),
+            Animated.timing(a, { toValue: 1, duration: 200, useNativeDriver: true }),
           ]),
         )),
       );
@@ -188,8 +186,8 @@ function RecordingBar({ elapsed, onStop, accent, colors }: { elapsed: number; on
 
   useEffect(() => {
     const loop = Animated.loop(Animated.sequence([
-      Animated.timing(pulseAnim, { toValue: 1.4, duration: 600, useNativeDriver: Platform.OS !== "web" }),
-      Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(pulseAnim, { toValue: 1.4, duration: 600, useNativeDriver: true }),
+      Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
     ]));
     loop.start();
     return () => loop.stop();
@@ -781,10 +779,6 @@ export default function PostDetailScreen() {
   }
 
   async function startRecording() {
-    if (Platform.OS === "web") {
-      showAlert("Not supported", "Voice recording is not available on web.");
-      return;
-    }
     if (!Audio?.requestPermissionsAsync) return;
     const { granted } = await Audio.requestPermissionsAsync();
     if (!granted) {
@@ -838,10 +832,8 @@ export default function PostDetailScreen() {
   }
 
   async function pickImage() {
-    if (Platform.OS !== "web") {
-      const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!granted) { showAlert("Photos access needed", "Please enable photo library access in Settings."); return; }
-    }
+    const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!granted) { showAlert("Photos access needed", "Please enable photo library access in Settings."); return; }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.82, allowsEditing: false });
     if (!result.canceled && result.assets.length > 0) {
       const a = result.assets[0];
@@ -1331,7 +1323,7 @@ export default function PostDetailScreen() {
                     style={[styles.attachBtn, attachedImage && { backgroundColor: accent + "25" }]}>
                     <Ionicons name="image-outline" size={19} color={attachedImage ? accent : colors.textMuted} />
                   </TouchableOpacity>
-                  {recordState === "idle" && Platform.OS !== "web" && (
+                  {recordState === "idle" && (
                     <TouchableOpacity onPress={startRecording} activeOpacity={0.7} hitSlop={6} style={styles.attachBtn}>
                       <Ionicons name="mic-outline" size={19} color={colors.textMuted} />
                     </TouchableOpacity>

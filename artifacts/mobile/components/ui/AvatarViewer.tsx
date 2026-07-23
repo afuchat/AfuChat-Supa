@@ -50,15 +50,6 @@ export function AvatarViewer({ visible, uri, name, onClose }: Props) {
   const initials = getInitials(name);
   const fallbackBg = hashColor(name);
 
-  // On web, ESC should close the viewer.
-  useEffect(() => {
-    if (!visible || Platform.OS !== "web") return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [visible, onClose]);
 
   return (
     <Modal

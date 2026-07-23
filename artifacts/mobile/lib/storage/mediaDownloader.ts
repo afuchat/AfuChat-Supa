@@ -46,7 +46,6 @@ export async function autoDownloadAttachment(
   conversationId: string = "",
   autoDownloadPref: "always" | "wifi_only" | "never" = "wifi_only",
 ): Promise<string | null> {
-  if (Platform.OS === "web") return null;
   if (!url || !url.startsWith("http")) return null;
   if (autoDownloadPref === "never") return null;
 
@@ -78,7 +77,7 @@ export async function autoDownloadAttachment(
  * Returns null if not yet on device.
  */
 export async function getDownloadedAttachmentUri(url: string): Promise<string | null> {
-  if (Platform.OS === "web" || !url) return null;
+  if (!url) return null;
   try {
     const db = await getDB();
     const hash = urlHash(url);
@@ -103,7 +102,7 @@ export async function preloadConversationMedia(
   messages: Array<{ id: string; conversation_id: string; attachment_url: string | null; attachment_type: string | null }>,
   autoDownloadPref: "always" | "wifi_only" | "never" = "wifi_only",
 ): Promise<void> {
-  if (Platform.OS === "web" || autoDownloadPref === "never") return;
+  if (autoDownloadPref === "never") return;
   for (const msg of messages) {
     if (!msg.attachment_url || !msg.attachment_type) continue;
     autoDownloadAttachment(

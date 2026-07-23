@@ -41,7 +41,7 @@ const _GH: typeof import("react-native-gesture-handler") | null = (() => {
   return null;
 })();
 
-const RA_AVAILABLE = _RA !== null && _GH !== null && Platform.OS !== "web";
+const RA_AVAILABLE = _RA !== null && _GH !== null;
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 

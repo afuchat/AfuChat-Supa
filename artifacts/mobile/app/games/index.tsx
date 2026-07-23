@@ -24,10 +24,10 @@ export default function GamesScreen() {
   }, []);
 
   function onPressIn() {
-    Animated.spring(scale, { toValue: 0.97, useNativeDriver: Platform.OS !== "web", speed: 50, bounciness: 0 }).start();
+    Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
   }
   function onPressOut() {
-    Animated.spring(scale, { toValue: 1, useNativeDriver: Platform.OS !== "web", speed: 30, bounciness: 6 }).start();
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 6 }).start();
   }
 
   return (

@@ -90,7 +90,6 @@ async function getProfileCacheStats(): Promise<{ bytes: number; count: number }>
 }
 
 async function getSQLiteSize(): Promise<number> {
-  if (Platform.OS === "web") return 0;
   try {
     const dbPath = ((FileSystem as any).documentDirectory ?? "") + "SQLite/afuchat_local.db";
     const info = await FileSystem.getInfoAsync(dbPath);

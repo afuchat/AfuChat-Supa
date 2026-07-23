@@ -61,8 +61,8 @@ export function PremiumUpsellCard({ variant = "ai", onDismiss }: Props) {
   function press() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Animated.sequence([
-      Animated.timing(scale, { toValue: 0.97, duration: 80, useNativeDriver: Platform.OS !== "web" }),
-      Animated.spring(scale, { toValue: 1, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(scale, { toValue: 0.97, duration: 80, useNativeDriver: true }),
+      Animated.spring(scale, { toValue: 1, useNativeDriver: true }),
     ]).start(() => safeRouter.push("/premium" as any));
   }
 

@@ -74,7 +74,7 @@ export default function VideoTrimmerModal({
   }, [visible, uri]);
 
   async function generateThumbs(dur: number) {
-    if (Platform.OS === "web" || !uri || dur <= 0) return;
+    if (!uri || dur <= 0) return;
     setThumbsLoading(true);
     const results: string[] = [];
     for (let i = 0; i < THUMB_COUNT; i++) {

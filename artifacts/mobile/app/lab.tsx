@@ -39,13 +39,11 @@ import { LinearGradient as SafeGrad } from "@/components/ui/SafeGradient";
 // Camera — native only
 let CameraView: any = null;
 let useCameraPermissions: any = null;
-if (Platform.OS !== "web") {
-  try {
-    const cam = require("expo-camera");
-    CameraView = cam.CameraView;
-    useCameraPermissions = cam.useCameraPermissions;
-  } catch (_) {}
-}
+try {
+  const cam = require("expo-camera");
+  CameraView = cam.CameraView;
+  useCameraPermissions = cam.useCameraPermissions;
+} catch (_) {}
 
 const { width: SW, height: SH } = Dimensions.get("window");
 const FRAME_SIZE = Math.min(SW, SH) * 0.72;
@@ -76,8 +74,8 @@ function ScanFrame({ scanning }: { scanning: boolean }) {
     if (scanning) {
       RNAnimated.loop(
         RNAnimated.sequence([
-          RNAnimated.timing(pulse, { toValue: 0.6, duration: 600, useNativeDriver: Platform.OS !== "web" }),
-          RNAnimated.timing(pulse, { toValue: 1,   duration: 600, useNativeDriver: Platform.OS !== "web" }),
+          RNAnimated.timing(pulse, { toValue: 0.6, duration: 600, useNativeDriver: true }),
+          RNAnimated.timing(pulse, { toValue: 1,   duration: 600, useNativeDriver: true }),
         ])
       ).start();
       RNAnimated.loop(
@@ -197,10 +195,10 @@ export default function LabScreen() {
   const sheetY = useRef(new RNAnimated.Value(SH)).current;
 
   function showSheet() {
-    RNAnimated.spring(sheetY, { toValue: 0, useNativeDriver: Platform.OS !== "web", tension: 65, friction: 11 }).start();
+    RNAnimated.spring(sheetY, { toValue: 0, useNativeDriver: true, tension: 65, friction: 11 }).start();
   }
   function hideSheet() {
-    RNAnimated.timing(sheetY, { toValue: SH, duration: 280, useNativeDriver: Platform.OS !== "web" }).start(() => {
+    RNAnimated.timing(sheetY, { toValue: SH, duration: 280, useNativeDriver: true }).start(() => {
       setResult(null);
       setPreview(null);
       setError(null);

@@ -17,7 +17,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import type { CompressionEstimate } from "@/lib/videoCompression";
 
-const ND = Platform.OS !== "web";
+const ND = true;
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 

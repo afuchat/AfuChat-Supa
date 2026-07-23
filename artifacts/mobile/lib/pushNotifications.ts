@@ -33,25 +33,23 @@ function alreadyHandled(id: string): boolean {
 let Notifications: typeof import("expo-notifications") | null = null;
 let Device: typeof import("expo-device") | null = null;
 
-if (Platform.OS !== "web") {
-  try {
-    Notifications = require("expo-notifications");
-    Device = require("expo-device");
+try {
+  Notifications = require("expo-notifications");
+  Device = require("expo-device");
 
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-        shouldShowBanner: true,
-        shouldShowList: true,
-        priority: Notifications.AndroidNotificationPriority.MAX,
-      }),
-    });
-  } catch {
-    Notifications = null;
-    Device = null;
-  }
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+      priority: Notifications.AndroidNotificationPriority.MAX,
+    }),
+  });
+} catch {
+  Notifications = null;
+  Device = null;
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -59,7 +57,7 @@ if (Platform.OS !== "web") {
 // ─────────────────────────────────────────────────────────────────────
 
 export async function setupNotificationCategories(): Promise<void> {
-  if (Platform.OS === "web" || !Notifications) return;
+  if (!Notifications) return;
   try {
     await Notifications.setNotificationCategoryAsync(NOTIF_CATEGORY.MESSAGE_REPLY, [
       {
@@ -267,7 +265,7 @@ export async function setupNotificationChannels(): Promise<void> {
 // ─────────────────────────────────────────────────────────────────────
 
 export async function registerForPushNotifications(userId: string): Promise<string | null> {
-  if (Platform.OS === "web" || !Notifications || !Device) return null;
+  if (!Notifications || !Device) return null;
   try {
     if (!Device.isDevice) return null;
 
@@ -436,7 +434,7 @@ async function routeNotificationResponse(response: any) {
 let _listenersActive = false;
 
 export function setupNotificationListeners() {
-  if (Platform.OS === "web" || !Notifications) return () => {};
+  if (!Notifications) return () => {};
   if (_listenersActive) return () => {};
   _listenersActive = true;
 
@@ -532,7 +530,7 @@ export async function sendPushNotification(params: {
 // ─────────────────────────────────────────────────────────────────────
 
 export async function clearBadge(): Promise<void> {
-  if (Platform.OS === "web" || !Notifications) return;
+  if (!Notifications) return;
   try {
     await Notifications.setBadgeCountAsync(0);
   } catch {}

@@ -220,7 +220,7 @@ function openAppItem(app: AppItem, openApp: (id: string) => void) {
   if (needsNetwork && !isOnline()) {
     showToast(`${app.label} requires an internet connection`, { type: "info", icon: "wifi-outline" });
   }
-  if (app.miniApp && Platform.OS !== "web") {
+  if (app.miniApp) {
     openApp(app.id);
   } else {
     safeRouter.push(app.route as any);
@@ -241,10 +241,10 @@ function FeaturedCard({
   const scale = useRef(new Animated.Value(1)).current;
 
   function handlePressIn() {
-    Animated.spring(scale, { toValue: 0.96, useNativeDriver: Platform.OS !== "web", speed: 50, bounciness: 0 }).start();
+    Animated.spring(scale, { toValue: 0.96, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
   }
   function handlePressOut() {
-    Animated.spring(scale, { toValue: 1, useNativeDriver: Platform.OS !== "web", speed: 30, bounciness: 6 }).start();
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 6 }).start();
   }
   function handlePress() {
     Haptics.selectionAsync();
@@ -298,10 +298,10 @@ function AppTile({
   const scale = useRef(new Animated.Value(1)).current;
 
   function handlePressIn() {
-    Animated.spring(scale, { toValue: 0.88, useNativeDriver: Platform.OS !== "web", speed: 50, bounciness: 0 }).start();
+    Animated.spring(scale, { toValue: 0.88, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
   }
   function handlePressOut() {
-    Animated.spring(scale, { toValue: 1, useNativeDriver: Platform.OS !== "web", speed: 30, bounciness: 8 }).start();
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 8 }).start();
   }
   function handlePress() {
     Haptics.selectionAsync();
@@ -373,9 +373,7 @@ export default function AppsScreen() {
     });
   }
 
-  const isWeb = Platform.OS === "web";
   function isVisible(a: AppItem) {
-    if (a.nativeOnly && isWeb) return false;
     if (a.orgOnly && !isOrgVerified) return false;
     return true;
   }

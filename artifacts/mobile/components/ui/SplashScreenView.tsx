@@ -61,35 +61,20 @@ export function SplashScreenView({ ready, onDone }: Props) {
     if (!ready || doneFired.current) return;
     doneFired.current = true;
 
-    if (Platform.OS === "web") {
-      // On web: opacity-only fade. Use a ref-stored setTimeout for onDone
-      // because (a) the Animated .start() callback is unreliable on RN Web
-      // when the native animated module is absent, and (b) storing the timer
-      // in a ref prevents the effect cleanup from cancelling it on re-renders
-      // after doneFired is already true.
+    Animated.parallel([
       Animated.timing(opacity, {
         toValue: 0,
-        duration: 350,
-        delay: 80,
-        useNativeDriver: false,
-      }).start();
-      timerRef.current = setTimeout(() => onDoneRef.current(), 480);
-    } else {
-      Animated.parallel([
-        Animated.timing(opacity, {
-          toValue: 0,
-          duration: 380,
-          delay: 120,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scale, {
-          toValue: 1.08,
-          duration: 380,
-          delay: 120,
-          useNativeDriver: true,
-        }),
-      ]).start(() => onDoneRef.current());
-    }
+        duration: 380,
+        delay: 120,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scale, {
+        toValue: 1.08,
+        duration: 380,
+        delay: 120,
+        useNativeDriver: true,
+      }),
+    ]).start(() => onDoneRef.current());
 
     return () => {
       if (timerRef.current !== null) {
@@ -119,11 +104,9 @@ export function SplashScreenView({ ready, onDone }: Props) {
           Afu<Text style={styles.wordmarkAccent}>Chat</Text>
         </Text>
       </View>
-      {Platform.OS !== "web" && (
-        <View style={styles.taglineWrap}>
-          <Text style={[styles.tagline, { color: taglineColor }]}>Connect · Discover · Create</Text>
-        </View>
-      )}
+      <View style={styles.taglineWrap}>
+        <Text style={[styles.tagline, { color: taglineColor }]}>Connect · Discover · Create</Text>
+      </View>
     </Animated.View>
   );
 }

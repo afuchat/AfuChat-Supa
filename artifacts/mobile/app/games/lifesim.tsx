@@ -796,8 +796,8 @@ export default function LifeSimGame() {
     fadeAnim.setValue(0);
     slideAnim.setValue(20);
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 380, useNativeDriver: Platform.OS !== "web" }),
-      Animated.spring(slideAnim, { toValue: 0, tension: 80, friction: 9, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 380, useNativeDriver: true }),
+      Animated.spring(slideAnim, { toValue: 0, tension: 80, friction: 9, useNativeDriver: true }),
     ]).start();
   }, [fadeAnim, slideAnim]);
 

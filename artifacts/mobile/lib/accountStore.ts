@@ -38,7 +38,6 @@ export type StoredAccount = {
 
 async function secureGet(key: string): Promise<string | null> {
   try {
-    if (Platform.OS === "web") return AsyncStorage.getItem(key);
     return SecureStore.getItemAsync(key);
   } catch {
     return null;
@@ -47,21 +46,13 @@ async function secureGet(key: string): Promise<string | null> {
 
 async function secureSet(key: string, value: string): Promise<void> {
   try {
-    if (Platform.OS === "web") {
-      await AsyncStorage.setItem(key, value);
-    } else {
-      await SecureStore.setItemAsync(key, value);
-    }
+    await SecureStore.setItemAsync(key, value);
   } catch {}
 }
 
 async function secureDel(key: string): Promise<void> {
   try {
-    if (Platform.OS === "web") {
-      await AsyncStorage.removeItem(key);
-    } else {
-      await SecureStore.deleteItemAsync(key);
-    }
+    await SecureStore.deleteItemAsync(key);
   } catch {}
 }
 

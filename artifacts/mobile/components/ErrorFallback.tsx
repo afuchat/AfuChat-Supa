@@ -106,10 +106,6 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
   }, [error]);
 
   const handleRestart = useCallback(async () => {
-    if (Platform.OS === "web") {
-      typeof window !== "undefined" ? window.location.reload() : resetError();
-      return;
-    }
     try { await reloadAppAsync(); } catch { resetError(); }
   }, [resetError]);
 

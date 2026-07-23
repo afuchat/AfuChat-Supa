@@ -1,9 +1,6 @@
-import { Platform } from "react-native";
-
 let _mod: typeof import("expo-haptics") | null | undefined;
 
 function getHaptics() {
-  if (Platform.OS === "web") return null;
   if (_mod === undefined) {
     try {
       _mod = require("expo-haptics");
@@ -29,10 +26,10 @@ export function selectionAsync() {
   if (h) h.selectionAsync();
 }
 
-export const ImpactFeedbackStyle = Platform.OS === "web"
-  ? { Light: "light", Medium: "medium", Heavy: "heavy" }
-  : (() => { try { return require("expo-haptics").ImpactFeedbackStyle; } catch { return { Light: "light", Medium: "medium", Heavy: "heavy" }; } })();
+export const ImpactFeedbackStyle = (() => {
+  try { return require("expo-haptics").ImpactFeedbackStyle; } catch { return { Light: "light", Medium: "medium", Heavy: "heavy" }; }
+})();
 
-export const NotificationFeedbackType = Platform.OS === "web"
-  ? { Success: "success", Warning: "warning", Error: "error" }
-  : (() => { try { return require("expo-haptics").NotificationFeedbackType; } catch { return { Success: "success", Warning: "warning", Error: "error" }; } })();
+export const NotificationFeedbackType = (() => {
+  try { return require("expo-haptics").NotificationFeedbackType; } catch { return { Success: "success", Warning: "warning", Error: "error" }; }
+})();

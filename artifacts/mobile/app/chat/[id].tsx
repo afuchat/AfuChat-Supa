@@ -42,9 +42,7 @@ import * as FileSystem from "expo-file-system";
 // expo-av: lazy-load to avoid "Cannot find native module 'ExponentAV'" on web
 let Audio: typeof import("expo-av").Audio | null = null;
 type AudioRecording = import("expo-av/build/Audio/Recording").Recording;
-if (Platform.OS !== "web") {
-  try { Audio = require("expo-av").Audio; } catch {}
-}
+try { Audio = require("expo-av").Audio; } catch {}
 import VideoPreview from "@/components/ui/VideoPreview";
 import VideoTrimmerModal from "@/components/chat/VideoTrimmerModal";
 import * as Speech from "expo-speech";
@@ -147,7 +145,7 @@ const ReAnimated       = { View: (_ra?.default?.View ?? Animated.View) as any };
 // crash the moment the gesture fires — the compiled worklet tries to call
 // native Reanimated methods on plain React ref stubs.  We gate the
 // GestureDetector mic button on this flag and fall back to a plain Pressable.
-const _reanimatedEnabled = _ra !== null && Platform.OS !== "web";
+const _reanimatedEnabled = _ra !== null;
 
 type Gift = {
   id: string;
@@ -303,7 +301,7 @@ function PremiumBubbleShimmer() {
   useEffect(() => {
     const anim = Animated.loop(
       Animated.sequence([
-        Animated.timing(shimmer, { toValue: 1, duration: 1400, useNativeDriver: Platform.OS !== "web" }),
+        Animated.timing(shimmer, { toValue: 1, duration: 1400, useNativeDriver: true }),
         Animated.delay(3800),
       ])
     );
@@ -396,7 +394,7 @@ function SmartReplyBar({ messages, myId, input, onSend, colors }: {
   const show = replies.length > 0 && !input.trim();
 
   useEffect(() => {
-    Animated.timing(fadeAnim, { toValue: show ? 1 : 0, duration: 180, useNativeDriver: Platform.OS !== "web" }).start();
+    Animated.timing(fadeAnim, { toValue: show ? 1 : 0, duration: 180, useNativeDriver: true }).start();
   }, [show]);
 
   if (!lastOtherMsg) return null;
@@ -448,8 +446,8 @@ function TypingBubble({ names, colors }: { names: string[]; colors: any }) {
       Animated.loop(
         Animated.sequence([
           Animated.delay(delay),
-          Animated.timing(dot, { toValue: -5, duration: 300, useNativeDriver: Platform.OS !== "web" }),
-          Animated.timing(dot, { toValue: 0, duration: 300, useNativeDriver: Platform.OS !== "web" }),
+          Animated.timing(dot, { toValue: -5, duration: 300, useNativeDriver: true }),
+          Animated.timing(dot, { toValue: 0, duration: 300, useNativeDriver: true }),
           Animated.delay(600),
         ])
       );
@@ -494,9 +492,9 @@ function BottomSheet({ visible, onClose, children }: { visible: boolean; onClose
 
   useEffect(() => {
     if (visible) {
-      Animated.spring(translateY, { toValue: 0, useNativeDriver: Platform.OS !== "web", damping: 22, stiffness: 260 }).start();
+      Animated.spring(translateY, { toValue: 0, useNativeDriver: true, damping: 22, stiffness: 260 }).start();
     } else {
-      Animated.timing(translateY, { toValue: screenHeight, duration: 220, useNativeDriver: Platform.OS !== "web" }).start();
+      Animated.timing(translateY, { toValue: screenHeight, duration: 220, useNativeDriver: true }).start();
     }
   }, [visible, screenHeight]);
 
@@ -506,9 +504,9 @@ function BottomSheet({ visible, onClose, children }: { visible: boolean; onClose
       onPanResponderMove: (_, g) => { if (g.dy > 0) translateY.setValue(g.dy); },
       onPanResponderRelease: (_, g) => {
         if (g.dy > 80 || g.vy > 0.4) {
-          Animated.timing(translateY, { toValue: screenHeight, duration: 200, useNativeDriver: Platform.OS !== "web" }).start(() => onClose());
+          Animated.timing(translateY, { toValue: screenHeight, duration: 200, useNativeDriver: true }).start(() => onClose());
         } else {
-          Animated.spring(translateY, { toValue: 0, useNativeDriver: Platform.OS !== "web" }).start();
+          Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start();
         }
       },
     })
@@ -793,9 +791,7 @@ function LensContextCard({ msg, onSuggestionTap }: {
       <View style={{
         backgroundColor: colors.surface, borderRadius: 20, overflow: "hidden",
         borderWidth: 1, borderColor: BRAND_C + "30",
-        ...(Platform.OS !== "web"
-          ? { shadowColor: BRAND_C, shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 4 }
-          : { boxShadow: `0 3px 10px ${BRAND_C}1A` } as any),
+        shadowColor: BRAND_C, shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 4,
       }}>
         {/* Header */}
         <View style={{
@@ -1019,12 +1015,12 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
       },
       onPanResponderRelease: (_, gs) => {
         const triggered = isMe ? gs.dx <= -SWIPE_THRESHOLD : gs.dx >= SWIPE_THRESHOLD;
-        Animated.spring(swipeX, { toValue: 0, tension: 120, friction: 14, useNativeDriver: Platform.OS !== "web" }).start();
+        Animated.spring(swipeX, { toValue: 0, tension: 120, friction: 14, useNativeDriver: true }).start();
         if (triggered) onReply(msg);
         swipeTriggered.current = false;
       },
       onPanResponderTerminate: () => {
-        Animated.spring(swipeX, { toValue: 0, tension: 120, friction: 14, useNativeDriver: Platform.OS !== "web" }).start();
+        Animated.spring(swipeX, { toValue: 0, tension: 120, friction: 14, useNativeDriver: true }).start();
         swipeTriggered.current = false;
       },
     })
@@ -1126,7 +1122,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
 
   const fadeIn = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.timing(fadeIn, { toValue: 1, duration: 180, useNativeDriver: Platform.OS !== "web" }).start();
+    Animated.timing(fadeIn, { toValue: 1, duration: 180, useNativeDriver: true }).start();
   }, []);
 
   if (isRedEnvelope) {
@@ -1874,7 +1870,7 @@ function ChatScreen() {
   // Load chatInfo from local SQLite cache immediately so the header renders
   // without any network delay, even if nav params weren't passed.
   useEffect(() => {
-    if (isDraft || chatInfo || Platform.OS === "web") return;
+    if (isDraft || chatInfo) return;
     getLocalConversation(id).then((local) => {
       if (!local) return;
       setChatInfo((prev) => prev ?? {
@@ -1897,7 +1893,6 @@ function ChatScreen() {
 
 
   useEffect(() => {
-    if (Platform.OS === "web") return;
     // iOS: use Will events for zero-lag animation in sync with the keyboard.
     // Android (pan mode): use Did events; animate layout changes manually.
     const showEvent = "keyboardDidShow";
@@ -1942,7 +1937,7 @@ function ChatScreen() {
       notifPillAnim.setValue(80);
       Animated.spring(notifPillAnim, {
         toValue: 0,
-        useNativeDriver: Platform.OS !== "web",
+        useNativeDriver: true,
         speed: 18,
         bounciness: 5,
       }).start();
@@ -2094,7 +2089,7 @@ function ChatScreen() {
   const [contactSending, setContactSending] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!showAttachPanel || attachTab !== "Contact" || Platform.OS === "web") return;
+    if (!showAttachPanel || attachTab !== "Contact") return;
     if (contactList.length > 0) return; // already loaded
     (async () => {
       setContactsLoading(true);
@@ -2193,8 +2188,8 @@ function ChatScreen() {
     const chatId = isDraft ? realChatId : id;
     if (!chatId || !user) return;
 
-    // ── Native-only: load from local SQLite cache first (instant render, no network) ──
-    if (Platform.OS !== "web") {
+    // ── Load from local SQLite cache first (instant render, no network) ──
+    {
       // getLocalMessages returns oldest-first (ASC). FlatList is inverted so index 0
       // must be the NEWEST message. Reverse to get newest-first.
       const clearedAt = await AsyncStorage.getItem(`chat_cleared_${user.id}_${chatId}`).catch(() => null);
@@ -2254,10 +2249,8 @@ function ChatScreen() {
 
     // Delta sync: only fetch messages NEWER than what's already stored on device.
     // On web: always fetch fresh from the server (no local cache).
-    const newestStored = Platform.OS !== "web" ? await getNewestMessageDate(chatId) : null;
-    const clearedAtServer = Platform.OS !== "web"
-      ? await AsyncStorage.getItem(`chat_cleared_${user.id}_${chatId}`).catch(() => null)
-      : null;
+    const newestStored = await getNewestMessageDate(chatId);
+    const clearedAtServer = await AsyncStorage.getItem(`chat_cleared_${user.id}_${chatId}`).catch(() => null);
     let msgQuery = supabase
       .from("messages")
       .select(`id, chat_id, sender_id, encrypted_content, sent_at, reply_to_message_id, attachment_url, attachment_type, edited_at, profiles!messages_sender_id_fkey(display_name, avatar_url, handle)`)
@@ -2308,8 +2301,8 @@ function ChatScreen() {
         );
       });
 
-      if (Platform.OS !== "web") saveMessages(chatId, mapped).catch(() => {});
-      if (Platform.OS !== "web") autoDownloadChatAttachments(mapped, {
+      saveMessages(chatId, mapped).catch(() => {});
+      autoDownloadChatAttachments(mapped, {
         autoDownloadPref: chatPrefs.auto_download ? "wifi_only" : "never",
         saveToGallery: chatPrefs.save_to_gallery,
       });
@@ -2470,7 +2463,6 @@ function ChatScreen() {
 
   useEffect(() => {
     // Native-only: web has no offline queue and no connectivity events to handle.
-    if (Platform.OS === "web") return;
     const unsub = onConnectivityChange(async (online) => {
       setNetworkOnline(online);
       if (online) {
@@ -2866,7 +2858,7 @@ function ChatScreen() {
             const keywords = kf.keyword_alerts_list.split(",").map((k: string) => k.trim().toLowerCase()).filter(Boolean);
             const msgLower = (newMsg.encrypted_content as string).toLowerCase();
             const hit = keywords.find((kw: string) => msgLower.includes(kw));
-            if (hit && Platform.OS !== "web") {
+            if (hit) {
               try {
                 const Notifications = await import("expo-notifications");
                 const { status } = await Notifications.getPermissionsAsync();
@@ -3747,9 +3739,7 @@ function ChatScreen() {
           try {
             const clearedAt = new Date().toISOString();
             await AsyncStorage.setItem(`chat_cleared_${user.id}_${chatId}`, clearedAt);
-            if (Platform.OS !== "web") {
-              await deleteAllLocalMessages(chatId);
-            }
+            await deleteAllLocalMessages(chatId);
             if (chatInfo?.other_id === AFUAI_BOT_ID) {
               try { await supabase.rpc("clear_afuai_chat", { p_chat_id: chatId }); } catch {}
             }
@@ -4377,64 +4367,19 @@ STRICT RULES:
       showAlert("Nothing to export", "This chat has no messages yet.");
       return;
     }
-    if (Platform.OS === "web") {
-      try {
-        let content: string;
-        let filename: string;
-        if (fmt === "json") {
-          content = JSON.stringify(
-            sorted.map((m) => ({
-              sender: m.sender?.display_name,
-              handle: m.sender?.handle,
-              text: m.encrypted_content,
-              time: m.sent_at,
-              attachment: m.attachment_type || null,
-            })),
-            null,
-            2
-          );
-          filename = `chat_export_${Date.now()}.json`;
-        } else {
-          content = sorted
-            .map(
-              (m) =>
-                `[${m.sent_at ? new Date(m.sent_at).toLocaleString() : ""}] ${m.sender?.display_name || "Unknown"}: ${m.encrypted_content || `[${m.attachment_type || "attachment"}]`}`
-            )
-            .join("\n");
-          filename = `chat_export_${Date.now()}.txt`;
-        }
-        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } catch {
-        showAlert("Error", "Could not export chat.");
-      }
-    } else {
-      try {
-        const { Share } = await import("react-native");
-        const lines = sorted
-          .map(
-            (m) =>
-              `[${m.sent_at ? new Date(m.sent_at).toLocaleString() : ""}] ${m.sender?.display_name || "Unknown"}: ${m.encrypted_content || `[${m.attachment_type || "attachment"}]`}`
-          )
-          .join("\n");
-        await Share.share({ message: lines, title: `Chat with ${headerTitle}` });
-      } catch {}
-    }
+    try {
+      const { Share } = await import("react-native");
+      const lines = sorted
+        .map(
+          (m) =>
+            `[${m.sent_at ? new Date(m.sent_at).toLocaleString() : ""}] ${m.sender?.display_name || "Unknown"}: ${m.encrypted_content || `[${m.attachment_type || "attachment"}]`}`
+        )
+        .join("\n");
+      await Share.share({ message: lines, title: `Chat with ${headerTitle}` });
+    } catch {}
   }
 
   async function scheduleReminder(msg: Message, secondsFromNow: number) {
-    if (Platform.OS === "web") {
-      showAlert("Not supported", "Message reminders are only available on mobile.");
-      setReminderMsg(null);
-      return;
-    }
     try {
       const Notifications = await import("expo-notifications");
       const { status } = await Notifications.getPermissionsAsync();
@@ -5092,7 +5037,7 @@ STRICT RULES:
       ));
 
       // Delete the DocumentPicker temp copy from cacheDirectory now that upload is done
-      if (Platform.OS !== "web" && uri) {
+      if (uri) {
         const cacheDir = (FileSystem as any).cacheDirectory ?? "";
         if (cacheDir && uri.startsWith(cacheDir)) {
           FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
@@ -5376,47 +5321,22 @@ STRICT RULES:
     directionLock.value = "none";
 
     if (capturedDuration < 1) {
-      if (Platform.OS === "web") {
-        try { webMediaRecorderRef.current?.stop(); } catch (_) {}
-        webStreamRef.current?.getTracks().forEach((t) => t.stop());
-        webMediaRecorderRef.current = null;
-        webStreamRef.current = null;
-        webChunksRef.current = [];
-      } else {
-        try {
-          await recorderRef.current?.stopAndUnloadAsync();
-        } catch (_) {}
-        recorderRef.current = null;
-      }
+      try {
+        await recorderRef.current?.stopAndUnloadAsync();
+      } catch (_) {}
+      recorderRef.current = null;
       recordingActiveRef.current = false;
       return;
     }
 
     try {
       let uri: string | null = null;
-      if (Platform.OS === "web") {
-        uri = await new Promise<string | null>((resolve) => {
-          const recorder = webMediaRecorderRef.current;
-          if (!recorder) { resolve(null); return; }
-          recorder.onstop = () => {
-            const mimeType = recorder.mimeType || "audio/webm";
-            const blob = new Blob(webChunksRef.current, { type: mimeType });
-            resolve(URL.createObjectURL(blob));
-          };
-          recorder.stop();
-        });
-        webStreamRef.current?.getTracks().forEach((t) => t.stop());
-        webStreamRef.current = null;
-        webMediaRecorderRef.current = null;
-        webChunksRef.current = [];
-      } else {
-        await recorderRef.current?.stopAndUnloadAsync();
-        uri = recorderRef.current?.getURI() ?? null;
-        recorderRef.current = null;
-        // Restore audio session to playback mode so sound effects and video
-        // audio work normally after the voice message is sent.
-        Audio?.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: false }).catch(() => {});
-      }
+      await recorderRef.current?.stopAndUnloadAsync();
+      uri = recorderRef.current?.getURI() ?? null;
+      recorderRef.current = null;
+      // Restore audio session to playback mode so sound effects and video
+      // audio work normally after the voice message is sent.
+      Audio?.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: false }).catch(() => {});
       recordingActiveRef.current = false;
 
       if (!uri || !user) return;
@@ -5445,8 +5365,8 @@ STRICT RULES:
       setMessages((prev) => [optimisticMsg, ...prev]);
       setSending(true);
 
-      const ext = Platform.OS === "web" ? "webm" : "m4a";
-      const voiceMime = Platform.OS === "web" ? "audio/webm" : "audio/mp4";
+      const ext = "m4a";
+      const voiceMime = "audio/mp4";
       const { publicUrl, error: uploadErr } = await uploadChatMedia(
         "voice-messages",
         activeChatId,
@@ -5474,7 +5394,7 @@ STRICT RULES:
       loadMessages();
       setSending(false);
       // Delete the local recording from cacheDirectory now that upload is complete
-      if (Platform.OS !== "web" && uri) {
+      if (uri) {
         FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
       }
     } catch (err: any) {
@@ -5506,25 +5426,17 @@ STRICT RULES:
     slideY.value = 0;
     directionLock.value = "none";
     if (recordingActiveRef.current) {
-      if (Platform.OS === "web") {
-        try { webMediaRecorderRef.current?.stop(); } catch (_) {}
-        webStreamRef.current?.getTracks().forEach((t) => t.stop());
-        webMediaRecorderRef.current = null;
-        webStreamRef.current = null;
-        webChunksRef.current = [];
-      } else {
-        try {
-          const cancelUri = recorderRef.current?.getURI();
-          await recorderRef.current?.stopAndUnloadAsync();
-          // Delete the discarded recording file from cacheDirectory immediately
-          if (cancelUri) {
-            FileSystem.deleteAsync(cancelUri, { idempotent: true }).catch(() => {});
-          }
-        } catch (_) {}
-        recorderRef.current = null;
-        // Restore audio session to playback mode after cancellation.
-        Audio?.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: false }).catch(() => {});
-      }
+      try {
+        const cancelUri = recorderRef.current?.getURI();
+        await recorderRef.current?.stopAndUnloadAsync();
+        // Delete the discarded recording file from cacheDirectory immediately
+        if (cancelUri) {
+          FileSystem.deleteAsync(cancelUri, { idempotent: true }).catch(() => {});
+        }
+      } catch (_) {}
+      recorderRef.current = null;
+      // Restore audio session to playback mode after cancellation.
+      Audio?.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: false }).catch(() => {});
       recordingActiveRef.current = false;
     }
   }
@@ -5785,7 +5697,7 @@ STRICT RULES:
       Animated.timing(scrollBtnOpacity, {
         toValue: shouldShow ? 1 : 0,
         duration: 200,
-        useNativeDriver: Platform.OS !== "web",
+        useNativeDriver: true,
       }).start();
       if (!shouldShow) setNewMsgCount(0);
     }
@@ -5808,7 +5720,7 @@ STRICT RULES:
   // Load phone-book name once we know who the other person is.
   useEffect(() => {
     const otherId = chatInfo?.other_id;
-    if (!otherId || chatInfo?.is_group || chatInfo?.is_channel || Platform.OS === "web") return;
+    if (!otherId || chatInfo?.is_group || chatInfo?.is_channel) return;
     getPhonebookName(otherId).then(setPhonebookName).catch(() => {});
   }, [chatInfo?.other_id, chatInfo?.is_group, chatInfo?.is_channel]);
 
@@ -6015,7 +5927,7 @@ STRICT RULES:
     <ChatFontSizeCtx.Provider value={effectiveChatFontSize}>
     <View style={[st.root, { backgroundColor: chatAppearance?.bgColor ?? colors.background }]}>
       <WallpaperOverlay wallpaper={chatAppearance?.wallpaper} dark={isDark} />
-      {Platform.OS !== "web" && <OfflineBanner />}
+      {<OfflineBanner />}
       <View style={[st.header, { backgroundColor: colors.surface, paddingTop: insets.top + 4, borderBottomColor: colors.border }]}>
         {(
           <TouchableOpacity onPress={() => router.back()} style={st.backBtn} hitSlop={12}>
@@ -6156,7 +6068,7 @@ STRICT RULES:
               <Ionicons name="chatbubble-outline" size={13} color="#fff" />
               <Text style={st.strangerBtnText}>Accept & Reply</Text>
             </TouchableOpacity>
-            {Platform.OS !== "web" && (
+            {(
               <TouchableOpacity
                 style={[st.strangerBtnOutline, { borderColor: colors.border }]}
                 onPress={async () => {
@@ -6635,7 +6547,7 @@ STRICT RULES:
                     <View style={isRecording && !recLocked ? st.recMicWrap : undefined}>
                       {_reanimatedEnabled ? (
                         <GestureDetector gesture={micGesture}>
-                          <View style={isRecording && !recLocked ? [st.recMicBtn, { backgroundColor: BRAND, ...(Platform.OS !== "web" ? { shadowColor: BRAND } : {}) }] : [st.sendBtn, { backgroundColor: BRAND }]}>
+                          <View style={isRecording && !recLocked ? [st.recMicBtn, { backgroundColor: BRAND, ...{ shadowColor: BRAND } }] : [st.sendBtn, { backgroundColor: BRAND }]}>
                             <Ionicons name="mic" size={isRecording ? 24 : 20} color="#fff" />
                           </View>
                         </GestureDetector>
@@ -6709,78 +6621,6 @@ STRICT RULES:
 
           const renderContent = () => {
             if (attachTab === "Gallery") {
-              // ── Web: use SDK pickers, no custom MediaLibrary grid ──────────
-              if (Platform.OS === "web") {
-                const WEB_PICKS = [
-                  {
-                    label: "Photo / Video",
-                    icon: "images-outline" as const,
-                    color: "#007AFF",
-                    onPress: async () => {
-                      setShowAttachPanel(false);
-                      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-                      if (!perm.granted) return;
-                      const res = await ImagePicker.launchImageLibraryAsync({
-                        mediaTypes: ["images", "videos"] as any,
-                        allowsEditing: false,
-                        quality: 0.85,
-                      });
-                      if (!res.canceled && res.assets?.[0]) {
-                        const a = res.assets[0];
-                        setAttachmentPreview({ uri: a.uri, type: a.type === "video" ? "video" : "image" });
-                      }
-                    },
-                  },
-                  {
-                    label: "Document",
-                    icon: "document-text-outline" as const,
-                    color: "#3B82F6",
-                    onPress: async () => {
-                      setShowAttachPanel(false);
-                      try {
-                        const res = await DocumentPicker.getDocumentAsync({ type: "*/*", copyToCacheDirectory: true });
-                        if (!res.canceled && res.assets?.[0]) {
-                          const d = res.assets[0];
-                          setAttachmentPreview({ uri: d.uri, type: "file", name: d.name });
-                        }
-                      } catch { /* ignore */ }
-                    },
-                  },
-                  {
-                    label: "Audio File",
-                    icon: "musical-notes-outline" as const,
-                    color: "#10B981",
-                    onPress: async () => {
-                      setShowAttachPanel(false);
-                      try {
-                        const res = await DocumentPicker.getDocumentAsync({ type: "audio/*", copyToCacheDirectory: true });
-                        if (!res.canceled && res.assets?.[0]) {
-                          const d = res.assets[0];
-                          setAttachmentPreview({ uri: d.uri, type: "file", name: d.name });
-                        }
-                      } catch { /* ignore */ }
-                    },
-                  },
-                ];
-                return (
-                  <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 20, paddingTop: 20, gap: 16, justifyContent: "center" }}>
-                    {WEB_PICKS.map((pick) => (
-                      <TouchableOpacity
-                        key={pick.label}
-                        activeOpacity={0.75}
-                        onPress={pick.onPress}
-                        style={{ width: (SW2 - 80) / 3, alignItems: "center", paddingVertical: 18, borderRadius: 18, backgroundColor: colors.inputBg, gap: 10 }}
-                      >
-                        <View style={{ width: 54, height: 54, borderRadius: 18, backgroundColor: pick.color + "20", alignItems: "center", justifyContent: "center" }}>
-                          <Ionicons name={pick.icon} size={26} color={pick.color} />
-                        </View>
-                        <Text style={{ fontSize: 12, fontFamily: "Inter_600SemiBold", color: colors.text, textAlign: "center" }}>{pick.label}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                );
-              }
-
               // Native: clean picker cards — opens the device's native gallery/file picker
               const NATIVE_PICKS = [
                 {
@@ -7313,7 +7153,7 @@ STRICT RULES:
         })()}
 
         {/* Save to Phone */}
-        {showReactions?.attachment_url && showReactions.attachment_type !== "video" && Platform.OS !== "web" && (
+        {showReactions?.attachment_url && showReactions.attachment_type !== "video" && (
           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) handleSaveToPhone(showReactions); }}>
             <Ionicons name="download-outline" size={24} color="#111" style={st.reactRowIcon} />
             <Text style={st.reactRowLabel}>Save to Phone</Text>

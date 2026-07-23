@@ -66,8 +66,8 @@ function AiTypingIndicator({ colors }: { colors: any }) {
       Animated.loop(
         Animated.sequence([
           Animated.delay(delay),
-          Animated.timing(dot, { toValue: 1, duration: 350, useNativeDriver: Platform.OS !== "web" }),
-          Animated.timing(dot, { toValue: 0.3, duration: 350, useNativeDriver: Platform.OS !== "web" }),
+          Animated.timing(dot, { toValue: 1, duration: 350, useNativeDriver: true }),
+          Animated.timing(dot, { toValue: 0.3, duration: 350, useNativeDriver: true }),
         ])
       );
 

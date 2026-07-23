@@ -66,7 +66,7 @@ export function GlobalInboxListener() {
     Animated.timing(slideY, {
       toValue: -(BANNER_HEIGHT + 20),
       duration: 220,
-      useNativeDriver: Platform.OS !== "web",
+      useNativeDriver: true,
     }).start(() => setBanner(null));
   }, [slideY]);
 
@@ -77,7 +77,7 @@ export function GlobalInboxListener() {
       slideY.setValue(-(BANNER_HEIGHT + 20));
       Animated.spring(slideY, {
         toValue: 0,
-        useNativeDriver: Platform.OS !== "web",
+        useNativeDriver: true,
         bounciness: 6,
         speed: 18,
       }).start();
@@ -100,7 +100,7 @@ export function GlobalInboxListener() {
         } else {
           Animated.spring(slideY, {
             toValue: 0,
-            useNativeDriver: Platform.OS !== "web",
+            useNativeDriver: true,
             bounciness: 4,
           }).start();
         }

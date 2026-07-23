@@ -51,7 +51,6 @@ async function ensureSound(): Promise<any | null> {
  * rebuilt fresh (the old instance was created under a different session mode).
  */
 export async function resetToPlaybackMode(): Promise<void> {
-  if (Platform.OS === "web") return;
   try {
     const { Audio } = await import("expo-av");
     await Audio.setAudioModeAsync(PLAYBACK_AUDIO_MODE);
@@ -89,7 +88,6 @@ export async function setSoundMode(mode: SoundMode): Promise<void> {
 // ── Playback ──────────────────────────────────────────────────────────
 
 export async function playNotificationSound(): Promise<void> {
-  if (Platform.OS === "web") return;
   try {
     const mode = await getSoundMode();
     if (mode === "silent" || mode === "device") return;
@@ -121,9 +119,7 @@ export async function playNotificationSound(): Promise<void> {
 }
 
 export function preloadNotificationSound(): void {
-  if (Platform.OS !== "web") {
-    ensureSound().catch(() => {});
-  }
+  ensureSound().catch(() => {});
 }
 
 /**

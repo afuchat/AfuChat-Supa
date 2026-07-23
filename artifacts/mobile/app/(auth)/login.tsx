@@ -74,7 +74,7 @@ const inp = StyleSheet.create({
 function GlassModal({ visible, onClose, isDark, children }: { visible: boolean; onClose: () => void; isDark: boolean; children: React.ReactNode }) {
   const opacity = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.timing(opacity, { toValue: visible ? 1 : 0, duration: 220, useNativeDriver: Platform.OS !== "web" }).start();
+    Animated.timing(opacity, { toValue: visible ? 1 : 0, duration: 220, useNativeDriver: true }).start();
   }, [visible]);
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
@@ -242,8 +242,6 @@ export default function SignInScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const { width: SW } = useWindowDimensions();
-  const isWeb = Platform.OS === "web";
-
   useEffect(() => { if (user) router.replace("/(tabs)/chats"); }, [user]);
 
   const [step, setStep] = useState<"landing" | "email">("landing");
@@ -270,7 +268,6 @@ export default function SignInScreen() {
   const [bioLoading, setBioLoading] = useState(false);
 
   useEffect(() => {
-    if (isWeb) return;
     (async () => {
       try {
         const [hw, enrolled] = await Promise.all([
@@ -291,11 +288,11 @@ export default function SignInScreen() {
         setBioStored(!!stored);
       } catch {}
     })();
-  }, [isWeb]);
+  }, []);
 
   // Store refresh token after login for future biometric use
   async function storeSessionForBio(refreshToken: string, email: string) {
-    if (isWeb || !bioAvailable) return;
+    if (!bioAvailable) return;
     try {
       await SecureStore.setItemAsync(BIO_REFRESH_KEY, refreshToken);
       await SecureStore.setItemAsync(BIO_EMAIL_KEY, email);
@@ -354,16 +351,16 @@ export default function SignInScreen() {
   function goToEmail() {
     setStep("email");
     Animated.parallel([
-      Animated.spring(landingX, { toValue: -SW, useNativeDriver: !isWeb, tension: 200, friction: 28 }),
-      Animated.spring(formX, { toValue: 0, useNativeDriver: !isWeb, tension: 200, friction: 28 }),
+      Animated.spring(landingX, { toValue: -SW, useNativeDriver: true, tension: 200, friction: 28 }),
+      Animated.spring(formX, { toValue: 0, useNativeDriver: true, tension: 200, friction: 28 }),
     ]).start();
   }
 
   function goToLanding() {
     setStep("landing");
     Animated.parallel([
-      Animated.spring(landingX, { toValue: 0, useNativeDriver: !isWeb, tension: 200, friction: 28 }),
-      Animated.spring(formX, { toValue: SW, useNativeDriver: !isWeb, tension: 200, friction: 28 }),
+      Animated.spring(landingX, { toValue: 0, useNativeDriver: true, tension: 200, friction: 28 }),
+      Animated.spring(formX, { toValue: SW, useNativeDriver: true, tension: 200, friction: 28 }),
     ]).start();
   }
 
@@ -535,12 +532,12 @@ export default function SignInScreen() {
   }
 
   function handleGoogle() {
-    Platform.OS === "web" ? webGoogleSignIn() : nativeGoogleSignIn();
+    nativeGoogleSignIn();
   }
 
   const idType = detectType(identifier);
   const idIcon = idType === "email" ? "mail-outline" : idType === "phone" ? "call-outline" : "at-outline";
-  const showBioBtn = !isWeb && bioAvailable && bioStored;
+  const showBioBtn = bioAvailable && bioStored;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, overflow: "hidden" }}>

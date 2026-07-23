@@ -56,8 +56,8 @@ export default function ReportUserScreen() {
 
   function animateToStep(next: 1 | 2 | 3) {
     Animated.sequence([
-      Animated.timing(slideAnim, { toValue: -30, duration: 120, useNativeDriver: Platform.OS !== "web" }),
-      Animated.timing(slideAnim, { toValue: 0,   duration: 180, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(slideAnim, { toValue: -30, duration: 120, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0,   duration: 180, useNativeDriver: true }),
     ]).start();
     setStep(next);
   }

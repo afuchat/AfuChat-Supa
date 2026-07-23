@@ -337,7 +337,7 @@ export default function SettingsScreen() {
         </Section>
 
         {/* ── Notifications ─────────────────────────────────────────────── */}
-        {Platform.OS !== "web" && (
+        {(
           <Section title="NOTIFICATIONS" colors={colors}>
             <Row
               icon="notifications-outline"
@@ -419,7 +419,7 @@ export default function SettingsScreen() {
             colors={colors}
             accent={accent}
           />
-          {Platform.OS !== "web" && (
+          {(
             <Row
               icon="download-outline"
               label="Offline Videos"
@@ -429,7 +429,7 @@ export default function SettingsScreen() {
               accent={accent}
             />
           )}
-          {Platform.OS !== "web" && (
+          {(
             <Row
               icon="eye-off-outline"
               label="Not Interested"

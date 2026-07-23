@@ -1,5 +1,4 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
 import { storage, KEYS } from "./storage/mmkv";
 
 const FEED_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -37,44 +36,28 @@ function initNetInfo() {
   if (_netInfoInitialized) return;
   _netInfoInitialized = true;
 
-  if (Platform.OS === "web") {
-    // navigator.onLine is unreliable at startup — it reports false in sandboxed
-    // iframes (Replit canvas/workspace), headless browsers, and other restricted
-    // contexts even when the network is reachable. We keep the optimistic `true`
-    // default and only update via the browser online/offline events, which are
-    // consistently reliable across all environments.
-    window.addEventListener("online", () => {
-      _isOnline = true;
-      _listeners.forEach((fn) => fn(true));
-    });
-    window.addEventListener("offline", () => {
-      _isOnline = false;
-      _listeners.forEach((fn) => fn(false));
-    });
-  } else {
-    try {
-      const NetInfo = require("@react-native-community/netinfo").default;
+  try {
+    const NetInfo = require("@react-native-community/netinfo").default;
 
-      // Fetch initial connectivity state immediately (async) so the very first
-      // call to isOnline() after boot reflects reality rather than the optimistic
-      // "true" default. This matters on cold start when the phone is offline.
-      NetInfo.fetch().then((state: any) => {
-        const initialOnline = state.isConnected === true && state.isInternetReachable !== false;
-        if (initialOnline !== _isOnline) {
-          _isOnline = initialOnline;
-          _listeners.forEach((fn) => fn(initialOnline));
-        }
-      }).catch(() => {});
+    // Fetch initial connectivity state immediately (async) so the very first
+    // call to isOnline() after boot reflects reality rather than the optimistic
+    // "true" default. This matters on cold start when the phone is offline.
+    NetInfo.fetch().then((state: any) => {
+      const initialOnline = state.isConnected === true && state.isInternetReachable !== false;
+      if (initialOnline !== _isOnline) {
+        _isOnline = initialOnline;
+        _listeners.forEach((fn) => fn(initialOnline));
+      }
+    }).catch(() => {});
 
-      NetInfo.addEventListener((state: any) => {
-        const newOnline = state.isConnected === true && state.isInternetReachable !== false;
-        if (newOnline !== _isOnline) {
-          _isOnline = newOnline;
-          _listeners.forEach((fn) => fn(newOnline));
-        }
-      });
-    } catch {}
-  }
+    NetInfo.addEventListener((state: any) => {
+      const newOnline = state.isConnected === true && state.isInternetReachable !== false;
+      if (newOnline !== _isOnline) {
+        _isOnline = newOnline;
+        _listeners.forEach((fn) => fn(newOnline));
+      }
+    });
+  } catch {}
 }
 
 initNetInfo();

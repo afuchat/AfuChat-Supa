@@ -76,15 +76,13 @@ const INVITE_MSG =
   "Hey! I'm using AfuChat — the social super app for chatting, discovering content, and connecting with people. Join me here: https://afuchat.com";
 
 async function sendInvite(name: string, phone: string) {
-  if (Platform.OS !== "web") {
-    try {
-      const smsUrl = `sms:${phone}?body=${encodeURIComponent(INVITE_MSG)}`;
-      if (await Linking.canOpenURL(smsUrl)) {
-        await Linking.openURL(smsUrl);
-        return;
-      }
-    } catch {}
-  }
+  try {
+    const smsUrl = `sms:${phone}?body=${encodeURIComponent(INVITE_MSG)}`;
+    if (await Linking.canOpenURL(smsUrl)) {
+      await Linking.openURL(smsUrl);
+      return;
+    }
+  } catch {}
   await Share.share({ message: INVITE_MSG, title: "Join AfuChat" });
 }
 
@@ -153,9 +151,7 @@ export default function NewChatScreen() {
   }, [contacts]);
 
   useEffect(() => {
-    if (Platform.OS !== "web") {
-      getAllPhonebookNames().then(setPhonebookNames).catch(() => {});
-    }
+    getAllPhonebookNames().then(setPhonebookNames).catch(() => {});
   }, []);
 
   const loadContacts = useCallback(
@@ -265,7 +261,7 @@ export default function NewChatScreen() {
   // before initialization) and the production bundle crashes with
   // "Cannot access '…' before initialization".
   const loadPhoneContacts = useCallback(async () => {
-    if (Platform.OS === "web" || !Contacts) return;
+    if (!Contacts) return;
     try {
       const { status } = await Contacts.requestPermissionsAsync();
       if (status !== "granted") return;

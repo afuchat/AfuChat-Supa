@@ -17,26 +17,22 @@
 //   The task is inactive in Expo Go — it only fires in development builds and
 //   production builds where native modules are fully available.
 
-import { Platform } from "react-native";
-
 export const CALL_SERVICE_TASK = "AFUCHAT_CALL_SERVICE";
 
-if (Platform.OS !== "web") {
-  try {
-    const TaskManager = require("expo-task-manager");
-    TaskManager.defineTask(CALL_SERVICE_TASK, ({ data, error }: any) => {
-      if (error) {
-        console.warn("[CallService] Background task error:", error.message);
-        return;
-      }
-      const notifData = data?.notification?.request?.content?.data ?? {};
-      if (notifData.type === "missed_call") {
-        // The FCM backend already built and delivered the system tray
-        // notification. No local notification needed — handled by backend.
-        void notifData.callId;
-      }
-    });
-  } catch {
-    // expo-task-manager not available (Expo Go) — silently skip.
-  }
+try {
+  const TaskManager = require("expo-task-manager");
+  TaskManager.defineTask(CALL_SERVICE_TASK, ({ data, error }: any) => {
+    if (error) {
+      console.warn("[CallService] Background task error:", error.message);
+      return;
+    }
+    const notifData = data?.notification?.request?.content?.data ?? {};
+    if (notifData.type === "missed_call") {
+      // The FCM backend already built and delivered the system tray
+      // notification. No local notification needed — handled by backend.
+      void notifData.callId;
+    }
+  });
+} catch {
+  // expo-task-manager not available (Expo Go) — silently skip.
 }

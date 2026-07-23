@@ -1514,7 +1514,7 @@ function TikTokHeader({
 }) {
   const underlineX   = useRef(new Animated.Value(0)).current;
   const tabLayouts   = useRef<{ x: number; w: number }[]>([{ x: 0, w: 0 }, { x: 0, w: 0 }]);
-  const nd           = Platform.OS !== "web";
+  const nd = true;
 
   const TABS: { key: FeedTab; label: string }[] = [
     { key: "following", label: "Following" },

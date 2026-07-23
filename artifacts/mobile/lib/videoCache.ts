@@ -212,7 +212,7 @@ async function dbDeleteAll(): Promise<void> {
  * Returns null if the video hasn't been downloaded yet.
  */
 export async function getCachedVideoUri(url: string): Promise<string | null> {
-  if (Platform.OS === "web" || !url) return null;
+  if (!url) return null;
 
   // 1. Memory map
   if (memoryMap.has(url)) return memoryMap.get(url)!;
@@ -238,7 +238,7 @@ export async function getCachedVideoUri(url: string): Promise<string | null> {
  * of being downloaded, saving significant mobile data.
  */
 export function cacheVideo(url: string): Promise<string | null> {
-  if (Platform.OS === "web" || !url) return Promise.resolve(null);
+  if (!url) return Promise.resolve(null);
   // Never pre-download on cellular — stream only to protect mobile data
   if (isCellular()) return Promise.resolve(null);
   if (memoryMap.has(url)) return Promise.resolve(memoryMap.get(url)!);
@@ -289,7 +289,7 @@ export async function markVideoWatched(
     authorAvatar?: string | null;
   },
 ): Promise<void> {
-  if (Platform.OS === "web" || !url || !postId) return;
+  if (!url || !postId) return;
   if (saveInProgress.has(postId)) return;
   saveInProgress.add(postId);
 
@@ -370,7 +370,6 @@ export async function markVideoWatched(
 
 /** Returns all permanently stored videos, ordered by last-watched newest first. */
 export async function getOfflineVideos(): Promise<OfflineVideoEntry[]> {
-  if (Platform.OS === "web") return [];
   return dbGetAll();
 }
 
@@ -379,14 +378,12 @@ export async function getOfflineVideos(): Promise<OfflineVideoEntry[]> {
  * These are already on-device — no network needed to play them.
  */
 export async function getRecentlyWatchedVideos(hours = 24): Promise<OfflineVideoEntry[]> {
-  if (Platform.OS === "web") return [];
   const since = Date.now() - hours * 60 * 60 * 1000;
   return dbGetRecent(since);
 }
 
 /** Total size and count of permanently stored videos. */
 export async function getOfflineCacheStats(): Promise<{ count: number; bytes: number }> {
-  if (Platform.OS === "web") return { count: 0, bytes: 0 };
   try {
     const db = await getDB();
     const row = await db.getFirstAsync<{ count: number; bytes: number }>(
@@ -400,7 +397,6 @@ export async function getOfflineCacheStats(): Promise<{ count: number; bytes: nu
 
 /** User-initiated: delete ALL stored videos from device. */
 export async function clearAllOfflineVideos(): Promise<void> {
-  if (Platform.OS === "web") return;
   const entries = await dbGetAll();
   await dbDeleteAll();
   memoryMap.clear();
@@ -415,7 +411,6 @@ export async function clearAllOfflineVideos(): Promise<void> {
 
 /** User-initiated: delete a single video by postId. */
 export async function removeOfflineVideo(postId: string): Promise<void> {
-  if (Platform.OS === "web") return;
   const entry = await dbGetEntry(postId);
   if (!entry) return;
   await dbDeleteEntry(postId);
@@ -434,7 +429,6 @@ export async function clearExpiredOfflineVideos(): Promise<number> {
 
 /** Migrate old AsyncStorage registry entries into SQLite. Safe to call repeatedly. */
 export async function migrateOfflineCacheV2toV3(): Promise<void> {
-  if (Platform.OS === "web") return;
   const KEYS = ["afu_offline_video_registry_v2", "afu_offline_video_registry_v3"];
   for (const key of KEYS) {
     try {

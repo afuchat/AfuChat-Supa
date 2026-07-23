@@ -36,9 +36,6 @@ declare const performance: {
 
 export function AnimationGuardInit(): null {
   useEffect(() => {
-    // Guard is native-only — web uses no-op animation shims.
-    if (Platform.OS === "web") return;
-
     initAnimationGuard();
 
     // Android-specific heap pressure watcher.

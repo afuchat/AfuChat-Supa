@@ -222,7 +222,6 @@ function VideoThumbnailImage({ videoUrl, imageUrl, style }: { videoUrl: string; 
   const [tried, setTried] = useState(false);
 
   useEffect(() => {
-    if (Platform.OS === "web") return;
     if (thumbUri || tried) return;
     setTried(true);
     if (thumbCache.has(videoUrl)) {
@@ -1778,9 +1777,7 @@ export default function SearchScreen() {
           />
           {query.length > 0
             ? <TouchableOpacity onPress={clearSearch} hitSlop={8}><Ionicons name="close-circle" size={17} color={colors.textMuted} /></TouchableOpacity>
-            : Platform.OS === "web"
-              ? <TouchableOpacity hitSlop={8}><Ionicons name="mic-outline" size={17} color={colors.textMuted} /></TouchableOpacity>
-              : null}
+            : null}
         </View>
 
         {/* Inline search suggestions — appear while typing, before submitting */}

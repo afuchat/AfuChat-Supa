@@ -33,9 +33,7 @@ export function ProfileNotFoundView({
 
   function goBack() {
     if (onBack) { onBack(); return; }
-    if (Platform.OS === "web" && typeof window !== "undefined") {
-      window.history.back();
-    } else if (router.canGoBack()) {
+    if (router.canGoBack()) {
       router.back();
     } else {
       router.replace("/(tabs)/discover" as any);
@@ -91,9 +89,7 @@ export default function ProfileNotFoundScreen() {
         <TouchableOpacity
           style={styles.backBtn}
           onPress={() => {
-            if (Platform.OS === "web" && typeof window !== "undefined") {
-              window.history.back();
-            } else if (router.canGoBack()) {
+            if (router.canGoBack()) {
               router.back();
             } else {
               router.replace("/(tabs)/discover" as any);

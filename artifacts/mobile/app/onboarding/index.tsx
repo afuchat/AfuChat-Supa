@@ -307,25 +307,13 @@ export default function OnboardingScreen() {
         if (pickByCode(json?.[field])) return;
       } catch { /* try next */ }
     }
-    if (Platform.OS === "web") {
-      try {
-        const langs: string[] = (navigator as any)?.languages?.length
-          ? (navigator as any).languages : [navigator.language];
-        for (const lang of langs) {
-          const region = lang?.split("-")[1];
-          if (pickByCode(region)) return;
-        }
-      } catch { /* ignore */ }
-    }
-    if (Platform.OS !== "web") {
-      try {
-        const { status } = await Location.getForegroundPermissionsAsync();
-        if (status !== "granted") return;
-        const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
-        const [geo]    = await Location.reverseGeocodeAsync({ latitude: location.coords.latitude, longitude: location.coords.longitude });
-        pickByCode(geo?.isoCountryCode);
-      } catch { /* ignore */ }
-    }
+    try {
+      const { status } = await Location.getForegroundPermissionsAsync();
+      if (status !== "granted") return;
+      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
+      const [geo]    = await Location.reverseGeocodeAsync({ latitude: location.coords.latitude, longitude: location.coords.longitude });
+      pickByCode(geo?.isoCountryCode);
+    } catch { /* ignore */ }
   }
 
   // ── Phone helpers (unchanged) ────────────────────────────────────────────────

@@ -330,10 +330,6 @@ export default function ContactScreen() {
 
   // ── Add to device contacts ────────────────────────────────────────────────
   const handleAddToContacts = useCallback(async () => {
-    if (Platform.OS === "web") {
-      showToast("Save contacts is not supported in the browser", { type: "info" });
-      return;
-    }
     try {
       const Contacts = require("expo-contacts");
       const { status } = await Contacts.requestPermissionsAsync();

@@ -360,8 +360,8 @@ function AchievementBadge({ achievement, onPress }: { achievement: Achievement; 
       style={[badge.wrap, { width: SIZE }]}
       onPress={onPress}
       activeOpacity={0.85}
-      onPressIn={() => Animated.spring(scaleAnim, { toValue: 0.93, useNativeDriver: Platform.OS !== "web", speed: 60, bounciness: 0 }).start()}
-      onPressOut={() => Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: Platform.OS !== "web", speed: 40, bounciness: 6 }).start()}
+      onPressIn={() => Animated.spring(scaleAnim, { toValue: 0.93, useNativeDriver: true, speed: 60, bounciness: 0 }).start()}
+      onPressOut={() => Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 6 }).start()}
     >
       <Animated.View style={{ transform: [{ scale: scaleAnim }], alignItems: "center" }}>
         {/* Icon container */}
@@ -434,7 +434,7 @@ function DetailModal({ achievement, onClose }: { achievement: Achievement | null
   const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(opacity, { toValue: achievement ? 1 : 0, duration: 180, useNativeDriver: Platform.OS !== "web" }).start();
+    Animated.timing(opacity, { toValue: achievement ? 1 : 0, duration: 180, useNativeDriver: true }).start();
   }, [achievement]);
 
   if (!achievement) return null;

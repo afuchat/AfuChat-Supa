@@ -117,9 +117,7 @@ export default function ChatDangerScreen() {
             try {
               const clearedAt = new Date().toISOString();
               await AsyncStorage.setItem(`chat_cleared_${user.id}_${id}`, clearedAt);
-              if (Platform.OS !== "web") {
-                await deleteAllLocalMessages(id);
-              }
+              await deleteAllLocalMessages(id);
               showAlert("Chat Cleared", "All messages have been removed for you.");
             } catch {
               showAlert("Error", "Could not clear chat. Please try again.");

@@ -40,12 +40,12 @@ function ShieldHero({ enrolled }: { enrolled: boolean }) {
 
   useEffect(() => {
     Animated.loop(
-      Animated.timing(spin, { toValue: 1, duration: 8000, easing: Easing.linear, useNativeDriver: Platform.OS !== "web" })
+      Animated.timing(spin, { toValue: 1, duration: 8000, easing: Easing.linear, useNativeDriver: true })
     ).start();
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.08, duration: 1800, useNativeDriver: Platform.OS !== "web" }),
-        Animated.timing(pulse, { toValue: 1,    duration: 1800, useNativeDriver: Platform.OS !== "web" }),
+        Animated.timing(pulse, { toValue: 1.08, duration: 1800, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1,    duration: 1800, useNativeDriver: true }),
       ])
     ).start();
   }, []);
@@ -166,8 +166,8 @@ export default function TwoFactorScreen() {
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.03, duration: 900, useNativeDriver: Platform.OS !== "web" }),
-        Animated.timing(pulseAnim, { toValue: 1,    duration: 900, useNativeDriver: Platform.OS !== "web" }),
+        Animated.timing(pulseAnim, { toValue: 1.03, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1,    duration: 900, useNativeDriver: true }),
       ])
     );
     loop.start();

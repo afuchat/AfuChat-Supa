@@ -48,16 +48,14 @@ const INVITE_MSG =
   "Hey! I'm using AfuChat — the social super app for chatting, discovering content, and connecting with people. Join me here: https://afuchat.com";
 
 async function sendInvite(name: string, phone: string) {
-  if (Platform.OS !== "web") {
-    try {
-      const smsUrl = `sms:${phone}?body=${encodeURIComponent(INVITE_MSG)}`;
-      const canOpen = await Linking.canOpenURL(smsUrl);
-      if (canOpen) {
-        await Linking.openURL(smsUrl);
-        return;
-      }
-    } catch {}
-  }
+  try {
+    const smsUrl = `sms:${phone}?body=${encodeURIComponent(INVITE_MSG)}`;
+    const canOpen = await Linking.canOpenURL(smsUrl);
+    if (canOpen) {
+      await Linking.openURL(smsUrl);
+      return;
+    }
+  } catch {}
   await Share.share({ message: INVITE_MSG, title: "Join AfuChat" });
 }
 
@@ -140,15 +138,6 @@ export default function PhoneContactsScreen() {
   }, [user]);
 
   useEffect(() => { findContacts(); }, [findContacts]);
-
-  if (Platform.OS === "web") {
-    return (
-      <MobileOnlyView
-        title="Phone Contacts"
-        description="Finding your phone contacts requires access to your native contacts list. This feature is only available on the AfuChat mobile app."
-      />
-    );
-  }
 
   return (
     <View style={[styles.root, { backgroundColor: colors.backgroundSecondary, paddingTop: insets.top }]}>

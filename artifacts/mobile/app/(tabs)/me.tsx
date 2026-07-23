@@ -62,8 +62,8 @@ function MenuItem({ icon, iconColor, label, value, badge, badgeColor, onPress, s
         <TouchableOpacity
           style={mi.row}
           onPress={() => { Haptics.selectionAsync(); onPress(); }}
-          onPressIn={() => Animated.spring(scale, { toValue: 0.97, useNativeDriver: Platform.OS !== "web", speed: 60, bounciness: 0 }).start()}
-          onPressOut={() => Animated.spring(scale, { toValue: 1, useNativeDriver: Platform.OS !== "web", speed: 40, bounciness: 4 }).start()}
+          onPressIn={() => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, speed: 60, bounciness: 0 }).start()}
+          onPressOut={() => Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 4 }).start()}
           activeOpacity={1}
         >
           <View style={[mi.iconWrap, { backgroundColor: iconColor + "18" }]}>

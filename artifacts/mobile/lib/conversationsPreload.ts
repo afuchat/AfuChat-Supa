@@ -24,7 +24,6 @@ let _promise: Promise<void> | null = null;
  * Returns immediately; loading happens in the background.
  */
 export function preloadConversations(): void {
-  if (Platform.OS === "web") return;
   if (_cache !== null || _promise !== null) return;
   _promise = getLocalConversations()
     .then((rows) => {

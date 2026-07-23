@@ -11,9 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 // expo-av: lazy-load to avoid "Cannot find native module 'ExponentAV'" on web
 let Audio: typeof import("expo-av").Audio | null = null;
-if (Platform.OS !== "web") {
-  try { Audio = require("expo-av").Audio; } catch {}
-}
+try { Audio = require("expo-av").Audio; } catch {}
 type AVPlaybackStatus = import("expo-av").AVPlaybackStatus;
 type AudioSound = import("expo-av/build/Audio/Sound").Sound;
 
@@ -90,13 +88,11 @@ function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor }: AudioPlaye
     async function loadAudio() {
       try {
         if (!Audio) return;
-        if (Platform.OS !== "web") {
-          await Audio.setAudioModeAsync({
-            playsInSilentModeIOS: true,
-            shouldDuckAndroid: false,
-            staysActiveInBackground: false,
-          }).then(() => {}, () => {});
-        }
+        await Audio.setAudioModeAsync({
+          playsInSilentModeIOS: true,
+          shouldDuckAndroid: false,
+          staysActiveInBackground: false,
+        }).then(() => {}, () => {});
 
         const { sound } = await Audio.Sound.createAsync(
           { uri },

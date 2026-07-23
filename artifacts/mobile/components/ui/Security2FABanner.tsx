@@ -30,15 +30,15 @@ export function Security2FABanner({ userId }: Props) {
   const show = useCallback(() => {
     setVisible(true);
     Animated.parallel([
-      Animated.spring(slideY, { toValue: 0, useNativeDriver: Platform.OS !== "web", damping: 18, stiffness: 200 }),
-      Animated.timing(opacity, { toValue: 1, duration: 220, useNativeDriver: Platform.OS !== "web" }),
+      Animated.spring(slideY, { toValue: 0, useNativeDriver: true, damping: 18, stiffness: 200 }),
+      Animated.timing(opacity, { toValue: 1, duration: 220, useNativeDriver: true }),
     ]).start();
   }, [slideY, opacity]);
 
   const hide = useCallback(() => {
     Animated.parallel([
-      Animated.timing(slideY, { toValue: -80, duration: 200, useNativeDriver: Platform.OS !== "web" }),
-      Animated.timing(opacity, { toValue: 0, duration: 180, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(slideY, { toValue: -80, duration: 200, useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 0, duration: 180, useNativeDriver: true }),
     ]).start(() => setVisible(false));
   }, [slideY, opacity]);
 

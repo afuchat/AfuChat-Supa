@@ -145,7 +145,7 @@ export default function DigitalIdScreen() {
       toValue: next,
       duration: 600,
       easing: Easing.out(Easing.cubic),
-      useNativeDriver: Platform.OS !== "web",
+      useNativeDriver: true,
     }).start();
     setShowBack(!showBack);
   }
@@ -278,7 +278,7 @@ function CardStrip({ primary, secondary, h = 8 }: { primary: string; secondary: 
 }
 
 function SecurityPattern({ w, h, color }: { w: number; h: number; color: string }) {
-  if (Platform.OS !== "web") return null;
+  return null;
   const lines: { x1: number; y1: number; x2: number; y2: number }[] = [];
   const step = 14;
   for (let i = -h; i < w + h; i += step) {
@@ -330,9 +330,9 @@ function Chip({ size = 32, primary }: { size?: number; primary: string }) {
 }
 
 function HoloStrip({ w, primary }: { w: number; primary: string }) {
-  if (Platform.OS !== "web") {
-    return <View style={{ width: w, height: 24, backgroundColor: primary + "22" }} />;
-  }
+  return <View style={{ width: w, height: 24, backgroundColor: primary + "22" }} />;
+}
+function _HoloStripWebUnused({ w, primary }: { w: number; primary: string }) {
   return (
     <View style={{ width: w, height: 22, overflow: "hidden" }}>
       <svg width={w} height={22} style={{ position: "absolute", top: 0, left: 0 } as any}>

@@ -35,9 +35,7 @@ import { Ionicons } from "@expo/vector-icons";
 let Audio: typeof import("expo-av").Audio | null = null;
 type AudioSound = import("expo-av/build/Audio/Sound").Sound;
 type AudioRecording = import("expo-av/build/Audio/Recording").Recording;
-if (Platform.OS !== "web") {
-  try { Audio = require("expo-av").Audio; } catch {}
-}
+try { Audio = require("expo-av").Audio; } catch {}
 import * as ImagePicker from "expo-image-picker";
 
 import { supabase } from "@/lib/supabase";
@@ -654,7 +652,6 @@ export function VideoCommentsSheet({
   const sendScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    if (Platform.OS === "web") return;
     // iOS fires Will* events with exact keyboard animation duration for perfect sync.
     // Android fires Did* events — we use a fixed 220ms curve that matches the system.
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
@@ -787,10 +784,6 @@ export function VideoCommentsSheet({
   }
 
   async function startRecording() {
-    if (Platform.OS === "web") {
-      showAlert("Not supported", "Voice recording is not available on web.");
-      return;
-    }
     if (!Audio) {
       showAlert("Not supported", "Audio recording is not available in this environment.");
       return;
@@ -854,12 +847,10 @@ export function VideoCommentsSheet({
   }
 
   async function pickImage() {
-    if (Platform.OS !== "web") {
-      const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!granted) {
-        showAlert("Photos access needed", "Please enable photo library access in Settings.");
-        return;
-      }
+    const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!granted) {
+      showAlert("Photos access needed", "Please enable photo library access in Settings.");
+      return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],

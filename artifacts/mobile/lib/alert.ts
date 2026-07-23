@@ -1,4 +1,4 @@
-import { Alert, Platform } from "react-native";
+import { Alert } from "react-native";
 import { showToast as _showToast } from "./toast";
 
 export type AlertButton = {
@@ -35,70 +35,22 @@ export function showAlert(
   message?: string,
   buttons?: AlertButton[],
 ) {
-  // Always prefer the custom AlertModal — it gives an iOS-style appearance on
-  // every platform (Android, iOS, and web).
+  // Always prefer the custom AlertModal — gives a consistent appearance across platforms.
   if (_listener) {
     _listener({ visible: true, title, message, buttons });
     return;
   }
 
   // Fallback: AlertModal not yet registered (very early startup edge case).
-  if (Platform.OS !== "web") {
-    const nativeButtons =
-      buttons && buttons.length > 0
-        ? buttons.map((b) => ({
-            text: b.text,
-            style: b.style,
-            onPress: b.onPress,
-          }))
-        : [{ text: "OK" }];
-    Alert.alert(title || "", message || "", nativeButtons, { cancelable: true });
-    return;
-  }
-
-  // Web last-resort.
-  _webFallback(title, message, buttons);
-}
-
-function _webFallback(
-  title: string,
-  message?: string,
-  buttons?: AlertButton[],
-) {
-  const msg = message ? `${title}\n${message}` : title;
-
-  if (!buttons || buttons.length === 0) {
-    window.alert(msg);
-    return;
-  }
-
-  if (buttons.length === 1) {
-    window.alert(msg);
-    buttons[0].onPress?.();
-    return;
-  }
-
-  const cancelBtn = buttons.find((b) => b.style === "cancel");
-  const actionBtns = buttons.filter((b) => b.style !== "cancel");
-
-  if (actionBtns.length === 1) {
-    const result = window.confirm(msg);
-    if (result) actionBtns[0].onPress?.();
-    else cancelBtn?.onPress?.();
-    return;
-  }
-
-  const choices = actionBtns.map((b, i) => `${i + 1}. ${b.text}`).join("\n");
-  const input = window.prompt(
-    `${msg}\n\n${choices}\n\nEnter a number (or cancel):`,
-  );
-  if (input === null || input.trim() === "") {
-    cancelBtn?.onPress?.();
-    return;
-  }
-  const idx = parseInt(input.trim(), 10) - 1;
-  if (idx >= 0 && idx < actionBtns.length) actionBtns[idx].onPress?.();
-  else cancelBtn?.onPress?.();
+  const nativeButtons =
+    buttons && buttons.length > 0
+      ? buttons.map((b) => ({
+          text: b.text,
+          style: b.style,
+          onPress: b.onPress,
+        }))
+      : [{ text: "OK" }];
+  Alert.alert(title || "", message || "", nativeButtons, { cancelable: true });
 }
 
 export function confirmAlert(

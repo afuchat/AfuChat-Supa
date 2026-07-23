@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { AppState, Platform } from "react-native";
+import { AppState } from "react-native";
 import { useAuth } from "@/context/AuthContext";
 import {
   registerForPushNotifications,
@@ -15,12 +15,11 @@ export function PushNotificationManager() {
   const lastRegisteredAt = useRef(0);
 
   useEffect(() => {
-    if (Platform.OS === "web") return;
     setupNotificationChannels();
   }, []);
 
   useEffect(() => {
-    if (!user || registered.current || Platform.OS === "web") return;
+    if (!user || registered.current) return;
 
     registered.current = true;
     lastRegisteredAt.current = Date.now();
@@ -35,7 +34,7 @@ export function PushNotificationManager() {
 
   // ── App foreground — clear badge and refresh token ─────────────────
   useEffect(() => {
-    if (Platform.OS === "web" || !user) return;
+    if (!user) return;
 
     const subscription = AppState.addEventListener("change", (state) => {
       if (state === "active") {

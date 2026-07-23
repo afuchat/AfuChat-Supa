@@ -15,7 +15,7 @@ import { onConnectivityChange, isOnline, getCachedShortsTab } from "@/lib/offlin
 import { T } from "@/constants/theme";
 import { impactAsync, ImpactFeedbackStyle } from "@/lib/haptics";
 
-const ND = Platform.OS !== "web";
+const ND = true;
 
 const AUTO_DISMISS_MS = 12000;
 

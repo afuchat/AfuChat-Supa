@@ -30,11 +30,7 @@ function isDismissed(): boolean {
 }
 
 function openTrustpilot() {
-  if (Platform.OS === "web") {
-    if (typeof window !== "undefined") window.open(TRUSTPILOT_URL, "_blank");
-  } else {
-    Linking.openURL(TRUSTPILOT_URL).catch(() => {});
-  }
+  Linking.openURL(TRUSTPILOT_URL).catch(() => {});
 }
 
 // ── Inline card (for Me tab) ──────────────────────────────────────────────────
@@ -125,14 +121,14 @@ export function TrustpilotReviewPrompt() {
       Animated.parallel([
         Animated.spring(slideAnim, {
           toValue: 0,
-          useNativeDriver: Platform.OS !== "web",
+          useNativeDriver: true,
           tension: 80,
           friction: 10,
         }),
         Animated.timing(opacityAnim, {
           toValue: 1,
           duration: 220,
-          useNativeDriver: Platform.OS !== "web",
+          useNativeDriver: true,
         }),
       ]).start();
     }
@@ -148,12 +144,12 @@ export function TrustpilotReviewPrompt() {
       Animated.timing(slideAnim, {
         toValue: 300,
         duration: 220,
-        useNativeDriver: Platform.OS !== "web",
+        useNativeDriver: true,
       }),
       Animated.timing(opacityAnim, {
         toValue: 0,
         duration: 200,
-        useNativeDriver: Platform.OS !== "web",
+        useNativeDriver: true,
       }),
     ]).start(() => setVisible(false));
   }
@@ -162,8 +158,8 @@ export function TrustpilotReviewPrompt() {
     storage.setNumber(STORAGE_KEY, Date.now() + 365 * 24 * 60 * 60 * 1000);
     openTrustpilot();
     Animated.parallel([
-      Animated.timing(slideAnim, { toValue: 300, duration: 220, useNativeDriver: Platform.OS !== "web" }),
-      Animated.timing(opacityAnim, { toValue: 0, duration: 200, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(slideAnim, { toValue: 300, duration: 220, useNativeDriver: true }),
+      Animated.timing(opacityAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
     ]).start(() => setVisible(false));
   }
 

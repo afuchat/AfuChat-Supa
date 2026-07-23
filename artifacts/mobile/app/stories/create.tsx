@@ -195,10 +195,10 @@ export default function CreateStoryScreen() {
   }
 
   function handleSharePressIn() {
-    Animated.spring(shareScale, { toValue: 0.92, useNativeDriver: Platform.OS !== "web", speed: 50, bounciness: 0 }).start();
+    Animated.spring(shareScale, { toValue: 0.92, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
   }
   function handleSharePressOut() {
-    Animated.spring(shareScale, { toValue: 1, useNativeDriver: Platform.OS !== "web", speed: 30, bounciness: 8 }).start();
+    Animated.spring(shareScale, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 8 }).start();
   }
 
   const privacyOption = PRIVACY_OPTIONS.find((p) => p.id === privacy) || PRIVACY_OPTIONS[0];

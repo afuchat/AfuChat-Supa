@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-const ND = Platform.OS !== "web";
+const ND = true;
 import {
   registerAlertListener,
   unregisterAlertListener,

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, Platform, StyleSheet, View, ViewStyle } from "react-native";
-const ND = Platform.OS !== "web";
+const ND = true;
 import { useTheme } from "../../hooks/useTheme";
 
 type SkeletonProps = {

@@ -85,7 +85,7 @@ export function getTempFilePath(key: string, ext: string): string {
  * Returns null if the file doesn't exist yet.
  */
 export async function getTempCachedUri(url: string): Promise<string | null> {
-  if (Platform.OS === "web" || !url) return null;
+  if (!url) return null;
 
   // 1. Memory map (fastest)
   if (_mem.has(url)) {
@@ -119,7 +119,7 @@ export async function getTempCachedUri(url: string): Promise<string | null> {
 const _inFlight = new Map<string, Promise<string | null>>();
 
 export function downloadToTemp(url: string, extHint?: string): Promise<string | null> {
-  if (Platform.OS === "web" || !url) return Promise.resolve(null);
+  if (!url) return Promise.resolve(null);
 
   const cached = _mem.get(url);
   if (cached) return Promise.resolve(cached);
@@ -162,7 +162,6 @@ export async function writeTempFile(
   key: string,
   ext: string,
 ): Promise<string | null> {
-  if (Platform.OS === "web") return null;
   try {
     await ensureDir();
     const destPath = getTempFilePath(key, ext);
@@ -187,7 +186,6 @@ export async function writeTempFile(
  * Safe to call repeatedly — already-cached URLs are skipped.
  */
 export function prefetchUrls(urls: string[], extHint?: string): void {
-  if (Platform.OS === "web") return;
   for (const url of urls) {
     if (!url || _mem.has(url)) continue;
     downloadToTemp(url, extHint).catch(() => {});
@@ -203,7 +201,6 @@ export type TempCacheStats = {
 };
 
 export async function getTempCacheStats(): Promise<TempCacheStats> {
-  if (Platform.OS === "web") return { bytes: 0, count: 0, oldFileCount: 0 };
   try {
     await ensureDir();
     const now = Date.now();
@@ -241,7 +238,6 @@ export async function getTempCacheStats(): Promise<TempCacheStats> {
  * Returns the number of files deleted.
  */
 export async function cleanupTempCache(): Promise<number> {
-  if (Platform.OS === "web") return 0;
   try {
     await ensureDir();
     const now = Date.now();
@@ -308,7 +304,6 @@ export async function cleanupTempCache(): Promise<number> {
  * Safe — only deletes cacheDirectory files, never documentDirectory.
  */
 export async function clearTempCache(): Promise<void> {
-  if (Platform.OS === "web") return;
   try {
     await FileSystem.deleteAsync(getTempDir(), { idempotent: true });
     _mem.clear();
@@ -331,7 +326,6 @@ export const TEMP_CACHE_DIR = getTempDir();
  * was cancelled.
  */
 export async function _sweepOrphanedRecordings(): Promise<void> {
-  if (Platform.OS === "web") return;
   const cacheDir = (FileSystem as any).cacheDirectory as string | null;
   if (!cacheDir) return;
 

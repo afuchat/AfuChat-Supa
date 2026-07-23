@@ -47,7 +47,7 @@ export default function LinkedAccountsScreen() {
     if (isQuickAdd) {
       Animated.spring(formAnim, {
         toValue: 1,
-        useNativeDriver: Platform.OS !== "web",
+        useNativeDriver: true,
         tension: 60,
         friction: 10,
       }).start();
@@ -58,7 +58,7 @@ export default function LinkedAccountsScreen() {
     setShowAdd(true);
     Animated.spring(formAnim, {
       toValue: 1,
-      useNativeDriver: Platform.OS !== "web",
+      useNativeDriver: true,
       tension: 60,
       friction: 10,
     }).start();
@@ -68,7 +68,7 @@ export default function LinkedAccountsScreen() {
     Animated.timing(formAnim, {
       toValue: 0,
       duration: 180,
-      useNativeDriver: Platform.OS !== "web",
+      useNativeDriver: true,
     }).start(() => {
       setShowAdd(false);
       setEmail("");

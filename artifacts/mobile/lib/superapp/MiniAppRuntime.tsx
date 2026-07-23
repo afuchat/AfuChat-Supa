@@ -62,7 +62,6 @@ export function MiniAppRuntimeProvider({ children }: { children: React.ReactNode
   const [activeAppId, setActiveAppId] = useState<string | null>(null);
 
   const openApp = useCallback((id: string) => {
-    if (Platform.OS === "web") return;
     const manifest = findModule(id);
     if (!manifest || manifest.comingSoon) return;
     if (manifest.nativeOnly && false) return;
@@ -143,7 +142,7 @@ export function MiniAppRuntimeProvider({ children }: { children: React.ReactNode
       <View style={[styles.root, { backgroundColor: colors.background }]}>
         {children}
 
-        {Platform.OS !== "web" && (
+        {(
           <>
             <MiniAppDock
               openApps={openApps}

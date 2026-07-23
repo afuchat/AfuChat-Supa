@@ -57,7 +57,7 @@ export async function ensureChatAttachmentDownloaded(
   type: string,
   _hint?: string,
 ): Promise<string | null> {
-  if (Platform.OS === "web" || !url?.startsWith("http")) return null;
+  if (!url?.startsWith("http")) return null;
   if (_mem.has(url)) return _mem.get(url)!;
   if (_inFlight.has(url)) return _inFlight.get(url)!;
 
@@ -95,7 +95,6 @@ export function autoDownloadChatAttachments(
   }>,
   opts: AutoDownloadOpts = {},
 ): void {
-  if (Platform.OS === "web") return;
   const { autoDownloadPref = "wifi_only", saveToGallery = false } = opts;
   if (autoDownloadPref === "never") return;
   for (const msg of messages) {
@@ -115,7 +114,6 @@ export function autoDownloadChatAttachments(
  * Returns true if permission was granted (or was already granted).
  */
 export async function requestGalleryPermissionOnce(): Promise<boolean> {
-  if (Platform.OS === "web") return false;
   try {
     const ML = await import("expo-media-library");
     const { status: current } = await ML.getPermissionsAsync();
@@ -131,7 +129,6 @@ export async function requestGalleryPermissionOnce(): Promise<boolean> {
  * Open a locally-cached file with the device's native file viewer / share sheet.
  */
 export async function openChatFile(localPath: string): Promise<void> {
-  if (Platform.OS === "web") return;
   try {
     const Sharing = await import("expo-sharing");
     const available = await Sharing.isAvailableAsync();
@@ -148,7 +145,6 @@ export async function openChatFile(localPath: string): Promise<void> {
  * Returns true if saved successfully, false otherwise.
  */
 export async function saveAttachmentToGallery(url: string): Promise<boolean> {
-  if (Platform.OS === "web") return false;
   try {
     const ML = await import("expo-media-library");
 
@@ -267,7 +263,6 @@ async function _saveToDeviceLibrary(
   saveToGallery: boolean,
 ): Promise<void> {
   if (!saveToGallery) return;
-  if (Platform.OS === "web") return;
   // Skip audio — Android requires READ_MEDIA_AUDIO in AndroidManifest which is
   // not declared, causing a hard crash when MediaLibrary checks permissions.
   if (!["image", "gif", "story_reply"].includes(type)) return;

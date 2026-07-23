@@ -279,8 +279,8 @@ export default function PremiumScreen() {
 
   function switchTier(tier: string) {
     Animated.sequence([
-      Animated.timing(fadeAnim, { toValue: 0, duration: 70, useNativeDriver: Platform.OS !== "web" }),
-      Animated.timing(fadeAnim, { toValue: 1, duration: 150, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(fadeAnim, { toValue: 0, duration: 70, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
     ]).start();
     setActiveTier(tier);
     Haptics.selectionAsync?.();

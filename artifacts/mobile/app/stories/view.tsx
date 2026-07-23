@@ -388,7 +388,7 @@ export default function ViewStoryScreen() {
     setPaused(true);
     setShowViewers(true);
     setLoadingViewers(true);
-    Animated.spring(slideAnim, { toValue: 1, useNativeDriver: Platform.OS !== "web", friction: 10 }).start();
+    Animated.spring(slideAnim, { toValue: 1, useNativeDriver: true, friction: 10 }).start();
 
     const { data } = await supabase
       .from("story_views")
@@ -410,7 +410,7 @@ export default function ViewStoryScreen() {
   }, [story, isOwner, slideAnim]);
 
   const closeViewers = useCallback(() => {
-    Animated.spring(slideAnim, { toValue: 0, useNativeDriver: Platform.OS !== "web", friction: 10 }).start(() => {
+    Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, friction: 10 }).start(() => {
       setShowViewers(false);
       setPaused(false);
     });
@@ -436,7 +436,7 @@ export default function ViewStoryScreen() {
           style={styles.media}
           contentFit="contain"
           nativeControls={false}
-          allowsPictureInPicture={Platform.OS !== "web"}
+          allowsPictureInPicture
           onPictureInPictureStart={() => setInPip(true)}
           onPictureInPictureStop={() => setInPip(false)}
         />
@@ -487,7 +487,7 @@ export default function ViewStoryScreen() {
           </View>
           <Text style={styles.storyTime}>{timeLabel}</Text>
         </View>
-        {Platform.OS !== "web" && isVideoStory && (
+        {isVideoStory && (
           <TouchableOpacity
             style={styles.topBtn}
             onPress={() => { try { inPip ? storyVideoRef.current?.stopPictureInPicture() : storyVideoRef.current?.startPictureInPicture(); } catch {} }}

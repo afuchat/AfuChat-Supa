@@ -1,4 +1,3 @@
-import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export type DataMode = "low" | "high";
@@ -7,9 +6,8 @@ type Listener = (mode: DataMode) => void;
 
 const STORAGE_KEY = "afu_data_mode_override";
 
-// Web always runs in high mode — no data saver on web.
-let _mode: DataMode = Platform.OS === "web" ? "high" : "low";
-let _isWifi: boolean = Platform.OS === "web";
+let _mode: DataMode = "low";
+let _isWifi = false;
 let _manualOverride: DataMode | null = null;
 let _listeners: Listener[] = [];
 let _initialized = false;
@@ -40,13 +38,6 @@ function detectFromNetState(state: any): DataMode {
 export async function initDataMode() {
   if (_initialized) return;
   _initialized = true;
-
-  // Web: always high — skip all network detection.
-  if (Platform.OS === "web") {
-    _isWifi = true;
-    _mode = "high";
-    return;
-  }
 
   try {
     const stored = await AsyncStorage.getItem(STORAGE_KEY);
@@ -83,7 +74,6 @@ export function getIsWifi(): boolean {
 }
 
 export async function setManualDataMode(mode: DataMode | null) {
-  if (Platform.OS === "web") return; // no-op on web
   _manualOverride = mode;
   try {
     if (mode === null) {

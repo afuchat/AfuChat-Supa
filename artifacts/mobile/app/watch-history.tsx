@@ -112,7 +112,7 @@ function HistoryRow({ item, colors, onPress, onDelete }: RowProps) {
   const handleSwipeConfirm = () => {
     showAlert("Remove from history?", "This video will be removed from your watch history.", [
       { text: "Cancel", style: "cancel", onPress: () => {
-        Animated.spring(translateX, { toValue: 0, useNativeDriver: Platform.OS !== "web" }).start();
+        Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
         setSwiped(false);
       }},
       { text: "Remove", style: "destructive", onPress: onDelete },

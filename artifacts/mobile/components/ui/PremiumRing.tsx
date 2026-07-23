@@ -61,7 +61,7 @@ export function PremiumRing({ size, children, square, ringType = 'premium' }: Pr
   const center = outerSize / 2;
   const arcGap = 5;
 
-  if (!hasSvg() || Platform.OS === "web") {
+  if (!hasSvg()) {
     return (
       <View style={{ width: outerSize, height: outerSize, alignItems: "center", justifyContent: "center" }}>
         <View style={{

@@ -7,7 +7,7 @@ import {
   subscribePostUpload,
 } from "@/lib/postUploadStore";
 
-const ND = Platform.OS !== "web";
+const ND = true;
 
 function usePostUpload() {
   return useSyncExternalStore(subscribePostUpload, getPostUploadState, getPostUploadState);

@@ -1,15 +1,8 @@
 // ─── Chat Folders ─────────────────────────────────────────────────────────────
-// User-defined chat category folders.
-//
-// Native: persisted in SQLite. Every public function ensures the table exists
-// before touching it (self-healing CREATE TABLE IF NOT EXISTS), so the feature
-// works even when the migration hasn't run yet in the current app session
-// (e.g. Expo Go Fast Refresh keeps the cached DB open at an older schema).
-//
-// Web: DB is a no-op stub. An in-memory array provides session-scoped storage
-// so the web preview works without any persistence.
+// User-defined chat category folders persisted in SQLite.
+// Every public function ensures the table exists before touching it
+// (self-healing CREATE TABLE IF NOT EXISTS).
 
-import { Platform } from "react-native";
 import { getDB } from "./db";
 
 export type FolderFilter = "personal" | "groups" | "channels" | "unread";
@@ -22,13 +15,7 @@ export type ChatFolder = {
   createdAt: number;
 };
 
-// ─── Web in-memory fallback ────────────────────────────────────────────────────
-
-let _webFolders: ChatFolder[] = [];
-
-// ─── Ensure table exists (native only) ────────────────────────────────────────
-// Called before every DB operation so the table is always ready, regardless of
-// whether the schema migration has run in the current session.
+// ─── Ensure table exists ───────────────────────────────────────────────────────
 
 const CREATE_TABLE_SQL = `
   CREATE TABLE IF NOT EXISTS chat_folders (
@@ -83,7 +70,6 @@ async function migrateFromAsyncStorage(): Promise<void> {
 // ─── Public API ────────────────────────────────────────────────────────────────
 
 export async function loadFolders(): Promise<ChatFolder[]> {
-  if (Platform.OS === "web") return [..._webFolders];
   try {
     await migrateFromAsyncStorage();
     const db = await ensureTable();
@@ -97,10 +83,6 @@ export async function loadFolders(): Promise<ChatFolder[]> {
 }
 
 export async function saveFolders(folders: ChatFolder[]): Promise<void> {
-  if (Platform.OS === "web") {
-    _webFolders = [...folders];
-    return;
-  }
   try {
     const db = await ensureTable();
     await db.execAsync("DELETE FROM chat_folders");
@@ -123,10 +105,6 @@ export async function createFolder(
     id: Math.random().toString(36).slice(2) + Date.now().toString(36),
     createdAt: Date.now(),
   };
-  if (Platform.OS === "web") {
-    _webFolders = [..._webFolders, folder];
-    return folder;
-  }
   try {
     const db = await ensureTable();
     const countRow = await db.getFirstAsync<{ c: number }>(
@@ -146,10 +124,6 @@ export async function updateFolder(
   id: string,
   updates: Partial<Pick<ChatFolder, "name" | "icon" | "filter">>,
 ): Promise<void> {
-  if (Platform.OS === "web") {
-    _webFolders = _webFolders.map((f) => (f.id === id ? { ...f, ...updates } : f));
-    return;
-  }
   try {
     const db = await ensureTable();
     if (updates.name   !== undefined)
@@ -162,10 +136,6 @@ export async function updateFolder(
 }
 
 export async function deleteFolder(id: string): Promise<void> {
-  if (Platform.OS === "web") {
-    _webFolders = _webFolders.filter((f) => f.id !== id);
-    return;
-  }
   try {
     const db = await ensureTable();
     await db.runAsync("DELETE FROM chat_folders WHERE id = ?", [id]);
@@ -173,24 +143,18 @@ export async function deleteFolder(id: string): Promise<void> {
 }
 
 export async function clearAllFolders(): Promise<void> {
-  if (Platform.OS === "web") {
-    _webFolders = [];
-    return;
-  }
   try {
     const db = await ensureTable();
     await db.execAsync("DELETE FROM chat_folders");
   } catch {}
 }
 
-// ─── Internal ──────────────────────────────────────────────────────────────────
-
-function rowToFolder(r: any): ChatFolder {
+function rowToFolder(row: any): ChatFolder {
   return {
-    id:        r.id,
-    name:      r.name,
-    icon:      r.icon,
-    filter:    r.filter as FolderFilter,
-    createdAt: r.created_at,
+    id:        row.id,
+    name:      row.name,
+    icon:      row.icon,
+    filter:    row.filter as FolderFilter,
+    createdAt: row.created_at,
   };
 }

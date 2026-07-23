@@ -243,7 +243,7 @@ export function SmartSheet({
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingBottom: insets.bottom }}
           scrollEnabled={isFull}
-          bounces={Platform.OS !== "web"}
+          bounces
           showsVerticalScrollIndicator={false}
           onScroll={(e) => {
             scrollYRef.current = e.nativeEvent.contentOffset.y;

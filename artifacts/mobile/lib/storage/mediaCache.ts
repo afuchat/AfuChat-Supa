@@ -62,7 +62,7 @@ export async function getCachedImageUri(
   url: string,
   type: "avatar" | "thumb" = "thumb",
 ): Promise<string> {
-  if (Platform.OS === "web" || !url || !url.startsWith("http")) return url;
+  if (!url || !url.startsWith("http")) return url;
 
   // 1. In-memory map — zero I/O
   if (_memCache.has(url)) return _memCache.get(url)!;
@@ -102,7 +102,7 @@ export async function downloadAndCache(
   url: string,
   type: "avatar" | "thumb" = "thumb",
 ): Promise<string | null> {
-  if (Platform.OS === "web" || !url || !url.startsWith("http")) return null;
+  if (!url || !url.startsWith("http")) return null;
   if (_memCache.has(url)) return _memCache.get(url)!;
 
   try {
@@ -133,7 +133,6 @@ export async function downloadAndCache(
 
 /** Preload a list of image URLs silently in background (no-op on web) */
 export function preloadImages(urls: string[], type: "avatar" | "thumb" = "thumb"): void {
-  if (Platform.OS === "web") return;
   for (const url of urls) {
     if (!url || _memCache.has(url)) continue;
     downloadAndCache(url, type).catch(() => {});

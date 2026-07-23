@@ -42,13 +42,11 @@ import * as Haptics from "@/lib/haptics";
 // ─── Lazy expo-video (native only) ────────────────────────────────────────────
 let _VideoView: any = null;
 let _useVideoPlayer: any = null;
-if (Platform.OS !== "web") {
-  try {
-    const ev = require("expo-video");
-    _VideoView = ev.VideoView;
-    _useVideoPlayer = ev.useVideoPlayer;
-  } catch {}
-}
+try {
+  const ev = require("expo-video");
+  _VideoView = ev.VideoView;
+  _useVideoPlayer = ev.useVideoPlayer;
+} catch {}
 
 // Inline video player used in the post detail header
 function NativeVideoPlayer({ videoUrl }: { videoUrl: string }) {
@@ -65,7 +63,7 @@ function NativeVideoPlayer({ videoUrl }: { videoUrl: string }) {
 }
 
 function VideoPlayerSection({ videoUrl }: { videoUrl: string | null }) {
-  if (!videoUrl || Platform.OS === "web" || !_VideoView || !_useVideoPlayer) {
+  if (!videoUrl || !_VideoView || !_useVideoPlayer) {
     return (
       <View style={{ width: "100%", aspectRatio: 9 / 16, backgroundColor: "#000", alignItems: "center", justifyContent: "center" }}>
         <Ionicons name="play-circle-outline" size={56} color="rgba(255,255,255,0.4)" />
