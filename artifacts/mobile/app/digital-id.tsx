@@ -84,50 +84,10 @@ function padMember(n: number) { return String(n).padStart(6,"0"); }
 function mrz1(name: string) { return `AFUCHAT<<${name.toUpperCase().replace(/[^A-Z ]/g,"").replace(/ /g,"<").padEnd(30,"<").slice(0,30)}`; }
 function mrz2(id: string, c: string) { return `${id.padEnd(9,"<")}${(c||"AFU").toUpperCase().slice(0,3).padEnd(3,"<")}${"<".repeat(17)}`; }
 
-/* ─── CAPTURE HELPERS ─── */
-async function h2cCapture(el: HTMLElement): Promise<HTMLCanvasElement> {
-  const h2c = (await import("html2canvas")).default;
-  return h2c(el, { useCORS: true, allowTaint: false, backgroundColor: null, scale: 3, logging: false });
-}
-async function webDownload(domRef: React.RefObject<View | null>, filename: string) {
-  const el = domRef.current as unknown as HTMLElement | null;
-  if (!el) return;
-  const canvas = await h2cCapture(el);
-  const a = document.createElement("a");
-  a.href = canvas.toDataURL("image/png");
-  a.download = filename;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-}
 async function nativeDownload(ref: React.RefObject<any>) {
   if (!ref.current || typeof (ref.current as any).capture !== "function") return;
   const uri: string = await (ref.current as any).capture();
   if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: "image/png" });
-}
-async function webPrint(frontRef: React.RefObject<View | null>, backRef: React.RefObject<View | null>, handle: string) {
-  const frontEl = frontRef.current as unknown as HTMLElement | null;
-  const backEl  = backRef.current  as unknown as HTMLElement | null;
-  if (!frontEl || !backEl) return;
-  const [fc, bc] = await Promise.all([h2cCapture(frontEl), h2cCapture(backEl)]);
-  const frontSrc = fc.toDataURL("image/png");
-  const backSrc  = bc.toDataURL("image/png");
-  const w = fc.width / 3; const h = fc.height / 3;
-  const win = window.open("", "_blank", "width=900,height=700");
-  if (!win) { alert("Allow pop-ups to use Print."); return; }
-  win.document.write(`<!DOCTYPE html><html><head>
-  <meta charset="utf-8"/>
-  <title>AfuChat ID — @${handle}</title>
-  <style>*{margin:0;padding:0;box-sizing:border-box}body{background:#111;font-family:sans-serif;color:#aaa}
-  .page{width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;page-break-after:always;page-break-inside:avoid}
-  .page:last-child{page-break-after:auto}.label{font-size:10px;letter-spacing:3px;text-transform:uppercase;margin-bottom:12px;opacity:.5}
-  img{border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.6);max-width:90vw}
-  .hint{position:fixed;top:16px;right:16px;font-size:12px;background:#222;padding:8px 16px;border-radius:8px;cursor:pointer;border:1px solid #333}
-  @media print{body{background:#fff}.hint{display:none}img{box-shadow:none}}</style>
-  </head><body>
-  <button class="hint" onclick="window.print()">🖨 Print (Ctrl+P)</button>
-  <div class="page"><div class="label">Front</div><img src="${frontSrc}" width="${w}" height="${h}" /></div>
-  <div class="page"><div class="label">Back</div><img src="${backSrc}" width="${w}" height="${h}" /></div>
-  <script>setTimeout(()=>window.print(),800)<\/script></body></html>`);
-  win.document.close();
 }
 
 /* ─── MAIN SCREEN ─── */
@@ -143,8 +103,6 @@ export default function DigitalIdScreen() {
   const [dlState,      setDlState]       = useState<"idle"|"front"|"back"|"print">("idle");
 
   const flipVal = useRef(new Animated.Value(0)).current;
-  const frontDomRef  = useRef<View>(null);
-  const backDomRef   = useRef<View>(null);
   const frontShotRef = useRef<any>(null);
   const backShotRef  = useRef<any>(null);
 
@@ -208,18 +166,9 @@ export default function DigitalIdScreen() {
 
   async function download(side: "front" | "back") {
     setDlState(side);
-    const filename = `afuchat-id-${side}-${profile?.handle ?? "card"}.png`;
     try {
-      if (Platform.OS === "web") await webDownload(side === "front" ? frontDomRef : backDomRef, filename);
-      else await nativeDownload(side === "front" ? frontShotRef : backShotRef);
+      await nativeDownload(side === "front" ? frontShotRef : backShotRef);
     } finally { setDlState("idle"); }
-  }
-
-  async function handlePrint() {
-    if (Platform.OS !== "web") return;
-    setDlState("print");
-    try { await webPrint(frontDomRef, backDomRef, profile?.handle ?? "user"); }
-    finally { setDlState("idle"); }
   }
 
   if (loading) return (
@@ -240,15 +189,7 @@ export default function DigitalIdScreen() {
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={[s.headerTitle, { color: colors.text }]}>Digital ID</Text>
-        <TouchableOpacity
-          style={s.iconBtn}
-          onPress={handlePrint}
-          disabled={Platform.OS !== "web" || dlState !== "idle"}
-        >
-          {dlState === "print"
-            ? <ActivityIndicator size="small" color={colors.textMuted} />
-            : <Ionicons name="print-outline" size={20} color={Platform.OS === "web" ? colors.text : colors.textMuted} />}
-        </TouchableOpacity>
+        <View style={s.iconBtn} />
       </View>
 
       <ScrollView
@@ -284,10 +225,6 @@ export default function DigitalIdScreen() {
             loading={dlState === "front"} disabled={dlState !== "idle"} onPress={() => download("front")} />
           <ActionBtn label="Save Back" icon="download-outline" color={theme.primary}
             loading={dlState === "back"} disabled={dlState !== "idle"} onPress={() => download("back")} />
-          {Platform.OS === "web" && (
-            <ActionBtn label="Print" icon="print-outline" color={colors.textMuted}
-              loading={dlState === "print"} disabled={dlState !== "idle"} onPress={handlePrint} />
-          )}
         </View>
 
         {/* HINT */}
@@ -302,10 +239,10 @@ export default function DigitalIdScreen() {
       {/* HIDDEN CAPTURE LAYERS */}
       <View style={[s.captureLayer, { pointerEvents: "none" } as any]}>
         <ViewShot ref={frontShotRef} options={{ format: "png", quality: 1, result: "tmpfile" }}>
-          <View ref={frontDomRef}><CardFront {...cp} /></View>
+          <CardFront {...cp} />
         </ViewShot>
         <ViewShot ref={backShotRef} options={{ format: "png", quality: 1, result: "tmpfile" }}>
-          <View ref={backDomRef}><CardBack {...cp} /></View>
+          <CardBack {...cp} />
         </ViewShot>
       </View>
     </View>

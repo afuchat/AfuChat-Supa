@@ -39,7 +39,6 @@ import { Avatar } from "@/components/ui/Avatar";
 import { RichText } from "@/components/ui/RichText";
 import Colors from "@/constants/colors";
 import { PostSkeleton } from "@/components/ui/Skeleton";
-import { useContextMenu, ContextMenu } from "@/components/desktop/ContextMenu";
 import { VideoThumbnail } from "@/components/ui/VideoThumbnail";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import UserName from "@/components/ui/UserName";
@@ -58,7 +57,6 @@ import { getMergedLearnedWeights } from "@/lib/personalization";
 import { useLanguage } from "@/context/LanguageContext";
 import { translateText, LANG_LABELS } from "@/lib/translate";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
-import { DesktopFeedLayout, FEED_COLUMN_MAX_WIDTH } from "@/components/desktop/DesktopFeedLayout";
 import { encodeId } from "@/lib/shortId";
 import { useVideoProgress } from "@/hooks/useVideoProgress";
 import SignInPromptModal from "@/components/ui/SignInPromptModal";
@@ -262,21 +260,6 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
     ]).start();
   }, [heartScale]);
 
-  const { bind: ctxBind, menuProps: ctxMenuProps } = useContextMenu([
-    [
-      { key: "open",    label: "Open post",                     icon: "open-outline",     onSelect: () => openPost() },
-      { key: "like",    label: item.liked ? "Unlike" : "Like",  icon: item.liked ? "heart" : "heart-outline", onSelect: () => { if (!currentUser) { onRequireAuth?.(); return; } onToggleLike(item.id); } },
-      { key: "save",    label: item.bookmarked ? "Unsave" : "Save", icon: item.bookmarked ? "bookmark" : "bookmark-outline", onSelect: () => { if (!currentUser) { onRequireAuth?.(); return; } onToggleBookmark(item.id); } },
-      { key: "profile", label: `View @${item.profile.handle}`, icon: "person-outline",   onSelect: () => safeRouter.push({ pathname: "/contact/[id]", params: { id: item.author_id, init_name: item.profile.display_name, init_handle: item.profile.handle, init_avatar: item.profile.avatar_url ?? "", init_verified: item.is_verified ? "1" : "0", init_org_verified: item.is_organization_verified ? "1" : "0" } } as any) },
-    ],
-    [
-      { key: "copy",  label: "Copy link", icon: "link-outline",  onSelect: () => { if (typeof window !== "undefined") navigator.clipboard?.writeText(`${window.location.origin}/p/${item.id}`); } },
-      { key: "share", label: "Share",     icon: "share-outline", onSelect: () => setShowShareModal(true) },
-    ],
-    [
-      { key: "report", label: "Report", icon: "flag-outline", destructive: true, onSelect: () => {} },
-    ],
-  ]);
   const showFollowBtn = !isOwnPost && !item.isFollowing;
 
   const allImages = item.images.length > 0 ? item.images : item.image_url ? [item.image_url] : [];
@@ -363,8 +346,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
         style={[styles.card, { backgroundColor: colors.background, borderBottomColor: colors.border }]}
         onPress={openPost}
         activeOpacity={0.97}
-        // @ts-ignore — RN Web supports onContextMenu
-        onContextMenu={Platform.OS === "web" ? ctxBind.onContextMenu : undefined}
+
       >
           {/* X/Twitter-style thread connector line */}
           {item.showThreadLine && (
@@ -691,8 +673,6 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
         </TouchableOpacity>
       </Modal>
 
-      {/* desktop right-click context menu */}
-      <ContextMenu {...ctxMenuProps} />
     </>
   );
 }, (prev, next) =>
@@ -2127,7 +2107,7 @@ export default function DiscoverScreen() {
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <OfflineBanner />
       <PostUploadBanner />
-      <DesktopFeedLayout>
+      <>
 
       {/* ── Fixed header ── */}
       <View
@@ -2256,7 +2236,7 @@ export default function DiscoverScreen() {
                     if (entry._kind === "user_recs") return <UserRecsCard seed={entry.seed} onRequireAuth={onRequireAuth} />;
                     if (entry._kind === "premium") return null;
                     return (
-                      <PostCard item={entry.item} onToggleLike={toggleLike} onToggleBookmark={toggleBookmark} onToggleFollow={toggleFollow} onImagePress={imgViewer.openViewer} onRequireAuth={onRequireAuth} colWidth={isDesktop ? FEED_COLUMN_MAX_WIDTH : undefined} onOpenComments={onOpenComments} onDismiss={onDismissPost} onMuteAuthor={onMuteAuthor} />
+                      <PostCard item={entry.item} onToggleLike={toggleLike} onToggleBookmark={toggleBookmark} onToggleFollow={toggleFollow} onImagePress={imgViewer.openViewer} onRequireAuth={onRequireAuth} onOpenComments={onOpenComments} onDismiss={onDismissPost} onMuteAuthor={onMuteAuthor} />
                     );
                   }}
                   ListHeaderComponent={user ? <SuggestedUsers compact maxCards={8} /> : null}
@@ -2329,7 +2309,7 @@ export default function DiscoverScreen() {
                     if (entry._kind === "user_recs") return <UserRecsCard seed={entry.seed} onRequireAuth={onRequireAuth} />;
                     if (entry._kind === "premium") return null;
                     return (
-                      <PostCard item={entry.item} onToggleLike={toggleLike} onToggleBookmark={toggleBookmark} onToggleFollow={toggleFollow} onImagePress={imgViewer.openViewer} onRequireAuth={onRequireAuth} colWidth={isDesktop ? FEED_COLUMN_MAX_WIDTH : undefined} onOpenComments={onOpenComments} onDismiss={onDismissPost} onMuteAuthor={onMuteAuthor} />
+                      <PostCard item={entry.item} onToggleLike={toggleLike} onToggleBookmark={toggleBookmark} onToggleFollow={toggleFollow} onImagePress={imgViewer.openViewer} onRequireAuth={onRequireAuth} onOpenComments={onOpenComments} onDismiss={onDismissPost} onMuteAuthor={onMuteAuthor} />
                     );
                   }}
                   contentContainerStyle={{ gap: 8, paddingTop: headerHeight + 8, paddingBottom: insets.bottom + 100 }}
@@ -2400,7 +2380,7 @@ export default function DiscoverScreen() {
               if (entry._kind === "user_recs") return <UserRecsCard seed={entry.seed} onRequireAuth={onRequireAuth} />;
               if (entry._kind === "premium") return null;
               return (
-                <PostCard item={entry.item} onToggleLike={toggleLike} onToggleBookmark={toggleBookmark} onToggleFollow={toggleFollow} onImagePress={imgViewer.openViewer} onRequireAuth={onRequireAuth} colWidth={isDesktop ? FEED_COLUMN_MAX_WIDTH : undefined} onOpenComments={onOpenComments} onDismiss={onDismissPost} onMuteAuthor={onMuteAuthor} />
+                <PostCard item={entry.item} onToggleLike={toggleLike} onToggleBookmark={toggleBookmark} onToggleFollow={toggleFollow} onImagePress={imgViewer.openViewer} onRequireAuth={onRequireAuth} onOpenComments={onOpenComments} onDismiss={onDismissPost} onMuteAuthor={onMuteAuthor} />
               );
             }}
             ListHeaderComponent={user && feedTab === "for_you" ? <SuggestedUsers compact maxCards={8} /> : null}
@@ -2436,7 +2416,7 @@ export default function DiscoverScreen() {
           />
         )
       )}
-      </DesktopFeedLayout>
+      </>
       {/* Sticky "loading more" pill — always visible regardless of scroll position */}
       {loadingMore && (
         <View

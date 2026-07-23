@@ -64,13 +64,6 @@ export default function QRPosterSheet({
   const cardTop = "#0d1e38";
 
   async function capture(): Promise<string | null> {
-    if (Platform.OS === "web") {
-      const el = posterRef.current as HTMLElement | null;
-      if (!el) return null;
-      const h2c = (await import("html2canvas")).default;
-      const canvas = await h2c(el, { useCORS: true, allowTaint: false, backgroundColor: cardBg, scale: 3, logging: false });
-      return canvas.toDataURL("image/png");
-    }
     if (!captureRef || !posterRef.current) return null;
     return captureRef(posterRef.current, { format: "png", quality: 1, result: "tmpfile" });
   }
@@ -80,17 +73,9 @@ export default function QRPosterSheet({
     try {
       const uri = await capture();
       if (!uri) { showToast("Could not generate image"); return; }
-      if (Platform.OS === "web") {
-        const a = document.createElement("a");
-        a.href = uri;
-        a.download = `afuchat-${handle}.png`;
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        showToast("Poster downloaded!");
-      } else {
-        const ok = await Sharing.isAvailableAsync();
-        if (ok) await Sharing.shareAsync(uri, { mimeType: "image/png" });
-        else showToast("Sharing not available on this device");
-      }
+      const ok = await Sharing.isAvailableAsync();
+      if (ok) await Sharing.shareAsync(uri, { mimeType: "image/png" });
+      else showToast("Sharing not available on this device");
     } catch {
       showToast("Share failed");
     } finally {
@@ -99,7 +84,6 @@ export default function QRPosterSheet({
   }
 
   async function handleSave() {
-    if (Platform.OS === "web") { handleShare(); return; }
     setSaving(true);
     try {
       if (!MediaLibrary) { showToast("Media library not available"); return; }

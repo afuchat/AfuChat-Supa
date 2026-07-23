@@ -78,7 +78,6 @@ import {
   subscribeStoryViewed,
 } from "@/lib/storyViewedStore";
 import { usePhonebookNames } from "@/hooks/usePhonebookNames";
-import { useContextMenu, ContextMenu } from "@/components/desktop/ContextMenu";
 import { setTotalUnread } from "@/lib/chatUnreadEvents";
 
 type StoryUser = {
@@ -336,19 +335,6 @@ function ChatRow({
   const { colors } = useTheme();
   const isSpecial = item.kind === "notes" || item.kind === "channel_broadcast";
   const isChatMuted = item.muted_until !== undefined && (item.muted_until === null || new Date(item.muted_until) > new Date());
-  const { bind, menuProps } = useContextMenu(
-    isSpecial
-      ? [[{ key: "open", label: "Open", icon: "open-outline", onSelect: () => onAction?.("open", item) }]]
-      : [
-          [
-            { key: "open", label: "Open chat", icon: "open-outline", onSelect: () => onAction?.("open", item) },
-            { key: "pin", label: item.is_pinned ? "Unpin chat" : "Pin chat", icon: item.is_pinned ? "pin" : "pin-outline", onSelect: () => onAction?.("togglePin", item) },
-            { key: "archive", label: item.is_archived ? "Unarchive" : "Archive", icon: item.is_archived ? "archive" : "archive-outline", onSelect: () => onAction?.("toggleArchive", item) },
-            { key: "mute", label: isChatMuted ? "Unmute" : "Mute", icon: isChatMuted ? "notifications-outline" : "notifications-off-outline", onSelect: () => onAction?.(isChatMuted ? "unmute" : "mute", item) },
-          ],
-          [{ key: "delete", label: item.is_group && !item.is_channel ? "Leave group" : "Delete chat", icon: item.is_group && !item.is_channel ? "exit-outline" : "trash-outline", destructive: true, onSelect: () => onAction?.("delete", item) }],
-        ]
-  );
   const displayName = item.kind === "notes"
     ? "My Notes"
     : item.is_group || item.is_channel
@@ -359,8 +345,7 @@ function ChatRow({
   const isOnlineDot = !item.is_group && !item.is_channel && (item.other_id === AFUCHAT_SYSTEM_ID || isUserOnline(item.other_last_seen, item.other_show_online));
 
   return (
-    <View {...bind}>
-      <ContextMenu {...menuProps} />
+    <View>
     <TouchableOpacity
       style={[styles.row, { backgroundColor: isSelected ? colors.accent + "18" : isActive ? colors.backgroundSecondary : colors.surface }]}
       onPress={selectMode ? onToggleSelect : onPress}

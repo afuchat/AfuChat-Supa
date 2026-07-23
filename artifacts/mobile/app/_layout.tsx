@@ -3,10 +3,7 @@ import "react-native-gesture-handler";
 import "@/lib/callService";
 import { enableScreens } from "react-native-screens";
 import { initCrashReporter, setCrashReporterUserId } from "@/lib/crashReporter";
-import { redirectIfDesktop } from "@/lib/desktopRedirect";
-
 initCrashReporter();
-redirectIfDesktop();
 
 // enableScreens() is intentionally moved out of module-evaluation scope.
 // Calling it synchronously at the top level (before any React component mounts)

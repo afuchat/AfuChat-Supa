@@ -65,7 +65,6 @@ export const ShareCard = React.forwardRef<View, ShareCardProps>(function ShareCa
       ref={ref}
       style={s.card}
       collapsable={false}
-      {...(Platform.OS === "web" ? ({ "data-afu-share-card": "1" } as any) : {})}
     >
       {/* ── Accent top bar ── */}
       <View style={[s.topBar, { backgroundColor: accent }]} />
@@ -291,64 +290,26 @@ export function PostShareCaptureModal({
       setAvatarSrc(null);
       return;
     }
-    if (Platform.OS === "web" && post.avatar_url) {
-      fetch(post.avatar_url)
-        .then((r) => r.blob())
-        .then(
-          (blob) =>
-            new Promise<string>((res, rej) => {
-              const reader = new FileReader();
-              reader.onloadend = () => res(reader.result as string);
-              reader.onerror = rej;
-              reader.readAsDataURL(blob);
-            }),
-        )
-        .then(setAvatarSrc)
-        .catch(() => setAvatarSrc(post.avatar_url));
-    } else {
-      setAvatarSrc(post.avatar_url);
-    }
+    setAvatarSrc(post.avatar_url);
   }, [visible, post?.avatar_url]);
 
   async function handleSave() {
     if (!post) return;
     setSaving(true);
     try {
-      if (Platform.OS === "web") {
-        if (typeof document === "undefined") throw new Error("no document");
-        const html2canvas = (await import("html2canvas")).default;
-        const el = document.querySelector("[data-afu-share-card]") as HTMLElement | null;
-        if (!el) throw new Error("share card not found");
-        const canvas = await html2canvas(el, {
-          useCORS: false,
-          allowTaint: false,
-          backgroundColor: "#ffffff",
-          scale: 3,
-          logging: false,
-          imageTimeout: 8000,
+      let captureRef: any;
+      try {
+        captureRef = require("react-native-view-shot").captureRef;
+      } catch {
+        throw new Error("view-shot not available");
+      }
+      const uri = await captureRef(cardRef, { format: "png", quality: 1, result: "tmpfile" });
+      const Sharing = require("expo-sharing");
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: "image/png",
+          dialogTitle: "Share AfuChat Post",
         });
-        const dataUrl = canvas.toDataURL("image/png");
-        const link = document.createElement("a");
-        link.href = dataUrl;
-        link.download = `afuchat-${post.id}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else {
-        let captureRef: any;
-        try {
-          captureRef = require("react-native-view-shot").captureRef;
-        } catch {
-          throw new Error("view-shot not available");
-        }
-        const uri = await captureRef(cardRef, { format: "png", quality: 1, result: "tmpfile" });
-        const Sharing = require("expo-sharing");
-        if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(uri, {
-            mimeType: "image/png",
-            dialogTitle: "Share AfuChat Post",
-          });
-        }
       }
     } catch (_err) {
       showAlert(
@@ -403,12 +364,12 @@ export function PostShareCaptureModal({
               ) : (
                 <>
                   <Ionicons
-                    name={Platform.OS === "web" ? "download-outline" : "share-outline"}
+                    name="share-outline"
                     size={19}
                     color="#fff"
                   />
                   <Text style={m.saveBtnText}>
-                    {Platform.OS === "web" ? "Download Image" : "Save & Share"}
+                    Save & Share
                   </Text>
                 </>
               )}
