@@ -26,7 +26,7 @@ SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdX
 EXPO_TOKEN = "qAq32FpLicd_vfPYyvOGm7xuqnqIBX0HI1gUCUw5"
 
 [workflows]
-runButton = "Start application"
+runButton = "Project"
 
 [[workflows.workflow]]
 name = "Start application"
@@ -37,8 +37,17 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd artifacts/mobile && EXPO_OFFLINE=1 EXPO_NO_LAZY=1 PORT=5001 EXPO_PUBLIC_DOMAIN=$REPLIT_DEV_DOMAIN EXPO_PUBLIC_REPL_ID=$REPL_ID EXPO_PACKAGER_PROXY_URL=https://$REPLIT_EXPO_DEV_DOMAIN REACT_NATIVE_PACKAGER_HOSTNAME=$REPLIT_EXPO_DEV_DOMAIN ./node_modules/.bin/expo start --web --port 5001"
-waitForPort = 5001
+args = "cd artifacts/mobile && EXPO_OFFLINE=1 EXPO_NO_LAZY=1 PORT=5000 EXPO_PUBLIC_DOMAIN=$REPLIT_DEV_DOMAIN EXPO_PUBLIC_REPL_ID=$REPL_ID EXPO_PACKAGER_PROXY_URL=https://$REPLIT_EXPO_DEV_DOMAIN REACT_NATIVE_PACKAGER_HOSTNAME=$REPLIT_EXPO_DEV_DOMAIN ./node_modules/.bin/expo start --web --port 5000"
+waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
 
 [[ports]]
 localPort = 3000
