@@ -4,6 +4,10 @@ const path = require("path");
 
 const config = getDefaultConfig(__dirname);
 
+// Explicitly pin projectRoot to artifacts/mobile so Metro doesn't pick up the
+// pnpm workspace root as the project root in a monorepo layout.
+config.projectRoot = __dirname;
+
 // Exclude the mockup-sandbox vite build artefacts from Metro's file watcher.
 // Without this, Metro crashes with ENOENT when Vite rotates its deps_temp_*
 // directories during a hot-reload cycle.

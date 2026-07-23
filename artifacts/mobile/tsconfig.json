@@ -19,9 +19,4 @@
     "node_modules",
     "supabase/**"
   ],
-  "references": [
-    {
-      "path": "../../lib/api-client-react"
-    }
-  ]
 }
