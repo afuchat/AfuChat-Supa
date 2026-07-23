@@ -939,14 +939,30 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     }
 
     let memberRows: { chat_id: string }[] | null = null;
+    let memberFetchFailed = false;
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("chat_members")
         .select("chat_id")
         .eq("user_id", user.id);
-      memberRows = data;
-    } catch {}
+      if (error) {
+        memberFetchFailed = true;
+      } else {
+        memberRows = data;
+      }
+    } catch {
+      memberFetchFailed = true;
+    }
 
+    // Query failed (network blip, transient error) — keep showing whatever
+    // the user already sees rather than wiping the list to "No chats yet".
+    if (memberFetchFailed) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
+    // Genuinely no chats (new account, left all chats, etc.)
     if (!memberRows || memberRows.length === 0) {
       setChats([]);
       setLoading(false);
