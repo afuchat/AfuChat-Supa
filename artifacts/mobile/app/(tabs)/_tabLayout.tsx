@@ -55,7 +55,7 @@ function useTotalUnread(userId: string | undefined): number {
       setTotal(convs.reduce((s, c) => s + (c.unread_count ?? 0), 0));
     };
     const ch = supabase
-      .channel("tab-bar-unread")
+      .channel(`tab-bar-unread-${userId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "message_status", filter: `user_id=eq.${userId}` }, fallbackRefresh)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "message_status", filter: `user_id=eq.${userId}` }, fallbackRefresh)
       .subscribe();
