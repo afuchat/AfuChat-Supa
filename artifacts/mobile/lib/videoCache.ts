@@ -1,4 +1,3 @@
-import { Platform } from "react-native";
 import * as FileSystem from "expo-file-system/legacy";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getDB } from "./storage/db";
@@ -22,10 +21,7 @@ import { isCellular } from "./networkQuality";
 // ─── Directories ───────────────────────────────────────────────────────────────
 
 // Permanent watched-video store — survives cache pressure, lives until user deletes.
-// FileSystem.documentDirectory is null on web — the "" fallback is never actually
-// used because every function that touches this path has an early-return
-// Platform.OS === "web" guard, so the path is only evaluated on native where
-// documentDirectory is always a non-null string.
+// FileSystem.documentDirectory is always a non-null string on Android.
 const VIDEO_DIR = (FileSystem.documentDirectory ?? "") + "afuchat_videos/";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────

@@ -171,25 +171,6 @@ function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-async function genWebThumb(url: string, at: number): Promise<string | null> {
-  if (typeof document === "undefined") return null;
-  try {
-    const v = document.createElement("video");
-    v.crossOrigin = "anonymous"; v.muted = true; v.preload = "metadata"; v.src = url;
-    await new Promise<void>((res, rej) => {
-      v.addEventListener("loadedmetadata", () => { v.currentTime = Math.min(at, v.duration - 0.01 || at); });
-      v.addEventListener("seeked", () => res());
-      v.addEventListener("error", () => rej(new Error("seek failed")));
-      v.load();
-    });
-    const w = v.videoWidth || 640; const h = v.videoHeight || 360;
-    const c = document.createElement("canvas"); c.width = w; c.height = h;
-    const ctx = c.getContext("2d"); if (!ctx) return null;
-    ctx.drawImage(v, 0, 0, w, h);
-    return await new Promise<string | null>((res) => c.toBlob((b) => res(b ? URL.createObjectURL(b) : null), "image/jpeg", 0.8));
-  } catch { return null; }
-}
-
 async function genNativeThumb(uri: string, ms: number): Promise<string | null> {
   try {
     const m = await import("expo-video-thumbnails");
@@ -874,8 +855,7 @@ function EditPhase({
     debounce.current = setTimeout(async () => {
       try {
         let uri: string | null = null;
-        if (Platform.OS === "web") uri = await genWebThumb(videoUri, thumbTime);
-        else if (!videoUri.startsWith("blob:")) uri = await genNativeThumb(videoUri, thumbTime * 1000);
+        if (!videoUri.startsWith("blob:")) uri = await genNativeThumb(videoUri, thumbTime * 1000);
         if (uri) setThumbnailUri(uri);
       } catch {} finally { setThumbGen(false); }
     }, 280);
@@ -1689,9 +1669,6 @@ export default function CreateVideoScreen() {
   // Loading state during gallery pick (OS transcoding can take several seconds)
   const [isPickingVideo, setIsPickingVideo] = useState(false);
 
-  // Web file input
-  const webInputRef = useRef<HTMLInputElement | null>(null);
-
   function handleCapture(uri: string, dur: number, speed: number) {
     setVideoUri(uri); setVideoMime("video/mp4");
     setDuration(dur); setFileSize(0);
@@ -1701,7 +1678,6 @@ export default function CreateVideoScreen() {
   }
 
   async function handlePickFromGallery() {
-    if (Platform.OS === "web") { webInputRef.current?.click(); return; }
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) { showAlert("Permission required", "Allow access to your media library."); return; }
 
@@ -1729,20 +1705,6 @@ export default function CreateVideoScreen() {
     } finally {
       setIsPickingVideo(false);
     }
-  }
-
-  async function handleWebFile(file: File | null) {
-    if (!file) return;
-    if (file.size > 200 * 1024 * 1024) { showAlert("Too large", "Max 200 MB."); return; }
-    const url = URL.createObjectURL(file);
-    setVideoUri(url); setVideoMime(file.type || undefined); setFileSize(file.size);
-    try {
-      const v = document.createElement("video"); v.preload = "metadata"; v.src = url;
-      await new Promise<void>((res, rej) => { v.onloadedmetadata = () => res(); v.onerror = () => rej(); });
-      if (v.duration > MAX_DURATION) { URL.revokeObjectURL(url); setVideoUri(null); showAlert("Too long", `Max ${MAX_DURATION}s.`); return; }
-      setDuration(v.duration); setVideoWidth(v.videoWidth || null); setVideoHeight(v.videoHeight || null);
-    } catch {}
-    setPhase("edit");
   }
 
   function handlePost(payload: PostPayload) {
@@ -1799,8 +1761,7 @@ export default function CreateVideoScreen() {
         try {
           let localThumb = _thumb;
           if (!localThumb) {
-            if (Platform.OS === "web") localThumb = await genWebThumb(_uri, _ttime);
-            else if (!_uri.startsWith("blob:")) localThumb = await genNativeThumb(_uri, _ttime * 1000);
+            if (!_uri.startsWith("blob:")) localThumb = await genNativeThumb(_uri, _ttime * 1000);
           }
           if (localThumb) {
             const tp = `${user.id}/${Date.now()}_thumb.jpg`;
@@ -1850,21 +1811,8 @@ export default function CreateVideoScreen() {
     })();
   }
 
-  // Web-only: show picker if we're in edit phase but no video yet
-  const needsVideoPicker = phase === "edit" && !videoUri;
-
   return (
     <>
-      {        // @ts-ignore
-        <input
-          ref={webInputRef as any}
-          type="file"
-          accept="video/mp4,video/quicktime,video/webm,video/*"
-          style={{ display: "none" }}
-          onChange={(e: any) => { const f = e.target?.files?.[0] ?? null; handleWebFile(f); if (e.target) e.target.value = ""; }}
-        />
-      )}
-
       {phase === "posting" ? (
         <PostingPhase thumbnailUri={postingThumb} caption={postingCaption} />
       ) : phase === "camera" ? (

@@ -4,7 +4,6 @@ import {
   TouchableOpacity,
   View,
   StyleSheet,
-  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
@@ -19,8 +18,6 @@ type Props = {
   translate?: boolean;
   richText?: boolean;
 };
-
-const WEB_CHARS_PER_LINE = 58;
 
 export function ExpandableText({
   text,
@@ -44,13 +41,6 @@ export function ExpandableText({
     setNeedsExpander(false);
     setExpanded(false);
   }, [displayText]);
-
-  useEffect(() => {
-    if (      setMeasured(true);
-      const lines = Math.ceil((displayText || "").length / WEB_CHARS_PER_LINE);
-      if (lines > maxLines) setNeedsExpander(true);
-    }
-  }, [displayText, measured, maxLines]);
 
   const onTextLayout = useCallback(
     (e: any) => {

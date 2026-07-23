@@ -14,7 +14,6 @@
  *     4. Falls back to proxy upload via Edge Function if presigned PUT fails.
  */
 
-import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase, supabaseUrl, supabaseAnonKey } from "./supabase";
 import * as FileSystem from "expo-file-system/legacy";
@@ -256,21 +255,7 @@ export async function uploadToStorage(
     const mime = resolvedMime || getMime(ext);
     const realBucket = resolveBucket(bucket);
 
-    // ── Web: always proxy (no CORS to R2) ───────────────────────────────────
-    if (Platform.OS === "web") {
-      let body: Blob | ArrayBuffer;
-      try {
-        body = await fileUriToBlob(fileUri, mime);
-      } catch {
-        return { publicUrl: null, error: "Could not read selected file. Please try again." };
-      }
-      const proxied = await proxyUpload(realBucket, filePath, body, mime);
-      return proxied.error
-        ? { publicUrl: null, error: proxied.error }
-        : { publicUrl: proxied.publicUrl, error: null };
-    }
-
-    // ── Native: data: / blob: URIs are already in memory — small files ───────
+    // ── data: / blob: URIs are already in memory — small files ─────────────
     if (fileUri.startsWith("data:") || fileUri.startsWith("blob:")) {
       let body: Blob | ArrayBuffer;
       try {
