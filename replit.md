@@ -8,7 +8,7 @@
 AfuChat is a social mobile app (React Native/Expo). The app includes messaging, posts, stories, video, payments (Pesapal), AI chat, and more.
 
 ## Architecture
-- **`artifacts/mobile`** — Expo/React Native mobile app (the only artifact)
+- **`artifacts/mobile`** — Expo/React Native mobile app (only artifact; website artifact removed)
 
 ## How to run
 - **Start application** workflow: starts Expo Metro bundler on port 5001 (scan QR in Expo Go or open web)
