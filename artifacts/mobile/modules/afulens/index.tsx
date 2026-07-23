@@ -18,7 +18,6 @@ import {
   Dimensions,
   Image,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -36,16 +35,7 @@ import { getEdgeFnBase, edgeHeaders } from "@/lib/aiHelper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient as SafeGrad } from "@/components/ui/SafeGradient";
 import { useSuperApp } from "@/lib/superapp/SuperAppContext";
-
-let CameraView: any = null;
-let useCameraPermissions: any = null;
-if (Platform.OS !== "web") {
-  try {
-    const cam = require("expo-camera");
-    CameraView = cam.CameraView;
-    useCameraPermissions = cam.useCameraPermissions;
-  } catch (_) {}
-}
+import { CameraView, useCameraPermissions } from "expo-camera";
 
 const { width: SW, height: SH } = Dimensions.get("window");
 const FRAME_SIZE = Math.min(SW, SH) * 0.68;
@@ -137,80 +127,13 @@ function ConfidenceBadge({ level }: { level: string }) {
   );
 }
 
-function WebCameraView({ onCapture }: { onCapture: (base64: string, mime: string) => void }) {
-  const videoRef  = useRef<any>(null);
-  const canvasRef = useRef<any>(null);
-  const streamRef = useRef<any>(null);
-  const [ready, setReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const stream = await (navigator as any).mediaDevices.getUserMedia({
-          video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
-        });
-        if (!mounted) { stream.getTracks().forEach((t: any) => t.stop()); return; }
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => { videoRef.current?.play(); setReady(true); };
-        }
-      } catch (e: any) { setError(e.message || "Camera access denied"); }
-    })();
-    return () => {
-      mounted = false;
-      streamRef.current?.getTracks().forEach((t: any) => t.stop());
-    };
-  }, []);
-
-  function capture() {
-    if (!videoRef.current || !canvasRef.current) return;
-    const v = videoRef.current;
-    const c = canvasRef.current;
-    c.width  = v.videoWidth  || 640;
-    c.height = v.videoHeight || 480;
-    c.getContext("2d")!.drawImage(v, 0, 0);
-    const dataUrl = c.toDataURL("image/jpeg", 0.7);
-    onCapture(dataUrl.split(",")[1], "image/jpeg");
-  }
-
-  if (error) {
-    return (
-      <View style={s.webFallback}>
-        <Ionicons name="videocam-off-outline" size={48} color="#999" />
-        <Text style={s.webFallbackText}>{error}</Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={StyleSheet.absoluteFill}>
-      <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-      <canvas ref={canvasRef} style={{ display: "none" }} />
-      {!ready && (
-        <View style={[StyleSheet.absoluteFill, s.camLoading]}>
-          <ActivityIndicator color={BRAND} size="large" />
-          <Text style={s.camLoadingText}>Starting camera…</Text>
-        </View>
-      )}
-      <TouchableOpacity style={s.webCaptureBtn} onPress={capture} activeOpacity={0.85}>
-        <Ionicons name="scan" size={28} color="#fff" />
-      </TouchableOpacity>
-    </View>
-  );
-}
-
 export default function AfuLensApp() {
   const insets   = useSafeAreaInsets();
   const { colors } = useTheme();
   const { navigateOutside } = useSuperApp();
   const cameraRef = useRef<any>(null);
 
-  const [permission, requestPermission] = useCameraPermissions
-    ? (useCameraPermissions as () => [any, () => Promise<any>])()
-    : [{ granted: Platform.OS === "web" }, async () => {}];
+  const [permission, requestPermission] = useCameraPermissions();
 
   const [facing,   setFacing]   = useState<"back" | "front">("back");
   const [scanning, setScanning] = useState(false);
@@ -272,24 +195,6 @@ export default function AfuLensApp() {
     } catch (e: any) { setError(e.message || "Could not capture photo"); }
   }
 
-  function handleImagePick() {
-    if (Platform.OS !== "web") return;
-    const input = document.createElement("input");
-    input.type = "file"; input.accept = "image/*";
-    input.onchange = (e: any) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const dataUrl = ev.target?.result as string;
-        setPreview(dataUrl);
-        analyze(dataUrl.split(",")[1], file.type || "image/jpeg");
-      };
-      reader.readAsDataURL(file);
-    };
-    input.click();
-  }
-
   async function askMoreInLens() {
     const q = moreQuery.trim();
     if (!q || !capturedBase64 || moreLoading) return;
@@ -309,7 +214,7 @@ export default function AfuLensApp() {
     } finally { setMoreLoading(false); }
   }
 
-  const needsPermission = Platform.OS !== "web" && !permission?.granted;
+  const needsPermission = !permission?.granted;
 
   if (needsPermission) {
     return (
@@ -333,26 +238,18 @@ export default function AfuLensApp() {
   return (
     <View style={s.root}>
       <View style={StyleSheet.absoluteFill}>
-        {Platform.OS === "web" ? (
-          <WebCameraView onCapture={(b64, mime) => analyze(b64, mime)} />
-        ) : CameraView ? (
-          <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing={facing} />
-        ) : (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: "#000" }]} />
-        )}
+        <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing={facing} />
       </View>
 
-      {Platform.OS !== "web" && (
-        <View style={[s.topControls, { paddingTop: insets.top + 4 }]}>
-          <TouchableOpacity
-            style={s.controlBtn}
-            onPress={() => setFacing(f => f === "back" ? "front" : "back")}
-            hitSlop={12}
-          >
-            <Ionicons name="camera-reverse-outline" size={22} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      )}
+      <View style={[s.topControls, { paddingTop: insets.top + 4 }]}>
+        <TouchableOpacity
+          style={s.controlBtn}
+          onPress={() => setFacing(f => f === "back" ? "front" : "back")}
+          hitSlop={12}
+        >
+          <Ionicons name="camera-reverse-outline" size={22} color="#fff" />
+        </TouchableOpacity>
+      </View>
 
       <View style={[s.frameContainer, { pointerEvents: "none" }]}>
         <ScanFrame scanning={scanning || loading} />
@@ -376,7 +273,7 @@ export default function AfuLensApp() {
               value={query}
               onChangeText={setQuery}
               returnKeyType="search"
-              onSubmitEditing={Platform.OS === "web" ? handleImagePick : captureNative}
+              onSubmitEditing={captureNative}
             />
             {query.length > 0 && (
               <TouchableOpacity onPress={() => setQuery("")} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -397,15 +294,9 @@ export default function AfuLensApp() {
         )}
 
         <View style={[s.captureRow, { paddingBottom: insets.bottom + 16 }]}>
-          {Platform.OS === "web" && (
-            <TouchableOpacity style={s.sideBtn} onPress={handleImagePick} activeOpacity={0.8}>
-              <Ionicons name="image-outline" size={24} color="#fff" />
-              <Text style={s.sideBtnText}>Gallery</Text>
-            </TouchableOpacity>
-          )}
           <TouchableOpacity
             style={[s.captureBtn, loading && s.captureBtnDisabled]}
-            onPress={Platform.OS === "web" ? handleImagePick : captureNative}
+            onPress={captureNative}
             activeOpacity={0.85}
             disabled={loading}
           >
@@ -419,7 +310,7 @@ export default function AfuLensApp() {
               <Ionicons name="list-outline" size={24} color="#fff" />
               <Text style={s.sideBtnText}>Results</Text>
             </TouchableOpacity>
-          ) : <View style={{ width: Platform.OS === "web" ? 72 : 0 }} />}
+          ) : <View style={{ width: 72 }} />}
         </View>
       </KeyboardAvoidingView>
 
@@ -585,9 +476,6 @@ const s = StyleSheet.create({
   permBtnText: { color: "#fff", fontSize: 16, fontFamily: "Inter_600SemiBold" },
   topControls: { position: "absolute", top: 0, right: 16, zIndex: 10, paddingTop: 8 },
   controlBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center" },
-  webFallback: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, backgroundColor: "#111" },
-  webFallbackText: { color: "#999", fontSize: 14, textAlign: "center", paddingHorizontal: 24 },
-  webCaptureBtn: { position: "absolute", bottom: 32, alignSelf: "center", width: 72, height: 72, borderRadius: 36, backgroundColor: BRAND, alignItems: "center", justifyContent: "center" },
   camLoading: { backgroundColor: "#000", alignItems: "center", justifyContent: "center", gap: 10 },
   camLoadingText: { color: "#fff", fontSize: 14 },
   frameContainer: { flex: 1, alignItems: "center", justifyContent: "center", marginTop: 40, marginBottom: 160 },

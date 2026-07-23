@@ -1,8 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  LayoutChangeEvent,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -12,241 +10,14 @@ import { router, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import Colors from "@/constants/colors";
+import { CameraView, useCameraPermissions, useMicrophonePermissions } from "expo-camera";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { showAlert } from "@/lib/alert";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
-import { DesktopCameraFallback } from "@/components/desktop/DesktopCameraFallback";
 import FilterSelector from "@/components/camera/FilterSelector";
 import FaceFilterOverlay from "@/components/camera/FaceFilterOverlay";
 import { FilterId } from "@/components/camera/filterDefs";
 
 type CameraMode = "photo" | "video";
-
-function useWebCamera() {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const [ready, setReady] = useState(false);
-  const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
-
-  const start = useCallback(async (facing: "user" | "environment") => {
-    try {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((t) => t.stop());
-      }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false,
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      setReady(true);
-    } catch {
-      setReady(false);
-    }
-  }, []);
-
-  const stop = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
-    setReady(false);
-  }, []);
-
-  const capture = useCallback((filterCanvas?: HTMLCanvasElement | null): string | null => {
-    const video = videoRef.current;
-    if (!video) return null;
-    const w = Math.min(video.videoWidth, 1280);
-    const h = Math.min(video.videoHeight, 720);
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    ctx.drawImage(video, 0, 0, w, h);
-    if (filterCanvas) {
-      ctx.drawImage(filterCanvas, 0, 0, w, h);
-    }
-    return canvas.toDataURL("image/jpeg", 0.85);
-  }, []);
-
-  const flip = useCallback(() => {
-    const next = facingMode === "user" ? "environment" : "user";
-    setFacingMode(next);
-    start(next);
-  }, [facingMode, start]);
-
-  return { videoRef, ready, start, stop, capture, flip, facingMode };
-}
-
-function WebCameraScreen() {
-  const { accent } = useAppAccent();
-  const insets = useSafeAreaInsets();
-  const { videoRef, ready, start, stop, capture, flip } = useWebCamera();
-  const [processing, setProcessing] = useState(false);
-  const [permDenied, setPermDenied] = useState(false);
-  const [filter, setFilter] = useState<FilterId>("normal");
-  const [dims, setDims] = useState({ w: 0, h: 0 });
-  const filterCanvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        await start("user");
-      } catch {
-        setPermDenied(true);
-      }
-    })();
-    return () => stop();
-  }, []);
-
-  const onLayout = useCallback((e: LayoutChangeEvent) => {
-    const { width, height } = e.nativeEvent.layout;
-    setDims({ w: width, h: height });
-  }, []);
-
-  const takePicture = useCallback(() => {
-    if (processing) return;
-    setProcessing(true);
-    try {
-      const canvas = filterCanvasRef.current;
-      const dataUri = capture(canvas);
-      if (dataUri) {
-        router.push({ pathname: "/stories/create", params: { mediaUri: dataUri, mediaType: "image" } });
-      } else {
-        showAlert("Error", "Could not capture photo.");
-        setProcessing(false);
-      }
-    } catch {
-      showAlert("Error", "Failed to take photo.");
-      setProcessing(false);
-    }
-  }, [processing, capture]);
-
-  useFocusEffect(
-    useCallback(() => {
-      setProcessing(false);
-    }, [])
-  );
-
-  const openGallery = useCallback(async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images", "videos"],
-        quality: 0.85,
-      });
-      if (!result.canceled && result.assets[0]) {
-        const asset = result.assets[0];
-        router.push({
-          pathname: "/stories/create",
-          params: { mediaUri: asset.uri, mediaType: asset.type === "video" ? "video" : "image" },
-        });
-      }
-    } catch {
-      showAlert("Error", "Could not open gallery.");
-    }
-  }, []);
-
-  if (permDenied) {
-    return (
-      <View style={[st.root, { backgroundColor: "#000" }]}>
-        <View style={st.permWrap}>
-          <Ionicons name="camera-outline" size={56} color="rgba(255,255,255,0.5)" />
-          <Text style={st.permText}>Camera access is needed to take photos for stories.</Text>
-          <TouchableOpacity style={[st.permBtn, { backgroundColor: accent }]} onPress={() => { setPermDenied(false); start("user"); }}>
-            <Text style={st.permBtnText}>Try Again</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={st.permSecondary} onPress={openGallery}>
-            <Ionicons name="images-outline" size={18} color="rgba(255,255,255,0.7)" />
-            <Text style={[st.permBtnText, { color: "rgba(255,255,255,0.7)" }]}>Choose from Gallery</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text style={[st.permBtnText, { color: "rgba(255,255,255,0.4)", marginTop: 8 }]}>Go Back</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
-  return (
-    <View style={[st.root, { backgroundColor: "#000" }]} onLayout={onLayout}>
-      <video
-        ref={videoRef as any}
-        autoPlay
-        playsInline
-        muted
-        style={{ width: "100%", height: "100%", objectFit: "cover" } as any}
-      />
-
-      {dims.w > 0 && (
-        <FaceFilterOverlay
-          videoRef={videoRef}
-          filter={filter}
-          width={dims.w}
-          height={dims.h}
-        />
-      )}
-
-      <View style={[st.topBar, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity onPress={() => router.back()} style={st.topBtn}>
-          <Ionicons name="arrow-back" size={26} color="#fff" />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }} />
-        <TouchableOpacity onPress={flip} style={st.topBtn}>
-          <Ionicons name="camera-reverse-outline" size={22} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={openGallery} style={st.topBtn}>
-          <Ionicons name="grid-outline" size={22} color="#fff" />
-        </TouchableOpacity>
-      </View>
-
-      <FilterSelector selected={filter} onSelect={setFilter} />
-
-      <View style={[st.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
-        <TouchableOpacity style={st.galleryThumb} onPress={openGallery}>
-          <View style={[st.galleryImg, { backgroundColor: "rgba(255,255,255,0.15)" }]}>
-            <Ionicons name="images-outline" size={20} color="rgba(255,255,255,0.5)" />
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={st.shutter}
-          onPress={takePicture}
-          disabled={processing || !ready}
-          activeOpacity={0.7}
-        >
-          {processing ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <View style={st.shutterInner} />
-          )}
-        </TouchableOpacity>
-
-        <View style={st.flipBtn} />
-      </View>
-
-      <View style={[st.modeBar, { bottom: insets.bottom + 4 }]}>
-        <View style={[st.modeBtn, st.modeBtnActive]}>
-          <Text style={[st.modeText, st.modeTextActive]}>Photo</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-let CameraView: any;
-let useCameraPermissions: any;
-let useMicrophonePermissions: any;
-if (Platform.OS !== "web") {
-  const cam = require("expo-camera");
-  CameraView = cam.CameraView;
-  useCameraPermissions = cam.useCameraPermissions;
-  useMicrophonePermissions = cam.useMicrophonePermissions;
-}
 
 function NativeCameraScreen() {
   const { accent } = useAppAccent();
@@ -439,12 +210,6 @@ function NativeCameraScreen() {
 }
 
 export default function StoryCameraScreen() {
-  const { isDesktop } = useIsDesktop();
-  useEffect(() => {
-    if (isDesktop) router.replace("/");
-  }, [isDesktop]);
-  if (isDesktop) return null;
-  if (Platform.OS === "web") return <WebCameraScreen />;
   return <NativeCameraScreen />;
 }
 

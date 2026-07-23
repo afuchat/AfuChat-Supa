@@ -1,6 +1,5 @@
 import React, { useCallback, useRef, useState } from "react";
 import {
-  Platform,
   Share,
   StyleSheet,
   Text,
@@ -13,11 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import * as WebBrowser from "expo-web-browser";
 import * as Clipboard from "expo-clipboard";
-
-let WebView: any = null;
-if (Platform.OS !== "web") {
-  WebView = require("react-native-webview").WebView;
-}
+import { WebView } from "react-native-webview";
 
 export default function BrowserScreen() {
   const { url: rawUrl } = useLocalSearchParams<{ url?: string }>();
@@ -70,16 +65,6 @@ export default function BrowserScreen() {
   const bg = isDark ? "#1a1a1a" : "#f5f5f5";
   const headerBg = isDark ? "#111111" : "#ffffff";
   const borderColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
-
-  if (Platform.OS === "web") {
-    return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <Text style={{ color: colors.textMuted, fontSize: 15 }}>
-          Opening in browser…
-        </Text>
-      </View>
-    );
-  }
 
   return (
     <View style={[styles.root, { backgroundColor: bg, paddingTop: insets.top }]}>

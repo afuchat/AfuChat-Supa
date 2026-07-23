@@ -37,7 +37,6 @@ import { notifyPostLike, notifyPostReply } from "@/lib/notifyUser";
 import { useAutoTranslate } from "@/context/LanguageContext";
 import { LANG_LABELS } from "@/lib/translate";
 import { aiSummarizeThread } from "@/lib/aiHelper";
-import { setPageMeta, resetPageMeta } from "@/lib/webMeta";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import * as Haptics from "@/lib/haptics";
 
@@ -418,16 +417,6 @@ export default function PostShortLinkScreen() {
   }, [id, loadingMoreReplies, hasMoreReplies]);
 
   useEffect(() => { loadPost(); loadReplies(); }, [loadPost, loadReplies]);
-
-  useEffect(() => {
-    if (!post || !shortCode) return;
-    const snippet = (post.content || "").slice(0, 70);
-    const title = `${post.author?.display_name ?? "User"} on AfuChat: "${snippet}${(post.content?.length ?? 0) > 70 ? "…" : ""}"`;
-    const description = (post.content || "").slice(0, 200) || "View this post on AfuChat.";
-    const image = (post.images?.[0] ?? post.image_url) ?? undefined;
-    setPageMeta({ title, description, image, url: `https://afuchat.com/p/${shortCode}`, type: "article", publishedAt: post.created_at, author: post.author?.display_name });
-    return resetPageMeta;
-  }, [post, shortCode]);
 
   useEffect(() => {
     if (!id) return;

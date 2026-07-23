@@ -71,9 +71,7 @@
     "plugins": [
       [
         "expo-router",
-        {
-          "origin": "https://afuchat.com"
-        }
+        {}
       ],
       "expo-font",
       "expo-web-browser",
@@ -136,9 +134,6 @@
             "enableProguardInReleaseBuilds": true,
             "enableShrinkResources": true,
             "enableMinifyInReleaseBuilds": true
-          },
-          "ios": {
-            "deploymentTarget": "15.1"
           }
         }
       ],
@@ -175,18 +170,6 @@
     "extra": {
       "eas": {
         "projectId": "7efbd70c-e8d4-485d-88a9-d05e3d34f280"
-      }
-    },
-    "ios": {
-      "bundleIdentifier": "com.afuchat.afuapp",
-      "buildNumber": "2.2.6",
-      "infoPlist": {
-        "NSCameraUsageDescription": "AfuChat uses the camera to take photos and videos for stories and messages.",
-        "NSMicrophoneUsageDescription": "AfuChat uses the microphone to record voice messages and video with audio.",
-        "NSPhotoLibraryUsageDescription": "AfuChat uses your photo library to let you save and share media.",
-        "NSLocationWhenInUseUsageDescription": "AfuChat uses your location only when the Nearby Friends feature is open.",
-        "NSContactsUsageDescription": "AfuChat uses your contacts to help you find and connect with people you know.",
-        "NSFaceIDUsageDescription": "AfuChat uses Face ID to let you sign in quickly and securely."
       }
     }
   }

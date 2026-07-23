@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -32,52 +31,6 @@ const MAX_DURATION_SECONDS = 90;
 function formatBytes(bytes: number) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-async function generateWebThumbnail(videoObjectUrl: string, atSecond: number): Promise<string | null> {
-  if (typeof document === "undefined") return null;
-  try {
-    const video = document.createElement("video");
-    video.crossOrigin = "anonymous";
-    video.muted = true;
-    video.preload = "metadata";
-    video.src = videoObjectUrl;
-    await new Promise<void>((resolve, reject) => {
-      const onLoaded = () => {
-        video.removeEventListener("loadedmetadata", onLoaded);
-        video.removeEventListener("error", onError);
-        video.currentTime = Math.max(0, Math.min(atSecond, video.duration - 0.01 || atSecond));
-      };
-      const onSeeked = () => {
-        video.removeEventListener("seeked", onSeeked);
-        video.removeEventListener("error", onError);
-        resolve();
-      };
-      const onError = () => {
-        video.removeEventListener("loadedmetadata", onLoaded);
-        video.removeEventListener("seeked", onSeeked);
-        video.removeEventListener("error", onError);
-        reject(new Error("Video seek failed"));
-      };
-      video.addEventListener("loadedmetadata", onLoaded);
-      video.addEventListener("seeked", onSeeked);
-      video.addEventListener("error", onError);
-      video.load();
-    });
-    const w = video.videoWidth || 640;
-    const h = video.videoHeight || 360;
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    ctx.drawImage(video, 0, 0, w, h);
-    return await new Promise<string | null>((resolve) => {
-      canvas.toBlob((blob) => resolve(blob ? URL.createObjectURL(blob) : null), "image/jpeg", 0.8);
-    });
-  } catch {
-    return null;
-  }
 }
 
 async function generateNativeThumbnail(videoUri: string, atMs: number): Promise<string | null> {
@@ -121,8 +74,6 @@ export default function CreateDuetScreen() {
   const [uploadProgress, setUploadProgress] = useState("");
   const [thumbnailUri, setThumbnailUri] = useState<string | null>(null);
 
-  const webFileInputRef = useRef<HTMLInputElement | null>(null);
-
   useEffect(() => {
     if (!postId) return;
     supabase
@@ -156,9 +107,7 @@ export default function CreateDuetScreen() {
     const go = async () => {
       try {
         let uri: string | null = null;
-        if (Platform.OS === "web") {
-          uri = await generateWebThumbnail(videoUri, 1);
-        } else if (!videoUri.startsWith("blob:")) {
+        if (!videoUri.startsWith("blob:")) {
           uri = await generateNativeThumbnail(videoUri, 1000);
         }
         if (uri) setThumbnailUri(uri);
@@ -167,45 +116,7 @@ export default function CreateDuetScreen() {
     go();
   }, [videoUri]);
 
-  function pickVideoWeb() {
-    if (Platform.OS !== "web" || !webFileInputRef.current) return;
-    webFileInputRef.current.click();
-  }
-
-  async function handleWebFileChange(file: File | null) {
-    if (!file) return;
-    if (file.size > 200 * 1024 * 1024) {
-      showAlert("Too large", "Please pick a video smaller than 200 MB.");
-      return;
-    }
-    const objectUrl = URL.createObjectURL(file);
-    setVideoUri(objectUrl);
-    setVideoMime(file.type || undefined);
-    setFileSize(file.size || 0);
-    setThumbnailUri(null);
-    try {
-      const probe = document.createElement("video");
-      probe.preload = "metadata";
-      probe.src = objectUrl;
-      await new Promise<void>((resolve, reject) => {
-        probe.onloadedmetadata = () => resolve();
-        probe.onerror = () => reject(new Error("Could not read video"));
-      });
-      const dur = isFinite(probe.duration) ? probe.duration : 0;
-      if (dur > MAX_DURATION_SECONDS) {
-        URL.revokeObjectURL(objectUrl);
-        setVideoUri(null);
-        showAlert("Too long", `Videos must be ${MAX_DURATION_SECONDS} seconds or shorter.`);
-        return;
-      }
-      setDuration(dur);
-      setVideoWidth(probe.videoWidth || null);
-      setVideoHeight(probe.videoHeight || null);
-    } catch {}
-  }
-
   async function pickVideo() {
-    if (Platform.OS === "web") { pickVideoWeb(); return; }
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
       showAlert("Permission required", "Please allow access to your media library to pick a video.");
@@ -412,26 +323,14 @@ export default function CreateDuetScreen() {
             <View style={s.videoHalf}>
               <Text style={[s.videoHalfLabel, { color: colors.textMuted }]}>Original</Text>
               <View style={[s.videoBox, { backgroundColor: "#000" }]}>
-                {Platform.OS !== "web" ? (
-                  <VideoPreview
-                    uri={original.video_url}
-                    style={StyleSheet.absoluteFill}
-                    contentFit="cover"
-                    shouldPlay={false}
-                    isLooping
-                    isMuted
-                  />
-                ) : (
-                  // @ts-ignore
-                  <video
-                    src={original.video_url}
-                    poster={original.image_url || undefined}
-                    muted
-                    playsInline
-                    loop
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                )}
+                <VideoPreview
+                  uri={original.video_url}
+                  style={StyleSheet.absoluteFill}
+                  contentFit="cover"
+                  shouldPlay={false}
+                  isLooping
+                  isMuted
+                />
                 <View style={s.videoLabel}>
                   <Text style={s.videoLabelText} numberOfLines={1}>
                     @{original.profile.handle}
@@ -456,25 +355,14 @@ export default function CreateDuetScreen() {
                 activeOpacity={0.8}
               >
                 {videoUri ? (
-                  Platform.OS !== "web" ? (
-                    <VideoPreview
-                      uri={videoUri!}
-                      style={StyleSheet.absoluteFill}
-                      contentFit="cover"
-                      shouldPlay={false}
-                      isLooping
-                      isMuted
-                    />
-                  ) : (
-                    // @ts-ignore
-                    <video
-                      src={videoUri}
-                      muted
-                      playsInline
-                      loop
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
-                  )
+                  <VideoPreview
+                    uri={videoUri}
+                    style={StyleSheet.absoluteFill}
+                    contentFit="cover"
+                    shouldPlay={false}
+                    isLooping
+                    isMuted
+                  />
                 ) : (
                   <View style={{ alignItems: "center", gap: 8 }}>
                     <Ionicons name="add-circle-outline" size={36} color={colors.textMuted} />

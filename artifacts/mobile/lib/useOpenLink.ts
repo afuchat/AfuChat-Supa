@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Alert, Linking, Platform } from "react-native";
+import { Alert, Linking } from "react-native";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import * as Clipboard from "expo-clipboard";
@@ -10,23 +10,12 @@ export function isWebUrl(url: string) {
   return WEB_SCHEMES.some((s) => url.startsWith(s));
 }
 
-// Default tap on a link:
-//   Web  → opens in new tab
-//   Android/iOS → Chrome Custom Tabs (Google Chrome in-app, has back gesture)
-// Non-http links (mailto, tel, sms) always go to the OS handler.
+// Default tap on a link: open web URLs in Chrome Custom Tabs and send
+// non-http links (mailto, tel, sms) to the OS handler.
 export function useOpenLink() {
   return useCallback((url: string) => {
     if (!url) return;
     const trimmed = url.trim();
-
-    if (Platform.OS === "web") {
-      if (isWebUrl(trimmed) && typeof window !== "undefined") {
-        window.open(trimmed, "_blank", "noopener,noreferrer");
-      } else {
-        Linking.openURL(trimmed).catch(() => {});
-      }
-      return;
-    }
 
     if (isWebUrl(trimmed)) {
       WebBrowser.openBrowserAsync(trimmed, {
@@ -62,11 +51,6 @@ export function useOpenLinkActions() {
 
   const showLinkSheet = useCallback(
     (url: string) => {
-      if (Platform.OS === "web") {
-        if (typeof window !== "undefined")
-          window.open(url, "_blank", "noopener,noreferrer");
-        return;
-      }
       const display = url.length > 52 ? url.slice(0, 52) + "\u2026" : url;
       Alert.alert("Open Link", display, [
         { text: "Open in App Browser",   onPress: () => openInAppBrowser(url) },

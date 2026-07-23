@@ -4,7 +4,6 @@ import {
   Animated,
   Easing,
   Image,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -103,20 +102,6 @@ function mrz2(id: string, c: string) {
   return `${id.padEnd(9,"<")}${(c||"AFU").toUpperCase().slice(0,3).padEnd(3,"<")}${"<".repeat(17)}`;
 }
 
-/* ─── CAPTURE HELPERS ─── */
-async function h2cCapture(el: HTMLElement): Promise<HTMLCanvasElement> {
-  const h2c = (await import("html2canvas")).default;
-  return h2c(el, { useCORS: true, allowTaint: false, backgroundColor: null, scale: 3, logging: false });
-}
-async function webDownload(domRef: React.RefObject<View | null>, filename: string) {
-  const el = domRef.current as unknown as HTMLElement | null;
-  if (!el) return;
-  const canvas = await h2cCapture(el);
-  const a = document.createElement("a");
-  a.href = canvas.toDataURL("image/png");
-  a.download = filename;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-}
 async function nativeDownload(ref: React.RefObject<any>) {
   if (!ref.current || typeof (ref.current as any).capture !== "function") return;
   const uri: string = await (ref.current as any).capture();
@@ -136,8 +121,6 @@ export default function AfuIDApp() {
   const [dlState, setDlState] = useState<"idle"|"front"|"back">("idle");
 
   const flipAnim = useRef(new Animated.Value(0)).current;
-  const frontDomRef  = useRef<View>(null);
-  const backDomRef   = useRef<View>(null);
   const frontShotRef = useRef<any>(null);
   const backShotRef  = useRef<any>(null);
 
@@ -208,10 +191,8 @@ export default function AfuIDApp() {
 
   async function download(side: "front" | "back") {
     setDlState(side);
-    const filename = `afuchat-id-${side}-${profile?.handle ?? "card"}.png`;
     try {
-      if (Platform.OS === "web") await webDownload(side === "front" ? frontDomRef : backDomRef, filename);
-      else await nativeDownload(side === "front" ? frontShotRef : backShotRef);
+      await nativeDownload(side === "front" ? frontShotRef : backShotRef);
     } finally { setDlState("idle"); }
   }
 
@@ -330,10 +311,10 @@ export default function AfuIDApp() {
       {/* HIDDEN CAPTURE LAYERS */}
       <View style={[r.captureLayer, { pointerEvents: "none" } as any]}>
         <ViewShot ref={frontShotRef} options={{ format: "png", quality: 1, result: "tmpfile" }}>
-          <View ref={frontDomRef}><CardFront {...cp} /></View>
+          <View><CardFront {...cp} /></View>
         </ViewShot>
         <ViewShot ref={backShotRef} options={{ format: "png", quality: 1, result: "tmpfile" }}>
-          <View ref={backDomRef}><CardBack {...cp} /></View>
+          <View><CardBack {...cp} /></View>
         </ViewShot>
       </View>
     </ScrollView>
@@ -362,50 +343,18 @@ function FlagStrip({ colors: fc, h = 5 }: { colors: string[]; h?: number }) {
 }
 
 function SecurityPattern({ w, h, color }: { w: number; h: number; color: string }) {
-  if (Platform.OS !== "web") return null;
-  const lines: any[] = [];
-  const step = 14;
-  for (let i = -h; i < w + h; i += step) {
-    lines.push({ x1: i, y1: 0, x2: i + h, y2: h });
-    lines.push({ x1: i + h, y1: 0, x2: i, y2: h });
-  }
   return (
-    <View style={[StyleSheet.absoluteFill, { overflow: "hidden", pointerEvents: "none" } as any]}>
-      <svg width={w} height={h} style={{ position: "absolute", top: 0, left: 0 } as any}>
-        {lines.map((l, i) => (
-          <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
-            stroke={color} strokeWidth="0.5" opacity="0.12" />
-        ))}
-      </svg>
-    </View>
+    <View
+      style={[
+        StyleSheet.absoluteFill,
+        { backgroundColor: color + "08", opacity: 0.7, pointerEvents: "none" },
+      ] as any}
+    />
   );
 }
 
 function HoloStrip({ w, primary }: { w: number; primary: string }) {
-  if (Platform.OS !== "web") {
-    return <View style={{ width: w, height: 22, backgroundColor: primary + "22" }} />;
-  }
-  return (
-    <View style={{ width: w, height: 22, overflow: "hidden" }}>
-      <svg width={w} height={22} style={{ position: "absolute", top: 0, left: 0 } as any}>
-        <defs>
-          <linearGradient id="holo2" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%"   stopColor="#FF0080" stopOpacity="0.25" />
-            <stop offset="20%"  stopColor={primary}  stopOpacity="0.35" />
-            <stop offset="40%"  stopColor="#00FFCC"  stopOpacity="0.25" />
-            <stop offset="60%"  stopColor="#FFD700"  stopOpacity="0.3"  />
-            <stop offset="80%"  stopColor="#8B5CF6"  stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#FF0080"  stopOpacity="0.25" />
-          </linearGradient>
-        </defs>
-        <rect x="0" y="0" width={w} height={22} fill="url(#holo2)" />
-        {[...Array(Math.floor(w / 8))].map((_, i) => (
-          <line key={i} x1={i * 8} y1="0" x2={i * 8} y2="22"
-            stroke="#ffffff" strokeWidth="0.3" opacity="0.15" />
-        ))}
-      </svg>
-    </View>
-  );
+  return <View style={{ width: w, height: 22, backgroundColor: primary + "22" }} />;
 }
 
 function MagneticStripe({ w }: { w: number }) {
@@ -629,10 +578,11 @@ const r = StyleSheet.create({
 const c = StyleSheet.create({
   card: {
     borderRadius: 16, overflow: "hidden",
-    ...Platform.select({
-      web: { boxShadow: "0 12px 40px rgba(0,0,0,0.7), 0 0 0 0.5px rgba(255,255,255,0.06)" } as any,
-      default: { shadowColor: "#000", shadowOpacity: 0.7, shadowRadius: 24, shadowOffset: { width: 0, height: 10 }, elevation: 16 },
-    }),
+    shadowColor: "#000",
+    shadowOpacity: 0.7,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 16,
   },
   hdr: { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 7 },
   hdrBrand: { fontSize: 10, fontWeight: "900", color: BRAND, letterSpacing: 2, lineHeight: 13 },

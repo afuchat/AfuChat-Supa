@@ -716,12 +716,7 @@ function ReceiveView({ colors, insets, profile, onBack }: any) {
 
   async function shareId() {
     try {
-      if (Platform.OS === "web") {
-        await Clipboard.setStringAsync(afuPayId);
-        showAlert("Copied", "AfuPay ID copied. Share it with anyone to receive payments.");
-      } else {
-        await Share.share({ message: `Send me ACoin or Nexa on AfuChat: ${afuPayId}` });
-      }
+      await Share.share({ message: `Send me ACoin or Nexa on AfuChat: ${afuPayId}` });
     } catch {}
   }
 

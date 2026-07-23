@@ -8,8 +8,7 @@
  *   MediaCodec (Android) natively, achieving 60-75% file-size reduction
  *   while keeping 720p resolution and acceptable quality.
  *
- *   Web / Expo Go — native module absent; falls back to the original file
- *   (expo-image-picker's videoQuality param provides best-effort reduction).
+ *   Expo Go — native module absent; falls back to the original file.
  *
  * Compression targets:
  *   WiFi    → auto mode  (native picks optimal preset; ~60% reduction)
@@ -19,7 +18,7 @@
  * Result: a 10 MB video typically compresses to 2-4 MB.
  */
 
-import { NativeModules, Platform } from "react-native";
+import { NativeModules } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { getNetworkType } from "./networkQuality";
 
@@ -27,10 +26,9 @@ import { getNetworkType } from "./networkQuality";
 
 /**
  * Whether the native compressor module is present.
- * False in Expo Go and on web — we fall back gracefully.
+ * False in Expo Go — we fall back gracefully.
  */
-const HAS_COMPRESSOR: boolean =
-  Platform.OS !== "web" && !!NativeModules.VideoCompressor;
+const HAS_COMPRESSOR: boolean = !!NativeModules.VideoCompressor;
 
 // ─── Thresholds ───────────────────────────────────────────────────────────────
 
@@ -50,7 +48,6 @@ export const WARN_SIZE_BYTES = 80 * 1024 * 1024; // 80 MB
  * Acts as a first-pass reduction at pick time; native compressor runs second.
  */
 export function getVideoPickerQuality(): number {
-  if (Platform.OS === "web") return 0.6;
   const net = getNetworkType();
   if (net === "wifi")     return 0.7;
   if (net === "cellular") return 0.5;
@@ -61,7 +58,6 @@ export function getVideoPickerQuality(): number {
  * Quality for chat/DM video clips.
  */
 export function getChatVideoPickerQuality(): number {
-  if (Platform.OS === "web") return 0.5;
   const net = getNetworkType();
   if (net === "wifi")     return 0.6;
   if (net === "cellular") return 0.4;
@@ -124,7 +120,7 @@ async function getFileSizeBytes(uri: string): Promise<number> {
 
 /**
  * Run actual native compression via react-native-compressor.
- * Uses lazy require so the module is never loaded in Expo Go / web
+ * Uses lazy require so the module is never loaded in Expo Go
  * (avoids NativeEventEmitter crash when module is absent).
  *
  * Returns the compressed URI (new temp file) or the original on failure.
@@ -198,7 +194,7 @@ async function compressNative(
  *
  * Call this BEFORE `uploadToStorage("videos", …)`. It:
  *   1. Detects whether the URI is a video.
- *   2. Skips compression for web, blob:, data:, or files < 4 MB.
+ *   2. Skips compression for blob:, data:, or files < 4 MB.
  *   3. On native with the compressor module present: runs real native
  *      compression (AVFoundation / MediaCodec), reporting live progress.
  *   4. Returns CompressionMeta with the (possibly new) compressed URI and
@@ -215,8 +211,8 @@ export async function compressVideoBeforeUpload(
   const isVideo = isVideoMime(mime) || isVideoUri(uri);
   const resolvedMime = mime ?? "video/mp4";
 
-  // Not a video, or web — skip entirely
-  if (!isVideo || Platform.OS === "web") {
+  // Not a video — skip entirely.
+  if (!isVideo) {
     return {
       uri,
       mime: resolvedMime,
@@ -253,7 +249,7 @@ export async function compressVideoBeforeUpload(
     };
   }
 
-  // Native compressor not available (Expo Go or web env)
+  // Native compressor not available in Expo Go.
   if (!HAS_COMPRESSOR) {
     onProgress?.("Preparing video…");
     await new Promise((r) => setTimeout(r, 40));

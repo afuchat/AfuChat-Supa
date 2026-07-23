@@ -26,7 +26,6 @@ import {
   Keyboard,
   Linking,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   Share,
@@ -93,11 +92,11 @@ import {
 } from "../../lib/feedAlgorithm";
 import * as Haptics from "@/lib/haptics";
 import { VideoCommentsSheet } from "@/components/ui/VideoCommentsSheet";
-import { activateKeepAwakeAsync, deactivateKeepAwakeAsync } from "expo-keep-awake";
+import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const USE_NATIVE = Platform.OS !== "web";
+const USE_NATIVE = true;
 const VIDEO_PAGE_SIZE = 50;
 const VID_THREAD_COLORS = ["#1f95ff", "#5C6BC0", "#26A69A", "#EF6C00", "#8E24AA"];
 const QUICK_EMOJIS = ["🔥", "❤️", "😂", "😮", "👏", "💯", "🙌", "😍"];
@@ -141,17 +140,6 @@ function GradientOverlay({
   height: number;
 }) {
   const posStyle = position === "bottom" ? { bottom: 0 } : { top: 0 };
-  if (Platform.OS === "web") {
-    const gradient =
-      position === "bottom"
-        ? "linear-gradient(to top, rgba(0,0,0,0.88) 0%, transparent 100%)"
-        : "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%)";
-    return (
-      <View
-        style={[GRADIENT_BASE, posStyle, { height, background: gradient, pointerEvents: "none" } as any]}
-      />
-    );
-  }
   return (
     <LinearGradient
       colors={
@@ -182,16 +170,6 @@ function TapHandler({
   onDoubleTap?: () => void;
   onLongPress?: () => void;
 }) {
-  if (Platform.OS === "web") {
-    return (
-      <View
-        style={[StyleSheet.absoluteFill, { right: 80 } as any]}
-        onClick={onTap}
-        onDoubleClick={onDoubleTap as any}
-      />
-    );
-  }
-
   const singleTap = Gesture.Tap()
     .maxDuration(300)
     .maxDistance(10)
@@ -224,124 +202,6 @@ function TapHandler({
           child view, which would swallow taps on Like / Comment / etc. */}
       <View style={[StyleSheet.absoluteFill, { right: 80 }]} />
     </GestureDetector>
-  );
-}
-
-// ─── Web video player ─────────────────────────────────────────────────────────
-
-function WebVideoPlayer({
-  src, poster, active, paused, preloadOnly,
-  onTogglePause, onDoubleTap, onLongPress,
-  onProgress, onBuffering, onFirstPlay, externalRef,
-}: {
-  src: string; poster?: string | null; active: boolean; paused: boolean; preloadOnly: boolean;
-  onTogglePause: () => void; onDoubleTap?: () => void; onLongPress?: () => void;
-  onProgress: (posMs: number, durMs: number) => void; onBuffering: (b: boolean) => void;
-  onFirstPlay?: () => void;
-  externalRef?: React.MutableRefObject<HTMLVideoElement | null>;
-}) {
-  const innerRef = useRef<HTMLVideoElement | null>(null);
-  const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastTapRef = useRef(0);
-  const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
-  const movedRef = useRef(false);
-
-  function setRef(el: HTMLVideoElement | null) {
-    innerRef.current = el;
-    if (externalRef) externalRef.current = el;
-  }
-
-  useEffect(() => {
-    const el = innerRef.current;
-    if (!el) return;
-    if (active && !paused && !preloadOnly) {
-      el.muted = false;
-      el.play().catch(() => {});
-    } else {
-      el.pause();
-    }
-  }, [active, paused, src, preloadOnly]);
-
-  useEffect(() => {
-    const el = innerRef.current;
-    if (!el || active) return;
-    try { el.currentTime = 0; } catch {}
-  }, [active]);
-
-  function handlePointerDown(e: any) {
-    movedRef.current = false;
-    pointerStartRef.current = { x: e.clientX, y: e.clientY };
-    if (onLongPress) {
-      longPressRef.current = setTimeout(() => {
-        longPressRef.current = null;
-        if (!movedRef.current) onLongPress();
-      }, 500);
-    }
-  }
-
-  function handlePointerMove(e: any) {
-    if (!pointerStartRef.current) return;
-    const dx = Math.abs(e.clientX - pointerStartRef.current.x);
-    const dy = Math.abs(e.clientY - pointerStartRef.current.y);
-    if (dx > 8 || dy > 8) {
-      movedRef.current = true;
-      if (longPressRef.current) { clearTimeout(longPressRef.current); longPressRef.current = null; }
-    }
-  }
-
-  function handlePointerUp() {
-    if (longPressRef.current) { clearTimeout(longPressRef.current); longPressRef.current = null; }
-    pointerStartRef.current = null;
-  }
-
-  function handleClick(e: any) {
-    if (preloadOnly || movedRef.current) return;
-    e?.stopPropagation?.();
-    const now = Date.now();
-    if (onDoubleTap && now - lastTapRef.current < 300) {
-      if (tapTimerRef.current) { clearTimeout(tapTimerRef.current); tapTimerRef.current = null; }
-      lastTapRef.current = 0;
-      onDoubleTap();
-    } else {
-      lastTapRef.current = now;
-      tapTimerRef.current = setTimeout(() => {
-        tapTimerRef.current = null;
-        onTogglePause();
-      }, 250);
-    }
-  }
-
-  return (
-    <>
-      {/* @ts-ignore */}
-      <video
-        ref={setRef}
-        src={src}
-        poster={poster || undefined}
-        playsInline
-        loop
-        preload="auto"
-        onTimeUpdate={(e: any) => {
-          const v = e.currentTarget as HTMLVideoElement;
-          if (v.duration) onProgress(v.currentTime * 1000, v.duration * 1000);
-        }}
-        onWaiting={() => onBuffering(true)}
-        onPlaying={() => { onBuffering(false); onFirstPlay?.(); }}
-        onCanPlay={() => onBuffering(false)}
-        style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "contain", backgroundColor: "#000", pointerEvents: "none" }}
-      />
-      {/* @ts-ignore */}
-      <div
-        onClick={handleClick}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, cursor: preloadOnly ? "default" : "pointer", touchAction: "pan-y" }}
-      />
-    </>
   );
 }
 
@@ -486,7 +346,6 @@ const VideoItem = React.memo(function VideoItem({
   const { accent } = useAppAccent();
   const insets = useSafeAreaInsets();
   const player = useVideoPlayer(null, (p) => { p.loop = true; p.muted = false; });
-  const webVideoRef = useRef<HTMLVideoElement | null>(null);
   const videoViewRef = useRef<VideoView>(null);
   const videoEndFiredRef = useRef(false);
   const [inPip, setInPip] = useState(false);
@@ -586,15 +445,9 @@ const VideoItem = React.memo(function VideoItem({
       if (inPip || justExitedPipRef.current) return;
       setVideoStarted(false);
       videoStartedRef.current = false;
-      if (Platform.OS === "web" && webVideoRef.current) {
-        webVideoRef.current.pause();
-      }
     } else {
       // App fully regained focus — the PiP-exit bridge is no longer needed.
       justExitedPipRef.current = false;
-      if (isActive && Platform.OS === "web" && webVideoRef.current && !paused) {
-        webVideoRef.current.play().catch(() => {});
-      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabFocused, inPip]);
@@ -662,7 +515,6 @@ const VideoItem = React.memo(function VideoItem({
   // this listener is the only place to catch app→foreground transitions and
   // resume the video after the user returns (from PiP or from background).
   useEffect(() => {
-    if (Platform.OS === "web") return;
     const sub = AppState.addEventListener("change", (nextState) => {
       if (nextState === "active" && isActive && !inPipRef.current && !pausedRef.current) {
         // Brief delay so the PiP-window closing animation fully completes
@@ -783,42 +635,7 @@ const VideoItem = React.memo(function VideoItem({
     player.currentTime = (durationMs / 1000) * pct;
   }
 
-  const videoElement = Platform.OS === "web" ? (
-    <View style={StyleSheet.absoluteFill}>
-      {shouldMountVideo ? (
-        <WebVideoPlayer
-          src={playbackUri} poster={item.image_url} active={isActive && tabFocused} paused={paused} preloadOnly={preloadOnly}
-          onTogglePause={() => setPaused((p) => !p)} onDoubleTap={triggerDoubleTapLike}
-          onLongPress={() => onOpenMenu(item, () => {})}
-          onProgress={(pos, dur) => {
-            if (!dur) return;
-            setDurationMs(dur);
-            const frac = pos / dur;
-            setProgress(frac);
-            if (frac >= 0.97) {
-              clearVideoProgress(item.id);
-              if (!videoEndFiredRef.current) { videoEndFiredRef.current = true; onVideoEnd?.(); }
-            } else {
-              saveVideoProgress(item.id, frac);
-            }
-          }}
-          onBuffering={(b) => {
-            setBuffering(b);
-            if (b) {
-              if (!bufferingTimerRef.current) {
-                bufferingTimerRef.current = setTimeout(() => { setShowBuffering(true); bufferingTimerRef.current = null; }, 400);
-              }
-            } else {
-              if (bufferingTimerRef.current) { clearTimeout(bufferingTimerRef.current); bufferingTimerRef.current = null; }
-              setShowBuffering(false);
-            }
-          }}
-          onFirstPlay={() => setVideoStarted(true)}
-          externalRef={webVideoRef}
-        />
-      ) : <View style={[StyleSheet.absoluteFill, { backgroundColor: "#000" }]} />}
-    </View>
-  ) : (
+  const videoElement = (
     <View style={StyleSheet.absoluteFill}>
       {shouldMountVideo ? (
         <VideoView
@@ -827,8 +644,8 @@ const VideoItem = React.memo(function VideoItem({
           style={StyleSheet.absoluteFill}
           contentFit="cover"
           nativeControls={false}
-          allowsPictureInPicture={isActive && Platform.OS !== "web"}
-          startsPictureInPictureAutomatically={isActive && Platform.OS !== "web"}
+          allowsPictureInPicture={isActive}
+          startsPictureInPictureAutomatically={isActive}
           onPictureInPictureStart={() => {
             justExitedPipRef.current = false;
             setInPip(true);
@@ -1028,10 +845,11 @@ const VideoItem = React.memo(function VideoItem({
   );
 }); // React.memo
 
-const VS_SHADOW = Platform.select({
-  web: { textShadow: "0 1px 5px rgba(0,0,0,0.8)" } as any,
-  default: { textShadowColor: "rgba(0,0,0,0.8)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 5 },
-});
+const VS_SHADOW = {
+  textShadowColor: "rgba(0,0,0,0.8)",
+  textShadowOffset: { width: 0, height: 1 },
+  textShadowRadius: 5,
+};
 const vStyles = StyleSheet.create({
   item: { backgroundColor: "#000", overflow: "hidden" },
   centerOverlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
@@ -1109,23 +927,18 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
     useCallback(() => {
       setTabFocused(true);
       setForceDark(true);
-      if (Platform.OS !== "web") {
-        activateKeepAwakeAsync?.("video-feed")?.catch(() => {});
-      }
+      activateKeepAwakeAsync?.("video-feed")?.catch(() => {});
       return () => {
         setTabFocused(false);
         setForceDark(false);
         setAutoScroll(false);
         autoScrollRef.current = false;
-        if (Platform.OS !== "web") {
-          deactivateKeepAwakeAsync?.("video-feed")?.catch(() => {});
-        }
+      deactivateKeepAwake?.("video-feed")?.catch(() => {});
       };
     }, [setForceDark])
   );
 
   const listRef = useRef<FlatList>(null);
-  const webScrollRef = useRef<HTMLDivElement | null>(null);
   const cursorRef = useRef<string | null>(null);
   const loadingMoreRef = useRef(false);
   const hasMoreRef = useRef(hasMore);
@@ -1177,28 +990,6 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
     });
   // fetchVideos is stable (dep is only `id`) — safe to omit here
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Web: hide scrollbar CSS
-  useEffect(() => {
-    if (Platform.OS !== "web") return;
-    const style = document.createElement("style");
-    style.textContent = "#vf-web-scroll::-webkit-scrollbar { display: none; }";
-    document.head.appendChild(style);
-    return () => { document.head.removeChild(style); };
-  }, []);
-
-  // Web: lock page scroll
-  useEffect(() => {
-    if (Platform.OS !== "web") return;
-    const prevBody = document.body.style.overflow;
-    const prevHtml = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prevBody;
-      document.documentElement.style.overflow = prevHtml;
-    };
   }, []);
 
   // ── Offline feed builder ──────────────────────────────────────────────────
@@ -1262,6 +1053,8 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
               display_name: local.author_name ?? "User",
               handle: local.author_handle ?? "user",
               avatar_url: local.author_avatar ?? null,
+              is_verified: false,
+              is_organization_verified: false,
             },
             liked: local.liked,
             bookmarked: local.bookmarked,
@@ -1555,7 +1348,6 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
     const unsub = onShortsRefresh(() => {
       setActiveIndex(0);
       listRef.current?.scrollToOffset({ offset: 0, animated: false });
-      if (webScrollRef.current) webScrollRef.current.scrollTop = 0;
       fetchVideos(videoTabRef.current).catch(() => { setLoading(false); });
     });
     return unsub;
@@ -1621,20 +1413,6 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
       setListHeight(h);
     }
   }, []);
-
-  // On web there is no FlatList, so onListLayout never fires.
-  // Chrome (Android) dynamically resizes the viewport when its address bar
-  // appears/disappears, changing SCREEN_H. Without this sync, the web scroll
-  // wrapper div shrinks but VideoItem keeps the old larger screenH, pushing
-  // the bottomBar past the wrapper's overflow:hidden boundary and clipping it.
-  useEffect(() => {
-    if (Platform.OS !== "web") return;
-    const h = SCREEN_H - tabOffset;
-    if (h > 0 && Math.abs(h - listHeightRef.current) > 2) {
-      listHeightRef.current = h;
-      setListHeight(h);
-    }
-  }, [SCREEN_H, tabOffset]);
 
   const getItemLayout = useCallback((_: any, index: number) => ({
     length: listHeight, offset: listHeight * index, index,
@@ -1724,9 +1502,7 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
 
   function getVideoUrl(item: VideoPost): string {
     const shortId = encodeId(item.id);
-    return Platform.OS === "web" && typeof window !== "undefined"
-      ? `${window.location.origin}/video/${shortId}`
-      : `https://afuchat.com/video/${shortId}`;
+    return `https://afuchat.com/video/${shortId}`;
   }
 
   function showToast(msg: string, durationMs = 2500) {
@@ -1758,17 +1534,6 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
         // ignore — use raw video_url below
       }
       return item.video_url;
-    }
-
-    if (Platform.OS === "web") {
-      try {
-        const url = await resolveDownloadUrl();
-        const a = document.createElement("a");
-        a.href = url; a.download = `afuchat_${item.id}.mp4`; a.target = "_blank"; a.rel = "noopener";
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        showToast("Download started");
-      } catch { showToast("Could not start download"); }
-      return;
     }
 
     setDownloading(true); showToast("Saving to device…", 30000);
@@ -1828,34 +1593,6 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
     setVideoTab(tab);
   }
 
-  // Web scroll logic
-  const scrollSettleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  function handleWebScroll(e: React.UIEvent<HTMLDivElement>) {
-    const el = e.currentTarget;
-    const scrollTop = el.scrollTop;
-    // Use listHeight (the measured slot height) rather than raw SCREEN_H so
-    // the index stays correct even during Chrome's address-bar resize events.
-    const slotH = listHeightRef.current || SCREEN_H;
-    // Immediately update active index so the current video pauses the instant
-    // the next snap point is crossed — no perceptible delay for the user.
-    const index = Math.round(scrollTop / slotH);
-    if (index !== activeIndexRef.current) {
-      setActiveIndex(index);
-      activeIndexRef.current = index;
-    }
-
-    // Debounce only the "load more" check to avoid triggering fetch on every
-    // scroll event during a fast swipe.
-    if (scrollSettleRef.current) clearTimeout(scrollSettleRef.current);
-    scrollSettleRef.current = setTimeout(() => {
-      const idx = Math.round(el.scrollTop / slotH);
-      if (idx >= videosLenRef.current - 3 && !loadingMoreRef.current && hasMoreRef.current && cursorRef.current) {
-        fetchVideos(videoTabRef.current, cursorRef.current).catch(() => { loadingMoreRef.current = false; setLoadingMore(false); });
-      }
-    }, 150);
-  }
-
   // ── Derived callbacks — must be declared before any early return ───────────
 
   const onShare = useCallback((item: VideoPost) => setShareSheetItem(item), []);
@@ -1868,10 +1605,6 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
     const next = activeIndexRef.current + 1;
     if (next >= videosLenRef.current) return;
     listRef.current?.scrollToIndex({ index: next, animated: true });
-    if (Platform.OS === "web" && webScrollRef.current) {
-      const el = webScrollRef.current as unknown as Element;
-      el.scrollTo({ top: el.scrollTop + el.clientHeight, behavior: "smooth" });
-    }
   }, []);
 
   const toggleAutoScroll = useCallback(() => {
@@ -1916,7 +1649,7 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
 
   if (loading) {
     return (
-      <View style={[mStyles.root, isEmbedded && Platform.OS === "web" ? { position: "relative" as any, zIndex: undefined } : undefined, { paddingBottom: tabOffset }]}>
+      <View style={[mStyles.root, { paddingBottom: tabOffset }]}>
         <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
         <ShortsFeedSkeleton dark={isDark} />
         {/* Render the real header on top so navigation chrome is visible during load */}
@@ -1950,7 +1683,7 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
   }
 
   return (
-    <View style={[mStyles.root, isEmbedded && Platform.OS === "web" ? { position: "relative" as any, zIndex: undefined } : undefined, { paddingBottom: tabOffset }]}>
+    <View style={[mStyles.root, { paddingBottom: tabOffset }]}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       {/* Fixed header */}
@@ -1993,47 +1726,7 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
               : videoTab === "following" ? "Follow creators to see their videos here" : "Videos will appear here soon"}
           </Text>
         </View>
-      ) : Platform.OS === "web" ? (
-        // Web: native scroll-snap div — no RN FlatList on web needed
-        <div
-          ref={webScrollRef}
-          id="vf-web-scroll"
-          onScroll={handleWebScroll}
-          style={{
-            height: listHeight, width: SCREEN_W,
-            overflowY: "scroll", scrollSnapType: "y mandatory",
-            scrollbarWidth: "none", backgroundColor: "#000",
-            touchAction: "pan-y",
-          } as React.CSSProperties}
-        >
-          {videos.map((item, index) => (
-            <div
-              key={item.id}
-              style={{
-                height: listHeight, width: SCREEN_W,
-                scrollSnapAlign: "start",
-                scrollSnapStop: "always",
-                flexShrink: 0, overflow: "hidden", position: "relative",
-              } as React.CSSProperties}
-            >
-              <VideoItem
-                item={item}
-                isActive={index === activeIndex}
-                isNearActive={Math.abs(index - activeIndex) <= 2}
-                isFollowing={followingSet.has(item.author_id)}
-                isSelf={user?.id === item.author_id}
-                {...videoItemProps}
-              />
-            </div>
-          ))}
-          {loadingMore && (
-            <div style={{ height: SCREEN_H, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#000", scrollSnapAlign: "start" } as React.CSSProperties}>
-              <ActivityIndicator color="rgba(255,255,255,0.6)" size="small" />
-            </div>
-          )}
-        </div>
       ) : (
-        // Native: FlatList with pagingEnabled — simplest, most reliable
         <FlatList
           ref={listRef}
           data={videos}
@@ -2123,7 +1816,6 @@ const mStyles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: "#000",
-    ...(Platform.OS === "web" ? { position: "absolute" as any, top: 0, left: 0, right: 0, bottom: 0, zIndex: 100 } : {}),
   } as any,
   headerRow: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 30, flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingBottom: 10 },
   headerSide: { width: 38, alignItems: "center" },

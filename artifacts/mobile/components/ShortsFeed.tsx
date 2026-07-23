@@ -6,12 +6,11 @@
  *         the right, author + caption + audio overlaid on the bottom-left,
  *         with the host (`discover.tsx`) hiding the bottom tab bar so the
  *         experience is fully immersive like TikTok.
- *       - "card" (desktop): a 9:16 card centered in the column with the
- *         action rail living *next* to the player, not on top of it.
+ *       - "card": a 9:16 card centered in the column with the action rail
+ *         living next to the player, not on top of it.
  *   • Real play/pause: tap the player to toggle.
  *   • Mute toggle, like, comment, bookmark, share, in-rail follow CTA.
- *   • On web we use a native <video> element for the lowest-latency start-up;
- *     on native we use <Video /> from expo-av.
+ *   • Native playback uses expo-video.
  *   • The active card and its two neighbours are mounted so swiping feels
  *     instant — neighbours preload metadata silently in the background.
  */
@@ -20,7 +19,6 @@ import {
   Animated,
   FlatList,
   Image,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -73,127 +71,6 @@ function formatCount(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return String(n);
-}
-
-/* ─────────────────────────────────────────────────────────────────────── */
-/*                       Web-only HTML5 video player                       */
-/* ─────────────────────────────────────────────────────────────────────── */
-
-function WebShortsPlayer({
-  src,
-  poster,
-  active,
-  paused,
-  preloadOnly,
-  loop = true,
-  onTogglePause,
-  onDoubleTap,
-  onEnded,
-}: {
-  src: string;
-  poster?: string | null;
-  active: boolean;
-  paused: boolean;
-  preloadOnly: boolean;
-  loop?: boolean;
-  onTogglePause: () => void;
-  onDoubleTap?: () => void;
-  onEnded: () => void;
-}) {
-  const ref = useRef<HTMLVideoElement | null>(null);
-  const [showControls, setShowControls] = useState(false);
-  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastClickRef = useRef(0);
-  const singleClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Drive playback from React state — always unmuted (YouTube-style).
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (active && !paused && !preloadOnly) {
-      el.muted = false;
-      el.play().catch(() => {});
-    } else {
-      el.pause();
-    }
-  }, [active, paused, src, preloadOnly]);
-
-  // Reset to start when becoming inactive so re-entry plays from the top.
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (!active) {
-      try { el.currentTime = 0; } catch { /* ignore */ }
-    }
-  }, [active]);
-
-  // Clean up all pending timers on unmount to prevent state-after-unmount crashes.
-  useEffect(() => {
-    return () => {
-      if (hideTimer.current) { clearTimeout(hideTimer.current); hideTimer.current = null; }
-      if (singleClickTimerRef.current) { clearTimeout(singleClickTimerRef.current); singleClickTimerRef.current = null; }
-    };
-  }, []);
-
-  function handlePointer() {
-    setShowControls(true);
-    if (hideTimer.current) clearTimeout(hideTimer.current);
-    hideTimer.current = setTimeout(() => { hideTimer.current = null; setShowControls(false); }, 1500);
-  }
-
-  // Double-click → like; single click (after 300 ms confirm) → pause/play.
-  function handleClick(e: any) {
-    if (preloadOnly) return;
-    if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-    const now = Date.now();
-    if (onDoubleTap && now - lastClickRef.current < 300) {
-      if (singleClickTimerRef.current) { clearTimeout(singleClickTimerRef.current); singleClickTimerRef.current = null; }
-      lastClickRef.current = 0;
-      onDoubleTap();
-    } else {
-      lastClickRef.current = now;
-      singleClickTimerRef.current = setTimeout(() => {
-        singleClickTimerRef.current = null;
-        lastClickRef.current = 0;
-        onTogglePause();
-      }, 300);
-    }
-  }
-
-  return (
-    <View style={StyleSheet.absoluteFill}>
-      <video
-        ref={ref}
-        src={src}
-        poster={poster || undefined}
-        playsInline
-        loop={loop}
-        preload="metadata"
-        onClick={handleClick}
-        onMouseMove={preloadOnly ? undefined : handlePointer}
-        onEnded={onEnded}
-        style={{
-          width: "100%",
-          height: "100%",
-          // Show the video in its original aspect ratio with no cropping —
-          // matches YouTube Shorts desktop behaviour and the /video/[id] page.
-          objectFit: "contain",
-          backgroundColor: "#000",
-          cursor: preloadOnly ? "default" : "pointer",
-        }}
-      />
-      {!preloadOnly && (paused || showControls) && (
-        <Pressable
-          onPress={onTogglePause}
-          style={[styles.centerPlayBtn, { pointerEvents: "box-only" }]}
-        >
-          <View style={styles.centerPlayCircle}>
-            <Ionicons name={paused ? "play" : "pause"} size={36} color="#fff" />
-          </View>
-        </Pressable>
-      )}
-    </View>
-  );
 }
 
 /* ─────────────────────────────────────────────────────────────────────── */
@@ -347,7 +224,6 @@ const ShortCard = React.memo(function ShortCard({
   onBookmark,
   onFollow,
   currentUserId,
-  activeToggleRef,
 }: {
   item: ShortPost;
   active: boolean;
@@ -363,7 +239,6 @@ const ShortCard = React.memo(function ShortCard({
   onBookmark: (postId: string, bookmarked: boolean) => void;
   onFollow: (authorId: string) => void;
   currentUserId?: string;
-  activeToggleRef?: React.MutableRefObject<(() => void) | null>;
 }) {
   const { colors } = useTheme();
   const online = useOnlineStatus();
@@ -387,19 +262,19 @@ const ShortCard = React.memo(function ShortCard({
   function handleLike() {
     // Like-button bounce
     Animated.sequence([
-      Animated.timing(heartScale, { toValue: 0.7, duration: 80, useNativeDriver: Platform.OS !== "web" }),
-      Animated.spring(heartScale, { toValue: 1, tension: 300, friction: 8, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(heartScale, { toValue: 0.7, duration: 80, useNativeDriver: true }),
+      Animated.spring(heartScale, { toValue: 1, tension: 300, friction: 8, useNativeDriver: true }),
     ]).start();
     // Double-tap heart burst (centre overlay)
     Animated.sequence([
       Animated.parallel([
-        Animated.timing(doubleTapOpacity, { toValue: 1, duration: 80, useNativeDriver: Platform.OS !== "web" }),
-        Animated.spring(doubleTapScale, { toValue: 1, tension: 200, friction: 8, useNativeDriver: Platform.OS !== "web" }),
+        Animated.timing(doubleTapOpacity, { toValue: 1, duration: 80, useNativeDriver: true }),
+        Animated.spring(doubleTapScale, { toValue: 1, tension: 200, friction: 8, useNativeDriver: true }),
       ]),
       Animated.delay(500),
       Animated.parallel([
-        Animated.timing(doubleTapOpacity, { toValue: 0, duration: 250, useNativeDriver: Platform.OS !== "web" }),
-        Animated.timing(doubleTapScale, { toValue: 0.3, duration: 250, useNativeDriver: Platform.OS !== "web" }),
+        Animated.timing(doubleTapOpacity, { toValue: 0, duration: 250, useNativeDriver: true }),
+        Animated.timing(doubleTapScale, { toValue: 0.3, duration: 250, useNativeDriver: true }),
       ]),
     ]).start();
     onLike(item.id, item.liked);
@@ -410,15 +285,6 @@ const ShortCard = React.memo(function ShortCard({
     if (active) setPaused(false);
   }, [active]);
 
-  // Register/unregister the pause toggle for the page-level keyboard handler.
-  useEffect(() => {
-    if (Platform.OS !== "web" || !activeToggleRef || !active) return;
-    activeToggleRef.current = () => setPaused((p) => !p);
-    return () => {
-      if (activeToggleRef.current) activeToggleRef.current = null;
-    };
-  }, [active, activeToggleRef]);
-
   const isOwnVideo = currentUserId === item.author_id;
   const showFollowBtn = !isOwnVideo && !item.following;
 
@@ -426,31 +292,17 @@ const ShortCard = React.memo(function ShortCard({
   if (isFullscreen) {
     return (
       <View style={[styles.fullCard, { width: cardWidth, height: cardHeight, backgroundColor: "#000" }]}>
-        {Platform.OS === "web" ? (
-          <WebShortsPlayer
-            src={src}
-            poster={item.image_url}
-            active={active}
-            paused={paused}
-            preloadOnly={preloadOnly}
-            loop={!autoScroll}
-            onTogglePause={handleTogglePause}
-            onDoubleTap={handleLike}
-            onEnded={onAutoScrollEnd}
-          />
-        ) : (
-          <NativeShortsPlayer
-            src={src}
-            poster={item.image_url}
-            active={active}
-            paused={paused}
-            preloadOnly={preloadOnly}
-            loop={!autoScroll}
-            onTogglePause={handleTogglePause}
-            onDoubleTap={handleLike}
-            onEnded={onAutoScrollEnd}
-          />
-        )}
+        <NativeShortsPlayer
+          src={src}
+          poster={item.image_url}
+          active={active}
+          paused={paused}
+          preloadOnly={preloadOnly}
+          loop={!autoScroll}
+          onTogglePause={handleTogglePause}
+          onDoubleTap={handleLike}
+          onEnded={onAutoScrollEnd}
+        />
 
         {/* Double-tap heart burst — centred, pointer-events:none so it never blocks taps */}
         <Animated.View
@@ -566,33 +418,20 @@ const ShortCard = React.memo(function ShortCard({
     );
   }
 
-  // ─── Card (desktop) ────────────────────────────────────────────────
+  // ─── Card layout ───────────────────────────────────────────────────
   return (
     <View style={[styles.cardOuter, { height: cardHeight }]}>
       <View style={[styles.cardInner, { width: cardWidth, height: cardHeight, backgroundColor: "#000" }]}>
-        {Platform.OS === "web" ? (
-          <WebShortsPlayer
-            src={src}
-            poster={item.image_url}
-            active={active}
-            paused={paused}
-            preloadOnly={preloadOnly}
-            loop={!autoScroll}
-            onTogglePause={handleTogglePause}
-            onEnded={onAutoScrollEnd}
-          />
-        ) : (
-          <NativeShortsPlayer
-            src={src}
-            poster={item.image_url}
-            active={active}
-            paused={paused}
-            preloadOnly={preloadOnly}
-            loop={!autoScroll}
-            onTogglePause={handleTogglePause}
-            onEnded={onAutoScrollEnd}
-          />
-        )}
+        <NativeShortsPlayer
+          src={src}
+          poster={item.image_url}
+          active={active}
+          paused={paused}
+          preloadOnly={preloadOnly}
+          loop={!autoScroll}
+          onTogglePause={handleTogglePause}
+          onEnded={onAutoScrollEnd}
+        />
 
         {/* Bottom info overlay */}
         <View style={[styles.bottomInfo, { pointerEvents: "box-none" }]}>
@@ -720,8 +559,8 @@ function OfflineEndPanel({
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(slideY, { toValue: 0, tension: 70, friction: 13, useNativeDriver: Platform.OS !== "web" }),
-      Animated.timing(bgOpacity, { toValue: 1, duration: 280, useNativeDriver: Platform.OS !== "web" }),
+      Animated.spring(slideY, { toValue: 0, tension: 70, friction: 13, useNativeDriver: true }),
+      Animated.timing(bgOpacity, { toValue: 1, duration: 280, useNativeDriver: true }),
     ]).start();
   }, []);
 
@@ -731,8 +570,8 @@ function OfflineEndPanel({
       return;
     }
     Animated.sequence([
-      Animated.timing(numScale, { toValue: 1.4, duration: 130, useNativeDriver: Platform.OS !== "web" }),
-      Animated.spring(numScale, { toValue: 1, tension: 220, friction: 9, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(numScale, { toValue: 1.4, duration: 130, useNativeDriver: true }),
+      Animated.spring(numScale, { toValue: 1, tension: 220, friction: 9, useNativeDriver: true }),
     ]).start();
     const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => clearTimeout(t);
@@ -837,15 +676,11 @@ export default function ShortsFeed({
 
   useFocusEffect(
     useCallback(() => {
-      if (Platform.OS !== "web") {
-        activateKeepAwakeAsync?.("shorts-feed")?.catch(() => {});
-      }
+      activateKeepAwakeAsync?.("shorts-feed")?.catch(() => {});
       return () => {
         setAutoScroll(false);
         autoScrollRef.current = false;
-        if (Platform.OS !== "web") {
-          deactivateKeepAwakeAsync?.("shorts-feed")?.catch(() => {});
-        }
+        deactivateKeepAwakeAsync?.("shorts-feed")?.catch(() => {});
       };
     }, [])
   );
@@ -1080,7 +915,7 @@ export default function ShortsFeed({
 
   // Auto-save viewed video + prefetch next for offline access (native only)
   useEffect(() => {
-    if (Platform.OS === "web" || !online) return;
+    if (!online) return;
     const item = postsRef.current[activeIndex];
     if (!item) return;
     const timer = setTimeout(() => {
@@ -1108,61 +943,6 @@ export default function ShortsFeed({
   }).current;
 
   const listRef = useRef<FlatList>(null);
-  // Pause toggle exposed by the active card so the page-level Space key
-  // listener can drive it without prop-drilling.
-  const activeToggleRef = useRef<(() => void) | null>(null);
-
-  // Web keyboard controls: Space → pause/play, ArrowUp/Down → prev/next.
-  useEffect(() => {
-    if (Platform.OS !== "web") return;
-    function onKey(e: KeyboardEvent) {
-      const t = e.target as HTMLElement | null;
-      if (t) {
-        const tag = t.tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (t as any).isContentEditable) {
-          return;
-        }
-      }
-      if (e.code === "Space" || e.key === " ") {
-        if (activeToggleRef.current) {
-          e.preventDefault();
-          activeToggleRef.current();
-        }
-        return;
-      }
-      if (e.key === "ArrowDown" || e.key === "PageDown") {
-        e.preventDefault();
-        const next = Math.min(activeIndex + 1, Math.max(posts.length - 1, 0));
-        if (next !== activeIndex) {
-          listRef.current?.scrollToIndex({ index: next, animated: true });
-        }
-      } else if (e.key === "ArrowUp" || e.key === "PageUp") {
-        e.preventDefault();
-        const prev = Math.max(activeIndex - 1, 0);
-        if (prev !== activeIndex) {
-          listRef.current?.scrollToIndex({ index: prev, animated: true });
-        }
-      }
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [activeIndex, posts.length]);
-
-  // Lock page body scroll while this feed is mounted so the browser
-  // doesn't scroll the page instead of the feed list.
-  // NOTE: do NOT set touchAction:none on the body — that blocks swipe gestures
-  // inside the FlatList and makes the feed un-scrollable on touch devices.
-  useEffect(() => {
-    if (Platform.OS !== "web") return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-      document.documentElement.style.overflow = "";
-    };
-  }, []);
-
   const handleAutoScrollEnd = useCallback(() => {
     if (!autoScrollRef.current) return;
     const next = activeIndexRef.current + 1;
@@ -1253,12 +1033,11 @@ export default function ShortsFeed({
         onBookmark={toggleBookmark}
         onFollow={toggleFollow}
         currentUserId={user?.id}
-        activeToggleRef={activeToggleRef}
       />
     );
   }, [activeIndex, layout, cardWidth, cardHeight, bottomInset, autoScroll,
       handleToggleAutoScroll, handleAutoScrollEnd, toggleLike, toggleBookmark,
-      toggleFollow, user?.id, activeToggleRef]);
+      toggleFollow, user?.id]);
 
   if (loading) {
     return <ShortsFeedSkeleton dark={isFullscreen} />;
@@ -1345,16 +1124,11 @@ const endStyles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 32,
     paddingHorizontal: 20,
-    ...Platform.select({
-      web: { boxShadow: "0 -8px 40px rgba(0,0,0,0.55)" } as any,
-      default: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.5,
-        shadowRadius: 24,
-        elevation: 24,
-      },
-    }),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    elevation: 24,
   },
   dismissBtn: {
     position: "absolute",
@@ -1498,10 +1272,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: "Inter_400Regular",
     lineHeight: 18,
-    ...Platform.select({
-      web: { textShadow: "0 1px 2px rgba(0,0,0,0.5)" } as any,
-      default: { textShadowColor: "rgba(0,0,0,0.5)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
-    }),
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   followInline: {
     paddingHorizontal: 12,
@@ -1548,10 +1321,10 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
-    ...Platform.select({
-      web: { boxShadow: "0 1px 3px rgba(0,0,0,0.08)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 3 },
-    }),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
   },
   actionLabel: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
 
@@ -1570,10 +1343,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter_400Regular",
     lineHeight: 19,
-    ...Platform.select({
-      web: { textShadow: "0 1px 3px rgba(0,0,0,0.6)" } as any,
-      default: { textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
-    }),
+    textShadowColor: "rgba(0,0,0,0.6)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   /* Bottom bar: row spanning full width */
   fullBottomBar: {
@@ -1601,10 +1373,9 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 14,
     fontFamily: "Inter_700Bold",
-    ...Platform.select({
-      web: { textShadow: "0 1px 3px rgba(0,0,0,0.6)" } as any,
-      default: { textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
-    }),
+    textShadowColor: "rgba(0,0,0,0.6)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   /* Slim Follow button replaces display name */
   fullFollowSlim: {
@@ -1637,9 +1408,8 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
-    ...Platform.select({
-      web: { textShadow: "0 1px 2px rgba(0,0,0,0.6)" } as any,
-      default: { textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
-    }),
+    textShadowColor: "rgba(0,0,0,0.6)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });

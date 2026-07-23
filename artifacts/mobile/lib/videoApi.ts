@@ -6,7 +6,6 @@
  *   getAssetVideoManifest — fetch playback manifest for an asset
  *   pickBestSource      — choose the best rendition for the current device
  */
-import { Platform } from "react-native";
 import { supabase, supabaseUrl } from "./supabase";
 
 // All video API calls go directly to the Supabase Edge Function.
@@ -144,27 +143,7 @@ export async function getPostVideoManifest(
 let _av1Supported: boolean | null = null;
 function detectAv1Support(): boolean {
   if (_av1Supported !== null) return _av1Supported;
-  // expo-av on iOS/Android does not reliably play AV1 — H.264 only.
-  if (Platform.OS !== "web") {
-    _av1Supported = false;
-    return false;
-  }
-  try {
-    if (typeof MediaSource !== "undefined" && MediaSource?.isTypeSupported) {
-      _av1Supported = MediaSource.isTypeSupported(
-        'video/mp4; codecs="av01.0.05M.08"',
-      );
-      return _av1Supported;
-    }
-    // Fallback to <video>.canPlayType which returns "", "maybe" or "probably".
-    if (typeof document !== "undefined") {
-      const v = document.createElement("video");
-      _av1Supported = !!v.canPlayType('video/mp4; codecs="av01.0.05M.08"');
-      return _av1Supported;
-    }
-  } catch {
-    /* ignore */
-  }
+  // Android playback uses the native H.264 path.
   _av1Supported = false;
   return false;
 }

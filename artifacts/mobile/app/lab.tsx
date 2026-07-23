@@ -165,81 +165,6 @@ function ConfidenceBadge({ level }: { level: string }) {
   );
 }
 
-// ── Web camera fallback ────────────────────────────────────────────────────────
-
-function WebCameraView({ onCapture }: { onCapture: (base64: string, mime: string) => void }) {
-  const videoRef  = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const [ready, setReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const stream = await (navigator as any).mediaDevices.getUserMedia({
-          video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
-        });
-        if (!mounted) { stream.getTracks().forEach((t: any) => t.stop()); return; }
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => { videoRef.current?.play(); setReady(true); };
-        }
-      } catch (e: any) {
-        setError(e.message || "Camera access denied");
-      }
-    })();
-    return () => {
-      mounted = false;
-      streamRef.current?.getTracks().forEach((t: any) => t.stop());
-    };
-  }, []);
-
-  function capture() {
-    if (!videoRef.current || !canvasRef.current) return;
-    const v = videoRef.current;
-    const c = canvasRef.current;
-    c.width  = v.videoWidth  || 640;
-    c.height = v.videoHeight || 480;
-    c.getContext("2d")!.drawImage(v, 0, 0);
-    const dataUrl = c.toDataURL("image/jpeg", 0.7);
-    const base64  = dataUrl.split(",")[1];
-    onCapture(base64, "image/jpeg");
-  }
-
-  if (error) {
-    return (
-      <View style={styles.webFallback}>
-        <Ionicons name="videocam-off-outline" size={48} color="#999" />
-        <Text style={styles.webFallbackText}>{error}</Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={StyleSheet.absoluteFill}>
-      {/* @ts-ignore — web only */}
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-      />
-      {/* @ts-ignore */}
-      <canvas ref={canvasRef} style={{ display: "none" }} />
-      {!ready && (
-        <View style={[StyleSheet.absoluteFill, styles.camLoading]}>
-          <ActivityIndicator color={BRAND} size="large" />
-          <Text style={styles.camLoadingText}>Starting camera…</Text>
-        </View>
-      )}
-    </View>
-  );
-}
-
 // ── Main screen ────────────────────────────────────────────────────────────────
 
 export default function LabScreen() {
@@ -250,9 +175,7 @@ export default function LabScreen() {
   const cameraRef = useRef<any>(null);
 
   // Camera permissions (native only)
-  const [permission, requestPermission] = useCameraPermissions
-    ? (useCameraPermissions as () => [any, () => Promise<any>])()
-    : [{ granted: Platform.OS === "web" }, async () => {}];
+  const [permission, requestPermission] = (useCameraPermissions as () => [any, () => Promise<any>])();
 
   const [facing,   setFacing]   = useState<"back" | "front">("back");
   const [scanning, setScanning] = useState(false);
@@ -332,30 +255,6 @@ export default function LabScreen() {
     }
   }
 
-  function handleWebCapture(base64: string, mime: string) {
-    analyze(base64, mime);
-  }
-
-  function handleImagePick() {
-    if (Platform.OS !== "web") return;
-    const input = document.createElement("input");
-    input.type   = "file";
-    input.accept = "image/*";
-    input.onchange = (e: any) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const dataUrl = ev.target?.result as string;
-        const base64  = dataUrl.split(",")[1];
-        setPreview(dataUrl);
-        analyze(base64, file.type || "image/jpeg");
-      };
-      reader.readAsDataURL(file);
-    };
-    input.click();
-  }
-
   async function askMoreInLens() {
     const q = moreQuery.trim();
     if (!q || !capturedBase64 || moreLoading) return;
@@ -385,7 +284,7 @@ export default function LabScreen() {
     }
   }
 
-  const needsPermission = Platform.OS !== "web" && !permission?.granted;
+  const needsPermission = !permission?.granted;
 
   // ── Permission gate ──────────────────────────────────────────────────────────
   if (needsPermission) {
@@ -415,17 +314,13 @@ export default function LabScreen() {
     <View style={styles.root}>
       {/* ── Camera background ── */}
       <View style={StyleSheet.absoluteFill}>
-        {Platform.OS === "web" ? (
-          <WebCameraView onCapture={handleWebCapture} />
-        ) : CameraView ? (
+        {CameraView ? (
           <CameraView
             ref={cameraRef}
             style={StyleSheet.absoluteFill}
             facing={facing}
           />
-        ) : (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: "#000" }]} />
-        )}
+        ) : null}
       </View>
 
       {/* ── Dark vignette ── */}
@@ -449,16 +344,13 @@ export default function LabScreen() {
           <Text style={styles.headerSub}>AI Lens</Text>
         </View>
 
-        {Platform.OS !== "web" && (
-          <TouchableOpacity
-            style={styles.headerBack}
-            onPress={() => setFacing(f => f === "back" ? "front" : "back")}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          >
-            <Ionicons name="camera-reverse-outline" size={22} color="#fff" />
-          </TouchableOpacity>
-        )}
-        {Platform.OS === "web" && <View style={{ width: 40 }} />}
+        <TouchableOpacity
+          style={styles.headerBack}
+          onPress={() => setFacing(f => f === "back" ? "front" : "back")}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+          <Ionicons name="camera-reverse-outline" size={22} color="#fff" />
+        </TouchableOpacity>
       </View>
 
       {/* ── Scan frame ── */}
@@ -485,7 +377,7 @@ export default function LabScreen() {
               value={query}
               onChangeText={setQuery}
               returnKeyType="search"
-              onSubmitEditing={Platform.OS === "web" ? handleImagePick : captureNative}
+              onSubmitEditing={captureNative}
             />
             {query.length > 0 && (
               <TouchableOpacity onPress={() => setQuery("")} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -508,16 +400,9 @@ export default function LabScreen() {
 
         {/* ── Capture button ── */}
         <View style={[styles.captureRow, { paddingBottom: insets.bottom + 24 }]}>
-          {Platform.OS === "web" && (
-            <TouchableOpacity style={styles.sideBtn} onPress={handleImagePick} activeOpacity={0.8}>
-              <Ionicons name="image-outline" size={24} color="#fff" />
-              <Text style={styles.sideBtnText}>Gallery</Text>
-            </TouchableOpacity>
-          )}
-
           <TouchableOpacity
             style={[styles.captureBtn, loading && styles.captureBtnDisabled]}
-            onPress={Platform.OS === "web" ? handleImagePick : captureNative}
+            onPress={captureNative}
             activeOpacity={0.85}
             disabled={loading}
           >
@@ -536,7 +421,7 @@ export default function LabScreen() {
               <Text style={styles.sideBtnText}>Results</Text>
             </TouchableOpacity>
           )}
-          {!result && <View style={{ width: Platform.OS === "web" ? 72 : 0 }} />}
+          {!result && <View style={{ width: 72 }} />}
         </View>
       </KeyboardAvoidingView>
 
@@ -1063,20 +948,4 @@ const styles = StyleSheet.create({
   permBack:    { paddingVertical: 8 },
   permBackText: { fontSize: 15 },
 
-  // Web fallback
-  webFallback: {
-    flex:           1,
-    alignItems:     "center",
-    justifyContent: "center",
-    backgroundColor: "#111",
-    gap:            12,
-  },
-  webFallbackText: { color: "#999", fontSize: 14, textAlign: "center", paddingHorizontal: 32 },
-  camLoading: {
-    alignItems:     "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.6)",
-    gap:            12,
-  },
-  camLoadingText: { color: "#fff", fontSize: 14 },
 });

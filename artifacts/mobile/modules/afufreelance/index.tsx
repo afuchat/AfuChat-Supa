@@ -166,20 +166,11 @@ export default function AfuFreelanceApp() {
   async function shareGig(gig: Gig) {
     const url = `https://afuchat.com/freelance/${gig.id}`;
     try {
-      if (Platform.OS === "web") {
-        if (navigator.share) {
-          await navigator.share({ title: gig.title, url });
-        } else {
-          await navigator.clipboard.writeText(url);
-          showAlert("Link copied!", url);
-        }
-      } else {
-        await Share.share({
-          message: `Check out "${gig.title}" on AfuFreelance 💼\n${url}`,
-          url,
-          title: gig.title,
-        });
-      }
+      await Share.share({
+        message: `Check out "${gig.title}" on AfuFreelance 💼\n${url}`,
+        url,
+        title: gig.title,
+      });
     } catch { /* user cancelled */ }
   }
 

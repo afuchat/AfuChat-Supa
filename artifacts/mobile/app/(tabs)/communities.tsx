@@ -17,11 +17,9 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { supabase } from "@/lib/supabase";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { ListRowSkeleton } from "@/components/ui/Skeleton";
-import { RightRail } from "@/components/desktop/RightRail";
 import { showAlert } from "@/lib/alert";
 import { isOnline } from "@/lib/offlineStore";
 import * as Haptics from "@/lib/haptics";
@@ -54,7 +52,6 @@ type CommunityTab = "groups" | "channels";
 export default function CommunitiesScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { isDesktop, width } = useIsDesktop();
   const insets = useSafeAreaInsets();
 
   const [activeTab, setActiveTab] = useState<CommunityTab>("groups");

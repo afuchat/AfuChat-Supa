@@ -41,11 +41,10 @@ export function DataModeProvider({ children }: { children: React.ReactNode }) {
     return unsub;
   }, []);
 
-  // Data saver is only relevant on native and only when on cellular (not wifi)
-  const dataSaverEnabled = Platform.OS !== "web" && !isWifi && dataMode === "low";
+  // Data saver is only relevant when on cellular (not wifi).
+  const dataSaverEnabled = !isWifi && dataMode === "low";
 
   async function toggleDataSaver(enabled: boolean) {
-    if (Platform.OS === "web") return;
     await setManualDataMode(enabled ? "low" : "high");
     setDataMode(getCurrentDataMode());
     setIsWifi(getIsWifi());

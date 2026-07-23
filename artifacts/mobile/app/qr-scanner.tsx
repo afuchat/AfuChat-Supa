@@ -11,7 +11,6 @@ import {
   Easing,
   Linking,
   Modal,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -36,68 +35,6 @@ const { width: SW, height: SH } = Dimensions.get("window");
 const FRAME_SIZE = Math.min(SW * 0.72, 280);
 const HISTORY_KEY = "afu_qr_history";
 const MAX_HISTORY = 12;
-
-// ─── Web scanner (BarcodeDetector / polyfill) ─────────────────────────────────
-
-function WebQRScanner({ onScanned, active }: { onScanned: (data: string) => void; active: boolean }) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-    navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } })
-      .then((stream) => {
-        if (!mounted) { stream.getTracks().forEach((t) => t.stop()); return; }
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.setAttribute("playsinline", "true");
-          videoRef.current.play().then(() => { if (mounted) setReady(true); });
-        }
-      })
-      .catch(() => {});
-    return () => {
-      mounted = false;
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!ready || !active) return;
-    let detector: any = null;
-    const BDC = (window as any).BarcodeDetector;
-    async function setup() {
-      if (typeof BDC !== "undefined") {
-        detector = new BDC({ formats: ["qr_code"] });
-      } else {
-        try {
-          const mod = await import("https://cdn.jsdelivr.net/npm/barcode-detector@3/dist/es/pure.min.js" as any);
-          detector = new mod.BarcodeDetector({ formats: ["qr_code"] });
-        } catch { return; }
-      }
-      intervalRef.current = setInterval(async () => {
-        if (!videoRef.current || !detector) return;
-        if (videoRef.current.readyState < 2) return;
-        try {
-          const barcodes = await detector.detect(videoRef.current);
-          if (barcodes.length > 0) onScanned(barcodes[0].rawValue);
-        } catch {}
-      }, 350);
-    }
-    setup();
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [ready, active, onScanned]);
-
-  return (
-    <View style={StyleSheet.absoluteFillObject}>
-      <video ref={videoRef as any} style={{ width: "100%", height: "100%", objectFit: "cover" } as any} autoPlay playsInline muted />
-    </View>
-  );
-}
 
 // ─── QR type detection ────────────────────────────────────────────────────────
 
@@ -251,7 +188,6 @@ function ResultSheet({
   }
 
   async function saveContact() {
-    if (Platform.OS === "web") { copyToClipboard(result.raw); return; }
     try {
       const Contacts = await import("expo-contacts");
       const { status } = await Contacts.requestPermissionsAsync();
@@ -396,7 +332,7 @@ function ResultSheet({
         {result.type === "contact" && (
           <TouchableOpacity style={[sheet.actionBtn, { backgroundColor: "#34C759" }]} onPress={saveContact}>
             <Ionicons name="person-add" size={18} color="#fff" />
-            <Text style={sheet.actionBtnText}>{Platform.OS === "web" ? "Copy Contact" : "Save to Phone"}</Text>
+            <Text style={sheet.actionBtnText}>Save to Phone</Text>
           </TouchableOpacity>
         )}
 
@@ -468,17 +404,13 @@ export default function QRScannerScreen() {
     setHistory(await loadHistory());
   }, []);
 
-  const handleWebScanned = useCallback((data: string) => {
-    handleScanned({ data });
-  }, [handleScanned]);
-
   function rescan() {
     processedRef.current = false;
     setScanned(false);
     setResult(null);
   }
 
-  if (Platform.OS !== "web" && !permission) {
+  if (!permission) {
     return (
       <View style={[s.root, s.centered, { backgroundColor: colors.background }]}>
         <ActivityIndicator color={Colors.brand} />
@@ -486,7 +418,7 @@ export default function QRScannerScreen() {
     );
   }
 
-  if (Platform.OS !== "web" && !permission?.granted) {
+  if (!permission?.granted) {
     return (
       <View style={[s.root, s.centered, { backgroundColor: colors.background, paddingHorizontal: 40 }]}>
         <View style={[s.permCard, { backgroundColor: colors.surface }]}>
@@ -507,17 +439,13 @@ export default function QRScannerScreen() {
   return (
     <View style={[s.root, { backgroundColor: "#000" }]}>
       {/* Camera */}
-      {Platform.OS === "web" ? (
-        <WebQRScanner onScanned={handleWebScanned} active={!scanned} />
-      ) : (
-        <CameraView
-          style={StyleSheet.absoluteFillObject}
-          facing="back"
-          enableTorch={torch}
-          onBarcodeScanned={scanned ? undefined : handleScanned}
-          barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
-        />
-      )}
+      <CameraView
+        style={StyleSheet.absoluteFillObject}
+        facing="back"
+        enableTorch={torch}
+        onBarcodeScanned={scanned ? undefined : handleScanned}
+        barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
+      />
 
       {/* Dark overlay with cutout */}
       <View style={[StyleSheet.absoluteFillObject, { pointerEvents: "none" } as any]}>
@@ -560,11 +488,9 @@ export default function QRScannerScreen() {
         </TouchableOpacity>
         <Text style={s.topTitle}>QR Scanner</Text>
         <View style={{ flexDirection: "row", gap: 8 }}>
-          {Platform.OS !== "web" && (
-            <TouchableOpacity style={s.iconBtn} onPress={() => setTorch((t) => !t)}>
-              <Ionicons name={torch ? "flash" : "flash-off"} size={22} color={torch ? "#FFD60A" : "#fff"} />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity style={s.iconBtn} onPress={() => setTorch((t) => !t)}>
+            <Ionicons name={torch ? "flash" : "flash-off"} size={22} color={torch ? "#FFD60A" : "#fff"} />
+          </TouchableOpacity>
           <TouchableOpacity style={s.iconBtn} onPress={() => { loadHistory().then(setHistory); setShowHistory(true); }}>
             <Ionicons name="time-outline" size={22} color="#fff" />
           </TouchableOpacity>
@@ -719,10 +645,11 @@ const sheet = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 12,
     paddingBottom: 24,
-    ...Platform.select({
-      web: { boxShadow: "0 -4px 20px rgba(0,0,0,0.15)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 12 },
-    }),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
   },
   handle: { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 20 },
   iconWrap: { width: 64, height: 64, borderRadius: 20, alignItems: "center", justifyContent: "center", alignSelf: "center", marginBottom: 14 },

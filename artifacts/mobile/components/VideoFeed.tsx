@@ -158,19 +158,6 @@ function fmtDur(secs: number): string {
 // ─── Gradients ────────────────────────────────────────────────────────────────
 
 function TopGradient() {
-  if (Platform.OS === "web") {
-    return (
-      <View
-        style={[
-          styles.topGradient,
-          {
-            background: "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%)",
-            pointerEvents: "none",
-          } as any,
-        ]}
-      />
-    );
-  }
   return (
     <LinearGradient
       colors={["rgba(0,0,0,0.55)", "transparent"]}
@@ -182,19 +169,6 @@ function TopGradient() {
 // ─── Bottom gradient (for caption/author readability) ─────────────────────────
 
 function BottomGradient() {
-  if (Platform.OS === "web") {
-    return (
-      <View
-        style={[
-          styles.bottomGradient,
-          {
-            background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.0) 100%)",
-            pointerEvents: "none",
-          } as any,
-        ]}
-      />
-    );
-  }
   return (
     <LinearGradient
       colors={["transparent", "rgba(0,0,0,0.72)"]}
@@ -215,7 +189,7 @@ function MusicDisc({ isPlaying }: { isPlaying: boolean }) {
         Animated.timing(spin, {
           toValue: 1,
           duration: 3200,
-          useNativeDriver: Platform.OS !== "web",
+          useNativeDriver: true,
         })
       );
       animRef.current.start();
@@ -532,35 +506,12 @@ const VideoItem = React.memo(
           ) : null}
 
           {/* Native video */}
-          {isNearActive && Platform.OS !== "web" && (
+          {isNearActive && (
             <VideoView
               player={player}
               style={StyleSheet.absoluteFill}
               contentFit="cover"
               nativeControls={false}
-            />
-          )}
-
-          {/* Web video */}
-          {isNearActive && Platform.OS === "web" && (
-            // @ts-ignore web-only
-            <video
-              src={playUri}
-              autoPlay={isActive && !paused}
-              loop={false}
-              muted={globalMuted}
-              playsInline
-              style={{
-                position: "absolute", top: 0, left: 0,
-                width: "100%", height: "100%",
-                objectFit: "cover", backgroundColor: "#000",
-              }}
-              onPlaying={() => { videoStartedRef.current = true; setVideoStarted(true); setShowBuffering(false); }}
-              onWaiting={() => setShowBuffering(true)}
-              onCanPlay={() => setShowBuffering(false)}
-              onEnded={() => {
-                if (!endFired.current) { endFired.current = true; onVideoEnd(); }
-              }}
             />
           )}
 
@@ -780,14 +731,13 @@ function VideoMoreSheet({ visible, item, onClose, onNotInterested }: MoreSheetPr
         if (gs.dy > 0) translateY.setValue(gs.dy);
       },
       onPanResponderRelease: (_, gs) => {
-        const nd = Platform.OS !== "web";
         if (gs.dy > 72 || gs.vy > 0.65) {
-          Animated.timing(translateY, { toValue: 520, duration: 190, useNativeDriver: nd }).start(() => {
+          Animated.timing(translateY, { toValue: 520, duration: 190, useNativeDriver: true }).start(() => {
             translateY.setValue(0);
             onClose();
           });
         } else {
-          Animated.spring(translateY, { toValue: 0, useNativeDriver: nd, damping: 18, stiffness: 220 }).start();
+          Animated.spring(translateY, { toValue: 0, useNativeDriver: true, damping: 18, stiffness: 220 }).start();
         }
       },
     })
@@ -860,7 +810,7 @@ function VideoMoreSheet({ visible, item, onClose, onNotInterested }: MoreSheetPr
         style={msStyles.backdrop}
         activeOpacity={1}
         onPress={() => {
-          Animated.timing(translateY, { toValue: 520, duration: 190, useNativeDriver: Platform.OS !== "web" }).start(() => {
+          Animated.timing(translateY, { toValue: 520, duration: 190, useNativeDriver: true }).start(() => {
             translateY.setValue(0);
             onClose();
           });
@@ -989,7 +939,7 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [globalMuted, setGlobalMuted] = useState(Platform.OS === "web");
+  const [globalMuted, setGlobalMuted] = useState(false);
 
   const flatListRef       = useRef<FlatList>(null);
   const cursorRef         = useRef<string | null>(null);
@@ -1417,20 +1367,12 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
 
   // ── FlatList config ───────────────────────────────────────────────────────
 
-  // On web the first video starts muted so autoplay works. As soon as the user
-  // scrolls to a second video we unmute — they've already indicated engagement.
-  const hasUnmutedOnWebRef = useRef(false);
-
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       if (viewableItems.length > 0 && viewableItems[0].index !== null) {
         const idx = viewableItems[0].index!;
         activeIndexRef.current = idx;
         setActiveIndex(idx);
-        if (Platform.OS === "web" && idx > 0 && !hasUnmutedOnWebRef.current) {
-          hasUnmutedOnWebRef.current = true;
-          setGlobalMuted(false);
-        }
       }
     }
   ).current;

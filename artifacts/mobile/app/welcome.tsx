@@ -71,7 +71,6 @@ export default function WelcomeScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const { width: SW, height: SH } = useWindowDimensions();
-  const isWeb = Platform.OS === "web";
 
   const bgColor = isDark ? "#0A0A0A" : "#FFFFFF";
 
@@ -104,12 +103,12 @@ export default function WelcomeScreen() {
     // Content: fade out → slide up slightly → fade in new text
     Animated.sequence([
       Animated.parallel([
-        Animated.timing(contentOpacity, { toValue: 0, duration: 120, useNativeDriver: !isWeb }),
-        Animated.timing(contentY, { toValue: 8, duration: 120, useNativeDriver: !isWeb }),
+        Animated.timing(contentOpacity, { toValue: 0, duration: 120, useNativeDriver: true }),
+        Animated.timing(contentY, { toValue: 8, duration: 120, useNativeDriver: true }),
       ]),
       Animated.parallel([
-        Animated.timing(contentOpacity, { toValue: 1, duration: 220, useNativeDriver: !isWeb }),
-        Animated.timing(contentY, { toValue: 0, duration: 220, useNativeDriver: !isWeb }),
+        Animated.timing(contentOpacity, { toValue: 1, duration: 220, useNativeDriver: true }),
+        Animated.timing(contentY, { toValue: 0, duration: 220, useNativeDriver: true }),
       ]),
     ]).start(() => { isBusyRef.current = false; });
 
