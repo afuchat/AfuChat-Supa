@@ -19,6 +19,10 @@ export function redirectIfDesktop(): void {
   const params = new URLSearchParams(window.location.search);
   if (params.get("forceMobile") === "1") return;
 
+  // Never redirect when running on localhost or in a Replit dev/preview environment.
+  const hostname = window.location.hostname;
+  if (hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith(".replit.dev") || hostname.endsWith(".repl.co")) return;
+
   const isMobileUA = MOBILE_UA_RE.test(window.navigator.userAgent);
   const isNarrow = window.innerWidth < 900;
   if (isMobileUA || isNarrow) return;
