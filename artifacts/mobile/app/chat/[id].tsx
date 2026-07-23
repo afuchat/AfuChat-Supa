@@ -93,6 +93,7 @@ import { markChatVisited, setActiveChatId, clearActiveChatId } from "@/lib/chatV
 import { getProfileCache, setProfileCache } from "@/lib/profileCache";
 import { subscribeToChat, broadcastToUserInbox } from "@/lib/globalMessageEvents";
 import { askAi, aiSuggestReply, transcribeAudio, getEdgeFnBase, edgeHeaders, aiTransformTone, aiFixText, aiEmojifyText } from "@/lib/aiHelper";
+import { getEngagera } from "@/lib/engagera";
 import { buildNavigationContext, ACTION_ROUTES_GUIDE, detectVoiceNavCommand, pickNavConfirmation } from "@/lib/platformKnowledge";
 import { playNotificationSound as playMgrSound } from "@/lib/soundManager";
 import { AFUAI_BOT_ID } from "@/lib/afuAiBot";
@@ -3292,26 +3293,22 @@ function ChatScreen() {
         : null,
     ].filter(Boolean).join("\n");
     try {
-      const res = await fetch(`${getEdgeFnBase()}/afu-ai-reply`, {
-        method: "POST",
-        headers: edgeHeaders(),
-        body: JSON.stringify({
-          messages: [
-            {
-              role: "system",
-              content: `You are AfuAI. The user scanned something with AI Lens and has brought the result into this conversation. Give a rich, expert, engaging introduction to the subject. Be informative, warm and enthusiastic. Highlight the most interesting aspects. End by inviting the user to ask more. Use up to 3 [SUGGEST:...] tags for great follow-up questions.`,
-            },
-            {
-              role: "user",
-              content: `I scanned this with AfuChat AI Lens:\n\n${contextLines}\n\nGive me a detailed, expert breakdown with the most fascinating details.`,
-            },
-          ],
-          max_tokens: 700,
-        }),
+      const engagera = await getEngagera();
+      const lensAiRes = await engagera.chat.create({
+        messages: [
+          {
+            role: "system" as const,
+            content: `You are AfuAI. The user scanned something with AI Lens and has brought the result into this conversation. Give a rich, expert, engaging introduction to the subject. Be informative, warm and enthusiastic. Highlight the most interesting aspects. End by inviting the user to ask more. Use up to 3 [SUGGEST:...] tags for great follow-up questions.`,
+          },
+          {
+            role: "user" as const,
+            content: `I scanned this with AfuChat AI Lens:\n\n${contextLines}\n\nGive me a detailed, expert breakdown with the most fascinating details.`,
+          },
+        ],
+        max_tokens: 700,
       });
-      if (res.ok) {
-        const data = await res.json();
-        const rawReply = (data.reply || "I've reviewed your scan. What would you like to know?").trim();
+      if (lensAiRes.content) {
+        const rawReply = lensAiRes.content.trim() || "I've reviewed your scan. What would you like to know?";
         const parsed = parseAfuAiTags(rawReply);
         let savedId: string | null = null;
         try {
@@ -4069,17 +4066,13 @@ STRICT RULES:
         .map(m => ({ role: m.sender_id === user?.id ? "user" as const : "assistant" as const, content: m.encrypted_content }));
       conversationMessages.push({ role: "user", content: userText.replace(/@afuai/gi, "").trim() || userText });
 
-      const res = await fetch(`${getEdgeFnBase()}/afu-ai-reply`, {
-        method: "POST",
-        headers: edgeHeaders(),
-        body: JSON.stringify({
-          messages: [{ role: "system", content: systemPrompt + lensAddition }, ...conversationMessages],
-          max_tokens: 800,
-        }),
+      const engagera = await getEngagera();
+      const chatAiRes = await engagera.chat.create({
+        messages: [{ role: "system" as const, content: systemPrompt + lensAddition }, ...conversationMessages],
+        max_tokens: 800,
       });
-      if (!res.ok) throw new Error(`AI request failed: ${res.status}`);
-      const data = await res.json();
-      const rawReply = (data.reply || "Sorry, I couldn't process that. Please try again.").trim();
+      if (!chatAiRes.content) throw new Error("AI returned empty response");
+      const rawReply = chatAiRes.content.trim() || "Sorry, I couldn't process that. Please try again.";
       const parsed = parseAfuAiTags(rawReply);
       const cleanText = parsed.text || rawReply;
       const sentAt = new Date().toISOString();

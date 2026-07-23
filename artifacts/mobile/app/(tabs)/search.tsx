@@ -25,6 +25,7 @@ import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { useOpenLink } from "@/lib/useOpenLink";
 import { supabase } from "@/lib/supabase";
 import { getEdgeFnBase, edgeHeaders } from "@/lib/aiHelper";
+import { getEngagera } from "@/lib/engagera";
 import { useSuperApp } from "@/lib/superapp/MiniAppRuntime";
 import { detectNavIntent, PLATFORM_NAV_MAP, PLATFORM_FEATURES_GUIDE } from "@/lib/platformKnowledge";
 import {
@@ -157,14 +158,12 @@ async function fetchAiInsight(query: string): Promise<AiInsight | null> {
   const navIntent = detectNavIntent(query);
 
   try {
-    const res = await fetch(`${getEdgeFnBase()}/afu-ai-reply`, {
-      method: "POST",
-      headers: edgeHeaders(),
-      body: JSON.stringify({
+    const engagera = await getEngagera();
+    const aiRes = await engagera.chat.create({
         max_tokens: 900,
         messages: [
           {
-            role: "system",
+            role: "system" as const,
             content: `You are AfuChat's intelligent search and navigation assistant. Analyze the user's query in context of the AfuChat platform and return a JSON object that helps them find what they need OR navigate directly to the right screen.
 
 ${PLATFORM_NAV_MAP}
@@ -194,13 +193,10 @@ Reply ONLY with a single JSON object — no markdown, no code fences, no explana
 - directAnswer: concise answer if this is a how-to or feature question (empty if pure content search)
 - actions: 2-3 concrete steps the user should take in AfuChat`,
           },
-          { role: "user", content: `Search query: "${query}"` },
+          { role: "user" as const, content: `Search query: "${query}"` },
         ],
-      }),
     });
-    if (!res.ok) return navIntent ? { summary: `Navigate to ${navIntent.label}`, intent: "navigation", bestCategory: "all", keyTerms: [], suggestions: [], explanation: "", actions: [], navigateTo: navIntent.route, navigateLabel: navIntent.label } : null;
-    const data = await res.json();
-    const raw: string = data?.choices?.[0]?.message?.content ?? data?.content ?? data?.reply ?? "";
+    const raw: string = aiRes.content ?? "";
     const parsed = parseAiJson(raw);
     if (!parsed) return navIntent ? { summary: `Navigate to ${navIntent.label}`, intent: "navigation", bestCategory: "all", keyTerms: [], suggestions: [], explanation: "", actions: [], navigateTo: navIntent.route, navigateLabel: navIntent.label } : null;
     return {

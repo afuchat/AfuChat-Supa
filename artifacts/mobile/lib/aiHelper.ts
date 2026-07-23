@@ -1,8 +1,9 @@
 import { SUPABASE_URL as supabaseUrl, SUPABASE_ANON_KEY as supabaseAnonKey } from "./env";
+import { getEngagera } from "@/lib/engagera";
 
 /**
  * Returns the Supabase edge function base URL.
- * All AI logic is handled by Supabase edge functions — NOT the Express backend.
+ * Used for non-AI edge functions (image generation, audio transcription, etc.).
  */
 function getEdgeFnBase(): string {
   return `${supabaseUrl}/functions/v1`;
@@ -35,28 +36,15 @@ interface AskAiOptions {
 }
 
 export async function askAi(prompt: string, systemPrompt?: string, options?: AskAiOptions): Promise<string> {
-  const messages: { role: string; content: string }[] = [];
+  const messages: { role: "system" | "user" | "assistant"; content: string }[] = [];
   if (systemPrompt) {
     messages.push({ role: "system", content: systemPrompt });
   }
   messages.push({ role: "user", content: prompt });
 
-  const res = await fetch(`${getEdgeFnBase()}/afu-ai-reply`, {
-    method: "POST",
-    headers: edgeHeaders(),
-    body: JSON.stringify({
-      messages,
-      fast: options?.fast ?? true,
-      max_tokens: options?.maxTokens,
-    }),
-  });
-
-  if (!res.ok) {
-    throw new Error(`AI request failed: ${res.status}`);
-  }
-
-  const data = await res.json();
-  return data.reply || "Sorry, I couldn't generate a response.";
+  const client = await getEngagera();
+  const reply = await client.chat.create({ messages, max_tokens: options?.maxTokens });
+  return reply.content || "Sorry, I couldn't generate a response.";
 }
 
 export async function aiEnhancePost(content: string): Promise<string> {

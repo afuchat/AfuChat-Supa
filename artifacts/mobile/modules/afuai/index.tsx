@@ -18,6 +18,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { getEdgeFnBase, edgeHeaders } from "@/lib/aiHelper";
+import { getEngagera } from "@/lib/engagera";
 import { buildNavigationContext, ACTION_ROUTES_GUIDE, NAV_INTENT_MAP } from "@/lib/platformKnowledge";
 import { useSuperApp } from "@/lib/superapp/SuperAppContext";
 import { getCurrentPage, type PageInfo } from "@/lib/pageTracker";
@@ -429,22 +430,21 @@ export default function AfuAIApp() {
 
         (async () => {
           try {
-            const res = await fetch(`${getEdgeFnBase()}/afu-ai-reply`, {
-              method: "POST",
-              headers: edgeHeaders(),
-              body: JSON.stringify({
+            let rawReply: string;
+            try {
+              const engagera = await getEngagera();
+              const aiReply = await engagera.chat.create({
                 messages: [
                   { role: "system", content: systemPrompt },
                   ...history,
                   { role: "user", content: trimmed },
-                ],
+                ] as { role: "system" | "user" | "assistant"; content: string }[],
                 max_tokens: 900,
-              }),
-            });
-
-            const rawReply: string = res.ok
-              ? ((await res.json()).reply || "Sorry, I had trouble processing that. Please try again.").trim()
-              : "I couldn't connect right now. Please check your connection and try again.";
+              });
+              rawReply = (aiReply.content || "Sorry, I had trouble processing that. Please try again.").trim();
+            } catch {
+              rawReply = "I couldn't connect right now. Please check your connection and try again.";
+            }
 
             const parsed = parseResponse(rawReply);
             const aiMsgId = `${Date.now()}-ai`;

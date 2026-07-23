@@ -17,6 +17,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
 import { getEdgeFnBase, edgeHeaders } from "@/lib/aiHelper";
+import { getEngagera } from "@/lib/engagera";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { useTier } from "@/hooks/useTier";
@@ -106,26 +107,21 @@ function parseChatAiJson(raw: string): Record<string, any> | null {
 
 async function fetchChatAiInsight(query: string): Promise<AiInsight | null> {
   try {
-    const res = await fetch(`${getEdgeFnBase()}/afu-ai-reply`, {
-      method: "POST",
-      headers: edgeHeaders(),
-      body: JSON.stringify({
-        max_tokens: 500,
-        messages: [
-          {
-            role: "system",
-            content: `You are AfuChat's messaging search assistant. Analyze the search query and reply ONLY with a single JSON object — no markdown, no code fences, no text outside the JSON:
+    const engagera = await getEngagera();
+    const aiRes = await engagera.chat.create({
+      max_tokens: 500,
+      messages: [
+        {
+          role: "system" as const,
+          content: `You are AfuChat's messaging search assistant. Analyze the search query and reply ONLY with a single JSON object — no markdown, no code fences, no text outside the JSON:
 {"summary":"2-3 sentences on what the user wants","bestTab":"chats|people|channels|groups|messages","suggestions":["refined search","related search","alternative"],"filters":["filter term 1","filter term 2"],"resultSummary":"one sentence on expected results","actions":["specific step 1","specific step 2","specific step 3"]}
 
 Tabs: chats=user's own DMs/group chats, people=profiles by name/@handle, channels=creator/brand broadcast feeds, groups=discussion spaces, messages=full-text inside channels/groups (premium). Actions must be specific to AfuChat (e.g. "Open the chat", "Message this person", "Join the group").`,
-          },
-          { role: "user", content: `Search query: "${query}"` },
-        ],
-      }),
+        },
+        { role: "user" as const, content: `Search query: "${query}"` },
+      ],
     });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const raw: string = data?.choices?.[0]?.message?.content ?? data?.content ?? data?.reply ?? "";
+    const raw: string = aiRes.content ?? "";
     const p = parseChatAiJson(raw);
     if (!p) return null;
     return {
