@@ -78,6 +78,9 @@ importers:
 
   artifacts/mobile:
     dependencies:
+      '@afuchat1/engagera':
+        specifier: ^0.1.5
+        version: 0.1.5
       '@mediapipe/tasks-vision':
         specifier: ^0.10.35
         version: 0.10.35
@@ -327,6 +330,9 @@ importers:
         version: 3.5.4(zod@3.25.76)
 
 packages:
+
+  '@afuchat1/engagera@0.1.5':
+    resolution: {integrity: sha512-xh39DBkFYT7x9CPiFpeSpO7xiGjRG6fqKbhc+hBoaZI5vkLaBTiide9PISu5uaZEmW0tytyvqFWYfizfN5aLbA==}
 
   '@babel/code-frame@7.10.4':
     resolution: {integrity: sha512-vG6SvB6oYEhvgisZNFRmRCUkLz11c7rp+tbNTynGqc6mS1d5ATd/sGyV6W0KZZnXRKMTzZDRgQT3Ou9jhpAfUg==}
@@ -4120,6 +4126,8 @@ packages:
     resolution: {integrity: sha512-g0sPJBIubO6zLcJh1jftLPIN6xziaqLsvLgtpGKwDrEhyXXqla3E3yjFrznlr78UHIOMzbJPi0HDWKs/KgaB7A==}
 
 snapshots:
+
+  '@afuchat1/engagera@0.1.5': {}
 
   '@babel/code-frame@7.10.4':
     dependencies:
