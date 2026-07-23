@@ -117,12 +117,12 @@ export default function WelcomeScreen() {
       Animated.timing(imgOpacities[current], {
         toValue: 0,
         duration: 480,
-        useNativeDriver: !isWeb,
+        useNativeDriver: true,
       }),
       Animated.timing(imgOpacities[nextIdx], {
         toValue: 1,
         duration: 480,
-        useNativeDriver: !isWeb,
+        useNativeDriver: true,
       }),
     ]).start();
   }

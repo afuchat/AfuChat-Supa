@@ -35,6 +35,7 @@ const light = {
   backgroundSecondary: "#EDE8DC", // cards, sheets
   backgroundTertiary:  "#E8E2D6", // inset areas, code blocks
   surface:           "#F5F0E8",   // elevated surfaces
+  card:              "#EDE8DC",
 
   // ── Lines ───────────────────────────────────────────────────────────────────
   border:            "#DDD7C9",
@@ -93,6 +94,7 @@ const dark = {
   backgroundSecondary: "#1A1A1A",
   backgroundTertiary:  "#1F1F1F",
   surface:           "#0F0F0F",
+  card:              "#1A1A1A",
 
   // ── Lines ───────────────────────────────────────────────────────────────────
   border:            "#2A2A2A",

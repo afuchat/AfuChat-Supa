@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState, type ComponentProps } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -48,7 +48,7 @@ function formatDuration(sec: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-const TABS: { key: MediaTab; label: string; icon: keyof typeof import("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf") }[] = [
+const TABS: { key: MediaTab; label: string; icon: ComponentProps<typeof Ionicons>["name"] }[] = [
   { key: "all",    label: "All",    icon: "grid-outline"          },
   { key: "photos", label: "Photos", icon: "image-outline"         },
   { key: "videos", label: "Videos", icon: "videocam-outline"      },

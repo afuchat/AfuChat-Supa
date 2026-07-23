@@ -177,7 +177,7 @@ export default function ChatInfoScreen() {
   };
 
   return (
-    <View style={[s.root, { backgroundColor: colors.backgroundSecondary ?? colors.background }]}>
+    <View style={[s.root, { backgroundColor: colors.backgroundSecondary }]}>
       <GlassHeader title="Chat Info" />
 
       <ScrollView

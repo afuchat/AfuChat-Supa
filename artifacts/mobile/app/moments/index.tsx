@@ -229,7 +229,6 @@ export default function MomentsScreen() {
     [colors]
   );
 
-  const isDesktop = Platform.OS === "web";
 
   return (
     <View
@@ -237,12 +236,12 @@ export default function MomentsScreen() {
         styles.container,
         {
           backgroundColor: colors.background,
-          paddingTop: isDesktop ? 0 : insets.top,
+          paddingTop: insets.top,
         },
       ]}
     >
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        {!isDesktop && (
+        {(
           <TouchableOpacity
             onPress={() => router.back()}
             style={styles.backBtn}

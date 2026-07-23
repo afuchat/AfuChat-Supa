@@ -17,6 +17,8 @@ import {
 } from "react-native";
 // expo-av: lazy-load to avoid "Cannot find native module 'ExponentAV'" on web
 let Audio: typeof import("expo-av").Audio | null = null;
+type AudioSound = import("expo-av/build/Audio/Sound").Sound;
+type AudioRecording = import("expo-av/build/Audio/Recording").Recording;
 if (Platform.OS !== "web") {
   try { Audio = require("expo-av").Audio; } catch {}
 }
@@ -118,7 +120,7 @@ function WaveformBars({ heights, progress, accent, animating }: { heights: numbe
 
 // ─── VoicePlayer ──────────────────────────────────────────────────────────────
 function VoicePlayer({ uri, durationSecs, accent, colors }: { uri: string; durationSecs: number; accent: string; colors: any }) {
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [sound, setSound] = useState<AudioSound | null>(null);
   const [playing, setPlaying] = useState(false);
   const [positionMs, setPositionMs] = useState(0);
   const [durationMs, setDurationMs] = useState(Math.max(1000, durationSecs * 1000));
@@ -510,7 +512,7 @@ export default function PostDetailScreen() {
 
   // Voice recording state
   const [recordState, setRecordState] = useState<RecordState>("idle");
-  const [recordingObj, setRecordingObj] = useState<Audio.Recording | null>(null);
+  const [recordingObj, setRecordingObj] = useState<AudioRecording | null>(null);
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
   const [recordedDuration, setRecordedDuration] = useState(0);
   const [recordElapsed, setRecordElapsed] = useState(0);
@@ -808,7 +810,7 @@ export default function PostDetailScreen() {
     }
   }
 
-  async function stopRecording(rec?: Audio.Recording | null, elapsed?: number) {
+  async function stopRecording(rec?: AudioRecording | null, elapsed?: number) {
     stopTimer();
     const activeRec = rec ?? recordingObj;
     if (!activeRec) { setRecordState("idle"); return; }

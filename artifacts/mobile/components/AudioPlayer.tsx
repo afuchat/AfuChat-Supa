@@ -15,6 +15,7 @@ if (Platform.OS !== "web") {
   try { Audio = require("expo-av").Audio; } catch {}
 }
 type AVPlaybackStatus = import("expo-av").AVPlaybackStatus;
+type AudioSound = import("expo-av/build/Audio/Sound").Sound;
 
 interface AudioPlayerProps {
   uri: string;
@@ -73,7 +74,7 @@ function AudioPlayerIdle({
 }
 
 function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor }: AudioPlayerProps) {
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const soundRef = useRef<AudioSound | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [positionMs, setPositionMs] = useState(0);
@@ -88,12 +89,13 @@ function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor }: AudioPlaye
 
     async function loadAudio() {
       try {
+        if (!Audio) return;
         if (Platform.OS !== "web") {
           await Audio.setAudioModeAsync({
             playsInSilentModeIOS: true,
             shouldDuckAndroid: false,
             staysActiveInBackground: false,
-          }).catch(() => {});
+          }).then(() => {}, () => {});
         }
 
         const { sound } = await Audio.Sound.createAsync(

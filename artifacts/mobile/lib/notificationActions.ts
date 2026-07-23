@@ -62,7 +62,7 @@ export async function handleNotificationAction(
         await supabase.from("post_acknowledgments").insert({
           post_id: data.postId,
           user_id: session.user.id,
-        }).then(() => {}).catch(() => {});
+        }).then(() => {}, () => {});
         break;
       }
 
@@ -74,7 +74,7 @@ export async function handleNotificationAction(
         await supabase.from("follows").insert({
           follower_id: session.user.id,
           following_id: data.actorId,
-        }).then(() => {}).catch(() => {});
+        }).then(() => {}, () => {});
         break;
       }
 

@@ -646,7 +646,7 @@ export default function AfuBusinessApp() {
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text style={[st.productName, { color: colors.text }]} numberOfLines={1}>{item.product?.name ?? "Product"}</Text>
                   <Text style={[{ fontSize: 12, fontFamily: "Inter_400Regular", color: colors.textMuted }]}>
-                    {item.buyer?.display_name ?? `@${item.buyer?.handle}` ?? "Customer"} • Qty {item.quantity ?? 1}
+                    {item.buyer?.display_name ?? (item.buyer?.handle ? `@${item.buyer.handle}` : "Customer")} • Qty {item.quantity ?? 1}
                   </Text>
                   <Text style={[{ fontSize: 11, fontFamily: "Inter_400Regular", color: colors.textMuted }]}>
                     {new Date(item.created_at).toLocaleDateString()}

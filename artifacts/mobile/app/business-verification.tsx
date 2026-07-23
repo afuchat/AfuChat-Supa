@@ -484,7 +484,7 @@ export default function BusinessVerificationScreen() {
                   <TouchableOpacity key={t.label}
                     style={[st.pickerOption, { borderBottomColor: colors.border, backgroundColor: selected ? GOLD + "12" : "transparent" }]}
                     onPress={() => { set("org_type", t.label); setShowOrgTypePicker(false); }} activeOpacity={0.75}>
-                    <View style={[st.pickerOptionIcon, { backgroundColor: selected ? GOLD + "28" : colors.backgroundSecondary ?? colors.surface }]}>
+                    <View style={[st.pickerOptionIcon, { backgroundColor: selected ? GOLD + "28" : colors.backgroundSecondary }]}>
                       <Ionicons name={t.icon as any} size={18} color={selected ? GOLD : colors.textSecondary} />
                     </View>
                     <Text style={[st.pickerOptionText, { color: selected ? GOLD : colors.text, fontFamily: selected ? "Inter_600SemiBold" : "Inter_400Regular" }]}>{t.label}</Text>
@@ -508,7 +508,7 @@ export default function BusinessVerificationScreen() {
                 const selected = form.industry === ind;
                 return (
                   <TouchableOpacity key={ind}
-                    style={[st.pickerOption, { borderBottomColor: colors.border, backgroundColor: selected ? colors.backgroundSecondary ?? colors.surface : "transparent" }]}
+                    style={[st.pickerOption, { borderBottomColor: colors.border, backgroundColor: selected ? colors.backgroundSecondary : "transparent" }]}
                     onPress={() => { set("industry", ind); setShowIndustryPicker(false); }} activeOpacity={0.75}>
                     <Text style={[st.pickerOptionText, { color: selected ? colors.text : colors.textSecondary, fontFamily: selected ? "Inter_600SemiBold" : "Inter_400Regular", flex: 1 }]}>{ind}</Text>
                     {selected && <Ionicons name="checkmark" size={18} color={GOLD} />}

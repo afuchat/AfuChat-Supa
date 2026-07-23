@@ -38,7 +38,7 @@ type NavTest = {
 //     automatically, so they're inherently safe even without explicit guards.
 
 const WORD_ROUTES = [
-  "about", "achievements", "ai", "article", "browser", "business",
+  "about", "achievements", "ai", "article", "business",
   "channel", "chat", "collections", "company", "followers", "freelance",
   "games", "gifts", "group", "help", "join", "lab", "login", "match",
   "moments", "monetize", "onboarding", "p", "post", "premium", "prestige",

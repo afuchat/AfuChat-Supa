@@ -686,8 +686,7 @@ export default function AfuReferralApp() {
       .eq("referred_id", user.id)
       .limit(1)
       .maybeSingle()
-      .then(({ data }) => { if (data) setAlreadyReferred(true); })
-      .catch(() => {});
+      .then(({ data }) => { if (data) setAlreadyReferred(true); }, () => {});
   }, [user]);
 
   async function handleClaimMilestone(step: RewardStep) {

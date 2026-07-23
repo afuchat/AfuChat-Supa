@@ -58,7 +58,7 @@ export type CompositeAnimation = {
 
 export type GuardedValue =
   | LegacyAnimatedValue
-  | SharedValue<unknown>
+  | SharedValue<any>
   | CompositeAnimation;
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -257,7 +257,7 @@ export function initAnimationGuard(): void {
       memWarningListener = AppState.addEventListener(
         // RN exposes this on iOS only; the cast is necessary because TS
         // definitions don't include this event name in older @types/react-native.
-        "memoryWarning" as AppStateStatus,
+        "memoryWarning" as any,
         () => cancelAll("memoryWarning")
       );
     } catch {

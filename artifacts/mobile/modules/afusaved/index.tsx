@@ -57,7 +57,7 @@ export default function AfuSavedApp() {
       .eq("user_id", user.id)
       .order("saved_at", { ascending: false })
       .limit(50);
-    setSaved((data as SavedPost[]) || []);
+    setSaved((data as unknown as SavedPost[]) || []);
     setLoading(false);
     setRefreshing(false);
   }, [user]);

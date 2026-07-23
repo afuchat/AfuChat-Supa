@@ -54,7 +54,7 @@ export default function AfuEventsApp() {
     if (tab === "online") query = query.eq("is_online", true);
     if (tab === "free") query = query.eq("price", 0);
     const { data } = await query;
-    setEvents((data as Event[]) || []);
+    setEvents((data as unknown as Event[]) || []);
     setLoading(false);
   }, [tab]);
 

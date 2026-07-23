@@ -22,7 +22,6 @@ import { useAuth } from "@/context/AuthContext";
 import { Avatar } from "@/components/ui/Avatar";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import { shareStory } from "@/lib/share";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { markStoriesViewed } from "@/lib/storyViewedStore";
 
 const STORY_DURATION = 5000;
@@ -60,7 +59,6 @@ export default function ViewStoryScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
-  const { isDesktop } = useIsDesktop();
 
   const [stories, setStories] = useState<Story[]>([]);
   const [index, setIndex] = useState(0);
@@ -102,11 +100,6 @@ export default function ViewStoryScreen() {
   const translateY = translateYRef.current;
 
   const isOwner = user?.id === userId;
-
-  useEffect(() => {
-    if (isDesktop) router.replace("/");
-  }, [isDesktop]);
-  if (isDesktop) return null;
 
   // ── Load stories ────────────────────────────────────────────────────────────
   useEffect(() => {

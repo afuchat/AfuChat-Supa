@@ -1,6 +1,5 @@
 import { useCallback } from "react";
 import { Alert, Linking } from "react-native";
-import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import * as Clipboard from "expo-clipboard";
 
@@ -28,20 +27,8 @@ export function useOpenLink() {
   }, []);
 }
 
-// Long-press on any link shows a choice sheet:
-//   "Open in App Browser"   → in-app WebView browser (/browser route)
-//   "Open in Google Chrome" → Chrome Custom Tabs
-//   "Copy Link"             → clipboard
+// Long-press on any link shows native Android link actions.
 export function useOpenLinkActions() {
-  const router = useRouter();
-
-  const openInAppBrowser = useCallback(
-    (url: string) => {
-      router.push({ pathname: "/browser", params: { url } } as any);
-    },
-    [router],
-  );
-
   const openInChrome = useCallback((url: string) => {
     WebBrowser.openBrowserAsync(url, {
       showTitle: true,
@@ -53,14 +40,13 @@ export function useOpenLinkActions() {
     (url: string) => {
       const display = url.length > 52 ? url.slice(0, 52) + "\u2026" : url;
       Alert.alert("Open Link", display, [
-        { text: "Open in App Browser",   onPress: () => openInAppBrowser(url) },
         { text: "Open in Google Chrome", onPress: () => openInChrome(url) },
         { text: "Copy Link",             onPress: () => Clipboard.setStringAsync(url).catch(() => {}) },
         { text: "Cancel", style: "cancel" },
       ]);
     },
-    [openInAppBrowser, openInChrome],
+    [openInChrome],
   );
 
-  return { showLinkSheet, openInAppBrowser, openInChrome };
+  return { showLinkSheet, openInChrome };
 }

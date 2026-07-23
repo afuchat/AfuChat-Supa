@@ -18,7 +18,6 @@ import type { Session } from "@supabase/supabase-js";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { TabSwipeProvider } from "@/context/TabSwipeContext";
 import { getLocalConversations } from "@/lib/storage/localConversations";
 import { supabase } from "@/lib/supabase";
@@ -325,7 +324,6 @@ function ClassicTabLayout({ isLoggedIn }: { isLoggedIn: boolean }) {
 
 export default function TabLayout() {
   const { session, profile, loading, user } = useAuth();
-  const { isDesktop } = useIsDesktop();
   const isLoggedIn     = !!session || !!user;
   const prevSessionRef = useRef<Session | null>(null);
 
@@ -354,7 +352,7 @@ export default function TabLayout() {
       <View style={{ flex: 1 }}>
         <ClassicTabLayout isLoggedIn={isLoggedIn} />
 
-        {isLoggedIn && !isDesktop && (
+        {isLoggedIn && (
           <CompactTabBar
             userId={user?.id}
             avatarUrl={profile?.avatar_url}

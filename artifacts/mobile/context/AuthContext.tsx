@@ -573,8 +573,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .then(({ data }) => {
               ensureAfuAiChat(session.user.id, data?.display_name).catch(() => {});
               ensureAfuSystemChat(session.user.id).catch(() => {});
-            })
-            .catch(() => {});
+            }, () => {});
         } else {
           // No live session — try to stay "soft logged in" from local storage.
           //
@@ -769,8 +768,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .then(({ data }) => {
                 ensureAfuAiChat(newSession.user.id, data?.display_name).catch(() => {});
                 ensureAfuSystemChat(newSession.user.id).catch(() => {});
-              })
-              .catch(() => {});
+              }, () => {});
           })
           .catch(() => {});
       }

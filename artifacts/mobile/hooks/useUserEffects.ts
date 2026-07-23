@@ -43,8 +43,7 @@ function fetchEffects(userId: string): Promise<void> {
     .eq("user_id", userId)
     .eq("equipped", true)
     .in("good_id", EFFECT_IDS)
-    .then(({ data }) => data ?? [])
-    .catch(() => [] as any[]);
+    .then(({ data }) => data ?? [], () => [] as any[]);
 
   const subPromise = supabase
     .from("user_subscriptions")
@@ -56,8 +55,7 @@ function fetchEffects(userId: string): Promise<void> {
         const tier = s.subscription_plans?.tier;
         return tier === "gold" || tier === "platinum";
       });
-    })
-    .catch(() => false);
+    }, () => false);
 
   const promise = Promise.all([goodsPromise, subPromise]).then(([goodsData, isPremiumSubscriber]) => {
     const ids = new Set((goodsData as any[]).map((d: any) => d.good_id as string));

@@ -744,6 +744,7 @@ function VideoMoreSheet({ visible, item, onClose, onNotInterested }: MoreSheetPr
   ).current;
 
   if (!item) return null;
+  const shareItem = item;
 
   // ── theme tokens ──────────────────────────────────────────────────────────
   const sheetBg   = isDark ? "#1C1C1E"  : "#F5F0E8";
@@ -759,9 +760,9 @@ function VideoMoreSheet({ visible, item, onClose, onNotInterested }: MoreSheetPr
     onClose();
     setTimeout(() => {
       Share.share({
-        message: `${item.profile.display_name} on AfuChat: ${videoUrl}`,
+        message: `${shareItem.profile.display_name} on AfuChat: ${videoUrl}`,
         url: videoUrl,
-        title: `${item.profile.display_name} on AfuChat`,
+        title: `${shareItem.profile.display_name} on AfuChat`,
       }).catch(() => {});
     }, 280);
   }

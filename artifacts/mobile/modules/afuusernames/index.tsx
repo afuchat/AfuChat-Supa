@@ -433,7 +433,7 @@ export default function AfuUsernamesApp() {
     if (filter === "auction") query = query.eq("is_auction", true);
 
     const { data, error } = await query;
-    if (!error) setListings((data as Listing[]) || []);
+    if (!error) setListings((data as unknown as Listing[]) || []);
     setLoading(false);
   }, [search, filter]);
 

@@ -166,7 +166,7 @@ export default function ChatDangerScreen() {
   }
 
   return (
-    <View style={[s.root, { backgroundColor: colors.backgroundSecondary ?? colors.background }]}>
+    <View style={[s.root, { backgroundColor: colors.backgroundSecondary }]}>
       <GlassHeader title="Safety & Privacy" />
 
       <ScrollView

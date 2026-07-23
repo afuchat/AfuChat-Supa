@@ -360,7 +360,7 @@ export default function GiftPickerSheet({
                       styles.tab,
                       active
                         ? { backgroundColor: rColor + "28", borderColor: rColor }
-                        : { backgroundColor: colors.backgroundSecondary ?? colors.inputBg, borderColor: "transparent" },
+                        : { backgroundColor: colors.backgroundSecondary, borderColor: "transparent" },
                     ]}
                     onPress={() => setFilter(r)}
                     activeOpacity={0.7}
@@ -412,9 +412,9 @@ export default function GiftPickerSheet({
             )}
 
             {selected && (
-              <View style={[styles.confirmBar, { backgroundColor: colors.backgroundSecondary ?? colors.inputBg, borderTopColor: colors.border }]}>
+              <View style={[styles.confirmBar, { backgroundColor: colors.backgroundSecondary, borderTopColor: colors.border }]}>
                 <TextInput
-                  style={[styles.msgInput, { backgroundColor: colors.inputBg ?? colors.surface, color: colors.text, borderColor: colors.border }]}
+                  style={[styles.msgInput, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
                   placeholder="Add a message (optional)"
                   placeholderTextColor={colors.textMuted}
                   value={message}

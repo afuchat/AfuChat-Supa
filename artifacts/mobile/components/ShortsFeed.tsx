@@ -30,7 +30,7 @@ import {
 import { ShortsFeedSkeleton } from "@/components/ui/Skeleton";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { router, useFocusEffect } from "expo-router";
-import { activateKeepAwakeAsync, deactivateKeepAwakeAsync } from "expo-keep-awake";
+import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import { Ionicons } from "@expo/vector-icons";
 
 import { supabase } from "@/lib/supabase";
@@ -680,7 +680,7 @@ export default function ShortsFeed({
       return () => {
         setAutoScroll(false);
         autoScrollRef.current = false;
-        deactivateKeepAwakeAsync?.("shorts-feed")?.catch(() => {});
+        deactivateKeepAwake("shorts-feed").catch(() => {});
       };
     }, [])
   );

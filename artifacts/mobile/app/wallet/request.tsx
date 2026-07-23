@@ -109,7 +109,7 @@ export default function MoneyRequestScreen() {
         body: `@${profile.handle} is requesting ${fmtAmt(amt)} ${currency === "acoin" ? "ACoin" : "Nexa"} from you`,
         data: { currency, amount: amt, note: note.trim() || null },
         read: false,
-      }).then(() => {}).catch(() => {});
+      }).then(() => {}, () => {});
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       showAlert(

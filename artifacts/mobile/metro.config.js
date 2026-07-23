@@ -7,16 +7,10 @@ const config = getDefaultConfig(__dirname);
 // pnpm workspace root as the project root in a monorepo layout.
 config.projectRoot = __dirname;
 
-// Exclude the mockup-sandbox vite build artefacts from Metro's file watcher.
-// Without this, Metro crashes with ENOENT when Vite rotates its deps_temp_*
-// directories during a hot-reload cycle.
+// Keep Metro focused on the mobile app and away from generated sandbox files.
 config.resolver = {
   ...(config.resolver || {}),
-  // Allow Metro to treat .wasm files as static assets rather than JS modules.
-  // expo-sqlite's web worker references wa-sqlite.wasm which is not shipped in
-  // the npm package; without this, web bundling fails with "Unable to resolve
-  // module ./wa-sqlite/wa-sqlite.wasm". The expo-sqlite resolveRequest shim
-  // below means the wasm is never actually loaded at runtime on web.
+  // Allow native dependencies that package static wasm assets to resolve.
   assetExts: [...(config.resolver?.assetExts ?? []), "wasm"],
   blockList: [
     /artifacts[\\/]mockup-sandbox[\\/].*/,

@@ -41,6 +41,7 @@ import * as Contacts from "expo-contacts";
 import * as FileSystem from "expo-file-system";
 // expo-av: lazy-load to avoid "Cannot find native module 'ExponentAV'" on web
 let Audio: typeof import("expo-av").Audio | null = null;
+type AudioRecording = import("expo-av/build/Audio/Recording").Recording;
 if (Platform.OS !== "web") {
   try { Audio = require("expo-av").Audio; } catch {}
 }
@@ -57,7 +58,6 @@ import { SmartSheet } from "@/components/ui/SmartSheet";
 import { supabase, supabaseUrl as SUPA_URL, supabaseAnonKey as SUPA_KEY } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { useGiftPrices } from "@/hooks/useGiftPrices";
 import { Avatar } from "@/components/ui/Avatar";
 import { RichText } from "@/components/ui/RichText";
@@ -1708,7 +1708,6 @@ function ChatScreen() {
   const isDraft = id === "new";
   const { user, profile, isPremium, subscription, refreshProfile, equippedGoods } = useAuth();
   const { colors, isDark } = useTheme();
-  const { isDesktop } = useIsDesktop();
   const { appearance: chatAppearance, updateAppearance: updateChatAppearance } = useChatAppearance(id as string | undefined);
   const BRAND = chatAppearance?.bubbleColor ?? colors.accent;
   const { textToSpeech: ttsEnabled } = useLanguage();
@@ -1760,8 +1759,7 @@ function ChatScreen() {
           if (r.good_id === "sg2" && !rings.has(r.user_id)) rings.set(r.user_id, 'void');
           if (r.good_id === "sg3" && !rings.has(r.user_id)) rings.set(r.user_id, 'diamond');
         }
-      })
-      .catch(() => {});
+      }, () => {});
 
     // Query 2: Gold/Platinum subscribers get golden names automatically (independent of Query 1)
     const subPromise = supabase
@@ -1774,8 +1772,7 @@ function ChatScreen() {
           const tier = s.subscription_plans?.tier;
           if (tier === "gold" || tier === "platinum") nameplates.add(s.user_id);
         }
-      })
-      .catch(() => {});
+      }, () => {});
 
     // Apply both results together once both queries settle
     Promise.allSettled([goodsPromise, subPromise]).then(() => {
@@ -1992,7 +1989,7 @@ function ChatScreen() {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [recordingTenths, setRecordingTenths] = useState(0);
   const [recAmplitudes, setRecAmplitudes] = useState<number[]>([]);
-  const recorderRef = useRef<Audio.Recording | null>(null);
+  const recorderRef = useRef<AudioRecording | null>(null);
   const webMediaRecorderRef = useRef<MediaRecorder | null>(null);
   const webChunksRef = useRef<Blob[]>([]);
   const webStreamRef = useRef<MediaStream | null>(null);
@@ -2817,7 +2814,7 @@ function ChatScreen() {
         : { display_name: gMsg.sender_display_name || "User", avatar_url: gMsg.sender_avatar_url ?? null, handle: gMsg.sender_handle || "" };
       setMessages((prev) => {
         if (prev.some((m) => m.id === gMsg.id)) return prev;
-        return [{ ...gMsg, sender: senderSnap as any, reactions: [], status: undefined }, ...prev];
+        return [{ ...gMsg, encrypted_content: gMsg.encrypted_content ?? "", sender: senderSnap as any, reactions: [], status: undefined }, ...prev];
       });
       playNotificationSound();
     });
@@ -3305,7 +3302,6 @@ function ChatScreen() {
             content: `I scanned this with AfuChat AI Lens:\n\n${contextLines}\n\nGive me a detailed, expert breakdown with the most fascinating details.`,
           },
         ],
-        max_tokens: 700,
       });
       if (lensAiRes.content) {
         const rawReply = lensAiRes.content.trim() || "I've reviewed your scan. What would you like to know?";
@@ -3612,7 +3608,7 @@ function ChatScreen() {
       .then(({ data }) => {
         if (!data) { setMuteUntil(undefined); return; }
         setMuteUntil(data.muted_until ?? null);
-      }).catch(() => {});
+      }, () => {});
     AsyncStorage.getItem(`afu_disappearing_${chatId}`).then((v) => setDisappearingEnabled(v === "1")).catch(() => {});
     AsyncStorage.getItem(`afu_disappearing_timer_${chatId}`).then((v) => { if (v) setDisappearingTimer(parseInt(v, 10)); }).catch(() => {});
     if (chatInfo?.other_id && !chatInfo.is_group && !chatInfo.is_channel) {
@@ -4069,7 +4065,6 @@ STRICT RULES:
       const engagera = await getEngagera();
       const chatAiRes = await engagera.chat.create({
         messages: [{ role: "system" as const, content: systemPrompt + lensAddition }, ...conversationMessages],
-        max_tokens: 800,
       });
       if (!chatAiRes.content) throw new Error("AI returned empty response");
       const rawReply = chatAiRes.content.trim() || "Sorry, I couldn't process that. Please try again.";
@@ -5965,7 +5960,7 @@ STRICT RULES:
             onLongPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               setForwardMsg(item);
-              loadForwardChats();
+              openForward(item);
             }}
           >
             <LensContextCard
@@ -6022,7 +6017,7 @@ STRICT RULES:
       <WallpaperOverlay wallpaper={chatAppearance?.wallpaper} dark={isDark} />
       {Platform.OS !== "web" && <OfflineBanner />}
       <View style={[st.header, { backgroundColor: colors.surface, paddingTop: insets.top + 4, borderBottomColor: colors.border }]}>
-        {!isDesktop && (
+        {(
           <TouchableOpacity onPress={() => router.back()} style={st.backBtn} hitSlop={12}>
             <Ionicons name="chevron-back" size={26} color={colors.text} />
           </TouchableOpacity>
@@ -8202,7 +8197,7 @@ STRICT RULES:
             <View style={{
               flexDirection: "row",
               alignItems: "center",
-              backgroundColor: colors.inputBg ?? colors.background,
+              backgroundColor: colors.inputBg,
               borderRadius: 14,
               borderWidth: 1,
               borderColor: colors.border,
@@ -8211,7 +8206,7 @@ STRICT RULES:
               marginBottom: 16,
             }}>
               <Ionicons name="link-outline" size={15} color={colors.textMuted} style={{ marginRight: 8 }} />
-              <Text style={{ flex: 1, fontSize: 13, fontFamily: "Inter_400Regular", color: colors.textSecondary ?? colors.textMuted }} numberOfLines={1} ellipsizeMode="middle">
+              <Text style={{ flex: 1, fontSize: 13, fontFamily: "Inter_400Regular", color: colors.textSecondary }} numberOfLines={1} ellipsizeMode="middle">
                 {getInviteLink()}
               </Text>
             </View>
@@ -8266,7 +8261,7 @@ STRICT RULES:
             </View>
 
             {/* Info note */}
-            <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, padding: 12, backgroundColor: colors.inputBg ?? colors.background, borderRadius: 12 }}>
+            <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, padding: 12, backgroundColor: colors.inputBg, borderRadius: 12 }}>
               <Ionicons name="information-circle-outline" size={15} color={colors.textMuted} style={{ marginTop: 1 }} />
               <Text style={{ flex: 1, fontSize: 12, fontFamily: "Inter_400Regular", color: colors.textMuted, lineHeight: 17 }}>
                 This link is permanent and unique to this {chatInfo?.is_channel ? "channel" : "group"}. Anyone who taps it can join directly without needing approval.

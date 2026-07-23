@@ -21,7 +21,6 @@ import * as Haptics from "@/lib/haptics";
 
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { useOpenLink } from "@/lib/useOpenLink";
 import { supabase } from "@/lib/supabase";
 import { getEdgeFnBase, edgeHeaders } from "@/lib/aiHelper";
@@ -160,7 +159,6 @@ async function fetchAiInsight(query: string): Promise<AiInsight | null> {
   try {
     const engagera = await getEngagera();
     const aiRes = await engagera.chat.create({
-        max_tokens: 900,
         messages: [
           {
             role: "system" as const,
@@ -297,7 +295,6 @@ export default function SearchScreen() {
   const { tag: incomingTag, q: incomingQ } = useLocalSearchParams<{ tag?: string; q?: string }>();
   const handledTagRef = useRef<string | null>(null);
   const handledQRef   = useRef<string | null>(null);
-  const { isDesktop } = useIsDesktop();
 
   const scrollPB = insets.bottom + 90;
 
@@ -1744,7 +1741,7 @@ export default function SearchScreen() {
     <View style={[ss.root, { backgroundColor: colors.backgroundSecondary }]}>
 
       {/* Header */}
-      <View style={[ss.header, { paddingTop: isDesktop ? 12 : insets.top + 8, backgroundColor: colors.surface + "CC", borderBottomColor: colors.border }]}>
+      <View style={[ss.header, { paddingTop: insets.top + 8, backgroundColor: colors.surface + "CC", borderBottomColor: colors.border }]}>
 
         {/* Title + AI toggle */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>

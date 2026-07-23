@@ -225,8 +225,7 @@ export default function ContactScreen() {
       .or("visibility.eq.public,visibility.eq.followers,visibility.is.null")
       .order("created_at", { ascending: false })
       .limit(90)
-      .then(({ data }) => { setAllGridPosts((data as GridPost[]) ?? []); setGridLoading(false); })
-      .catch(() => { setAllGridPosts([]); setGridLoading(false); });
+      .then(({ data }) => { setAllGridPosts((data as GridPost[]) ?? []); setGridLoading(false); }, () => { setAllGridPosts([]); setGridLoading(false); });
   }, [id, loading]);
 
   // ── Derive visible posts for the active tab (instant, no network) ─────────

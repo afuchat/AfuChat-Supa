@@ -43,7 +43,7 @@ export async function askAi(prompt: string, systemPrompt?: string, options?: Ask
   messages.push({ role: "user", content: prompt });
 
   const client = await getEngagera();
-  const reply = await client.chat.create({ messages, max_tokens: options?.maxTokens });
+  const reply = await client.chat.create({ messages });
   return reply.content || "Sorry, I couldn't generate a response.";
 }
 

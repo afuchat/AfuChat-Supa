@@ -147,7 +147,7 @@ export default function SchoolPickerInput({ value, onChange, country, placeholde
         presentationStyle="pageSheet"
         onRequestClose={() => setModalOpen(false)}
       >
-        <SafeAreaView style={[styles.modalRoot, { backgroundColor: colors.background ?? colors.surface }]}>
+        <SafeAreaView style={[styles.modalRoot, { backgroundColor: colors.background }]}>
           {/* Modal header */}
           <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Select School</Text>

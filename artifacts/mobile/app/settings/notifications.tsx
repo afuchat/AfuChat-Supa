@@ -24,8 +24,7 @@ import { getSoundMode, setSoundMode, playNotificationSound, SoundMode } from "@/
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { patchLocalSetting } from "@/lib/storage/localSettings";
-import { BottomSheetContainer, SHEET_OVERLAY_STYLE, DESKTOP_OVERLAY_STYLE } from "@/components/ui/BottomSheetContainer";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
+import { BottomSheetContainer, SHEET_OVERLAY_STYLE } from "@/components/ui/BottomSheetContainer";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -247,7 +246,6 @@ interface TimePickerSheetProps {
 function TimePickerSheet({ visible, label, value, onConfirm, onClose }: TimePickerSheetProps) {
   const { colors, accent } = useTheme();
   const insets = useSafeAreaInsets();
-  const { isDesktop } = useIsDesktop();
 
   const parsed = parse24(value);
 
@@ -279,8 +277,8 @@ function TimePickerSheet({ visible, label, value, onConfirm, onClose }: TimePick
 
   const COLUMN_W = 64;
 
-  const overlayStyle = Platform.OS === "web" && isDesktop ? DESKTOP_OVERLAY_STYLE : SHEET_OVERLAY_STYLE;
-  const animType = Platform.OS === "web" && isDesktop ? "fade" : "slide";
+  const overlayStyle = SHEET_OVERLAY_STYLE;
+  const animType = "slide" as const;
 
   return (
     <Modal visible={visible} transparent animationType={animType} onRequestClose={onClose}>
@@ -398,16 +396,17 @@ export default function NotificationSettingsScreen() {
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
-        if (data) {
+        const prefsData = data as any;
+        if (prefsData) {
           // Format TIME columns from "HH:MM:SS" to "HH:MM"
-          const start = (data.quiet_hours_start as string | null)?.slice(0, 5) ?? "22:00";
-          const end   = (data.quiet_hours_end   as string | null)?.slice(0, 5) ?? "08:00";
+          const start = (prefsData.quiet_hours_start as string | null)?.slice(0, 5) ?? "22:00";
+          const end   = (prefsData.quiet_hours_end   as string | null)?.slice(0, 5) ?? "08:00";
           setPrefs({
             ...defaults,
-            ...data,
+            ...prefsData,
             quiet_hours_start: start,
             quiet_hours_end:   end,
-            quiet_hours_timezone: data.quiet_hours_timezone ?? deviceTimezone(),
+            quiet_hours_timezone: prefsData.quiet_hours_timezone ?? deviceTimezone(),
           });
         } else {
           // No row yet — seed with device timezone

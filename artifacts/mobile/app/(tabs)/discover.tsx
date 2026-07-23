@@ -20,9 +20,9 @@ import {
   useWindowDimensions,
 } from "react-native";
 // PagerView gives true native 1:1 finger-tracking on Android/iOS.
-const _PagerView: any = Platform.OS !== "web"
-  ? (() => { try { return require("react-native-pager-view").default; } catch { return null; } })()
-  : null;
+const _PagerView: any = (() => {
+  try { return require("react-native-pager-view").default; } catch { return null; }
+})();
 import { TabSwipeContext } from "@/context/TabSwipeContext";
 import { Image as ExpoImage } from "expo-image";
 import { showAlert } from "@/lib/alert";
@@ -56,7 +56,6 @@ import { trackEvent } from "@/lib/activityTracker";
 import { getMergedLearnedWeights } from "@/lib/personalization";
 import { useLanguage } from "@/context/LanguageContext";
 import { translateText, LANG_LABELS } from "@/lib/translate";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { encodeId } from "@/lib/shortId";
 import { useVideoProgress } from "@/hooks/useVideoProgress";
 import SignInPromptModal from "@/components/ui/SignInPromptModal";
@@ -115,8 +114,8 @@ function BookmarkButton({ bookmarked, onPress }: { bookmarked: boolean; onPress:
   const scale = useRef(new Animated.Value(1)).current;
   function handlePress() {
     Animated.sequence([
-      Animated.timing(scale, { toValue: 0.7, duration: 100, useNativeDriver: Platform.OS !== "web" }),
-      Animated.spring(scale, { toValue: 1, tension: 200, friction: 8, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(scale, { toValue: 0.7, duration: 100, useNativeDriver: true }),
+      Animated.spring(scale, { toValue: 1, tension: 200, friction: 8, useNativeDriver: true }),
     ]).start();
     onPress();
   }
@@ -160,11 +159,11 @@ function PostImages({
     heartOpacity.setValue(0);
     heartScale.setValue(0.3);
     Animated.parallel([
-      Animated.timing(heartOpacity, { toValue: 1, duration: 120, useNativeDriver: Platform.OS !== "web" }),
-      Animated.spring(heartScale,   { toValue: 1, speed: 50, bounciness: 14, useNativeDriver: Platform.OS !== "web" }),
+      Animated.timing(heartOpacity, { toValue: 1, duration: 120, useNativeDriver: true }),
+      Animated.spring(heartScale,   { toValue: 1, speed: 50, bounciness: 14, useNativeDriver: true }),
     ]).start(() => {
       setTimeout(() => {
-        Animated.timing(heartOpacity, { toValue: 0, duration: 380, useNativeDriver: Platform.OS !== "web" }).start();
+        Animated.timing(heartOpacity, { toValue: 0, duration: 380, useNativeDriver: true }).start();
       }, 500);
     });
     onDoubleTap();
@@ -242,7 +241,6 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
   const { width: screenW } = useWindowDimensions();
   const cardInsets = useCardInsets();
   const { user: currentUser } = useAuth();
-  const { isDesktop } = useIsDesktop();
   const watchedFraction = useVideoProgress(item.post_type === "video" ? item.id : "");
   const [displayContent, setDisplayContent] = useState(item.content);
   const [isTranslated, setIsTranslated] = useState(false);
@@ -255,8 +253,8 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
   const animateHeart = useCallback(() => {
     heartScale.setValue(1);
     Animated.sequence([
-      Animated.spring(heartScale, { toValue: 1.4, useNativeDriver: Platform.OS !== "web", speed: 50, bounciness: 14 }),
-      Animated.spring(heartScale, { toValue: 1,   useNativeDriver: Platform.OS !== "web", speed: 22, bounciness: 4  }),
+      Animated.spring(heartScale, { toValue: 1.4, useNativeDriver: true, speed: 50, bounciness: 14 }),
+      Animated.spring(heartScale, { toValue: 1,   useNativeDriver: true, speed: 22, bounciness: 4  }),
     ]).start();
   }, [heartScale]);
 
@@ -354,8 +352,8 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
               style={{
                 pointerEvents: "none",
                 position: "absolute",
-                left: isDesktop ? 38 : 35,
-                top: isDesktop ? 70 : 64,
+                left: 35,
+                top: 64,
                 bottom: -8,
                 width: 2,
                 backgroundColor: colors.border,
@@ -372,9 +370,9 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                 activeOpacity={0.8}
               >
                 {item.profile.avatar_url
-                  ? <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={isDesktop ? 44 : 40} square userId={item.author_id} />
-                  : <View style={{ width: isDesktop ? 44 : 40, height: isDesktop ? 44 : 40, borderRadius: 8, backgroundColor: colors.accent + "20", alignItems: "center", justifyContent: "center" }}>
-                      <Text style={{ color: colors.accent, fontFamily: "Inter_700Bold", fontSize: isDesktop ? 18 : 16 }}>{(item.profile.display_name || "O").slice(0, 1).toUpperCase()}</Text>
+                  ? <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={40} square userId={item.author_id} />
+                  : <View style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: colors.accent + "20", alignItems: "center", justifyContent: "center" }}>
+                      <Text style={{ color: colors.accent, fontFamily: "Inter_700Bold", fontSize: 16 }}>{(item.profile.display_name || "O").slice(0, 1).toUpperCase()}</Text>
                     </View>
                 }
               </TouchableOpacity>
@@ -383,7 +381,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                 onPress={() => safeRouter.push({ pathname: "/contact/[id]", params: { id: item.author_id, init_name: item.profile.display_name, init_handle: item.profile.handle, init_avatar: item.profile.avatar_url ?? "", init_verified: item.is_verified ? "1" : "0", init_org_verified: item.is_organization_verified ? "1" : "0" } } as any)}
                 activeOpacity={0.8}
               >
-                <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={isDesktop ? 44 : 40} square={!!(item.is_organization_verified)} userId={item.author_id} />
+                <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={40} square={!!(item.is_organization_verified)} userId={item.author_id} />
               </TouchableOpacity>
             )}
             <View style={{ flex: 1, gap: 0, paddingTop: 10 }}>
@@ -392,9 +390,9 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                 <>
                   <View style={[styles.nameRow, { flex: 1 }]}>
                     <TouchableOpacity onPress={() => safeRouter.push(`/company/${item.org_slug}` as any)} activeOpacity={0.7}>
-                      <UserName userId={item.author_id} name={item.profile.display_name} style={[styles.cardHandle, { color: colors.text, fontSize: isDesktop ? 14 : 13, flexShrink: 1 }]} numberOfLines={1} />
+                      <UserName userId={item.author_id} name={item.profile.display_name} style={[styles.cardHandle, { color: colors.text, fontSize: 13, flexShrink: 1 }]} numberOfLines={1} />
                     </TouchableOpacity>
-                    {item.org_verified ? <VerifiedBadge isVerified={false} isOrganizationVerified size={isDesktop ? 14 : 12} /> : null}
+                    {item.org_verified ? <VerifiedBadge isVerified={false} isOrganizationVerified size={12} /> : null}
                     <View style={{ backgroundColor: colors.accent + "15", borderRadius: 4, paddingHorizontal: 5, paddingVertical: 1 }}>
                       <Text style={{ fontSize: 9.5, fontFamily: "Inter_600SemiBold", color: colors.accent, textTransform: "capitalize" }}>
                         {item.org_type?.replace(/\s*\/.*$/, "") || "Company"}
@@ -421,8 +419,8 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                 /* ── Person: bold display name / @handle subtitle / bio ── */
                 <>
                   <View style={[styles.nameRow, { flex: 1 }]}>
-                    <UserName userId={item.author_id} name={item.profile.display_name || item.profile.handle} style={[styles.cardHandle, { color: colors.text, fontSize: isDesktop ? 14 : 13, fontFamily: "Inter_700Bold", flexShrink: 1 }]} numberOfLines={1} />
-                    <VerifiedBadge isVerified={item.is_verified} isOrganizationVerified={item.is_organization_verified} size={isDesktop ? 14 : 12} />
+                  <UserName userId={item.author_id} name={item.profile.display_name || item.profile.handle} style={[styles.cardHandle, { color: colors.text, fontSize: 13, fontFamily: "Inter_700Bold", flexShrink: 1 }]} numberOfLines={1} />
+                  <VerifiedBadge isVerified={item.is_verified} isOrganizationVerified={item.is_organization_verified} size={12} />
                     <View style={{ flex: 1 }} />
                     {showFollowBtn && (
                       <TouchableOpacity
@@ -471,9 +469,9 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                   videoUrl={item.video_url!}
                   fallbackImageUrl={item.image_url}
                   style={StyleSheet.absoluteFill}
-                  lowData={isDesktop}
+                  lowData={false}
                   durationSeconds={item.duration_seconds}
-                  watchedFraction={isDesktop ? null : watchedFraction}
+                  watchedFraction={watchedFraction}
                 />
                 <View style={styles.playCircle}>
                   <Ionicons name="play" size={22} color="#fff" />
@@ -526,7 +524,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
             <>
               {/* ── Content text ── */}
               {(displayContent || "").trim().length > 0 && (
-                <RichText style={[styles.cardContent, { color: colors.text, fontSize: isDesktop ? 17 : 15, lineHeight: isDesktop ? 27 : 23 }]}>
+                <RichText style={[styles.cardContent, { color: colors.text, fontSize: 15, lineHeight: 23 }]}>
                   {displayContent}
                 </RichText>
               )}
@@ -701,26 +699,10 @@ export default function DiscoverScreen() {
   const { user, profile } = useAuth();
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
-  const { isDesktop } = useIsDesktop();
   const navigation = useNavigation();
   // Shorts now lives at /shorts (which redirects to /video/[id]). Any URL like
   // ?tab=shorts is forwarded there so existing links keep working.
-  const [feedTab, setFeedTab] = useState<"for_you" | "following">(() => {
-    if (Platform.OS === "web" && typeof window !== "undefined") {
-      const sp = new URLSearchParams(window.location.search);
-      const t = sp.get("tab");
-      if (t === "following" || t === "for_you") return t as any;
-    }
-    return "for_you";
-  });
-  useEffect(() => {
-    if (Platform.OS === "web" && typeof window !== "undefined") {
-      const sp = new URLSearchParams(window.location.search);
-      if (sp.get("tab") === "shorts") {
-        router.replace("/shorts" as any); // replace intentional — not a user tap
-      }
-    }
-  }, []);
+  const [feedTab, setFeedTab] = useState<"for_you" | "following">("for_you");
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -741,15 +723,13 @@ export default function DiscoverScreen() {
   const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
   const snackAnim = useRef(new Animated.Value(0)).current;
   const snackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isWeb = Platform.OS === "web";
-
   const showSnack = useCallback((count: number) => {
     if (snackTimerRef.current) clearTimeout(snackTimerRef.current);
-    Animated.spring(snackAnim, { toValue: 1, useNativeDriver: !isWeb, tension: 140, friction: 14 }).start();
+    Animated.spring(snackAnim, { toValue: 1, useNativeDriver: true, tension: 140, friction: 14 }).start();
     snackTimerRef.current = setTimeout(() => {
-      Animated.timing(snackAnim, { toValue: 0, duration: 260, useNativeDriver: !isWeb }).start();
+      Animated.timing(snackAnim, { toValue: 0, duration: 260, useNativeDriver: true }).start();
     }, 4000);
-  }, [snackAnim, isWeb]);
+  }, [snackAnim]);
 
   const handleUndo = useCallback(() => {
     setUndoStack(prev => {
@@ -763,11 +743,11 @@ export default function DiscoverScreen() {
       const next = prev.slice(0, -1);
       if (next.length === 0) {
         if (snackTimerRef.current) clearTimeout(snackTimerRef.current);
-        Animated.timing(snackAnim, { toValue: 0, duration: 260, useNativeDriver: !isWeb }).start();
+        Animated.timing(snackAnim, { toValue: 0, duration: 260, useNativeDriver: true }).start();
       }
       return next;
     });
-  }, [snackAnim, isWeb]);
+  }, [snackAnim]);
   const PAGE_SIZE = 30;
   const imgViewer = useImageViewer();
 
@@ -966,7 +946,7 @@ export default function DiscoverScreen() {
   // Animate the floating "new posts" popup in when new authors arrive,
   // out when the list is cleared (refresh, tab switch, etc.).
   // useNativeDriver is only available on native — web uses JS-driven animation.
-  const _useND = Platform.OS !== "web";
+  const _useND = true;
   useEffect(() => {
     if (newPostAuthors.length === 0) {
       if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
@@ -1164,7 +1144,8 @@ export default function DiscoverScreen() {
 
         // Seed handle→id cache — makes mention-taps to these authors instant
         for (const p of data) {
-          if (p.author_id && p.profiles?.handle) setHandleId(p.profiles.handle, p.author_id);
+          const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
+          if (p.author_id && profile?.handle) setHandleId(profile.handle, p.author_id);
         }
 
         if (isRefresh) {
@@ -2210,7 +2191,7 @@ export default function DiscoverScreen() {
       </View>
       {/* ────────────────────────────────────────────────────────────────── */}
 
-      {_PagerView && !isDesktop ? (
+      {_PagerView ? (
         <_PagerView
           ref={pagerRef}
           style={{ flex: 1 }}
@@ -2252,7 +2233,7 @@ export default function DiscoverScreen() {
                   maxToRenderPerBatch={10}
                   windowSize={8}
                   updateCellsBatchingPeriod={50}
-                  removeClippedSubviews={Platform.OS !== "web"}
+                  removeClippedSubviews
                   refreshControl={
                     <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
                   }
@@ -2324,7 +2305,7 @@ export default function DiscoverScreen() {
                   maxToRenderPerBatch={10}
                   windowSize={8}
                   updateCellsBatchingPeriod={50}
-                  removeClippedSubviews={Platform.OS !== "web"}
+                  removeClippedSubviews
                   refreshControl={
                     <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
                   }
@@ -2396,7 +2377,7 @@ export default function DiscoverScreen() {
             maxToRenderPerBatch={10}
             windowSize={8}
             updateCellsBatchingPeriod={50}
-            removeClippedSubviews={Platform.OS !== "web"}
+            removeClippedSubviews
             refreshControl={
               <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
             }
@@ -2421,7 +2402,7 @@ export default function DiscoverScreen() {
       {loadingMore && (
         <View
           pointerEvents="none"
-          style={[styles.loadMorePill, { bottom: insets.bottom + (Platform.OS === "web" ? 108 : 90) }]}
+          style={[styles.loadMorePill, { bottom: insets.bottom + 90 }]}
         >
           <View style={styles.loadMorePillInner}>
             <ActivityIndicator size="small" color="#fff" />
@@ -2433,7 +2414,7 @@ export default function DiscoverScreen() {
       {user && (
         <TouchableOpacity
           ref={fabRef}
-          style={[styles.fab, { backgroundColor: colors.accent, bottom: insets.bottom + (Platform.OS === "web" ? 108 : 90) }]}
+          style={[styles.fab, { backgroundColor: colors.accent, bottom: insets.bottom + 90 }]}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setShowCreatePicker(true);

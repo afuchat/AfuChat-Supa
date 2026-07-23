@@ -11,6 +11,7 @@ export type PageInfo = {
   pathname: string;
   name: string;
   summary: string;
+  actions?: string[];
 };
 
 let _current: PageInfo = {

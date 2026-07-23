@@ -65,7 +65,7 @@ export function MiniAppRuntimeProvider({ children }: { children: React.ReactNode
     if (Platform.OS === "web") return;
     const manifest = findModule(id);
     if (!manifest || manifest.comingSoon) return;
-    if (manifest.nativeOnly && Platform.OS === "web") return;
+    if (manifest.nativeOnly && false) return;
 
     setOpenApps((prev) => {
       const existing = prev.find((a) => a.manifest.id === id);

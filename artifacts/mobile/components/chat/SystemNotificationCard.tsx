@@ -308,8 +308,7 @@ function useActorProfile(data: SysNotifData) {
       .then(({ data: p }) => {
         if (cancelled || !p) return;
         setResolved({ name: p.display_name || undefined, handle: p.handle || undefined, avatar: p.avatar_url || undefined });
-      })
-      .catch(() => {});
+      }, () => {});
     return () => { cancelled = true; };
   }, [data.actor_id, needsFetch]);
 
@@ -364,8 +363,7 @@ function usePostContent(postId: string | undefined, type: string) {
         if (cancelled || !data?.content) return;
         const text = typeof data.content === "string" ? data.content.trim() : "";
         if (text) setContent(text.slice(0, 100));
-      })
-      .catch(() => {});
+      }, () => {});
     return () => { cancelled = true; };
   }, [postId, type]);
 
@@ -389,8 +387,7 @@ function usePostThumbnail(postId: string | undefined, provided: string | undefin
         if (!data) return;
         const url = data.video_thumbnail_url || data.media_url;
         if (url && typeof url === "string") setThumb(url);
-      })
-      .catch(() => {});
+      }, () => {});
   }, [postId, provided]);
 
   return thumb;
@@ -634,7 +631,7 @@ export function GroupedSystemNotificationCard({ data, sentAt }: { data: GroupedS
               <Text style={sn.boldName}>
                 {firstActor?.name || firstActor?.handle || "Someone"}
               </Text>
-              <Text style={{ color: colors.textSecondary || colors.textMuted }}>
+              <Text style={{ color: colors.textSecondary }}>
                 {buildGroupedBodySuffix(data.actors, data.totalCount, data.type)}
               </Text>
             </Text>
@@ -685,11 +682,11 @@ export function GroupedSystemNotificationCard({ data, sentAt }: { data: GroupedS
                 <Ionicons
                   name={a.icon as any}
                   size={12}
-                  color={a.primary ? "#fff" : colors.textSecondary || colors.textMuted}
+                  color={a.primary ? "#fff" : colors.textSecondary}
                   style={{ marginRight: 4 }}
                 />
                 <Text
-                  style={[sn.actionBtnText, { color: a.primary ? "#fff" : colors.textSecondary || colors.textMuted }]}
+                  style={[sn.actionBtnText, { color: a.primary ? "#fff" : colors.textSecondary }]}
                   numberOfLines={1}
                 >
                   {a.label}
@@ -790,7 +787,7 @@ export function SystemNotificationCard({ data, sentAt }: Props) {
             {bodyParts ? (
               <Text style={[sn.bodyText, { color: colors.text }]} numberOfLines={3}>
                 <Text style={sn.boldName}>{bodyParts.bold}</Text>
-                <Text style={{ color: colors.textSecondary || colors.textMuted }}>{bodyParts.rest}</Text>
+                <Text style={{ color: colors.textSecondary }}>{bodyParts.rest}</Text>
               </Text>
             ) : (
               <Text style={[sn.bodyText, { color: colors.text }]} numberOfLines={3}>
@@ -809,7 +806,7 @@ export function SystemNotificationCard({ data, sentAt }: Props) {
             )}
 
             {data.type === "shop_review" && (data.data?.rating || 0) > 0 && (
-              <Text style={sn.stars}>{"★".repeat(data.data!.rating)}{"☆".repeat(5 - data.data!.rating)}</Text>
+              <Text style={sn.stars}>{"★".repeat(data.data?.rating ?? 0)}{"☆".repeat(5 - (data.data?.rating ?? 0))}</Text>
             )}
 
             {/* Post content preview */}
@@ -863,11 +860,11 @@ export function SystemNotificationCard({ data, sentAt }: Props) {
                 <Ionicons
                   name={a.icon as any}
                   size={12}
-                  color={a.primary ? "#fff" : colors.textSecondary || colors.textMuted}
+                  color={a.primary ? "#fff" : colors.textSecondary}
                   style={{ marginRight: 4 }}
                 />
                 <Text
-                  style={[sn.actionBtnText, { color: a.primary ? "#fff" : colors.textSecondary || colors.textMuted }]}
+                  style={[sn.actionBtnText, { color: a.primary ? "#fff" : colors.textSecondary }]}
                   numberOfLines={1}
                 >
                   {a.label}

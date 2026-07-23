@@ -11,7 +11,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { safeRouter } from "@/lib/navUtils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { T } from "@/constants/theme";
 
 export interface GlassHeaderProps {
@@ -37,9 +36,6 @@ export function GlassHeader({
 }: GlassHeaderProps) {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
-  const { isDesktop } = useIsDesktop();
-
-  if (isDesktop) return null;
 
   function handleBack() {
     if (onBack) { onBack(); return; }

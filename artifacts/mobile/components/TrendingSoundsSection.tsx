@@ -174,7 +174,7 @@ export function TrendingSoundsSection() {
       <View style={styles.header}>
         <Ionicons name="musical-notes" size={18} color={colors.accent} />
         <Text style={[styles.title, { color: colors.text }]}>Trending Sounds</Text>
-        <Text style={[styles.sub, { color: colors.textMuted ?? colors.text + "88" }]}>
+        <Text style={[styles.sub, { color: colors.textMuted }]}>
           Tap to use in your video
         </Text>
       </View>
@@ -189,9 +189,9 @@ export function TrendingSoundsSection() {
             key={s.name}
             sound={s}
             accent={colors.accent}
-            surface={colors.backgroundTertiary ?? colors.surface ?? colors.background}
+            surface={colors.backgroundTertiary}
             text={colors.text}
-            muted={colors.textMuted ?? colors.textSecondary ?? colors.text + "88"}
+            muted={colors.textMuted}
           />
         ))}
       </ScrollView>

@@ -124,7 +124,7 @@ export default function TicketDetail() {
         .order("created_at", { ascending: true }),
     ]);
     if (t) setTicket(t as Ticket);
-    if (msgs) setMessages(msgs as Message[]);
+    if (msgs) setMessages(msgs as unknown as Message[]);
     setLoading(false);
     setTimeout(() => listRef.current?.scrollToEnd({ animated: false }), 200);
   }, [id]);

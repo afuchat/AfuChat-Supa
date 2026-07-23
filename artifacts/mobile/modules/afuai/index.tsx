@@ -439,7 +439,6 @@ export default function AfuAIApp() {
                   ...history,
                   { role: "user", content: trimmed },
                 ] as { role: "system" | "user" | "assistant"; content: string }[],
-                max_tokens: 900,
               });
               rawReply = (aiReply.content || "Sorry, I had trouble processing that. Please try again.").trim();
             } catch {

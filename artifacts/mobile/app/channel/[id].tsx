@@ -257,8 +257,10 @@ export default function ChannelDetailScreen() {
     const asset = result.assets[0];
     setUploadingImage(true);
     try {
-      const url = await uploadChatMedia(asset.uri, "image");
-      setAttachImage(url);
+      if (!user || !id) return;
+      const result = await uploadChatMedia("channel-media", id, user.id, asset.uri);
+      if (result.error || !result.publicUrl) throw new Error(result.error || "Upload failed");
+      setAttachImage(result.publicUrl);
     } catch {
       showAlert("Error", "Could not attach image.");
     }
@@ -345,7 +347,7 @@ export default function ChannelDetailScreen() {
         <View style={{ maxWidth: "78%", gap: 2 }}>
           {!fromMe && (
             <Text style={[st.senderName, { color: PURPLE }]} numberOfLines={1}>
-              {channel.name}
+              {channel?.name ?? "Channel"}
             </Text>
           )}
 

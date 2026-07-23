@@ -3,12 +3,10 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { router, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function NotFoundScreen() {
   const { colors } = useTheme();
-  const { isDesktop } = useIsDesktop();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
 
@@ -23,7 +21,7 @@ export default function NotFoundScreen() {
         },
       ]}
     >
-      {!isDesktop && (
+      {(
         <TouchableOpacity
           style={styles.backBtn}
           onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)/discover")}
@@ -34,17 +32,17 @@ export default function NotFoundScreen() {
       )}
 
       <View style={styles.content}>
-        <View style={[styles.iconCircle, { backgroundColor: colors.surface ?? colors.backgroundSecondary }]}>
-          <Ionicons name="compass-outline" size={isDesktop ? 52 : 44} color={colors.accent} />
+        <View style={[styles.iconCircle, { backgroundColor: colors.surface }]}>
+          <Ionicons name="compass-outline" size={44} color={colors.accent} />
         </View>
 
         <Text style={[styles.code, { color: colors.accent }]}>404</Text>
 
-        <Text style={[styles.title, { color: colors.text, fontSize: isDesktop ? 26 : 22 }]}>
+        <Text style={[styles.title, { color: colors.text, fontSize: 22 }]}>
           Page not found
         </Text>
 
-        <Text style={[styles.subtitle, { color: colors.textMuted, fontSize: isDesktop ? 16 : 14 }]}>
+        <Text style={[styles.subtitle, { color: colors.textMuted, fontSize: 14 }]}>
           {pathname && pathname !== "/"
             ? `"${pathname}" doesn't exist or has been moved.`
             : "The page you're looking for doesn't exist."}

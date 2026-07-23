@@ -147,7 +147,7 @@ export default function ReportUserScreen() {
                 The more detail you provide, the faster we can investigate. Minimum 20 characters.
               </Text>
               <TextInput
-                style={[s.textArea, { color: colors.text, borderColor: colors.border, backgroundColor: colors.backgroundSecondary ?? colors.background }]}
+                style={[s.textArea, { color: colors.text, borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}
                 placeholder="Describe the issue in detail..."
                 placeholderTextColor={colors.textMuted}
                 multiline
@@ -226,7 +226,7 @@ export default function ReportUserScreen() {
   };
 
   return (
-    <View style={[s.root, { backgroundColor: colors.backgroundSecondary ?? colors.background }]}>
+    <View style={[s.root, { backgroundColor: colors.backgroundSecondary }]}>
       <GlassHeader
         title={step === 3 ? "Report Sent" : "Report User"}
         subtitle={step === 1 ? "Step 1 of 2 — Choose a reason" : step === 2 ? "Step 2 of 2 — Add details" : undefined}

@@ -38,7 +38,6 @@ import { supabase } from "@/lib/supabase";
 import { AFUCHAT_SYSTEM_ID } from "@/lib/afuSystemChat";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { Avatar } from "@/components/ui/Avatar";
 import UserName from "@/components/ui/UserName";
 import { StoryRing } from "@/components/ui/StoryRing";
@@ -526,7 +525,7 @@ const uploadBannerStyles = StyleSheet.create({
   fill: { height: 3, borderRadius: 2 },
 });
 
-function StoriesBar({ userId, colors, isDesktop }: { userId: string; colors: any; isDesktop: boolean }) {
+function StoriesBar({ userId, colors }: { userId: string; colors: any }) {
   const [storyUsers, setStoryUsers] = useState<StoryUser[]>([]);
   // Used to force re-render when storyViewedStore fires
   const [_viewedTick, setViewedTick] = useState(0);
@@ -649,11 +648,11 @@ function StoriesBar({ userId, colors, isDesktop }: { userId: string; colors: any
     });
   }, [loadStories]);
 
-  if (storyUsers.length === 0 && isDesktop) return null;
+  if (storyUsers.length === 0) return null;
 
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={storyBarStyles.list} nestedScrollEnabled>
-      {!isDesktop && (
+      {(
         <TouchableOpacity
           style={storyBarStyles.item}
           onPress={() => router.push("/stories/camera")}
@@ -801,7 +800,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   const { user, profile, linkedAccounts, switchAccount, loading: authLoading } = useAuth();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { isDesktop } = useIsDesktop();
   const pathname = usePathname() || "/";
   const activeChatMatch = pathname.match(/^\/chat\/([^/]+)/);
   const activeChatId = activeChatMatch ? activeChatMatch[1] : null;
@@ -1020,7 +1018,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       lastMsgMap[m.chat_id] = {
         lastMessage: buildMsgPreview(m.encrypted_content, m.attachment_type),
         lastMessageAt: m.sent_at,
-        isFromMe: m.sender_id === user.id,
+        isFromMe: m.sender_id === user?.id,
         lastMsgId: m.id,
       };
     }
@@ -1455,7 +1453,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         if (action === "unmute") {
           setChats((prev) => prev.map((c) => c.id === item.id ? { ...c, muted_until: undefined } : c));
           await supabase.from("chat_mutes").delete().eq("user_id", user.id).eq("chat_id", item.id);
-          showActionToast("Notifications unmuted", "", undefined, { type: "info", icon: "notifications-outline" });
+          showToast("Notifications unmuted", { type: "info", icon: "notifications-outline" });
         } else {
           // Quick mute: 8 hours by default from the list; full duration picker is inside the chat
           const until = new Date(Date.now() + 8 * 3600_000).toISOString();
@@ -1758,7 +1756,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
 
   // Show the folder tab bar on mobile only when the feature is enabled or
   // the user already has folders (so their data is never hidden).
-  const showFolderUI = !panelMode && !isDesktop && (advancedFeatures.chat_folders || folders.length > 0);
+  const showFolderUI = !panelMode && (advancedFeatures.chat_folders || folders.length > 0);
   const hasFolders   = folders.length > 0;
 
   type AllPage = { key: "all" };
@@ -1801,7 +1799,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     // where ChatsScreen mounts before the auth context has set the user.
     if (authLoading) return null;
 
-    if (panelMode || isDesktop) {
+    if (panelMode) {
       // Inside the desktop master-detail panel (or any desktop context) — keep
       // the layout intact and show a tasteful "sign in" placeholder instead of
       // redirecting to Discover and breaking the desktop shell layout.
@@ -1917,7 +1915,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
           {user && (
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <View style={{ flex: 1 }}>
-                <StoriesBar userId={user.id} colors={colors} isDesktop={false} />
+                <StoriesBar userId={user.id} colors={colors} />
               </View>
               {/* Collapse chevron — tap to close stories bar */}
               <TouchableOpacity

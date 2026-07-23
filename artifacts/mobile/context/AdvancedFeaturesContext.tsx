@@ -111,8 +111,7 @@ export function AdvancedFeaturesProvider({ children }: { children: React.ReactNo
       .then(({ data }) => {
         if (data) setFeatures({ ...defaults, ...(data as any) });
         setLoading(false);
-      })
-      .catch(() => {
+      }, () => {
         setLoading(false);
       });
   }, [user?.id]);

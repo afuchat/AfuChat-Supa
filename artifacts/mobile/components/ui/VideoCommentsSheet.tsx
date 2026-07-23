@@ -11,7 +11,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
 import {
   ActivityIndicator,
   Animated,
@@ -34,6 +33,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 // expo-av: lazy-load to avoid "Cannot find native module 'ExponentAV'" on web
 let Audio: typeof import("expo-av").Audio | null = null;
+type AudioSound = import("expo-av/build/Audio/Sound").Sound;
+type AudioRecording = import("expo-av/build/Audio/Recording").Recording;
 if (Platform.OS !== "web") {
   try { Audio = require("expo-av").Audio; } catch {}
 }
@@ -52,7 +53,7 @@ import { uploadToStorage } from "@/lib/mediaUpload";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const USE_NATIVE = Platform.OS !== "web";
+const USE_NATIVE = true;
 const VID_THREAD_COLORS = ["#1f95ff", "#5C6BC0", "#26A69A", "#EF6C00", "#8E24AA"];
 const QUICK_EMOJIS = ["🔥", "❤️", "😂", "😮", "👏", "💯", "🙌", "😍"];
 const MAX_VOICE_SECS = 60;
@@ -172,8 +173,8 @@ function WaveformBars({
           40,
           pulseAnims.map((a) =>
             Animated.sequence([
-              Animated.timing(a, { toValue: 1.5 + Math.random() * 0.5, duration: 200 + Math.random() * 200, useNativeDriver: Platform.OS !== "web" }),
-              Animated.timing(a, { toValue: 1, duration: 200, useNativeDriver: Platform.OS !== "web" }),
+              Animated.timing(a, { toValue: 1.5 + Math.random() * 0.5, duration: 200 + Math.random() * 200, useNativeDriver: true }),
+              Animated.timing(a, { toValue: 1, duration: 200, useNativeDriver: true }),
             ]),
           ),
         ),
@@ -214,7 +215,7 @@ function VoicePlayer({
 }: {
   uri: string; durationSecs: number; accent: string; isDark?: boolean;
 }) {
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [sound, setSound] = useState<AudioSound | null>(null);
   const [playing, setPlaying] = useState(false);
   const [positionMs, setPositionMs] = useState(0);
   const [durationMs, setDurationMs] = useState(Math.max(1000, durationSecs * 1000));
@@ -257,7 +258,8 @@ function VoicePlayer({
       await sound.pauseAsync();
       setPlaying(false);
     } else {
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, allowsRecordingIOS: false }).catch(() => {});
+      if (!Audio) return;
+      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, allowsRecordingIOS: false }).then(() => {}, () => {});
       await sound.playAsync();
       setPlaying(true);
     }
@@ -462,8 +464,8 @@ function RecordingBar({
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.4, duration: 600, useNativeDriver: Platform.OS !== "web" }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: Platform.OS !== "web" }),
+        Animated.timing(pulseAnim, { toValue: 1.4, duration: 600, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
       ]),
     );
     loop.start();
@@ -583,14 +585,14 @@ export function VideoCommentsSheet({
     if (visible) {
       isFullSheetRef.current = false;
       animSheetH.setValue(peekSHRef.current || 400);
-      Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: Platform.OS !== "web", tension: 60, friction: 11 }).start();
+      Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true, tension: 60, friction: 11 }).start();
     } else {
       sheetTranslateY.setValue(1000);
     }
   }, [visible]);
 
   function dismissSheet() {
-    Animated.timing(sheetTranslateY, { toValue: 1000, duration: 220, useNativeDriver: Platform.OS !== "web" }).start(() => onClose());
+    Animated.timing(sheetTranslateY, { toValue: 1000, duration: 220, useNativeDriver: true }).start(() => onClose());
   }
 
   const sheetPan = useRef(PanResponder.create({
@@ -638,7 +640,7 @@ export function VideoCommentsSheet({
   const [kbHeight, setKbHeight] = useState(0);
 
   const [recordState, setRecordState] = useState<RecordState>("idle");
-  const [recordingObj, setRecordingObj] = useState<Audio.Recording | null>(null);
+  const [recordingObj, setRecordingObj] = useState<AudioRecording | null>(null);
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
   const [recordedDuration, setRecordedDuration] = useState(0);
   const [recordElapsed, setRecordElapsed] = useState(0);
@@ -824,7 +826,7 @@ export function VideoCommentsSheet({
     }
   }
 
-  async function stopRecording(rec?: Audio.Recording | null, elapsed?: number) {
+  async function stopRecording(rec?: AudioRecording | null, elapsed?: number) {
     stopTimer();
     const activeRec = rec ?? recordingObj;
     if (!activeRec) { setRecordState("idle"); return; }
@@ -1012,145 +1014,7 @@ export function VideoCommentsSheet({
   const listMaxH = Math.max(sheetMaxH - 230 - mediaBarH - Math.max(insets.bottom, 16), 80);
 
   const canSend = !sending && (text.trim().length > 0 || (recordState === "recorded" && !!recordedUri) || !!attachedImage);
-  const { isDesktop } = useIsDesktop();
-  const isDesktopWeb = Platform.OS === "web" && isDesktop;
-
-  // ─── Desktop: right-side panel ────────────────────────────────────────────
-  if (isDesktopWeb) {
-    return (
-      <Modal visible={visible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
-        <View style={{ flex: 1, flexDirection: "row" }}>
-          <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }} onPress={onClose} />
-          <View style={dpStyles.panel}>
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: sheetBg }]} />
-            <View style={cStyles.header}>
-              <View style={{ flex: 1 }}>
-                <Text style={[cStyles.title, { color: titleClr }]}>
-                  {replies.length > 0 ? `${formatCount(replies.length)} ` : ""}Comments
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => setSortMode((m) => m === "recent" ? "top" : "recent")}
-                hitSlop={10}
-                activeOpacity={0.7}
-                style={{
-                  flexDirection: "row", alignItems: "center", gap: 4,
-                  paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16,
-                  backgroundColor: sortMode === "top" ? accent + "22" : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"),
-                }}
-              >
-                <Ionicons name="funnel-outline" size={13} color={sortMode === "top" ? accent : sortTabTxt} />
-                <Text style={{ color: sortMode === "top" ? accent : sortTabTxt, fontSize: 12, fontFamily: "Inter_600SemiBold" }}>
-                  {sortMode === "recent" ? "Recent" : "Top"}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={onClose} hitSlop={12} style={{ paddingLeft: 6 }}>
-                <Ionicons name="close" size={22} color={closeBtnClr} />
-              </TouchableOpacity>
-            </View>
-            <View style={{ height: 0.5, backgroundColor: separatorClr }} />
-            {loading ? (
-              <View style={{ padding: 32, alignItems: "center" }}><ActivityIndicator color={accent} /></View>
-            ) : sortedTree.length === 0 ? (
-              <View style={cStyles.emptyBox}>
-                <Ionicons name="chatbubble-outline" size={32} color={emptyIconClr} />
-                <Text style={[cStyles.emptyText, { color: emptyTxtClr }]}>No comments yet</Text>
-                <Text style={[cStyles.emptySub, { color: emptySubClr }]}>Be the first to comment</Text>
-              </View>
-            ) : (
-              <FlatList
-                ref={listRef}
-                data={sortedTree}
-                keyExtractor={(r) => r.id}
-                style={{ flex: 1 }}
-                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 8 }}
-                showsVerticalScrollIndicator={false}
-                renderItem={({ item: r }) => (
-                  <VideoReplyItem
-                    reply={r} depth={0} onReplyTo={handleReplyTo}
-                    isCreator={r.author_id === postAuthorId}
-                    isNew={newCommentIds.has(r.id)} accent={accent}
-                    likedSet={likedIds} onLike={handleReplyLike} isDark={isDark}
-                  />
-                )}
-              />
-            )}
-            {replyingTo && (
-              <View style={[cStyles.replyingTo, { borderTopColor: borderTopClr }]}>
-                <Text style={[cStyles.replyingToText, { color: replyToTxt }]}>
-                  Replying to <Text style={{ color: accent }}>@{replyingTo.profile.handle}</Text>
-                </Text>
-                <TouchableOpacity onPress={() => setReplyingTo(null)} hitSlop={8}>
-                  <Ionicons name="close-circle" size={16} color={replyToIcon} />
-                </TouchableOpacity>
-              </View>
-            )}
-            <View style={[cStyles.emojiBar, { borderTopColor: borderTopClr }]}>
-              {QUICK_EMOJIS.map((e) => (
-                <TouchableOpacity key={e} onPress={() => setText((t) => t + e)} style={cStyles.emojiBtn} activeOpacity={0.6}>
-                  <Text style={cStyles.emojiText}>{e}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            {user ? (
-              <View style={[cStyles.inputRow, { borderTopColor: borderTopClr }]}>
-                <Avatar uri={profile?.avatar_url} name={profile?.display_name || "You"} size={32} />
-                <View style={{ flex: 1, position: "relative" }}>
-                  <TextInput
-                    ref={inputRef}
-                    style={[cStyles.input, { backgroundColor: inputBg, color: inputTxt }]}
-                    placeholder="Add a comment…"
-                    placeholderTextColor={inputPH}
-                    value={text}
-                    onChangeText={setText}
-                    multiline
-                    maxLength={500}
-                  />
-                  {text.length > 400 && (
-                    <Text style={[cStyles.charCounter, { color: 500 - text.length < 20 ? "#FF453A" : inputPH }]}>
-                      {500 - text.length}
-                    </Text>
-                  )}
-                </View>
-                <TouchableOpacity
-                  onPress={pickImage}
-                  activeOpacity={0.7}
-                  style={[cStyles.attachBtn, attachedImage && { backgroundColor: accent + "30" }]}
-                  hitSlop={6}
-                >
-                  <Ionicons name="image-outline" size={20} color={attachedImage ? accent : attachIconCl} />
-                </TouchableOpacity>
-                <Animated.View style={{ transform: [{ scale: sendScale }] }}>
-                  <TouchableOpacity
-                    onPress={sendReply}
-                    disabled={!canSend}
-                    style={[cStyles.sendBtn, { backgroundColor: canSend ? accent : sendDisabled }]}
-                  >
-                    {sending
-                      ? <ActivityIndicator size={14} color="#fff" />
-                      : <Ionicons name="arrow-up" size={16} color="#fff" />
-                    }
-                  </TouchableOpacity>
-                </Animated.View>
-              </View>
-            ) : (
-              <TouchableOpacity
-                style={{ paddingVertical: 14, alignItems: "center" }}
-                onPress={() => { onClose(); router.push("/(auth)/login"); }}
-              >
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 18, paddingVertical: 9, borderRadius: 20, borderWidth: 1, borderColor: accent + "50", backgroundColor: accent + "18" }}>
-                  <Ionicons name="person-circle-outline" size={16} color={accent} />
-                  <Text style={{ fontSize: 14, fontFamily: "Inter_600SemiBold", color: accent }}>Sign in to comment</Text>
-                </View>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-      </Modal>
-    );
-  }
-
-  // ─── Mobile: shared inner sheet content ────────────────────────────────────
+  // ─── Native bottom sheet content ───────────────────────────────────────────
   const borderTopStyle = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)";
 
   // The bottom input area (always pinned at bottom of sheet)
@@ -1432,19 +1296,6 @@ export function VideoCommentsSheet({
     </Modal>
   );
 }
-
-const dpStyles = StyleSheet.create({
-  panel: {
-    width: 420,
-    height: "100%" as any,
-    overflow: "hidden",
-    flexDirection: "column",
-    ...Platform.select({
-      web: { boxShadow: "-4px 0 24px rgba(0,0,0,0.4)" } as any,
-      default: {},
-    }),
-  },
-});
 
 const cStyles = StyleSheet.create({
   kavFull: { flex: 1 },

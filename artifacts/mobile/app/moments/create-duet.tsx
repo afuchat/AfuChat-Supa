@@ -177,12 +177,8 @@ export default function CreateDuetScreen() {
       let thumbnailPublicUrl: string | null = null;
       try {
         let thumbLocalUri = thumbnailUri;
-        if (!thumbLocalUri) {
-          if (Platform.OS === "web") {
-            thumbLocalUri = await generateWebThumbnail(videoUri, 1);
-          } else if (!videoUri.startsWith("blob:")) {
-            thumbLocalUri = await generateNativeThumbnail(videoUri, 1000);
-          }
+        if (!thumbLocalUri && !videoUri.startsWith("blob:")) {
+          thumbLocalUri = await generateNativeThumbnail(videoUri, 1000);
         }
         if (thumbLocalUri) {
           const thumbPath = `${user.id}/${Date.now()}_duet_thumb.jpg`;
@@ -270,21 +266,6 @@ export default function CreateDuetScreen() {
 
   return (
     <View style={[s.root, { backgroundColor: colors.background }]}>
-      {Platform.OS === "web" ? (
-        // @ts-ignore
-        <input
-          ref={webFileInputRef as any}
-          type="file"
-          accept="video/mp4,video/quicktime,video/webm,video/x-matroska,video/*"
-          style={{ display: "none" }}
-          onChange={(e: any) => {
-            const f = e.target?.files?.[0] ?? null;
-            handleWebFileChange(f);
-            if (e.target) e.target.value = "";
-          }}
-        />
-      ) : null}
-
       <View style={[s.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
         <TouchableOpacity onPress={() => router.back()} style={s.headerBtn} hitSlop={8}>
           <Ionicons name="close" size={24} color={colors.text} />

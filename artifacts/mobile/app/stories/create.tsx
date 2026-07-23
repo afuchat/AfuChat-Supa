@@ -32,7 +32,6 @@ import { showAlert } from "@/lib/alert";
 import { uploadToStorage } from "@/lib/mediaUpload";
 import { isOnline } from "@/lib/offlineStore";
 import { getDailyUsage, recordDailyUsage } from "@/lib/featureUsage";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
 import {
   startStoryUpload,
   updateStoryProgress,
@@ -71,13 +70,6 @@ export default function CreateStoryScreen() {
 
   const shareScale = useRef(new Animated.Value(1)).current;
   const captionRef = useRef<TextInput>(null);
-  const { isDesktop } = useIsDesktop();
-
-  useEffect(() => {
-    if (isDesktop) router.replace("/");
-  }, [isDesktop]);
-  if (isDesktop) return null;
-
   const previewRadius = 24;
   const previewMargin = 8;
   const previewW = screenW - previewMargin * 2;

@@ -77,7 +77,7 @@ const SYSTEM_ROUTES = new Set([
   "terms", "about", "help", "feedback", "notifications", "likes",
   "explore", "trending", "feed", "home", "index", "join",
   "lab", "achievements", "watch-history",
-  "browser", "business", "collections", "games", "welcome",
+  "business", "collections", "games", "welcome",
   "store", "paid-communities", "phone-contacts", "file-manager",
   "create-post", "video-analytics", "username-market", "user-discovery",
   "chat-search", "profile-not-found", "profile-private",

@@ -131,7 +131,7 @@ export default function JoinGroupScreen() {
         encrypted_content: `joined via invite link`,
         type:              "system",
         sent_at:           new Date().toISOString(),
-      }).then(() => {}).catch(() => {});
+      }).then(() => {}, () => {});
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setJoined(true);

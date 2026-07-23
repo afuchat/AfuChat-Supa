@@ -23,7 +23,7 @@ const SERVER_KEYS = new Set([
 export type ChatTheme =
   | "Teal" | "Blue" | "Green" | "Purple" | "Red"
   | "Orange" | "Pink" | "Cyan" | "RealTeal" | "Indigo"
-  | "Emerald" | "Gold";
+  | "Emerald" | "Gold" | "Rose" | "Amber";
 
 export type BubbleStyle = "Rounded" | "Sharp" | "Minimal";
 export type MediaQuality = "Auto" | "High" | "Low";

@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/lib/supabase";
 import {
@@ -192,7 +191,6 @@ const pc = StyleSheet.create({
 
 export default function MeScreen() {
   const { colors, accent, isDark } = useTheme();
-  const { isDesktop } = useIsDesktop();
   const { profile, isPremium, subscription, loading, user, equippedGoods } = useAuth();
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [qrPosterOpen, setQrPosterOpen] = useState(false);
@@ -265,16 +263,31 @@ export default function MeScreen() {
     const ch = supabase
       .channel(`me-stats:${user.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "follows", filter: `following_id=eq.${user.id}` }, () =>
-        supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", user.id)
-          .then(({ count }) => { setFollowerCount(count ?? 0); persist({ fc: count ?? 0 }); }).catch(() => {})
+        void (async () => {
+          try {
+            const { count } = await supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", user.id);
+            setFollowerCount(count ?? 0);
+            persist({ fc: count ?? 0 });
+          } catch {}
+        })()
       )
       .on("postgres_changes", { event: "*", schema: "public", table: "follows", filter: `follower_id=eq.${user.id}` }, () =>
-        supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", user.id)
-          .then(({ count }) => { setFollowingCount(count ?? 0); persist({ fgc: count ?? 0 }); }).catch(() => {})
+        void (async () => {
+          try {
+            const { count } = await supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", user.id);
+            setFollowingCount(count ?? 0);
+            persist({ fgc: count ?? 0 });
+          } catch {}
+        })()
       )
       .on("postgres_changes", { event: "*", schema: "public", table: "posts", filter: `author_id=eq.${user.id}` }, () =>
-        supabase.from("posts").select("*", { count: "exact", head: true }).eq("author_id", user.id)
-          .then(({ count }) => { setPostCount(count ?? 0); persist({ pc: count ?? 0 }); }).catch(() => {})
+        void (async () => {
+          try {
+            const { count } = await supabase.from("posts").select("*", { count: "exact", head: true }).eq("author_id", user.id);
+            setPostCount(count ?? 0);
+            persist({ pc: count ?? 0 });
+          } catch {}
+        })()
       )
       .subscribe();
     return () => { supabase.removeChannel(ch); };
@@ -337,7 +350,7 @@ export default function MeScreen() {
       <OfflineBanner />
 
       {/* ── Settings gear ───────────────────────────────────────────────────── */}
-      {!isDesktop && (
+      {(
         <TouchableOpacity
           onPress={() => router.push("/settings" as any)}
           hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
@@ -362,9 +375,8 @@ export default function MeScreen() {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[s.content, {
-          paddingTop: isDesktop ? 20 : insets.top + 10,
+          paddingTop: insets.top + 10,
           paddingBottom: insets.bottom + 96,
-          maxWidth: isDesktop ? 720 : undefined,
           alignSelf: "center",
           width: "100%",
         }]}

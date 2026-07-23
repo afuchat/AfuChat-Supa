@@ -247,7 +247,7 @@ export default function IncomingRequestsScreen() {
       body: `@${profile.handle} declined your ${fmtAmt(req.amount)} ${req.currency === "acoin" ? "ACoin" : "Nexa"} request`,
       data: { currency: req.currency, amount: req.amount, request_id: req.id },
       read: false,
-    }).then(() => {}).catch(() => {});
+    }).then(() => {}, () => {});
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     load();

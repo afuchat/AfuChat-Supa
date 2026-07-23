@@ -17,7 +17,6 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { supabase } from "@/lib/supabase";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -82,7 +81,7 @@ type Stats = {
 };
 
 async function fetchStats(userId: string): Promise<Stats> {
-  const safe = async <T,>(p: Promise<T>, fallback: T): Promise<T> => {
+  const safe = async <T,>(p: PromiseLike<T>, fallback: T): Promise<T> => {
     try { return await p; } catch { return fallback; }
   };
 
@@ -188,9 +187,8 @@ function buildAchievements(profile: any, isPremium: boolean, stats: Stats): Achi
 
 function useBadgeSize() {
   const { width } = useWindowDimensions();
-  const { isDesktop } = useIsDesktop();
-  const containerWidth = isDesktop ? Math.min(width, 860) : width;
-  const cols = isDesktop ? 4 : 3;
+  const containerWidth = width;
+  const cols = 3;
   return (containerWidth - 48 - 8 * (cols - 1)) / cols;
 }
 
@@ -557,7 +555,6 @@ const dm = StyleSheet.create({
 export default function AchievementsScreen() {
   const { profile, user, isPremium } = useAuth();
   const { colors } = useTheme();
-  const { isDesktop } = useIsDesktop();
   const insets = useSafeAreaInsets();
 
   const [selectedCategory, setSelectedCategory] = useState<Category>("All");
@@ -586,9 +583,9 @@ export default function AchievementsScreen() {
   const lockedFiltered    = filtered.filter(a => !a.unlocked);
 
   return (
-    <View style={[sc.screen, { backgroundColor: colors.backgroundSecondary, paddingTop: isDesktop ? 0 : insets.top }]}>
+    <View style={[sc.screen, { backgroundColor: colors.backgroundSecondary, paddingTop: insets.top }]}>
       {/* Header */}
-      {!isDesktop && (
+      {(
         <View style={[sc.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => router.back()} style={sc.backBtn}>
             <Ionicons name="chevron-back" size={24} color={colors.accent} />

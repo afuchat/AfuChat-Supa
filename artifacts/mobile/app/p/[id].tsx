@@ -37,7 +37,6 @@ import { notifyPostLike, notifyPostReply } from "@/lib/notifyUser";
 import { useAutoTranslate } from "@/context/LanguageContext";
 import { LANG_LABELS } from "@/lib/translate";
 import { aiSummarizeThread } from "@/lib/aiHelper";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
 import * as Haptics from "@/lib/haptics";
 
 // ─── Lazy expo-video (native only) ────────────────────────────────────────────
@@ -296,6 +295,7 @@ export default function PostShortLinkScreen() {
       images: params.init_image ? [params.init_image] : [],
       post_type: params.init_post_type || null,
       article_title: params.init_article_title || null,
+      video_url: null,
       created_at: params.init_created_at ?? new Date().toISOString(),
       view_count: Number(params.init_view_count ?? 0),
       visibility: "public",
@@ -316,7 +316,6 @@ export default function PostShortLinkScreen() {
   const { user, profile: myProfile } = useAuth();
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
-  const { isDesktop } = useIsDesktop();
   const [post, setPost] = useState<PostData | null>(initPost);
   const [replies, setReplies] = useState<Reply[]>([]);
   const [hasMoreReplies, setHasMoreReplies] = useState(false);
@@ -357,6 +356,7 @@ export default function PostShortLinkScreen() {
           images: local.images,
           post_type: local.post_type || null,
           article_title: local.article_title,
+          video_url: local.video_url ?? null,
           created_at: local.created_at,
           view_count: local.view_count,
           visibility: "public",

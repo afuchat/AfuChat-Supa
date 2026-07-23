@@ -8,8 +8,6 @@
  *   • Drag DOWN from peek / fast fling → dismisses
  *   • Content is inside a ScrollView; scrolling is enabled only when fully expanded
  *
- * Desktop (web):
- *   • Centered popup modal — unchanged from the original
  */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -17,17 +15,13 @@ import {
   Animated,
   Modal,
   PanResponder,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
   View,
   useWindowDimensions,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { useTheme } from "@/hooks/useTheme";
 
 interface Props {
@@ -42,8 +36,6 @@ interface Props {
    */
   maxHeight?: string | number;
   overlayColor?: string;
-  /** Optional max width for the desktop popup card (default 520) */
-  desktopMaxWidth?: number;
 }
 
 export default function SwipeableBottomSheet({
@@ -53,47 +45,7 @@ export default function SwipeableBottomSheet({
   backgroundColor,
   maxHeight = "62%",
   overlayColor,
-  desktopMaxWidth = 520,
 }: Props) {
-  const { isDesktop } = useIsDesktop();
-
-  // ─── Desktop: centered popup modal (unchanged) ────────────────────────────
-  if (Platform.OS === "web" && isDesktop) {
-    const popupBg = backgroundColor ?? "#1a1a1a";
-    if (!visible) return null;
-    return (
-      <Modal
-        visible={visible}
-        transparent
-        animationType="fade"
-        onRequestClose={onClose}
-        statusBarTranslucent
-      >
-        <Pressable style={ds.backdrop} onPress={onClose}>
-          <Pressable
-            onPress={() => {}}
-            style={[ds.popup, { backgroundColor: popupBg, maxWidth: desktopMaxWidth }]}
-          >
-            <View style={ds.header}>
-              <TouchableOpacity onPress={onClose} style={ds.closeBtn} hitSlop={8}>
-                <Ionicons name="close" size={20} color="rgba(180,180,180,0.9)" />
-              </TouchableOpacity>
-            </View>
-            <ScrollView
-              style={{ maxHeight: "80vh" as any }}
-              contentContainerStyle={{ flexGrow: 1 }}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-            >
-              {children}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
-    );
-  }
-
-  // ─── Mobile: expanding bottom sheet ───────────────────────────────────────
   return (
     <MobileSheet
       visible={visible}
@@ -275,7 +227,7 @@ function MobileSheet({ visible, onClose, children, backgroundColor, maxHeight = 
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingBottom: insets.bottom }}
           scrollEnabled={isFull}
-          bounces={Platform.OS !== "web"}
+          bounces
           showsVerticalScrollIndicator={false}
           onScroll={(e) => { scrollYRef.current = e.nativeEvent.contentOffset.y; }}
           onScrollEndDrag={handleScrollEndDrag}
@@ -289,49 +241,6 @@ function MobileSheet({ visible, onClose, children, backgroundColor, maxHeight = 
   );
 }
 
-// ─── Desktop styles ────────────────────────────────────────────────────────────
-const ds = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.60)",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 32,
-  },
-  popup: {
-    width: "100%",
-    borderRadius: 16,
-    overflow: "hidden",
-    ...Platform.select({
-      web: { boxShadow: "0 12px 48px rgba(0,0,0,0.35)" } as any,
-      default: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 24,
-        elevation: 16,
-      },
-    }),
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 4,
-  },
-  closeBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "rgba(128,128,128,0.18)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
-
-// ─── Mobile styles ─────────────────────────────────────────────────────────────
 const ms = StyleSheet.create({
   sheet: {
     position: "absolute",
@@ -341,16 +250,11 @@ const ms = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: "hidden",
-    ...Platform.select({
-      web: { boxShadow: "0 -8px 32px rgba(0,0,0,0.24)" } as any,
-      default: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -6 },
-        shadowOpacity: 0.22,
-        shadowRadius: 18,
-        elevation: 20,
-      },
-    }),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+    elevation: 20,
   },
   sheetBorder: {
     position: "absolute",

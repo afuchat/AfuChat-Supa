@@ -272,7 +272,7 @@ export default function ChatAppearanceScreen() {
   const effectiveFontSize = appearance.fontSize ?? 15;
 
   return (
-    <View style={[s.root, { backgroundColor: colors.backgroundSecondary ?? colors.background }]}>
+    <View style={[s.root, { backgroundColor: colors.backgroundSecondary }]}>
       <GlassHeader title={`Appearance — ${displayName ?? "Chat"}`} />
 
       <ScrollView

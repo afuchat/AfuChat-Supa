@@ -19,16 +19,17 @@ export default function UpdatePrompt() {
 
   if (!info || dismissed) return null;
 
-  const visible = info.hasUpdate && !dismissed;
-  const storeUrl = info.androidUrl;
+  const updateInfo = info;
+  const visible = updateInfo.hasUpdate && !dismissed;
+  const storeUrl = updateInfo.androidUrl;
 
   function openStore() {
     Linking.openURL(storeUrl).catch(() => {});
-    if (!info.isMandatory) setDismissed(true);
+    if (!updateInfo.isMandatory) setDismissed(true);
   }
 
   function dismiss() {
-    if (!info.isMandatory) setDismissed(true);
+    if (!updateInfo.isMandatory) setDismissed(true);
   }
 
   const bg = isDark ? "#1a1a2e" : "#fff";

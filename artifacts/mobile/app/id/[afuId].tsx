@@ -63,8 +63,7 @@ export default function IdLandingPage() {
           const p = data?.[0];
           if (p) router.replace({ pathname: "/contact/[id]", params: { id: p.id } } as any);
           else router.back();
-        })
-        .catch(() => router.back());
+        }, () => router.back());
       return;
     }
 

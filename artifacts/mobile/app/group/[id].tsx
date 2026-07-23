@@ -127,8 +127,7 @@ export default function GroupManageScreen() {
         const mu = data.muted_until ?? null;
         setMuteUntil(mu);
         setIsMuted(mu === null || mu > now);
-      })
-      .catch(() => {});
+      }, () => {});
   }, [id, user?.id]);
 
   function muteLabel(): string {
@@ -155,7 +154,7 @@ export default function GroupManageScreen() {
         { user_id: user.id, chat_id: id, muted_until: val, created_at: new Date().toISOString() },
         { onConflict: "user_id,chat_id" },
       )
-      .catch(() => {});
+      .then(() => {}, () => {});
   }
 
   async function toggleMute() {
@@ -165,7 +164,7 @@ export default function GroupManageScreen() {
       setIsMuted(false);
       setMuteUntil(undefined);
       setShowMutePicker(false);
-      await supabase.from("chat_mutes").delete().eq("user_id", user.id).eq("chat_id", id).catch(() => {});
+      await supabase.from("chat_mutes").delete().eq("user_id", user.id).eq("chat_id", id).then(() => {}, () => {});
     } else {
       // Show duration picker
       setShowMutePicker(true);

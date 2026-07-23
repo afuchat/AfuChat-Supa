@@ -288,9 +288,9 @@ export default function WatchHistoryScreen() {
             setClearing(false);
             if (ok) {
               setItems([]);
-              showToast("Watch history cleared — algorithm reset", "success");
+              showToast("Watch history cleared — algorithm reset", { type: "success" });
             } else {
-              showToast(error || "Failed to clear history", "error");
+              showToast(error || "Failed to clear history", { type: "error" });
             }
           },
         },
@@ -316,7 +316,7 @@ export default function WatchHistoryScreen() {
       <GlassHeader
         title="Watch History"
         onBack={() => router.back()}
-        rightElement={
+        right={
           items.length > 0 ? (
             <TouchableOpacity
               onPress={handleClearAll}

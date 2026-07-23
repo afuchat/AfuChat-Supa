@@ -159,7 +159,7 @@ export default function MiniProfilePopup({ userId, visible, onClose, currentChat
     : !isFollowing && theyFollow ? "follow_back"
     : isFollowing ? "following"
     : "follow";
-  const fBg    = fState === "follow" ? accent : fState === "follow_back" ? "#FF9500" : colors.inputBg ?? colors.surface;
+  const fBg    = fState === "follow" ? accent : fState === "follow_back" ? "#FF9500" : colors.inputBg;
   const fBrd   = fState === "friends" ? "#34C759" : fState === "following" ? colors.border : "transparent";
   const fBw    = (fState === "following" || fState === "friends") ? 1 : 0;
   const fTc    = (fState === "follow" || fState === "follow_back") ? "#fff" : fState === "friends" ? "#34C759" : colors.textMuted;
@@ -250,7 +250,7 @@ export default function MiniProfilePopup({ userId, visible, onClose, currentChat
             )}
 
             {profile.bio ? (
-              <Text style={[st.bio, { color: colors.textSecondary ?? colors.text }]} numberOfLines={3}>
+              <Text style={[st.bio, { color: colors.textSecondary }]} numberOfLines={3}>
                 {profile.bio}
               </Text>
             ) : null}

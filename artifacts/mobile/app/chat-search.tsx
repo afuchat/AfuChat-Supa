@@ -109,7 +109,6 @@ async function fetchChatAiInsight(query: string): Promise<AiInsight | null> {
   try {
     const engagera = await getEngagera();
     const aiRes = await engagera.chat.create({
-      max_tokens: 500,
       messages: [
         {
           role: "system" as const,

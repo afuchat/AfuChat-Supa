@@ -236,7 +236,7 @@ export function GlobalInboxListener() {
         style={[
           styles.banner,
           {
-            backgroundColor: colors.card ?? colors.background,
+            backgroundColor: colors.card,
             shadowColor: colors.text,
           },
         ]}
@@ -259,7 +259,7 @@ export function GlobalInboxListener() {
             style={[
               styles.avatar,
               styles.avatarFallback,
-              { backgroundColor: colors.primary ?? "#4A90E2" },
+              { backgroundColor: colors.accent },
             ]}
           >
             <Text style={styles.avatarLetter}>
@@ -277,7 +277,7 @@ export function GlobalInboxListener() {
             {banner.senderName}
           </Text>
           <Text
-            style={[styles.preview, { color: colors.subtext ?? colors.text }]}
+            style={[styles.preview, { color: colors.textSecondary }]}
             numberOfLines={1}
           >
             {banner.preview}
@@ -293,7 +293,7 @@ export function GlobalInboxListener() {
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           style={styles.closeBtn}
         >
-          <Text style={[styles.closeIcon, { color: colors.subtext ?? "#888" }]}>
+          <Text style={[styles.closeIcon, { color: colors.textMuted }]}>
             ✕
           </Text>
         </TouchableOpacity>

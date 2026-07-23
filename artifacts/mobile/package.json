@@ -4,7 +4,7 @@
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
-    "dev": "CI= EXPO_PACKAGER_PROXY_URL=https://$REPLIT_EXPO_DEV_DOMAIN EXPO_PUBLIC_DOMAIN=$REPLIT_DEV_DOMAIN EXPO_PUBLIC_REPL_ID=$REPL_ID REACT_NATIVE_PACKAGER_HOSTNAME=$REPLIT_DEV_DOMAIN pnpm exec expo start --localhost --port $PORT --offline",
+    "dev": "EXPO_OFFLINE=1 EXPO_NO_LAZY=1 EXPO_PACKAGER_PROXY_URL=https://$REPLIT_EXPO_DEV_DOMAIN EXPO_PUBLIC_DOMAIN=$REPLIT_DEV_DOMAIN EXPO_PUBLIC_REPL_ID=$REPL_ID REACT_NATIVE_PACKAGER_HOSTNAME=$REPLIT_EXPO_DEV_DOMAIN pnpm exec expo start --port 8000",
     "build:apk": "bash scripts/eas-build.sh",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "postinstall": "bash scripts/postinstall.sh"
@@ -53,7 +53,6 @@
     "@react-native-community/netinfo": "~11.5.2",
     "@react-native-google-signin/google-signin": "^16.1.2",
     "@shopify/flash-list": "^2.0.2",
-    "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.110.1",
     "@types/qrcode": "^1.5.6",
     "expo-auth-session": "~55.0.16",
