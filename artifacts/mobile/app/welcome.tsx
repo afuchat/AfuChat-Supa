@@ -120,77 +120,126 @@ function SoftOrb({ cx, cy, size, color }: { cx: number; cy: number; size: number
   );
 }
 
+// ─── Shared human figure component ────────────────────────────────────────────
+function HumanFigure({
+  x, y, headColor, bodyColor, size = 1, facing = "right",
+}: { x: number; y: number; headColor: string; bodyColor: string; size?: number; facing?: "left" | "right" }) {
+  const s = size;
+  const flip = facing === "left" ? [{ scaleX: -1 }] : [];
+  return (
+    <View style={{ position: "absolute", left: x, top: y, transform: flip }}>
+      {/* Head */}
+      <View style={{
+        width: 28 * s, height: 28 * s, borderRadius: 14 * s,
+        backgroundColor: headColor, alignSelf: "center",
+      }}>
+        {/* Eyes */}
+        <View style={{ flexDirection: "row", justifyContent: "space-evenly", marginTop: 9 * s }}>
+          <View style={{ width: 4 * s, height: 4 * s, borderRadius: 2 * s, backgroundColor: "rgba(0,0,0,0.5)" }} />
+          <View style={{ width: 4 * s, height: 4 * s, borderRadius: 2 * s, backgroundColor: "rgba(0,0,0,0.5)" }} />
+        </View>
+        {/* Smile */}
+        <View style={{
+          width: 12 * s, height: 6 * s, borderBottomLeftRadius: 8 * s, borderBottomRightRadius: 8 * s,
+          borderWidth: 2 * s, borderTopWidth: 0, borderColor: "rgba(0,0,0,0.35)",
+          alignSelf: "center", marginTop: 3 * s,
+        }} />
+      </View>
+      {/* Neck */}
+      <View style={{ width: 8 * s, height: 6 * s, backgroundColor: headColor, alignSelf: "center" }} />
+      {/* Body */}
+      <View style={{
+        width: 36 * s, height: 44 * s, borderRadius: 10 * s,
+        backgroundColor: bodyColor, alignSelf: "center",
+      }}>
+        {/* Arms */}
+        <View style={{
+          position: "absolute", left: -10 * s, top: 6 * s,
+          width: 10 * s, height: 28 * s, borderRadius: 5 * s,
+          backgroundColor: headColor,
+        }} />
+        <View style={{
+          position: "absolute", right: -10 * s, top: 6 * s,
+          width: 10 * s, height: 28 * s, borderRadius: 5 * s,
+          backgroundColor: headColor,
+        }} />
+      </View>
+      {/* Legs */}
+      <View style={{ flexDirection: "row", gap: 4 * s, alignSelf: "center", marginTop: 2 * s }}>
+        <View style={{ width: 11 * s, height: 30 * s, borderRadius: 6 * s, backgroundColor: bodyColor }} />
+        <View style={{ width: 11 * s, height: 30 * s, borderRadius: 6 * s, backgroundColor: bodyColor }} />
+      </View>
+    </View>
+  );
+}
+
 // ─── Messaging Illustration ────────────────────────────────────────────────────
 function MessagingIllustration({ accent, W }: { accent: string; W: number }) {
   const pulseAnim = useRef(new Animated.Value(0)).current;
+  const floatAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0, duration: 700, useNativeDriver: true }),
+      ])
+    ).start();
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, { toValue: 1, duration: 2200, useNativeDriver: true }),
+        Animated.timing(floatAnim, { toValue: 0, duration: 2200, useNativeDriver: true }),
       ])
     ).start();
   }, []);
 
+  const cx = (W * 0.82) / 2;
   return (
-    <View style={[il.container, { width: W * 0.82 }]}>
-      {/* Glow */}
-      <View style={[il.glow, { backgroundColor: accent + "22" }]} />
+    <View style={[il.container, { width: W * 0.82, height: 280 }]}>
+      <View style={[il.glow, { backgroundColor: accent + "18" }]} />
 
-      {/* Incoming bubble */}
-      <View style={[il.bubbleIn, { borderColor: "rgba(255,255,255,0.10)" }]}>
-        <View style={il.avatarDot} />
-        <View style={{ flex: 1, gap: 7 }}>
-          <View style={[il.msgLine, { width: "80%", backgroundColor: "rgba(255,255,255,0.22)" }]} />
-          <View style={[il.msgLine, { width: "55%", backgroundColor: "rgba(255,255,255,0.14)" }]} />
-        </View>
-        {/* Encryption badge */}
-        <View style={[il.lockBadge, { backgroundColor: accent + "30", borderColor: accent + "50" }]}>
-          <View style={[il.lockBody, { backgroundColor: accent }]} />
-        </View>
+      {/* Person A — left, facing right */}
+      <Animated.View style={{ transform: [{ translateY: floatAnim.interpolate({ inputRange: [0,1], outputRange: [-4,4] }) }] }}>
+        <HumanFigure x={cx - 120} y={60} headColor="#F4C08A" bodyColor={accent} size={0.9} facing="right" />
+      </Animated.View>
+
+      {/* Person B — right, facing left */}
+      <Animated.View style={{ transform: [{ translateY: floatAnim.interpolate({ inputRange: [0,1], outputRange: [4,-4] }) }] }}>
+        <HumanFigure x={cx + 44} y={60} headColor="#C68642" bodyColor="#7B5EA7" size={0.9} facing="left" />
+      </Animated.View>
+
+      {/* Chat bubbles between them */}
+      <View style={{
+        position: "absolute", left: cx - 60, top: 50,
+        backgroundColor: accent + "30", borderRadius: 14, borderBottomLeftRadius: 4,
+        paddingHorizontal: 12, paddingVertical: 8, maxWidth: 110,
+      }}>
+        <View style={{ width: 64, height: 7, borderRadius: 4, backgroundColor: accent + "80", marginBottom: 5 }} />
+        <View style={{ width: 44, height: 7, borderRadius: 4, backgroundColor: accent + "50" }} />
       </View>
 
-      {/* Outgoing bubble */}
-      <View style={[il.bubbleOut, { backgroundColor: accent + "28", borderColor: accent + "40" }]}>
-        <View style={{ flex: 1, gap: 7 }}>
-          <View style={[il.msgLine, { width: "70%", backgroundColor: accent + "80" }]} />
-          <View style={[il.msgLine, { width: "45%", backgroundColor: accent + "55" }]} />
-        </View>
-        {/* Read receipt */}
-        <View style={{ flexDirection: "row", gap: 2, alignItems: "center", marginTop: 2 }}>
-          <View style={[il.tick, { backgroundColor: accent }]} />
-          <View style={[il.tick, { backgroundColor: accent, marginLeft: -4 }]} />
-        </View>
-      </View>
-
-      {/* Typing indicator */}
-      <View style={[il.typingBubble, { borderColor: "rgba(255,255,255,0.10)" }]}>
+      {/* Typing bubble */}
+      <View style={{
+        position: "absolute", left: cx - 58, top: 115,
+        backgroundColor: "rgba(255,255,255,0.10)", borderRadius: 14, borderBottomRightRadius: 4,
+        paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", gap: 5,
+      }}>
         {[0, 1, 2].map(i => (
-          <Animated.View key={i} style={[il.typingDot, {
-            backgroundColor: "rgba(255,255,255,0.55)",
-            opacity: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: i === 1 ? [0.35, 1] : [0.7, 0.35] }),
-            transform: [{ translateY: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: i === 1 ? [-3, 0] : [0, 0] }) }],
-          }]} />
+          <Animated.View key={i} style={{
+            width: 7, height: 7, borderRadius: 4,
+            backgroundColor: "rgba(255,255,255,0.6)",
+            opacity: pulseAnim.interpolate({ inputRange: [0,1], outputRange: i === 1 ? [0.3,1] : [0.8,0.3] }),
+          }} />
         ))}
       </View>
 
-      {/* Signal rings */}
-      <View style={il.signalGroup}>
-        {[32, 22, 12].map((s, i) => (
-          <View key={i} style={[il.signalRing, {
-            width: s, height: s, borderRadius: s / 2,
-            borderColor: accent + (i === 0 ? "30" : i === 1 ? "55" : "88"),
-          }]} />
-        ))}
-      </View>
-
-      {/* Floating elements */}
-      <View style={[il.floatEl, { top: 12, right: 60, backgroundColor: accent + "20", borderColor: accent + "40" }]}>
-        <Text style={{ fontSize: 12 }}>📎</Text>
-      </View>
-      <View style={[il.floatEl, { bottom: 18, left: 30, backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.12)" }]}>
-        <Text style={{ fontSize: 11 }}>🎙️</Text>
-      </View>
+      {/* Heart reaction */}
+      <Animated.View style={{
+        position: "absolute", left: cx + 22, top: 42,
+        transform: [{ translateY: pulseAnim.interpolate({ inputRange: [0,1], outputRange: [0,-6] }) }],
+        opacity: pulseAnim.interpolate({ inputRange: [0,1], outputRange: [0.6,1] }),
+      }}>
+        <Text style={{ fontSize: 18 }}>❤️</Text>
+      </Animated.View>
     </View>
   );
 }
@@ -207,62 +256,46 @@ function CommunityIllustration({ accent, W }: { accent: string; W: number }) {
     ).start();
   }, []);
 
-  // 6 satellite nodes in hexagon
-  const nodePos = [
-    { x: 0, y: -80 }, { x: 70, y: -40 }, { x: 70, y: 40 },
-    { x: 0, y: 80 }, { x: -70, y: 40 }, { x: -70, y: -40 },
-  ];
-  const nodeEmojis = ["❤️", "📍", "✨", "🎵", "🎮", "+"];
   const cx = (W * 0.82) / 2;
+  const people = [
+    { dx: -155, skin: "#F4C08A", shirt: accent,     size: 0.82, delay: 0 },
+    { dx: -88,  skin: "#8D5524", shirt: "#7B5EA7",   size: 0.92, delay: 300 },
+    { dx: -16,  skin: "#C68642", shirt: "#FF6B9D",   size: 1.0,  delay: 100 },
+    { dx: 54,   skin: "#FDBCB4", shirt: accent,      size: 0.92, delay: 200 },
+    { dx: 120,  skin: "#6B3A2A", shirt: "#00D4AA",   size: 0.82, delay: 150 },
+  ];
 
   return (
-    <View style={[il.container, { width: W * 0.82 }]}>
-      <View style={[il.glow, { backgroundColor: accent + "22" }]} />
+    <View style={[il.container, { width: W * 0.82, height: 280 }]}>
+      <View style={[il.glow, { backgroundColor: accent + "18" }]} />
 
-      {/* Connection lines */}
-      {nodePos.map((n, i) => (
-        <View key={i} style={{
-          position: "absolute",
-          left: cx + n.x * 0.5,
-          top: 130 + n.y * 0.5,
-          width: Math.sqrt(n.x * n.x * 0.25 + n.y * n.y * 0.25),
-          height: 1,
-          backgroundColor: accent + "25",
-          transform: [{ rotate: `${Math.atan2(n.y, n.x) * 180 / Math.PI}deg` }],
-          transformOrigin: "left center",
-        } as any} />
-      ))}
-
-      {/* Satellite nodes */}
-      {nodePos.map((n, i) => (
+      {people.map((p, i) => (
         <Animated.View key={i} style={{
-          position: "absolute",
-          left: cx + n.x - 18,
-          top: 130 + n.y - 18,
-          width: 36,
-          height: 36,
-          borderRadius: 18,
-          backgroundColor: i === 3 ? accent + "35" : "rgba(255,255,255,0.08)",
-          borderWidth: 1,
-          borderColor: i === 3 ? accent + "70" : "rgba(255,255,255,0.14)",
-          alignItems: "center",
-          justifyContent: "center",
-          transform: [{ translateY: floatAnim.interpolate({ inputRange: [0, 1], outputRange: [i % 2 === 0 ? -4 : 4, i % 2 === 0 ? 4 : -4] }) }],
+          transform: [{ translateY: floatAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [i % 2 === 0 ? -5 : 5, i % 2 === 0 ? 5 : -5],
+          }) }],
         }}>
-          <Text style={{ fontSize: 14 }}>{nodeEmojis[i]}</Text>
+          <HumanFigure x={cx + p.dx} y={i === 2 ? 40 : 60} headColor={p.skin} bodyColor={p.shirt} size={p.size} />
         </Animated.View>
       ))}
 
-      {/* Center node */}
-      <View style={[il.centerNode, { backgroundColor: accent + "25", borderColor: accent + "60" }]}>
-        <View style={[il.centerNodeInner, { backgroundColor: accent + "40" }]}>
-          <Text style={{ fontSize: 22 }}>👤</Text>
-        </View>
+      {/* Online badge */}
+      <View style={[il.badge, { backgroundColor: accent, top: 28, left: cx - 16 }]}>
+        <Text style={{ color: "#fff", fontSize: 10, fontFamily: "Inter_700Bold" }}>2.4k online</Text>
       </View>
 
-      {/* Online count badge */}
-      <View style={[il.badge, { backgroundColor: accent, top: 72, right: cx - 12 }]}>
-        <Text style={{ color: "#fff", fontSize: 10, fontFamily: "Inter_700Bold" }}>2.4k</Text>
+      {/* Shared reaction row */}
+      <View style={{ position: "absolute", bottom: 10, left: 0, right: 0, flexDirection: "row", justifyContent: "center", gap: 8 }}>
+        {["👋","❤️","🎉","🔥","✨"].map((e, i) => (
+          <Animated.View key={i} style={{
+            backgroundColor: "rgba(255,255,255,0.10)", borderRadius: 999,
+            paddingHorizontal: 8, paddingVertical: 4,
+            transform: [{ translateY: floatAnim.interpolate({ inputRange:[0,1], outputRange: [i%2===0?-3:3, i%2===0?3:-3] }) }],
+          }}>
+            <Text style={{ fontSize: 14 }}>{e}</Text>
+          </Animated.View>
+        ))}
       </View>
     </View>
   );
@@ -270,97 +303,74 @@ function CommunityIllustration({ accent, W }: { accent: string; W: number }) {
 
 // ─── AI Illustration ───────────────────────────────────────────────────────────
 function AIIllustration({ accent, W }: { accent: string; W: number }) {
-  const rotateAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(0)).current;
+  const floatAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.loop(
-      Animated.timing(rotateAnim, { toValue: 1, duration: 8000, useNativeDriver: true })
-    ).start();
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
         Animated.timing(pulseAnim, { toValue: 0, duration: 1200, useNativeDriver: true }),
       ])
     ).start();
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
+        Animated.timing(floatAnim, { toValue: 0, duration: 2000, useNativeDriver: true }),
+      ])
+    ).start();
   }, []);
 
   const cx = (W * 0.82) / 2;
-  const rings = [90, 68, 48];
-  const ringDots = [12, 8, 5];
-
   return (
-    <View style={[il.container, { width: W * 0.82 }]}>
-      <View style={[il.glow, { backgroundColor: accent + "22" }]} />
+    <View style={[il.container, { width: W * 0.82, height: 280 }]}>
+      <View style={[il.glow, { backgroundColor: accent + "20" }]} />
 
-      {/* Concentric rings */}
-      {rings.map((r, ri) => (
-        <Animated.View key={ri} style={{
-          position: "absolute",
-          left: cx - r,
-          top: 130 - r,
-          width: r * 2,
-          height: r * 2,
-          borderRadius: r,
-          borderWidth: ri === 0 ? 1 : 0.5,
-          borderColor: accent + (ri === 0 ? "30" : ri === 1 ? "22" : "18"),
-          transform: [{
-            rotate: rotateAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [ri % 2 === 0 ? "0deg" : "360deg", ri % 2 === 0 ? "360deg" : "0deg"],
-            })
-          }],
-        }}>
-          {/* Ring dots */}
-          {Array.from({ length: ringDots[ri] }).map((_, di) => {
-            const angle = (di / ringDots[ri]) * 2 * Math.PI;
-            return (
-              <View key={di} style={{
-                position: "absolute",
-                left: r + Math.cos(angle) * r - 3,
-                top: r + Math.sin(angle) * r - 3,
-                width: 6,
-                height: 6,
-                borderRadius: 3,
-                backgroundColor: accent + (di % 3 === 0 ? "CC" : di % 3 === 1 ? "70" : "40"),
-              }} />
-            );
-          })}
-        </Animated.View>
-      ))}
-
-      {/* Central AI core */}
-      <Animated.View style={[il.aiCore, {
-        left: cx - 32,
-        top: 98,
-        backgroundColor: accent + "30",
-        borderColor: accent + "80",
-        transform: [{ scale: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }) }],
-      }]}>
-        <Text style={{ fontSize: 28 }}>✦</Text>
+      {/* Human user on left */}
+      <Animated.View style={{ transform: [{ translateY: floatAnim.interpolate({ inputRange:[0,1], outputRange:[-4,4] }) }] }}>
+        <HumanFigure x={cx - 140} y={55} headColor="#F4C08A" bodyColor="#5A5A8A" size={0.95} facing="right" />
       </Animated.View>
 
-      {/* Floating particles */}
+      {/* AI orb / assistant on right */}
+      <Animated.View style={{
+        position: "absolute", left: cx + 20, top: 48,
+        transform: [
+          { translateY: floatAnim.interpolate({ inputRange:[0,1], outputRange:[4,-4] }) },
+          { scale: pulseAnim.interpolate({ inputRange:[0,1], outputRange:[1, 1.06] }) },
+        ],
+      }}>
+        {/* Outer glow ring */}
+        <View style={{ width: 90, height: 90, borderRadius: 45, backgroundColor: accent + "20", alignItems: "center", justifyContent: "center" }}>
+          <View style={{ width: 66, height: 66, borderRadius: 33, backgroundColor: accent + "35", alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ fontSize: 30 }}>✦</Text>
+          </View>
+        </View>
+        {/* Sparkles */}
+        <Text style={{ position: "absolute", top: -8, right: 0, fontSize: 14, opacity: 0.9 }}>✨</Text>
+        <Text style={{ position: "absolute", bottom: -4, left: -4, fontSize: 12, opacity: 0.7 }}>⚡</Text>
+      </Animated.View>
+
+      {/* Speech bubble from AI */}
+      <View style={{
+        position: "absolute", left: cx - 70, top: 40,
+        backgroundColor: accent + "28", borderRadius: 14, borderBottomLeftRadius: 4,
+        paddingHorizontal: 12, paddingVertical: 8,
+      }}>
+        <View style={{ width: 72, height: 7, borderRadius: 4, backgroundColor: accent + "80", marginBottom: 5 }} />
+        <View style={{ width: 50, height: 7, borderRadius: 4, backgroundColor: accent + "55" }} />
+      </View>
+
+      {/* Floating feature pills */}
       {[
-        { x: cx - 100, y: 50, emoji: "⚡" },
-        { x: cx + 80, y: 60, emoji: "🔮" },
-        { x: cx - 80, y: 210, emoji: "💬" },
-        { x: cx + 90, y: 200, emoji: "🌐" },
+        { label: "Translate", x: cx - 100, y: 198 },
+        { label: "Summarise", x: cx + 10, y: 205 },
       ].map((p, i) => (
         <Animated.View key={i} style={{
-          position: "absolute",
-          left: p.x - 14,
-          top: p.y - 14,
-          width: 28,
-          height: 28,
-          borderRadius: 8,
-          backgroundColor: "rgba(255,255,255,0.06)",
-          borderWidth: 1,
-          borderColor: "rgba(255,255,255,0.10)",
-          alignItems: "center",
-          justifyContent: "center",
-          transform: [{ translateY: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [i % 2 === 0 ? -5 : 5, i % 2 === 0 ? 5 : -5] }) }],
+          position: "absolute", left: p.x, top: p.y,
+          backgroundColor: "rgba(255,255,255,0.09)", borderRadius: 999,
+          paddingHorizontal: 10, paddingVertical: 5,
+          transform: [{ translateY: floatAnim.interpolate({ inputRange:[0,1], outputRange: [i%2===0?-3:3, i%2===0?3:-3] }) }],
         }}>
-          <Text style={{ fontSize: 13 }}>{p.emoji}</Text>
+          <Text style={{ fontSize: 11, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.75)" }}>{p.label}</Text>
         </Animated.View>
       ))}
     </View>
@@ -385,80 +395,53 @@ function WalletIllustration({ accent, W }: { accent: string; W: number }) {
   const bars = [0.4, 0.65, 0.5, 0.85, 0.72, 1.0];
 
   return (
-    <View style={[il.container, { width: W * 0.82 }]}>
-      <View style={[il.glow, { backgroundColor: accent + "22" }]} />
+    <View style={[il.container, { width: W * 0.82, height: 280 }]}>
+      <View style={[il.glow, { backgroundColor: accent + "18" }]} />
 
-      {/* Main coin circle */}
-      <Animated.View style={[il.coin, {
-        left: cx - 60,
-        top: 60,
-        backgroundColor: accent + "20",
-        borderColor: accent + "50",
-        transform: [{ translateY: floatAnim.interpolate({ inputRange: [0, 1], outputRange: [-8, 8] }) }],
-      }]}>
-        {/* Facet lines */}
-        {[0, 45, 90, 135].map(angle => (
-          <View key={angle} style={{
-            position: "absolute",
-            left: 57, top: 2,
-            width: 1,
-            height: 116,
-            backgroundColor: accent + "30",
-            transform: [{ rotate: `${angle}deg` }],
-            transformOrigin: "center center",
-          } as any} />
-        ))}
-        <View style={[il.coinInner, { backgroundColor: accent + "35", borderColor: accent + "60" }]}>
-          <Text style={{ fontSize: 24, fontFamily: "Inter_700Bold", color: accent }}>₦</Text>
-        </View>
+      {/* Central human figure */}
+      <Animated.View style={{ transform: [{ translateY: floatAnim.interpolate({ inputRange:[0,1], outputRange:[-5,5] }) }] }}>
+        <HumanFigure x={cx - 22} y={30} headColor="#C68642" bodyColor={accent} size={1.05} />
       </Animated.View>
 
-      {/* Mini chart bars */}
-      <View style={[il.chartContainer, { left: cx - 90, top: 195 }]}>
-        {bars.map((h, i) => (
-          <Animated.View key={i} style={{
-            width: 16,
-            height: 60 * h,
-            borderRadius: 4,
-            backgroundColor: i === 5 ? accent : accent + "55",
-            alignSelf: "flex-end",
-            transform: [{ scaleY: growAnim }],
-            transformOrigin: "bottom",
-          } as any} />
-        ))}
-      </View>
-
-      {/* Floating coins */}
-      {[
-        { x: cx + 62, y: 75, size: 28 },
-        { x: cx + 44, y: 118, size: 20 },
-        { x: cx - 82, y: 100, size: 22 },
-      ].map((c, i) => (
+      {/* Coin stack left */}
+      {[0,1,2].map(i => (
         <Animated.View key={i} style={{
-          position: "absolute",
-          left: c.x - c.size / 2,
-          top: c.y - c.size / 2,
-          width: c.size,
-          height: c.size,
-          borderRadius: c.size / 2,
-          backgroundColor: accent + "25",
-          borderWidth: 1.5,
-          borderColor: accent + "50",
-          transform: [{ translateY: floatAnim.interpolate({ inputRange: [0, 1], outputRange: [i % 2 === 0 ? 6 : -6, i % 2 === 0 ? -6 : 6] }) }],
+          position: "absolute", left: cx - 120, top: 130 - i * 14,
+          width: 44, height: 14, borderRadius: 7,
+          backgroundColor: i === 0 ? accent : accent + (i === 1 ? "90" : "55"),
+          transform: [{ translateY: floatAnim.interpolate({ inputRange:[0,1], outputRange:[-4+i,4-i] }) }],
         }} />
       ))}
 
-      {/* Nexa badge */}
-      <View style={[il.badge, { backgroundColor: accent, top: 72, left: cx - 22 }]}>
-        <Text style={{ color: "#fff", fontSize: 9, fontFamily: "Inter_700Bold" }}>+50 NX</Text>
+      {/* Coin stack right */}
+      {[0,1].map(i => (
+        <Animated.View key={i} style={{
+          position: "absolute", left: cx + 68, top: 140 - i * 14,
+          width: 40, height: 14, borderRadius: 7,
+          backgroundColor: i === 0 ? accent + "BB" : accent + "60",
+          transform: [{ translateY: floatAnim.interpolate({ inputRange:[0,1], outputRange:[i%2===0?5:-5, i%2===0?-5:5] }) }],
+        }} />
+      ))}
+
+      {/* Mini chart bars at bottom */}
+      <View style={{ position: "absolute", left: cx - 88, bottom: 8, flexDirection: "row", alignItems: "flex-end", gap: 6 }}>
+        {bars.map((h, i) => (
+          <Animated.View key={i} style={{
+            width: 14, height: 52 * h, borderRadius: 4,
+            backgroundColor: i === 5 ? accent : accent + "55",
+            transform: [{ scaleY: growAnim }],
+          } as any} />
+        ))}
       </View>
 
-      {/* Sparkles */}
-      {[
-        { x: cx + 75, y: 165 }, { x: cx - 76, y: 165 }, { x: cx + 10, y: 60 },
-      ].map((s, i) => (
-        <Text key={i} style={{ position: "absolute", left: s.x, top: s.y, fontSize: 12, opacity: 0.7 }}>✦</Text>
-      ))}
+      {/* Floating +badge */}
+      <Animated.View style={{
+        position: "absolute", left: cx + 30, top: 25,
+        backgroundColor: accent, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4,
+        transform: [{ translateY: floatAnim.interpolate({ inputRange:[0,1], outputRange:[-6,6] }) }],
+      }}>
+        <Text style={{ color: "#fff", fontSize: 11, fontFamily: "Inter_700Bold" }}>+50 NX</Text>
+      </Animated.View>
     </View>
   );
 }
@@ -718,171 +701,7 @@ const il = StyleSheet.create({
     top: 30,
   },
 
-  // Messaging
-  bubbleIn: {
-    position: "absolute",
-    top: 20,
-    left: 0,
-    right: 60,
-    height: 68,
-    borderRadius: 20,
-    borderTopLeftRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderWidth: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    gap: 10,
-  },
-  avatarDot: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.14)",
-    flexShrink: 0,
-  },
-  msgLine: {
-    height: 8,
-    borderRadius: 4,
-  },
-  lockBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  lockBody: {
-    width: 8,
-    height: 8,
-    borderRadius: 2,
-  },
-  bubbleOut: {
-    position: "absolute",
-    top: 104,
-    left: 60,
-    right: 0,
-    height: 60,
-    borderRadius: 18,
-    borderTopRightRadius: 4,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    justifyContent: "space-between",
-  },
-  tick: {
-    width: 9,
-    height: 5,
-    borderRadius: 2,
-    opacity: 0.8,
-  },
-  typingBubble: {
-    position: "absolute",
-    bottom: 28,
-    left: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(255,255,255,0.07)",
-    borderWidth: 1,
-    borderRadius: 20,
-    borderBottomLeftRadius: 4,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    height: 40,
-    width: 72,
-  },
-  typingDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-  },
-  signalGroup: {
-    position: "absolute",
-    top: 10,
-    right: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    width: 32,
-    height: 32,
-  },
-  signalRing: {
-    position: "absolute",
-    borderWidth: 1.5,
-  },
-
-  // Community
-  centerNode: {
-    position: "absolute",
-    left: "50%" as any,
-    top: 94,
-    marginLeft: -32,
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  centerNodeInner: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  // AI
-  aiCore: {
-    position: "absolute",
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  // Wallet
-  coin: {
-    position: "absolute",
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  coinInner: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 1.5,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  chartContainer: {
-    position: "absolute",
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 6,
-    height: 65,
-    width: 180,
-  },
-
   // Shared
-  floatEl: {
-    position: "absolute",
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   badge: {
     position: "absolute",
     paddingHorizontal: 7,
@@ -925,8 +744,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 7,
     borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.14)",
   },
   skipText: {
     color: "rgba(255,255,255,0.7)",
@@ -968,7 +785,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 11,
     paddingVertical: 5,
     borderRadius: 999,
-    borderWidth: 1,
     gap: 6,
   },
   tagDot: { width: 6, height: 6, borderRadius: 3 },

@@ -15,10 +15,11 @@ export default function IndexScreen() {
     const cachedId  = getCachedUserId();
     const isLoggedIn = hasSession || Boolean(cachedId);
 
-    // Not logged in — go straight to login/register
+    // Not logged in — show welcome onboarding first, then login
     if (!isLoggedIn) {
       redirected.current = true;
-      router.replace("/(auth)/login");
+      const onboardingDone = (() => { try { return storage.getBoolean(KEYS.ONBOARDING_DONE); } catch { return false; } })();
+      router.replace(onboardingDone ? "/(auth)/login" : "/welcome");
       return;
     }
 
@@ -73,7 +74,8 @@ export default function IndexScreen() {
       } else if (getCachedUserId()) {
         router.replace("/(tabs)/chats");
       } else {
-        router.replace("/(auth)/login");
+        const onboardingDone = (() => { try { return storage.getBoolean(KEYS.ONBOARDING_DONE); } catch { return false; } })();
+        router.replace(onboardingDone ? "/(auth)/login" : "/welcome");
       }
     }, 600);
 

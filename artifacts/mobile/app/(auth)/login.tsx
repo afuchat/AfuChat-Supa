@@ -76,7 +76,7 @@ function AuthInput({ icon, placeholder, value, onChangeText, secureTextEntry, ke
   );
 }
 const inp = StyleSheet.create({
-  wrap: { flexDirection: "row", alignItems: "center", borderRadius: 16, paddingHorizontal: 16, height: 56, borderWidth: 1.5 },
+  wrap: { flexDirection: "row", alignItems: "center", borderRadius: 999, paddingHorizontal: 18, height: 56, borderWidth: 0 },
   icon: { marginRight: 10 },
   text: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular", height: 56, color: "#F1F1F1", outlineStyle: "none" } as any,
 });
@@ -523,12 +523,7 @@ export default function SignInScreen() {
           {/* Logo + wordmark */}
           <View style={{ alignItems: "center", marginBottom: showBioBtn ? 32 : 48 }}>
             <View style={sc.logoRing}>
-              <LinearGradient
-                colors={[accent + "40", accent + "10"]}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFill}
-              />
-              <AfuLogo size={52} forceTheme="dark" />
+              <AfuLogo size={64} forceTheme="dark" />
             </View>
             <Text style={sc.logoWordmark}>AfuChat</Text>
           </View>
@@ -698,12 +693,8 @@ const sc = StyleSheet.create({
   logoRing: {
     width: 88,
     height: 88,
-    borderRadius: 26,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.12)",
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
     marginBottom: 12,
   },
   logoWordmark: {
@@ -732,7 +723,7 @@ const sc = StyleSheet.create({
     width: 76,
     height: 76,
     borderRadius: 38,
-    borderWidth: 2,
+    borderWidth: 0,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -743,10 +734,9 @@ const sc = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
     height: 56,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.07)",
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.12)",
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 0,
   },
   glassBtnText: {
     fontSize: 15,
@@ -756,8 +746,9 @@ const sc = StyleSheet.create({
   },
   outlineBtn: {
     height: 56,
-    borderRadius: 16,
-    borderWidth: 1.5,
+    borderRadius: 999,
+    borderWidth: 0,
+    backgroundColor: "rgba(255,255,255,0.06)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -772,15 +763,14 @@ const sc = StyleSheet.create({
   backBtnInner: {
     width: 42,
     height: 42,
-    borderRadius: 13,
+    borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.07)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
+    borderWidth: 0,
     alignItems: "center",
     justifyContent: "center",
   },
 
-  primaryBtn: { borderRadius: 16, overflow: "hidden", marginTop: 4 },
+  primaryBtn: { borderRadius: 999, overflow: "hidden", marginTop: 4 },
   primaryGrad: { height: 58, alignItems: "center", justifyContent: "center" },
   primaryText: { color: "#fff", fontSize: 16, fontFamily: "Inter_700Bold", letterSpacing: -0.1 },
 
