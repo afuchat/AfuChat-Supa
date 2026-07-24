@@ -11,3 +11,27 @@ id = "irsPN81pmpqSxtk8C59Id"
 uri = "file://ANDROID_CRASH_AUDIT.md"
 type = "text"
 title = "AfuChat Android Startup Crash Audit"
+
+[[outputs]]
+id = "mS7sIUqDmlxuyK3EwL12t"
+uri = "file://attached_assets/il_messaging.png"
+type = "image"
+title = "Slide 1 — Messaging"
+
+[[outputs]]
+id = "J4CtUhk0bm8pIZMaPdBVY"
+uri = "file://attached_assets/il_community.png"
+type = "image"
+title = "Slide 2 — Community"
+
+[[outputs]]
+id = "oGDlmcOckK5iHWfZyR3MF"
+uri = "file://attached_assets/il_ai.png"
+type = "image"
+title = "Slide 3 — AI Features"
+
+[[outputs]]
+id = "B3xhez5anAinS5j6qcOyb"
+uri = "file://attached_assets/il_wallet.png"
+type = "image"
+title = "Slide 4 — Wallet"
