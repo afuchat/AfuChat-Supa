@@ -15,17 +15,10 @@ export default function IndexScreen() {
     const cachedId  = getCachedUserId();
     const isLoggedIn = hasSession || Boolean(cachedId);
 
-    // First-time visitor — show the welcome/onboarding landing before anything else
-    if (!isLoggedIn && !storage.getBoolean(KEYS.ONBOARDING_DONE)) {
-      redirected.current = true;
-      router.replace("/welcome");
-      return;
-    }
-
-    // No session and no cached user but onboarding already seen — go to login
+    // Not logged in — go straight to login/register
     if (!isLoggedIn) {
       redirected.current = true;
-      router.replace("/login");
+      router.replace("/(auth)/login");
       return;
     }
 
@@ -79,10 +72,8 @@ export default function IndexScreen() {
         router.replace(`/${handle}` as any);
       } else if (getCachedUserId()) {
         router.replace("/(tabs)/chats");
-      } else if (!storage.getBoolean(KEYS.ONBOARDING_DONE)) {
-        router.replace("/welcome");
       } else {
-        router.replace("/login");
+        router.replace("/(auth)/login");
       }
     }, 600);
 
