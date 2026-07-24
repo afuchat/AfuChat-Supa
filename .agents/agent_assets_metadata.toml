@@ -59,3 +59,9 @@ id = "Irktt1zRobFhLjm031hCq"
 uri = "file://artifacts/mobile/assets/illustrations/wallet.png"
 type = "image"
 title = "Wallet — Earn as you connect"
+
+[[outputs]]
+id = "u1Mg8g7hzNc7jxBS1ejNx"
+uri = "file://artifacts/mobile/assets/illustrations/community_new.png"
+type = "image"
+title = "AfuChat Community — Find your tribe"
