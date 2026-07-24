@@ -252,13 +252,7 @@ export default function WelcomeScreen() {
   const slide = SLIDES[activeIndex];
   const isLast = activeIndex === TOTAL - 1;
 
-  const IllustrationMap: Record<string, React.FC<{ accent: string; W: number }>> = {
-    messaging: MessagingIllustration,
-    community: CommunityIllustration,
-    ai: AIIllustration,
-    wallet: WalletIllustration,
-  };
-  const IllustrationComponent = IllustrationMap[slide.illustration];
+  const IllustrationComponent = SlideIllustration;
 
   return (
     <View style={[s.root, { backgroundColor: BG }]} {...panResponder.panHandlers}>
@@ -308,7 +302,7 @@ export default function WelcomeScreen() {
         opacity: illustrationOpacity,
         transform: [{ scale: illustrationScale }],
       }]}>
-        <IllustrationComponent accent={slide.accent} W={SW} />
+        <IllustrationComponent illustration={slide.illustration} accent={slide.accent} W={SW} />
       </Animated.View>
 
       {/* Bottom gradient fade */}
