@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import {
   Animated,
+  Image,
   PanResponder,
   Platform,
   StatusBar,
@@ -10,6 +11,11 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
+
+const IL_MESSAGING  = require("@/assets/illustrations/messaging.png");
+const IL_COMMUNITY  = require("@/assets/illustrations/community.png");
+const IL_AI         = require("@/assets/illustrations/ai.png");
+const IL_WALLET     = require("@/assets/illustrations/wallet.png");
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "@/components/ui/SafeGradient";
@@ -120,331 +126,33 @@ function SoftOrb({ cx, cy, size, color }: { cx: number; cy: number; size: number
   );
 }
 
-// ─── Shared human figure component ────────────────────────────────────────────
-function HumanFigure({
-  x, y, headColor, bodyColor, size = 1, facing = "right",
-}: { x: number; y: number; headColor: string; bodyColor: string; size?: number; facing?: "left" | "right" }) {
-  const s = size;
-  const flip = facing === "left" ? [{ scaleX: -1 }] : [];
+// ─── Illustration sources ──────────────────────────────────────────────────────
+const IL_SOURCES: Record<string, any> = {
+  messaging: IL_MESSAGING,
+  community: IL_COMMUNITY,
+  ai:        IL_AI,
+  wallet:    IL_WALLET,
+};
+
+// ─── Slide Illustration ────────────────────────────────────────────────────────
+function SlideIllustration({ illustration, W }: { illustration: string; accent: string; W: number }) {
+  const size = W * 0.82;
   return (
-    <View style={{ position: "absolute", left: x, top: y, transform: flip }}>
-      {/* Head */}
-      <View style={{
-        width: 28 * s, height: 28 * s, borderRadius: 14 * s,
-        backgroundColor: headColor, alignSelf: "center",
-      }}>
-        {/* Eyes */}
-        <View style={{ flexDirection: "row", justifyContent: "space-evenly", marginTop: 9 * s }}>
-          <View style={{ width: 4 * s, height: 4 * s, borderRadius: 2 * s, backgroundColor: "rgba(0,0,0,0.5)" }} />
-          <View style={{ width: 4 * s, height: 4 * s, borderRadius: 2 * s, backgroundColor: "rgba(0,0,0,0.5)" }} />
-        </View>
-        {/* Smile */}
-        <View style={{
-          width: 12 * s, height: 6 * s, borderBottomLeftRadius: 8 * s, borderBottomRightRadius: 8 * s,
-          borderWidth: 2 * s, borderTopWidth: 0, borderColor: "rgba(0,0,0,0.35)",
-          alignSelf: "center", marginTop: 3 * s,
-        }} />
-      </View>
-      {/* Neck */}
-      <View style={{ width: 8 * s, height: 6 * s, backgroundColor: headColor, alignSelf: "center" }} />
-      {/* Body */}
-      <View style={{
-        width: 36 * s, height: 44 * s, borderRadius: 10 * s,
-        backgroundColor: bodyColor, alignSelf: "center",
-      }}>
-        {/* Arms */}
-        <View style={{
-          position: "absolute", left: -10 * s, top: 6 * s,
-          width: 10 * s, height: 28 * s, borderRadius: 5 * s,
-          backgroundColor: headColor,
-        }} />
-        <View style={{
-          position: "absolute", right: -10 * s, top: 6 * s,
-          width: 10 * s, height: 28 * s, borderRadius: 5 * s,
-          backgroundColor: headColor,
-        }} />
-      </View>
-      {/* Legs */}
-      <View style={{ flexDirection: "row", gap: 4 * s, alignSelf: "center", marginTop: 2 * s }}>
-        <View style={{ width: 11 * s, height: 30 * s, borderRadius: 6 * s, backgroundColor: bodyColor }} />
-        <View style={{ width: 11 * s, height: 30 * s, borderRadius: 6 * s, backgroundColor: bodyColor }} />
-      </View>
+    <View style={{ width: size, height: size * 0.88, alignSelf: "center" }}>
+      <Image
+        source={IL_SOURCES[illustration]}
+        style={{ width: "100%", height: "100%", borderRadius: 24 }}
+        resizeMode="cover"
+      />
     </View>
   );
 }
 
-// ─── Messaging Illustration ────────────────────────────────────────────────────
-function MessagingIllustration({ accent, W }: { accent: string; W: number }) {
-  const pulseAnim = useRef(new Animated.Value(0)).current;
-  const floatAnim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 0, duration: 700, useNativeDriver: true }),
-      ])
-    ).start();
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim, { toValue: 1, duration: 2200, useNativeDriver: true }),
-        Animated.timing(floatAnim, { toValue: 0, duration: 2200, useNativeDriver: true }),
-      ])
-    ).start();
-  }, []);
-
-  const cx = (W * 0.82) / 2;
-  return (
-    <View style={[il.container, { width: W * 0.82, height: 280 }]}>
-      <View style={[il.glow, { backgroundColor: accent + "18" }]} />
-
-      {/* Person A — left, facing right */}
-      <Animated.View style={{ transform: [{ translateY: floatAnim.interpolate({ inputRange: [0,1], outputRange: [-4,4] }) }] }}>
-        <HumanFigure x={cx - 120} y={60} headColor="#F4C08A" bodyColor={accent} size={0.9} facing="right" />
-      </Animated.View>
-
-      {/* Person B — right, facing left */}
-      <Animated.View style={{ transform: [{ translateY: floatAnim.interpolate({ inputRange: [0,1], outputRange: [4,-4] }) }] }}>
-        <HumanFigure x={cx + 44} y={60} headColor="#C68642" bodyColor="#7B5EA7" size={0.9} facing="left" />
-      </Animated.View>
-
-      {/* Chat bubbles between them */}
-      <View style={{
-        position: "absolute", left: cx - 60, top: 50,
-        backgroundColor: accent + "30", borderRadius: 14, borderBottomLeftRadius: 4,
-        paddingHorizontal: 12, paddingVertical: 8, maxWidth: 110,
-      }}>
-        <View style={{ width: 64, height: 7, borderRadius: 4, backgroundColor: accent + "80", marginBottom: 5 }} />
-        <View style={{ width: 44, height: 7, borderRadius: 4, backgroundColor: accent + "50" }} />
-      </View>
-
-      {/* Typing bubble */}
-      <View style={{
-        position: "absolute", left: cx - 58, top: 115,
-        backgroundColor: "rgba(255,255,255,0.10)", borderRadius: 14, borderBottomRightRadius: 4,
-        paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", gap: 5,
-      }}>
-        {[0, 1, 2].map(i => (
-          <Animated.View key={i} style={{
-            width: 7, height: 7, borderRadius: 4,
-            backgroundColor: "rgba(255,255,255,0.6)",
-            opacity: pulseAnim.interpolate({ inputRange: [0,1], outputRange: i === 1 ? [0.3,1] : [0.8,0.3] }),
-          }} />
-        ))}
-      </View>
-
-      {/* Heart reaction */}
-      <Animated.View style={{
-        position: "absolute", left: cx + 22, top: 42,
-        transform: [{ translateY: pulseAnim.interpolate({ inputRange: [0,1], outputRange: [0,-6] }) }],
-        opacity: pulseAnim.interpolate({ inputRange: [0,1], outputRange: [0.6,1] }),
-      }}>
-        <Text style={{ fontSize: 18 }}>❤️</Text>
-      </Animated.View>
-    </View>
-  );
-}
-
-// ─── Community Illustration ────────────────────────────────────────────────────
-function CommunityIllustration({ accent, W }: { accent: string; W: number }) {
-  const floatAnim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
-        Animated.timing(floatAnim, { toValue: 0, duration: 2000, useNativeDriver: true }),
-      ])
-    ).start();
-  }, []);
-
-  const cx = (W * 0.82) / 2;
-  const people = [
-    { dx: -155, skin: "#F4C08A", shirt: accent,     size: 0.82, delay: 0 },
-    { dx: -88,  skin: "#8D5524", shirt: "#7B5EA7",   size: 0.92, delay: 300 },
-    { dx: -16,  skin: "#C68642", shirt: "#FF6B9D",   size: 1.0,  delay: 100 },
-    { dx: 54,   skin: "#FDBCB4", shirt: accent,      size: 0.92, delay: 200 },
-    { dx: 120,  skin: "#6B3A2A", shirt: "#00D4AA",   size: 0.82, delay: 150 },
-  ];
-
-  return (
-    <View style={[il.container, { width: W * 0.82, height: 280 }]}>
-      <View style={[il.glow, { backgroundColor: accent + "18" }]} />
-
-      {people.map((p, i) => (
-        <Animated.View key={i} style={{
-          transform: [{ translateY: floatAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [i % 2 === 0 ? -5 : 5, i % 2 === 0 ? 5 : -5],
-          }) }],
-        }}>
-          <HumanFigure x={cx + p.dx} y={i === 2 ? 40 : 60} headColor={p.skin} bodyColor={p.shirt} size={p.size} />
-        </Animated.View>
-      ))}
-
-      {/* Online badge */}
-      <View style={[il.badge, { backgroundColor: accent, top: 28, left: cx - 16 }]}>
-        <Text style={{ color: "#fff", fontSize: 10, fontFamily: "Inter_700Bold" }}>2.4k online</Text>
-      </View>
-
-      {/* Shared reaction row */}
-      <View style={{ position: "absolute", bottom: 10, left: 0, right: 0, flexDirection: "row", justifyContent: "center", gap: 8 }}>
-        {["👋","❤️","🎉","🔥","✨"].map((e, i) => (
-          <Animated.View key={i} style={{
-            backgroundColor: "rgba(255,255,255,0.10)", borderRadius: 999,
-            paddingHorizontal: 8, paddingVertical: 4,
-            transform: [{ translateY: floatAnim.interpolate({ inputRange:[0,1], outputRange: [i%2===0?-3:3, i%2===0?3:-3] }) }],
-          }}>
-            <Text style={{ fontSize: 14 }}>{e}</Text>
-          </Animated.View>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-// ─── AI Illustration ───────────────────────────────────────────────────────────
-function AIIllustration({ accent, W }: { accent: string; W: number }) {
-  const pulseAnim = useRef(new Animated.Value(0)).current;
-  const floatAnim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 0, duration: 1200, useNativeDriver: true }),
-      ])
-    ).start();
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
-        Animated.timing(floatAnim, { toValue: 0, duration: 2000, useNativeDriver: true }),
-      ])
-    ).start();
-  }, []);
-
-  const cx = (W * 0.82) / 2;
-  return (
-    <View style={[il.container, { width: W * 0.82, height: 280 }]}>
-      <View style={[il.glow, { backgroundColor: accent + "20" }]} />
-
-      {/* Human user on left */}
-      <Animated.View style={{ transform: [{ translateY: floatAnim.interpolate({ inputRange:[0,1], outputRange:[-4,4] }) }] }}>
-        <HumanFigure x={cx - 140} y={55} headColor="#F4C08A" bodyColor="#5A5A8A" size={0.95} facing="right" />
-      </Animated.View>
-
-      {/* AI orb / assistant on right */}
-      <Animated.View style={{
-        position: "absolute", left: cx + 20, top: 48,
-        transform: [
-          { translateY: floatAnim.interpolate({ inputRange:[0,1], outputRange:[4,-4] }) },
-          { scale: pulseAnim.interpolate({ inputRange:[0,1], outputRange:[1, 1.06] }) },
-        ],
-      }}>
-        {/* Outer glow ring */}
-        <View style={{ width: 90, height: 90, borderRadius: 45, backgroundColor: accent + "20", alignItems: "center", justifyContent: "center" }}>
-          <View style={{ width: 66, height: 66, borderRadius: 33, backgroundColor: accent + "35", alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontSize: 30 }}>✦</Text>
-          </View>
-        </View>
-        {/* Sparkles */}
-        <Text style={{ position: "absolute", top: -8, right: 0, fontSize: 14, opacity: 0.9 }}>✨</Text>
-        <Text style={{ position: "absolute", bottom: -4, left: -4, fontSize: 12, opacity: 0.7 }}>⚡</Text>
-      </Animated.View>
-
-      {/* Speech bubble from AI */}
-      <View style={{
-        position: "absolute", left: cx - 70, top: 40,
-        backgroundColor: accent + "28", borderRadius: 14, borderBottomLeftRadius: 4,
-        paddingHorizontal: 12, paddingVertical: 8,
-      }}>
-        <View style={{ width: 72, height: 7, borderRadius: 4, backgroundColor: accent + "80", marginBottom: 5 }} />
-        <View style={{ width: 50, height: 7, borderRadius: 4, backgroundColor: accent + "55" }} />
-      </View>
-
-      {/* Floating feature pills */}
-      {[
-        { label: "Translate", x: cx - 100, y: 198 },
-        { label: "Summarise", x: cx + 10, y: 205 },
-      ].map((p, i) => (
-        <Animated.View key={i} style={{
-          position: "absolute", left: p.x, top: p.y,
-          backgroundColor: "rgba(255,255,255,0.09)", borderRadius: 999,
-          paddingHorizontal: 10, paddingVertical: 5,
-          transform: [{ translateY: floatAnim.interpolate({ inputRange:[0,1], outputRange: [i%2===0?-3:3, i%2===0?3:-3] }) }],
-        }}>
-          <Text style={{ fontSize: 11, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.75)" }}>{p.label}</Text>
-        </Animated.View>
-      ))}
-    </View>
-  );
-}
-
-// ─── Wallet Illustration ───────────────────────────────────────────────────────
-function WalletIllustration({ accent, W }: { accent: string; W: number }) {
-  const floatAnim = useRef(new Animated.Value(0)).current;
-  const growAnim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim, { toValue: 1, duration: 1800, useNativeDriver: true }),
-        Animated.timing(floatAnim, { toValue: 0, duration: 1800, useNativeDriver: true }),
-      ])
-    ).start();
-    Animated.timing(growAnim, { toValue: 1, duration: 1200, useNativeDriver: true }).start();
-  }, []);
-
-  const cx = (W * 0.82) / 2;
-  const bars = [0.4, 0.65, 0.5, 0.85, 0.72, 1.0];
-
-  return (
-    <View style={[il.container, { width: W * 0.82, height: 280 }]}>
-      <View style={[il.glow, { backgroundColor: accent + "18" }]} />
-
-      {/* Central human figure */}
-      <Animated.View style={{ transform: [{ translateY: floatAnim.interpolate({ inputRange:[0,1], outputRange:[-5,5] }) }] }}>
-        <HumanFigure x={cx - 22} y={30} headColor="#C68642" bodyColor={accent} size={1.05} />
-      </Animated.View>
-
-      {/* Coin stack left */}
-      {[0,1,2].map(i => (
-        <Animated.View key={i} style={{
-          position: "absolute", left: cx - 120, top: 130 - i * 14,
-          width: 44, height: 14, borderRadius: 7,
-          backgroundColor: i === 0 ? accent : accent + (i === 1 ? "90" : "55"),
-          transform: [{ translateY: floatAnim.interpolate({ inputRange:[0,1], outputRange:[-4+i,4-i] }) }],
-        }} />
-      ))}
-
-      {/* Coin stack right */}
-      {[0,1].map(i => (
-        <Animated.View key={i} style={{
-          position: "absolute", left: cx + 68, top: 140 - i * 14,
-          width: 40, height: 14, borderRadius: 7,
-          backgroundColor: i === 0 ? accent + "BB" : accent + "60",
-          transform: [{ translateY: floatAnim.interpolate({ inputRange:[0,1], outputRange:[i%2===0?5:-5, i%2===0?-5:5] }) }],
-        }} />
-      ))}
-
-      {/* Mini chart bars at bottom */}
-      <View style={{ position: "absolute", left: cx - 88, bottom: 8, flexDirection: "row", alignItems: "flex-end", gap: 6 }}>
-        {bars.map((h, i) => (
-          <Animated.View key={i} style={{
-            width: 14, height: 52 * h, borderRadius: 4,
-            backgroundColor: i === 5 ? accent : accent + "55",
-            transform: [{ scaleY: growAnim }],
-          } as any} />
-        ))}
-      </View>
-
-      {/* Floating +badge */}
-      <Animated.View style={{
-        position: "absolute", left: cx + 30, top: 25,
-        backgroundColor: accent, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4,
-        transform: [{ translateY: floatAnim.interpolate({ inputRange:[0,1], outputRange:[-6,6] }) }],
-      }}>
-        <Text style={{ color: "#fff", fontSize: 11, fontFamily: "Inter_700Bold" }}>+50 NX</Text>
-      </Animated.View>
-    </View>
-  );
-}
+// Alias so IllustrationMap lookup still works
+const MessagingIllustration  = SlideIllustration;
+const CommunityIllustration  = SlideIllustration;
+const AIIllustration         = SlideIllustration;
+const WalletIllustration     = SlideIllustration;
 
 // ─── Main component ────────────────────────────────────────────────────────────
 export default function WelcomeScreen() {
