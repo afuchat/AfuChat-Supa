@@ -15,7 +15,7 @@ initCrashReporter();
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { Linking, LogBox, StyleSheet, Text, TextInput, View } from "react-native";
+import { Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
 import { Stack, usePathname, router } from "expo-router";
 import { setCurrentPage, resolvePageInfo } from "@/lib/pageTracker";
 import { StatusBar } from "expo-status-bar";
@@ -175,11 +175,12 @@ export default function RootLayout() {
     SplashScreen.hideAsync().catch(() => {});
   }, []);
 
-  // Safety: force the splash away after 2.5 s maximum so the app is never
-  // permanently blocked by a slow/failing auth or font load. The normal path
-  // (AppReadyGate) clears it sooner when both fonts + auth resolve quickly.
+  // Safety: force the splash away after 2.5 s on native, 1 s on web (no native
+  // splash to sync with). The normal path (AppReadyGate) fires sooner when
+  // both fonts + auth resolve quickly.
   useEffect(() => {
-    const t = setTimeout(() => setAppReady(true), 2500);
+    const timeout = Platform.OS === "web" ? 1000 : 2500;
+    const t = setTimeout(() => setAppReady(true), timeout);
     return () => clearTimeout(t);
   }, []);
 
