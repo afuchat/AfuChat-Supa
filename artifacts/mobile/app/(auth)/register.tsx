@@ -32,21 +32,33 @@ import { googleSignIn } from "@/lib/googleAuth";
 import AfuLogo from "@/components/ui/AfuLogo";
 import { GoogleLogo } from "@/components/ui/OAuthLogos";
 
-// ─── AuthInput ────────────────────────────────────────────────────────────────
-function AuthInput({ icon, placeholder, value, onChangeText, secureTextEntry, keyboardType, autoCapitalize, autoComplete, isDark, rightElement, onSubmitEditing, returnKeyType, inputRef, accent }: any) {
+const BG = "#06080F";
+
+// ─── Soft orb ─────────────────────────────────────────────────────────────────
+function SoftOrb({ cx, cy, size, color }: { cx: number; cy: number; size: number; color: string }) {
+  return (
+    <>
+      <View style={{ position: "absolute", left: cx - size * 0.75, top: cy - size * 0.75, width: size * 1.5, height: size * 1.5, borderRadius: size * 0.75, backgroundColor: color, opacity: 0.07 }} />
+      <View style={{ position: "absolute", left: cx - size * 0.5, top: cy - size * 0.5, width: size, height: size, borderRadius: size * 0.5, backgroundColor: color, opacity: 0.11 }} />
+      <View style={{ position: "absolute", left: cx - size * 0.27, top: cy - size * 0.27, width: size * 0.54, height: size * 0.54, borderRadius: size * 0.27, backgroundColor: color, opacity: 0.16 }} />
+    </>
+  );
+}
+
+// ─── Glass input ──────────────────────────────────────────────────────────────
+function AuthInput({ icon, placeholder, value, onChangeText, secureTextEntry, keyboardType, autoCapitalize, autoComplete, rightElement, onSubmitEditing, returnKeyType, inputRef, accent }: any) {
   const [focused, setFocused] = useState(false);
   return (
     <View style={[inp.wrap, {
-      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
-      borderColor: focused ? accent + "80" : isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.09)",
-      borderWidth: 1.5,
+      backgroundColor: focused ? "rgba(255,255,255,0.09)" : "rgba(255,255,255,0.06)",
+      borderColor: focused ? accent + "70" : "rgba(255,255,255,0.10)",
     }]}>
-      <Ionicons name={icon} size={17} color={focused ? accent : isDark ? "rgba(255,255,255,0.32)" : "rgba(0,0,0,0.26)"} style={inp.icon} />
+      <Ionicons name={icon} size={17} color={focused ? accent : "rgba(255,255,255,0.32)"} style={inp.icon} />
       <TextInput
         ref={inputRef}
-        style={[inp.text, { color: isDark ? "#F1F1F1" : "#0F0F0F" }]}
+        style={inp.text}
         placeholder={placeholder}
-        placeholderTextColor={isDark ? "rgba(255,255,255,0.28)" : "rgba(0,0,0,0.26)"}
+        placeholderTextColor="rgba(255,255,255,0.25)"
         value={value} onChangeText={onChangeText}
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType} autoCapitalize={autoCapitalize ?? "none"}
@@ -59,18 +71,18 @@ function AuthInput({ icon, placeholder, value, onChangeText, secureTextEntry, ke
   );
 }
 const inp = StyleSheet.create({
-  wrap: { flexDirection: "row", alignItems: "center", borderRadius: 100, paddingHorizontal: 14, height: 54 },
+  wrap: { flexDirection: "row", alignItems: "center", borderRadius: 16, paddingHorizontal: 16, height: 56, borderWidth: 1.5 },
   icon: { marginRight: 10 },
-  text: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular", height: 54, outlineStyle: "none" } as any,
+  text: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular", height: 56, color: "#F1F1F1", outlineStyle: "none" } as any,
 });
 
 // ─── Checkbox ─────────────────────────────────────────────────────────────────
-function Checkbox({ checked, onToggle, isDark, accent, children }: { checked: boolean; onToggle: () => void; isDark: boolean; accent: string; children: React.ReactNode }) {
+function Checkbox({ checked, onToggle, accent, children }: { checked: boolean; onToggle: () => void; isDark: boolean; accent: string; children: React.ReactNode }) {
   return (
     <TouchableOpacity style={cb.row} onPress={onToggle} activeOpacity={0.7}>
       <View style={[cb.box, {
-        borderColor: checked ? accent : isDark ? "rgba(255,255,255,0.20)" : "rgba(0,0,0,0.18)",
-        backgroundColor: checked ? accent : "transparent"
+        borderColor: checked ? accent : "rgba(255,255,255,0.18)",
+        backgroundColor: checked ? accent : "transparent",
       }]}>
         {checked && <Ionicons name="checkmark" size={12} color="#fff" />}
       </View>
@@ -83,36 +95,45 @@ const cb = StyleSheet.create({
   box: { width: 20, height: 20, borderRadius: 6, borderWidth: 1.5, alignItems: "center", justifyContent: "center", marginTop: 1, flexShrink: 0 },
 });
 
-// ─── GlassModal ───────────────────────────────────────────────────────────────
-function GlassModal({ visible, onClose, isDark, children }: { visible: boolean; onClose: () => void; isDark: boolean; children: React.ReactNode }) {
+// ─── Glass modal wrapper ───────────────────────────────────────────────────────
+function GlassModal({ visible, onClose, children }: { visible: boolean; onClose: () => void; isDark: boolean; children: React.ReactNode }) {
   const opacity = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(0.94)).current;
   useEffect(() => {
-    Animated.timing(opacity, { toValue: visible ? 1 : 0, duration: 220, useNativeDriver: true }).start();
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: visible ? 1 : 0, duration: 240, useNativeDriver: true }),
+      Animated.spring(scale, { toValue: visible ? 1 : 0.94, useNativeDriver: true, tension: 220, friction: 22 }),
+    ]).start();
   }, [visible]);
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
-      <Animated.View style={[gm.overlay, { opacity, backgroundColor: isDark ? "rgba(0,0,0,0.72)" : "rgba(0,0,0,0.48)" }]}>
+      <Animated.View style={[gm.overlay, { opacity }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={[gm.card, { backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF", borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)", borderWidth: 0.5 }]}>
+        <Animated.View style={[gm.card, { transform: [{ scale }] }]}>
+          <LinearGradient
+            colors={["rgba(255,255,255,0.10)", "rgba(255,255,255,0.04)"]}
+            start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={gm.topBorder} />
           {children}
-        </View>
+        </Animated.View>
       </Animated.View>
     </Modal>
   );
 }
 const gm = StyleSheet.create({
-  overlay: { flex: 1, alignItems: "center", justifyContent: "center", padding: 20 },
-  card: { width: "100%", maxWidth: 420, borderRadius: 24, overflow: "hidden" },
+  overlay: { flex: 1, alignItems: "center", justifyContent: "center", padding: 20, backgroundColor: "rgba(0,0,0,0.75)" },
+  card: { width: "100%", maxWidth: 420, borderRadius: 28, overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.10)", backgroundColor: "rgba(255,255,255,0.04)" },
+  topBorder: { height: 1, backgroundColor: "rgba(255,255,255,0.14)" },
 });
 
-// ─── EmailVerifyModal ─────────────────────────────────────────────────────────
+// ─── Email verify modal ────────────────────────────────────────────────────────
 function EmailVerifyModal({ visible, email, onClose, onVerified, isDark, accent }: { visible: boolean; email: string; onClose: () => void; onVerified: () => void; isDark: boolean; accent: string }) {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const sentRef = useRef(false);
-  const textColor = isDark ? "#F1F1F1" : "#0F0F0F";
-  const mutedColor = isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.45)";
 
   useEffect(() => {
     if (visible && !sentRef.current && email) { sentRef.current = true; sendCode(); }
@@ -136,16 +157,16 @@ function EmailVerifyModal({ visible, email, onClose, onVerified, isDark, accent 
 
   return (
     <GlassModal visible={visible} onClose={onClose} isDark={isDark}>
-      <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 24 }}>
+      <View style={{ paddingHorizontal: 24, paddingTop: 22, paddingBottom: 24 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-          <Text style={{ fontSize: 20, fontFamily: "Inter_700Bold", color: textColor }}>Verify your email</Text>
-          <TouchableOpacity onPress={onClose} hitSlop={12}><Ionicons name="close" size={20} color={mutedColor} /></TouchableOpacity>
+          <Text style={{ fontSize: 20, fontFamily: "Inter_700Bold", color: "#F1F1F1" }}>Verify your email</Text>
+          <TouchableOpacity onPress={onClose} hitSlop={12}><Ionicons name="close" size={20} color="rgba(255,255,255,0.40)" /></TouchableOpacity>
         </View>
-        <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: mutedColor, marginBottom: 20, lineHeight: 20 }}>
+        <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.45)", marginBottom: 20, lineHeight: 20 }}>
           {sending ? "Sending verification code…" : `We sent a 6-digit code to ${email}`}
         </Text>
         <View style={{ gap: 12 }}>
-          <AuthInput icon="keypad-outline" placeholder="6-digit code" value={code} onChangeText={setCode} keyboardType="number-pad" isDark={isDark} returnKeyType="go" onSubmitEditing={verify} accent={accent} />
+          <AuthInput icon="keypad-outline" placeholder="6-digit code" value={code} onChangeText={setCode} keyboardType="number-pad" returnKeyType="go" onSubmitEditing={verify} accent={accent} />
           <TouchableOpacity style={[sc.primaryBtn, (loading || sending) && { opacity: 0.6 }]} onPress={verify} disabled={loading || sending} activeOpacity={0.85}>
             <LinearGradient colors={[accent, "#1a7fd4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
               {(loading || sending) ? <ActivityIndicator color="#fff" size="small" /> : <Text style={sc.primaryText}>Verify email</Text>}
@@ -160,13 +181,13 @@ function EmailVerifyModal({ visible, email, onClose, onVerified, isDark, accent 
   );
 }
 
-// ─── SignUpScreen ─────────────────────────────────────────────────────────────
+// ─── Sign up screen ────────────────────────────────────────────────────────────
 export default function SignUpScreen() {
-  const { isDark, colors } = useTheme();
+  const { isDark } = useTheme();
   const { accent } = useAppAccent();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
-  const { width: SW } = useWindowDimensions();
+  const { width: SW, height: SH } = useWindowDimensions();
   // Only redirect already-logged-in users when this screen first mounts.
   // Do NOT react to `user` becoming set during the sign-up flow itself —
   // the sign-up handlers navigate explicitly. Reacting to [user] caused a
@@ -189,11 +210,6 @@ export default function SignUpScreen() {
   const pwdRef = useRef<TextInput>(null);
   const oauthHandledRef = useRef(false);
 
-  const textColor = isDark ? "#F1F1F1" : "#0F0F0F";
-  const mutedColor = isDark ? "rgba(255,255,255,0.42)" : "rgba(0,0,0,0.42)";
-  const surfaceColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)";
-  const borderColor = isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.09)";
-
   // Slide animation
   const landingX = useRef(new Animated.Value(0)).current;
   const formX = useRef(new Animated.Value(SW)).current;
@@ -214,7 +230,6 @@ export default function SignUpScreen() {
     ]).start();
   }
 
-  // ── Signup ──────────────────────────────────────────────────────────────────
   async function handleSignup() {
     const e = email.trim();
     if (!e || !password) return showAlert("Missing fields", "Please enter your email and a password.");
@@ -236,7 +251,6 @@ export default function SignUpScreen() {
     }
   }
 
-  // ── Google ──────────────────────────────────────────────────────────────────
   async function nativeGoogleSignIn() {
     setOauthLoading(true);
     const result = await googleSignIn();
@@ -294,78 +308,81 @@ export default function SignUpScreen() {
     } catch { setOauthLoading(false); showAlert("Error", "Could not complete Google sign-in."); }
   }
 
-  function handleGoogle() {
-    nativeGoogleSignIn();
-  }
+  function handleGoogle() { nativeGoogleSignIn(); }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background, overflow: "hidden" }}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+    <View style={{ flex: 1, backgroundColor: BG, overflow: "hidden" }}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+
+      {/* ── Background orbs ── */}
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <SoftOrb cx={SW * 0.15} cy={SH * 0.10} size={260} color="#AF52DE" />
+        <SoftOrb cx={SW * 0.88} cy={SH * 0.50} size={220} color="#1f95ff" />
+        <SoftOrb cx={SW * 0.40} cy={SH * 0.88} size={180} color="#AF52DE" />
+      </View>
 
       {/* ── LANDING PANEL ── */}
-      <Animated.View
-        style={[sc.panel, { transform: [{ translateX: landingX }], pointerEvents: step === "landing" ? "auto" : "none" } as any]}
-      >
-        <View style={{ flex: 1, paddingHorizontal: 28, paddingTop: insets.top + 48, paddingBottom: insets.bottom + 32 }}>
-          {/* Logo */}
-          <View style={{ alignItems: "center", marginBottom: 52 }}>
-            <AfuLogo size={64} />
+      <Animated.View style={[sc.panel, { transform: [{ translateX: landingX }], pointerEvents: step === "landing" ? "auto" : "none" } as any]}>
+        <View style={{ flex: 1, paddingHorizontal: 28, paddingTop: insets.top + 40, paddingBottom: insets.bottom + 32 }}>
+
+          {/* Logo + tagline */}
+          <View style={{ alignItems: "center", marginBottom: 48 }}>
+            <View style={sc.logoRing}>
+              <LinearGradient
+                colors={["#AF52DE40", "#1f95ff20"]}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <AfuLogo size={52} forceTheme="dark" />
+            </View>
+            <Text style={sc.logoWordmark}>AfuChat</Text>
+            <View style={sc.freeBadge}>
+              <Text style={sc.freeBadgeText}>Free forever ✦</Text>
+            </View>
           </View>
 
-          <Text style={[sc.heading, { color: textColor }]}>Create account</Text>
-          <Text style={[sc.subheading, { color: mutedColor }]}>
-            Join AfuChat — free forever
-          </Text>
+          <Text style={sc.heading}>Create account</Text>
+          <Text style={sc.subheading}>Join millions of people on AfuChat</Text>
 
-          <View style={{ gap: 12, marginTop: 36 }}>
-            <TouchableOpacity
-              style={[sc.socialBtn, { backgroundColor: surfaceColor, borderColor }]}
-              onPress={handleGoogle}
-              disabled={oauthLoading}
-              activeOpacity={0.78}
-            >
-              {oauthLoading ? (
-                <ActivityIndicator size="small" color={accent} />
-              ) : (
-                <>
-                  <GoogleLogo size={20} />
-                  <Text style={[sc.socialBtnText, { color: textColor }]}>Continue with Google</Text>
-                </>
-              )}
+          <View style={{ gap: 12, marginTop: 28 }}>
+            <TouchableOpacity style={sc.glassBtn} onPress={handleGoogle} disabled={oauthLoading} activeOpacity={0.78}>
+              {oauthLoading
+                ? <ActivityIndicator size="small" color="#AF52DE" />
+                : (<>
+                    <GoogleLogo size={20} />
+                    <Text style={sc.glassBtnText}>Continue with Google</Text>
+                  </>)
+              }
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[sc.socialBtn, { backgroundColor: surfaceColor, borderColor }]}
-              onPress={goToEmail}
-              activeOpacity={0.78}
-            >
-              <Ionicons name="mail-outline" size={20} color={textColor} />
-              <Text style={[sc.socialBtnText, { color: textColor }]}>Continue with email</Text>
+            <TouchableOpacity style={sc.glassBtn} onPress={goToEmail} activeOpacity={0.78}>
+              <Ionicons name="mail-outline" size={20} color="rgba(255,255,255,0.75)" />
+              <Text style={sc.glassBtnText}>Continue with email</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginVertical: 28 }}>
-            <View style={{ flex: 1, height: 0.5, backgroundColor: borderColor }} />
-            <Text style={{ fontSize: 12, fontFamily: "Inter_500Medium", color: mutedColor, letterSpacing: 0.4 }}>or</Text>
-            <View style={{ flex: 1, height: 0.5, backgroundColor: borderColor }} />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginVertical: 24 }}>
+            <View style={{ flex: 1, height: 0.5, backgroundColor: "rgba(255,255,255,0.10)" }} />
+            <Text style={{ fontSize: 12, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.25)", letterSpacing: 0.4 }}>or</Text>
+            <View style={{ flex: 1, height: 0.5, backgroundColor: "rgba(255,255,255,0.10)" }} />
           </View>
 
           <TouchableOpacity
-            style={[sc.createBtn, { borderColor }]}
+            style={[sc.outlineBtn, { borderColor: "rgba(255,255,255,0.14)" }]}
             onPress={() => router.replace("/(auth)/login")}
             activeOpacity={0.78}
           >
-            <Text style={[sc.createBtnText, { color: accent }]}>Already have an account</Text>
+            <Text style={[sc.outlineBtnText, { color: "#AF52DE" }]}>Already have an account</Text>
           </TouchableOpacity>
 
           <View style={{ marginTop: "auto", paddingTop: 32, alignItems: "center", gap: 6 }}>
-            <Text style={{ fontSize: 11, fontFamily: "Inter_400Regular", color: mutedColor, textAlign: "center", lineHeight: 17, paddingHorizontal: 8 }}>
+            <Text style={{ fontSize: 11, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.25)", textAlign: "center", lineHeight: 17, paddingHorizontal: 8 }}>
               By continuing, you agree to our{" "}
-              <Text style={{ color: accent }} onPress={() => Linking.openURL("https://afuchat.com/terms").catch(() => {})}>Terms</Text>
+              <Text style={{ color: "#AF52DE" }} onPress={() => Linking.openURL("https://afuchat.com/terms").catch(() => {})}>Terms</Text>
               {" "}and{" "}
-              <Text style={{ color: accent }} onPress={() => Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>Privacy Policy</Text>
+              <Text style={{ color: "#AF52DE" }} onPress={() => Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>Privacy Policy</Text>
             </Text>
-            <Text style={{ fontSize: 10.5, fontFamily: "Inter_400Regular", color: isDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.16)" }}>
+            <Text style={{ fontSize: 10.5, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.14)" }}>
               © {new Date().getFullYear()} AfuChat Technologies Limited
             </Text>
           </View>
@@ -373,9 +390,7 @@ export default function SignUpScreen() {
       </Animated.View>
 
       {/* ── EMAIL FORM PANEL ── */}
-      <Animated.View
-        style={[sc.panel, { transform: [{ translateX: formX }], pointerEvents: step === "email" ? "auto" : "none" } as any]}
-      >
+      <Animated.View style={[sc.panel, { transform: [{ translateX: formX }], pointerEvents: step === "email" ? "auto" : "none" } as any]}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
           <ScrollView
             contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 28, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40 }}
@@ -383,14 +398,14 @@ export default function SignUpScreen() {
             showsVerticalScrollIndicator={false}
           >
             <TouchableOpacity onPress={goToLanding} style={sc.backBtn} hitSlop={14}>
-              <Ionicons name="arrow-back" size={22} color={textColor} />
+              <View style={sc.backBtnInner}>
+                <Ionicons name="arrow-back" size={20} color="rgba(255,255,255,0.80)" />
+              </View>
             </TouchableOpacity>
 
-            <View style={{ marginTop: 28, marginBottom: 32 }}>
-              <Text style={[sc.heading, { color: textColor }]}>Create account</Text>
-              <Text style={[sc.subheading, { color: mutedColor }]}>
-                Enter your details to get started
-              </Text>
+            <View style={{ marginTop: 24, marginBottom: 32 }}>
+              <Text style={sc.heading}>Create account</Text>
+              <Text style={sc.subheading}>Enter your details to get started</Text>
             </View>
 
             <View style={{ gap: 14 }}>
@@ -398,38 +413,38 @@ export default function SignUpScreen() {
                 icon="mail-outline" placeholder="Email address"
                 value={email} onChangeText={setEmail}
                 keyboardType="email-address" autoComplete="email"
-                isDark={isDark} returnKeyType="next"
+                returnKeyType="next"
                 onSubmitEditing={() => pwdRef.current?.focus()}
-                accent={accent}
+                accent="#AF52DE"
               />
               <AuthInput
                 inputRef={pwdRef}
                 icon="lock-closed-outline" placeholder="Password (min. 8 characters)"
                 value={password} onChangeText={setPassword}
                 secureTextEntry={!showPwd} autoComplete="new-password"
-                isDark={isDark} returnKeyType="go" onSubmitEditing={handleSignup}
-                accent={accent}
+                returnKeyType="go" onSubmitEditing={handleSignup}
+                accent="#AF52DE"
                 rightElement={
                   <TouchableOpacity onPress={() => setShowPwd(p => !p)} style={{ padding: 4 }}>
-                    <Ionicons name={showPwd ? "eye-off-outline" : "eye-outline"} size={18} color={mutedColor} />
+                    <Ionicons name={showPwd ? "eye-off-outline" : "eye-outline"} size={18} color="rgba(255,255,255,0.35)" />
                   </TouchableOpacity>
                 }
               />
             </View>
 
             <View style={{ gap: 14, marginTop: 20, marginBottom: 24 }}>
-              <Checkbox checked={ageOk} onToggle={() => setAgeOk(p => !p)} isDark={isDark} accent={accent}>
-                <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: mutedColor, lineHeight: 19, flex: 1 }}>
+              <Checkbox checked={ageOk} onToggle={() => setAgeOk(p => !p)} isDark={isDark} accent="#AF52DE">
+                <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.50)", lineHeight: 19, flex: 1 }}>
                   I confirm I am{" "}
-                  <Text style={{ fontFamily: "Inter_600SemiBold", color: textColor }}>13 years of age or older</Text>
+                  <Text style={{ fontFamily: "Inter_600SemiBold", color: "rgba(255,255,255,0.85)" }}>13 years of age or older</Text>
                 </Text>
               </Checkbox>
-              <Checkbox checked={termsOk} onToggle={() => setTermsOk(p => !p)} isDark={isDark} accent={accent}>
-                <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: mutedColor, lineHeight: 19, flex: 1 }}>
+              <Checkbox checked={termsOk} onToggle={() => setTermsOk(p => !p)} isDark={isDark} accent="#AF52DE">
+                <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.50)", lineHeight: 19, flex: 1 }}>
                   I agree to the{" "}
-                  <Text style={{ color: accent, fontFamily: "Inter_500Medium" }} onPress={() => Linking.openURL("https://afuchat.com/terms").catch(() => {})}>Terms of Service</Text>
+                  <Text style={{ color: "#AF52DE", fontFamily: "Inter_500Medium" }} onPress={() => Linking.openURL("https://afuchat.com/terms").catch(() => {})}>Terms of Service</Text>
                   {" "}and{" "}
-                  <Text style={{ color: accent, fontFamily: "Inter_500Medium" }} onPress={() => Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>Privacy Policy</Text>
+                  <Text style={{ color: "#AF52DE", fontFamily: "Inter_500Medium" }} onPress={() => Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>Privacy Policy</Text>
                 </Text>
               </Checkbox>
             </View>
@@ -440,7 +455,7 @@ export default function SignUpScreen() {
               disabled={loading}
               activeOpacity={0.85}
             >
-              <LinearGradient colors={[accent, "#1a7fd4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
+              <LinearGradient colors={["#AF52DE", "#7B2FBE"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
                 {loading
                   ? <ActivityIndicator color="#fff" size="small" />
                   : <Text style={sc.primaryText}>Create account</Text>
@@ -449,9 +464,9 @@ export default function SignUpScreen() {
             </TouchableOpacity>
 
             <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 4, marginTop: 24 }}>
-              <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: mutedColor }}>Already have an account?</Text>
+              <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.40)" }}>Already have an account?</Text>
               <TouchableOpacity onPress={() => router.replace("/(auth)/login")} activeOpacity={0.7}>
-                <Text style={{ fontSize: 14, fontFamily: "Inter_700Bold", color: accent }}>Sign in</Text>
+                <Text style={{ fontSize: 14, fontFamily: "Inter_700Bold", color: "#AF52DE" }}>Sign in</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -466,7 +481,7 @@ export default function SignUpScreen() {
           if (signupUserId) router.replace({ pathname: "/onboarding", params: { userId: signupUserId } } as any);
           else router.replace("/(tabs)/chats");
         }}
-        isDark={isDark} accent={accent}
+        isDark={isDark} accent="#AF52DE"
       />
     </View>
   );
@@ -474,55 +489,98 @@ export default function SignUpScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const sc = StyleSheet.create({
-  panel: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "transparent",
+  panel: { ...StyleSheet.absoluteFillObject, backgroundColor: "transparent" },
+
+  logoRing: {
+    width: 88,
+    height: 88,
+    borderRadius: 26,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    marginBottom: 10,
   },
+  logoWordmark: {
+    color: "#fff",
+    fontSize: 20,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: -0.4,
+    marginBottom: 8,
+  },
+  freeBadge: {
+    backgroundColor: "rgba(175,82,222,0.20)",
+    borderWidth: 1,
+    borderColor: "rgba(175,82,222,0.35)",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  freeBadgeText: {
+    color: "#AF52DE",
+    fontSize: 11.5,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.2,
+  },
+
   heading: {
     fontSize: 32,
     fontFamily: "Inter_700Bold",
     letterSpacing: -0.8,
     lineHeight: 40,
     marginBottom: 8,
+    color: "#FFFFFF",
   },
   subheading: {
     fontSize: 15,
     fontFamily: "Inter_400Regular",
     lineHeight: 22,
+    color: "rgba(255,255,255,0.45)",
   },
-  socialBtn: {
+
+  glassBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    height: 54,
-    borderRadius: 999,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.07)",
     borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.12)",
   },
-  socialBtnText: {
+  glassBtnText: {
     fontSize: 15,
     fontFamily: "Inter_600SemiBold",
     letterSpacing: -0.1,
+    color: "rgba(255,255,255,0.85)",
   },
-  createBtn: {
-    height: 54,
-    borderRadius: 999,
+  outlineBtn: {
+    height: 56,
+    borderRadius: 16,
     borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
   },
-  createBtnText: {
+  outlineBtnText: {
     fontSize: 15,
     fontFamily: "Inter_600SemiBold",
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+
+  backBtn: { marginBottom: 4 },
+  backBtnInner: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    backgroundColor: "rgba(255,255,255,0.07)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
     alignItems: "center",
     justifyContent: "center",
   },
-  primaryBtn: { borderRadius: 999, overflow: "hidden", marginTop: 4 },
-  primaryGrad: { height: 56, alignItems: "center", justifyContent: "center" },
+
+  primaryBtn: { borderRadius: 16, overflow: "hidden", marginTop: 4 },
+  primaryGrad: { height: 58, alignItems: "center", justifyContent: "center" },
   primaryText: { color: "#fff", fontSize: 16, fontFamily: "Inter_700Bold", letterSpacing: -0.1 },
 });
