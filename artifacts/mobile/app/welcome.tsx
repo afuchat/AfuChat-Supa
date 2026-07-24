@@ -126,6 +126,7 @@ function SoftOrb({ cx, cy, size, color }: { cx: number; cy: number; size: number
   );
 }
 
+// ─── Slide Illustration ────────────────────────────────────────────────────────
 // ─── Illustration sources ──────────────────────────────────────────────────────
 const IL_SOURCES: Record<string, any> = {
   messaging: IL_MESSAGING,
@@ -136,13 +137,13 @@ const IL_SOURCES: Record<string, any> = {
 
 // ─── Slide Illustration ────────────────────────────────────────────────────────
 function SlideIllustration({ illustration, W }: { illustration: string; accent: string; W: number }) {
-  const size = W * 0.82;
+  const size = W * 0.88;
   return (
-    <View style={{ width: size, height: size * 0.88, alignSelf: "center" }}>
+    <View style={{ width: size, height: size * 0.9, alignSelf: "center" }}>
       <Image
         source={IL_SOURCES[illustration]}
-        style={{ width: "100%", height: "100%", borderRadius: 24 }}
-        resizeMode="cover"
+        style={{ width: "100%", height: "100%" }}
+        resizeMode="contain"
       />
     </View>
   );
