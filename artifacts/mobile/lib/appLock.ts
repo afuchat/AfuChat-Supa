@@ -1,4 +1,6 @@
-import * as SecureStore from "expo-secure-store";
+// expo-secure-store is native-only; on web all PIN/biometric ops are no-ops.
+let SecureStore: typeof import("expo-secure-store") | null = null;
+try { SecureStore = require("expo-secure-store"); } catch {}
 
 const PIN_KEY = "afuchat_app_pin";
 const BIOMETRIC_KEY = "afuchat_biometric_enabled";
@@ -20,13 +22,13 @@ function simpleHash(pin: string): string {
 
 export async function storePIN(pin: string): Promise<void> {
   try {
-    await SecureStore.setItemAsync(PIN_KEY, simpleHash(pin));
+    await SecureStore?.setItemAsync(PIN_KEY, simpleHash(pin));
   } catch {}
 }
 
 export async function verifyPIN(pin: string): Promise<boolean> {
   try {
-    const stored = await SecureStore.getItemAsync(PIN_KEY);
+    const stored = await SecureStore?.getItemAsync(PIN_KEY);
     if (!stored) return false;
     return stored === simpleHash(pin);
   } catch {
@@ -36,7 +38,7 @@ export async function verifyPIN(pin: string): Promise<boolean> {
 
 export async function hasPIN(): Promise<boolean> {
   try {
-    const stored = await SecureStore.getItemAsync(PIN_KEY);
+    const stored = await SecureStore?.getItemAsync(PIN_KEY);
     return !!stored;
   } catch {
     return false;
@@ -45,19 +47,19 @@ export async function hasPIN(): Promise<boolean> {
 
 export async function clearPIN(): Promise<void> {
   try {
-    await SecureStore.deleteItemAsync(PIN_KEY);
+    await SecureStore?.deleteItemAsync(PIN_KEY);
   } catch {}
 }
 
 export async function setBiometricEnabled(enabled: boolean): Promise<void> {
   try {
-    await SecureStore.setItemAsync(BIOMETRIC_KEY, enabled ? "1" : "0");
+    await SecureStore?.setItemAsync(BIOMETRIC_KEY, enabled ? "1" : "0");
   } catch {}
 }
 
 export async function isBiometricEnabled(): Promise<boolean> {
   try {
-    const val = await SecureStore.getItemAsync(BIOMETRIC_KEY);
+    const val = await SecureStore?.getItemAsync(BIOMETRIC_KEY);
     return val === "1";
   } catch {
     return false;
@@ -66,14 +68,14 @@ export async function isBiometricEnabled(): Promise<boolean> {
 
 export async function setScreenshotProtectionEnabled(enabled: boolean): Promise<void> {
   try {
-    await SecureStore.setItemAsync(SCREENSHOT_KEY, enabled ? "1" : "0");
+    await SecureStore?.setItemAsync(SCREENSHOT_KEY, enabled ? "1" : "0");
     await applyScreenshotProtection(enabled);
   } catch {}
 }
 
 export async function isScreenshotProtectionEnabled(): Promise<boolean> {
   try {
-    const val = await SecureStore.getItemAsync(SCREENSHOT_KEY);
+    const val = await SecureStore?.getItemAsync(SCREENSHOT_KEY);
     return val === "1";
   } catch {
     return false;

@@ -19,7 +19,10 @@
 
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as SecureStore from "expo-secure-store";
+
+// expo-secure-store is native-only; on web fall back to AsyncStorage for all ops.
+let SecureStore: typeof import("expo-secure-store") | null = null;
+try { SecureStore = require("expo-secure-store"); } catch {}
 
 const INDEX_KEY = "afuchat_accounts_index";
 const SESSION_PREFIX = "afuchat_session_";
@@ -38,7 +41,8 @@ export type StoredAccount = {
 
 async function secureGet(key: string): Promise<string | null> {
   try {
-    return SecureStore.getItemAsync(key);
+    if (SecureStore) return SecureStore.getItemAsync(key);
+    return AsyncStorage.getItem(key);
   } catch {
     return null;
   }
@@ -46,13 +50,15 @@ async function secureGet(key: string): Promise<string | null> {
 
 async function secureSet(key: string, value: string): Promise<void> {
   try {
-    await SecureStore.setItemAsync(key, value);
+    if (SecureStore) { await SecureStore.setItemAsync(key, value); return; }
+    await AsyncStorage.setItem(key, value);
   } catch {}
 }
 
 async function secureDel(key: string): Promise<void> {
   try {
-    await SecureStore.deleteItemAsync(key);
+    if (SecureStore) { await SecureStore.deleteItemAsync(key); return; }
+    await AsyncStorage.removeItem(key);
   } catch {}
 }
 

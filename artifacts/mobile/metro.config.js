@@ -7,11 +7,35 @@ const config = getDefaultConfig(__dirname);
 // pnpm workspace root as the project root in a monorepo layout.
 config.projectRoot = __dirname;
 
+// ─── Web-platform shims ────────────────────────────────────────────────────────
+// Packages that import react-native internals (codegenNativeCommands, ReactFabric,
+// etc.) are unsupported on web. resolveRequest intercepts them at bundle time and
+// swaps in a lightweight web-safe stub so Metro can produce a valid web bundle.
+const WEB_SHIMS = {
+  "react-native-pager-view": path.resolve(__dirname, "lib/pager-view-web-shim.js"),
+  "@shopify/flash-list":     path.resolve(__dirname, "lib/flash-list-web-shim.js"),
+};
+
 // Keep Metro focused on the mobile app and away from generated sandbox files.
 config.resolver = {
   ...(config.resolver || {}),
   // Allow native dependencies that package static wasm assets to resolve.
   assetExts: [...(config.resolver?.assetExts ?? []), "wasm"],
+  // Pin React & react-native-web to the single copy in artifacts/mobile/node_modules
+  // so pnpm's hoisting never produces two React instances (causes ReactCurrentDispatcher crash).
+  extraNodeModules: {
+    "react":            path.resolve(__dirname, "node_modules/react"),
+    "react-dom":        path.resolve(__dirname, "node_modules/react-dom"),
+    "react-native-web": path.resolve(__dirname, "node_modules/react-native-web"),
+  },
+  resolveRequest: (context, moduleName, platform) => {
+    // Apply web shims only for the web platform bundle.
+    if (platform === "web" && WEB_SHIMS[moduleName]) {
+      return { filePath: WEB_SHIMS[moduleName], type: "sourceFile" };
+    }
+    // Fall through to default Metro resolution for all other cases.
+    return context.resolveRequest(context, moduleName, platform);
+  },
   blockList: [
     /artifacts[\\/]mockup-sandbox[\\/].*/,
     /node_modules[\\/]\.pnpm[\\/].*_tmp_\d+/,
