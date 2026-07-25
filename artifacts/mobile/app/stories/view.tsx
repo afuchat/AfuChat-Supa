@@ -311,32 +311,35 @@ export default function ViewStoryScreen() {
     if (!s || !user || !commentText.trim()) return;
     setSendingComment(true);
     setPaused(true);
-
-    const trimmed = commentText.trim();
-    await supabase.from("story_replies").insert({
-      story_id: s.id,
-      user_id: user.id,
-      content: trimmed,
-    });
-
-    if (s.user_id !== user.id) {
-      const { data: chatId } = await supabase.rpc("get_or_create_direct_chat", {
-        other_user_id: s.user_id,
+    try {
+      const trimmed = commentText.trim();
+      await supabase.from("story_replies").insert({
+        story_id: s.id,
+        user_id: user.id,
+        content: trimmed,
       });
-      if (chatId) {
-        await supabase.from("messages").insert({
-          chat_id: chatId,
-          sender_id: user.id,
-          encrypted_content: `storyUserId:${s.user_id}|${trimmed}`,
-          attachment_url: s.media_url,
-          attachment_type: "story_reply",
-        });
-      }
-    }
 
-    setCommentText("");
-    setSendingComment(false);
-    setPaused(false);
+      if (s.user_id !== user.id) {
+        const { data: chatId } = await supabase.rpc("get_or_create_direct_chat", {
+          other_user_id: s.user_id,
+        });
+        if (chatId) {
+          await supabase.from("messages").insert({
+            chat_id: chatId,
+            sender_id: user.id,
+            encrypted_content: `storyUserId:${s.user_id}|${trimmed}`,
+            attachment_url: s.media_url,
+            attachment_type: "story_reply",
+          });
+        }
+      }
+      setCommentText("");
+    } catch {
+      // comment send failed — silently recover, keep text in input
+    } finally {
+      setSendingComment(false);
+      setPaused(false);
+    }
   }, [index, stories, user, commentText]);
 
   // ── Share sheet ─────────────────────────────────────────────────────────────
@@ -344,23 +347,27 @@ export default function ViewStoryScreen() {
     if (!story) return;
     setPaused(true);
     setShowShareSheet(true);
-    const { data } = await supabase
-      .from("chats")
-      .select("id, is_group, is_channel, name, chat_members!inner(user_id, profiles!chat_members_user_id_fkey(display_name, avatar_url))")
-      .eq("is_channel", false)
-      .order("updated_at", { ascending: false })
-      .limit(20);
-    if (data) {
-      const items = (data as any[]).map((c) => {
-        if (c.is_group) return { id: c.id, name: c.name || "Group", avatar_url: null };
-        const other = (c.chat_members || []).find((m: any) => m.user_id !== user?.id);
-        return {
-          id: c.id,
-          name: other?.profiles?.display_name || c.name || "Chat",
-          avatar_url: other?.profiles?.avatar_url || null,
-        };
-      });
-      setChatList(items);
+    try {
+      const { data } = await supabase
+        .from("chats")
+        .select("id, is_group, is_channel, name, chat_members!inner(user_id, profiles!chat_members_user_id_fkey(display_name, avatar_url))")
+        .eq("is_channel", false)
+        .order("updated_at", { ascending: false })
+        .limit(20);
+      if (data) {
+        const items = (data as any[]).map((c) => {
+          if (c.is_group) return { id: c.id, name: c.name || "Group", avatar_url: null };
+          const other = (c.chat_members || []).find((m: any) => m.user_id !== user?.id);
+          return {
+            id: c.id,
+            name: other?.profiles?.display_name || c.name || "Chat",
+            avatar_url: other?.profiles?.avatar_url || null,
+          };
+        });
+        setChatList(items);
+      }
+    } catch {
+      // failed to load chats — sheet still shows, just empty
     }
   }, [story, user]);
 
@@ -372,14 +379,18 @@ export default function ViewStoryScreen() {
   const sendStoryToChat = useCallback(async (chatId: string) => {
     if (!story || !user) return;
     closeShareSheet();
-    const caption = story.caption ? `"${story.caption}"` : "Shared a story";
-    await supabase.from("messages").insert({
-      chat_id: chatId,
-      sender_id: user.id,
-      encrypted_content: `storyUserId:${story.user_id}|${caption}`,
-      attachment_url: story.media_url,
-      attachment_type: "story_reply",
-    });
+    try {
+      const caption = story.caption ? `"${story.caption}"` : "Shared a story";
+      await supabase.from("messages").insert({
+        chat_id: chatId,
+        sender_id: user.id,
+        encrypted_content: `storyUserId:${story.user_id}|${caption}`,
+        attachment_url: story.media_url,
+        attachment_type: "story_reply",
+      });
+    } catch {
+      // send failed — already navigated away, nothing to revert
+    }
   }, [story, user, closeShareSheet]);
 
   // ── Viewers sheet ────────────────────────────────────────────────────────────
@@ -389,24 +400,28 @@ export default function ViewStoryScreen() {
     setShowViewers(true);
     setLoadingViewers(true);
     Animated.spring(slideAnim, { toValue: 1, useNativeDriver: true, friction: 10 }).start();
+    try {
+      const { data } = await supabase
+        .from("story_views")
+        .select("viewed_at, profiles!story_views_viewer_id_fkey(id, display_name, avatar_url, handle, is_verified, is_organization_verified)")
+        .eq("story_id", story.id)
+        .order("viewed_at", { ascending: false });
 
-    const { data } = await supabase
-      .from("story_views")
-      .select("viewed_at, profiles!story_views_viewer_id_fkey(id, display_name, avatar_url, handle, is_verified, is_organization_verified)")
-      .eq("story_id", story.id)
-      .order("viewed_at", { ascending: false });
-
-    const list: Viewer[] = (data || []).map((v: any) => ({
-      id: v.profiles?.id || "",
-      display_name: v.profiles?.display_name || "User",
-      avatar_url: v.profiles?.avatar_url || null,
-      handle: v.profiles?.handle || "",
-      viewed_at: v.viewed_at,
-      is_verified: v.profiles?.is_verified,
-      is_organization_verified: v.profiles?.is_organization_verified,
-    }));
-    setViewers(list);
-    setLoadingViewers(false);
+      const list: Viewer[] = (data || []).map((v: any) => ({
+        id: v.profiles?.id || "",
+        display_name: v.profiles?.display_name || "User",
+        avatar_url: v.profiles?.avatar_url || null,
+        handle: v.profiles?.handle || "",
+        viewed_at: v.viewed_at,
+        is_verified: v.profiles?.is_verified,
+        is_organization_verified: v.profiles?.is_organization_verified,
+      }));
+      setViewers(list);
+    } catch {
+      setViewers([]);
+    } finally {
+      setLoadingViewers(false);
+    }
   }, [story, isOwner, slideAnim]);
 
   const closeViewers = useCallback(() => {

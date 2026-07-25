@@ -1694,7 +1694,7 @@ export default function DiscoverScreen() {
         postIds.length > 0 && user
           ? supabase.from("post_bookmarks").select("post_id").in("post_id", postIds).eq("user_id", user.id).limit(_fyLimit)
           : { data: [] },
-        _orgQ.catch(() => ({ data: null })),
+        Promise.resolve(_orgQ).catch(() => ({ data: null })),
       ]);
       const _orgData: any[] | null = (_orgResult as any)?.data ?? null;
 
@@ -2594,10 +2594,10 @@ export default function DiscoverScreen() {
                   onViewableItemsChanged={onViewableItemsChanged}
                   viewabilityConfig={viewabilityConfig}
                   initialNumToRender={15}
-                  maxToRenderPerBatch={10}
-                  windowSize={8}
-                  updateCellsBatchingPeriod={50}
-                  removeClippedSubviews
+                  maxToRenderPerBatch={20}
+                  windowSize={21}
+                  updateCellsBatchingPeriod={20}
+
                   refreshControl={
                     <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
                   }
@@ -2666,10 +2666,10 @@ export default function DiscoverScreen() {
                   onViewableItemsChanged={onViewableItemsChanged}
                   viewabilityConfig={viewabilityConfig}
                   initialNumToRender={15}
-                  maxToRenderPerBatch={10}
-                  windowSize={8}
-                  updateCellsBatchingPeriod={50}
-                  removeClippedSubviews
+                  maxToRenderPerBatch={20}
+                  windowSize={21}
+                  updateCellsBatchingPeriod={20}
+
                   refreshControl={
                     <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
                   }
@@ -2738,10 +2738,10 @@ export default function DiscoverScreen() {
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={viewabilityConfig}
             initialNumToRender={15}
-            maxToRenderPerBatch={10}
-            windowSize={8}
-            updateCellsBatchingPeriod={50}
-            removeClippedSubviews
+            maxToRenderPerBatch={20}
+            windowSize={21}
+            updateCellsBatchingPeriod={20}
+
             refreshControl={
               <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
             }
