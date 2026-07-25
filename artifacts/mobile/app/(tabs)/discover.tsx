@@ -716,11 +716,13 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                 let bodyText = previewUrl
                   ? (displayContent || "").split(previewUrl).join("").replace(/\s{2,}/g, " ").trim()
                   : (displayContent || "");
-                // Remove hashtags from inline text — they are shown as pills below
+                // Remove hashtags from inline text — they are shown as pills below.
+                // Replace with a space (not empty string) so adjacent @mentions or
+                // words don't get concatenated when the hashtag has no surrounding space.
                 bodyText = bodyText
-                  .replace(/#[A-Za-z0-9_]{2,30}/g, "")
+                  .replace(/#[A-Za-z0-9_]{2,30}/g, " ")
                   .split("\n")
-                  .map((l: string) => l.trimEnd())
+                  .map((l: string) => l.replace(/[ \t]{2,}/g, " ").trim())
                   .join("\n")
                   .replace(/\n{3,}/g, "\n\n")
                   .trim();
