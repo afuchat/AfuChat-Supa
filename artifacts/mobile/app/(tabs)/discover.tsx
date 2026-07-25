@@ -726,6 +726,36 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                   .join("\n")
                   .replace(/\n{3,}/g, "\n\n")
                   .trim();
+                // Remove duplicate @mention-only lines: some posts append a block of
+                // "@mention#tag@mention#tag" at the end; after hashtag removal these
+                // lines become "@mention @mention" — duplicates of mentions already
+                // in the body.  Drop any line whose sole content is @mentions that
+                // have already appeared earlier in the text.
+                {
+                  const seenMentions = new Set<string>();
+                  const MENTION_RE = /@[A-Za-z0-9_]{1,30}/g;
+                  bodyText = bodyText
+                    .split("\n")
+                    .filter((line) => {
+                      const t = line.trim();
+                      const mentionsInLine = t.match(MENTION_RE) || [];
+                      const nonMentionContent = t.replace(MENTION_RE, "").trim();
+                      // If the line has no real content beyond @mentions, check for dups
+                      if (nonMentionContent === "" && mentionsInLine.length > 0) {
+                        const allSeen = mentionsInLine.every((m) =>
+                          seenMentions.has(m.toLowerCase())
+                        );
+                        if (allSeen) return false; // drop duplicate-mention-only line
+                        mentionsInLine.forEach((m) => seenMentions.add(m.toLowerCase()));
+                      } else {
+                        mentionsInLine.forEach((m) => seenMentions.add(m.toLowerCase()));
+                      }
+                      return true;
+                    })
+                    .join("\n")
+                    .replace(/\n{3,}/g, "\n\n")
+                    .trim();
+                }
                 if (!bodyText) return null;
                 const isTruncated = !expanded && bodyText.length > LIMIT;
                 const shown = isTruncated ? bodyText.slice(0, LIMIT).trimEnd() : bodyText;
