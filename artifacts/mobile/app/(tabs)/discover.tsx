@@ -2363,14 +2363,6 @@ export default function DiscoverScreen() {
 
   const onRequireAuth = useCallback(() => setShowSignInPrompt(true), []);
 
-  // Force dark theme while Discover is focused (matches the dark UI design)
-  useFocusEffect(
-    useCallback(() => {
-      setForceDark(true);
-      return () => setForceDark(false);
-    }, [setForceDark])
-  );
-
   // Re-sync isFollowing for every post whenever Discover comes back into focus
   // (handles the "follow from profile page → back to feed" stale-state case).
   useFocusEffect(
@@ -2436,9 +2428,9 @@ export default function DiscoverScreen() {
             )}
           </TouchableOpacity>
 
-          {/* Brand wordmark — centred, all white on dark */}
+          {/* Brand wordmark — centred */}
           <View style={styles.wordmarkRow}>
-            <Text style={[styles.wordmarkText, { color: "#FFFFFF" }]}>AfuChat</Text>
+            <Text style={[styles.wordmarkText, { color: colors.text }]}>AfuChat</Text>
           </View>
 
           {/* Right: bell icon */}

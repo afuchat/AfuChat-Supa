@@ -91,7 +91,7 @@ function CompactTabBar({
     { icon: "document-text-outline", label: "Article", desc: "Write a long-form article",        route: "/moments/create-article", color: "#007AFF"       },
   ];
 
-  const BAR_BG     = "#0C0C0C";
+  const BAR_BG     = isDark ? "#0C0C0C" : "#FFFFFF";
   const ICON_SIZE  = 24;
   const SLOT_COUNT = 5; // home | search | CREATE | chat | profile
 
@@ -114,7 +114,7 @@ function CompactTabBar({
 
   return (
     <>
-      <View style={[bar.container, { paddingBottom: Math.max(insets.bottom, 8), backgroundColor: BAR_BG }]}>
+      <View style={[bar.container, { paddingBottom: Math.max(insets.bottom, 8), backgroundColor: BAR_BG, borderTopColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)" }]}>
         {slots.map((slot, idx) => {
           if (slot.kind === "create") {
             return (
@@ -135,7 +135,7 @@ function CompactTabBar({
 
           const focused    = active === slot.route;
           const isProfile  = slot.route === "/(tabs)/me";
-          const iconColor  = focused ? "#FFFFFF" : "rgba(120,120,128,1)";
+          const iconColor  = focused ? colors.text : colors.textMuted;
           const iconName   = focused ? slot.iconOn : slot.iconOff;
 
           return (
@@ -154,8 +154,8 @@ function CompactTabBar({
                       style={[
                         bar.avatar,
                         focused
-                          ? { borderColor: "#FFFFFF", borderWidth: 2 }
-                          : { borderColor: "rgba(128,128,128,0.3)", borderWidth: 1.5 },
+                          ? { borderColor: colors.text, borderWidth: 2 }
+                          : { borderColor: colors.textMuted + "4D", borderWidth: 1.5 },
                       ]}
                       contentFit="cover"
                       cachePolicy="memory-disk"
