@@ -6,7 +6,6 @@ import {
   Image as RNImage,
   InteractionManager,
   KeyboardAvoidingView,
-  Linking,
   Modal,
   Platform,
   Pressable,
@@ -58,6 +57,7 @@ import { getMergedLearnedWeights } from "@/lib/personalization";
 import { useLanguage } from "@/context/LanguageContext";
 import { translateText, LANG_LABELS } from "@/lib/translate";
 import { encodeId } from "@/lib/shortId";
+import { useOpenLink } from "@/lib/useOpenLink";
 import { useVideoProgress } from "@/hooks/useVideoProgress";
 import SignInPromptModal from "@/components/ui/SignInPromptModal";
 import { PostShareCaptureModal, type ShareablePost } from "@/components/ui/PostShareCard";
@@ -133,14 +133,38 @@ function extractFirstUrl(text: string): string | null {
   return m?.[0] ?? null;
 }
 
+// ── OG image cache & fetcher ─────────────────────────────────────────────────
+const _ogCache: Record<string, string | null> = {};
+async function fetchOgImage(url: string): Promise<string | null> {
+  if (url in _ogCache) return _ogCache[url];
+  try {
+    const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
+    const html = await res.text();
+    const m =
+      html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
+      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+    const img = m ? m[1] : null;
+    _ogCache[url] = img;
+    return img;
+  } catch {
+    _ogCache[url] = null;
+    return null;
+  }
+}
+
 function LinkPreviewCard({ url, colors }: { url: string; colors: any }) {
+  const openLink = useOpenLink();
+  const [ogImage, setOgImage] = useState<string | null>(null);
   let domain = url;
   try { domain = new URL(url).hostname.replace(/^www\./, ""); } catch {}
+
+  useEffect(() => {
+    fetchOgImage(url).then(setOgImage);
+  }, [url]);
+
   return (
     <TouchableOpacity
-      onPress={() => {
-        try { Linking.openURL(url); } catch {}
-      }}
+      onPress={() => openLink(url)}
       activeOpacity={0.85}
       style={{
         marginLeft: 66,
@@ -153,9 +177,13 @@ function LinkPreviewCard({ url, colors }: { url: string; colors: any }) {
         backgroundColor: colors.card,
       }}
     >
-      {/* Icon / favicon placeholder */}
-      <View style={{ width: 90, backgroundColor: colors.backgroundTertiary, alignItems: "center", justifyContent: "center" }}>
-        <Ionicons name="globe-outline" size={28} color={colors.textMuted} />
+      {/* OG image or fallback globe */}
+      <View style={{ width: 90, minHeight: 80, backgroundColor: colors.backgroundTertiary, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+        {ogImage ? (
+          <ExpoImage source={{ uri: ogImage }} style={{ width: 90, height: "100%" }} contentFit="cover" />
+        ) : (
+          <Ionicons name="globe-outline" size={28} color={colors.textMuted} />
+        )}
       </View>
       <View style={{ flex: 1, padding: 10, gap: 4, justifyContent: "center" }}>
         <Text style={{ fontSize: 13, fontFamily: "Inter_600SemiBold", color: colors.textMuted }} numberOfLines={1}>{domain}</Text>
@@ -284,7 +312,7 @@ function BookmarkButton({ bookmarked, onPress }: { bookmarked: boolean; onPress:
     onPress();
   }
   return (
-    <Animated.View style={{ transform: [{ scale }], marginLeft: "auto" }}>
+    <Animated.View style={[styles.footerStat, { transform: [{ scale }] }]}>
       <TouchableOpacity onPress={handlePress} hitSlop={8}>
         <Ionicons name={bookmarked ? "bookmark" : "bookmark-outline"} size={21} color={bookmarked ? Colors.gold : colors.textMuted} />
       </TouchableOpacity>
@@ -803,6 +831,21 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
               <Ionicons name="eye-outline" size={21} color={colors.textMuted} />
               <Text style={[styles.footerStatNum, { color: colors.textMuted }]}>{formatNum(item.view_count)}</Text>
             </View>
+
+            {/* Share */}
+            <TouchableOpacity
+              style={styles.footerStat}
+              onPress={() => {
+                if (item.post_type === "video") {
+                  shareVideo({ postId: item.id, authorName: item.profile.display_name, caption: item.content });
+                } else {
+                  sharePost({ postId: item.id, authorName: item.profile.display_name, content: item.content });
+                }
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="arrow-redo-outline" size={21} color={colors.textMuted} />
+            </TouchableOpacity>
 
             {/* Bookmark */}
             <BookmarkButton bookmarked={item.bookmarked} onPress={() => { if (!currentUser) { onRequireAuth?.(); return; } onToggleBookmark(item.id); }} />
