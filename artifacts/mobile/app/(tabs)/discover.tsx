@@ -442,6 +442,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
   const [shareablePost, setShareablePost] = useState<ShareablePost | null>(null);
   const [showCrownDetails, setShowCrownDetails] = useState(false);
   const isOwnPost = currentUser?.id === item.author_id;
+  const [expanded, setExpanded] = useState(false);
 
   const heartScale = useRef(new Animated.Value(1)).current;
   const animateHeart = useCallback(() => {
@@ -719,11 +720,24 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
           ) : (
             <>
               {/* ── Content text ── */}
-              {(displayContent || "").trim().length > 0 && (
-                <RichText style={[styles.cardContent, { color: colors.text, fontSize: 15, lineHeight: 23 }]}>
-                  {displayContent}
-                </RichText>
-              )}
+              {(displayContent || "").trim().length > 0 && (() => {
+                const LIMIT = 300;
+                const full = displayContent || "";
+                const isTruncated = !expanded && full.length > LIMIT;
+                const shown = isTruncated ? full.slice(0, LIMIT).trimEnd() : full;
+                return (
+                  <View>
+                    <RichText style={[styles.cardContent, { color: colors.text, fontSize: 15, lineHeight: 23 }]}>
+                      {shown}{isTruncated ? "…" : ""}
+                    </RichText>
+                    {isTruncated && (
+                      <TouchableOpacity onPress={() => setExpanded(true)} activeOpacity={0.7} style={{ paddingLeft: 66, paddingTop: 2, paddingBottom: 2 }}>
+                        <Text style={{ color: Colors.gold, fontSize: 14, fontFamily: "Inter_600SemiBold" }}>Read more</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                );
+              })()}
             </>
           )}
 
