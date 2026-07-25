@@ -1738,6 +1738,8 @@ function ChatScreen() {
     const stars = new Set<string>();
     const glows = new Set<string>();
     const rings = new Map<string, 'crown'|'void'|'diamond'>();
+    const crownCandidates = new Set<string>();
+    const platinumIds = new Set<string>();
 
     // Query 1: status goods (sg4 = gold nameplate, sg5 = verified star, sg8 = glow, sg1-3 = rings)
     const goodsPromise = supabase
@@ -1751,13 +1753,14 @@ function ChatScreen() {
           if (r.good_id === "sg4") nameplates.add(r.user_id);
           if (r.good_id === "sg5") stars.add(r.user_id);
           if (r.good_id === "sg8") glows.add(r.user_id);
-          if (r.good_id === "sg1" && !rings.has(r.user_id)) rings.set(r.user_id, 'crown');
+          if (r.good_id === "sg1") crownCandidates.add(r.user_id);
           if (r.good_id === "sg2" && !rings.has(r.user_id)) rings.set(r.user_id, 'void');
           if (r.good_id === "sg3" && !rings.has(r.user_id)) rings.set(r.user_id, 'diamond');
         }
       }, () => {});
 
-    // Query 2: Gold/Platinum subscribers get golden names automatically (independent of Query 1)
+    // Query 2: Gold/Platinum subscribers get golden names automatically (independent of Query 1).
+    // Platinum is also required before an equipped Crown Aura can render.
     const subPromise = supabase
       .from("user_subscriptions")
       .select("user_id, subscription_plans(tier)")
@@ -1767,11 +1770,25 @@ function ChatScreen() {
         for (const s of (data || []) as { user_id: string; subscription_plans: any }[]) {
           const tier = s.subscription_plans?.tier;
           if (tier === "gold" || tier === "platinum") nameplates.add(s.user_id);
+          if (tier === "platinum") platinumIds.add(s.user_id);
         }
       }, () => {});
 
-    // Apply both results together once both queries settle
-    Promise.allSettled([goodsPromise, subPromise]).then(() => {
+    const referralPlatinumPromise = supabase
+      .from("profiles")
+      .select("id, platinum_until")
+      .in("id", senderIds)
+      .then(({ data }) => {
+        for (const p of (data || []) as { id: string; platinum_until: string | null }[]) {
+          if (p.platinum_until && new Date(p.platinum_until) > new Date()) platinumIds.add(p.id);
+        }
+      }, () => {});
+
+    // Apply both results together once all tier/effect queries settle.
+    Promise.allSettled([goodsPromise, subPromise, referralPlatinumPromise]).then(() => {
+      for (const userId of crownCandidates) {
+        if (platinumIds.has(userId) && !rings.has(userId)) rings.set(userId, 'crown');
+      }
       setGoldNameplateIds(new Set(nameplates));
       setVerifiedStarIds(new Set(stars));
       setStatusGlowIds(new Set(glows));

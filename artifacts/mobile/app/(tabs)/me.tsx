@@ -401,7 +401,6 @@ export default function MeScreen() {
                 userId={user?.id}
                 square={!!(profile?.is_organization_verified || profile?.is_business_mode)}
                 prestigeRing={
-                  equippedGoods.has('sg1') ? 'crown' :
                   equippedGoods.has('sg2') ? 'void' :
                   equippedGoods.has('sg3') ? 'diamond' : null
                 }

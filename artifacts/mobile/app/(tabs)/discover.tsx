@@ -67,6 +67,7 @@ import { DismissSheet, type DismissReason } from "@/components/discover/DismissS
 import { SuggestedUsers } from "@/components/ui/SuggestedUsers";
 import { StoryRing } from "@/components/ui/StoryRing";
 import { LinearGradient } from "@/components/ui/SafeGradient";
+import { useUserEffects } from "@/hooks/useUserEffects";
 
 type PostItem = {
   id: string;
@@ -193,24 +194,23 @@ function StoriesRow({ userId, avatarUrl }: { userId: string | null; avatarUrl: s
       .order("created_at", { ascending: false })
       .limit(30)
       .then(({ data }) => {
-        if (!data) return;
-        const map = new Map<string, StoryEntry>();
-        for (const s of data as any[]) {
-          if (!s.user_id || s.user_id === userId) continue; // skip own stories here
-          if (!map.has(s.user_id)) {
-            map.set(s.user_id, {
-              userId: s.user_id,
-              name: s.profiles?.display_name || "User",
-              avatar_url: s.profiles?.avatar_url ?? null,
-              storyCount: 0,
-              seenCount: 0,
-            });
+          if (!data) return;
+          const map = new Map<string, StoryEntry>();
+          for (const s of data as any[]) {
+            if (!s.user_id || s.user_id === userId) continue; // skip own stories here
+            if (!map.has(s.user_id)) {
+              map.set(s.user_id, {
+                userId: s.user_id,
+                name: s.profiles?.display_name || "User",
+                avatar_url: s.profiles?.avatar_url ?? null,
+                storyCount: 0,
+                seenCount: 0,
+              });
+            }
+            map.get(s.user_id)!.storyCount++;
           }
-          map.get(s.user_id)!.storyCount++;
-        }
-        setStories(Array.from(map.values()).slice(0, 12));
-      })
-      .catch(() => {});
+          setStories(Array.from(map.values()).slice(0, 12));
+        }, () => {});
   }, [userId]);
 
   return (
@@ -405,12 +405,14 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
   const { width: screenW } = useWindowDimensions();
   const cardInsets = useCardInsets();
   const { user: currentUser } = useAuth();
+  const { isPlatinum } = useUserEffects(item.author_id);
   const watchedFraction = useVideoProgress(item.post_type === "video" ? item.id : "");
   const [displayContent, setDisplayContent] = useState(item.content);
   const [isTranslated, setIsTranslated] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareablePost, setShareablePost] = useState<ShareablePost | null>(null);
+  const [showCrownDetails, setShowCrownDetails] = useState(false);
   const isOwnPost = currentUser?.id === item.author_id;
 
   const heartScale = useRef(new Animated.Value(1)).current;
@@ -548,11 +550,18 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                 >
                   <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={40} square={!!(item.is_organization_verified)} userId={item.author_id} />
                 </TouchableOpacity>
-                {/* Crown rendered after avatar so it sits on top */}
-                {item.is_verified && (
-                  <View style={{ position: "absolute", top: -10, left: -2, zIndex: 20 }} pointerEvents="none">
+                {/* Platinum crown rendered after avatar so it sits on top */}
+                {isPlatinum && (
+                  <TouchableOpacity
+                    style={{ position: "absolute", top: -10, left: -2, zIndex: 20 }}
+                    onPress={() => setShowCrownDetails(true)}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Platinum membership details"
+                  >
                     <Text style={{ fontSize: 14 }}>👑</Text>
-                  </View>
+                  </TouchableOpacity>
                 )}
               </View>
             )}
@@ -806,6 +815,42 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
         visible={showShareModal}
         onClose={() => { setShowShareModal(false); setShareablePost(null); }}
       />
+
+      <Modal
+        visible={showCrownDetails}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCrownDetails(false)}
+      >
+        <Pressable style={styles.crownModalBackdrop} onPress={() => setShowCrownDetails(false)}>
+          <Pressable
+            style={[styles.crownModalCard, { backgroundColor: colors.surface }]}
+            onPress={(event) => event.stopPropagation()}
+          >
+            <View style={styles.crownModalIcon}>
+              <Text style={{ fontSize: 28 }}>👑</Text>
+            </View>
+            <Text style={[styles.crownModalTitle, { color: colors.text }]}>Platinum member</Text>
+            <Text style={[styles.crownModalBody, { color: colors.textSecondary }]}>
+              This crown marks an AfuChat Platinum member. Platinum includes unlimited AI, exclusive perks, priority support, and early access to new features.
+            </Text>
+            <TouchableOpacity
+              style={[styles.crownModalCta, { backgroundColor: colors.accent }]}
+              onPress={() => {
+                setShowCrownDetails(false);
+                safeRouter.push("/premium" as any);
+              }}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="diamond" size={16} color="#fff" />
+              <Text style={styles.crownModalCtaText}>View Premium plans</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowCrownDetails(false)} style={styles.crownModalClose}>
+              <Text style={[styles.crownModalCloseText, { color: colors.textMuted }]}>Not now</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <Modal visible={menuVisible} transparent animationType="none" onRequestClose={() => setMenuVisible(false)}>
         <TouchableOpacity style={styles.menuOverlay} activeOpacity={1} onPress={() => setMenuVisible(false)}>
@@ -2811,6 +2856,7 @@ const styles = StyleSheet.create({
   },
   tabRow: {
     flexDirection: "row",
+    justifyContent: "center",
     paddingHorizontal: 4,
   },
   loadMorePill: {
@@ -2863,8 +2909,66 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_500Medium",
     letterSpacing: 0.1,
   },
-  tabPill: { paddingVertical: 12, paddingHorizontal: 22, alignItems: "center" },
+  tabPill: { minWidth: 116, paddingVertical: 12, paddingHorizontal: 22, alignItems: "center" },
   tabPillText: { fontSize: 15, fontFamily: "Inter_700Bold" },
+  crownModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.62)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  crownModalCard: {
+    width: "100%",
+    maxWidth: 360,
+    borderRadius: 24,
+    padding: 24,
+    alignItems: "center",
+  },
+  crownModalIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: "#D4A85322",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  crownModalTitle: {
+    fontSize: 20,
+    fontFamily: "Inter_700Bold",
+    marginBottom: 8,
+  },
+  crownModalBody: {
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 21,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  crownModalCta: {
+    width: "100%",
+    borderRadius: 14,
+    paddingVertical: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+  },
+  crownModalCtaText: {
+    color: "#fff",
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+  },
+  crownModalClose: {
+    paddingTop: 14,
+    paddingHorizontal: 16,
+    paddingBottom: 2,
+  },
+  crownModalCloseText: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
   card: {
     overflow: "hidden",
     borderBottomWidth: StyleSheet.hairlineWidth,

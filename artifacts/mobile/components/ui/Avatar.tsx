@@ -45,7 +45,9 @@ export function Avatar({ uri, name, size = 44, style, online, premium, square, p
   const radius = square ? size * 0.2 : size / 2;
 
   // Status effect rings take full priority — suppress premium ring when one is active
-  const resolvedRing: PrestigeRing | null = prestigeRing
+  const requestedRing: PrestigeRing | null =
+    prestigeRing === "crown" && !effects.isPlatinum ? null : (prestigeRing ?? null);
+  const resolvedRing: PrestigeRing | null = requestedRing
     ?? (effects.crownRing ? 'crown' : effects.voidRing ? 'void' : effects.diamondRing ? 'diamond' : null);
 
   // When userId is provided, effects are the sole source of truth for rings.

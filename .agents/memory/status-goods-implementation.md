@@ -11,7 +11,7 @@ All 8 goods (`sg1`–`sg8`) live in the `status_goods_purchases` table (`user_id
 
 | ID | Name | Effect | Where applied |
 |----|------|--------|---------------|
-| sg1 | Crown Aura | Gold spinning ring around avatar | `Avatar` `prestigeRing='crown'` → `PremiumRing ringType='crown'` |
+| sg1 | Crown Aura | Gold spinning ring around avatar, Platinum members only | `Avatar` `prestigeRing='crown'` / `effects.crownRing` → `PremiumRing ringType='crown'`; shared Avatar guard requires Platinum |
 | sg2 | Obsidian Void Ring | Dark purple ring | Same, `prestigeRing='void'` → `ringType='void'` |
 | sg3 | Diamond Halo | Ice-blue ring | Same, `prestigeRing='diamond'` → `ringType='diamond'` |
 | sg4 | Gold Nameplate | Name in `#D4A853` gold | `goldNameplate` prop on `MessageBubble`, `authorGoldNameplate` in `post/[id].tsx` |

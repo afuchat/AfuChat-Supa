@@ -5,6 +5,7 @@ export type UserEffects = {
   goldNameplate: boolean;
   verifiedStar: boolean;
   crownRing: boolean;
+  isPlatinum: boolean;
   voidRing: boolean;
   diamondRing: boolean;
   founderSeal: boolean;
@@ -16,6 +17,7 @@ const EMPTY: UserEffects = {
   goldNameplate: false,
   verifiedStar: false,
   crownRing: false,
+  isPlatinum: false,
   voidRing: false,
   diamondRing: false,
   founderSeal: false,
@@ -51,18 +53,24 @@ function fetchEffects(userId: string): Promise<void> {
     .eq("user_id", userId)
     .eq("is_active", true)
     .then(({ data }) => {
-      return (data ?? []).some((s: any) => {
-        const tier = s.subscription_plans?.tier;
-        return tier === "gold" || tier === "platinum";
-      });
+      return (data ?? []).some((s: any) => s.subscription_plans?.tier === "platinum");
     }, () => false);
 
-  const promise = Promise.all([goodsPromise, subPromise]).then(([goodsData, isPremiumSubscriber]) => {
+  const referralPlatinumPromise = supabase
+    .from("profiles")
+    .select("platinum_until")
+    .eq("id", userId)
+    .maybeSingle()
+    .then(({ data }) => !!(data?.platinum_until && new Date(data.platinum_until) > new Date()), () => false);
+
+  const promise = Promise.all([goodsPromise, subPromise, referralPlatinumPromise]).then(([goodsData, hasPlatinumSubscription, hasReferralPlatinum]) => {
     const ids = new Set((goodsData as any[]).map((d: any) => d.good_id as string));
+    const isPlatinum = hasPlatinumSubscription || hasReferralPlatinum;
     cache.set(userId, {
-      goldNameplate: ids.has("sg4") || isPremiumSubscriber,
+      goldNameplate: ids.has("sg4") || isPlatinum,
       verifiedStar: ids.has("sg5"),
-      crownRing: ids.has("sg1"),
+      crownRing: ids.has("sg1") && isPlatinum,
+      isPlatinum,
       voidRing: ids.has("sg2"),
       diamondRing: ids.has("sg3"),
       founderSeal: ids.has("sg6"),
