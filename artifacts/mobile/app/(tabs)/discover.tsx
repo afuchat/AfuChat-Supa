@@ -2593,10 +2593,11 @@ export default function DiscoverScreen() {
                   onEndReachedThreshold={0.5}
                   onViewableItemsChanged={onViewableItemsChanged}
                   viewabilityConfig={viewabilityConfig}
-                  initialNumToRender={15}
-                  maxToRenderPerBatch={20}
-                  windowSize={21}
-                  updateCellsBatchingPeriod={20}
+                  initialNumToRender={8}
+                  maxToRenderPerBatch={5}
+                  windowSize={7}
+                  updateCellsBatchingPeriod={50}
+                  removeClippedSubviews={false}
 
                   refreshControl={
                     <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
@@ -2665,10 +2666,11 @@ export default function DiscoverScreen() {
                   onEndReachedThreshold={0.5}
                   onViewableItemsChanged={onViewableItemsChanged}
                   viewabilityConfig={viewabilityConfig}
-                  initialNumToRender={15}
-                  maxToRenderPerBatch={20}
-                  windowSize={21}
-                  updateCellsBatchingPeriod={20}
+                  initialNumToRender={8}
+                  maxToRenderPerBatch={5}
+                  windowSize={7}
+                  updateCellsBatchingPeriod={50}
+                  removeClippedSubviews={false}
 
                   refreshControl={
                     <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
@@ -2737,10 +2739,11 @@ export default function DiscoverScreen() {
             onEndReachedThreshold={0.5}
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={viewabilityConfig}
-            initialNumToRender={15}
-            maxToRenderPerBatch={20}
-            windowSize={21}
-            updateCellsBatchingPeriod={20}
+            initialNumToRender={8}
+            maxToRenderPerBatch={5}
+            windowSize={7}
+            updateCellsBatchingPeriod={50}
+            removeClippedSubviews={false}
 
             refreshControl={
               <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />

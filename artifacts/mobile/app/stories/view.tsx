@@ -89,15 +89,16 @@ export default function ViewStoryScreen() {
   // Progress animation
   const progressAnim = useRef(new Animated.Value(0)).current;
 
-  // Always compute panelH/translateY before any early return — the React
-  // Compiler must never see these inside a conditional branch.  A stable
-  // useRef prevents the Compiler from re-creating the interpolation on every
-  // render (which briefly produces transform:null and triggers _validateTransforms).
+  // Always compute panelH/translateY before any early return.
+  // useMemo keeps the Animated.AnimatedInterpolation stable between renders
+  // (preventing _validateTransforms flicker) while still updating when
+  // screenH changes (e.g. orientation flip).
   const panelH = (screenH || 812) * 0.52;
-  const translateYRef = useRef(
-    slideAnim.interpolate({ inputRange: [0, 1], outputRange: [panelH, 0] })
+  const translateY = useMemo(
+    () => slideAnim.interpolate({ inputRange: [0, 1], outputRange: [panelH, 0] }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [panelH]
   );
-  const translateY = translateYRef.current;
 
   const isOwner = user?.id === userId;
 
@@ -979,7 +980,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     paddingVertical: 10,
-    
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "rgba(255,255,255,0.07)",
   },
   viewerName: {
@@ -1015,7 +1016,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "rgba(255,255,255,0.07)",
   },
   shareOptionIcon: {

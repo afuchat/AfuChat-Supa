@@ -750,8 +750,11 @@ function CompactStoryHeader({ userId, colors, onExpand }: { userId: string; colo
 type ChatTabKey = "all" | "unread" | "personal" | "groups" | "channels";
 
 const NOTES_CACHE_KEY = "notes_chat_id_v2";
+// In-memory cache so Notes opens instantly on the second+ press (skips AsyncStorage round-trip)
+let _notesChatIdMem: string | null = null;
 
 async function findOrCreateNotesChatId(userId: string): Promise<string | null> {
+  if (_notesChatIdMem) return _notesChatIdMem;
   let id = await AsyncStorage.getItem(NOTES_CACHE_KEY).catch(() => null);
   if (id) {
     const { data } = await supabase.from("chats").select("id").eq("id", id).maybeSingle();
@@ -774,6 +777,7 @@ async function findOrCreateNotesChatId(userId: string): Promise<string | null> {
     }
     if (id) await AsyncStorage.setItem(NOTES_CACHE_KEY, id).catch(() => {});
   }
+  if (id) _notesChatIdMem = id;
   return id;
 }
 
@@ -1310,6 +1314,12 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
 
   useEffect(() => { loadChats(); }, [loadChats]);
   useFocusEffect(useCallback(() => { loadChats(true); }, [loadChats]));
+
+  // Pre-warm the Notes chat ID in the background so the first tap on "My Notes"
+  // is instant (avoids an AsyncStorage + Supabase round-trip on press).
+  useEffect(() => {
+    if (user?.id) findOrCreateNotesChatId(user.id).catch(() => {});
+  }, [user?.id]);
 
   // Push the latest total unread into the shared in-memory store so the tab
   // bar badge updates instantly without waiting for a SQLite round-trip.
@@ -1962,6 +1972,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                       <SafeFlashList
                         data={pageChats}
                         keyExtractor={(item) => item.id}
+                        estimatedItemSize={74}
                         renderItem={({ item }) => (
                           <ChatRow
                             item={item}
@@ -1971,9 +1982,8 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                             isSelected={selectedIds.has(item.id)}
                             onEnterSelectMode={() => enterSelectMode(item.id)}
                             onToggleSelect={() => toggleSelect(item.id)}
-                            onPress={async () => {
+                            onPress={() => {
                               Haptics.selectionAsync();
-                              // Instantly clear unread badge before navigation
                               if (item.unread_count > 0) {
                                 markChatVisited(item.id);
                                 setChats((prev) =>
@@ -1985,17 +1995,26 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                                 router.push({ pathname: "/channel/[id]", params: { id: item.channel_id } } as any);
                                 return;
                               }
-                              let chatId = item.id;
-                              if (item.kind === "notes" && chatId === "MY_NOTES_VIRTUAL") {
-                                chatId = (await findOrCreateNotesChatId(user.id)) || "";
-                                if (!chatId) return;
+                              if (item.kind === "notes" && item.id === "MY_NOTES_VIRTUAL") {
+                                const cached = _notesChatIdMem;
+                                if (cached) {
+                                  if (onOpenChat) { onOpenChat(item, cached); return; }
+                                  router.push({ pathname: "/chat/[id]", params: { id: cached, otherName: "My Notes", otherAvatar: "", otherId: "", isGroup: "false", isChannel: "false", chatName: "", chatAvatar: "" } });
+                                } else {
+                                  findOrCreateNotesChatId(user.id).then((chatId) => {
+                                    if (!chatId) return;
+                                    if (onOpenChat) { onOpenChat(item, chatId); return; }
+                                    router.push({ pathname: "/chat/[id]", params: { id: chatId, otherName: "My Notes", otherAvatar: "", otherId: "", isGroup: "false", isChannel: "false", chatName: "", chatAvatar: "" } });
+                                  }).catch(() => {});
+                                }
+                                return;
                               }
-                              if (onOpenChat) { onOpenChat(item, chatId); return; }
+                              if (onOpenChat) { onOpenChat(item, item.id); return; }
                               router.push({
                                 pathname: "/chat/[id]",
                                 params: {
-                                  id: chatId,
-                                  otherName: item.kind === "notes" ? "My Notes" : ((!item.is_group && !item.is_channel && phonebookNames.get(item.other_id)) || item.other_display_name || ""),
+                                  id: item.id,
+                                  otherName: ((!item.is_group && !item.is_channel && phonebookNames.get(item.other_id)) || item.other_display_name || ""),
                                   otherAvatar: item.other_avatar || "",
                                   otherId: item.other_id || "",
                                   isGroup: item.is_group ? "true" : "false",
@@ -2005,7 +2024,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                                 },
                               });
                             }}
-                            onAction={handleChatAction}
+                          onAction={handleChatAction}
                           />
                         )}
                         ItemSeparatorComponent={() => <Separator indent={74} />}
@@ -2070,6 +2089,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                       <SafeFlashList
                         data={pageChats}
                         keyExtractor={(item) => item.id}
+                        estimatedItemSize={74}
                         renderItem={({ item }) => (
                           <ChatRow
                             item={item}
@@ -2079,9 +2099,8 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                             isSelected={selectedIds.has(item.id)}
                             onEnterSelectMode={() => enterSelectMode(item.id)}
                             onToggleSelect={() => toggleSelect(item.id)}
-                            onPress={async () => {
+                            onPress={() => {
                               Haptics.selectionAsync();
-                              // Instantly clear unread badge before navigation
                               if (item.unread_count > 0) {
                                 markChatVisited(item.id);
                                 setChats((prev) =>
@@ -2093,17 +2112,26 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                                 router.push({ pathname: "/channel/[id]", params: { id: item.channel_id } } as any);
                                 return;
                               }
-                              let chatId = item.id;
-                              if (item.kind === "notes" && chatId === "MY_NOTES_VIRTUAL") {
-                                chatId = (await findOrCreateNotesChatId(user.id)) || "";
-                                if (!chatId) return;
+                              if (item.kind === "notes" && item.id === "MY_NOTES_VIRTUAL") {
+                                const cached = _notesChatIdMem;
+                                if (cached) {
+                                  if (onOpenChat) { onOpenChat(item, cached); return; }
+                                  router.push({ pathname: "/chat/[id]", params: { id: cached, otherName: "My Notes", otherAvatar: "", otherId: "", isGroup: "false", isChannel: "false", chatName: "", chatAvatar: "" } });
+                                } else {
+                                  findOrCreateNotesChatId(user.id).then((chatId) => {
+                                    if (!chatId) return;
+                                    if (onOpenChat) { onOpenChat(item, chatId); return; }
+                                    router.push({ pathname: "/chat/[id]", params: { id: chatId, otherName: "My Notes", otherAvatar: "", otherId: "", isGroup: "false", isChannel: "false", chatName: "", chatAvatar: "" } });
+                                  }).catch(() => {});
+                                }
+                                return;
                               }
-                              if (onOpenChat) { onOpenChat(item, chatId); return; }
+                              if (onOpenChat) { onOpenChat(item, item.id); return; }
                               router.push({
                                 pathname: "/chat/[id]",
                                 params: {
-                                  id: chatId,
-                                  otherName: item.kind === "notes" ? "My Notes" : ((!item.is_group && !item.is_channel && phonebookNames.get(item.other_id)) || item.other_display_name || ""),
+                                  id: item.id,
+                                  otherName: ((!item.is_group && !item.is_channel && phonebookNames.get(item.other_id)) || item.other_display_name || ""),
                                   otherAvatar: item.other_avatar || "",
                                   otherId: item.other_id || "",
                                   isGroup: item.is_group ? "true" : "false",
@@ -2113,7 +2141,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                                 },
                               });
                             }}
-                            onAction={handleChatAction}
+                          onAction={handleChatAction}
                           />
                         )}
                         ItemSeparatorComponent={() => <Separator indent={74} />}
@@ -2161,6 +2189,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               <SafeFlashList
                 data={filtered}
                 keyExtractor={(item) => item.id}
+                estimatedItemSize={74}
                 renderItem={({ item }) => (
                   <ChatRow
                     item={item}
@@ -2171,7 +2200,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                     isSelected={selectedIds.has(item.id)}
                     onEnterSelectMode={() => enterSelectMode(item.id)}
                     onToggleSelect={() => toggleSelect(item.id)}
-                    onPress={async () => {
+                    onPress={() => {
                       Haptics.selectionAsync();
                       // Instantly clear unread badge before navigation
                       if (item.unread_count > 0) {
@@ -2185,17 +2214,27 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                         router.push({ pathname: "/channel/[id]", params: { id: item.channel_id } } as any);
                         return;
                       }
-                      let chatId = item.id;
-                      if (item.kind === "notes" && chatId === "MY_NOTES_VIRTUAL") {
-                        chatId = (await findOrCreateNotesChatId(user.id)) || "";
-                        if (!chatId) return;
+                      // Notes: use memory cache for instant navigation; fall back to async resolve
+                      if (item.kind === "notes" && item.id === "MY_NOTES_VIRTUAL") {
+                        const cached = _notesChatIdMem;
+                        if (cached) {
+                          if (onOpenChat) { onOpenChat(item, cached); return; }
+                          router.push({ pathname: "/chat/[id]", params: { id: cached, otherName: "My Notes", otherAvatar: "", otherId: "", isGroup: "false", isChannel: "false", chatName: "", chatAvatar: "" } });
+                        } else {
+                          findOrCreateNotesChatId(user.id).then((chatId) => {
+                            if (!chatId) return;
+                            if (onOpenChat) { onOpenChat(item, chatId); return; }
+                            router.push({ pathname: "/chat/[id]", params: { id: chatId, otherName: "My Notes", otherAvatar: "", otherId: "", isGroup: "false", isChannel: "false", chatName: "", chatAvatar: "" } });
+                          }).catch(() => {});
+                        }
+                        return;
                       }
-                      if (onOpenChat) { onOpenChat(item, chatId); return; }
+                      if (onOpenChat) { onOpenChat(item, item.id); return; }
                       router.push({
                         pathname: "/chat/[id]",
                         params: {
-                          id: chatId,
-                          otherName: item.kind === "notes" ? "My Notes" : ((!item.is_group && !item.is_channel && phonebookNames.get(item.other_id)) || item.other_display_name || ""),
+                          id: item.id,
+                          otherName: ((!item.is_group && !item.is_channel && phonebookNames.get(item.other_id)) || item.other_display_name || ""),
                           otherAvatar: item.other_avatar || "",
                           otherId: item.other_id || "",
                           isGroup: item.is_group ? "true" : "false",
