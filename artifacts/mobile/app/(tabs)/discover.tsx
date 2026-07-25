@@ -1134,6 +1134,12 @@ export default function DiscoverScreen() {
   const learnedWeightsRef = useRef<Record<string, number>>({});
   const postsRef = useRef<PostItem[]>([]);
   const feedTabRef = useRef<"for_you" | "following">("for_you");
+  // Cache following IDs for 5 min — eliminates the serial round-trip on every Following tab load.
+  const followingIdsCacheRef = useRef<{ ids: string[]; cachedAt: number }>({ ids: [], cachedAt: 0 });
+  // Batched post_views — buffer IDs and flush as a single insert every 3 s.
+  const pendingViewsRef = useRef<string[]>([]);
+  const viewFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const userIdRef = useRef<string | undefined>(undefined);
   // Throwback pagination — tracks how far into the older-posts pool we've paged.
   // Reset to a random starting point on each fresh load so every session shows
   // different older content.
@@ -1209,9 +1215,25 @@ export default function DiscoverScreen() {
       const postEntry = vi.item?._kind === "post" ? vi.item.item : vi.item;
       const authorId = postEntry?.author_id as string | undefined;
       const postType = postEntry?.post_type as string | undefined;
-      supabase.from("post_views").insert({ post_id: postId, viewer_id: user.id }).then(() => {
-        setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, view_count: (p.view_count || 0) + 1 } : p));
-      });
+      // Buffer view IDs — flush as one batch insert every 3 s instead of
+      // one round-trip per visible post.
+      pendingViewsRef.current.push(postId);
+      if (viewFlushTimerRef.current === null) {
+        viewFlushTimerRef.current = setTimeout(() => {
+          viewFlushTimerRef.current = null;
+          const ids = pendingViewsRef.current.splice(0);
+          const uid = userIdRef.current;
+          if (ids.length === 0 || !uid) return;
+          supabase
+            .from("post_views")
+            .insert(ids.map((id) => ({ post_id: id, viewer_id: uid })))
+            .then(() => {
+              setPosts((prev) =>
+                prev.map((p) => ids.includes(p.id) ? { ...p, view_count: (p.view_count || 0) + 1 } : p)
+              );
+            });
+        }, 3000);
+      }
       trackEvent("view_post", { post_id: postId, author_id: authorId ?? "", post_type: postType ?? "text" });
     }
   };
@@ -1236,6 +1258,7 @@ export default function DiscoverScreen() {
 
   useEffect(() => { postsRef.current = posts; }, [posts]);
   useEffect(() => { feedTabRef.current = feedTab; }, [feedTab]);
+  useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
 
   // Keep newestPostAtRef pointed at the latest post currently rendered in the feed.
   // This is what the poller uses to ask "are there posts newer than this?"
@@ -1372,13 +1395,21 @@ export default function DiscoverScreen() {
     if (activeTab === "following") {
       if (!user) { setLoading(false); setRefreshing(false); setLoadingMore(false); return; }
 
-      const { data: followData } = await supabase
-        .from("follows")
-        .select("following_id")
-        .eq("follower_id", user.id)
-        .limit(1000);
-
-      const followingIds = (followData || []).map((f: any) => f.following_id);
+      // Cache following IDs for 5 min — skip the round-trip on every tab switch.
+      const FOLLOWING_IDS_TTL = 5 * 60 * 1000;
+      let followingIds: string[];
+      const _fidCache = followingIdsCacheRef.current;
+      if (_fidCache.ids.length > 0 && Date.now() - _fidCache.cachedAt < FOLLOWING_IDS_TTL) {
+        followingIds = _fidCache.ids;
+      } else {
+        const { data: followData } = await supabase
+          .from("follows")
+          .select("following_id")
+          .eq("follower_id", user.id)
+          .limit(1000);
+        followingIds = (followData || []).map((f: any) => f.following_id);
+        followingIdsCacheRef.current = { ids: followingIds, cachedAt: Date.now() };
+      }
 
       if (followingIds.length === 0) {
         setFollowingEmpty(true);
@@ -1519,6 +1550,9 @@ export default function DiscoverScreen() {
       video_assets!posts_video_asset_id_fkey(duration_seconds)
     `;
 
+    // Kick off SQLite reads immediately so they overlap with query-building and network.
+    const seenPostIdsPromise = getSeenPostIds();
+
     // Delta sync: on refresh, only fetch posts NEWER than newest stored
     const fyNewerThan = isRefresh ? await getNewestFeedPostDate("for_you") : null;
 
@@ -1615,6 +1649,15 @@ export default function DiscoverScreen() {
       const postIds = data.map((p: any) => p.id);
       const authorIds = [...new Set(data.map((p: any) => p.author_id))];
 
+      // Build org-posts query now so it fires alongside the 6 metadata queries
+      // rather than sequentially after them.
+      let _orgQ: any = supabase
+        .from("organization_page_posts")
+        .select("id, content, image_url, created_at, author_id, likes, page_id, organization_pages!inner(id, slug, name, org_type, logo_url, is_verified)")
+        .order("created_at", { ascending: false })
+        .limit(6);
+      if (fyOlderThan) _orgQ = _orgQ.lt("created_at", fyOlderThan);
+
       const _fyLimit = PAGE_SIZE * 3;
       const [
         { data: myLikes },
@@ -1623,6 +1666,7 @@ export default function DiscoverScreen() {
         { data: followingData },
         { data: myReplies },
         { data: myBookmarks },
+        _orgResult,
       ] = await Promise.all([
         postIds.length > 0 && user
           ? supabase.from("post_acknowledgments").select("post_id").in("post_id", postIds).eq("user_id", user.id).limit(_fyLimit)
@@ -1650,7 +1694,9 @@ export default function DiscoverScreen() {
         postIds.length > 0 && user
           ? supabase.from("post_bookmarks").select("post_id").in("post_id", postIds).eq("user_id", user.id).limit(_fyLimit)
           : { data: [] },
+        _orgQ.catch(() => ({ data: null })),
       ]);
+      const _orgData: any[] | null = (_orgResult as any)?.data ?? null;
 
       const myLikeSet = new Set((myLikes || []).map((l: any) => l.post_id));
       const myBookmarkSet = new Set((myBookmarks || []).map((b: any) => b.post_id));
@@ -1685,8 +1731,9 @@ export default function DiscoverScreen() {
         authorPostCount[aid] = (authorPostCount[aid] || 0) + 1;
       }
 
-      // Load seen post IDs in parallel with scoring (already have data at this point)
-      const seenPostIds = await getSeenPostIds();
+      // seenPostIds was kicked off before the network requests — resolves from
+      // SQLite concurrently with the Supabase round-trips, so this await is free.
+      const seenPostIds = await seenPostIdsPromise;
 
       const scored = visibleData.map((p: any) => {
         const likeCount = p.like_count || 0;
@@ -1764,17 +1811,10 @@ export default function DiscoverScreen() {
       // Mark these posts as seen so they get demoted on the next refresh
       markPostsSeen(diversified.map((p) => p.id)).catch(() => {});
 
-      // Fetch org page posts and splice into feed (1 per every ~5 regular posts)
+      // Org posts were fetched in parallel with the metadata queries above.
       let orgPostItems: PostItem[] = [];
       try {
-        const orgCursor = fyOlderThan;
-        let orgQ: any = supabase
-          .from("organization_page_posts")
-          .select("id, content, image_url, created_at, author_id, likes, page_id, organization_pages!inner(id, slug, name, org_type, logo_url, is_verified)")
-          .order("created_at", { ascending: false })
-          .limit(6);
-        if (orgCursor) orgQ = orgQ.lt("created_at", orgCursor);
-        const { data: orgData } = await orgQ;
+        const orgData = _orgData;
         if (orgData && orgData.length > 0) {
           orgPostItems = orgData.map((op: any) => {
             const pg = op.organization_pages;
