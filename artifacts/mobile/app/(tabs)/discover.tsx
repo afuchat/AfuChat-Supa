@@ -470,6 +470,12 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
   const effectiveW = colWidth ?? screenW;
   const CONTENT_INDENT = 66;
 
+  // URL to show in the preview card — only for plain text posts with no images
+  const previewUrl =
+    item.post_type !== "article" && item.post_type !== "video" && allImages.length === 0
+      ? extractFirstUrl(displayContent || "")
+      : null;
+
   useEffect(() => {
     if (!preferredLang || !item.content?.trim()) { setDisplayContent(item.content); setIsTranslated(false); return; }
     if (item.language_code && item.language_code === preferredLang) return;
@@ -733,7 +739,11 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
               {/* ── Content text ── */}
               {(displayContent || "").trim().length > 0 && (() => {
                 const LIMIT = 300;
-                const full = displayContent || "";
+                // Strip the preview URL from the body so it doesn't appear twice
+                const bodyText = previewUrl
+                  ? (displayContent || "").split(previewUrl).join("").replace(/\s{2,}/g, " ").trim()
+                  : (displayContent || "");
+                const full = bodyText;
                 const isTruncated = !expanded && full.length > LIMIT;
                 const shown = isTruncated ? full.slice(0, LIMIT).trimEnd() : full;
                 return (
@@ -811,11 +821,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
           )}
 
           {/* ── Link preview (for plain-text posts containing a URL, no image) ── */}
-          {item.post_type !== "article" && item.post_type !== "video" && allImages.length === 0 && (() => {
-            const url = extractFirstUrl(displayContent || "");
-            if (!url) return null;
-            return <LinkPreviewCard url={url} colors={colors} />;
-          })()}
+          {previewUrl ? <LinkPreviewCard url={previewUrl} colors={colors} /> : null}
 
           {/* ── Footer ── */}
           <View style={styles.cardFooter}>
