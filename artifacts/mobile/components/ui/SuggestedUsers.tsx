@@ -176,7 +176,7 @@ function UserCard({
 
   return (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      style={[styles.card, { backgroundColor: colors.surface }]}
       onPress={() => router.push({ pathname: "/[handle]", params: { handle: user.handle } })}
       activeOpacity={0.85}
     >
@@ -638,11 +638,14 @@ const styles = StyleSheet.create({
 
   card: {
     width: CARD_WIDTH,
+    height: 200,
     borderRadius: 16,
     padding: 14,
     alignItems: "center",
+    justifyContent: "flex-start",
     gap: 6,
     position: "relative",
+    overflow: "hidden",
   },
   dismissBtn: {
     position: "absolute",
@@ -699,7 +702,7 @@ const styles = StyleSheet.create({
   skeletonRow: { flexDirection: "row", gap: 10, paddingHorizontal: 16 },
   skeletonCard: {
     width: CARD_WIDTH,
-    height: 190,
+    height: 200,
     borderRadius: 16,
     opacity: 0.4,
   },

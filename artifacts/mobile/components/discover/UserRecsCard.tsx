@@ -82,7 +82,7 @@ export function UserRecsCard({ seed = 0, onRequireAuth }: Props) {
   if (users.length === 0) return null;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface }]}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Ionicons name="sparkles" size={16} color={colors.accent} />
@@ -101,7 +101,7 @@ export function UserRecsCard({ seed = 0, onRequireAuth }: Props) {
         {users.map((u) => (
           <TouchableOpacity
             key={u.id}
-            style={[styles.card, { backgroundColor: colors.background }]}
+            style={[styles.card, { backgroundColor: colors.surface }]}
             onPress={() => safeRouter.push(`/@${u.handle}` as any)}
             activeOpacity={0.88}
           >
@@ -149,7 +149,6 @@ const styles = StyleSheet.create({
   container: {
     marginHorizontal: 12,
     marginVertical: 4,
-    borderRadius: 16,
     overflow: "hidden",
   },
   header: {
@@ -165,11 +164,12 @@ const styles = StyleSheet.create({
   seeAll: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
   list: { paddingHorizontal: 14, paddingBottom: 14, gap: 10 },
   card: {
-    width: 142,
+    width: 148,
+    height: 200,
     borderRadius: 14,
-    borderWidth: 1,
     padding: 12,
     alignItems: "center",
+    justifyContent: "flex-start",
     gap: 4,
   },
   cardNameRow: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 6 },

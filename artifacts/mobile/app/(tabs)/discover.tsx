@@ -858,8 +858,6 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
               <Text style={[styles.footerStatNum, { color: colors.textMuted }]}>{formatNum(item.replyCount)}</Text>
             </TouchableOpacity>
 
-            <View style={{ flex: 1 }} />
-
             {/* Views */}
             <View style={styles.footerStat}>
               <Ionicons name="eye-outline" size={21} color={colors.textMuted} />
@@ -3126,13 +3124,13 @@ const styles = StyleSheet.create({
     paddingRight: 12,
     paddingTop: 2,
     paddingBottom: 10,
-    gap: 0,
+    gap: 2,
   },
   footerStat: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingHorizontal: 7,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
