@@ -716,9 +716,22 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                 let bodyText = previewUrl
                   ? (displayContent || "").split(previewUrl).join("").replace(/\s{2,}/g, " ").trim()
                   : (displayContent || "");
-                // Remove hashtags from inline text — they are shown as pills below.
-                // Replace with a space (not empty string) so adjacent @mentions or
-                // words don't get concatenated when the hashtag has no surrounding space.
+                // Step 1 — Remove "concatenated tag-block" lines that some clients
+                // append at the end of posts (e.g. "@mention#tag#tag@mention#tag").
+                // A line is a tag-block when ALL of its content is #tags / @mentions
+                // AND at least one pair of tags is glued together with no space.
+                bodyText = bodyText
+                  .split("\n")
+                  .filter((line) => {
+                    const t = line.trim();
+                    if (!t) return true; // keep blank lines (paragraph breaks)
+                    const isConcatenated = /#[A-Za-z0-9_]{2,30}[@#]|@[A-Za-z0-9_]{1,30}[@#]/.test(t);
+                    const onlyTagContent = t.replace(/#[A-Za-z0-9_]{2,30}/g, "").replace(/@[A-Za-z0-9_]{1,30}/g, "").trim() === "";
+                    return !(isConcatenated && onlyTagContent);
+                  })
+                  .join("\n");
+                // Step 2 — Strip remaining individual hashtags (shown as pills below).
+                // Replace with a space so adjacent words/mentions don't concatenate.
                 bodyText = bodyText
                   .replace(/#[A-Za-z0-9_]{2,30}/g, " ")
                   .split("\n")
@@ -726,36 +739,6 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                   .join("\n")
                   .replace(/\n{3,}/g, "\n\n")
                   .trim();
-                // Remove duplicate @mention-only lines: some posts append a block of
-                // "@mention#tag@mention#tag" at the end; after hashtag removal these
-                // lines become "@mention @mention" — duplicates of mentions already
-                // in the body.  Drop any line whose sole content is @mentions that
-                // have already appeared earlier in the text.
-                {
-                  const seenMentions = new Set<string>();
-                  const MENTION_RE = /@[A-Za-z0-9_]{1,30}/g;
-                  bodyText = bodyText
-                    .split("\n")
-                    .filter((line) => {
-                      const t = line.trim();
-                      const mentionsInLine = t.match(MENTION_RE) || [];
-                      const nonMentionContent = t.replace(MENTION_RE, "").trim();
-                      // If the line has no real content beyond @mentions, check for dups
-                      if (nonMentionContent === "" && mentionsInLine.length > 0) {
-                        const allSeen = mentionsInLine.every((m) =>
-                          seenMentions.has(m.toLowerCase())
-                        );
-                        if (allSeen) return false; // drop duplicate-mention-only line
-                        mentionsInLine.forEach((m) => seenMentions.add(m.toLowerCase()));
-                      } else {
-                        mentionsInLine.forEach((m) => seenMentions.add(m.toLowerCase()));
-                      }
-                      return true;
-                    })
-                    .join("\n")
-                    .replace(/\n{3,}/g, "\n\n")
-                    .trim();
-                }
                 if (!bodyText) return null;
                 const isTruncated = !expanded && bodyText.length > LIMIT;
                 const shown = isTruncated ? bodyText.slice(0, LIMIT).trimEnd() : bodyText;
@@ -764,6 +747,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                     <RichText
                       style={[styles.cardContent, { color: colors.text, fontSize: 15, lineHeight: 23 }]}
                       linkColor={colors.text}
+                      plainMentions
                     >
                       {shown}{isTruncated ? "…" : ""}
                     </RichText>

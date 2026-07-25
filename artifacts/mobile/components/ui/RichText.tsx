@@ -174,6 +174,10 @@ type RichTextProps = {
   linkColor?: string;
   numberOfLines?: number;
   selectable?: boolean;
+  /** When true, @mentions render as plain (non-tappable) bold text instead
+   *  of navigable links.  Use in feed post bodies where mentions should
+   *  stay in-place but not trigger navigation. */
+  plainMentions?: boolean;
   /** Transparent inline spacer appended after all spans — used for the
    *  WhatsApp-style timestamp ghost: reserves horizontal space on the last
    *  line so the real (absolute-positioned) timestamp never overlaps text. */
@@ -186,6 +190,7 @@ export function RichText({
   linkColor,
   numberOfLines,
   selectable,
+  plainMentions,
   tail,
 }: RichTextProps) {
   const { accent } = useAppAccent();
@@ -322,16 +327,33 @@ export function RichText({
                 {span.text}
               </Text>
             );
-          case "email":
           case "mention":
+            if (plainMentions) {
+              return (
+                <Text
+                  key={i}
+                  style={[styles.mention, { color: inheritedColor }]}
+                  selectable={selectable}
+                >
+                  {span.text}
+                </Text>
+              );
+            }
             return (
               <Text
                 key={i}
-                style={[
-                  styles.link,
-                  { color: effectiveLinkColor },
-                  span.type === "mention" && styles.mention,
-                ]}
+                style={[styles.link, styles.mention, { color: effectiveLinkColor }]}
+                onPress={() => handlePress(span)}
+                selectable={selectable}
+              >
+                {span.text}
+              </Text>
+            );
+          case "email":
+            return (
+              <Text
+                key={i}
+                style={[styles.link, { color: effectiveLinkColor }]}
                 onPress={() => handlePress(span)}
                 selectable={selectable}
               >
