@@ -4,6 +4,6 @@ import { useTheme } from "@/hooks/useTheme";
 export default function AuthLayout() {
   const { colors } = useTheme();
   return (
-    <Stack screenOptions={{ headerShown: false, animation: "fade", contentStyle: { backgroundColor: colors.background } }} />
+    <Stack screenOptions={{ headerShown: false, animation: "none", contentStyle: { backgroundColor: colors.background } }} />
   );
 }

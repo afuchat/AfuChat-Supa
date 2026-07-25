@@ -137,8 +137,8 @@ function PageWatcher() {
 // ─── AppNavigationStack ───────────────────────────────────────────────────────
 // Reads the theme background so every screen card uses the real background
 // colour instead of "transparent" (which causes a white flash on push/pop).
-// Uses "fade" globally — flat, fast, no directional slide, no flash on
-// entry or exit.  Feels identical to a tab switch.
+// Uses "none" globally — instant, zero flash on entry or exit, identical
+// to a tab switch.  Every sub-layout mirrors this setting.
 function AppNavigationStack() {
   const { colors } = useTheme();
   const bg = colors.background;
@@ -146,16 +146,16 @@ function AppNavigationStack() {
     <Stack
       screenOptions={{
         headerShown: false,
-        animation: "fade",
+        animation: "none",
         gestureEnabled: true,
         contentStyle: { backgroundColor: bg },
         freezeOnBlur: true,
       }}
     >
-      <Stack.Screen name="index"     options={{ animation: "none", contentStyle: { backgroundColor: bg } }} />
-      <Stack.Screen name="welcome"   options={{ animation: "none", gestureEnabled: false }} />
-      <Stack.Screen name="(tabs)"    options={{ animation: "none" }} />
-      <Stack.Screen name="(auth)"    options={{ animation: "fade" }} />
+      <Stack.Screen name="index"      options={{ animation: "none", contentStyle: { backgroundColor: bg } }} />
+      <Stack.Screen name="welcome"    options={{ animation: "none", gestureEnabled: false }} />
+      <Stack.Screen name="(tabs)"     options={{ animation: "none" }} />
+      <Stack.Screen name="(auth)"     options={{ animation: "none" }} />
       <Stack.Screen name="onboarding" options={{ animation: "none" }} />
       <Stack.Screen name="+not-found" />
     </Stack>
