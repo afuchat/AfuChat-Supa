@@ -134,6 +134,34 @@ function PageWatcher() {
   return null;
 }
 
+// ─── AppNavigationStack ───────────────────────────────────────────────────────
+// Reads the theme background so every screen card uses the real background
+// colour instead of "transparent" (which causes a white flash on push/pop).
+// Uses "fade" globally — flat, fast, no directional slide, no flash on
+// entry or exit.  Feels identical to a tab switch.
+function AppNavigationStack() {
+  const { colors } = useTheme();
+  const bg = colors.background;
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        animation: "fade",
+        gestureEnabled: true,
+        contentStyle: { backgroundColor: bg },
+        freezeOnBlur: true,
+      }}
+    >
+      <Stack.Screen name="index"     options={{ animation: "none", contentStyle: { backgroundColor: bg } }} />
+      <Stack.Screen name="welcome"   options={{ animation: "none", gestureEnabled: false }} />
+      <Stack.Screen name="(tabs)"    options={{ animation: "none" }} />
+      <Stack.Screen name="(auth)"    options={{ animation: "fade" }} />
+      <Stack.Screen name="onboarding" options={{ animation: "none" }} />
+      <Stack.Screen name="+not-found" />
+    </Stack>
+  );
+}
+
 function ThemedStatusBar() {
   const { isDark } = useTheme();
   return (
@@ -314,22 +342,7 @@ export default function RootLayout() {
                         <MiniAppRuntimeProvider>
                           <OfflineBanner />
                           <OfflineVideoToast />
-                          <Stack
-                            screenOptions={{
-                              headerShown: false,
-                              animation: "slide_from_right",
-                              gestureEnabled: true,
-                              contentStyle: { backgroundColor: "transparent" },
-                              freezeOnBlur: true,
-                            }}
-                          >
-                            <Stack.Screen name="index" options={{ animation: "none", contentStyle: { backgroundColor: "transparent" } }} />
-                            <Stack.Screen name="welcome" options={{ animation: "none", gestureEnabled: false }} />
-                            <Stack.Screen name="(tabs)" options={{ animation: "none" }} />
-                            <Stack.Screen name="(auth)" options={{ animation: "slide_from_right", gestureEnabled: true }} />
-                            <Stack.Screen name="onboarding" options={{ animation: "none" }} />
-                            <Stack.Screen name="+not-found" />
-                          </Stack>
+                          <AppNavigationStack />
                           <ToastContainer />
                           <AlertModal />
                         </MiniAppRuntimeProvider>
