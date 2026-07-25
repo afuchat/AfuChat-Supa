@@ -31,7 +31,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // Use the module-level cache as the initial value so hot-reloads and
   // re-mounts instantly show the correct theme without an async round-trip.
   const [themeMode, setThemeModeState] = useState<ThemeMode>(
-    _moduleCache ?? "system"
+    _moduleCache ?? "dark"
   );
   const [forceDark, setForceDarkState] = useState(false);
 

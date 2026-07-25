@@ -4,11 +4,12 @@ import * as Haptics from "expo-haptics";
 import React, { useEffect, useRef, useState } from "react";
 import { Security2FABanner } from "@/components/ui/Security2FABanner";
 import {
-  Animated,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { Image as ExpoImage } from "expo-image";
@@ -21,15 +22,15 @@ import { useTheme } from "@/hooks/useTheme";
 import { TabSwipeProvider } from "@/context/TabSwipeContext";
 import { getLocalConversations } from "@/lib/storage/localConversations";
 import { supabase } from "@/lib/supabase";
-import { emitShortsRefresh } from "@/lib/shortsRefresh";
 import { getTotalUnread, subscribeUnread } from "@/lib/chatUnreadEvents";
 
-const TABS = [
-  { route: "/(tabs)/chats",    label: "Chats",   mdOn: "chatbubbles",   mdOff: "chatbubbles-outline"   },
-  { route: "/(tabs)/discover", label: "Discover", mdOn: "compass",       mdOff: "compass-outline"       },
-  { route: "/(tabs)/shorts",   label: "Shorts",   mdOn: "play-circle",   mdOff: "play-circle-outline"   },
-  { route: "/(tabs)/apps",     label: "Apps",     mdOn: "grid",          mdOff: "grid-outline"          },
-  { route: "/(tabs)/me",       label: "Profile",  mdOn: "person",        mdOff: "person-outline"        },
+// Visible bottom bar tabs
+const BOTTOM_TABS = [
+  { route: "/(tabs)/discover", iconOn: "home",       iconOff: "home-outline"       },
+  { route: "/(tabs)/search",   iconOn: "search",      iconOff: "search-outline"     },
+  // index 2 is the CREATE button — handled separately
+  { route: "/(tabs)/chats",    iconOn: "chatbubble",  iconOff: "chatbubble-outline" },
+  { route: "/(tabs)/me",       iconOn: "person",      iconOff: "person-outline"     },
 ] as const;
 
 function normalizeTabPath(p: string): string {
@@ -38,6 +39,7 @@ function normalizeTabPath(p: string): string {
   if (p === "/shorts"    || p === "/(tabs)/shorts")    return "/(tabs)/shorts";
   if (p === "/apps"      || p === "/(tabs)/apps")      return "/(tabs)/apps";
   if (p === "/me"        || p === "/(tabs)/me")        return "/(tabs)/me";
+  if (p === "/search"    || p === "/(tabs)/search")    return "/(tabs)/search";
   return p;
 }
 
@@ -68,7 +70,7 @@ function useTotalUnread(userId: string | undefined): number {
   return total;
 }
 
-// ── Compact floating tab bar ──────────────────────────────────────────────────
+// ── Full-width bottom tab bar ─────────────────────────────────────────────────
 function CompactTabBar({
   userId,
   avatarUrl,
@@ -81,200 +83,197 @@ function CompactTabBar({
   const { colors, isDark } = useTheme();
   const totalUnread     = useTotalUnread(userId);
   const active          = normalizeTabPath(pathname);
-  const isAndroid       = Platform.OS === "android";
+  const [showCreatePicker, setShowCreatePicker] = useState(false);
 
-  const lastShortsTapRef = useRef<number>(0);
+  const CREATE_OPTIONS = [
+    { icon: "create-outline",        label: "Post",    desc: "Share a thought, photo, or link", route: "/moments/create",         color: colors.accent   },
+    { icon: "videocam-outline",      label: "Video",   desc: "Share a short video clip",         route: "/moments/create-video",   color: "#FF3B30"       },
+    { icon: "document-text-outline", label: "Article", desc: "Write a long-form article",        route: "/moments/create-article", color: "#007AFF"       },
+  ];
 
-  // ── Pill position — instant, no animation ────────────────────────────────────
-  const ITEM_W  = 64;
-  const PILL_W  = 56;
-  const PILL_H  = 32;
-  const BAR_PAD = 6;
+  const BAR_BG     = "#0C0C0C";
+  const ICON_SIZE  = 24;
+  const SLOT_COUNT = 5; // home | search | CREATE | chat | profile
 
-  const pillX = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const idx = TABS.findIndex(t => t.route === active);
-    if (idx === -1) return;
-    pillX.setValue(idx * ITEM_W);
-  }, [active]);
-
-  const bottomPos = Math.max(insets.bottom, 4) + 6;
-
-  const barBg      = isDark ? "rgba(38,38,44,0.96)" : "rgba(255,255,255,0.97)";
-  const borderColor = isDark ? "rgba(58,58,64,1)"   : "rgba(221,215,201,1)";
-
-  const shadow = isDark
-    ? { elevation: 20 }
-    : { elevation: 12 };
-
-  const ripple = { color: colors.accent + "22", borderless: false } as const;
-
-  function handleTabPress(route: typeof TABS[number]["route"]) {
-    if (route === "/(tabs)/shorts" && active === "/(tabs)/shorts") {
-      const now = Date.now();
-      if (now - lastShortsTapRef.current < 400) {
-        emitShortsRefresh();
-        lastShortsTapRef.current = 0;
-        return;
-      }
-      lastShortsTapRef.current = now;
-    }
-
+  function handleTabPress(route: string) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     safeRouter.navigate(route as any);
   }
 
-  return (
-    <View style={[bar.container, { bottom: bottomPos, pointerEvents: "box-none" }]}>
-      <View style={[bar.pill, shadow, { backgroundColor: barBg, borderColor }]}>
-        {/* Accent highlight — jumps instantly to active tab */}
-        <Animated.View
-          style={[
-            bar.highlight,
-            {
-              width: PILL_W,
-              height: PILL_H,
-              borderRadius: PILL_H / 2,
-              backgroundColor: colors.accent + "30",
-              left: BAR_PAD + (ITEM_W - PILL_W) / 2,
-              transform: [{ translateX: pillX }],
-            },
-          ]}
-        />
+  // Build the 5 slot array (insert CREATE placeholder at index 2)
+  const slots: Array<
+    | { kind: "tab"; route: string; iconOn: string; iconOff: string }
+    | { kind: "create" }
+  > = [
+    { kind: "tab", ...BOTTOM_TABS[0] },
+    { kind: "tab", ...BOTTOM_TABS[1] },
+    { kind: "create" },
+    { kind: "tab", ...BOTTOM_TABS[2] },
+    { kind: "tab", ...BOTTOM_TABS[3] },
+  ];
 
-        {TABS.map((tab) => {
-          const focused    = active === tab.route;
-          const mutedColor = isDark ? "rgba(95,93,105,1)" : "rgba(110,108,118,1)";
-          const iconColor  = focused ? colors.accent : mutedColor;
-          const isProfile  = tab.route === "/(tabs)/me";
+  return (
+    <>
+      <View style={[bar.container, { paddingBottom: Math.max(insets.bottom, 8), backgroundColor: BAR_BG }]}>
+        {slots.map((slot, idx) => {
+          if (slot.kind === "create") {
+            return (
+              <View key="create" style={bar.slot}>
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+                    setShowCreatePicker(true);
+                  }}
+                  style={bar.createBtn}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="add" size={28} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            );
+          }
+
+          const focused    = active === slot.route;
+          const isProfile  = slot.route === "/(tabs)/me";
+          const iconColor  = focused ? "#FFFFFF" : "rgba(120,120,128,1)";
+          const iconName   = focused ? slot.iconOn : slot.iconOff;
 
           return (
-            <View key={tab.route} style={bar.item}>
+            <View key={slot.route} style={bar.slot}>
               <Pressable
-                android_ripple={ripple}
-                style={({ pressed }) => [
-                  bar.pressable,
-                  isAndroid && pressed ? { opacity: 0.68 } : null,
-                ]}
-                onPress={() => handleTabPress(tab.route)}
+                style={({ pressed }) => [bar.pressable, pressed && { opacity: 0.6 }]}
+                onPress={() => handleTabPress(slot.route)}
                 accessibilityRole="button"
-                accessibilityLabel={tab.label}
+                accessibilityLabel={slot.route.replace("/(tabs)/", "")}
                 accessibilityState={{ selected: focused }}
               >
-                <View style={bar.iconChip}>
+                <View style={bar.iconWrap}>
                   {isProfile && avatarUrl ? (
                     <ExpoImage
                       source={{ uri: avatarUrl }}
                       style={[
                         bar.avatar,
                         focused
-                          ? { borderColor: colors.accent, borderWidth: 2.5 }
-                          : { borderColor: "rgba(128,128,128,0.22)", borderWidth: 2 },
+                          ? { borderColor: "#FFFFFF", borderWidth: 2 }
+                          : { borderColor: "rgba(128,128,128,0.3)", borderWidth: 1.5 },
                       ]}
                       contentFit="cover"
                       cachePolicy="memory-disk"
                     />
                   ) : (
-                    <Ionicons
-                      name={(focused ? tab.mdOn : tab.mdOff) as any}
-                      size={22}
-                      color={iconColor}
-                    />
+                    <Ionicons name={iconName as any} size={ICON_SIZE} color={iconColor} />
                   )}
                 </View>
-                <Text
-                  style={[
-                    bar.label,
-                    { color: iconColor },
-                    focused && bar.labelActive,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {tab.label}
-                </Text>
-              </Pressable>
 
-              {tab.route === "/(tabs)/chats" && totalUnread > 0 && (
-                <View style={[bar.badge, { backgroundColor: colors.accent }]}>
-                  <Text style={bar.badgeText} numberOfLines={1}>
-                    {totalUnread > 99 ? "99+" : String(totalUnread)}
-                  </Text>
-                </View>
-              )}
+                {/* Unread badge on chat */}
+                {slot.route === "/(tabs)/chats" && totalUnread > 0 && (
+                  <View style={[bar.badge, { backgroundColor: colors.accent }]}>
+                    <Text style={bar.badgeText} numberOfLines={1}>
+                      {totalUnread > 99 ? "99+" : String(totalUnread)}
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
             </View>
           );
         })}
       </View>
-    </View>
+
+      {/* Create picker modal */}
+      <Modal
+        visible={showCreatePicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowCreatePicker(false)}
+      >
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" }}
+          activeOpacity={1}
+          onPress={() => setShowCreatePicker(false)}
+        >
+          <View style={[sheet.container, { backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF", paddingBottom: insets.bottom + 20 }]}>
+            <View style={[sheet.handle, { backgroundColor: isDark ? "#48484A" : "#C7C7CC" }]} />
+            <Text style={[sheet.title, { color: isDark ? "#FFFFFF" : "#000000" }]}>What would you like to create?</Text>
+            {CREATE_OPTIONS.map((opt) => (
+              <TouchableOpacity
+                key={opt.label}
+                style={[sheet.option, { backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7" }]}
+                onPress={() => {
+                  setShowCreatePicker(false);
+                  setTimeout(() => safeRouter.push(opt.route as any), 200);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[sheet.iconBox, { backgroundColor: opt.color + "20" }]}>
+                  <Ionicons name={opt.icon as any} size={24} color={opt.color} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[sheet.optionLabel, { color: isDark ? "#FFFFFF" : "#000000" }]}>{opt.label}</Text>
+                  <Text style={[sheet.optionDesc, { color: isDark ? "#8E8E93" : "#6C6C70" }]}>{opt.desc}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={isDark ? "#48484A" : "#C7C7CC"} />
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
   );
 }
 
 const bar = StyleSheet.create({
   container: {
     position: "absolute",
+    bottom: 0,
     left: 0,
     right: 0,
-    alignItems: "center",
-    zIndex: 100,
-  },
-  pill: {
     flexDirection: "row",
-    borderRadius: 999,
-    paddingVertical: 4,
-    paddingHorizontal: 5,
-    borderWidth: 1,
-    alignSelf: "center",
-    overflow: "hidden",
+    alignItems: "center",
+    paddingTop: 10,
+    zIndex: 100,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(255,255,255,0.07)",
   },
-  highlight: {
-    position: "absolute",
-    top: 9,
-    zIndex: 0,
-  },
-  item: {
+  slot: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    width: 64,
-    zIndex: 1,
   },
   pressable: {
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 999,
-    paddingVertical: 2,
-    width: 64,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 12,
   },
-  iconChip: {
-    width: 64,
-    height: 34,
-    borderRadius: 17,
+  iconWrap: {
+    width: 36,
+    height: 30,
     alignItems: "center",
     justifyContent: "center",
   },
-  label: {
-    fontSize: 10.5,
-    fontFamily: "Inter_700Bold",
-    fontWeight: "700",
-    letterSpacing: 0.1,
-    lineHeight: 14,
-    textAlign: "center",
-  },
-  labelActive: {
-    fontSize: 11.5,
-    fontFamily: "Inter_700Bold",
-    fontWeight: "900",
-    letterSpacing: 0.15,
+  createBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#1f95ff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#1f95ff",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
   },
   avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
   },
   badge: {
     position: "absolute",
-    top: 2,
-    right: 2,
+    top: 0,
+    right: 0,
     minWidth: 16,
     height: 16,
     borderRadius: 8,
@@ -289,6 +288,44 @@ const bar = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     lineHeight: 12,
   },
+});
+
+const sheet = StyleSheet.create({
+  container: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 12,
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 12,
+  },
+  title: {
+    fontSize: 16,
+    fontFamily: "Inter_600SemiBold",
+    marginBottom: 4,
+  },
+  option: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    padding: 14,
+    borderRadius: 14,
+  },
+  iconBox: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  optionLabel: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  optionDesc:  { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
 });
 
 function ClassicTabLayout({ isLoggedIn }: { isLoggedIn: boolean }) {
@@ -336,8 +373,6 @@ export default function TabLayout() {
     prevSessionRef.current = session;
   }, [session, user, loading]);
 
-  // Guard: if a logged-in user somehow reaches the tabs without completing
-  // onboarding, push them back to the onboarding flow.
   useEffect(() => {
     if (loading) return;
     if (!session || !user) return;

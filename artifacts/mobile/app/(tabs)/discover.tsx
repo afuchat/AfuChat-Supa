@@ -109,6 +109,80 @@ function RecentCommenters(_props: { postId: string; replyCount: number; bgColor:
   return null;
 }
 
+// ── Stories row ──────────────────────────────────────────────────────────────
+function StoriesRow({ userId, avatarUrl }: { userId: string | null; avatarUrl: string | null }) {
+  const { colors } = useTheme();
+  const [followed, setFollowed] = useState<Array<{ id: string; name: string; avatar_url: string | null }>>([]);
+  const SZ = 58;
+
+  useEffect(() => {
+    if (!userId) return;
+    supabase
+      .from("follows")
+      .select("following_id, profiles!follows_following_id_fkey(id, display_name, handle, avatar_url)")
+      .eq("follower_id", userId)
+      .limit(10)
+      .then(({ data }) => {
+        if (!data) return;
+        setFollowed(data.map((f: any) => ({
+          id: f.following_id,
+          name: (f.profiles?.display_name || f.profiles?.handle || "User") as string,
+          avatar_url: f.profiles?.avatar_url ?? null,
+        })));
+      });
+  }, [userId]);
+
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingHorizontal: 14, paddingVertical: 10, gap: 14 }}
+    >
+      {/* Your story */}
+      <TouchableOpacity
+        style={{ alignItems: "center", gap: 5, width: 68 }}
+        onPress={() => safeRouter.push("/moments/create" as any)}
+        activeOpacity={0.8}
+      >
+        <View style={{ position: "relative" }}>
+          <View style={{ width: SZ, height: SZ, borderRadius: SZ / 2, backgroundColor: colors.backgroundSecondary, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
+            {avatarUrl ? (
+              <ExpoImage source={{ uri: avatarUrl }} style={{ width: SZ, height: SZ }} contentFit="cover" cachePolicy="memory-disk" />
+            ) : (
+              <Ionicons name="person" size={24} color={colors.textMuted} />
+            )}
+          </View>
+          <View style={{ position: "absolute", bottom: 1, right: 1, width: 20, height: 20, borderRadius: 10, backgroundColor: colors.accent, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#0F0F0F" }}>
+            <Text style={{ color: "#fff", fontSize: 14, fontFamily: "Inter_700Bold", lineHeight: 17, marginTop: Platform.OS === "android" ? -1 : 0 }}>+</Text>
+          </View>
+        </View>
+        <Text style={{ color: colors.text, fontSize: 11, fontFamily: "Inter_400Regular" }} numberOfLines={1}>Your story</Text>
+      </TouchableOpacity>
+
+      {/* Followed users with blue story ring */}
+      {followed.map((u) => (
+        <TouchableOpacity
+          key={u.id}
+          style={{ alignItems: "center", gap: 5, width: 68 }}
+          activeOpacity={0.8}
+          onPress={() => safeRouter.push({ pathname: "/contact/[id]", params: { id: u.id } } as any)}
+        >
+          <View style={{ width: SZ, height: SZ, borderRadius: SZ / 2, padding: 2, borderWidth: 2.5, borderColor: colors.accent }}>
+            <View style={{ flex: 1, borderRadius: (SZ - 9) / 2, overflow: "hidden", backgroundColor: colors.backgroundSecondary, alignItems: "center", justifyContent: "center" }}>
+              {u.avatar_url ? (
+                <ExpoImage source={{ uri: u.avatar_url }} style={{ width: "100%", height: "100%" }} contentFit="cover" cachePolicy="memory-disk" />
+              ) : (
+                <Text style={{ color: colors.accent, fontSize: 20, fontFamily: "Inter_700Bold" }}>{(u.name[0] ?? "?").toUpperCase()}</Text>
+              )}
+            </View>
+          </View>
+          <Text style={{ color: colors.textMuted, fontSize: 11, fontFamily: "Inter_400Regular" }} numberOfLines={1}>{u.name.split(" ")[0]}</Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  );
+}
+
 function BookmarkButton({ bookmarked, onPress }: { bookmarked: boolean; onPress: () => void }) {
   const { colors } = useTheme();
   const scale = useRef(new Animated.Value(1)).current;
@@ -377,12 +451,25 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                 }
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity
-                onPress={() => safeRouter.push({ pathname: "/contact/[id]", params: { id: item.author_id, init_name: item.profile.display_name, init_handle: item.profile.handle, init_avatar: item.profile.avatar_url ?? "", init_verified: item.is_verified ? "1" : "0", init_org_verified: item.is_organization_verified ? "1" : "0" } } as any)}
-                activeOpacity={0.8}
-              >
-                <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={40} square={!!(item.is_organization_verified)} userId={item.author_id} />
-              </TouchableOpacity>
+              <View style={{ position: "relative" }}>
+                {item.is_verified && (
+                  <View style={{ position: "absolute", top: -9, left: -5, zIndex: 10 }} pointerEvents="none">
+                    <Text style={{ fontSize: 13 }}>👑</Text>
+                  </View>
+                )}
+                <TouchableOpacity
+                  onPress={() => safeRouter.push({ pathname: "/contact/[id]", params: { id: item.author_id, init_name: item.profile.display_name, init_handle: item.profile.handle, init_avatar: item.profile.avatar_url ?? "", init_verified: item.is_verified ? "1" : "0", init_org_verified: item.is_organization_verified ? "1" : "0" } } as any)}
+                  activeOpacity={0.8}
+                >
+                  {item.is_verified ? (
+                    <View style={{ borderWidth: 2.5, borderColor: "#D4A853", borderRadius: 22, padding: 1.5 }}>
+                      <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={37} square={false} userId={item.author_id} />
+                    </View>
+                  ) : (
+                    <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={40} square={!!(item.is_organization_verified)} userId={item.author_id} />
+                  )}
+                </TouchableOpacity>
+              </View>
             )}
             <View style={{ flex: 1, gap: 0, paddingTop: 10 }}>
               {item.org_page_id ? (
@@ -484,9 +571,13 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
             </TouchableOpacity>
           )}
 
-          {/* ── ARTICLE: distinctive card ── */}
+          {/* ── ARTICLE: horizontal card ── */}
           {item.post_type === "article" ? (
-            <View style={[styles.articleCard, { backgroundColor: colors.surface }]}>
+            <TouchableOpacity
+              onPress={openPost}
+              activeOpacity={0.85}
+              style={[styles.articleCard, { backgroundColor: colors.card }]}
+            >
               {allImages.length > 0 && (
                 <ExpoImage
                   source={{ uri: allImages[0] }}
@@ -497,15 +588,6 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                 />
               )}
               <View style={styles.articleCardBody}>
-                <View style={[styles.articleBadgeRow, { backgroundColor: colors.accent + "15" }]}>
-                  <Ionicons name="document-text" size={11} color={colors.accent} />
-                  <Text style={[styles.articleBadgeText, { color: colors.accent }]}>Article</Text>
-                  {item.article_title && (
-                    <Text style={{ color: colors.textMuted, fontSize: 10, fontFamily: "Inter_400Regular", marginLeft: 4 }}>
-                      {Math.max(1, Math.round((item.article_body || item.content || "").trim().split(/\s+/).filter(Boolean).length / 200))} min read
-                    </Text>
-                  )}
-                </View>
                 {item.article_title ? (
                   <Text style={[styles.articleTitle, { color: colors.text }]} numberOfLines={2}>{item.article_title}</Text>
                 ) : null}
@@ -514,12 +596,9 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                     {displayContent}
                   </Text>
                 )}
-                <TouchableOpacity onPress={openPost} style={[styles.articleReadBtn, { backgroundColor: colors.accent }]}>
-                  <Ionicons name="book-outline" size={13} color="#fff" />
-                  <Text style={styles.articleReadBtnText}>Read article</Text>
-                </TouchableOpacity>
+                <Text style={styles.articleReadLink}>Read article ›</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           ) : (
             <>
               {/* ── Content text ── */}
@@ -2098,10 +2177,29 @@ export default function DiscoverScreen() {
         {/* Flat header background */}
         <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? "#0F0F0F" : "#F5F0E8", zIndex: 0 }]} />
 
-        {/* ── Row 1: centered wordmark + right actions ── */}
+        {/* ── Row 1: user avatar | centered wordmark | bell ── */}
         <View style={[styles.headerTop, { paddingTop: insets.top + 6 }]}>
-          {/* Left spacer — mirrors right actions width so wordmark is truly centred */}
-          <View style={styles.headerSpacer} />
+          {/* Left: user avatar (or AC initials) */}
+          <TouchableOpacity
+            style={styles.headerSpacer}
+            onPress={() => user ? safeRouter.push("/(tabs)/me") : safeRouter.push("/(auth)/login")}
+            activeOpacity={0.8}
+          >
+            {profile?.avatar_url ? (
+              <ExpoImage
+                source={{ uri: profile.avatar_url }}
+                style={{ width: 34, height: 34, borderRadius: 17 }}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+              />
+            ) : (
+              <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: colors.accent, alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ color: "#fff", fontSize: 13, fontFamily: "Inter_700Bold" }}>
+                  {user ? (profile?.display_name?.[0] ?? profile?.handle?.[0] ?? "A").toUpperCase() : "AC"}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
           {/* Brand wordmark — centred */}
           <View style={styles.wordmarkRow}>
@@ -2109,7 +2207,7 @@ export default function DiscoverScreen() {
             <Text style={[styles.wordmarkText, { color: colors.accent }]}>Chat</Text>
           </View>
 
-          {/* Right actions */}
+          {/* Right: bell icon */}
           <View style={styles.headerActions}>
             {!user && (
               <TouchableOpacity
@@ -2121,17 +2219,14 @@ export default function DiscoverScreen() {
               </TouchableOpacity>
             )}
             <TouchableOpacity
-              onPress={() => {
-                Haptics.selectionAsync();
-                safeRouter.push("/(tabs)/search");
-              }}
-              style={[styles.searchBtn, { backgroundColor: colors.backgroundSecondary }]}
+              onPress={() => { Haptics.selectionAsync(); }}
+              style={[styles.searchBtn, { backgroundColor: "transparent" }]}
               activeOpacity={0.7}
               hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
               accessibilityRole="button"
-              accessibilityLabel="Search"
+              accessibilityLabel="Notifications"
             >
-              <Ionicons name="search" size={18} color={colors.icon} />
+              <Ionicons name="notifications-outline" size={24} color={colors.icon} />
             </TouchableOpacity>
           </View>
         </View>
@@ -2220,7 +2315,7 @@ export default function DiscoverScreen() {
                       <PostCard item={entry.item} onToggleLike={toggleLike} onToggleBookmark={toggleBookmark} onToggleFollow={toggleFollow} onImagePress={imgViewer.openViewer} onRequireAuth={onRequireAuth} onOpenComments={onOpenComments} onDismiss={onDismissPost} onMuteAuthor={onMuteAuthor} />
                     );
                   }}
-                  ListHeaderComponent={user ? <SuggestedUsers compact maxCards={8} /> : null}
+                  ListHeaderComponent={<StoriesRow userId={user?.id ?? null} avatarUrl={profile?.avatar_url ?? null} />}
                   contentContainerStyle={{ gap: 8, paddingTop: headerHeight + 8, paddingBottom: insets.bottom + 100 }}
                   showsVerticalScrollIndicator={false}
                   onScroll={onFeedScroll}
@@ -2364,7 +2459,7 @@ export default function DiscoverScreen() {
                 <PostCard item={entry.item} onToggleLike={toggleLike} onToggleBookmark={toggleBookmark} onToggleFollow={toggleFollow} onImagePress={imgViewer.openViewer} onRequireAuth={onRequireAuth} onOpenComments={onOpenComments} onDismiss={onDismissPost} onMuteAuthor={onMuteAuthor} />
               );
             }}
-            ListHeaderComponent={user && feedTab === "for_you" ? <SuggestedUsers compact maxCards={8} /> : null}
+            ListHeaderComponent={<StoriesRow userId={user?.id ?? null} avatarUrl={profile?.avatar_url ?? null} />}
             contentContainerStyle={{ gap: 8, paddingTop: headerHeight + 8, paddingBottom: insets.bottom + 100 }}
             showsVerticalScrollIndicator={false}
             onScroll={onFeedScroll}
@@ -2411,19 +2506,7 @@ export default function DiscoverScreen() {
         </View>
       )}
 
-      {user && (
-        <TouchableOpacity
-          ref={fabRef}
-          style={[styles.fab, { backgroundColor: colors.accent, bottom: insets.bottom + 90 }]}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setShowCreatePicker(true);
-          }}
-          activeOpacity={0.85}
-        >
-          <Ionicons name="add" size={28} color="#fff" />
-        </TouchableOpacity>
-      )}
+      {/* FAB removed — create button now lives in the bottom tab bar */}
 
       {/* Create type picker */}
       <Modal
@@ -2766,17 +2849,21 @@ const styles = StyleSheet.create({
   articleCard: {
     marginLeft: 66,
     marginRight: 16,
-    marginVertical: 4,
+    marginVertical: 6,
     borderRadius: 14,
     overflow: "hidden",
+    flexDirection: "row",
+    alignItems: "stretch",
   },
   articleCover: {
-    width: "100%",
-    height: 140,
+    width: 110,
+    height: 95,
   },
   articleCardBody: {
-    padding: 14,
-    gap: 8,
+    flex: 1,
+    padding: 10,
+    gap: 4,
+    justifyContent: "center",
   },
   articleBadgeRow: {
     flexDirection: "row",
@@ -2789,9 +2876,15 @@ const styles = StyleSheet.create({
   },
   articleBadgeText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
   articleExcerpt: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: "Inter_400Regular",
-    lineHeight: 19,
+    lineHeight: 17,
+  },
+  articleReadLink: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    color: "#FF9500",
+    marginTop: 4,
   },
   articleReadBtn: {
     flexDirection: "row",
@@ -2868,9 +2961,9 @@ const styles = StyleSheet.create({
   },
   postTypeBadgeText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
   articleTitle: {
-    fontSize: 17,
+    fontSize: 14,
     fontFamily: "Inter_700Bold",
-    lineHeight: 23,
+    lineHeight: 20,
   },
   readArticleBtn: {
     flexDirection: "row",
