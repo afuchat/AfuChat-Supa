@@ -115,14 +115,14 @@ export function PremiumRing({ size, children, square, ringType = 'premium' }: Pr
           stroke={primaryColor} strokeWidth={ring} fill="none"
           strokeDasharray={`${halfCirc - arcGap} ${halfCirc + arcGap}`}
           strokeDashoffset={0} strokeLinecap="round"
-          rotation={-90} origin={`${center}, ${center}`}
+          transform={`rotate(-90, ${center}, ${center})`}
         />
         <Circle
           cx={center} cy={center} r={radius}
           stroke={secondaryColor} strokeWidth={ring} fill="none"
           strokeDasharray={`${halfCirc - arcGap} ${halfCirc + arcGap}`}
           strokeDashoffset={-(halfCirc)} strokeLinecap="round"
-          rotation={-90} origin={`${center}, ${center}`}
+          transform={`rotate(-90, ${center}, ${center})`}
         />
       </SvgRoot>
     );
