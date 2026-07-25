@@ -138,12 +138,23 @@ const _ogCache: Record<string, string | null> = {};
 async function fetchOgImage(url: string): Promise<string | null> {
   if (url in _ogCache) return _ogCache[url];
   try {
-    const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; AfuChatBot/1.0)" },
+    });
     const html = await res.text();
     const m =
       html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
-      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-    const img = m ? m[1] : null;
+      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i) ||
+      html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i) ||
+      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i);
+    let img = m ? m[1] : null;
+    // Resolve relative URLs against the page origin
+    if (img && !img.startsWith("http")) {
+      try {
+        const base = new URL(res.url);
+        img = new URL(img, base.origin).href;
+      } catch {}
+    }
     _ogCache[url] = img;
     return img;
   } catch {
@@ -178,9 +189,9 @@ function LinkPreviewCard({ url, colors }: { url: string; colors: any }) {
       }}
     >
       {/* OG image or fallback globe */}
-      <View style={{ width: 90, minHeight: 80, backgroundColor: colors.backgroundTertiary, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+      <View style={{ width: 90, minHeight: 90, backgroundColor: colors.backgroundTertiary, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
         {ogImage ? (
-          <ExpoImage source={{ uri: ogImage }} style={{ width: 90, height: "100%" }} contentFit="cover" />
+          <ExpoImage source={{ uri: ogImage }} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} contentFit="cover" />
         ) : (
           <Ionicons name="globe-outline" size={28} color={colors.textMuted} />
         )}
@@ -727,7 +738,10 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                 const shown = isTruncated ? full.slice(0, LIMIT).trimEnd() : full;
                 return (
                   <View>
-                    <RichText style={[styles.cardContent, { color: colors.text, fontSize: 15, lineHeight: 23 }]}>
+                    <RichText
+                      style={[styles.cardContent, { color: colors.text, fontSize: 15, lineHeight: 23 }]}
+                      linkColor={colors.text}
+                    >
                       {shown}{isTruncated ? "…" : ""}
                     </RichText>
                     {isTruncated && (
