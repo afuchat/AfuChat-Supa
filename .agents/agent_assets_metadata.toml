@@ -40,25 +40,25 @@ title = "Slide 4 — Wallet"
 id = "LGCzeUw7tOWPhkQZo0Oo8"
 uri = "file://artifacts/mobile/assets/illustrations/messaging.png"
 type = "image"
-title = "Messaging — Chat like never before"
+title = "Messaging — AfuChat chat UI"
 
 [[outputs]]
 id = "UCIZjbu0BDNQweTVv7mPH"
 uri = "file://artifacts/mobile/assets/illustrations/community.png"
 type = "image"
-title = "Community — Find your tribe"
+title = "Community — AfuChat feed UI"
 
 [[outputs]]
 id = "-TJN45oJT7o8LNLZJSTO0"
 uri = "file://artifacts/mobile/assets/illustrations/ai.png"
 type = "image"
-title = "AI Features — AI that works for you"
+title = "AI — AfuAI assistant UI"
 
 [[outputs]]
 id = "Irktt1zRobFhLjm031hCq"
 uri = "file://artifacts/mobile/assets/illustrations/wallet.png"
 type = "image"
-title = "Wallet — Earn as you connect"
+title = "Wallet — AfuPay UI"
 
 [[outputs]]
 id = "u1Mg8g7hzNc7jxBS1ejNx"
