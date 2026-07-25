@@ -274,7 +274,7 @@ export default function CreateStoryScreen() {
 
               {/* Tint colour overlay */}
               {tintColor && (
-                <View style={[StyleSheet.absoluteFill, { backgroundColor: tintColor, borderRadius: previewRadius, pointerEvents: "none" } as any]} />
+                <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: tintColor, borderRadius: previewRadius }]} />
               )}
 
               <View style={styles.sideToolbar}>

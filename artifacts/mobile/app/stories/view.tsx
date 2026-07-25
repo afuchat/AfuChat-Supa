@@ -61,6 +61,7 @@ export default function ViewStoryScreen() {
   const { height: screenH } = useWindowDimensions();
 
   const [stories, setStories] = useState<Story[]>([]);
+  const [storiesLoaded, setStoriesLoaded] = useState(false);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const storyVideoPlayer = useVideoPlayer(null, (p) => { p.loop = false; p.muted = false; });
@@ -105,6 +106,7 @@ export default function ViewStoryScreen() {
   // ── Load stories ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!userId) return;
+    setStoriesLoaded(false);
     supabase
       .from("stories")
       .select("id, media_url, media_type, caption, privacy, created_at, view_count, user_id, profiles!stories_user_id_fkey(display_name, avatar_url, handle, is_verified, is_organization_verified)")
@@ -130,6 +132,8 @@ export default function ViewStoryScreen() {
           const storyIds = mapped.map((s: any) => s.id);
           if (storyIds.length > 0) loadLikeState(storyIds);
         }
+        // Mark fetch complete regardless of result so the empty-state guard fires
+        setStoriesLoaded(true);
       });
   }, [userId]);
 
@@ -432,6 +436,16 @@ export default function ViewStoryScreen() {
     });
   }, [slideAnim]);
 
+  // Auto-navigate back when stories list finishes loading but is empty
+  // Navigate back deterministically once the fetch resolves with no visible stories
+  useEffect(() => {
+    if (!storiesLoaded) return;
+    if (stories.length === 0) {
+      if (router.canGoBack()) router.back();
+      else router.replace("/(tabs)/discover" as any);
+    }
+  }, [storiesLoaded, stories.length]);
+
   if (!story) return <View style={[styles.root, { backgroundColor: "#0D0D0D" }]} />;
 
   const elapsed = Math.floor((Date.now() - new Date(story.created_at).getTime()) / 3600000);
@@ -571,7 +585,7 @@ export default function ViewStoryScreen() {
             </TouchableOpacity>
           ) : (
             /* Non-owner: viewer count display (read-only) */
-            <View style={[styles.viewerPill, { pointerEvents: "none" } as any]}>
+            <View pointerEvents="none" style={styles.viewerPill}>
               <Ionicons name="eye" size={15} color="rgba(255,255,255,0.65)" />
               <Text style={styles.viewerPillCount}>{story.view_count || 0}</Text>
             </View>

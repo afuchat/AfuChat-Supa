@@ -2593,10 +2593,10 @@ export default function DiscoverScreen() {
                   onEndReachedThreshold={0.5}
                   onViewableItemsChanged={onViewableItemsChanged}
                   viewabilityConfig={viewabilityConfig}
-                  initialNumToRender={8}
-                  maxToRenderPerBatch={5}
-                  windowSize={7}
-                  updateCellsBatchingPeriod={50}
+                  initialNumToRender={12}
+                  maxToRenderPerBatch={10}
+                  windowSize={21}
+                  updateCellsBatchingPeriod={30}
                   removeClippedSubviews={false}
 
                   refreshControl={
@@ -2666,10 +2666,10 @@ export default function DiscoverScreen() {
                   onEndReachedThreshold={0.5}
                   onViewableItemsChanged={onViewableItemsChanged}
                   viewabilityConfig={viewabilityConfig}
-                  initialNumToRender={8}
-                  maxToRenderPerBatch={5}
-                  windowSize={7}
-                  updateCellsBatchingPeriod={50}
+                  initialNumToRender={12}
+                  maxToRenderPerBatch={10}
+                  windowSize={21}
+                  updateCellsBatchingPeriod={30}
                   removeClippedSubviews={false}
 
                   refreshControl={
@@ -2739,10 +2739,10 @@ export default function DiscoverScreen() {
             onEndReachedThreshold={0.5}
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={viewabilityConfig}
-            initialNumToRender={8}
-            maxToRenderPerBatch={5}
-            windowSize={7}
-            updateCellsBatchingPeriod={50}
+            initialNumToRender={12}
+            maxToRenderPerBatch={10}
+            windowSize={21}
+            updateCellsBatchingPeriod={30}
             removeClippedSubviews={false}
 
             refreshControl={
