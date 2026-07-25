@@ -6,6 +6,7 @@ import {
   Image as RNImage,
   InteractionManager,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -103,6 +104,64 @@ function formatNum(n: number): string {
   if (n >= 10_000) return Math.round(n / 1_000) + "K";
   if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
   return String(n);
+}
+
+/** Compact relative time: "just now" → "now", "3 mins ago" → "3m", "2h", "5d", "3w", "4mo", "1y" */
+function compactTime(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  if (isNaN(diff) || diff < 0) return "";
+  const m = Math.floor(diff / 60_000);
+  if (m < 1)  return "now";
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  const d = Math.floor(h / 24);
+  if (d < 7)  return `${d}d`;
+  const w = Math.floor(d / 7);
+  if (w < 4)  return `${w}w`;
+  const mo = Math.floor(d / 30);
+  if (mo < 12) return `${mo}mo`;
+  return `${Math.floor(d / 365)}y`;
+}
+
+const URL_RE = /https?:\/\/[^\s<)"'\]]+/g;
+function extractFirstUrl(text: string): string | null {
+  const m = text.match(URL_RE);
+  return m?.[0] ?? null;
+}
+
+function LinkPreviewCard({ url, colors }: { url: string; colors: any }) {
+  let domain = url;
+  try { domain = new URL(url).hostname.replace(/^www\./, ""); } catch {}
+  return (
+    <TouchableOpacity
+      onPress={() => {
+        try { Linking.openURL(url); } catch {}
+      }}
+      activeOpacity={0.85}
+      style={{
+        marginLeft: 66,
+        marginRight: 16,
+        marginVertical: 6,
+        borderRadius: 14,
+        overflow: "hidden",
+        flexDirection: "row",
+        alignItems: "stretch",
+        backgroundColor: colors.card,
+      }}
+    >
+      {/* Icon / favicon placeholder */}
+      <View style={{ width: 90, backgroundColor: colors.backgroundTertiary, alignItems: "center", justifyContent: "center" }}>
+        <Ionicons name="globe-outline" size={28} color={colors.textMuted} />
+      </View>
+      <View style={{ flex: 1, padding: 10, gap: 4, justifyContent: "center" }}>
+        <Text style={{ fontSize: 13, fontFamily: "Inter_600SemiBold", color: colors.textMuted }} numberOfLines={1}>{domain}</Text>
+        <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: colors.textSecondary, lineHeight: 16 }} numberOfLines={2}>{url}</Text>
+        <Text style={{ fontSize: 12, fontFamily: "Inter_600SemiBold", color: "#FF9500", marginTop: 2 }}>Visit link ›</Text>
+      </View>
+    </TouchableOpacity>
+  );
 }
 
 function RecentCommenters(_props: { postId: string; replyCount: number; bgColor: string; accentColor: string }) {
@@ -532,7 +591,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                     </TouchableOpacity>
                   </View>
                   <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: colors.textMuted, marginTop: 1 }} numberOfLines={1}>
-                    @{item.profile.handle} · {formatRelative(item.created_at)}
+                    @{item.profile.handle} · {compactTime(item.created_at)}
                   </Text>
                 </>
               )}
@@ -660,6 +719,13 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
             />
           )}
 
+          {/* ── Link preview (for plain-text posts containing a URL, no image) ── */}
+          {item.post_type !== "article" && item.post_type !== "video" && allImages.length === 0 && (() => {
+            const url = extractFirstUrl(displayContent || "");
+            if (!url) return null;
+            return <LinkPreviewCard url={url} colors={colors} />;
+          })()}
+
           {/* ── Footer ── */}
           <View style={styles.cardFooter}>
             {/* Likes */}
@@ -693,21 +759,6 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
               <Ionicons name="chatbubble-outline" size={21} color={colors.textMuted} />
               <RecentCommenters postId={item.id} replyCount={item.replyCount} bgColor={colors.background} accentColor={colors.accent} />
               <Text style={[styles.footerStatNum, { color: colors.textMuted }]}>{formatNum(item.replyCount)}</Text>
-            </TouchableOpacity>
-
-            {/* Share */}
-            <TouchableOpacity
-              style={styles.footerStat}
-              onPress={() => {
-                if (!currentUser) { onRequireAuth?.(); return; }
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                item.post_type === "video"
-                  ? shareVideo({ postId: item.id, authorName: item.profile.display_name, caption: item.content })
-                  : sharePost({ postId: item.id, authorName: item.profile.display_name, content: item.content });
-              }}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="arrow-redo-outline" size={21} color={colors.textMuted} />
             </TouchableOpacity>
 
             <View style={{ flex: 1 }} />
