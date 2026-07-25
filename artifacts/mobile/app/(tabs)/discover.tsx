@@ -679,33 +679,6 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
             </View>
           </View>
 
-          {/* ── VIDEO: thumbnail preview card ── */}
-          {item.post_type === "video" && item.video_url && (
-            <TouchableOpacity
-              activeOpacity={0.88}
-              onPress={() => safeRouter.push({ pathname: "/post/[id]", params: { id: item.id } })}
-              style={styles.videoCard}
-            >
-              <View style={styles.videoThumb}>
-                <VideoThumbnail
-                  videoUrl={item.video_url!}
-                  fallbackImageUrl={item.image_url}
-                  style={StyleSheet.absoluteFill}
-                  lowData={false}
-                  durationSeconds={item.duration_seconds}
-                  watchedFraction={watchedFraction}
-                />
-                <View style={styles.playCircle}>
-                  <Ionicons name="play" size={22} color="#fff" />
-                </View>
-                <View style={styles.videoBadge}>
-                  <Ionicons name="videocam" size={11} color="#fff" />
-                  <Text style={styles.videoBadgeText}>Video</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          )}
-
           {/* ── ARTICLE: horizontal card ── */}
           {item.post_type === "article" ? (
             <TouchableOpacity
@@ -736,16 +709,24 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
             </TouchableOpacity>
           ) : (
             <>
-              {/* ── Content text ── */}
+              {/* ── Content text (hashtags stripped — displayed as pills below) ── */}
               {(displayContent || "").trim().length > 0 && (() => {
                 const LIMIT = 300;
                 // Strip the preview URL from the body so it doesn't appear twice
-                const bodyText = previewUrl
+                let bodyText = previewUrl
                   ? (displayContent || "").split(previewUrl).join("").replace(/\s{2,}/g, " ").trim()
                   : (displayContent || "");
-                const full = bodyText;
-                const isTruncated = !expanded && full.length > LIMIT;
-                const shown = isTruncated ? full.slice(0, LIMIT).trimEnd() : full;
+                // Remove hashtags from inline text — they are shown as pills below
+                bodyText = bodyText
+                  .replace(/#[A-Za-z0-9_]{2,30}/g, "")
+                  .split("\n")
+                  .map((l: string) => l.trimEnd())
+                  .join("\n")
+                  .replace(/\n{3,}/g, "\n\n")
+                  .trim();
+                if (!bodyText) return null;
+                const isTruncated = !expanded && bodyText.length > LIMIT;
+                const shown = isTruncated ? bodyText.slice(0, LIMIT).trimEnd() : bodyText;
                 return (
                   <View>
                     <RichText
@@ -787,25 +768,57 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                 contentContainerStyle={{ gap: 8, paddingRight: 16 }}
               >
                 {unique.map((tag) => (
-                  <View
+                  <TouchableOpacity
                     key={tag}
-                    style={{
-                      backgroundColor: "#5856D625",
-                      borderRadius: 20,
-                      paddingHorizontal: 12,
-                      paddingVertical: 5,
-                      flexDirection: "row",
-                      alignItems: "center",
-                    }}
+                    activeOpacity={0.7}
+                    onPress={() => safeRouter.push({ pathname: "/(tabs)/search", params: { tag: tag.slice(1) } } as any)}
                   >
-                    <Text style={{ color: "#7B79F7", fontSize: 13, fontFamily: "Inter_600SemiBold" }}>
-                      # {tag.slice(1)}
-                    </Text>
-                  </View>
+                    <View
+                      style={{
+                        backgroundColor: "#5856D625",
+                        borderRadius: 20,
+                        paddingHorizontal: 12,
+                        paddingVertical: 5,
+                        flexDirection: "row",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text style={{ color: "#7B79F7", fontSize: 13, fontFamily: "Inter_600SemiBold" }}>
+                        # {tag.slice(1)}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
                 ))}
               </ScrollView>
             );
           })()}
+
+          {/* ── VIDEO: thumbnail preview card (caption shown above, thumbnail below) ── */}
+          {item.post_type === "video" && item.video_url && (
+            <TouchableOpacity
+              activeOpacity={0.88}
+              onPress={() => safeRouter.push({ pathname: "/post/[id]", params: { id: item.id } })}
+              style={styles.videoCard}
+            >
+              <View style={styles.videoThumb}>
+                <VideoThumbnail
+                  videoUrl={item.video_url!}
+                  fallbackImageUrl={item.image_url}
+                  style={StyleSheet.absoluteFill}
+                  lowData={false}
+                  durationSeconds={item.duration_seconds}
+                  watchedFraction={watchedFraction}
+                />
+                <View style={styles.playCircle}>
+                  <Ionicons name="play" size={22} color="#fff" />
+                </View>
+                <View style={styles.videoBadge}>
+                  <Ionicons name="videocam" size={11} color="#fff" />
+                  <Text style={styles.videoBadgeText}>Video</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          )}
 
           {/* ── Images ── */}
           {allImages.length > 0 && item.post_type !== "video" && item.post_type !== "article" && (
