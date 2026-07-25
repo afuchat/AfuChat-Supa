@@ -167,7 +167,7 @@ function StoriesRow({ userId, avatarUrl }: { userId: string | null; avatarUrl: s
           activeOpacity={0.8}
           onPress={() => safeRouter.push({ pathname: "/contact/[id]", params: { id: u.id } } as any)}
         >
-          <View style={{ width: SZ, height: SZ, borderRadius: SZ / 2, padding: 2, borderWidth: 2.5, borderColor: colors.accent }}>
+          <View style={{ width: SZ, height: SZ, borderRadius: SZ / 2, padding: 2, borderWidth: 2.5, borderColor: colors.accent, borderStyle: "dashed" }}>
             <View style={{ flex: 1, borderRadius: (SZ - 9) / 2, overflow: "hidden", backgroundColor: colors.backgroundSecondary, alignItems: "center", justifyContent: "center" }}>
               {u.avatar_url ? (
                 <ExpoImage source={{ uri: u.avatar_url }} style={{ width: "100%", height: "100%" }} contentFit="cover" cachePolicy="memory-disk" />
@@ -532,13 +532,8 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                     </TouchableOpacity>
                   </View>
                   <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: colors.textMuted, marginTop: 1 }} numberOfLines={1}>
-                    @{item.profile.handle}
+                    @{item.profile.handle} · {formatRelative(item.created_at)}
                   </Text>
-                  {item.profile.bio ? (
-                    <Text style={[styles.cardBio, { color: colors.textMuted }]} numberOfLines={1}>
-                      {item.profile.bio}
-                    </Text>
-                  ) : null}
                 </>
               )}
             </View>
@@ -619,6 +614,39 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
             </View>
           )}
 
+          {/* ── Hashtag pills ── */}
+          {(() => {
+            const tags = (displayContent || "").match(/#[A-Za-z0-9_]{2,30}/g);
+            if (!tags || tags.length === 0) return null;
+            const unique = [...new Set(tags)].slice(0, 5);
+            return (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ paddingLeft: 66, marginBottom: 8 }}
+                contentContainerStyle={{ gap: 8, paddingRight: 16 }}
+              >
+                {unique.map((tag) => (
+                  <View
+                    key={tag}
+                    style={{
+                      backgroundColor: "#5856D625",
+                      borderRadius: 20,
+                      paddingHorizontal: 12,
+                      paddingVertical: 5,
+                      flexDirection: "row",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text style={{ color: "#7B79F7", fontSize: 13, fontFamily: "Inter_600SemiBold" }}>
+                      # {tag.slice(1)}
+                    </Text>
+                  </View>
+                ))}
+              </ScrollView>
+            );
+          })()}
+
           {/* ── Images ── */}
           {allImages.length > 0 && item.post_type !== "video" && item.post_type !== "article" && (
             <PostImages
@@ -631,11 +659,6 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
               effectiveW={effectiveW}
             />
           )}
-
-          {/* ── Date — sits between content and reaction buttons ── */}
-          <Text style={[styles.cardMeta, { color: colors.textMuted, fontSize: 12, paddingLeft: 58, paddingRight: 12, marginTop: 2, marginBottom: 0 }]}>
-            {formatPostDate(item.created_at)}
-          </Text>
 
           {/* ── Footer ── */}
           <View style={styles.cardFooter}>
@@ -774,7 +797,7 @@ type FeedEntry =
 export default function DiscoverScreen() {
   "use no memo";
   const { horizontalScrollActive } = React.useContext(TabSwipeContext);
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, setForceDark } = useTheme();
   const { user, profile } = useAuth();
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
@@ -2135,6 +2158,14 @@ export default function DiscoverScreen() {
   }, [user]);
 
   const onRequireAuth = useCallback(() => setShowSignInPrompt(true), []);
+
+  // Force dark theme while Discover is focused (matches the dark UI design)
+  useFocusEffect(
+    useCallback(() => {
+      setForceDark(true);
+      return () => setForceDark(false);
+    }, [setForceDark])
+  );
 
   // Re-sync isFollowing for every post whenever Discover comes back into focus
   // (handles the "follow from profile page → back to feed" stale-state case).
