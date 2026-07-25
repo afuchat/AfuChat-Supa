@@ -38,24 +38,49 @@ export type DeepLinkAction =
  * misidentified as user handles.
  */
 const NAV_ROUTES: Record<string, string> = {
-  settings:        "/settings",
-  wallet:          "/wallet",
-  profile:         "/(tabs)/me",
-  me:              "/(tabs)/me",
-  discover:        "/(tabs)/discover",
-  chats:           "/(tabs)/chats",
-  chat:            "/(tabs)/chats",
-  ai:              "/ai",
-  premium:         "/premium",
-  referral:        "/referral",
-  prestige:        "/prestige",
-  store:           "/store",
-  search:          "/(tabs)/search",
-  communities:     "/(tabs)/communities",
-  contacts:        "/(tabs)/contacts",
-  apps:            "/(tabs)/apps",
-  support:         "/support",
-  about:           "/about",
+  // ── Tab screens ────────────────────────────────────────────────────────────
+  discover:           "/(tabs)/discover",
+  chats:              "/(tabs)/chats",
+  chat:               "/(tabs)/chats",
+  search:             "/(tabs)/search",
+  communities:        "/(tabs)/communities",
+  contacts:           "/(tabs)/contacts",
+  apps:               "/(tabs)/apps",
+  shorts:             "/(tabs)/shorts",
+  // ── Profile ────────────────────────────────────────────────────────────────
+  profile:            "/(tabs)/me",
+  me:                 "/(tabs)/me",
+  followers:          "/followers",
+  // ── Core screens ──────────────────────────────────────────────────────────
+  settings:           "/settings",
+  wallet:             "/wallet",
+  ai:                 "/ai",
+  premium:            "/premium",
+  prestige:           "/prestige",
+  referral:           "/referral",
+  store:              "/store",
+  support:            "/support",
+  about:              "/about",
+  terms:              "/terms",
+  help:               "/help",
+  privacy:            "/privacy",
+  lab:                "/lab",
+  // ── Content creation ──────────────────────────────────────────────────────
+  moments:            "/moments",
+  "create-post":      "/create-post",
+  stories:            "/stories/view",
+  // ── Social ────────────────────────────────────────────────────────────────
+  achievements:       "/achievements",
+  collections:        "/collections",
+  "saved-posts":      "/saved-posts",
+  "my-posts":         "/my-posts",
+  "watch-history":    "/watch-history",
+  // ── Commerce & mini-apps ──────────────────────────────────────────────────
+  shop:               "/shop",
+  games:              "/games",
+  freelance:          "/freelance",
+  gifts:              "/gifts",
+  business:           "/business",
 };
 
 /**
@@ -70,7 +95,7 @@ const SYSTEM_ROUTES = new Set([
   "shop", "freelance", "company", "mini-programs", "prestige",
   "username-market", "match", "gifts", "events", "market", "jobs",
   "support", "qr-scanner", "digital-id", "language-settings",
-  "monetize", "me", "call", "call-history", "red-envelope", "p",
+  "me", "call", "red-envelope", "p",
   "saved-posts", "my-posts", "profile", "followers", "user-discovery",
   "linked-accounts", "device-security", "status", "contact", "group",
   "channel", "digital-events", "ref", "app", "download", "privacy",
@@ -79,8 +104,9 @@ const SYSTEM_ROUTES = new Set([
   "lab", "achievements", "watch-history",
   "business", "collections", "games", "welcome",
   "store", "paid-communities", "phone-contacts", "file-manager",
-  "create-post", "video-analytics", "username-market", "user-discovery",
+  "create-post", "username-market", "user-discovery",
   "chat-search", "profile-not-found", "profile-private",
+  "id", "report", "register", "reset-password", "chat-info",
 ]);
 
 /** Validate that a string looks like a real user handle */
