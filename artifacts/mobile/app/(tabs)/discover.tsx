@@ -709,44 +709,20 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
             </TouchableOpacity>
           ) : (
             <>
-              {/* ── Content text (hashtags stripped — displayed as pills below) ── */}
+              {/* ── Content text — same architecture as post details page ── */}
               {(displayContent || "").trim().length > 0 && (() => {
                 const LIMIT = 300;
-                // Strip the preview URL from the body so it doesn't appear twice
-                let bodyText = previewUrl
+                const full = previewUrl
                   ? (displayContent || "").split(previewUrl).join("").replace(/\s{2,}/g, " ").trim()
                   : (displayContent || "");
-                // Step 1 — Remove "concatenated tag-block" lines that some clients
-                // append at the end of posts (e.g. "@mention#tag#tag@mention#tag").
-                // A line is a tag-block when ALL of its content is #tags / @mentions
-                // AND at least one pair of tags is glued together with no space.
-                bodyText = bodyText
-                  .split("\n")
-                  .filter((line) => {
-                    const t = line.trim();
-                    if (!t) return true; // keep blank lines (paragraph breaks)
-                    const isConcatenated = /#[A-Za-z0-9_]{2,30}[@#]|@[A-Za-z0-9_]{1,30}[@#]/.test(t);
-                    const onlyTagContent = t.replace(/#[A-Za-z0-9_]{2,30}/g, "").replace(/@[A-Za-z0-9_]{1,30}/g, "").trim() === "";
-                    return !(isConcatenated && onlyTagContent);
-                  })
-                  .join("\n");
-                // Step 2 — Strip remaining individual hashtags (shown as pills below).
-                // Replace with a space so adjacent words/mentions don't concatenate.
-                bodyText = bodyText
-                  .replace(/#[A-Za-z0-9_]{2,30}/g, " ")
-                  .split("\n")
-                  .map((l: string) => l.replace(/[ \t]{2,}/g, " ").trim())
-                  .join("\n")
-                  .replace(/\n{3,}/g, "\n\n")
-                  .trim();
-                if (!bodyText) return null;
-                const isTruncated = !expanded && bodyText.length > LIMIT;
-                const shown = isTruncated ? bodyText.slice(0, LIMIT).trimEnd() : bodyText;
+                const isTruncated = !expanded && full.length > LIMIT;
+                const shown = isTruncated ? full.slice(0, LIMIT).trimEnd() : full;
+                if (!shown) return null;
                 return (
                   <View>
                     <RichText
                       style={[styles.cardContent, { color: colors.text, fontSize: 15, lineHeight: 23 }]}
-                      linkColor={colors.text}
+                      linkColor={colors.accent}
                       plainMentions
                     >
                       {shown}{isTruncated ? "…" : ""}
@@ -770,44 +746,6 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
               </Text>
             </View>
           )}
-
-          {/* ── Hashtag pills ── */}
-          {(() => {
-            const tags = (displayContent || "").match(/#[A-Za-z0-9_]{2,30}/g);
-            if (!tags || tags.length === 0) return null;
-            const unique = [...new Set(tags)].slice(0, 5);
-            return (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={{ paddingLeft: 66, marginBottom: 8 }}
-                contentContainerStyle={{ gap: 8, paddingRight: 16 }}
-              >
-                {unique.map((tag) => (
-                  <TouchableOpacity
-                    key={tag}
-                    activeOpacity={0.7}
-                    onPress={() => safeRouter.push({ pathname: "/(tabs)/search", params: { tag: tag.slice(1) } } as any)}
-                  >
-                    <View
-                      style={{
-                        backgroundColor: "#5856D625",
-                        borderRadius: 20,
-                        paddingHorizontal: 12,
-                        paddingVertical: 5,
-                        flexDirection: "row",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Text style={{ color: "#7B79F7", fontSize: 13, fontFamily: "Inter_600SemiBold" }}>
-                        # {tag.slice(1)}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            );
-          })()}
 
           {/* ── VIDEO: thumbnail preview card (caption shown above, thumbnail below) ── */}
           {item.post_type === "video" && item.video_url && (
