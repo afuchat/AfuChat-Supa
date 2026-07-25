@@ -65,6 +65,7 @@ import { VideoCommentsSheet } from "@/components/ui/VideoCommentsSheet";
 import { UserRecsCard } from "@/components/discover/UserRecsCard";
 import { DismissSheet, type DismissReason } from "@/components/discover/DismissSheet";
 import { SuggestedUsers } from "@/components/ui/SuggestedUsers";
+import { StoryRing } from "@/components/ui/StoryRing";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 
 type PostItem = {
@@ -168,27 +169,48 @@ function RecentCommenters(_props: { postId: string; replyCount: number; bgColor:
   return null;
 }
 
-// ── Stories row ──────────────────────────────────────────────────────────────
+// ── Stories row — real stories from the `stories` table ──────────────────────
+type StoryEntry = {
+  userId: string;
+  name: string;
+  avatar_url: string | null;
+  storyCount: number;
+  seenCount: number;
+};
+
 function StoriesRow({ userId, avatarUrl }: { userId: string | null; avatarUrl: string | null }) {
   const { colors } = useTheme();
-  const [followed, setFollowed] = useState<Array<{ id: string; name: string; avatar_url: string | null }>>([]);
+  const [stories, setStories] = useState<StoryEntry[]>([]);
   const SZ = 58;
 
   useEffect(() => {
-    if (!userId) return;
+    const now = new Date().toISOString();
     supabase
-      .from("follows")
-      .select("following_id, profiles!follows_following_id_fkey(id, display_name, handle, avatar_url)")
-      .eq("follower_id", userId)
-      .limit(10)
+      .from("stories")
+      .select("id, user_id, profiles!stories_user_id_fkey(display_name, avatar_url)")
+      .gt("expires_at", now)
+      .eq("privacy", "everyone")
+      .order("created_at", { ascending: false })
+      .limit(30)
       .then(({ data }) => {
         if (!data) return;
-        setFollowed(data.map((f: any) => ({
-          id: f.following_id,
-          name: (f.profiles?.display_name || f.profiles?.handle || "User") as string,
-          avatar_url: f.profiles?.avatar_url ?? null,
-        })));
-      });
+        const map = new Map<string, StoryEntry>();
+        for (const s of data as any[]) {
+          if (!s.user_id || s.user_id === userId) continue; // skip own stories here
+          if (!map.has(s.user_id)) {
+            map.set(s.user_id, {
+              userId: s.user_id,
+              name: s.profiles?.display_name || "User",
+              avatar_url: s.profiles?.avatar_url ?? null,
+              storyCount: 0,
+              seenCount: 0,
+            });
+          }
+          map.get(s.user_id)!.storyCount++;
+        }
+        setStories(Array.from(map.values()).slice(0, 12));
+      })
+      .catch(() => {});
   }, [userId]);
 
   return (
@@ -204,38 +226,47 @@ function StoriesRow({ userId, avatarUrl }: { userId: string | null; avatarUrl: s
         activeOpacity={0.8}
       >
         <View style={{ position: "relative" }}>
-          <View style={{ width: SZ, height: SZ, borderRadius: SZ / 2, backgroundColor: colors.backgroundSecondary, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
+          <View style={{
+            width: SZ, height: SZ, borderRadius: SZ / 2,
+            backgroundColor: colors.backgroundSecondary,
+            overflow: "hidden", alignItems: "center", justifyContent: "center",
+          }}>
             {avatarUrl ? (
               <ExpoImage source={{ uri: avatarUrl }} style={{ width: SZ, height: SZ }} contentFit="cover" cachePolicy="memory-disk" />
             ) : (
               <Ionicons name="person" size={24} color={colors.textMuted} />
             )}
           </View>
-          <View style={{ position: "absolute", bottom: 1, right: 1, width: 20, height: 20, borderRadius: 10, backgroundColor: colors.accent, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#0F0F0F" }}>
+          <View style={{
+            position: "absolute", bottom: 1, right: 1,
+            width: 20, height: 20, borderRadius: 10,
+            backgroundColor: colors.accent, alignItems: "center", justifyContent: "center",
+            borderWidth: 2, borderColor: "#0F0F0F",
+          }}>
             <Text style={{ color: "#fff", fontSize: 14, fontFamily: "Inter_700Bold", lineHeight: 17, marginTop: Platform.OS === "android" ? -1 : 0 }}>+</Text>
           </View>
         </View>
         <Text style={{ color: colors.text, fontSize: 11, fontFamily: "Inter_400Regular" }} numberOfLines={1}>Your story</Text>
       </TouchableOpacity>
 
-      {/* Followed users with blue story ring */}
-      {followed.map((u) => (
+      {/* Real stories from other users */}
+      {stories.map((s) => (
         <TouchableOpacity
-          key={u.id}
+          key={s.userId}
           style={{ alignItems: "center", gap: 5, width: 68 }}
           activeOpacity={0.8}
-          onPress={() => safeRouter.push({ pathname: "/contact/[id]", params: { id: u.id } } as any)}
+          onPress={() => safeRouter.push("/moments" as any)}
         >
-          <View style={{ width: SZ, height: SZ, borderRadius: SZ / 2, padding: 2, borderWidth: 2.5, borderColor: colors.accent, borderStyle: "dashed" }}>
-            <View style={{ flex: 1, borderRadius: (SZ - 9) / 2, overflow: "hidden", backgroundColor: colors.backgroundSecondary, alignItems: "center", justifyContent: "center" }}>
-              {u.avatar_url ? (
-                <ExpoImage source={{ uri: u.avatar_url }} style={{ width: "100%", height: "100%" }} contentFit="cover" cachePolicy="memory-disk" />
+          <StoryRing size={SZ} storyCount={s.storyCount} seenCount={s.seenCount}>
+            <View style={{ width: SZ, height: SZ, borderRadius: SZ / 2, overflow: "hidden", backgroundColor: colors.backgroundSecondary, alignItems: "center", justifyContent: "center" }}>
+              {s.avatar_url ? (
+                <ExpoImage source={{ uri: s.avatar_url }} style={{ width: SZ, height: SZ }} contentFit="cover" cachePolicy="memory-disk" />
               ) : (
-                <Text style={{ color: colors.accent, fontSize: 20, fontFamily: "Inter_700Bold" }}>{(u.name[0] ?? "?").toUpperCase()}</Text>
+                <Text style={{ color: colors.accent, fontSize: 20, fontFamily: "Inter_700Bold" }}>{(s.name[0] ?? "?").toUpperCase()}</Text>
               )}
             </View>
-          </View>
-          <Text style={{ color: colors.textMuted, fontSize: 11, fontFamily: "Inter_400Regular" }} numberOfLines={1}>{u.name.split(" ")[0]}</Text>
+          </StoryRing>
+          <Text style={{ color: colors.textMuted, fontSize: 11, fontFamily: "Inter_400Regular" }} numberOfLines={1}>{s.name.split(" ")[0]}</Text>
         </TouchableOpacity>
       ))}
     </ScrollView>
@@ -511,23 +542,18 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
               </TouchableOpacity>
             ) : (
               <View style={{ position: "relative" }}>
-                {item.is_verified && (
-                  <View style={{ position: "absolute", top: -9, left: -5, zIndex: 10 }} pointerEvents="none">
-                    <Text style={{ fontSize: 13 }}>👑</Text>
-                  </View>
-                )}
                 <TouchableOpacity
                   onPress={() => safeRouter.push({ pathname: "/contact/[id]", params: { id: item.author_id, init_name: item.profile.display_name, init_handle: item.profile.handle, init_avatar: item.profile.avatar_url ?? "", init_verified: item.is_verified ? "1" : "0", init_org_verified: item.is_organization_verified ? "1" : "0" } } as any)}
                   activeOpacity={0.8}
                 >
-                  {item.is_verified ? (
-                    <View style={{ borderWidth: 2.5, borderColor: "#D4A853", borderRadius: 22, padding: 1.5 }}>
-                      <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={37} square={false} userId={item.author_id} />
-                    </View>
-                  ) : (
-                    <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={40} square={!!(item.is_organization_verified)} userId={item.author_id} />
-                  )}
+                  <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={40} square={!!(item.is_organization_verified)} userId={item.author_id} />
                 </TouchableOpacity>
+                {/* Crown rendered after avatar so it sits on top */}
+                {item.is_verified && (
+                  <View style={{ position: "absolute", top: -10, left: -2, zIndex: 20 }} pointerEvents="none">
+                    <Text style={{ fontSize: 14 }}>👑</Text>
+                  </View>
+                )}
               </View>
             )}
             <View style={{ flex: 1, gap: 0, paddingTop: 10 }}>
@@ -2283,10 +2309,9 @@ export default function DiscoverScreen() {
             )}
           </TouchableOpacity>
 
-          {/* Brand wordmark — centred */}
+          {/* Brand wordmark — centred, all white on dark */}
           <View style={styles.wordmarkRow}>
-            <Text style={[styles.wordmarkText, { color: colors.text }]}>Afu</Text>
-            <Text style={[styles.wordmarkText, { color: colors.accent }]}>Chat</Text>
+            <Text style={[styles.wordmarkText, { color: "#FFFFFF" }]}>AfuChat</Text>
           </View>
 
           {/* Right: bell icon */}
@@ -2685,7 +2710,7 @@ export default function DiscoverScreen() {
         style={[
           styles.newPostsFloatingWrap,
           {
-            top: headerHeight + 10,
+            top: insets.top + 8,
             transform: [{ translateY: popupSlide }],
             opacity: popupOpacity,
             pointerEvents: popupSnapshot.length > 0 ? "auto" : "none",
