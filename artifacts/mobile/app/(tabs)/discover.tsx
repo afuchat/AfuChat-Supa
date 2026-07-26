@@ -2436,14 +2436,14 @@ export default function DiscoverScreen() {
               </TouchableOpacity>
             )}
             <TouchableOpacity
-              onPress={() => { Haptics.selectionAsync(); }}
+              onPress={() => { Haptics.selectionAsync(); safeRouter.push("/(tabs)/search" as any); }}
               style={[styles.searchBtn, { backgroundColor: "transparent" }]}
               activeOpacity={0.7}
               hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
               accessibilityRole="button"
-              accessibilityLabel="Notifications"
+              accessibilityLabel="Search"
             >
-              <Ionicons name="notifications-outline" size={24} color={colors.icon} />
+              <Ionicons name="search-outline" size={24} color={colors.icon} />
             </TouchableOpacity>
           </View>
         </View>
