@@ -288,24 +288,26 @@ export async function uploadToStorage(
     let uploadUri = fileUri;
     let tempPath: string | null = null;
     try {
-      // Only copy if the source is in a volatile camera/temp location. We
-      // always copy on Android to be safe, since cacheDirectory is guaranteed.
+      // Copy to a stable cacheDirectory path so FileSystem.uploadAsync has a
+      // guaranteed-readable source (avoids volatile camera/temp dirs).
       if (FileSystem.cacheDirectory) {
         tempPath = `${FileSystem.cacheDirectory}upload_tmp_${Date.now()}.${ext}`;
         await FileSystem.copyAsync({ from: fileUri, to: tempPath });
         uploadUri = tempPath;
       }
     } catch (copyErr: any) {
-      // Copy failed (e.g., source file truly missing). Report a clear error
-      // rather than confusing the user with the raw Java IO exception.
-      console.warn(`[Upload] Could not access source file: ${copyErr?.message || copyErr}`);
+      // Non-fatal: In Expo Go on Android, ImagePicker URIs live inside the host
+      // app's private sandbox and FileSystem.copyAsync cannot cross that boundary
+      // (throws FileNotFoundException). When that happens, leave uploadUri as the
+      // original fileUri and let FileSystem.uploadAsync try to stream it directly
+      // via Android's native layer — it uses a different access path that can
+      // reach those files. If that also fails the error surfaces below.
+      console.warn(`[Upload] Pre-copy skipped (will try direct stream): ${copyErr?.message || copyErr}`);
       if (tempPath) {
         FileSystem.deleteAsync(tempPath, { idempotent: true }).catch(() => {});
+        tempPath = null;
       }
-      return {
-        publicUrl: null,
-        error: "Could not read the selected file. Please try again or choose a different photo/video.",
-      };
+      // uploadUri stays as the original fileUri
     }
 
     const cleanupTemp = () => {

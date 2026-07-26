@@ -129,6 +129,15 @@ export default function CreateStoryScreen() {
     // Copy to a stable cacheDirectory file NOW — before dismissing — so the
     // background upload always has a readable source.
     // We skip data: and blob: (already in-memory) and web (no FileSystem).
+    //
+    // IMPORTANT: In Expo Go on Android the ImagePicker writes temp files to the
+    // host app's private sandbox (/data/user/0/host.exp.exponent/…). That path
+    // is inaccessible to FileSystem.copyAsync (cross-app sandbox boundary), so
+    // the copy will throw FileNotFoundException. When that happens we do NOT
+    // abort — we warn and proceed with the original URI. uploadToStorage then
+    // attempts FileSystem.uploadAsync directly on the original path, which goes
+    // through Android's native layer and CAN cross that boundary, or falls back
+    // to the proxy upload path. Either way the upload has a chance to succeed.
     let _mediaUri = mediaUri;
     const isNativeFileUri =
       Platform.OS !== "web" &&
@@ -142,13 +151,11 @@ export default function CreateStoryScreen() {
         await FileSystem.copyAsync({ from: mediaUri, to: stablePath });
         _mediaUri = stablePath;
       } catch (copyErr: any) {
-        setStarting(false);
-        showAlert(
-          "Could not read file",
-          "The selected photo or video could not be accessed. Please try again.",
-        );
-        console.error("[Story Publish] Pre-copy failed:", copyErr?.message || copyErr);
-        return;
+        // Non-fatal: Expo Go on Android cannot copy from the host app's private
+        // ImagePicker cache via FileSystem. Log and continue with the original
+        // URI — uploadToStorage will stream it directly via native upload APIs.
+        console.warn("[Story Publish] Pre-copy skipped (Expo Go sandbox path), uploading from original URI:", copyErr?.message || copyErr);
+        // _mediaUri stays as the original mediaUri
       }
     }
 
