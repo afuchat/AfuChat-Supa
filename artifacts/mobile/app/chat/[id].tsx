@@ -2830,6 +2830,16 @@ function ChatScreen() {
       playNotificationSound();
     });
 
+    // Evict any stale channel with this name before creating a fresh one.
+    // Supabase caches channels by name; if a previous effect run left one
+    // subscribed (e.g. React Strict Mode double-invoke, dep change), calling
+    // .on() on the already-subscribed instance throws the
+    // "cannot add postgres_changes callbacks after subscribe()" error.
+    const _staleMsgCh = supabase.getChannels().find(
+      (ch) => ch.topic === `realtime:chat:${activeChatId}`
+    );
+    if (_staleMsgCh) supabase.removeChannel(_staleMsgCh);
+
     const msgSub = supabase
       .channel(`chat:${activeChatId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `chat_id=eq.${activeChatId}` },
