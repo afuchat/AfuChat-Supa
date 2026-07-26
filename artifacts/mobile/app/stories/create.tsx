@@ -177,77 +177,84 @@ export default function CreateStoryScreen() {
       }
     }
 
-    // Navigate immediately — screen closes right away
-    if (router.canDismiss()) {
-      router.dismissAll();
-    } else {
-      router.replace("/(tabs)/chats");
-    }
-
-    // Start background upload — drives the progress bar in the chat UI
+    // Keep this screen mounted until the native upload finishes. Expo Go on
+    // Android can return media from the host app's temporary cache; dismissing
+    // this screen first lets that URI disappear before the native uploader has
+    // finished reading it.
     startStoryUpload(_caption);
 
-    (async () => {
-      try {
-        updateStoryProgress(0.15);
+    try {
+      updateStoryProgress(0.15);
 
-        let ext: string;
-        let mime: string;
-        if (_mediaMimeType) {
-          mime = _mediaMimeType;
-          const mimeToExtMap: Record<string, string> = {
-            "image/jpeg": "jpg", "image/jpg": "jpg", "image/png": "png",
-            "image/gif": "gif", "image/webp": "webp", "image/heic": "jpg",
-            "image/heif": "jpg", "video/mp4": "mp4", "video/quicktime": "mov",
-            "video/webm": "webm", "video/x-mkvideo": "mkv",
-          };
-          ext = mimeToExtMap[_mediaMimeType] || _mediaUri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
-        } else if (_mediaUri.startsWith("data:")) {
-          const dataMime = _mediaUri.match(/data:([^;]+)/)?.[1] || "";
-          ext = dataMime.includes("png") ? "png" : dataMime.includes("webp") ? "webp" : "jpg";
-          mime = dataMime || "image/jpeg";
-        } else {
-          ext = _mediaUri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
-          mime = _mediaType === "video"
-            ? `video/${ext === "mov" ? "quicktime" : "mp4"}`
-            : `image/${ext === "jpg" ? "jpeg" : ext}`;
-        }
-
-        updateStoryProgress(0.3);
-        const fileName = `${_userId}/${Date.now()}.${ext}`;
-        const { publicUrl, error: uploadErr } = await uploadToStorage("stories", fileName, _mediaUri, mime);
-
-        if (uploadErr || !publicUrl) {
-          console.error("[Story Upload] Upload failed:", uploadErr);
-          failStoryUpload(uploadErr || "Upload failed");
-          return;
-        }
-
-        updateStoryProgress(0.75);
-        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-        const { error } = await supabase.from("stories").insert({
-          user_id: _userId,
-          media_url: publicUrl,
-          media_type: _mediaType,
-          caption: _caption || null,
-          expires_at: expiresAt,
-          privacy: _privacy,
-        });
-
-        if (error) {
-          console.error("[Story Upload] DB insert failed:", error.message);
-          failStoryUpload(error.message || "Failed to save story");
-        } else {
-          try { const { rewardXp } = await import("../../lib/rewardXp"); rewardXp("story_created"); } catch (_) {}
-          await recordDailyUsage("stories_create");
-          finishStoryUpload();
-        }
-      } catch (error: any) {
-        const message = error?.message || "Could not publish story. Please try again.";
-        console.error("[Story Upload] Unexpected failure:", message);
-        failStoryUpload(message);
+      let ext: string;
+      let mime: string;
+      if (_mediaMimeType) {
+        mime = _mediaMimeType;
+        const mimeToExtMap: Record<string, string> = {
+          "image/jpeg": "jpg", "image/jpg": "jpg", "image/png": "png",
+          "image/gif": "gif", "image/webp": "webp", "image/heic": "jpg",
+          "image/heif": "jpg", "video/mp4": "mp4", "video/quicktime": "mov",
+          "video/webm": "webm", "video/x-mkvideo": "mkv",
+        };
+        ext = mimeToExtMap[_mediaMimeType] || _mediaUri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
+      } else if (_mediaUri.startsWith("data:")) {
+        const dataMime = _mediaUri.match(/data:([^;]+)/)?.[1] || "";
+        ext = dataMime.includes("png") ? "png" : dataMime.includes("webp") ? "webp" : "jpg";
+        mime = dataMime || "image/jpeg";
+      } else {
+        ext = _mediaUri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
+        mime = _mediaType === "video"
+          ? `video/${ext === "mov" ? "quicktime" : "mp4"}`
+          : `image/${ext === "jpg" ? "jpeg" : ext}`;
       }
-    })();
+
+      updateStoryProgress(0.3);
+      const fileName = `${_userId}/${Date.now()}.${ext}`;
+      const { publicUrl, error: uploadErr } = await uploadToStorage("stories", fileName, _mediaUri, mime);
+
+      if (uploadErr || !publicUrl) {
+        console.error("[Story Upload] Upload failed:", uploadErr);
+        failStoryUpload(uploadErr || "Upload failed");
+        setStarting(false);
+        showAlert("Story upload failed", uploadErr || "Could not read the selected photo or video. Please choose it again.");
+        return;
+      }
+
+      updateStoryProgress(0.75);
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      const { error } = await supabase.from("stories").insert({
+        user_id: _userId,
+        media_url: publicUrl,
+        media_type: _mediaType,
+        caption: _caption || null,
+        expires_at: expiresAt,
+        privacy: _privacy,
+      });
+
+      if (error) {
+        console.error("[Story Upload] DB insert failed:", error.message);
+        failStoryUpload(error.message || "Failed to save story");
+        setStarting(false);
+        showAlert("Story could not be shared", error.message || "Failed to save your story. Please try again.");
+        return;
+      }
+
+      try { const { rewardXp } = await import("../../lib/rewardXp"); rewardXp("story_created"); } catch (_) {}
+      await recordDailyUsage("stories_create");
+      finishStoryUpload();
+
+      if (router.canDismiss()) {
+        router.dismissAll();
+      } else {
+        router.replace("/(tabs)/chats");
+      }
+    } catch (error: any) {
+      const message = error?.message || "Could not publish story. Please try again.";
+      console.error("[Story Upload] Unexpected failure:", message);
+      failStoryUpload(message);
+      setStarting(false);
+      showAlert("Story upload failed", message);
+    }
   }
 
   function handleSharePressIn() {
