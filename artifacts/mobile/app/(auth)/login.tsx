@@ -261,7 +261,7 @@ export default function SignInScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const { width: SW, height: SH } = useWindowDimensions();
-  useEffect(() => { if (user) router.replace("/(tabs)/chats"); }, [user]);
+  useEffect(() => { if (user) router.replace("/(tabs)/discover"); }, [user]);
 
   const [step, setStep] = useState<"landing" | "email">("landing");
   const [identifier, setIdentifier] = useState("");
@@ -337,7 +337,7 @@ export default function SignInScreen() {
       }
       await SecureStore.setItemAsync(BIO_REFRESH_KEY, data.session.refresh_token);
       setBioLoading(false);
-      router.replace("/(tabs)/chats");
+      router.replace("/(tabs)/discover");
     } catch {
       setBioLoading(false);
       showAlert("Error", "Biometric authentication failed.");
@@ -430,13 +430,13 @@ export default function SignInScreen() {
           setLoading(false);
           showAlert("Account Scheduled for Deletion", `Your account will be deleted in ${days} day${days !== 1 ? "s" : ""}. Restore it?`, [
             { text: "Delete Anyway", style: "destructive", onPress: async () => supabase.auth.signOut() },
-            { text: "Restore", style: "default", onPress: async () => { await supabase.from("profiles").update({ scheduled_deletion_at: null }).eq("id", data.user!.id); router.replace("/(tabs)/chats"); } },
+            { text: "Restore", style: "default", onPress: async () => { await supabase.from("profiles").update({ scheduled_deletion_at: null }).eq("id", data.user!.id); router.replace("/(tabs)/discover"); } },
           ]); return;
         }
       }
       if (data.session) storeSessionForBio(data.session.refresh_token, resolvedEmail);
       setLoading(false);
-      router.replace("/(tabs)/chats");
+      router.replace("/(tabs)/discover");
     } finally {
       isSubmittingRef.current = false;
     }
@@ -456,7 +456,7 @@ export default function SignInScreen() {
       if (!prof?.onboarding_completed) { setOauthLoading(false); router.replace({ pathname: "/onboarding", params: { userId: uid } } as any); return; }
     }
     setOauthLoading(false);
-    router.replace("/(tabs)/chats");
+    router.replace("/(tabs)/discover");
   }
 
   async function webGoogleSignIn() {
@@ -483,7 +483,7 @@ export default function SignInScreen() {
               const { data: prof } = await supabase.from("profiles").select("onboarding_completed").eq("id", uid).maybeSingle();
               if (!prof?.onboarding_completed) { setOauthLoading(false); router.replace({ pathname: "/onboarding", params: { userId: uid } } as any); return; }
             }
-            setOauthLoading(false); router.replace("/(tabs)/chats"); return;
+            setOauthLoading(false); router.replace("/(tabs)/discover"); return;
           }
         }
         let at = url.hash ? new URLSearchParams(url.hash.substring(1)).get("access_token") : null;
@@ -492,7 +492,7 @@ export default function SignInScreen() {
         if (at && rt) {
           const { error: e } = await supabase.auth.setSession({ access_token: at, refresh_token: rt });
           if (e) showAlert("Error", e.message);
-          else router.replace("/(tabs)/chats");
+          else router.replace("/(tabs)/discover");
         }
       }
       setOauthLoading(false);
@@ -679,7 +679,7 @@ export default function SignInScreen() {
       <EmailVerifyModal
         visible={verifyVisible} email={verifyEmail}
         onClose={() => setVerifyVisible(false)}
-        onVerified={() => { setVerifyVisible(false); router.replace("/(tabs)/chats"); }}
+        onVerified={() => { setVerifyVisible(false); router.replace("/(tabs)/discover"); }}
         isDark={isDark} accent={accent}
       />
     </View>

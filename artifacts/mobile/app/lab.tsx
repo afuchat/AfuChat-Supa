@@ -16,7 +16,6 @@ import {
   Dimensions,
   Image,
   KeyboardAvoidingView,
-  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -554,21 +553,10 @@ export default function LabScreen() {
               </View>
             )}
 
-            {/* Powered by Engagera + verify */}
+            {/* Powered by Engagera */}
             <View style={styles.poweredRow}>
               <Ionicons name="sparkles" size={10} color="rgba(255,255,255,0.35)" />
               <Text style={styles.poweredText}>Powered by Engagera</Text>
-              <View style={styles.poweredDot} />
-              <TouchableOpacity
-                onPress={() => {
-                  const q = encodeURIComponent((result?.searchQuery || result?.title || "").trim());
-                  if (q) Linking.openURL(`https://www.google.com/search?q=${q}`);
-                }}
-                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.verifyLink}>Verify online ↗</Text>
-              </TouchableOpacity>
             </View>
 
             <View style={styles.aiDisclaimerRow}>
@@ -975,8 +963,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 16, marginBottom: 4, marginTop: 4,
   },
   poweredText: { fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "Inter_400Regular" },
-  poweredDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)" },
-  verifyLink: { fontSize: 10, color: BRAND, fontFamily: "Inter_600SemiBold" },
   aiDisclaimerRow: {
     flexDirection: "row", alignItems: "flex-start", gap: 5,
     marginHorizontal: 16, marginBottom: 12,

@@ -158,7 +158,7 @@ export default function WelcomeScreen() {
   }))).current;
 
   useEffect(() => {
-    if (user) router.replace("/(tabs)/chats");
+    if (user) router.replace("/(tabs)/discover");
     // First slide orbs are already at 1 — nothing to animate on mount.
   }, [user]);
 

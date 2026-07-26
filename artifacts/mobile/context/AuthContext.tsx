@@ -466,7 +466,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
 
       // ── 10. Reset navigation so stale screens are gone ───────────────────────
-      router.replace("/(tabs)");
+      router.replace("/(tabs)/discover");
 
       // Background: register device + ensure AI chat exists
       registerDeviceSession(newSession.user.id).catch(() => {});

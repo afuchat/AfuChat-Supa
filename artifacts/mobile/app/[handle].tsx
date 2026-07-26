@@ -306,7 +306,7 @@ export default function HandleScreen() {
       // Bounce the user to a safe home instead of showing a broken profile
       if (!hasNavigated.current) {
         hasNavigated.current = true;
-        safeNavigate(session ? "/(tabs)" : "/welcome");
+        safeNavigate(session ? "/(tabs)/discover" : "/welcome");
       }
     }
   }, [cleanHandle, session]);
@@ -348,7 +348,7 @@ export default function HandleScreen() {
     // Reserved app route accidentally deep-linked: bounce to the appropriate home.
     if (RESERVED_ROUTES.has(cleanHandle.toLowerCase())) {
       hasNavigated.current = true;
-      safeNavigate(session ? "/(tabs)" : "/welcome");
+      safeNavigate(session ? "/(tabs)/discover" : "/welcome");
       return;
     }
 

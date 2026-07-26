@@ -15,13 +15,29 @@ import { APP_DOMAIN } from "./env";
 
 /** Generate a shareable invite link for a group chat. */
 export function generateGroupInviteLink(chatId: string): string {
-  const code = encodeId(chatId);
+  const normalizedChatId = normalizeChatId(chatId);
+  if (!normalizedChatId) return "";
+  const code = encodeId(normalizedChatId);
   return `https://${APP_DOMAIN}/join/${code}`;
 }
 
 /** Generate just the short invite code for a chat UUID. */
 export function generateInviteCode(chatId: string): string {
-  return encodeId(chatId);
+  const normalizedChatId = normalizeChatId(chatId);
+  return normalizedChatId ? encodeId(normalizedChatId) : "";
+}
+
+/**
+ * Chat routes normally carry a raw UUID, but stale/deep-linked routes can
+ * carry an already encoded ID. Normalize both forms before encoding so an
+ * invalid route value never reaches the BigInt conversion.
+ */
+function normalizeChatId(chatId: string): string | null {
+  const value = String(chatId ?? "").trim();
+  if (isUuid(value)) return value;
+  if (!isEncodedId(value)) return null;
+  const decoded = decodeId(value);
+  return isUuid(decoded) ? decoded : null;
 }
 
 /**

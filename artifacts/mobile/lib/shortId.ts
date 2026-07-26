@@ -1,6 +1,9 @@
 const CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 function hexToBytes(hex: string): number[] {
+  if (!/^[0-9a-f]+$/i.test(hex) || hex.length % 2 !== 0) {
+    throw new Error("Invalid hexadecimal value");
+  }
   const bytes: number[] = [];
   for (let i = 0; i < hex.length; i += 2) {
     bytes.push(parseInt(hex.substring(i, i + 2), 16));
@@ -51,6 +54,9 @@ function base62ToBytes(str: string, byteLen: number): number[] {
 
 export function encodeId(uuid: string): string {
   const clean = uuid.replace(/-/g, "");
+  if (!isUuid(uuid) || clean.length !== 32) {
+    throw new Error("Cannot encode a non-UUID value");
+  }
   const bytes = hexToBytes(clean);
   return bytesToBase62(bytes);
 }

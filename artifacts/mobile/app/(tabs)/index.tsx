@@ -2496,7 +2496,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
  * On mobile, renders the full-screen chats list as usual.
  */
 export default function ChatsRoute() {
-  return <Redirect href="/(tabs)/chats" />;
+  return <Redirect href="/(tabs)/discover" />;
 }
 
 /**

@@ -29,7 +29,7 @@ export default function IndexScreen() {
       if (hasSession && profileReady && profile?.onboarding_completed === false) {
         router.replace("/onboarding");
       } else {
-        router.replace("/(tabs)/chats");
+        router.replace("/(tabs)/discover");
       }
       return;
     }
@@ -41,7 +41,7 @@ export default function IndexScreen() {
     if (hasSession && profileReady && !profileOnboarded) {
       router.replace("/onboarding");
     } else {
-      router.replace("/(tabs)/chats");
+      router.replace("/(tabs)/discover");
     }
   }
 
@@ -72,7 +72,7 @@ export default function IndexScreen() {
       if (handle) {
         router.replace(`/${handle}` as any);
       } else if (getCachedUserId()) {
-        router.replace("/(tabs)/chats");
+        router.replace("/(tabs)/discover");
       } else {
         const onboardingDone = (() => { try { return storage.getBoolean(KEYS.ONBOARDING_DONE); } catch { return false; } })();
         router.replace(onboardingDone ? "/(auth)/login" : "/welcome");

@@ -34,7 +34,8 @@ const BOTTOM_TABS = [
 ] as const;
 
 function normalizeTabPath(p: string): string {
-  if (p === "/" || p === "/(tabs)" || p === "/(tabs)/index" || p === "/chats" || p === "/(tabs)/chats") return "/(tabs)/chats";
+  if (p === "/" || p === "/(tabs)" || p === "/(tabs)/index") return "/(tabs)/discover";
+  if (p === "/chats" || p === "/(tabs)/chats") return "/(tabs)/chats";
   if (p === "/discover"  || p === "/(tabs)/discover")  return "/(tabs)/discover";
   if (p === "/shorts"    || p === "/(tabs)/shorts")    return "/(tabs)/shorts";
   if (p === "/apps"      || p === "/(tabs)/apps")      return "/(tabs)/apps";

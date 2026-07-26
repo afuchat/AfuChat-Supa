@@ -3806,7 +3806,12 @@ function ChatScreen() {
 
   function getInviteLink(): string {
     const chatId = isDraft ? realChatId : id;
-    return chatId ? generateGroupInviteLink(chatId as string) : "";
+    if (!chatId) return "";
+    try {
+      return generateGroupInviteLink(String(chatId));
+    } catch {
+      return "";
+    }
   }
 
   async function handleCopyInviteLink() {
