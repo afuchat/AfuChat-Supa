@@ -55,8 +55,12 @@ function useTotalUnread(userId: string | undefined): number {
       const convs = await getLocalConversations();
       setTotal(convs.reduce((s, c) => s + (c.unread_count ?? 0), 0));
     };
+    // Unique suffix prevents Supabase from returning a stale already-subscribed
+    // channel object when the effect re-runs before the previous removeChannel
+    // resolves (StrictMode double-invoke, userId change, etc.).
+    const chName = `tab-bar-unread-${userId}-${Date.now()}`;
     const ch = supabase
-      .channel(`tab-bar-unread-${userId}`)
+      .channel(chName)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "message_status", filter: `user_id=eq.${userId}` }, fallbackRefresh)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "message_status", filter: `user_id=eq.${userId}` }, fallbackRefresh)
       .subscribe();
