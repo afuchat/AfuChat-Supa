@@ -126,34 +126,13 @@ function SoftOrb({ cx, cy, size, color }: { cx: number; cy: number; size: number
   );
 }
 
-// ─── Slide Illustration ────────────────────────────────────────────────────────
-// ─── Illustration sources ──────────────────────────────────────────────────────
-const IL_SOURCES: Record<string, any> = {
-  messaging: IL_MESSAGING,
-  community: IL_COMMUNITY,
-  ai:        IL_AI,
-  wallet:    IL_WALLET,
-};
-
-// ─── Slide Illustration ────────────────────────────────────────────────────────
-function SlideIllustration({ illustration, W }: { illustration: string; accent: string; W: number }) {
-  const size = W * 0.88;
-  return (
-    <View style={{ width: size, height: size * 0.9, alignSelf: "center" }}>
-      <Image
-        source={IL_SOURCES[illustration]}
-        style={{ width: "100%", height: "100%" }}
-        resizeMode="contain"
-      />
-    </View>
-  );
-}
-
-// Alias so IllustrationMap lookup still works
-const MessagingIllustration  = SlideIllustration;
-const CommunityIllustration  = SlideIllustration;
-const AIIllustration         = SlideIllustration;
-const WalletIllustration     = SlideIllustration;
+// ─── Illustration sources (all pre-loaded at require time) ────────────────────
+const IL_SOURCES: { key: string; src: any }[] = [
+  { key: "messaging", src: IL_MESSAGING },
+  { key: "community", src: IL_COMMUNITY },
+  { key: "ai",        src: IL_AI },
+  { key: "wallet",    src: IL_WALLET },
+];
 
 // ─── Main component ────────────────────────────────────────────────────────────
 export default function WelcomeScreen() {
@@ -170,21 +149,17 @@ export default function WelcomeScreen() {
   const illustrationScale = useRef(new Animated.Value(1)).current;
   const illustrationOpacity = useRef(new Animated.Value(1)).current;
 
-  // Orb animated values
-  const orbOpacities = useRef(SLIDES.map(() => ({
-    o1: new Animated.Value(0),
-    o2: new Animated.Value(0),
-    o3: new Animated.Value(0),
+  // Orb animated values — first slide starts at 1 so the illustration is
+  // visible immediately on mount (no waiting for a fade-in decode delay).
+  const orbOpacities = useRef(SLIDES.map((_, i) => ({
+    o1: new Animated.Value(i === 0 ? 1 : 0),
+    o2: new Animated.Value(i === 0 ? 1 : 0),
+    o3: new Animated.Value(i === 0 ? 1 : 0),
   }))).current;
 
   useEffect(() => {
     if (user) router.replace("/(tabs)/chats");
-    // Show first slide orbs
-    Animated.parallel([
-      Animated.timing(orbOpacities[0].o1, { toValue: 1, duration: 800, useNativeDriver: true }),
-      Animated.timing(orbOpacities[0].o2, { toValue: 1, duration: 900, useNativeDriver: true }),
-      Animated.timing(orbOpacities[0].o3, { toValue: 1, duration: 1000, useNativeDriver: true }),
-    ]).start();
+    // First slide orbs are already at 1 — nothing to animate on mount.
   }, [user]);
 
   function crossfadeTo(nextIdx: number) {
@@ -253,13 +228,35 @@ export default function WelcomeScreen() {
   const slide = SLIDES[activeIndex];
   const isLast = activeIndex === TOTAL - 1;
 
-  const IllustrationComponent = SlideIllustration;
-
   return (
     <View style={[s.root, { backgroundColor: BG }]} {...panResponder.panHandlers}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      {/* ── Animated orbs (one set per slide, cross-fade) ── */}
+      {/* ── Layer 1: All illustrations pre-rendered — decode on mount, not per-slide ── */}
+      {/* They live BEHIND the orbs so they're part of the background, not overlaid on it */}
+      {IL_SOURCES.map(({ key, src }, si) => (
+        <Animated.View
+          key={key}
+          style={[s.illustrationBg, {
+            opacity: Animated.multiply(
+              illustrationOpacity,
+              orbOpacities[si].o1, // reuse orb opacity as slide visibility
+            ),
+            transform: [{ scale: illustrationScale }],
+          }]}
+          pointerEvents="none"
+        >
+          <Image
+            source={src}
+            style={s.illustrationBgImage}
+            resizeMode="contain"
+            // Rasterise once so the GPU doesn't re-decode on every frame
+            renderToHardwareTextureAndroid
+          />
+        </Animated.View>
+      ))}
+
+      {/* ── Layer 2: Orbs on top of the illustration ── */}
       {SLIDES.map((sl, si) => (
         <View key={si} style={[StyleSheet.absoluteFill, { pointerEvents: "none" } as any]}>
           <Animated.View style={[StyleSheet.absoluteFill, { opacity: orbOpacities[si].o1 }]}>
@@ -274,19 +271,17 @@ export default function WelcomeScreen() {
         </View>
       ))}
 
-      {/* Subtle noise/grain overlay */}
-      <View style={[StyleSheet.absoluteFill, { opacity: 0.03, pointerEvents: "none" } as any]}>
-        <LinearGradient
-          colors={["rgba(255,255,255,0.06)", "transparent", "rgba(255,255,255,0.04)"]}
-          locations={[0, 0.5, 1]}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-      </View>
+      {/* ── Layer 3: Gradient that blends the whole background into the dark bottom ── */}
+      {/* Starts at ~30% down so the illustration top is fully visible */}
+      <LinearGradient
+        colors={["transparent", `${BG}00`, `${BG}B0`, BG, BG]}
+        locations={[0, 0.28, 0.52, 0.70, 1]}
+        start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+        style={[StyleSheet.absoluteFill, { pointerEvents: "none" } as any]}
+      />
 
       {/* ── Top bar ── */}
       <View style={[s.topBar, { paddingTop: insets.top + 12 }]}>
-        {/* Logo wordmark */}
         <View style={s.logoRow}>
           <View style={[s.logoDot, { backgroundColor: slide.accent }]} />
           <Text style={s.logoText}>AfuChat</Text>
@@ -297,22 +292,6 @@ export default function WelcomeScreen() {
           </View>
         </TouchableOpacity>
       </View>
-
-      {/* ── Illustration ── */}
-      <Animated.View style={[s.illustrationArea, {
-        opacity: illustrationOpacity,
-        transform: [{ scale: illustrationScale }],
-      }]}>
-        <IllustrationComponent illustration={slide.illustration} accent={slide.accent} W={SW} />
-      </Animated.View>
-
-      {/* Bottom gradient fade */}
-      <LinearGradient
-        colors={["transparent", `${BG}00`, `${BG}CC`, BG, BG]}
-        locations={[0, 0.25, 0.55, 0.75, 1]}
-        start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
-        style={[StyleSheet.absoluteFill, { pointerEvents: "none" } as any]}
-      />
 
       {/* ── Glass content card ── */}
       <View style={[s.card, { paddingBottom: Math.max(insets.bottom, 20) + 8 }]}>
@@ -387,32 +366,6 @@ export default function WelcomeScreen() {
   );
 }
 
-// ─── Illustration shared styles ────────────────────────────────────────────────
-const il = StyleSheet.create({
-  container: {
-    height: 270,
-    alignSelf: "center",
-    position: "relative",
-    alignItems: "center",
-  },
-  glow: {
-    position: "absolute",
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    alignSelf: "center",
-    top: 30,
-  },
-
-  // Shared
-  badge: {
-    position: "absolute",
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 999,
-  },
-});
-
 // ─── Screen styles ─────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   root: { flex: 1 },
@@ -454,14 +407,20 @@ const s = StyleSheet.create({
     fontFamily: "Inter_500Medium",
   },
 
-  illustrationArea: {
+  // Illustration sits in the background layer behind orbs + gradient.
+  // Full-width, anchored to the top half of the screen so it blends naturally.
+  illustrationBg: {
     position: "absolute",
     left: 0, right: 0,
     top: 0,
-    height: "58%" as any,
+    height: "62%" as any,
     alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 90,
+    justifyContent: "flex-end",
+    paddingBottom: 8,
+  },
+  illustrationBgImage: {
+    width: "92%" as any,
+    height: "100%" as any,
   },
 
   card: {
