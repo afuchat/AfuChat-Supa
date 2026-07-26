@@ -2587,11 +2587,7 @@ export default function DiscoverScreen() {
                         <Text style={[styles.endOfFeedText, { color: colors.textMuted }]}>You're all caught up</Text>
                         <View style={[styles.endOfFeedDot, { backgroundColor: colors.border }]} />
                       </View>
-                    ) : loadingMore ? (
-                      <View style={styles.footerSpinnerRow}>
-                        <ActivityIndicator size="small" color={colors.accent} />
-                      </View>
-                    ) : null
+                     ) : null
                   }
                 />
               )
@@ -2660,11 +2656,7 @@ export default function DiscoverScreen() {
                         <Text style={[styles.endOfFeedText, { color: colors.textMuted }]}>You're all caught up</Text>
                         <View style={[styles.endOfFeedDot, { backgroundColor: colors.border }]} />
                       </View>
-                    ) : loadingMore ? (
-                      <View style={styles.footerSpinnerRow}>
-                        <ActivityIndicator size="small" color={colors.accent} />
-                      </View>
-                    ) : null
+                     ) : null
                   }
                 />
               )
@@ -2732,10 +2724,6 @@ export default function DiscoverScreen() {
                   <View style={[styles.endOfFeedDot, { backgroundColor: colors.border }]} />
                   <Text style={[styles.endOfFeedText, { color: colors.textMuted }]}>You're all caught up</Text>
                   <View style={[styles.endOfFeedDot, { backgroundColor: colors.border }]} />
-                </View>
-              ) : loadingMore ? (
-                <View style={styles.footerSpinnerRow}>
-                  <ActivityIndicator size="small" color={colors.accent} />
                 </View>
               ) : null
             }
