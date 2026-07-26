@@ -623,6 +623,12 @@ function StoriesBar({ userId, colors }: { userId: string; colors: any }) {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "stories" }, () => {
         loadStories();
       })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "stories" }, () => {
+        loadStories();
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "stories" }, () => {
+        loadStories();
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [loadStories]);

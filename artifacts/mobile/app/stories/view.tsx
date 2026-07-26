@@ -170,6 +170,84 @@ export default function ViewStoryScreen() {
     }
   }
 
+  // ── Realtime — live new stories, view counts, and like counts ───────────────
+  useEffect(() => {
+    if (!userId || !storiesLoaded) return;
+
+    const storyIds = stories.map((s) => s.id);
+
+    const channel = supabase
+      .channel(`story-viewer-rt-${userId}`)
+      // New story posted by this user while viewer is open → append it
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "stories", filter: `user_id=eq.${userId}` },
+        (payload) => {
+          const s = payload.new as any;
+          const p = s.privacy || "everyone";
+          if (p === "only_me" && s.user_id !== user?.id) return;
+          if (p === "close_friends" && s.user_id !== user?.id) return;
+          const profile = stories[0]?.profile;
+          if (!profile) return;
+          setStories((prev) => {
+            if (prev.find((x) => x.id === s.id)) return prev;
+            return [...prev, { ...s, profile, like_count: 0 }];
+          });
+        },
+      )
+      // view_count updated (another user viewed this story) → keep owner's counter live
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "stories" },
+        (payload) => {
+          const updated = payload.new as any;
+          setStories((prev) =>
+            prev.map((s) =>
+              s.id === updated.id
+                ? { ...s, view_count: updated.view_count ?? s.view_count }
+                : s,
+            ),
+          );
+        },
+      )
+      // Like added
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "story_likes" },
+        (payload) => {
+          const { story_id, user_id: liker } = payload.new as any;
+          if (!storyIds.includes(story_id)) return;
+          setLikeState((prev) => {
+            const curr = prev[story_id];
+            if (!curr) return prev;
+            // Don't double-count our own optimistic update
+            if (liker === user?.id) return prev;
+            return { ...prev, [story_id]: { ...curr, count: curr.count + 1 } };
+          });
+        },
+      )
+      // Like removed (story_likes has REPLICA IDENTITY FULL so old row is included)
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "story_likes" },
+        (payload) => {
+          const { story_id, user_id: unliker } = (payload.old ?? {}) as any;
+          if (!story_id || !storyIds.includes(story_id)) return;
+          setLikeState((prev) => {
+            const curr = prev[story_id];
+            if (!curr) return prev;
+            if (unliker === user?.id) return prev; // own optimistic update already applied
+            return { ...prev, [story_id]: { ...curr, count: Math.max(0, curr.count - 1) } };
+          });
+        },
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  // Re-subscribe when stories first load or userId changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, storiesLoaded]);
+
   // ── Navigation (must be declared BEFORE effects that reference them) ──────────
   const story = stories[index];
   const isVideoStory = story?.media_type === "video";
