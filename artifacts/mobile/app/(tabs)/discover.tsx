@@ -726,9 +726,8 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                     <RichText
                       style={[styles.cardContent, { color: colors.text, fontSize: 15, lineHeight: 23 }]}
                       linkColor={colors.accent}
-                      plainMentions
                     >
-                      {shown}{isTruncated ? "…" : ""}
+                      {isTruncated ? shown + "…" : shown}
                     </RichText>
                     {isTruncated && (
                       <TouchableOpacity onPress={() => setExpanded(true)} activeOpacity={0.7} style={{ paddingLeft: 66, paddingTop: 2, paddingBottom: 2 }}>

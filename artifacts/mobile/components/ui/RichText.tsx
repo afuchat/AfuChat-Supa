@@ -319,7 +319,7 @@ export function RichText({
             return (
               <Text
                 key={i}
-                style={[styles.bold, { color: inheritedColor }]}
+                style={[styles.bold, { color: effectiveLinkColor }]}
                 onPress={() => handlePress(span)}
                 selectable={selectable}
                 suppressHighlighting
