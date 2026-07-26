@@ -138,11 +138,18 @@ export default function MyOrdersScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Real-time: re-fetch when any of this buyer's orders are updated
+  // Real-time: re-fetch when any of this buyer's orders are updated.
+  // Guard: remove any stale channel with the same name before subscribing.
+  // React 19 New Architecture can reconnect passive effects without running
+  // cleanup first, which causes "cannot add callbacks after subscribe()".
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
+    const channelName = `buyer-orders:${user.id}`;
+    const stale = supabase.getChannels().find((c) => c.topic === `realtime:${channelName}`);
+    if (stale) supabase.removeChannel(stale);
+
     const channel = supabase
-      .channel(`buyer-orders:${user.id}`)
+      .channel(channelName)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "shop_orders", filter: `buyer_id=eq.${user.id}` },
@@ -155,7 +162,7 @@ export default function MyOrdersScreen() {
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user, load]);
+  }, [user?.id, load]);
 
   async function onRefresh() {
     setRefreshing(true);

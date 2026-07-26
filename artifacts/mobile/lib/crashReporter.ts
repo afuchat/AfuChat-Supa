@@ -44,6 +44,13 @@ let _initialized         = false;
 let _userId: string | null = null;
 let _isStandalone        = false;
 
+/**
+ * Optional callback set by the UI layer to notify the user when a crash is
+ * captured. Receives the error message so it can be pre-filled as a support
+ * ticket subject. Called at most once per deduplicated error.
+ */
+let _crashNotificationHandler: ((errorMessage: string) => void) | null = null;
+
 /** Hash → timestamp of last send. Prevents flooding from repeat errors. */
 const _recentHashes = new Map<string, number>();
 const DEDUP_WINDOW_MS  = 10_000;
@@ -97,6 +104,18 @@ export function setCrashReporterUserId(id: string | null): void {
 }
 
 /**
+ * Register a handler that is called whenever a crash is captured (after dedup).
+ * The handler receives the human-readable error message so the UI can offer the
+ * user options to report it via email or an in-app support ticket.
+ * Pass null to clear the handler.
+ */
+export function setCrashNotificationHandler(
+  handler: ((errorMessage: string) => void) | null,
+): void {
+  _crashNotificationHandler = handler;
+}
+
+/**
  * Report an error explicitly (e.g. from ErrorBoundary.componentDidCatch).
  * Safe to call even if initCrashReporter() was never called.
  */
@@ -146,6 +165,11 @@ async function _enqueue(report: CrashReport): Promise<void> {
     if (_isDuplicate(hash)) return;
 
     const payload = _buildPayload(report);
+
+    // Notify the UI so the user can choose to send a support report.
+    if (_crashNotificationHandler && report.error_message) {
+      try { _crashNotificationHandler(report.error_message); } catch {}
+    }
 
     // Try immediate send; fall back to queue on failure.
     const sent = await _send(payload);

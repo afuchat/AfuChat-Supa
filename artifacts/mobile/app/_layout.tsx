@@ -2,7 +2,7 @@ import "@/polyfills";
 import "react-native-gesture-handler";
 import "@/lib/callService";
 import { enableScreens } from "react-native-screens";
-import { initCrashReporter, setCrashReporterUserId } from "@/lib/crashReporter";
+import { initCrashReporter, setCrashReporterUserId, setCrashNotificationHandler } from "@/lib/crashReporter";
 initCrashReporter();
 
 // enableScreens() is intentionally moved out of module-evaluation scope.
@@ -15,7 +15,7 @@ initCrashReporter();
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
 import { Stack, usePathname, router } from "expo-router";
 import { setCurrentPage, resolvePageInfo } from "@/lib/pageTracker";
 import { StatusBar } from "expo-status-bar";
@@ -123,6 +123,68 @@ function ActivityTrackerSync() {
 function CrashReporterUserSync() {
   const { user } = useAuth();
   useEffect(() => { setCrashReporterUserId(user?.id ?? null); }, [user?.id]);
+  return null;
+}
+
+/**
+ * Registers the crash notification handler so that whenever a crash is
+ * captured the user immediately gets the option to report it — either by
+ * email or via an in-app support ticket with the error pre-filled as the
+ * subject.
+ */
+function CrashSupportHandler() {
+  const { user } = useAuth();
+
+  useEffect(() => {
+    setCrashNotificationHandler((errorMessage: string) => {
+      // Truncate long messages so they fit in the alert
+      const shortMsg = errorMessage.length > 120
+        ? errorMessage.slice(0, 117) + "…"
+        : errorMessage;
+
+      const encodedSubject = encodeURIComponent(`[AfuChat Bug] ${shortMsg}`);
+      const encodedBody = encodeURIComponent(
+        `Error: ${errorMessage}\n\nSteps to reproduce:\n\nDevice info:\n`,
+      );
+
+      Alert.alert(
+        "Something went wrong",
+        "An error was detected. Would you like to send a report so our team can fix it?",
+        [
+          {
+            text: "Send Email",
+            onPress: () => {
+              Linking.openURL(
+                `mailto:support@afuchat.com?subject=${encodedSubject}&body=${encodedBody}`,
+              ).catch(() => {});
+            },
+          },
+          {
+            text: "In-App Support",
+            onPress: () => {
+              // Navigate to the support page with error pre-filled.
+              // Small delay so the alert dismisses before navigation.
+              setTimeout(() => {
+                router.push({
+                  pathname: "/support" as any,
+                  params: {
+                    errorSubject: shortMsg,
+                    errorCategory: "technical",
+                    errorPriority: "high",
+                  },
+                });
+              }, 300);
+            },
+          },
+          { text: "Dismiss", style: "cancel" },
+        ],
+        { cancelable: true },
+      );
+    });
+
+    return () => { setCrashNotificationHandler(null); };
+  }, [user?.id]);
+
   return null;
 }
 
@@ -332,6 +394,7 @@ export default function RootLayout() {
                   <AppReadyGate fontsReady={fontsReady} onReady={handleAppReady} />
                   <ActivityTrackerSync />
                   <CrashReporterUserSync />
+                  <CrashSupportHandler />
                   <PageWatcher />
                   <PushNotificationManager />
                   <GlobalInboxListener />

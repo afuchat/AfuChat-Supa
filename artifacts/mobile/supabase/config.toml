@@ -23,3 +23,6 @@ verify_jwt = true
 
 [functions.push-notification-trigger]
 verify_jwt = false
+
+[functions.support-ai-reply]
+verify_jwt = true

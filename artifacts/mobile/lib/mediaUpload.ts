@@ -280,17 +280,51 @@ export async function uploadToStorage(
     // ── Native file:// path — stream via FileSystem.uploadAsync ─────────────
     // This is the critical path for video uploads: avoids loading the entire
     // file into JS memory (which would OOM on 50-100 MB videos).
+    //
+    // Android quirk: on some devices the camera cache directory may not exist
+    // when ExponentFileSystem tries to open the source file, causing
+    // "java.io.IOException: Directory for '...' doesn't exist".
+    // Fix: copy the file to a known-accessible cacheDirectory temp path first.
+    let uploadUri = fileUri;
+    let tempPath: string | null = null;
+    try {
+      // Only copy if the source is in a volatile camera/temp location. We
+      // always copy on Android to be safe, since cacheDirectory is guaranteed.
+      if (FileSystem.cacheDirectory) {
+        tempPath = `${FileSystem.cacheDirectory}upload_tmp_${Date.now()}.${ext}`;
+        await FileSystem.copyAsync({ from: fileUri, to: tempPath });
+        uploadUri = tempPath;
+      }
+    } catch (copyErr: any) {
+      // Copy failed (e.g., source file truly missing). Report a clear error
+      // rather than confusing the user with the raw Java IO exception.
+      console.warn(`[Upload] Could not access source file: ${copyErr?.message || copyErr}`);
+      if (tempPath) {
+        FileSystem.deleteAsync(tempPath, { idempotent: true }).catch(() => {});
+      }
+      return {
+        publicUrl: null,
+        error: "Could not read the selected file. Please try again or choose a different photo/video.",
+      };
+    }
+
+    const cleanupTemp = () => {
+      if (tempPath) {
+        FileSystem.deleteAsync(tempPath!, { idempotent: true }).catch(() => {});
+      }
+    };
 
     // 1. Try presigned PUT — bytes stream directly from disk to R2.
     const sign = await getSignedUpload(realBucket, filePath, mime);
     if (sign.data) {
       try {
-        const putResult = await FileSystem.uploadAsync(sign.data.uploadUrl, fileUri, {
+        const putResult = await FileSystem.uploadAsync(sign.data.uploadUrl, uploadUri, {
           httpMethod: "PUT",
           headers: { "Content-Type": mime },
           uploadType: FileSystemUploadType.BINARY_CONTENT,
         });
         if (putResult.status >= 200 && putResult.status < 300) {
+          cleanupTemp();
           return { publicUrl: sign.data.publicUrl, error: null };
         }
         console.warn(
@@ -306,12 +340,12 @@ export async function uploadToStorage(
     // 2. Proxy fallback — POST bytes through the Supabase Edge Function.
     //    Still streamed via FileSystem.uploadAsync, not loaded into memory.
     const token = await getAccessToken();
-    if (!token) return { publicUrl: null, error: "Not authenticated" };
+    if (!token) { cleanupTemp(); return { publicUrl: null, error: "Not authenticated" }; }
     const qs = new URLSearchParams({ bucket: realBucket, path: filePath }).toString();
     try {
       const proxyResult = await FileSystem.uploadAsync(
         `${uploadsUrl("upload")}?${qs}`,
-        fileUri,
+        uploadUri,
         {
           httpMethod: "POST",
           headers: {
@@ -322,6 +356,7 @@ export async function uploadToStorage(
           uploadType: FileSystemUploadType.BINARY_CONTENT,
         },
       );
+      cleanupTemp();
       const text = proxyResult.body ?? "";
       if (!text) return { publicUrl: null, error: `Upload failed (HTTP ${proxyResult.status})` };
       if (text.trimStart().startsWith("<")) return { publicUrl: null, error: "Upload service unreachable" };
@@ -335,6 +370,7 @@ export async function uploadToStorage(
       if (!json?.publicUrl) return { publicUrl: null, error: "Upload service returned no URL" };
       return { publicUrl: json.publicUrl, error: null };
     } catch (e: any) {
+      cleanupTemp();
       return { publicUrl: null, error: `Upload failed: ${e?.message || e}` };
     }
   } catch (e: any) {

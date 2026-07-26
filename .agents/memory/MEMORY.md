@@ -1,4 +1,5 @@
 - [Supabase DB connection on Replit](supabase-db-replit.md) — Direct pg + Supavisor both fail from Replit IPv4; use Supabase JS admin client (HTTPS) for all DB ops. claim_video_job via .rpc(), auth.users via supabase.auth.admin.getUserById().
+- [Support tickets schema + AI reply](support-tickets-ai.md) — has_ai_draft column added via Management API; support-ai-reply edge fn calls Engagera; client invokes it fire-and-forget after inserting first message.
 - [AfuChat crash audit patterns](afuchat-crash-audit.md) — 8 crash pattern categories found across 16 files; lazy FileSystem init, supabase .catch, try/catch on awaits, context null-blocking, empty-catch Babel pitfall.
 - [Chat keyboard avoidance](chat-keyboard-avoidance.md) — effectiveBottom must use keyboardHeight on BOTH platforms; Android adjustResize does not move absolute children.
 - [Unread badge shared store](unread-badge-store.md) — tab bar reads from in-memory store (chatUnreadEvents.ts), not SQLite; ChatsScreen pushes on every chats state change.

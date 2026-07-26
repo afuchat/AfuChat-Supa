@@ -13,7 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Device from "expo-device";
@@ -107,16 +107,24 @@ export default function SupportCenter() {
   const { user, profile } = useAuth();
   const insets = useSafeAreaInsets();
 
-  const [tab, setTab] = useState<TabId>("home");
+  // Crash-triggered pre-fill: when navigating here from the crash alert the
+  // route params carry the error message, category, and priority.
+  const params = useLocalSearchParams<{
+    errorSubject?: string;
+    errorCategory?: string;
+    errorPriority?: string;
+  }>();
+
+  const [tab, setTab] = useState<TabId>(params.errorSubject ? "new" : "home");
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submittedTicketId, setSubmittedTicketId] = useState<string | null>(null);
 
-  const [category, setCategory] = useState("");
-  const [priority, setPriority] = useState("normal");
-  const [subject, setSubject] = useState("");
+  const [category, setCategory] = useState(params.errorCategory || "");
+  const [priority, setPriority] = useState(params.errorPriority || "normal");
+  const [subject, setSubject] = useState(params.errorSubject || "");
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState(user?.email || "");
   const [includeDeviceInfo, setIncludeDeviceInfo] = useState(true);
@@ -146,11 +154,12 @@ export default function SupportCenter() {
   const fetchTickets = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("support_tickets")
       .select("id, subject, category, status, priority, created_at, updated_at, has_ai_draft")
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false });
+    if (error) console.warn("[Support] fetchTickets error:", error.message);
     setTickets(data || []);
     setLoading(false);
   }, [user]);
@@ -193,6 +202,11 @@ export default function SupportCenter() {
         sender_type: "user",
         message: fullMessage,
       });
+
+      // Fire AI reply in the background — don't block the success UI on it.
+      supabase.functions
+        .invoke("support-ai-reply", { body: { ticket_id: ticket.id } })
+        .catch((e) => console.warn("[Support] AI reply invoke failed:", e?.message));
 
       setSubmittedTicketId(ticket.id);
       setSubmitted(true);
