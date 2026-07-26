@@ -220,7 +220,10 @@ function openAppItem(app: AppItem, openApp: (id: string) => void) {
   if (needsNetwork && !isOnline()) {
     showToast(`${app.label} requires an internet connection`, { type: "info", icon: "wifi" });
   }
-  if (app.miniApp) {
+  // On web the mini-app overlay uses native animations and native-only modules
+  // (e.g. react-native-webview) that aren't available. Fall back to the standard
+  // Expo Router route which works on all platforms.
+  if (app.miniApp && Platform.OS !== "web") {
     openApp(app.id);
   } else {
     safeRouter.push(app.route as any);
