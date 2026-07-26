@@ -16,6 +16,7 @@ import {
   Dimensions,
   Image,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -553,6 +554,28 @@ export default function LabScreen() {
               </View>
             )}
 
+            {/* Powered by Engagera + verify */}
+            <View style={styles.poweredRow}>
+              <Ionicons name="sparkles" size={10} color="rgba(255,255,255,0.35)" />
+              <Text style={styles.poweredText}>Powered by Engagera</Text>
+              <View style={styles.poweredDot} />
+              <TouchableOpacity
+                onPress={() => {
+                  const q = encodeURIComponent((result?.searchQuery || result?.title || "").trim());
+                  if (q) Linking.openURL(`https://www.google.com/search?q=${q}`);
+                }}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.verifyLink}>Verify online ↗</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.aiDisclaimerRow}>
+              <Ionicons name="information-circle-outline" size={12} color="rgba(255,255,255,0.4)" />
+              <Text style={styles.aiDisclaimerText}>AI can make mistakes. Double-check important information.</Text>
+            </View>
+
             {/* Actions */}
             <View style={styles.actions}>
               <TouchableOpacity
@@ -945,5 +968,21 @@ const styles = StyleSheet.create({
   permBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
   permBack:    { paddingVertical: 8 },
   permBackText: { fontSize: 15 },
+
+  // Engagera branding + verify
+  poweredRow: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    marginHorizontal: 16, marginBottom: 4, marginTop: 4,
+  },
+  poweredText: { fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "Inter_400Regular" },
+  poweredDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)" },
+  verifyLink: { fontSize: 10, color: BRAND, fontFamily: "Inter_600SemiBold" },
+  aiDisclaimerRow: {
+    flexDirection: "row", alignItems: "flex-start", gap: 5,
+    marginHorizontal: 16, marginBottom: 12,
+  },
+  aiDisclaimerText: {
+    flex: 1, fontSize: 11, color: "rgba(255,255,255,0.4)", lineHeight: 15,
+  },
 
 });

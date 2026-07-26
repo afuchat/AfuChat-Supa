@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   StyleSheet,
@@ -615,6 +616,26 @@ export default function AfuAIApp() {
               ))}
             </View>
           )}
+
+          {/* Verify footer — shown on completed AI responses */}
+          {!isUser && (
+            <View style={styles.verifyRow}>
+              <Ionicons name="sparkles" size={9} color={colors.textMuted} style={{ opacity: 0.6 }} />
+              <Text style={[styles.verifyPowered, { color: colors.textMuted }]}>Powered by Engagera</Text>
+              <View style={[styles.verifyDivider, { backgroundColor: colors.border }]} />
+              <TouchableOpacity
+                onPress={() => {
+                  const raw = item.content.replace(/[#*`\[\]>]/g, "").trim();
+                  const q = encodeURIComponent(raw.slice(0, 80));
+                  if (q) Linking.openURL(`https://www.google.com/search?q=${q}`);
+                }}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                activeOpacity={0.6}
+              >
+                <Text style={[styles.verifyLink, { color: accent }]}>Verify ↗</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       );
     },
@@ -640,7 +661,12 @@ export default function AfuAIApp() {
           <Ionicons name="sparkles" size={16} color="#fff" />
         </LinearGradient>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>AfuAI</Text>
+          <View style={styles.headerTitleRow}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>AfuAI</Text>
+            <View style={[styles.poweredBadge, { backgroundColor: accent + "18", borderColor: accent + "40" }]}>
+              <Text style={[styles.poweredBadgeText, { color: accent }]}>Engagera</Text>
+            </View>
+          </View>
           {isOnPage ? (
             <View style={styles.pageTagRow}>
               <Ionicons name="location-outline" size={10} color={accent} />
@@ -1013,6 +1039,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 7,
   },
   actionBtnText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  headerTitleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  poweredBadge: {
+    flexDirection: "row", alignItems: "center",
+    borderWidth: 1, borderRadius: 6,
+    paddingHorizontal: 5, paddingVertical: 1,
+  },
+  poweredBadgeText: { fontSize: 9, fontFamily: "Inter_600SemiBold", letterSpacing: 0.3 },
+  verifyRow: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    marginTop: 6, paddingLeft: 2,
+  },
+  verifyPowered: { fontSize: 10, fontFamily: "Inter_400Regular", opacity: 0.55 },
+  verifyDivider: { width: 1, height: 10, opacity: 0.4 },
+  verifyLink: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
   inputRow: { paddingHorizontal: 10, paddingTop: 8 },
   inputPill: {
     flexDirection: "row", alignItems: "flex-end",

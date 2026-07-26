@@ -18,6 +18,7 @@ import {
   Dimensions,
   Image,
   KeyboardAvoidingView,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -422,6 +423,28 @@ export default function AfuLensApp() {
               </View>
             )}
 
+            {/* Powered by Engagera + double-check */}
+            <View style={s.poweredRow}>
+              <Ionicons name="sparkles" size={10} color="rgba(255,255,255,0.35)" />
+              <Text style={s.poweredText}>Powered by Engagera</Text>
+              <View style={s.poweredDot} />
+              <TouchableOpacity
+                onPress={() => {
+                  const q = encodeURIComponent((result?.searchQuery || result?.title || "").trim());
+                  if (q) Linking.openURL(`https://www.google.com/search?q=${q}`);
+                }}
+                hitSlop={8}
+                activeOpacity={0.7}
+              >
+                <Text style={s.verifyLink}>Verify online ↗</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={s.aiDisclaimerRow}>
+              <Ionicons name="information-circle-outline" size={12} color="rgba(255,255,255,0.4)" />
+              <Text style={s.aiDisclaimerText}>AI can make mistakes. Double-check important information.</Text>
+            </View>
+
             <View style={s.actions}>
               <TouchableOpacity
                 style={[s.actionBtn, s.actionBtnPrimary]}
@@ -521,4 +544,19 @@ const s = StyleSheet.create({
   actionBtnPrimary: { backgroundColor: BRAND, borderColor: BRAND },
   actionBtnPrimaryText: { color: "#fff", fontSize: 14, fontFamily: "Inter_600SemiBold" },
   actionBtnText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  poweredRow: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    marginHorizontal: 16, marginBottom: 4, marginTop: 4,
+  },
+  poweredText: { fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "Inter_400Regular" },
+  poweredDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)" },
+  verifyLink: { fontSize: 10, color: BRAND, fontFamily: "Inter_600SemiBold" },
+  aiDisclaimerRow: {
+    flexDirection: "row", alignItems: "flex-start", gap: 5,
+    marginHorizontal: 16, marginBottom: 12,
+  },
+  aiDisclaimerText: {
+    flex: 1, fontSize: 11, color: "rgba(255,255,255,0.4)",
+    fontFamily: "Inter_400Regular", lineHeight: 15,
+  },
 });
