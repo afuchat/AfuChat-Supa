@@ -1122,11 +1122,6 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   const rcptRead      = darkBubble ? "#7DD3FC" : "#0284C7";
   const isPending = msg._pending || msg.status === "sending";
 
-  const fadeIn = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.timing(fadeIn, { toValue: 1, duration: 180, useNativeDriver: true }).start();
-  }, []);
-
   if (isRedEnvelope) {
     return (
       <View style={[st.msgRow, isMe ? st.msgRowMe : st.msgRowOther]}>
@@ -1179,7 +1174,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
           <Ionicons name="arrow-undo" size={18} color={BRAND} />
         </Animated.View>
       )}
-      <Animated.View style={[{ flex: 1, flexDirection: "row", justifyContent: isMe ? "flex-end" : "flex-start", minWidth: 0 }, { transform: [{ translateX: swipeX }], opacity: fadeIn }]}>
+      <Animated.View style={[{ flex: 1, flexDirection: "row", justifyContent: isMe ? "flex-end" : "flex-start", minWidth: 0 }, { transform: [{ translateX: swipeX }] }]}>
       <View style={[
         st.bubbleContainer,
         isMe ? st.bubbleContainerMe : st.bubbleContainerOther,
