@@ -107,7 +107,7 @@ function parseChatAiJson(raw: string): Record<string, any> | null {
 
 async function fetchChatAiInsight(query: string): Promise<AiInsight | null> {
   try {
-    const engagera = await getEngagera();
+    const engagera = getEngagera();
     const aiRes = await engagera.chat.create({
       messages: [
         {

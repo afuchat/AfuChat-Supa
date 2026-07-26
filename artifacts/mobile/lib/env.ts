@@ -26,3 +26,12 @@ export const APP_DOMAIN: string =
 export const APP_ORIGIN: string = `https://${APP_DOMAIN}`;
 
 export const SUPABASE_EDGE_URL: string = `${SUPABASE_URL}/functions/v1`;
+
+/**
+ * Engagera API key — authorises calls to the /chat edge function on this
+ * Supabase project. Intentionally public (same security model as the anon
+ * key — the edge function owns rate-limiting and auth).
+ */
+export const ENGAGERA_API_KEY: string =
+  (process.env.EXPO_PUBLIC_ENGAGERA_API_KEY ?? "").trim() ||
+  "eng_2ed3f056425528efe6685e1d5f833a2b25910ae83c32f090a2320e8b298a2ca7";

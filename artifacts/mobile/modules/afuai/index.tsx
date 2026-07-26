@@ -432,7 +432,7 @@ export default function AfuAIApp() {
           try {
             let rawReply: string;
             try {
-              const engagera = await getEngagera();
+              const engagera = getEngagera();
               const aiReply = await engagera.chat.create({
                 messages: [
                   { role: "system", content: systemPrompt },

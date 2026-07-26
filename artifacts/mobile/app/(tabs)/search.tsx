@@ -157,7 +157,7 @@ async function fetchAiInsight(query: string): Promise<AiInsight | null> {
   const navIntent = detectNavIntent(query);
 
   try {
-    const engagera = await getEngagera();
+    const engagera = getEngagera();
     const aiRes = await engagera.chat.create({
         messages: [
           {

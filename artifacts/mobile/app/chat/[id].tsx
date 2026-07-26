@@ -3299,7 +3299,7 @@ function ChatScreen() {
         : null,
     ].filter(Boolean).join("\n");
     try {
-      const engagera = await getEngagera();
+      const engagera = getEngagera();
       const lensAiRes = await engagera.chat.create({
         messages: [
           {
@@ -4069,7 +4069,7 @@ STRICT RULES:
         .map(m => ({ role: m.sender_id === user?.id ? "user" as const : "assistant" as const, content: m.encrypted_content }));
       conversationMessages.push({ role: "user", content: userText.replace(/@afuai/gi, "").trim() || userText });
 
-      const engagera = await getEngagera();
+      const engagera = getEngagera();
       const chatAiRes = await engagera.chat.create({
         messages: [{ role: "system" as const, content: systemPrompt + lensAddition }, ...conversationMessages],
       });
