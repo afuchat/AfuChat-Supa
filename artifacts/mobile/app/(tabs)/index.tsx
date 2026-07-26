@@ -645,18 +645,6 @@ function StoriesBar({ userId, colors }: { userId: string; colors: any }) {
 
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={storyBarStyles.list} nestedScrollEnabled>
-      {(
-        <TouchableOpacity
-          style={storyBarStyles.item}
-          onPress={() => router.push("/stories/camera")}
-          activeOpacity={0.75}
-        >
-          <View style={[storyBarStyles.addCircle, { borderColor: colors.accent }]}>
-            <Ionicons name="add" size={26} color={colors.accent} />
-          </View>
-          <Text style={[storyBarStyles.name, { color: colors.textSecondary }]}>Your Story</Text>
-        </TouchableOpacity>
-      )}
       {storyUsers.map((u) => (
         <TouchableOpacity
           key={u.userId}
@@ -711,16 +699,7 @@ function CompactStoryHeader({ userId, colors, onExpand }: { userId: string; colo
   }, [userId]);
 
   if (previews.length === 0) {
-    return (
-      <TouchableOpacity
-        onPress={() => router.push("/stories/camera")}
-        style={{ width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", borderWidth: 1.5, borderColor: colors.accent, borderStyle: "dashed" }}
-        activeOpacity={0.7}
-        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-      >
-        <Ionicons name="add" size={20} color={colors.accent} />
-      </TouchableOpacity>
-    );
+    return null;
   }
 
   return (

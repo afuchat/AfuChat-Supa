@@ -90,6 +90,7 @@ function CompactTabBar({
   const [showCreatePicker, setShowCreatePicker] = useState(false);
 
   const CREATE_OPTIONS = [
+    { icon: "camera-outline",        label: "Story",   desc: "Share a photo or video story",     route: "/stories/camera",         color: "#FF9F0A"       },
     { icon: "create-outline",        label: "Post",    desc: "Share a thought, photo, or link", route: "/moments/create",         color: colors.accent   },
     { icon: "videocam-outline",      label: "Video",   desc: "Share a short video clip",         route: "/moments/create-video",   color: "#FF3B30"       },
     { icon: "document-text-outline", label: "Article", desc: "Write a long-form article",        route: "/moments/create-article", color: "#007AFF"       },

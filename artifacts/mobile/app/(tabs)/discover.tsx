@@ -276,37 +276,7 @@ function StoriesRow({ userId, avatarUrl }: { userId: string | null; avatarUrl: s
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={{ paddingHorizontal: 14, paddingVertical: 10, gap: 14 }}
     >
-      {/* Your story */}
-      <TouchableOpacity
-        style={{ alignItems: "center", gap: 5, width: 68 }}
-        onPress={() => safeRouter.push("/moments/create" as any)}
-        activeOpacity={0.8}
-      >
-        <View style={{ position: "relative" }}>
-          <View style={{
-            width: SZ, height: SZ, borderRadius: SZ / 2,
-            backgroundColor: colors.backgroundSecondary,
-            overflow: "hidden", alignItems: "center", justifyContent: "center",
-          }}>
-            {avatarUrl ? (
-              <ExpoImage source={{ uri: avatarUrl }} style={{ width: SZ, height: SZ }} contentFit="cover" cachePolicy="memory-disk" />
-            ) : (
-              <Ionicons name="person" size={24} color={colors.textMuted} />
-            )}
-          </View>
-          <View style={{
-            position: "absolute", bottom: 1, right: 1,
-            width: 20, height: 20, borderRadius: 10,
-            backgroundColor: colors.accent, alignItems: "center", justifyContent: "center",
-            borderWidth: 2, borderColor: "#0F0F0F",
-          }}>
-            <Text style={{ color: "#fff", fontSize: 14, fontFamily: "Inter_700Bold", lineHeight: 17, marginTop: Platform.OS === "android" ? -1 : 0 }}>+</Text>
-          </View>
-        </View>
-        <Text style={{ color: colors.text, fontSize: 11, fontFamily: "Inter_400Regular" }} numberOfLines={1}>Your story</Text>
-      </TouchableOpacity>
-
-      {/* Real stories from other users */}
+      {/* Stories from other users */}
       {stories.map((s) => (
         <TouchableOpacity
           key={s.userId}
