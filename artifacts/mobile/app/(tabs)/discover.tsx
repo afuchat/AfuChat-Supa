@@ -198,7 +198,6 @@ function LinkPreviewCard({ url, colors }: { url: string; colors: any }) {
       </View>
       <View style={{ flex: 1, padding: 10, gap: 4, justifyContent: "center" }}>
         <Text style={{ fontSize: 13, fontFamily: "Inter_600SemiBold", color: colors.textMuted }} numberOfLines={1}>{domain}</Text>
-        <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: colors.textSecondary, lineHeight: 16 }} numberOfLines={2}>{url}</Text>
         <Text style={{ fontSize: 12, fontFamily: "Inter_600SemiBold", color: "#FF9500", marginTop: 2 }}>Visit link ›</Text>
       </View>
     </TouchableOpacity>
@@ -712,9 +711,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
               {/* ── Content text — same architecture as post details page ── */}
               {(displayContent || "").trim().length > 0 && (() => {
                 const LIMIT = 300;
-                const full = previewUrl
-                  ? (displayContent || "").split(previewUrl).join("").replace(/\s{2,}/g, " ").trim()
-                  : (displayContent || "");
+                const full = (displayContent || "").trim();
                 const isTruncated = !expanded && full.length > LIMIT;
                 const shown = isTruncated ? full.slice(0, LIMIT).trimEnd() : full;
                 if (!shown) return null;
