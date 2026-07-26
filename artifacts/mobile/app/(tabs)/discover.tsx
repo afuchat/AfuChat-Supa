@@ -797,10 +797,10 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                 <Ionicons
                   name={item.liked ? "heart" : "heart-outline"}
                   size={21}
-                  color={item.liked ? Colors.gold : colors.textMuted}
+                  color={item.liked ? "#FF9500" : colors.textMuted}
                 />
               </Animated.View>
-              <Text style={[styles.footerStatNum, { color: item.liked ? Colors.gold : colors.textMuted }]}>
+              <Text style={[styles.footerStatNum, { color: item.liked ? "#FF9500" : colors.textMuted }]}>
                 {formatNum(item.likeCount)}
               </Text>
             </TouchableOpacity>
