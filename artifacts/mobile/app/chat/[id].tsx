@@ -1801,6 +1801,7 @@ function ChatScreen() {
   const [sending, setSending] = useState(false);
   const imgViewer = useImageViewer();
   const [realChatId, setRealChatId] = useState<string | null>(null);
+  const creatingChatIdRef = useRef<Promise<string | null> | null>(null);
 
   // Build initial chatInfo from navigation params so the header renders instantly.
   const buildInitialChatInfo = (): ChatInfo | null => {
@@ -2807,7 +2808,8 @@ function ChatScreen() {
 
 
   useEffect(() => {
-    if (isDraft) return;
+    const activeChatId = isDraft ? realChatId : id;
+    if (!activeChatId) return;
 
     loadChatInfo();
     loadMessages();
@@ -2815,7 +2817,7 @@ function ChatScreen() {
     // ── Fast-path: messages delivered via GlobalInboxListener broadcast ──────
     // This fires ~20 ms after send (before Postgres Changes arrives).
     // We render the message immediately and deduplicate when Postgres fires.
-    const unsubFastPath = subscribeToChat(id, (gMsg) => {
+    const unsubFastPath = subscribeToChat(activeChatId, (gMsg) => {
       if (!user || gMsg.sender_id === user.id) return;
       const cachedSender = getProfileCache(gMsg.sender_id);
       const senderSnap = cachedSender
@@ -2829,8 +2831,8 @@ function ChatScreen() {
     });
 
     const msgSub = supabase
-      .channel(`chat:${id}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `chat_id=eq.${id}` },
+      .channel(`chat:${activeChatId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `chat_id=eq.${activeChatId}` },
         async (payload) => {
           const newMsg = payload.new as any;
           if (newMsg.sender_id === user?.id) return;
@@ -2884,7 +2886,7 @@ function ChatScreen() {
                     content: {
                       title: `🔔 Keyword alert: "${hit}"`,
                       body: (newMsg.encrypted_content as string).slice(0, 100),
-                      data: { chatId: id, type: "keyword_alert" },
+                      data: { chatId: activeChatId, type: "keyword_alert" },
                     },
                     trigger: null,
                   });
@@ -2903,11 +2905,11 @@ function ChatScreen() {
             user
           ) {
             const autoReplyText = kf.auto_reply_message;
-            const activeChatId = id;
+            const replyChatId = activeChatId;
             try {
               const { data: autoMsg } = await supabase
                 .from("messages")
-                .insert({ chat_id: activeChatId, sender_id: user.id, encrypted_content: autoReplyText })
+                .insert({ chat_id: replyChatId, sender_id: user.id, encrypted_content: autoReplyText })
                 .select("id, chat_id, sender_id, encrypted_content, sent_at, attachment_type")
                 .single();
               if (autoMsg) {
@@ -2930,11 +2932,11 @@ function ChatScreen() {
             supabase.from("message_status").upsert({ message_id: newMsg.id, user_id: user.id, delivered_at: _rtNow, ...(chatPrefs.read_receipts ? { read_at: _rtNow } : {}) }, { onConflict: "message_id,user_id" }).then(() => {});
             // Always tell the sender we received it (double-grey) —
             // only tell them we read it if read receipts are enabled (double-blue).
-            typingChannelRef.current?.send({ type: "broadcast", event: "delivered", payload: { reader_id: user.id, message_ids: [newMsg.id], chat_id: id, delivered_at: _rtNow } });
+            typingChannelRef.current?.send({ type: "broadcast", event: "delivered", payload: { reader_id: user.id, message_ids: [newMsg.id], chat_id: activeChatId, delivered_at: _rtNow } });
             if (chatPrefs.read_receipts) {
-              typingChannelRef.current?.send({ type: "broadcast", event: "read", payload: { reader_id: user.id, message_ids: [newMsg.id], chat_id: id, read_at: _rtNow } });
+              typingChannelRef.current?.send({ type: "broadcast", event: "read", payload: { reader_id: user.id, message_ids: [newMsg.id], chat_id: activeChatId, read_at: _rtNow } });
             }
-            markChatVisited(id);
+            markChatVisited(activeChatId);
           }
         }
       )
@@ -2995,7 +2997,7 @@ function ChatScreen() {
       clearActiveChatId();
       supabase.removeChannel(msgSub);
     };
-  }, [id, loadChatInfo, loadMessages]);
+  }, [id, isDraft, realChatId, loadChatInfo, loadMessages]);
 
   // ── Realtime: typing indicators + read receipts (user-scoped for DMs) ─────
   useEffect(() => {
@@ -4552,42 +4554,30 @@ STRICT RULES:
     if (realChatId) return realChatId;
     if (!user || !contactId) return null;
 
-    const { data: chatId, error } = await supabase.rpc("get_or_create_direct_chat", {
-      other_user_id: contactId,
-    });
+    if (creatingChatIdRef.current) return creatingChatIdRef.current;
 
-    if (error || !chatId) {
-      console.error("[getOrCreateChatId] RPC error:", error?.message);
-      return null;
+    const createPromise = (async () => {
+      const { data: chatId, error } = await supabase.rpc("get_or_create_direct_chat", {
+        other_user_id: contactId,
+      });
+
+      if (error || !chatId) {
+        console.error("[getOrCreateChatId] RPC error:", error?.message);
+        return null;
+      }
+
+      setRealChatId(chatId);
+      return chatId;
+    })();
+
+    creatingChatIdRef.current = createPromise;
+    try {
+      return await createPromise;
+    } finally {
+      if (creatingChatIdRef.current === createPromise) {
+        creatingChatIdRef.current = null;
+      }
     }
-
-    setRealChatId(chatId);
-
-    supabase
-      .channel(`chat:${chatId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `chat_id=eq.${chatId}` },
-        async (payload) => {
-          const newMsg = payload.new as any;
-          if (newMsg.sender_id === user.id) return;
-          if (newMsg.sender_id === AFUAI_BOT_ID) return;
-          const _cs2 = getProfileCache(newMsg.sender_id);
-          const _ss2 = _cs2
-            ? { display_name: _cs2.display_name, avatar_url: _cs2.avatar_url ?? null, handle: _cs2.handle }
-            : { display_name: "User", avatar_url: null, handle: "" };
-          setMessages((prev) => [{ ...newMsg, sender: _ss2 as any, reactions: [], status: undefined }, ...prev]);
-          if (!_cs2) {
-            supabase.from("profiles").select("display_name, avatar_url, handle").eq("id", newMsg.sender_id).single().then(({ data: _sp2 }) => {
-              if (_sp2) {
-                setProfileCache(newMsg.sender_id, _sp2 as any);
-                setMessages((prev) => prev.map((m) => m.id === newMsg.id ? { ...m, sender: _sp2 as any } : m));
-              }
-            });
-          }
-        }
-      )
-      .subscribe();
-
-    return chatId;
   }
 
   async function handleInlineSendMoney() {
