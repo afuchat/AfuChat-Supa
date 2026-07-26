@@ -52,8 +52,8 @@ function RadioGroup({
   return (
     <GlassCard style={s.groupCard} variant="medium">
       <View style={[s.groupHeader, { backgroundColor: colors.surface }]}>
-        <View style={[s.groupIcon, { backgroundColor: iconColor + "18" }]}>
-          <Ionicons name={icon} size={18} color={iconColor} />
+        <View style={s.groupIcon}>
+          <Ionicons name={icon} size={22} color={colors.text} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[s.groupLabel, { color: colors.text }]}>{label}</Text>
@@ -164,7 +164,7 @@ const s = StyleSheet.create({
   },
   groupCard: { borderRadius: 16, overflow: "hidden" },
   groupHeader: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 14, gap: 12 },
-  groupIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  groupIcon: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
   groupLabel: { fontSize: 15, fontFamily: "Inter_500Medium", marginBottom: 2 },
   groupDesc: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 16 },
   optStrip: { flexDirection: "row", borderTopWidth: 0.5, paddingVertical: 10, paddingHorizontal: 8 },

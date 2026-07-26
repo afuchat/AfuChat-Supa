@@ -83,8 +83,8 @@ const hero = StyleSheet.create({
 function BenefitRow({ icon, label, sub, color }: { icon: string; label: string; sub: string; color: string }) {
   return (
     <View style={bft.row}>
-      <View style={[bft.icon, { backgroundColor: color + "18" }]}>
-        <Ionicons name={icon as any} size={18} color={color} />
+      <View style={bft.icon}>
+        <Ionicons name={icon as any} size={22} color={"rgba(255,255,255,0.85)"} />
       </View>
       <View style={bft.text}>
         <Text style={bft.label}>{label}</Text>
@@ -95,7 +95,7 @@ function BenefitRow({ icon, label, sub, color }: { icon: string; label: string; 
 }
 const bft = StyleSheet.create({
   row:   { flexDirection: "row", alignItems: "flex-start", gap: 12 },
-  icon:  { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 },
+  icon:  { width: 28, height: 28, alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 },
   text:  { flex: 1 },
   label: { fontSize: 13.5, fontFamily: "Inter_600SemiBold", color: "#fff", lineHeight: 19 },
   sub:   { fontSize: 12, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.6)", lineHeight: 17, marginTop: 1 },

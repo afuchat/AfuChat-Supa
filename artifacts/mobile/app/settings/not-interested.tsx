@@ -234,8 +234,8 @@ export default function NotInterestedScreen() {
                     <View key={topic}>
                       {i > 0 && <View style={[styles.sep, { backgroundColor: separatorBg }]} />}
                       <View style={styles.row}>
-                        <View style={[styles.topicIcon, { backgroundColor: accent + "18" }]}>
-                          <Ionicons name={icon} size={18} color={accent} />
+                        <View style={styles.topicIcon}>
+                          <Ionicons name={icon} size={22} color={colors.text} />
                         </View>
                         <Text style={[styles.topicLabel, { color: colors.text }]}>{label}</Text>
                         <TouchableOpacity
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   row:         { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 12, gap: 12 },
   name:        { fontSize: 15, fontFamily: "Inter_500Medium" },
   handle:      { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 1 },
-  topicIcon:   { width: 38, height: 38, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  topicIcon:   { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
   topicLabel:  { flex: 1, fontSize: 15, fontFamily: "Inter_500Medium" },
   removeBtn:   { flexDirection: "row", alignItems: "center", gap: 4, borderWidth: 1, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
   removeTxt:   { fontSize: 12, fontFamily: "Inter_500Medium" },

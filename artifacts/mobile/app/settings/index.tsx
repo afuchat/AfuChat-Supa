@@ -53,8 +53,6 @@ function Section({
 
 function Row({
   icon,
-  iconColor,
-  iconBg,
   label,
   sublabel,
   value,
@@ -63,6 +61,7 @@ function Row({
   last,
   colors,
   accent,
+  danger,
 }: {
   icon: React.ComponentProps<typeof Ionicons>["name"];
   iconColor?: string;
@@ -75,9 +74,8 @@ function Row({
   last?: boolean;
   colors: ReturnType<typeof useTheme>["colors"];
   accent: string;
+  danger?: boolean;
 }) {
-  const ic = iconColor ?? accent;
-  const bg = iconBg ?? ic + "18";
   return (
     <>
       <TouchableOpacity
@@ -86,8 +84,8 @@ function Row({
         activeOpacity={onPress ? 0.7 : 1}
         disabled={!onPress}
       >
-        <View style={[s.iconWrap, { backgroundColor: bg }]}>
-          <Ionicons name={icon} size={18} color={ic} />
+        <View style={s.iconWrap}>
+          <Ionicons name={icon} size={22} color={danger ? "#FF3B30" : colors.text} />
         </View>
         <View style={s.rowText}>
           <Text style={[s.rowLabel, { color: colors.text }]}>{label}</Text>
@@ -287,7 +285,7 @@ export default function SettingsScreen() {
         {displayAccounts.length <= 1 && (
           <Section colors={colors}>
             <Row
-              icon="person-add"
+              icon="person-add-outline"
               label="Add Another Account"
               sublabel="Switch between multiple AfuChat accounts"
               onPress={() => router.push("/linked-accounts")}
@@ -326,7 +324,7 @@ export default function SettingsScreen() {
           </View>
           <View style={[s.divider, { backgroundColor: colors.separator }]} />
           <Row
-            icon="language"
+            icon="language-outline"
             label="Language"
             value={langLabel}
             onPress={() => router.push("/language-settings")}
@@ -340,7 +338,7 @@ export default function SettingsScreen() {
         {(
           <Section title="NOTIFICATIONS" colors={colors}>
             <Row
-              icon="notifications"
+              icon="notifications-outline"
               label="Notifications"
               sublabel="Alerts, sounds and vibration"
               onPress={() => router.push("/settings/notifications")}
@@ -354,7 +352,7 @@ export default function SettingsScreen() {
         {/* ── Messaging ─────────────────────────────────────────────────── */}
         <Section title="MESSAGING" colors={colors}>
           <Row
-            icon="chatbubble-ellipses"
+            icon="chatbubble-ellipses-outline"
             label="Chat Settings"
             sublabel="Bubbles, themes, media quality"
             onPress={() => router.push("/settings/chat")}
@@ -362,7 +360,7 @@ export default function SettingsScreen() {
             accent={accent}
           />
           <Row
-            icon="person-remove"
+            icon="person-remove-outline"
             label="Blocked Users"
             sublabel="Manage people you've blocked"
             onPress={() => router.push("/settings/blocked")}
@@ -375,7 +373,7 @@ export default function SettingsScreen() {
         {/* ── Privacy & Security ────────────────────────────────────────── */}
         <Section title="PRIVACY & SECURITY" colors={colors}>
           <Row
-            icon="eye-off"
+            icon="eye-off-outline"
             label="Privacy"
             sublabel="Visibility, messages, interactions"
             onPress={() => router.push("/settings/privacy")}
@@ -383,7 +381,7 @@ export default function SettingsScreen() {
             accent={accent}
           />
           <Row
-            icon="lock-closed"
+            icon="lock-closed-outline"
             label="Security & Password"
             sublabel="Password, 2FA, device lock"
             onPress={() => router.push("/settings/security")}
@@ -391,7 +389,7 @@ export default function SettingsScreen() {
             accent={accent}
           />
           <Row
-            icon="key"
+            icon="key-outline"
             label="Login Methods"
             sublabel="Google, Apple and other sign-in options"
             onPress={() => router.push("/settings/oauth-providers")}
@@ -399,7 +397,7 @@ export default function SettingsScreen() {
             accent={accent}
           />
           <Row
-            icon="cloud-download"
+            icon="cloud-download-outline"
             label="Download My Data"
             sublabel="Export a copy of your account data"
             onPress={() => router.push("/settings/privacy-download" as any)}
@@ -412,7 +410,7 @@ export default function SettingsScreen() {
         {/* ── Storage & Data ────────────────────────────────────────────── */}
         <Section title="STORAGE & DATA" colors={colors}>
           <Row
-            icon="server"
+            icon="server-outline"
             label="Storage & Cache"
             sublabel="Manage local files and cached media"
             onPress={() => router.push("/settings/storage")}
@@ -421,7 +419,7 @@ export default function SettingsScreen() {
           />
           {(
             <Row
-              icon="download"
+              icon="download-outline"
               label="Offline Videos"
               sublabel="Videos saved for offline playback"
               onPress={() => router.push("/settings/offline-videos" as any)}
@@ -431,7 +429,7 @@ export default function SettingsScreen() {
           )}
           {(
             <Row
-              icon="eye-off"
+              icon="eye-off-outline"
               label="Not Interested"
               sublabel="Muted authors and suppressed topics"
               onPress={() => router.push("/settings/not-interested" as any)}
@@ -445,7 +443,7 @@ export default function SettingsScreen() {
         {/* ── Support & About ───────────────────────────────────────────── */}
         <Section title="SUPPORT & ABOUT" colors={colors}>
           <Row
-            icon="help-buoy"
+            icon="help-buoy-outline"
             label="Help & Support"
             sublabel="FAQs, contact and tickets"
             onPress={() => router.push("/support" as any)}
@@ -453,7 +451,7 @@ export default function SettingsScreen() {
             accent={accent}
           />
           <Row
-            icon="information-circle"
+            icon="information-circle-outline"
             label="About AfuChat"
             sublabel="Version, terms, privacy and company info"
             onPress={() => router.push("/about" as any)}
@@ -516,7 +514,7 @@ const s = StyleSheet.create({
 
   // Generic row
   row: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 13, gap: 12 },
-  iconWrap: { width: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  iconWrap: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
   rowText: { flex: 1 },
   rowLabel: { fontSize: 15, fontFamily: "Inter_400Regular" },
   rowSub:   { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },

@@ -66,8 +66,8 @@ function MenuItem({ icon, iconColor, label, value, badge, badgeColor, onPress, s
           onPressOut={() => Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 4 }).start()}
           activeOpacity={1}
         >
-          <View style={[mi.iconWrap, { backgroundColor: iconColor + "18" }]}>
-            <Ionicons name={icon as any} size={19} color={iconColor} />
+          <View style={mi.iconWrap}>
+            <Ionicons name={icon as any} size={22} color={colors.text} />
           </View>
           <Text style={[mi.label, { color: destructive ? "#FF3B30" : colors.text }]} numberOfLines={1}>{label}</Text>
           <View style={mi.right}>
@@ -88,7 +88,7 @@ function MenuItem({ icon, iconColor, label, value, badge, badgeColor, onPress, s
 
 const mi = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 13, gap: 12 },
-  iconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  iconWrap: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
   label: { flex: 1, fontSize: 15, fontFamily: "Inter_500Medium" },
   right: { flexDirection: "row", alignItems: "center", gap: 6 },
   value: { fontSize: 13, fontFamily: "Inter_400Regular" },

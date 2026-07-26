@@ -43,10 +43,10 @@ function Row({
   return (
     <>
       <TouchableOpacity style={s.row} onPress={onPress} activeOpacity={onPress ? 0.7 : 1} disabled={!onPress || loading}>
-        <View style={[s.iconWrap, { backgroundColor: ic + "18" }]}>
+        <View style={s.iconWrap}>
           {loading
-            ? <ActivityIndicator size="small" color={ic} />
-            : <Ionicons name={icon} size={18} color={ic} />}
+            ? <ActivityIndicator size="small" color={danger ? "#FF3B30" : colors.text} />
+            : <Ionicons name={icon} size={22} color={danger ? "#FF3B30" : colors.text} />}
         </View>
         <View style={s.rowText}>
           <Text style={[s.rowLabel, { color: danger ? "#FF3B30" : colors.text }]}>{label}</Text>
@@ -164,7 +164,7 @@ const s = StyleSheet.create({
   card: { borderRadius: 18, overflow: "hidden" },
 
   row: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 13, gap: 12 },
-  iconWrap: { width: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  iconWrap: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
   rowText: { flex: 1 },
   rowLabel: { fontSize: 15, fontFamily: "Inter_500Medium" },
   rowSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2, lineHeight: 17 },

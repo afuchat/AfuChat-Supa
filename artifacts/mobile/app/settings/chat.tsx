@@ -130,8 +130,8 @@ export default function ChatSettingsScreen() {
         <SectionTitle label="ACCENT COLOUR" />
         <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={s.cardHeaderRow}>
-            <View style={[s.iconWrap, { backgroundColor: themeColor + "18" }]}>
-              <Ionicons name="color-palette" size={18} color={themeColor} />
+            <View style={s.iconWrap}>
+              <Ionicons name="color-palette-outline" size={22} color={colors.text} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[s.cardTitle, { color: colors.text }]}>App Accent</Text>
@@ -185,8 +185,8 @@ export default function ChatSettingsScreen() {
         {/* Bubble style */}
         <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border, marginBottom: 10 }]}>
           <View style={s.cardHeaderRow}>
-            <View style={[s.iconWrap, { backgroundColor: themeColor + "18" }]}>
-              <Ionicons name="chatbubble" size={18} color={themeColor} />
+            <View style={s.iconWrap}>
+              <Ionicons name="chatbubble-outline" size={22} color={colors.text} />
             </View>
             <Text style={[s.cardTitle, { color: colors.text }]}>Bubble Style</Text>
           </View>
@@ -213,8 +213,8 @@ export default function ChatSettingsScreen() {
         {/* Font size */}
         <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border, marginBottom: 10 }]}>
           <View style={s.cardHeaderRow}>
-            <View style={[s.iconWrap, { backgroundColor: themeColor + "18" }]}>
-              <Ionicons name="text" size={18} color={themeColor} />
+            <View style={s.iconWrap}>
+              <Ionicons name="text-outline" size={22} color={colors.text} />
             </View>
             <Text style={[s.cardTitle, { color: colors.text, flex: 1 }]}>Font Size</Text>
             <Text style={[s.accentPillText, { color: themeColor }]}>{prefs.font_size}px</Text>
@@ -354,8 +354,8 @@ export default function ChatSettingsScreen() {
             value={prefs.autoplay_gifs} onChange={(v) => updatePref("autoplay_gifs", v)} />
           <Sep color={colors.border} />
           <View style={s.row}>
-            <View style={[s.iconWrap, { backgroundColor: themeColor + "18" }]}>
-              <Ionicons name="image" size={18} color={themeColor} />
+            <View style={s.iconWrap}>
+              <Ionicons name="image-outline" size={22} color={colors.text} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[s.rowLabel, { color: colors.text }]}>Upload Quality</Text>
@@ -377,8 +377,8 @@ export default function ChatSettingsScreen() {
             <>
               <Sep color={colors.border} />
               <View style={s.row}>
-                <View style={[s.iconWrap, { backgroundColor: themeColor + "18" }]}>
-                  <Ionicons name="download" size={18} color={themeColor} />
+                <View style={s.iconWrap}>
+                  <Ionicons name="download-outline" size={22} color={colors.text} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[s.rowLabel, { color: colors.text }]}>Save to Gallery</Text>
@@ -442,10 +442,10 @@ export default function ChatSettingsScreen() {
             <>
               <Sep color={colors.border} />
               <TouchableOpacity style={s.row} onPress={handleBackupNow} activeOpacity={0.7} disabled={backingUp}>
-                <View style={[s.iconWrap, { backgroundColor: themeColor + "18" }]}>
+                <View style={s.iconWrap}>
                   {backingUp
-                    ? <ActivityIndicator size="small" color={themeColor} />
-                    : <Ionicons name="refresh" size={18} color={themeColor} />}
+                    ? <ActivityIndicator size="small" color={colors.text} />
+                    : <Ionicons name="refresh-outline" size={22} color={colors.text} />}
                 </View>
                 <Text style={[s.rowLabel, { color: colors.text, flex: 1 }]}>Back Up Now</Text>
                 <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
@@ -502,8 +502,8 @@ function TogRow({
 }) {
   return (
     <View style={s.row}>
-      <View style={[s.iconWrap, { backgroundColor: themeColor + "18" }]}>
-        <Ionicons name={icon as any} size={18} color={themeColor} />
+      <View style={s.iconWrap}>
+        <Ionicons name={icon as any} size={22} color={colors.text} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[s.rowLabel, { color: colors.text }]}>{label}</Text>
@@ -598,7 +598,7 @@ const s = StyleSheet.create({
     gap: 12,
   },
   iconWrap: {
-    width: 34, height: 34, borderRadius: 10,
+    width: 28, height: 28,
     alignItems: "center", justifyContent: "center",
   },
   iconBadge: {

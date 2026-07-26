@@ -73,10 +73,10 @@ function Row({
         activeOpacity={onPress ? 0.7 : 1}
         disabled={!onPress || rowLoading}
       >
-        <View style={[sec.iconWrap, { backgroundColor: ic + "18" }]}>
+        <View style={sec.iconWrap}>
           {rowLoading
-            ? <ActivityIndicator size="small" color={ic} />
-            : <Ionicons name={icon} size={18} color={ic} />
+            ? <ActivityIndicator size="small" color={danger ? "#FF3B30" : colors.text} />
+            : <Ionicons name={icon} size={22} color={danger ? "#FF3B30" : colors.text} />
           }
         </View>
         <View style={sec.rowText}>
@@ -99,7 +99,7 @@ const sec = StyleSheet.create({
   sectionLabel: { fontSize: 11, fontFamily: "Inter_600SemiBold", letterSpacing: 0.6, marginBottom: 8, paddingHorizontal: 4 },
   card: { borderRadius: 18, overflow: "hidden" },
   row: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 13, gap: 12 },
-  iconWrap: { width: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  iconWrap: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
   rowText: { flex: 1 },
   rowLabel: { fontSize: 15, fontFamily: "Inter_500Medium" },
   rowSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2, lineHeight: 17 },

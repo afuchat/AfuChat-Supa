@@ -36,8 +36,8 @@ function ToggleRow({ icon, iconColor, label, description, value, onToggle, savin
   const { colors, accent } = useTheme();
   return (
     <View style={[s.row, { backgroundColor: colors.surface }]}>
-      <View style={[s.rowIcon, { backgroundColor: iconColor + "18" }]}>
-        <Ionicons name={icon} size={18} color={iconColor} />
+      <View style={s.rowIcon}>
+        <Ionicons name={icon} size={22} color={colors.text} />
       </View>
       <View style={s.rowText}>
         <Text style={[s.rowLabel, { color: colors.text }]}>{label}</Text>
@@ -119,8 +119,8 @@ export default function PrivacyDataScreen() {
               ])}
               activeOpacity={0.7}
             >
-              <View style={[s.rowIcon, { backgroundColor: "#FF3B3018" }]}>
-                <Ionicons name="trash" size={18} color="#FF3B30" />
+              <View style={s.rowIcon}>
+                <Ionicons name="trash-outline" size={22} color="#FF3B30" />
               </View>
               <View style={s.rowText}>
                 <Text style={[s.rowLabel, { color: "#FF3B30" }]}>Clear Activity History</Text>
@@ -152,7 +152,7 @@ const s = StyleSheet.create({
   group: { marginHorizontal: 16, borderRadius: 16, overflow: "hidden" },
   sep: { height: 0.5, marginLeft: 62 },
   row: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 14, gap: 14 },
-  rowIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  rowIcon: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
   rowText: { flex: 1 },
   rowLabel: { fontSize: 15, fontFamily: "Inter_500Medium", marginBottom: 2 },
   rowDesc: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 16 },

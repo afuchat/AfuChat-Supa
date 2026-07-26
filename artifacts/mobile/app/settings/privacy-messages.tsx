@@ -81,8 +81,8 @@ export default function PrivacyMessagesScreen() {
                     onPress={() => select(opt.value)}
                     activeOpacity={0.7}
                   >
-                    <View style={[s.optIcon, { backgroundColor: opt.iconColor + "18" }]}>
-                      <Ionicons name={opt.icon} size={18} color={opt.iconColor} />
+                    <View style={s.optIcon}>
+                      <Ionicons name={opt.icon} size={22} color={colors.text} />
                     </View>
                     <View style={s.optText}>
                       <Text style={[s.optLabel, { color: colors.text }]}>{opt.label}</Text>
@@ -119,7 +119,7 @@ const s = StyleSheet.create({
   group: { marginHorizontal: 16, borderRadius: 16, overflow: "hidden" },
   sep: { height: 0.5, marginLeft: 62 },
   optRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 14, gap: 14 },
-  optIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  optIcon: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
   optText: { flex: 1 },
   optLabel: { fontSize: 15, fontFamily: "Inter_500Medium", marginBottom: 2 },
   optDesc: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 16 },

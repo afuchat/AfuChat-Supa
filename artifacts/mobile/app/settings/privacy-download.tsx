@@ -132,8 +132,8 @@ export default function PrivacyDownloadScreen() {
                       onPress={() => toggle(item.id)}
                       activeOpacity={0.7}
                     >
-                      <View style={[s.rowIcon, { backgroundColor: item.iconColor + "18" }]}>
-                        <Ionicons name={item.icon} size={18} color={item.iconColor} />
+                      <View style={s.rowIcon}>
+                        <Ionicons name={item.icon} size={22} color={colors.text} />
                       </View>
                       <View style={s.rowText}>
                         <Text style={[s.rowLabel, { color: colors.text }]}>{item.label}</Text>
@@ -197,7 +197,7 @@ const s = StyleSheet.create({
   group: { marginHorizontal: 16, borderRadius: 16, overflow: "hidden" },
   sep: { height: 0.5, marginLeft: 62 },
   row: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 14, gap: 14 },
-  rowIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  rowIcon: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
   rowText: { flex: 1 },
   rowLabel: { fontSize: 15, fontFamily: "Inter_500Medium", marginBottom: 2 },
   rowDesc: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 16 },

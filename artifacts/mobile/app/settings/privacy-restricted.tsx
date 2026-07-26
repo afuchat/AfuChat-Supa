@@ -76,8 +76,8 @@ export default function PrivacyRestrictedScreen() {
 
       <GlassCard style={{ marginHorizontal: 16, marginTop: 16, borderRadius: 16, overflow: "hidden" }} variant="subtle" noShadow>
         <View style={s.infoCard}>
-          <View style={[s.infoIcon, { backgroundColor: accent + "18" }]}>
-            <Ionicons name="information-circle" size={20} color={accent} />
+          <View style={s.infoIcon}>
+            <Ionicons name="information-circle-outline" size={22} color={colors.text} />
           </View>
           <Text style={[s.infoText, { color: colors.textSecondary }]}>
             Restricted accounts can still see your posts but their comments are only visible to them. They can't see when you're online or when you've read their messages.
@@ -170,7 +170,7 @@ export default function PrivacyRestrictedScreen() {
 const s = StyleSheet.create({
   root: { flex: 1 },
   infoCard: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
-  infoIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  infoIcon: { width: 28, height: 28, alignItems: "center", justifyContent: "center" },
   infoText: { flex: 1, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
   searchBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
   searchInput: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular", padding: 0 },
