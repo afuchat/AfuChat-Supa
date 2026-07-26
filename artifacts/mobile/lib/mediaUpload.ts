@@ -15,6 +15,7 @@
  */
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 import { supabase, supabaseUrl, supabaseAnonKey } from "./supabase";
 import * as FileSystem from "expo-file-system/legacy";
 import { FileSystemUploadType } from "expo-file-system/legacy";
@@ -85,6 +86,48 @@ const MIME_TO_EXT: Record<string, string> = {
 
 function getMime(ext: string): string {
   return MIME_MAP[ext.toLowerCase()] || "application/octet-stream";
+}
+
+/**
+ * Move a picker/camera result into this app's cache before the source screen
+ * unmounts. Expo Go can return a URI in its temporary host cache; that URI is
+ * not reliable after the camera or picker closes.
+ */
+export async function prepareMediaForUpload(
+  fileUri: string,
+  extension = "bin",
+): Promise<string> {
+  if (
+    fileUri.startsWith("data:") ||
+    fileUri.startsWith("blob:") ||
+    Platform.OS === "web"
+  ) {
+    return fileUri;
+  }
+
+  const cacheDirectory = FileSystem.cacheDirectory;
+  if (!cacheDirectory) {
+    throw new Error("Temporary storage is unavailable. Please try again.");
+  }
+
+  const normalizedExt = extension.replace(/[^a-z0-9]/gi, "").toLowerCase() || "bin";
+  const existingInfo = fileUri.startsWith(cacheDirectory)
+    ? await FileSystem.getInfoAsync(fileUri).catch(() => ({ exists: false }))
+    : null;
+  if (existingInfo?.exists) return fileUri;
+
+  const destination = `${cacheDirectory}story_source_${Date.now()}_${Math.random()
+    .toString(36)
+    .slice(2, 8)}.${normalizedExt}`;
+  try {
+    await FileSystem.copyAsync({ from: fileUri, to: destination });
+    const info = await FileSystem.getInfoAsync(destination);
+    if (!info.exists) throw new Error("The selected file could not be copied.");
+    return destination;
+  } catch {
+    await FileSystem.deleteAsync(destination, { idempotent: true }).catch(() => {});
+    throw new Error("Could not read the selected photo or video. Please choose it again.");
+  }
 }
 
 /**
@@ -372,8 +415,23 @@ export async function uploadToStorage(
       if (!json?.publicUrl) return { publicUrl: null, error: "Upload service returned no URL" };
       return { publicUrl: json.publicUrl, error: null };
     } catch (e: any) {
+      console.warn(`[Upload] Native proxy stream failed, trying readable URI fallback: ${e?.message || e}`);
+    }
+
+    // Some Android content/file URIs are readable by fetch even when the
+    // legacy FileSystem uploader rejects them. Use the same authenticated
+    // proxy with a Blob as a final fallback, especially for Expo Go media.
+    try {
+      const body = await fileUriToBlob(uploadUri, mime);
+      const fallback = await proxyUpload(realBucket, filePath, body, mime);
       cleanupTemp();
-      return { publicUrl: null, error: `Upload failed: ${e?.message || e}` };
+      return fallback;
+    } catch {
+      cleanupTemp();
+      return {
+        publicUrl: null,
+        error: "Could not read the selected photo or video. Please choose it again.",
+      };
     }
   } catch (e: any) {
     return { publicUrl: null, error: e?.message || "Upload failed" };

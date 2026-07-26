@@ -45,3 +45,4 @@
 - [app_settings secrets architecture](app-settings-secrets.md) — All API server secrets in Supabase app_settings (bootstrapped at startup); only SUPABASE_SERVICE_ROLE_KEY + SUPABASE_ACCESS_TOKEN stay in Replit. data-export fn is named export-user-data on Supabase.
 - [Shared Supabase auth cookie (web)](shared-auth-cookie-web.md) — mobile app's web build uses createBrowserClient + .afuchat.com cookie to share login with the marketing site; native unaffected.
 - [Supabase realtime channel ownership](supabase-realtime-channel-ownership.md) — configure every handler before subscribe, and give each logical chat channel one lifecycle owner to avoid post-subscribe callback crashes.
+- [Story upload media lifecycle](story-upload-expo-go.md) — detach Android picker/camera media from Expo Go temporary host-cache paths before background publishing.

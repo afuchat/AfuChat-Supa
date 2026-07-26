@@ -842,11 +842,11 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   const fabHidden   = useRef(false);
 
   // ── Collapsible stories bar (hard pull-down to reveal) ──────────────────
-  const [storiesExpanded, setStoriesExpanded] = useState(false);
-  const storiesExpandedRef = useRef(false);
-  const storiesHeightAnim  = useRef(new Animated.Value(0)).current;
+  const [storiesExpanded, setStoriesExpanded] = useState(true);
+  const storiesExpandedRef = useRef(true);
+  const storiesHeightAnim  = useRef(new Animated.Value(1)).current;
   // Drives compact avatar opacity/scale in header (1=visible, 0=hidden)
-  const compactAvatarAnim  = useRef(new Animated.Value(1)).current;
+  const compactAvatarAnim  = useRef(new Animated.Value(0)).current;
   const pullRevealFiredRef  = useRef(false);
 
   const expandStories = useCallback(() => {

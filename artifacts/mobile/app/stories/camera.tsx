@@ -16,6 +16,8 @@ import { showAlert } from "@/lib/alert";
 import FilterSelector from "@/components/camera/FilterSelector";
 import FaceFilterOverlay from "@/components/camera/FaceFilterOverlay";
 import { FilterId } from "@/components/camera/filterDefs";
+import { prepareMediaForUpload } from "@/lib/mediaUpload";
+import { setStoryMediaDraft } from "@/lib/storyMediaDraft";
 
 type CameraMode = "photo" | "video";
 
@@ -44,9 +46,14 @@ function NativeCameraScreen() {
     if (!cameraRef.current || processing) return;
     setProcessing(true);
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.85 });
-      if (photo?.uri) {
-        router.push({ pathname: "/stories/create", params: { mediaUri: photo.uri, mediaType: "image" } });
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.85, base64: true });
+      if (photo?.base64) {
+        const stableUri = `data:image/jpeg;base64,${photo.base64}`;
+        setStoryMediaDraft({ uri: stableUri, mediaType: "image", mimeType: "image/jpeg" });
+        router.push("/stories/create");
+      } else if (photo?.uri) {
+        const stableUri = await prepareMediaForUpload(photo.uri, "jpg");
+        router.push({ pathname: "/stories/create", params: { mediaUri: stableUri, mediaType: "image" } });
       } else {
         showAlert("Error", "Could not capture photo. Please try again.");
         setProcessing(false);
@@ -75,7 +82,8 @@ function NativeCameraScreen() {
       const video = await cameraRef.current.recordAsync({ maxDuration: 30 });
       setRecording(false);
       if (video?.uri) {
-        router.push({ pathname: "/stories/create", params: { mediaUri: video.uri, mediaType: "video" } });
+        const stableUri = await prepareMediaForUpload(video.uri, "mp4");
+        router.push({ pathname: "/stories/create", params: { mediaUri: stableUri, mediaType: "video" } });
       } else {
         showAlert("Error", "Could not record video. Please try again.");
       }
@@ -90,12 +98,25 @@ function NativeCameraScreen() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images", "videos"],
         quality: 0.85,
+        base64: true,
       });
       if (!result.canceled && result.assets[0]) {
         const asset = result.assets[0];
+        const stableUri = asset.type !== "video" && asset.base64
+          ? `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`
+          : await prepareMediaForUpload(asset.uri, asset.type === "video" ? "mp4" : "jpg");
+        if (stableUri.startsWith("data:")) {
+          setStoryMediaDraft({
+            uri: stableUri,
+            mediaType: "image",
+            mimeType: asset.mimeType || "image/jpeg",
+          });
+          router.push("/stories/create");
+          return;
+        }
         router.push({
           pathname: "/stories/create",
-          params: { mediaUri: asset.uri, mediaType: asset.type === "video" ? "video" : "image" },
+          params: { mediaUri: stableUri, mediaType: asset.type === "video" ? "video" : "image" },
         });
       }
     } catch {

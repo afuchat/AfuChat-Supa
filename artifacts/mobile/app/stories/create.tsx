@@ -29,7 +29,8 @@ import { Avatar } from "@/components/ui/Avatar";
 import Colors from "@/constants/colors";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { showAlert } from "@/lib/alert";
-import { uploadToStorage } from "@/lib/mediaUpload";
+import { prepareMediaForUpload, uploadToStorage } from "@/lib/mediaUpload";
+import { consumeStoryMediaDraft } from "@/lib/storyMediaDraft";
 import * as FileSystem from "expo-file-system/legacy";
 import { isOnline } from "@/lib/offlineStore";
 import { getDailyUsage, recordDailyUsage } from "@/lib/featureUsage";
@@ -55,12 +56,13 @@ export default function CreateStoryScreen() {
   const insets = useSafeAreaInsets();
   const { width: screenW, height: screenH } = useWindowDimensions();
   const params = useLocalSearchParams<{ mediaUri?: string; mediaType?: string }>();
-  const [mediaUri, setMediaUri] = useState<string | null>(params.mediaUri ?? null);
+  const mediaDraft = consumeStoryMediaDraft();
+  const [mediaUri, setMediaUri] = useState<string | null>(params.mediaUri ?? mediaDraft?.uri ?? null);
   const [mediaType, setMediaType] = useState<"image" | "video">(
-    params.mediaType === "video" ? "video" : "image"
+    params.mediaType === "video" ? "video" : mediaDraft?.mediaType === "video" ? "video" : "image"
   );
   const [caption, setCaption] = useState("");
-  const [mediaMimeType, setMediaMimeType] = useState<string | null>(null);
+  const [mediaMimeType, setMediaMimeType] = useState<string | null>(mediaDraft?.mimeType ?? null);
   const [starting, setStarting] = useState(false);
   const [privacy, setPrivacy] = useState<Privacy>("everyone");
   const [showPrivacy, setShowPrivacy] = useState(false);
@@ -83,10 +85,17 @@ export default function CreateStoryScreen() {
   function handleGallerySelect(assets: GalleryAsset[]) {
     const asset = assets[0];
     if (!asset) return;
-    setMediaUri(asset.uri);
     const isVideo = asset.mediaType === "video";
     setMediaType(isVideo ? "video" : "image");
     setMediaMimeType(isVideo ? "video/mp4" : "image/jpeg");
+    // MediaLibrary can return a content:// URI or an Expo host-cache URI.
+    // Resolve it while the picker is still active, before publishing.
+    prepareMediaForUpload(asset.uri, isVideo ? "mp4" : "jpg")
+      .then(setMediaUri)
+      .catch((error: any) => {
+        setMediaUri(null);
+        showAlert("Could not read file", error?.message || "Please choose the media again.");
+      });
   }
 
   async function publish() {
@@ -145,17 +154,26 @@ export default function CreateStoryScreen() {
       !mediaUri.startsWith("blob:");
     if (isNativeFileUri && FileSystem.cacheDirectory) {
       try {
-        const rawExt =
-          mediaUri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
-        const stablePath = `${FileSystem.cacheDirectory}story_src_${Date.now()}.${rawExt}`;
-        await FileSystem.copyAsync({ from: mediaUri, to: stablePath });
-        _mediaUri = stablePath;
+        if (mediaUri.startsWith(FileSystem.cacheDirectory)) {
+          const existing = await FileSystem.getInfoAsync(mediaUri);
+          if (existing.exists) {
+            _mediaUri = mediaUri;
+          } else {
+            throw new Error("Cached story media is no longer available.");
+          }
+        } else {
+          const rawExt =
+            mediaUri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
+          const stablePath = `${FileSystem.cacheDirectory}story_src_${Date.now()}.${rawExt}`;
+          await FileSystem.copyAsync({ from: mediaUri, to: stablePath });
+          _mediaUri = stablePath;
+        }
       } catch (copyErr: any) {
         // Non-fatal: Expo Go on Android cannot copy from the host app's private
         // ImagePicker cache via FileSystem. Log and continue with the original
-        // URI — uploadToStorage will stream it directly via native upload APIs.
-        console.warn("[Story Publish] Pre-copy skipped (Expo Go sandbox path), uploading from original URI:", copyErr?.message || copyErr);
-        // _mediaUri stays as the original mediaUri
+        // URI — uploadToStorage has a readable-URI fallback and will report a
+        // clear error if it is gone.
+        console.warn("[Story Publish] Pre-copy skipped:", copyErr?.message || copyErr);
       }
     }
 
@@ -224,8 +242,10 @@ export default function CreateStoryScreen() {
           await recordDailyUsage("stories_create");
           finishStoryUpload();
         }
-      } catch {
-        failStoryUpload();
+      } catch (error: any) {
+        const message = error?.message || "Could not publish story. Please try again.";
+        console.error("[Story Upload] Unexpected failure:", message);
+        failStoryUpload(message);
       }
     })();
   }

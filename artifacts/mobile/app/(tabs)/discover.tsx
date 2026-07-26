@@ -68,6 +68,7 @@ import { SuggestedUsers } from "@/components/ui/SuggestedUsers";
 import { StoryRing } from "@/components/ui/StoryRing";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { useUserEffects } from "@/hooks/useUserEffects";
+import { getViewedUserIds } from "@/lib/storyViewedStore";
 
 type PostItem = {
   id: string;
@@ -236,39 +237,59 @@ type StoryEntry = {
   seenCount: number;
 };
 
-function StoriesRow({ userId, avatarUrl }: { userId: string | null; avatarUrl: string | null }) {
+function StoriesRow({
+  userId,
+  avatarUrl,
+  displayName,
+}: {
+  userId: string | null;
+  avatarUrl: string | null;
+  displayName: string | null;
+}) {
   const { colors } = useTheme();
   const [stories, setStories] = useState<StoryEntry[]>([]);
   const SZ = 58;
 
-  const loadDiscoverStories = useCallback(() => {
+  const loadDiscoverStories = useCallback(async () => {
     const now = new Date().toISOString();
-    supabase
+    const { data } = await supabase
       .from("stories")
-      .select("id, user_id, profiles!stories_user_id_fkey(display_name, avatar_url)")
+      .select("id, user_id, created_at, privacy, profiles!stories_user_id_fkey(display_name, avatar_url)")
       .gt("expires_at", now)
-      .eq("privacy", "everyone")
       .order("created_at", { ascending: false })
-      .limit(30)
-      .then(({ data }) => {
-        if (!data) return;
-        const map = new Map<string, StoryEntry>();
-        for (const s of data as any[]) {
-          if (!s.user_id || s.user_id === userId) continue; // skip own stories here
-          if (!map.has(s.user_id)) {
-            map.set(s.user_id, {
-              userId: s.user_id,
-              name: s.profiles?.display_name || "User",
-              avatar_url: s.profiles?.avatar_url ?? null,
-              storyCount: 0,
-              seenCount: 0,
-            });
-          }
-          map.get(s.user_id)!.storyCount++;
-        }
-        setStories(Array.from(map.values()).slice(0, 12));
-      }, () => {});
-  }, [userId]);
+      .limit(100);
+    if (!data) return;
+
+    const visible = (data as any[]).filter((s) =>
+      s.user_id === userId || s.privacy === "everyone",
+    );
+    const storyIds = visible.map((s) => s.id).filter(Boolean);
+    const { data: viewed } = userId && storyIds.length
+      ? await supabase.from("story_views").select("story_id").eq("viewer_id", userId).in("story_id", storyIds)
+      : { data: [] as any[] };
+    const viewedSet = new Set((viewed || []).map((v: any) => v.story_id));
+    const sessionViewed = getViewedUserIds();
+    const map = new Map<string, StoryEntry>();
+    for (const s of visible) {
+      if (!s.user_id) continue;
+      const isOwn = s.user_id === userId;
+      const isSeen = isOwn || sessionViewed.has(s.user_id) || viewedSet.has(s.id);
+      const existing = map.get(s.user_id);
+      if (existing) {
+        existing.storyCount += 1;
+        if (isSeen) existing.seenCount += 1;
+        continue;
+      }
+      map.set(s.user_id, {
+        userId: s.user_id,
+        name: isOwn ? (displayName || "You") : (s.profiles?.display_name || "User"),
+        avatar_url: isOwn ? avatarUrl : (s.profiles?.avatar_url ?? null),
+        storyCount: 1,
+        seenCount: isSeen ? 1 : 0,
+      });
+    }
+    setStories(Array.from(map.values()).slice(0, 12));
+  }, [avatarUrl, displayName, userId]);
 
   // Reload whenever this tab comes into focus so freshly-posted stories appear.
   useFocusEffect(useCallback(() => { loadDiscoverStories(); }, [loadDiscoverStories]));
@@ -304,7 +325,10 @@ function StoriesRow({ userId, avatarUrl }: { userId: string | null; avatarUrl: s
           key={s.userId}
           style={{ alignItems: "center", gap: 5, width: 68 }}
           activeOpacity={0.8}
-          onPress={() => safeRouter.push("/moments" as any)}
+          onPress={() => safeRouter.push({
+            pathname: "/stories/view",
+            params: { userId: s.userId },
+          })}
         >
           <StoryRing size={SZ} storyCount={s.storyCount} seenCount={s.seenCount}>
             <View style={{ width: SZ, height: SZ, borderRadius: SZ / 2, overflow: "hidden", backgroundColor: colors.backgroundSecondary, alignItems: "center", justifyContent: "center" }}>
@@ -2554,7 +2578,7 @@ export default function DiscoverScreen() {
                       <PostCard item={entry.item} onToggleLike={toggleLike} onToggleBookmark={toggleBookmark} onToggleFollow={toggleFollow} onImagePress={imgViewer.openViewer} onRequireAuth={onRequireAuth} onOpenComments={onOpenComments} onDismiss={onDismissPost} onMuteAuthor={onMuteAuthor} />
                     );
                   }}
-                  ListHeaderComponent={<StoriesRow userId={user?.id ?? null} avatarUrl={profile?.avatar_url ?? null} />}
+                  ListHeaderComponent={<StoriesRow userId={user?.id ?? null} avatarUrl={profile?.avatar_url ?? null} displayName={profile?.display_name ?? null} />}
                   contentContainerStyle={{ gap: 8, paddingTop: headerHeight + 8, paddingBottom: insets.bottom + 100 }}
                   showsVerticalScrollIndicator={false}
                   onScroll={onFeedScroll}
@@ -2692,7 +2716,7 @@ export default function DiscoverScreen() {
                 <PostCard item={entry.item} onToggleLike={toggleLike} onToggleBookmark={toggleBookmark} onToggleFollow={toggleFollow} onImagePress={imgViewer.openViewer} onRequireAuth={onRequireAuth} onOpenComments={onOpenComments} onDismiss={onDismissPost} onMuteAuthor={onMuteAuthor} />
               );
             }}
-            ListHeaderComponent={<StoriesRow userId={user?.id ?? null} avatarUrl={profile?.avatar_url ?? null} />}
+            ListHeaderComponent={<StoriesRow userId={user?.id ?? null} avatarUrl={profile?.avatar_url ?? null} displayName={profile?.display_name ?? null} />}
             contentContainerStyle={{ gap: 8, paddingTop: headerHeight + 8, paddingBottom: insets.bottom + 100 }}
             showsVerticalScrollIndicator={false}
             onScroll={onFeedScroll}
