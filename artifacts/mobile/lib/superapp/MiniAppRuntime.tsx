@@ -124,7 +124,7 @@ export function MiniAppRuntimeProvider({ children }: { children: React.ReactNode
   );
 
   useEffect(() => {
-    if (!activeAppId) return;
+    if (!activeAppId || Platform.OS === "web") return;
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
       minimizeApp(activeAppId);
       return true;
