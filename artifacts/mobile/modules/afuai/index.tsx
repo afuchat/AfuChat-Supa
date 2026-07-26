@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  KeyboardAvoidingView,
+  Keyboard,
+  LayoutAnimation,
   Linking,
   Platform,
   Pressable,
@@ -308,6 +309,8 @@ export default function AfuAIApp() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [inputBarHeight, setInputBarHeight] = useState(64);
 
   // Page tracking
   const [activePage, setActivePage] = useState<PageInfo>(() => getCurrentPage());
@@ -342,6 +345,23 @@ export default function AfuAIApp() {
       setHistoryLoaded(true);
     })();
   }, [user, historyLoaded]);
+
+  // ── Keyboard height tracking — native approach, no KeyboardAvoidingView ─────
+  useEffect(() => {
+    const show = Keyboard.addListener("keyboardDidShow", (e) => {
+      if (Platform.OS === "android") {
+        LayoutAnimation.configureNext({ duration: 180, update: { type: LayoutAnimation.Types.easeInEaseOut } });
+      }
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const hide = Keyboard.addListener("keyboardDidHide", () => {
+      if (Platform.OS === "android") {
+        LayoutAnimation.configureNext({ duration: 180, update: { type: LayoutAnimation.Types.easeInEaseOut } });
+      }
+      setKeyboardHeight(0);
+    });
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   // ── Page tracking: fires when this mini app becomes active ─────────────────
   useEffect(() => {
@@ -617,24 +637,17 @@ export default function AfuAIApp() {
             </View>
           )}
 
-          {/* Verify footer — shown on completed AI responses */}
+          {/* Powered-by footer — shown on completed AI responses */}
           {!isUser && (
-            <View style={styles.verifyRow}>
+            <TouchableOpacity
+              onPress={() => Linking.openURL("https://engagera.afuchat.com")}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              activeOpacity={0.6}
+              style={styles.verifyRow}
+            >
               <Ionicons name="sparkles" size={9} color={colors.textMuted} style={{ opacity: 0.6 }} />
               <Text style={[styles.verifyPowered, { color: colors.textMuted }]}>Powered by Engagera</Text>
-              <View style={[styles.verifyDivider, { backgroundColor: colors.border }]} />
-              <TouchableOpacity
-                onPress={() => {
-                  const raw = item.content.replace(/[#*`\[\]>]/g, "").trim();
-                  const q = encodeURIComponent(raw.slice(0, 80));
-                  if (q) Linking.openURL(`https://www.google.com/search?q=${q}`);
-                }}
-                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                activeOpacity={0.6}
-              >
-                <Text style={[styles.verifyLink, { color: accent }]}>Verify ↗</Text>
-              </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
           )}
         </View>
       );
@@ -645,11 +658,7 @@ export default function AfuAIApp() {
   const isOnPage = activePage.pathname !== HOME_PATHNAME;
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.root, { backgroundColor: colors.background }]}
-      behavior="height"
-      keyboardVerticalOffset={0}
-    >
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <LinearGradient
@@ -708,14 +717,25 @@ export default function AfuAIApp() {
         data={messages}
         keyExtractor={(m) => m.id}
         renderItem={renderItem}
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 12 }]}
+        contentContainerStyle={[styles.list, { paddingBottom: inputBarHeight + keyboardHeight + insets.bottom + 12 }]}
         showsVerticalScrollIndicator={false}
         onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
         keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
       />
 
-      {/* Floating input bar */}
-      <View style={[styles.inputRow, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+      {/* Input bar — absolutely positioned so it always floats above the keyboard */}
+      <View
+        style={[styles.inputRow, {
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: keyboardHeight > 0 ? keyboardHeight : insets.bottom,
+          paddingBottom: keyboardHeight > 0 ? 8 : Math.max(insets.bottom > 0 ? 0 : 8, 0),
+          backgroundColor: colors.background,
+        }]}
+        onLayout={(e) => setInputBarHeight(e.nativeEvent.layout.height)}
+      >
         <View style={[styles.inputPill, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
           <TextInput
             style={[styles.input, { color: colors.text }]}
@@ -745,7 +765,7 @@ export default function AfuAIApp() {
           </Pressable>
         </View>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -1051,8 +1071,6 @@ const styles = StyleSheet.create({
     marginTop: 6, paddingLeft: 2,
   },
   verifyPowered: { fontSize: 10, fontFamily: "Inter_400Regular", opacity: 0.55 },
-  verifyDivider: { width: 1, height: 10, opacity: 0.4 },
-  verifyLink: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
   inputRow: { paddingHorizontal: 10, paddingTop: 8 },
   inputPill: {
     flexDirection: "row", alignItems: "flex-end",

@@ -913,7 +913,7 @@ function LensContextCard({ msg, onSuggestionTap }: {
   );
 }
 
-function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, replyPreview, onTapReply, isHighlighted, onTapEnvelope, onTapGift, onImageTap, isPremiumSender, onConfirmExec, onCancelExec, onSuggestionTap, onSenderPress, onReactionPress, onStatusPress, brandColor, goldNameplate, verifiedStar, statusGlow }: {
+function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, replyPreview, onTapReply, isHighlighted, onTapEnvelope, onTapGift, onImageTap, isPremiumSender, onConfirmExec, onCancelExec, onSuggestionTap, onSenderPress, onReactionPress, onStatusPress, brandColor, goldNameplate, verifiedStar, statusGlow, flatSurface }: {
   msg: Message;
   isMe: boolean;
   showTail: boolean;
@@ -937,6 +937,8 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   goldNameplate?: boolean;
   verifiedStar?: boolean;
   statusGlow?: boolean;
+  /** When true, renders a flat borderless surface — no bubble bg, no tail, no radius */
+  flatSurface?: boolean;
 }) {
   const { colors, isDark } = useTheme();
   const BRAND = brandColor ?? colors.accent;
@@ -1105,8 +1107,8 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   const meBubbleColor = BRAND;
   const otherBubbleColor = colors.bubbleIncoming;
   const isSticker = msg.attachment_type === "sticker";
-  const bubbleColor = isSticker ? "transparent" : (isMe ? meBubbleColor : otherBubbleColor);
-  const textColor = isMe ? "#FFFFFF" : colors.bubbleIncomingText;
+  const bubbleColor = flatSurface ? "transparent" : (isSticker ? "transparent" : (isMe ? meBubbleColor : otherBubbleColor));
+  const textColor = flatSurface ? colors.text : (isMe ? "#FFFFFF" : colors.bubbleIncomingText);
 
   // Adaptive receipt colours — computed from the actual bubble background so they
   // are always legible regardless of the user's chosen accent colour.
@@ -1159,9 +1161,9 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   // Plain text messages get an inline (WhatsApp-style) timestamp.
   // All other types (image, audio, file, sticker, AI) keep the metaRow below.
   const isPlainText = !hasImage && !hasVideo && !hasAudio && !hasFile && !hasStoryReply && !isSticker;
-  // Use inline timestamp only for bare text — exclude AI messages and messages
-  // that show translate/speak chips (chips follow the text, absolute metaRow would overlap them).
-  const useInlineTimestamp = isPlainText && !msg._isAi && !canTranslate && !canSpeak;
+  // Use inline timestamp only for bare text — exclude AI messages, flat-surface messages,
+  // and messages that show translate/speak chips (chips follow the text, absolute metaRow would overlap them).
+  const useInlineTimestamp = isPlainText && !msg._isAi && !flatSurface && !canTranslate && !canSpeak;
 
   const replyIconOpacity = swipeX.interpolate({
     inputRange: isMe ? [-SWIPE_THRESHOLD, -10, 0] : [0, 10, SWIPE_THRESHOLD],
@@ -1172,23 +1174,29 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   return (
     <View>
     <View {...swipePan.panHandlers} style={[st.msgRow, isMe ? st.msgRowMe : st.msgRowOther]}>
-      {!isMe && (
+      {!isMe && !flatSurface && (
         <Animated.View style={[st.swipeReplyIcon, { opacity: replyIconOpacity, left: 4 }]}>
           <Ionicons name="arrow-undo" size={18} color={BRAND} />
         </Animated.View>
       )}
       <Animated.View style={[{ flex: 1, flexDirection: "row", justifyContent: isMe ? "flex-end" : "flex-start", minWidth: 0 }, { transform: [{ translateX: swipeX }], opacity: fadeIn }]}>
-      <View style={[st.bubbleContainer, isMe ? st.bubbleContainerMe : st.bubbleContainerOther]}>
-        {showTail && <BubbleTail isMe={isMe} color={bubbleColor} />}
+      <View style={[
+        st.bubbleContainer,
+        isMe ? st.bubbleContainerMe : st.bubbleContainerOther,
+        flatSurface && { maxWidth: "100%" },
+      ]}>
+        {showTail && !flatSurface && <BubbleTail isMe={isMe} color={bubbleColor} />}
 
         <Pressable
           onLongPress={() => onLongPress(msg)}
           delayLongPress={300}
           style={[
             st.bubble,
-            { backgroundColor: bubbleColor, borderRadius: chatRadius ?? 18 },
+            flatSurface
+              ? { backgroundColor: "transparent", borderRadius: 0, paddingHorizontal: 4, paddingTop: 2, paddingBottom: 0 }
+              : { backgroundColor: bubbleColor, borderRadius: chatRadius ?? 18 },
             isMe ? st.bubbleMe : st.bubbleOther,
-            showTail ? (isMe ? st.bubbleTailMe : st.bubbleTailOther) : null,
+            !flatSurface && showTail ? (isMe ? st.bubbleTailMe : st.bubbleTailOther) : null,
             replyPreview ? st.bubbleWithReply : null,
             isPending && { opacity: 0.6 },
           ]}>
@@ -1604,7 +1612,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
         )}
       </View>
       </Animated.View>
-      {isMe && (
+      {isMe && !flatSurface && (
         <Animated.View style={[st.swipeReplyIcon, { opacity: replyIconOpacity, right: 4 }]}>
           <Ionicons name="arrow-undo" size={18} color={BRAND} />
         </Animated.View>
@@ -5938,6 +5946,7 @@ STRICT RULES:
             goldNameplate={goldNameplateIds.has(item.sender_id)}
             verifiedStar={verifiedStarIds.has(item.sender_id)}
             statusGlow={isMe ? equippedGoods.has('sg8') : statusGlowIds.has(item.sender_id)}
+            flatSurface={isAfuAiDirectChat}
           />
         )}
       </View>

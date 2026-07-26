@@ -42,7 +42,8 @@ import { showAlert } from "@/lib/alert";
 import { notifyPostLike, notifyPostReply } from "@/lib/notifyUser";
 import { useAutoTranslate } from "@/context/LanguageContext";
 import { LANG_LABELS } from "@/lib/translate";
-import { aiSummarizeThread } from "@/lib/aiHelper";
+import { aiSummarizeThread, askAi } from "@/lib/aiHelper";
+import { AFUAI_BOT_ID } from "@/lib/afuAiBot";
 import * as Haptics from "@/lib/haptics";
 import { getLocalFeedPost } from "@/lib/storage/localFeed";
 import { uploadToStorage } from "@/lib/mediaUpload";
@@ -889,7 +890,7 @@ export default function PostDetailScreen() {
     if (finalVoiceUrl) { insertData.voice_url = finalVoiceUrl; insertData.voice_duration = recordedDuration; }
     if (finalImageUrl) insertData.image_url = finalImageUrl;
 
-    const { error } = await supabase.from("post_replies").insert(insertData);
+    const { data: insertedRows, error } = await supabase.from("post_replies").insert(insertData).select("id").single();
     if (error) {
       showAlert("Error", "Could not post reply.");
     } else {
@@ -901,7 +902,29 @@ export default function PostDetailScreen() {
       loadReplies();
       try { const { rewardXp } = await import("../../lib/rewardXp"); rewardXp("post_reply"); } catch (_) {}
       if (post && post.author.id !== user.id) {
-        notifyPostReply({ postAuthorId: post.author.id, replierName: myProfile?.display_name || "Someone", replierUserId: user.id, postId: post.id, replyPreview: content || (finalVoiceUrl ? "🎤 Voice note" : finalImageUrl ? "🖼️ Image" : "") });
+        notifyPostReply({ postAuthorId: post.author.id, replierName: myProfile?.display_name || "Someone", replierUserId: user.id, postId: post.id, replyPreview: content || (finalVoiceUrl ? "\uD83C\uDF99\uFE0F Voice note" : finalImageUrl ? "\uD83D\uDDBC\uFE0F Image" : "") });
+      }
+      // Auto-reply from AfuAI when @afuai is mentioned in the comment
+      if (content && /@afuai/i.test(content) && post) {
+        (async () => {
+          try {
+            const promptText = content.replace(/@afuai/gi, "").trim() || content;
+            const aiReply = await askAi(
+              `A user commented on a post with the text: "${post.content.slice(0, 300)}"\n\nThey tagged @afuai and wrote: "${promptText}"\n\nReply naturally and helpfully as AfuAI in 1-3 sentences. No markdown, no lists.`,
+              "You are AfuAI, AfuChat's AI assistant. You are replying to a comment on a social media post. Be concise, friendly, and helpful.",
+              { fast: true, maxTokens: 150 }
+            );
+            if (!aiReply) return;
+            const parentId = insertedRows?.id ?? null;
+            await supabase.from("post_replies").insert({
+              post_id: id,
+              author_id: AFUAI_BOT_ID,
+              content: aiReply,
+              parent_reply_id: parentId,
+            });
+            loadReplies();
+          } catch (_) {}
+        })();
       }
     }
     setSending(false);

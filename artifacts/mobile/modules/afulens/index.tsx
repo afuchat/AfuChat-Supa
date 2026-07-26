@@ -423,22 +423,16 @@ export default function AfuLensApp() {
               </View>
             )}
 
-            {/* Powered by Engagera + double-check */}
-            <View style={s.poweredRow}>
+            {/* Powered by Engagera */}
+            <TouchableOpacity
+              style={s.poweredRow}
+              onPress={() => Linking.openURL("https://engagera.afuchat.com")}
+              hitSlop={8}
+              activeOpacity={0.7}
+            >
               <Ionicons name="sparkles" size={10} color="rgba(255,255,255,0.35)" />
               <Text style={s.poweredText}>Powered by Engagera</Text>
-              <View style={s.poweredDot} />
-              <TouchableOpacity
-                onPress={() => {
-                  const q = encodeURIComponent((result?.searchQuery || result?.title || "").trim());
-                  if (q) Linking.openURL(`https://www.google.com/search?q=${q}`);
-                }}
-                hitSlop={8}
-                activeOpacity={0.7}
-              >
-                <Text style={s.verifyLink}>Verify online ↗</Text>
-              </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
 
             <View style={s.aiDisclaimerRow}>
               <Ionicons name="information-circle-outline" size={12} color="rgba(255,255,255,0.4)" />
@@ -549,8 +543,6 @@ const s = StyleSheet.create({
     marginHorizontal: 16, marginBottom: 4, marginTop: 4,
   },
   poweredText: { fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "Inter_400Regular" },
-  poweredDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.25)" },
-  verifyLink: { fontSize: 10, color: BRAND, fontFamily: "Inter_600SemiBold" },
   aiDisclaimerRow: {
     flexDirection: "row", alignItems: "flex-start", gap: 5,
     marginHorizontal: 16, marginBottom: 12,
