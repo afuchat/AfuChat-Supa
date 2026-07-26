@@ -29,8 +29,8 @@ const BOTTOM_TABS = [
   { route: "/(tabs)/discover", iconOn: "home",             iconOff: "home-outline"           },
   { route: "/(tabs)/shorts",   iconOn: "play-circle",      iconOff: "play-circle-outline"    },
   // index 2 is the CREATE button — handled separately
+  { route: "/(tabs)/apps",     iconOn: "grid",             iconOff: "grid-outline"           },
   { route: "/(tabs)/chats",    iconOn: "chatbubble",       iconOff: "chatbubble-outline"     },
-  { route: "/(tabs)/me",       iconOn: "person",           iconOff: "person-outline"         },
 ] as const;
 
 function normalizeTabPath(p: string): string {
