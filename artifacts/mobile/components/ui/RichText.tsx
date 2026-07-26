@@ -319,7 +319,7 @@ export function RichText({
             return (
               <Text
                 key={i}
-                style={[styles.bold, { color: effectiveLinkColor }]}
+                style={[styles.bold, { color: inheritedColor }]}
                 onPress={() => handlePress(span)}
                 selectable={selectable}
                 suppressHighlighting
@@ -328,23 +328,13 @@ export function RichText({
               </Text>
             );
           case "mention":
-            if (plainMentions) {
-              return (
-                <Text
-                  key={i}
-                  style={[styles.mention, { color: inheritedColor }]}
-                  selectable={selectable}
-                >
-                  {span.text}
-                </Text>
-              );
-            }
             return (
               <Text
                 key={i}
-                style={[styles.link, styles.mention, { color: effectiveLinkColor }]}
+                style={[styles.mention, { color: inheritedColor }]}
                 onPress={() => handlePress(span)}
                 selectable={selectable}
+                suppressHighlighting
               >
                 {span.text}
               </Text>
