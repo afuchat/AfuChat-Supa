@@ -241,7 +241,7 @@ function StoriesRow({ userId, avatarUrl }: { userId: string | null; avatarUrl: s
   const [stories, setStories] = useState<StoryEntry[]>([]);
   const SZ = 58;
 
-  useEffect(() => {
+  const loadDiscoverStories = useCallback(() => {
     const now = new Date().toISOString();
     supabase
       .from("stories")
@@ -251,24 +251,46 @@ function StoriesRow({ userId, avatarUrl }: { userId: string | null; avatarUrl: s
       .order("created_at", { ascending: false })
       .limit(30)
       .then(({ data }) => {
-          if (!data) return;
-          const map = new Map<string, StoryEntry>();
-          for (const s of data as any[]) {
-            if (!s.user_id || s.user_id === userId) continue; // skip own stories here
-            if (!map.has(s.user_id)) {
-              map.set(s.user_id, {
-                userId: s.user_id,
-                name: s.profiles?.display_name || "User",
-                avatar_url: s.profiles?.avatar_url ?? null,
-                storyCount: 0,
-                seenCount: 0,
-              });
-            }
-            map.get(s.user_id)!.storyCount++;
+        if (!data) return;
+        const map = new Map<string, StoryEntry>();
+        for (const s of data as any[]) {
+          if (!s.user_id || s.user_id === userId) continue; // skip own stories here
+          if (!map.has(s.user_id)) {
+            map.set(s.user_id, {
+              userId: s.user_id,
+              name: s.profiles?.display_name || "User",
+              avatar_url: s.profiles?.avatar_url ?? null,
+              storyCount: 0,
+              seenCount: 0,
+            });
           }
-          setStories(Array.from(map.values()).slice(0, 12));
-        }, () => {});
+          map.get(s.user_id)!.storyCount++;
+        }
+        setStories(Array.from(map.values()).slice(0, 12));
+      }, () => {});
   }, [userId]);
+
+  // Reload whenever this tab comes into focus so freshly-posted stories appear.
+  useFocusEffect(useCallback(() => { loadDiscoverStories(); }, [loadDiscoverStories]));
+
+  // Realtime: pick up new stories without requiring a tab switch.
+  useEffect(() => {
+    const staleRt = supabase.getChannels().find(
+      (ch) => ch.topic === "realtime:stories-discover-row"
+    );
+    if (staleRt) supabase.removeChannel(staleRt);
+
+    const rt = supabase
+      .channel("stories-discover-row")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "stories" }, () => {
+        loadDiscoverStories();
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "stories" }, () => {
+        loadDiscoverStories();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(rt); };
+  }, [loadDiscoverStories]);
 
   return (
     <ScrollView

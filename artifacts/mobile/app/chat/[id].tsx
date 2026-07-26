@@ -3114,6 +3114,12 @@ function ChatScreen() {
   // and do a lightweight client-side check inside setMessages.
   useEffect(() => {
     if (!user || !id) return;
+    // Evict stale channel — double-tap can mount this effect twice for the same
+    // chat before the first cleanup fires, leaving an already-subscribed channel.
+    const _staleStatus = supabase.getChannels().find(
+      (ch) => ch.topic === `realtime:msg-status-watch:${id}:${user.id}`
+    );
+    if (_staleStatus) supabase.removeChannel(_staleStatus);
     const statusSub = supabase
       .channel(`msg-status-watch:${id}:${user.id}`)
       .on(
@@ -3156,6 +3162,11 @@ function ChatScreen() {
   useEffect(() => {
     const otherId = chatInfo?.other_id;
     if (!otherId || chatInfo?.is_group || chatInfo?.is_channel || isDraft) return;
+
+    const _stalePresence = supabase.getChannels().find(
+      (ch) => ch.topic === `realtime:presence-watch:${id}:${otherId}`
+    );
+    if (_stalePresence) supabase.removeChannel(_stalePresence);
 
     const presenceSub = supabase
       .channel(`presence-watch:${id}:${otherId}`)
