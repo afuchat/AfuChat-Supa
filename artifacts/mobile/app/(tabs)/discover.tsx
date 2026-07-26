@@ -711,7 +711,13 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
               {/* ── Content text — same architecture as post details page ── */}
               {(displayContent || "").trim().length > 0 && (() => {
                 const LIMIT = 300;
-                const full = (displayContent || "").trim();
+                // When a link-preview card is shown below, strip ALL URLs from the
+                // body using regex so there is no possibility of duplication —
+                // regardless of whether the extracted previewUrl exactly matches
+                // every URL variant in the content (trailing comma, encoding, etc.).
+                const full = previewUrl
+                  ? (displayContent || "").replace(/https?:\/\/[^\s<)"'\]]+/g, "").replace(/\s{2,}/g, " ").trim()
+                  : (displayContent || "").trim();
                 const isTruncated = !expanded && full.length > LIMIT;
                 const shown = isTruncated ? full.slice(0, LIMIT).trimEnd() : full;
                 if (!shown) return null;
