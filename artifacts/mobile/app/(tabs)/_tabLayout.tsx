@@ -97,8 +97,8 @@ function CompactTabBar({
   ];
 
   const BAR_BG     = isDark ? "#0C0C0C" : "#FFFFFF";
-  const ICON_SIZE  = 24;
-  const SLOT_COUNT = 5; // home | search | CREATE | chat | profile
+  const ICON_SIZE  = 27;
+  const SLOT_COUNT = 5; // home | Fun | CREATE | apps | chats
 
   function handleTabPress(route: string) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -138,36 +138,21 @@ function CompactTabBar({
             );
           }
 
-          const focused    = active === slot.route;
-          const isProfile  = slot.route === "/(tabs)/me";
-          const iconColor  = focused ? colors.text : colors.textMuted;
-          const iconName   = focused ? slot.iconOn : slot.iconOff;
+          const focused   = active === slot.route;
+          const iconColor = focused ? colors.text : colors.textMuted;
 
           return (
             <View key={slot.route} style={bar.slot}>
-              <Pressable
-                style={({ pressed }) => [bar.pressable, pressed && { opacity: 0.6 }]}
+              <TouchableOpacity
+                style={bar.pressable}
                 onPress={() => handleTabPress(slot.route)}
+                activeOpacity={0.65}
                 accessibilityRole="button"
                 accessibilityLabel={slot.route.replace("/(tabs)/", "")}
                 accessibilityState={{ selected: focused }}
               >
                 <View style={bar.iconWrap}>
-                  {isProfile && avatarUrl ? (
-                    <ExpoImage
-                      source={{ uri: avatarUrl }}
-                      style={[
-                        bar.avatar,
-                        focused
-                          ? { borderColor: colors.text, borderWidth: 2 }
-                          : { borderColor: colors.textMuted + "4D", borderWidth: 1.5 },
-                      ]}
-                      contentFit="cover"
-                      cachePolicy="memory-disk"
-                    />
-                  ) : (
-                    <Ionicons name={iconName as any} size={ICON_SIZE} color={iconColor} />
-                  )}
+                  <Ionicons name={slot.iconOn as any} size={ICON_SIZE} color={iconColor} />
                 </View>
 
                 {/* Unread badge on chat */}
@@ -178,7 +163,7 @@ function CompactTabBar({
                     </Text>
                   </View>
                 )}
-              </Pressable>
+              </TouchableOpacity>
             </View>
           );
         })}
@@ -234,26 +219,27 @@ const bar = StyleSheet.create({
     right: 0,
     flexDirection: "row",
     alignItems: "center",
-    paddingTop: 10,
+    height: 56,
+    paddingTop: 0,
     zIndex: 100,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: 0.5,
     borderTopColor: "rgba(255,255,255,0.07)",
   },
   slot: {
     flex: 1,
+    height: 56,
     alignItems: "center",
     justifyContent: "center",
   },
   pressable: {
+    width: 52,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 12,
   },
   iconWrap: {
-    width: 36,
-    height: 30,
+    width: 32,
+    height: 32,
     alignItems: "center",
     justifyContent: "center",
   },
