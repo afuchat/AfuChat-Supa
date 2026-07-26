@@ -110,7 +110,7 @@ export default function ManageAccountScreen() {
         {/* Banner */}
         <View style={[s.banner, { backgroundColor: colors.card }]}>
           <View style={[s.bannerIcon, { backgroundColor: "#0A84FF18" }]}>
-            <Ionicons name="person-circle-outline" size={24} color="#0A84FF" />
+            <Ionicons name="person-circle" size={24} color="#0A84FF" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[s.bannerTitle, { color: colors.text }]}>Your Account</Text>
@@ -123,7 +123,7 @@ export default function ManageAccountScreen() {
         {/* Data portability */}
         <Section title="DATA PORTABILITY" colors={colors}>
           <Row
-            icon="cloud-download-outline" iconColor="#0A84FF"
+            icon="cloud-download" iconColor="#0A84FF"
             label="Export My Data"
             sublabel="Download a copy of your profile, posts, messages and activity"
             loading={downloading}

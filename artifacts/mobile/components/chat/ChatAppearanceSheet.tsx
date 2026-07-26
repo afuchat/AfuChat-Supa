@@ -210,7 +210,7 @@ export default function ChatAppearanceSheet({ visible, chatId: _chatId, appearan
         {/* Reset */}
         {hasCustom && (
           <TouchableOpacity style={[styles.resetBtn, { borderColor: colors.border }]} onPress={resetAll} activeOpacity={0.7}>
-            <Ionicons name="refresh-outline" size={24} color={colors.text} style={styles.resetIcon} />
+            <Ionicons name="refresh" size={24} color={colors.text} style={styles.resetIcon} />
             <Text style={[styles.resetText, { color: colors.text }]}>Reset to Default</Text>
           </TouchableOpacity>
         )}

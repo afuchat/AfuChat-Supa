@@ -49,10 +49,10 @@ function formatDuration(sec: number): string {
 }
 
 const TABS: { key: MediaTab; label: string; icon: ComponentProps<typeof Ionicons>["name"] }[] = [
-  { key: "all",    label: "All",    icon: "grid-outline"          },
-  { key: "photos", label: "Photos", icon: "image-outline"         },
-  { key: "videos", label: "Videos", icon: "videocam-outline"      },
-  { key: "audio",  label: "Audio",  icon: "musical-notes-outline" },
+  { key: "all",    label: "All",    icon: "grid"          },
+  { key: "photos", label: "Photos", icon: "image"         },
+  { key: "videos", label: "Videos", icon: "videocam"      },
+  { key: "audio",  label: "Audio",  icon: "musical-notes" },
 ] as any;
 
 export default function MediaGalleryPicker({
@@ -214,7 +214,7 @@ export default function MediaGalleryPicker({
         {/* ── States ── */}
         {permission === "denied" && (
           <View style={s.center}>
-            <Ionicons name="lock-closed-outline" size={48} color={colors.textMuted ?? "#888"} />
+            <Ionicons name="lock-closed" size={48} color={colors.textMuted ?? "#888"} />
             <Text style={[s.emptyTitle, { color: colors.text }]}>Permission Required</Text>
             <Text style={[s.emptyBody, { color: colors.textMuted ?? "#888" }]}>
               Allow AfuChat to access your media library in your device settings.
@@ -231,7 +231,7 @@ export default function MediaGalleryPicker({
 
         {permission === "granted" && !loading && assets.length === 0 && (
           <View style={s.center}>
-            <Ionicons name="images-outline" size={48} color={colors.textMuted ?? "#888"} />
+            <Ionicons name="images" size={48} color={colors.textMuted ?? "#888"} />
             <Text style={[s.emptyTitle, { color: colors.text }]}>Nothing here</Text>
             <Text style={[s.emptyBody, { color: colors.textMuted ?? "#888" }]}>
               No {tab === "all" ? "media files" : tab} found on this device.

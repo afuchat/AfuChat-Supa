@@ -174,7 +174,7 @@ export default function SellerApplyScreen() {
         </View>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 14 }}>
           <View style={[st.statusIcon, { backgroundColor: "#FF9500" + "18" }]}>
-            <Ionicons name="time-outline" size={40} color="#FF9500" />
+            <Ionicons name="time" size={40} color="#FF9500" />
           </View>
           <Text style={{ fontSize: 20, fontFamily: "Inter_700Bold", color: colors.text, textAlign: "center" }}>Application Under Review</Text>
           <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: colors.textMuted, textAlign: "center", lineHeight: 21 }}>
@@ -183,7 +183,7 @@ export default function SellerApplyScreen() {
             {" "}and our team is reviewing it. You'll be notified once a decision is made.
           </Text>
           <View style={[st.statusPill, { backgroundColor: "#FF9500" + "18" }]}>
-            <Ionicons name="hourglass-outline" size={13} color="#FF9500" />
+            <Ionicons name="hourglass" size={13} color="#FF9500" />
             <Text style={{ fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#FF9500" }}>Pending Review</Text>
           </View>
           <Text style={[st.submittedDate, { color: colors.textMuted }]}>
@@ -206,7 +206,7 @@ export default function SellerApplyScreen() {
         </View>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 14 }}>
           <View style={[st.statusIcon, { backgroundColor: "#FF3B30" + "15" }]}>
-            <Ionicons name="close-circle-outline" size={40} color="#FF3B30" />
+            <Ionicons name="close-circle" size={40} color="#FF3B30" />
           </View>
           <Text style={{ fontSize: 20, fontFamily: "Inter_700Bold", color: colors.text, textAlign: "center" }}>Application Not Approved</Text>
           {existingApp.admin_note ? (
@@ -244,7 +244,7 @@ export default function SellerApplyScreen() {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
           {/* Intro Banner */}
           <View style={[st.introBanner, { backgroundColor: colors.accent + "12", borderColor: colors.accent + "30" }]}>
-            <Ionicons name="storefront-outline" size={24} color={colors.accent} />
+            <Ionicons name="storefront" size={24} color={colors.accent} />
             <View style={{ flex: 1 }}>
               <Text style={[st.introTitle, { color: colors.accent }]}>Join AfuMarket</Text>
               <Text style={[st.introSub, { color: colors.textMuted }]}>
@@ -402,7 +402,7 @@ export default function SellerApplyScreen() {
             onPress={() => Linking.openURL("https://afuchat.com/terms").catch(() => {})}
             activeOpacity={0.8}
           >
-            <Ionicons name="shield-checkmark-outline" size={15} color={colors.accent} />
+            <Ionicons name="shield-checkmark" size={15} color={colors.accent} />
             <Text style={[st.termsText, { color: colors.textMuted }]}>
               By submitting you agree to AfuChat's{" "}
               <Text style={{ color: colors.accent, fontFamily: "Inter_500Medium" }}>Marketplace Terms</Text>
@@ -420,7 +420,7 @@ export default function SellerApplyScreen() {
               <ActivityIndicator color="#fff" />
             ) : (
               <>
-                <Ionicons name="send-outline" size={18} color="#fff" />
+                <Ionicons name="send" size={18} color="#fff" />
                 <Text style={st.submitText}>Submit Application</Text>
               </>
             )}

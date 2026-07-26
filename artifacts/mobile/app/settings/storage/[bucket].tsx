@@ -253,7 +253,7 @@ export default function StorageBucketScreen() {
           {isDeleting ? (
             <ActivityIndicator size="small" color="#FF3B30" />
           ) : (
-            <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+            <Ionicons name="trash" size={20} color="#FF3B30" />
           )}
         </TouchableOpacity>
       </View>
@@ -322,7 +322,7 @@ export default function StorageBucketScreen() {
         </View>
       ) : error ? (
         <View style={styles.center}>
-          <Ionicons name="cloud-offline-outline" size={40} color={colors.textMuted} />
+          <Ionicons name="cloud-offline" size={40} color={colors.textMuted} />
           <Text style={[styles.errorText, { color: colors.textMuted }]}>{error}</Text>
           <TouchableOpacity
             onPress={() => load("initial")}

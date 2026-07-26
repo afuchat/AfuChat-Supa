@@ -183,7 +183,7 @@ export default function BroadcastScreen() {
 
         <View style={[styles.toolbar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <TouchableOpacity style={styles.toolbarBtn} onPress={pickImage} activeOpacity={0.7}>
-            <Ionicons name="image-outline" size={22} color={PURPLE} />
+            <Ionicons name="image" size={22} color={PURPLE} />
             <Text style={[styles.toolbarBtnLabel, { color: colors.textMuted }]}>Photo</Text>
           </TouchableOpacity>
 
@@ -197,7 +197,7 @@ export default function BroadcastScreen() {
         </View>
 
         <View style={[styles.tipCard, { backgroundColor: PURPLE + "0E", borderColor: PURPLE + "30" }]}>
-          <Ionicons name="information-circle-outline" size={16} color={PURPLE} />
+          <Ionicons name="information-circle" size={16} color={PURPLE} />
           <Text style={[styles.tipText, { color: PURPLE }]}>
             Only you can post to this channel. Subscribers can like and comment on your broadcasts.
           </Text>

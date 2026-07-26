@@ -595,7 +595,7 @@ export default function GroupManageScreen() {
             <Text style={[s.sectionTitle, { color: colors.textSecondary }]}>Description</Text>
             {iAmAdmin && (
               <TouchableOpacity onPress={() => openEdit("description")} hitSlop={12}>
-                <Ionicons name="pencil-outline" size={16} color={colors.accent} />
+                <Ionicons name="pencil" size={16} color={colors.accent} />
               </TouchableOpacity>
             )}
           </View>
@@ -608,7 +608,7 @@ export default function GroupManageScreen() {
         <View style={[s.actionsRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <TouchableOpacity style={s.actionBtn} onPress={shareInviteLink} activeOpacity={0.7}>
             <View style={[s.actionIconWrap, { backgroundColor: "#007AFF18" }]}>
-              <Ionicons name="share-social-outline" size={22} color="#007AFF" />
+              <Ionicons name="share-social" size={22} color="#007AFF" />
             </View>
             <Text style={[s.actionLabel, { color: colors.text }]}>Share</Text>
           </TouchableOpacity>
@@ -616,7 +616,7 @@ export default function GroupManageScreen() {
           {iAmAdmin && (
             <TouchableOpacity style={s.actionBtn} onPress={openAddMembers} activeOpacity={0.7}>
               <View style={[s.actionIconWrap, { backgroundColor: colors.accent + "18" }]}>
-                <Ionicons name="person-add-outline" size={22} color={colors.accent} />
+                <Ionicons name="person-add" size={22} color={colors.accent} />
               </View>
               <Text style={[s.actionLabel, { color: colors.text }]}>Add</Text>
             </TouchableOpacity>
@@ -630,7 +630,7 @@ export default function GroupManageScreen() {
             >
               <View style={[s.actionIconWrap, { backgroundColor: isMuted ? "#8E8E9318" : "#FF950018" }]}>
                 <Ionicons
-                  name={isMuted ? "notifications-off-outline" : "notifications-outline"}
+                  name={isMuted ? "notifications-off" : "notifications"}
                   size={22}
                   color={isMuted ? "#8E8E93" : "#FF9500"}
                 />
@@ -673,7 +673,7 @@ export default function GroupManageScreen() {
             activeOpacity={0.7}
           >
             <View style={[s.actionIconWrap, { backgroundColor: "#34C75918" }]}>
-              <Ionicons name="chatbubble-outline" size={22} color="#34C759" />
+              <Ionicons name="chatbubble" size={22} color="#34C759" />
             </View>
             <Text style={[s.actionLabel, { color: colors.text }]}>Chat</Text>
           </TouchableOpacity>
@@ -690,7 +690,7 @@ export default function GroupManageScreen() {
           {/* Member search */}
           {memberCount > 5 && (
             <View style={[s.searchWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
-              <Ionicons name="search-outline" size={16} color={colors.textMuted} style={{ marginRight: 6 }} />
+              <Ionicons name="search" size={16} color={colors.textMuted} style={{ marginRight: 6 }} />
               <TextInput
                 style={[s.searchInput, { color: colors.text }]}
                 placeholder={`Search ${isChannel ? "subscribers" : "members"}…`}
@@ -774,7 +774,7 @@ export default function GroupManageScreen() {
               onPress={leaveGroup}
               activeOpacity={0.7}
             >
-              <Ionicons name="exit-outline" size={18} color="#FF3B30" />
+              <Ionicons name="exit" size={18} color="#FF3B30" />
               <Text style={[s.dangerBtnText, { color: "#FF3B30" }]}>
                 Leave {typeLabel}
               </Text>
@@ -786,7 +786,7 @@ export default function GroupManageScreen() {
               onPress={deleteGroup}
               activeOpacity={0.7}
             >
-              <Ionicons name="trash-outline" size={18} color="#FF3B30" />
+              <Ionicons name="trash" size={18} color="#FF3B30" />
               <Text style={[s.dangerBtnText, { color: "#FF3B30" }]}>
                 Delete {typeLabel}
               </Text>
@@ -894,7 +894,7 @@ export default function GroupManageScreen() {
                 router.push(`/@${selectedMember.profile.handle}` as any);
               }}
             >
-              <Ionicons name="person-outline" size={24} color={colors.text} style={{ marginRight: 18, width: 24, textAlign: "center" }} />
+              <Ionicons name="person" size={24} color={colors.text} style={{ marginRight: 18, width: 24, textAlign: "center" }} />
               <Text style={{ fontSize: 16, fontFamily: "Inter_700Bold", color: colors.text, flex: 1 }}>View Profile</Text>
             </TouchableOpacity>
 
@@ -904,7 +904,7 @@ export default function GroupManageScreen() {
               onPress={() => toggleAdminRole(selectedMember)}
             >
               <Ionicons
-                name={selectedMember.is_admin ? "shield-outline" : "shield"}
+                name={selectedMember.is_admin ? "shield" : "shield"}
                 size={24}
                 color={colors.accent}
                 style={{ marginRight: 18, width: 24, textAlign: "center" }}
@@ -921,7 +921,7 @@ export default function GroupManageScreen() {
               activeOpacity={0.65}
               onPress={() => removeMember(selectedMember.user_id, selectedMember.profile.display_name)}
             >
-              <Ionicons name="person-remove-outline" size={24} color="#FF3B30" style={{ marginRight: 18, width: 24, textAlign: "center" }} />
+              <Ionicons name="person-remove" size={24} color="#FF3B30" style={{ marginRight: 18, width: 24, textAlign: "center" }} />
               <Text style={{ fontSize: 16, fontFamily: "Inter_700Bold", color: "#FF3B30", flex: 1 }}>
                 Remove from {typeLabel}
               </Text>
@@ -968,7 +968,7 @@ export default function GroupManageScreen() {
           </View>
         ) : addCandidates.length === 0 ? (
           <View style={{ padding: 32, alignItems: "center", gap: 8 }}>
-            <Ionicons name="people-outline" size={40} color={colors.textMuted} />
+            <Ionicons name="people" size={40} color={colors.textMuted} />
             <Text style={{ color: colors.textMuted, fontFamily: "Inter_400Regular", textAlign: "center" }}>
               All your contacts are already in this {typeLabel.toLowerCase()}
             </Text>

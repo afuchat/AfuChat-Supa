@@ -50,20 +50,20 @@ type DiscoverUser = {
 };
 
 const INTEREST_TAGS = [
-  { label: "All", icon: "apps-outline" },
-  { label: "Tech", icon: "hardware-chip-outline" },
-  { label: "Art", icon: "color-palette-outline" },
-  { label: "Music", icon: "musical-notes-outline" },
-  { label: "Gaming", icon: "game-controller-outline" },
-  { label: "Sports", icon: "football-outline" },
-  { label: "Finance", icon: "trending-up-outline" },
-  { label: "Travel", icon: "airplane-outline" },
-  { label: "Food", icon: "restaurant-outline" },
-  { label: "Fashion", icon: "shirt-outline" },
-  { label: "Science", icon: "flask-outline" },
-  { label: "Fitness", icon: "barbell-outline" },
-  { label: "Business", icon: "briefcase-outline" },
-  { label: "Education", icon: "school-outline" },
+  { label: "All", icon: "apps" },
+  { label: "Tech", icon: "hardware-chip" },
+  { label: "Art", icon: "color-palette" },
+  { label: "Music", icon: "musical-notes" },
+  { label: "Gaming", icon: "game-controller" },
+  { label: "Sports", icon: "football" },
+  { label: "Finance", icon: "trending-up" },
+  { label: "Travel", icon: "airplane" },
+  { label: "Food", icon: "restaurant" },
+  { label: "Fashion", icon: "shirt" },
+  { label: "Science", icon: "flask" },
+  { label: "Fitness", icon: "barbell" },
+  { label: "Business", icon: "briefcase" },
+  { label: "Education", icon: "school" },
 ] as const;
 
 const RADIUS_OPTIONS = [
@@ -76,9 +76,9 @@ const RADIUS_OPTIONS = [
 ];
 
 const SORT_OPTIONS = [
-  { label: "Popular", value: "popular", icon: "flame-outline" },
-  { label: "Newest", value: "newest", icon: "time-outline" },
-  { label: "Active", value: "active", icon: "pulse-outline" },
+  { label: "Popular", value: "popular", icon: "flame" },
+  { label: "Newest", value: "newest", icon: "time" },
+  { label: "Active", value: "active", icon: "pulse" },
 ] as const;
 
 type SortOption = "popular" | "newest" | "active";
@@ -584,7 +584,7 @@ export default function UserDiscoveryScreen() {
   const renderDiscoverEmpty = () => (
     <View style={styles.emptyWrap}>
       <View style={[styles.emptyIconWrap, { backgroundColor: accent + "15" }]}>
-        <Ionicons name="people-outline" size={44} color={accent} />
+        <Ionicons name="people" size={44} color={accent} />
       </View>
       <Text style={[styles.emptyTitle, { color: colors.text }]}>
         {searchQuery ? "No results found" : "No users found"}
@@ -623,7 +623,7 @@ export default function UserDiscoveryScreen() {
       return (
         <View style={styles.emptyWrap}>
           <View style={[styles.emptyIconWrap, { backgroundColor: "#FF3B3015" }]}>
-            <Ionicons name="alert-circle-outline" size={44} color="#FF3B30" />
+            <Ionicons name="alert-circle" size={44} color="#FF3B30" />
           </View>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>{nearbyError}</Text>
           <TouchableOpacity
@@ -682,7 +682,7 @@ export default function UserDiscoveryScreen() {
           hitSlop={10}
           style={styles.headerIcon}
         >
-          <Ionicons name="search-outline" size={22} color={colors.text} />
+          <Ionicons name="search" size={22} color={colors.text} />
         </TouchableOpacity>
       </View>
 
@@ -701,7 +701,7 @@ export default function UserDiscoveryScreen() {
             }}
           >
             <Ionicons
-              name={t === "discover" ? "compass-outline" : "wifi-outline"}
+              name={t === "discover" ? "compass" : "wifi"}
               size={15}
               color={tab === t ? accent : colors.textMuted}
             />
@@ -899,7 +899,7 @@ export default function UserDiscoveryScreen() {
                 gap: 5,
               }}
             >
-              <Ionicons name="time-outline" size={11} color={colors.textMuted} />
+              <Ionicons name="time" size={11} color={colors.textMuted} />
               <Text style={{ fontSize: 11, color: colors.textMuted }}>
                 Your location updated {formatLastSeen(myLocationUpdatedAt)}
               </Text>
@@ -925,7 +925,7 @@ export default function UserDiscoveryScreen() {
                   onPress={() => setRadiusKm(opt.value)}
                 >
                   <Ionicons
-                    name="navigate-circle-outline"
+                    name="navigate-circle"
                     size={13}
                     color={active ? "#fff" : colors.textMuted}
                   />
@@ -949,7 +949,7 @@ export default function UserDiscoveryScreen() {
               {locating ? (
                 <ActivityIndicator size={11} color={accent} />
               ) : (
-                <Ionicons name="refresh-outline" size={13} color={accent} />
+                <Ionicons name="refresh" size={13} color={accent} />
               )}
               <Text style={[styles.chipText, { color: accent }]}>
                 {locating ? "Locating…" : "Refresh"}
@@ -1120,14 +1120,14 @@ const UserRow = React.memo(function UserRow({
 
           {/* Meta row */}
           <View style={styles.metaRow}>
-            <Ionicons name="people-outline" size={11} color={colors.textMuted} />
+            <Ionicons name="people" size={11} color={colors.textMuted} />
             <Text style={[styles.metaText, { color: colors.textMuted }]}>
               {formatCount(item.follower_count)} followers
             </Text>
             {isNearby && item.distance_km != null && (
               <>
                 <View style={[styles.metaDot, { backgroundColor: colors.border }]} />
-                <Ionicons name="navigate-circle-outline" size={11} color={accent} />
+                <Ionicons name="navigate-circle" size={11} color={accent} />
                 <Text style={[styles.metaText, { color: accent }]}>
                   {formatDistance(item.distance_km)}
                 </Text>
@@ -1136,7 +1136,7 @@ const UserRow = React.memo(function UserRow({
             {isNearby && item.location_updated_at && (
               <>
                 <View style={[styles.metaDot, { backgroundColor: colors.border }]} />
-                <Ionicons name="time-outline" size={10} color={colors.textMuted} />
+                <Ionicons name="time" size={10} color={colors.textMuted} />
                 <Text style={[styles.metaText, { color: colors.textMuted }]}>
                   {formatLastSeen(item.location_updated_at)}
                 </Text>

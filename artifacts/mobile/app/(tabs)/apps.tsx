@@ -91,7 +91,7 @@ const CATEGORIES: Category[] = [
       {
         id: "afubusiness",
         label: "AfuBusiness",
-        icon: "briefcase-outline",
+        icon: "briefcase",
         gradient: ["#1C1C1E", "#3A3A3C"],
         route: "/business",
         miniApp: true,
@@ -218,7 +218,7 @@ function resolveGradient(gradient: [string, string], accent: string): [string, s
 function openAppItem(app: AppItem, openApp: (id: string) => void) {
   const needsNetwork = app.miniApp && app.id !== "afuai";
   if (needsNetwork && !isOnline()) {
-    showToast(`${app.label} requires an internet connection`, { type: "info", icon: "wifi-outline" });
+    showToast(`${app.label} requires an internet connection`, { type: "info", icon: "wifi" });
   }
   if (app.miniApp) {
     openApp(app.id);
@@ -492,7 +492,7 @@ export default function AppsScreen() {
 
         {filteredCategories.length === 0 ? (
           <View style={styles.emptyWrap}>
-            <Ionicons name="search-outline" size={40} color={colors.textMuted} />
+            <Ionicons name="search" size={40} color={colors.textMuted} />
             <Text style={[styles.emptyText, { color: colors.textMuted }]}>No apps match "{searchQuery}"</Text>
           </View>
         ) : null}

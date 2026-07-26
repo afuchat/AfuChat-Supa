@@ -108,7 +108,7 @@ export default function SchoolPickerInput({ value, onChange, country, placeholde
         onPress={openModal}
       >
         <Ionicons
-          name="school-outline"
+          name="school"
           size={18}
           color={hasValue ? BRAND : colors.textMuted}
           style={{ marginRight: 10 }}
@@ -191,7 +191,7 @@ export default function SchoolPickerInput({ value, onChange, country, placeholde
             <View style={{ padding: 12, gap: 8 }}>{[1,2,3,4,5,6].map(i => <ListRowSkeleton key={i} />)}</View>
           ) : filtered.length === 0 ? (
             <View style={styles.loadingWrap}>
-              <Ionicons name="school-outline" size={48} color={colors.textMuted} />
+              <Ionicons name="school" size={48} color={colors.textMuted} />
               <Text style={[styles.loadingText, { color: colors.textMuted }]}>
                 {searchQuery ? "No matching schools found" : "No schools available"}
               </Text>
@@ -217,7 +217,7 @@ export default function SchoolPickerInput({ value, onChange, country, placeholde
                   onPress={() => handleSelect(item)}
                 >
                   <View style={styles.resultIcon}>
-                    <Ionicons name="school-outline" size={18} color={colors.textMuted} />
+                    <Ionicons name="school" size={18} color={colors.textMuted} />
                   </View>
                   <View style={styles.resultTextWrap}>
                     <Text style={[styles.resultName, { color: colors.text }]} numberOfLines={2}>

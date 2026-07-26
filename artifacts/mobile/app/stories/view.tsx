@@ -527,7 +527,7 @@ export default function ViewStoryScreen() {
           </TouchableOpacity>
         )}
         <TouchableOpacity style={styles.topBtn} onPress={openShareSheet} activeOpacity={0.8}>
-          <Ionicons name="share-social-outline" size={20} color="#fff" />
+          <Ionicons name="share-social" size={20} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.topBtn} onPress={() => router.back()} activeOpacity={0.8}>
           <Ionicons name="close" size={22} color="#fff" />
@@ -601,7 +601,7 @@ export default function ViewStoryScreen() {
             activeOpacity={0.75}
           >
             <Ionicons
-              name={storyLike.liked ? "heart" : "heart-outline"}
+              name={storyLike.liked ? "heart" : "heart"}
               size={22}
               color={storyLike.liked ? "#FF2D55" : "#fff"}
             />
@@ -670,7 +670,7 @@ export default function ViewStoryScreen() {
               }}
             >
               <View style={[styles.shareOptionIcon, { backgroundColor: "#0088FF22" }]}>
-                <Ionicons name="link-outline" size={20} color="#0088FF" />
+                <Ionicons name="link" size={20} color="#0088FF" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.shareOptionLabel}>Share Link</Text>
@@ -741,7 +741,7 @@ export default function ViewStoryScreen() {
               </View>
             ) : viewers.length === 0 ? (
               <View style={styles.centeredMsg}>
-                <Ionicons name="eye-off-outline" size={36} color="rgba(255,255,255,0.2)" />
+                <Ionicons name="eye-off" size={36} color="rgba(255,255,255,0.2)" />
                 <Text style={[styles.mutedText, { marginTop: 8 }]}>No viewers yet</Text>
               </View>
             ) : (

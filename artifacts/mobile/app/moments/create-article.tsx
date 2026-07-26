@@ -30,9 +30,9 @@ const { width: SCREEN_W } = Dimensions.get("window");
 type Audience = "public" | "followers" | "private";
 
 const AUDIENCE_OPTIONS: { key: Audience; label: string; icon: string; desc: string }[] = [
-  { key: "public", label: "Everyone", icon: "globe-outline", desc: "Anyone can see this article" },
-  { key: "followers", label: "Followers", icon: "people-outline", desc: "Only your followers" },
-  { key: "private", label: "Only Me", icon: "lock-closed-outline", desc: "Visible only to you" },
+  { key: "public", label: "Everyone", icon: "globe", desc: "Anyone can see this article" },
+  { key: "followers", label: "Followers", icon: "people", desc: "Only your followers" },
+  { key: "private", label: "Only Me", icon: "lock-closed", desc: "Visible only to you" },
 ];
 
 function estimateReadTime(text: string): string {
@@ -187,7 +187,7 @@ export default function CreateArticleScreen() {
               </>
             ) : (
               <View style={styles.coverPlaceholder}>
-                <Ionicons name="image-outline" size={28} color={colors.textMuted} />
+                <Ionicons name="image" size={28} color={colors.textMuted} />
                 <Text style={[styles.coverPlaceholderText, { color: colors.textMuted }]}>
                   Add cover image
                 </Text>
@@ -205,7 +205,7 @@ export default function CreateArticleScreen() {
                 onPress={() => setShowAudienceModal(true)}
               >
                 <Ionicons
-                  name={AUDIENCE_OPTIONS.find(a => a.key === audience)?.icon as any || "globe-outline"}
+                  name={AUDIENCE_OPTIONS.find(a => a.key === audience)?.icon as any || "globe"}
                   size={12}
                   color={colors.textSecondary}
                 />
@@ -277,7 +277,7 @@ export default function CreateArticleScreen() {
           {uploadingInline
             ? <ActivityIndicator size="small" color={colors.accent} />
             : <>
-                <Ionicons name="image-outline" size={16} color={colors.accent} />
+                <Ionicons name="image" size={16} color={colors.accent} />
                 <Text style={[styles.insertImgText, { color: colors.accent }]}>Insert photo</Text>
               </>
           }

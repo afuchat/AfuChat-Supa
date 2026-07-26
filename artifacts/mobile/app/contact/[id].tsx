@@ -385,14 +385,14 @@ export default function ContactScreen() {
   const followLabel = followState === "friends" ? "Friends" : followState === "follow_back" ? "Follow Back"
     : followState === "following" ? "Following" : "Follow";
   const followIcon: any = followState === "friends" ? "heart" : followState === "following" ? "checkmark-circle"
-    : "person-add-outline";
+    : "person-add";
 
   const bannerColor1 = prestige.ringColors[0];
   const bannerColor2 = prestige.ringColors[1];
   const TABS: { id: TabId; icon: string; label: string }[] = [
-    { id: "posts",    icon: "grid-outline",           label: "Posts"    },
-    { id: "articles", icon: "document-text-outline",  label: "Articles" },
-    { id: "videos",   icon: "videocam-outline",       label: "Videos"   },
+    { id: "posts",    icon: "grid",           label: "Posts"    },
+    { id: "articles", icon: "document-text",  label: "Articles" },
+    { id: "videos",   icon: "videocam",       label: "Videos"   },
   ];
 
   const isOrg = profile.is_organization_verified || profile.is_business_mode;
@@ -492,33 +492,33 @@ export default function ContactScreen() {
                   <TouchableOpacity
                     style={[s.pillIconBtn, { backgroundColor: accent + "18" }]}
                     onPress={handleMessage} activeOpacity={0.8}>
-                    <Ionicons name="chatbubble-outline" size={17} color={accent} />
+                    <Ionicons name="chatbubble" size={17} color={accent} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[s.pillIconBtn, { backgroundColor: "#FF2D5518" }]}
                     onPress={() => router.push({ pathname: "/gifts", params: { recipientHandle: profile.handle, recipientName: profile.display_name } } as any)}
                     activeOpacity={0.8}>
-                    <Ionicons name="gift-outline" size={17} color="#FF2D55" />
+                    <Ionicons name="gift" size={17} color="#FF2D55" />
                   </TouchableOpacity>
                   {isOrg && (
                     <TouchableOpacity
                       style={[s.pillIconBtn, { backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)" }]}
                       onPress={() => router.push({ pathname: "/shop/[userId]", params: { userId: id } } as any)}
                       activeOpacity={0.8}>
-                      <Ionicons name="storefront-outline" size={17} color={colors.text} />
+                      <Ionicons name="storefront" size={17} color={colors.text} />
                     </TouchableOpacity>
                   )}
                   <TouchableOpacity
                     style={[s.pillIconBtn, { backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)" }]}
                     onPress={handleShareProfile}
                     activeOpacity={0.8}>
-                    <Ionicons name="share-outline" size={17} color={colors.text} />
+                    <Ionicons name="share" size={17} color={colors.text} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[s.pillIconBtn, { backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)" }]}
                     onPress={handleAddToContacts}
                     activeOpacity={0.8}>
-                    <Ionicons name="person-add-outline" size={17} color={colors.text} />
+                    <Ionicons name="person-add" size={17} color={colors.text} />
                   </TouchableOpacity>
                 </>
               )}
@@ -528,12 +528,12 @@ export default function ContactScreen() {
                   <TouchableOpacity
                     style={[s.pillIconBtn, { backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)" }]}
                     onPress={handleShareProfile} activeOpacity={0.8}>
-                    <Ionicons name="share-outline" size={17} color={colors.text} />
+                    <Ionicons name="share" size={17} color={colors.text} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[s.pillIconBtn, { backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)" }]}
                     onPress={() => router.push("/settings")} activeOpacity={0.8}>
-                    <Ionicons name="settings-outline" size={17} color={colors.text} />
+                    <Ionicons name="settings" size={17} color={colors.text} />
                   </TouchableOpacity>
                 </>
               )}
@@ -557,7 +557,7 @@ export default function ContactScreen() {
               <TouchableOpacity
                 style={[s.primaryBtn, { backgroundColor: "transparent", borderColor: colors.border }]}
                 onPress={() => router.push("/profile/edit")} activeOpacity={0.85}>
-                <Ionicons name="create-outline" size={13} color={colors.text} />
+                <Ionicons name="create" size={13} color={colors.text} />
                 <Text style={[s.primaryBtnText, { color: colors.text }]}>Edit</Text>
               </TouchableOpacity>
             )}
@@ -675,7 +675,7 @@ export default function ContactScreen() {
               </View>
             ) : expandedUsers.length === 0 ? (
               <View style={s.expandEmpty}>
-                <Ionicons name={expandedStat === "followers" ? "people-outline" : "person-add-outline"} size={28} color={colors.textMuted} />
+                <Ionicons name={expandedStat === "followers" ? "people" : "person-add"} size={28} color={colors.textMuted} />
                 <Text style={[s.expandEmptyText, { color: colors.textMuted }]}>
                   {expandedStat === "followers" ? "No followers yet" : "Not following anyone yet"}
                 </Text>
@@ -746,13 +746,13 @@ export default function ContactScreen() {
         <View style={s.metaStrip}>
           {profile.created_at && (
             <View style={[s.metaChip, { backgroundColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)" }]}>
-              <Ionicons name="calendar-outline" size={11} color={colors.textMuted} />
+              <Ionicons name="calendar" size={11} color={colors.textMuted} />
               <Text style={[s.metaChipText, { color: colors.textMuted }]}>Joined {joinedLabel(profile.created_at)}</Text>
             </View>
           )}
           {profile.country && (
             <View style={[s.metaChip, { backgroundColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)" }]}>
-              <Ionicons name="location-outline" size={11} color={colors.textMuted} />
+              <Ionicons name="location" size={11} color={colors.textMuted} />
               <Text style={[s.metaChipText, { color: colors.textMuted }]}>{profile.country}</Text>
             </View>
           )}
@@ -765,7 +765,7 @@ export default function ContactScreen() {
                 Linking.openURL(url).catch(() => {});
               }}
               activeOpacity={0.75}>
-              <Ionicons name="link-outline" size={11} color={accent} />
+              <Ionicons name="link" size={11} color={accent} />
               <Text style={[s.metaChipText, { color: accent }]} numberOfLines={1}>
                 {profile.website_url.replace(/^https?:\/\//, "")}
               </Text>
@@ -776,7 +776,7 @@ export default function ContactScreen() {
         {/* Also known as */}
         {aliases.length > 0 && (
           <View style={s.metaRow}>
-            <Ionicons name="at-circle-outline" size={13} color={colors.textMuted} />
+            <Ionicons name="at-circle" size={13} color={colors.textMuted} />
             <Text style={[s.metaBodyText, { color: colors.textMuted }]}>
               {"Also known as  "}
               {aliases.map((a, i) => (
@@ -903,7 +903,7 @@ export default function ContactScreen() {
         ) : gridPosts.length === 0 ? (
           <View style={s.gridCenter}>
             <View style={[s.emptyIcon, { backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)" }]}>
-              <Ionicons name={activeTab === "videos" ? "videocam-outline" : activeTab === "articles" ? "document-text-outline" : "images-outline"}
+              <Ionicons name={activeTab === "videos" ? "videocam" : activeTab === "articles" ? "document-text" : "images"}
                 size={32} color={colors.textMuted} />
             </View>
             <Text style={[s.emptyTitle, { color: colors.text }]}>
@@ -938,7 +938,7 @@ export default function ContactScreen() {
                     ? <Image source={{ uri: thumb }} style={{ width: CELL, height: CELL }} contentFit="cover" />
                     : isArticle
                       ? <View style={[s.gridTextCard, { backgroundColor: isDark ? "#1c1c1e" : "#f2f2f7" }]}>
-                          <Ionicons name="document-text-outline" size={14} color={accent} style={{ marginBottom: 4 }} />
+                          <Ionicons name="document-text" size={14} color={accent} style={{ marginBottom: 4 }} />
                           <Text style={[s.gridTextPreview, { color: colors.text, fontFamily: "Inter_600SemiBold" }]} numberOfLines={3}>
                             {item.article_title || item.content || "Article"}
                           </Text>
@@ -950,7 +950,7 @@ export default function ContactScreen() {
                             </Text>
                           </View>
                         : <View style={[s.gridPlaceholder, { backgroundColor: colors.backgroundSecondary }]}>
-                            <Ionicons name="image-outline" size={20} color={colors.textMuted} />
+                            <Ionicons name="image" size={20} color={colors.textMuted} />
                           </View>}
 
                   {/* Badges */}
@@ -961,7 +961,7 @@ export default function ContactScreen() {
                   )}
                   {isArticle && (
                     <View style={[s.videoTag, { backgroundColor: "rgba(0,0,0,0.55)" }]}>
-                      <Ionicons name="book-outline" size={14} color="#fff" />
+                      <Ionicons name="book" size={14} color="#fff" />
                     </View>
                   )}
                 </TouchableOpacity>

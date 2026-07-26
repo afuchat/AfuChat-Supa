@@ -43,31 +43,31 @@ function getDaysRemaining(storedMs: string | undefined, cooldownDays: number): n
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const INTERESTS = [
-  { id: "technology",  label: "Technology",    icon: "laptop-outline" },
-  { id: "music",       label: "Music",         icon: "musical-notes-outline" },
-  { id: "sports",      label: "Sports",        icon: "football-outline" },
-  { id: "fashion",     label: "Fashion",       icon: "shirt-outline" },
-  { id: "food",        label: "Food & Cooking",icon: "restaurant-outline" },
-  { id: "travel",      label: "Travel",        icon: "airplane-outline" },
-  { id: "art",         label: "Art & Design",  icon: "color-palette-outline" },
-  { id: "gaming",      label: "Gaming",        icon: "game-controller-outline" },
-  { id: "fitness",     label: "Fitness",       icon: "barbell-outline" },
-  { id: "photography", label: "Photography",   icon: "camera-outline" },
-  { id: "business",    label: "Business",      icon: "briefcase-outline" },
-  { id: "education",   label: "Education",     icon: "school-outline" },
-  { id: "movies",      label: "Movies & TV",   icon: "film-outline" },
-  { id: "reading",     label: "Reading",       icon: "book-outline" },
-  { id: "nature",      label: "Nature",        icon: "leaf-outline" },
-  { id: "politics",    label: "Politics",      icon: "megaphone-outline" },
-  { id: "science",     label: "Science",       icon: "flask-outline" },
+  { id: "technology",  label: "Technology",    icon: "laptop" },
+  { id: "music",       label: "Music",         icon: "musical-notes" },
+  { id: "sports",      label: "Sports",        icon: "football" },
+  { id: "fashion",     label: "Fashion",       icon: "shirt" },
+  { id: "food",        label: "Food & Cooking",icon: "restaurant" },
+  { id: "travel",      label: "Travel",        icon: "airplane" },
+  { id: "art",         label: "Art & Design",  icon: "color-palette" },
+  { id: "gaming",      label: "Gaming",        icon: "game-controller" },
+  { id: "fitness",     label: "Fitness",       icon: "barbell" },
+  { id: "photography", label: "Photography",   icon: "camera" },
+  { id: "business",    label: "Business",      icon: "briefcase" },
+  { id: "education",   label: "Education",     icon: "school" },
+  { id: "movies",      label: "Movies & TV",   icon: "film" },
+  { id: "reading",     label: "Reading",       icon: "book" },
+  { id: "nature",      label: "Nature",        icon: "leaf" },
+  { id: "politics",    label: "Politics",      icon: "megaphone" },
+  { id: "science",     label: "Science",       icon: "flask" },
   { id: "crypto",      label: "Crypto & Web3", icon: "logo-bitcoin" },
 ];
 
 const GENDERS = [
-  { id: "male",   label: "Male",              icon: "male-outline" },
-  { id: "female", label: "Female",            icon: "female-outline" },
-  { id: "other",  label: "Other",             icon: "ellipsis-horizontal-outline" },
-  { id: "prefer_not", label: "Prefer not to say", icon: "lock-closed-outline" },
+  { id: "male",   label: "Male",              icon: "male" },
+  { id: "female", label: "Female",            icon: "female" },
+  { id: "other",  label: "Other",             icon: "ellipsis-horizontal" },
+  { id: "prefer_not", label: "Prefer not to say", icon: "lock-closed" },
 ];
 
 const MONTHS = [
@@ -110,7 +110,7 @@ function ProfileCompletionCard({
       <View style={compStyles.header}>
         <View style={compStyles.headerLeft}>
           <Ionicons
-            name={allDone ? "checkmark-circle" : "stats-chart-outline"}
+            name={allDone ? "checkmark-circle" : "stats-chart"}
             size={16}
             color={allDone ? "#34C759" : colors.textMuted}
           />
@@ -581,7 +581,7 @@ export default function EditProfileScreen() {
               <ExpoImage source={{ uri: currentBanner }} style={StyleSheet.absoluteFill} contentFit="cover" />
             ) : (
               <View style={styles.bannerPlaceholder}>
-                <Ionicons name="image-outline" size={28} color={colors.textMuted} />
+                <Ionicons name="image" size={28} color={colors.textMuted} />
                 <Text style={[styles.bannerPlaceholderText, { color: colors.textMuted }]}>Tap to add cover photo</Text>
               </View>
             )}
@@ -626,41 +626,41 @@ export default function EditProfileScreen() {
               label: "Profile photo",
               hint: "Add a profile picture so people can recognise you",
               done: !!currentAvatar,
-              icon: "camera-outline",
+              icon: "camera",
             },
             {
               id: "name",
               label: "Display name",
               hint: "Set the name others see on your profile",
               done: !!displayName.trim(),
-              icon: "person-outline",
+              icon: "person",
             },
             {
               id: "bio",
               label: "Bio",
               hint: "Write a short description about yourself",
               done: !!bio.trim(),
-              icon: "document-text-outline",
+              icon: "document-text",
             },
             {
               id: "interests",
               label: "Interests (pick at least 3)",
               hint: "Choose topics to improve your recommendations",
               done: selectedInterests.size >= 3,
-              icon: "compass-outline",
+              icon: "compass",
             },
             {
               id: "country",
               label: "Country",
               hint: "Add your location to connect with nearby people",
               done: !!selectedCountry,
-              icon: "location-outline",
+              icon: "location",
             },
           ]}
         />
 
         {/* ── Identity ── */}
-        <SectionCard title="IDENTITY" icon="person-outline" colors={colors}>
+        <SectionCard title="IDENTITY" icon="person" colors={colors}>
           <FieldRow label="Name" colors={colors}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               <TextInput
@@ -720,7 +720,7 @@ export default function EditProfileScreen() {
         </SectionCard>
 
         {/* ── About ── */}
-        <SectionCard title="ABOUT" icon="document-text-outline" colors={colors}>
+        <SectionCard title="ABOUT" icon="document-text" colors={colors}>
           <FieldRow label="Bio" colors={colors}>
             <TextInput
               style={[styles.fieldInput, styles.bioInput, { color: colors.text }]}
@@ -776,7 +776,7 @@ export default function EditProfileScreen() {
         </SectionCard>
 
         {/* ── Location ── */}
-        <SectionCard title="LOCATION" icon="location-outline" colors={colors}>
+        <SectionCard title="LOCATION" icon="location" colors={colors}>
           <FieldRow label="Country" noBorder colors={colors}>
             <TouchableOpacity onPress={() => setShowCountryModal(true)} style={styles.pickerBtn}>
               <Text style={[styles.pickerBtnText, { color: selectedCountry ? colors.text : colors.textMuted }]}>
@@ -788,7 +788,7 @@ export default function EditProfileScreen() {
         </SectionCard>
 
         {/* ── Personal ── */}
-        <SectionCard title="PERSONAL" icon="heart-outline" colors={colors}>
+        <SectionCard title="PERSONAL" icon="heart" colors={colors}>
           {/* Gender */}
           <FieldRow label="Gender" colors={colors}>
             <View style={styles.genderGrid}>
@@ -868,7 +868,7 @@ export default function EditProfileScreen() {
         </SectionCard>
 
         {/* ── Interests ── */}
-        <SectionCard title="INTERESTS" icon="compass-outline" colors={colors}>
+        <SectionCard title="INTERESTS" icon="compass" colors={colors}>
           <Text style={[styles.interestsHint, { color: colors.textMuted }]}>
             Select topics you care about — they shape your feed and help others find you.
           </Text>
@@ -910,7 +910,7 @@ export default function EditProfileScreen() {
             </TouchableOpacity>
           </View>
           <View style={[styles.modalSearch, { backgroundColor: colors.inputBg }]}>
-            <Ionicons name="search-outline" size={16} color={colors.textMuted} />
+            <Ionicons name="search" size={16} color={colors.textMuted} />
             <TextInput
               style={[styles.modalSearchInput, { color: colors.text }]}
               value={countrySearch}
@@ -949,7 +949,7 @@ export default function EditProfileScreen() {
               style={[styles.clearCountryBtn, { borderTopColor: colors.border }]}
               onPress={() => { setSelectedCountry(null); setShowCountryModal(false); }}
             >
-              <Ionicons name="close-circle-outline" size={18} color="#FF3B30" />
+              <Ionicons name="close-circle" size={18} color="#FF3B30" />
               <Text style={{ color: "#FF3B30", fontSize: 14, fontFamily: "Inter_500Medium" }}>Clear Country</Text>
             </TouchableOpacity>
           )}

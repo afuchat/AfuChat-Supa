@@ -359,7 +359,7 @@ export default function MatchConversationScreen() {
                         <Text style={styles.giftPriceText}>{getGiftItem(item.gift_emoji ?? "🎁").price} AC</Text>
                       </View>
                       <View style={styles.giftTapHint}>
-                        <Ionicons name="information-circle-outline" size={11} color={isMine ? "rgba(255,255,255,0.6)" : colors.textMuted} />
+                        <Ionicons name="information-circle" size={11} color={isMine ? "rgba(255,255,255,0.6)" : colors.textMuted} />
                         <Text style={[styles.giftTapHintText, { color: isMine ? "rgba(255,255,255,0.6)" : colors.textMuted }]}>tap for details</Text>
                       </View>
                     </Pressable>
@@ -441,7 +441,7 @@ export default function MatchConversationScreen() {
           {/* Emoji / Keyboard toggle */}
           <Pressable style={styles.inputAction} onPress={toggleEmoji}>
             <Ionicons
-              name={showEmoji ? "keypad-outline" : "happy-outline"}
+              name={showEmoji ? "keypad" : "happy"}
               size={22}
               color={showEmoji ? BRAND : colors.textMuted}
             />

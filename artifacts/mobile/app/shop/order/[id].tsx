@@ -51,7 +51,7 @@ function StarRow({ rating, setRating, interactive = true }: { rating: number; se
     <View style={{ flexDirection: "row", gap: 6 }}>
       {[1, 2, 3, 4, 5].map(n => (
         <TouchableOpacity key={n} onPress={() => interactive && setRating?.(n)} disabled={!interactive} activeOpacity={0.7}>
-          <Ionicons name={n <= rating ? "star" : "star-outline"} size={28} color={n <= rating ? GOLD : "#ccc"} />
+          <Ionicons name={n <= rating ? "star" : "star"} size={28} color={n <= rating ? GOLD : "#ccc"} />
         </TouchableOpacity>
       ))}
     </View>
@@ -261,7 +261,7 @@ export default function OrderDetailScreen() {
   if (!order) {
     return (
       <View style={[st.root, { backgroundColor: colors.backgroundSecondary, alignItems: "center", justifyContent: "center" }]}>
-        <Ionicons name="alert-circle-outline" size={48} color={colors.textMuted} />
+        <Ionicons name="alert-circle" size={48} color={colors.textMuted} />
         <Text style={[{ color: colors.text, fontSize: 16, fontFamily: "Inter_500Medium", marginTop: 12 }]}>Order not found</Text>
         <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20, padding: 12 }}>
           <Text style={{ color: BRAND, fontFamily: "Inter_600SemiBold" }}>Go back</Text>
@@ -343,7 +343,7 @@ export default function OrderDetailScreen() {
                   onPress={() => setShowDisputeModal(true)}
                   activeOpacity={0.85}
                 >
-                  <Ionicons name="alert-circle-outline" size={18} color="#fff" />
+                  <Ionicons name="alert-circle" size={18} color="#fff" />
                   <Text style={st.actionBtnText}>Raise Dispute</Text>
                 </TouchableOpacity>
               )}
@@ -353,7 +353,7 @@ export default function OrderDetailScreen() {
                   onPress={() => setShowReviewModal(true)}
                   activeOpacity={0.85}
                 >
-                  <Ionicons name="star-outline" size={18} color="#fff" />
+                  <Ionicons name="star" size={18} color="#fff" />
                   <Text style={st.actionBtnText}>Leave Review</Text>
                 </TouchableOpacity>
               )}
@@ -369,7 +369,7 @@ export default function OrderDetailScreen() {
                   ? <Image source={{ uri: item.product?.images?.[0] || item.snapshot_image! }} style={st.itemImg} />
                   : (
                     <View style={[st.itemImg, { backgroundColor: colors.backgroundSecondary, alignItems: "center", justifyContent: "center" }]}>
-                      <Ionicons name="cube-outline" size={18} color={colors.textMuted} />
+                      <Ionicons name="cube" size={18} color={colors.textMuted} />
                     </View>
                   )}
                 <View style={{ flex: 1, gap: 2 }}>
@@ -422,7 +422,7 @@ export default function OrderDetailScreen() {
                 style={[st.chatBtn, { backgroundColor: BRAND + "15", borderColor: BRAND + "30" }]}
                 onPress={() => { setActiveTab("chat"); Haptics.selectionAsync(); }}
               >
-                <Ionicons name="chatbubble-outline" size={15} color={BRAND} />
+                <Ionicons name="chatbubble" size={15} color={BRAND} />
                 <Text style={{ color: BRAND, fontSize: 12, fontFamily: "Inter_600SemiBold" }}>Message</Text>
               </TouchableOpacity>
             </TouchableOpacity>
@@ -485,7 +485,7 @@ export default function OrderDetailScreen() {
           >
             {messages.length === 0 && (
               <View style={{ alignItems: "center", paddingTop: 40, gap: 10 }}>
-                <Ionicons name="chatbubbles-outline" size={40} color={colors.textMuted} />
+                <Ionicons name="chatbubbles" size={40} color={colors.textMuted} />
                 <Text style={[{ color: colors.textSecondary, fontFamily: "Inter_400Regular", fontSize: 14, textAlign: "center" }]}>
                   No messages yet.{"\n"}Ask the seller a question or get an update on your order.
                 </Text>

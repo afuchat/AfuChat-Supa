@@ -468,13 +468,13 @@ function CameraPhase({
       {/* ── Camera view ── */}
       {!camAvailable || !CameraView ? (
         <View style={[StyleSheet.absoluteFill, { backgroundColor: "#000", alignItems: "center", justifyContent: "center" }]}>
-          <Ionicons name="videocam-off-outline" size={48} color="#555" />
+          <Ionicons name="videocam-off" size={48} color="#555" />
           <Text style={{ color: "#555", marginTop: 12, fontFamily: "Inter_400Regular" }}>Camera unavailable</Text>
           <TouchableOpacity
             onPress={onPickFromGallery}
             style={[cs.galleryFallbackBtn, { backgroundColor: accent }]}
           >
-            <Ionicons name="images-outline" size={18} color="#fff" />
+            <Ionicons name="images" size={18} color="#fff" />
             <Text style={{ color: "#fff", fontFamily: "Inter_600SemiBold", marginLeft: 8 }}>Pick from Gallery</Text>
           </TouchableOpacity>
         </View>
@@ -530,7 +530,7 @@ function CameraPhase({
           {/* Selfie mode indicator */}
           {facing === "front" && !isRecording && (
             <View style={[cs.selfieBadge, { top: insets.top + 56, right: insets.right + 14 }]}>
-              <Ionicons name="swap-horizontal-outline" size={12} color="#fff" />
+              <Ionicons name="swap-horizontal" size={12} color="#fff" />
               <Text style={cs.selfieBadgeText}>Selfie</Text>
             </View>
           )}
@@ -614,41 +614,41 @@ function CameraPhase({
           accent={accent}
         />
         <SideBtn
-          icon="camera-reverse-outline"
+          icon="camera-reverse"
           label="Flip"
           onPress={() => { setFacing((f) => f === "back" ? "front" : "back"); void Haptics.impactAsync("light"); }}
           accent={accent}
         />
         <SideBtn
-          icon="color-filter-outline"
+          icon="color-filter"
           label="Filter"
           onPress={() => { setShowFilters((v) => !v); setShowFrames(false); }}
           active={showFilters || activeFilter.id !== "normal"}
           accent={accent}
         />
         <SideBtn
-          icon="happy-outline"
+          icon="happy"
           label="Frame"
           onPress={() => { setShowFrames((v) => !v); setShowFilters(false); }}
           active={showFrames || activeFrame.id !== "none"}
           accent={accent}
         />
         <SideBtn
-          icon="grid-outline"
+          icon="grid"
           label="Grid"
           onPress={() => { setShowGrid((v) => !v); void Haptics.selectionAsync(); }}
           active={showGrid}
           accent={accent}
         />
         <SideBtn
-          icon="sparkles-outline"
+          icon="sparkles"
           label="Beauty"
           onPress={() => { setBeautyMode((v) => !v); void Haptics.impactAsync("light"); }}
           active={beautyMode}
           accent={accent}
         />
         <SideBtn
-          icon="timer-outline"
+          icon="timer"
           label={`${maxDur}s`}
           onPress={() => {
             const i = DURATION_OPTIONS.indexOf(maxDur);
@@ -728,7 +728,7 @@ function CameraPhase({
         <View style={cs.recordRow}>
           {/* Gallery picker */}
           <TouchableOpacity onPress={onPickFromGallery} style={cs.galleryBtn} activeOpacity={0.8}>
-            <Ionicons name="images-outline" size={26} color="#fff" />
+            <Ionicons name="images" size={26} color="#fff" />
             <Text style={cs.galleryLabel}>Gallery</Text>
           </TouchableOpacity>
 
@@ -750,7 +750,7 @@ function CameraPhase({
             activeOpacity={0.8}
           >
             <View style={[{ width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: beautyMode ? "rgba(255,215,0,0.2)" : "transparent" }]}>
-              <Ionicons name="sparkles-outline" size={26} color={beautyMode ? "#FFD700" : "#fff"} />
+              <Ionicons name="sparkles" size={26} color={beautyMode ? "#FFD700" : "#fff"} />
             </View>
             <Text style={[cs.galleryLabel, beautyMode && { color: "#FFD700" }]}>Beauty</Text>
           </TouchableOpacity>
@@ -934,11 +934,11 @@ function EditPhase({
     : null;
 
   const TABS: { id: EditTab; icon: string; label: string }[] = [
-    { id: "filters",  icon: "color-filter-outline", label: "Filters"  },
-    { id: "text",     icon: "text-outline",          label: "Text"    },
-    { id: "stickers", icon: "happy-outline",          label: "Stickers"},
-    { id: "trim",     icon: "cut-outline",            label: "Trim"    },
-    { id: "adjust",   icon: "options-outline",        label: "Adjust"  },
+    { id: "filters",  icon: "color-filter", label: "Filters"  },
+    { id: "text",     icon: "text",          label: "Text"    },
+    { id: "stickers", icon: "happy",          label: "Stickers"},
+    { id: "trim",     icon: "cut",            label: "Trim"    },
+    { id: "adjust",   icon: "options",        label: "Adjust"  },
   ];
 
   return (
@@ -1060,7 +1060,7 @@ function EditPhase({
           <View style={es.videoBadges}>
             {duration > 0 && (
               <View style={es.badge}>
-                <Ionicons name="time-outline" size={11} color="#fff" />
+                <Ionicons name="time" size={11} color="#fff" />
                 <Text style={es.badgeText}>{fmtTime(duration)}</Text>
               </View>
             )}
@@ -1071,7 +1071,7 @@ function EditPhase({
               }
               return (
                 <View style={[es.badge, fileSize > WARN_SIZE_MB * 1024 * 1024 && { backgroundColor: "rgba(255,60,0,0.75)" }]}>
-                  <Ionicons name="cloud-upload-outline" size={11} color="#fff" />
+                  <Ionicons name="cloud-upload" size={11} color="#fff" />
                   <Text style={es.badgeText}>{fmtBytes(fileSize)}</Text>
                 </View>
               );
@@ -1160,7 +1160,7 @@ function EditPhase({
 
               {texts.length === 0 && (
                 <View style={es.emptyHint}>
-                  <Ionicons name="text-outline" size={28} color="#444" />
+                  <Ionicons name="text" size={28} color="#444" />
                   <Text style={es.emptyHintText}>Tap "Add Text" to place text on your video</Text>
                 </View>
               )}
@@ -1174,7 +1174,7 @@ function EditPhase({
                     <Text style={{ color: t.color, fontSize: 14, fontFamily: t.bold ? "Inter_700Bold" : "Inter_400Regular" }} numberOfLines={1}>{t.text}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => removeText(t.id)} hitSlop={10} style={{ padding: 8 }}>
-                    <Ionicons name="trash-outline" size={17} color="#666" />
+                    <Ionicons name="trash" size={17} color="#666" />
                   </TouchableOpacity>
                 </View>
               ))}
@@ -1211,7 +1211,7 @@ function EditPhase({
                       onPress={() => setEditTextBg((v) => !v)}
                       style={[es.textToggle, editTextBg && { backgroundColor: accent + "22", borderColor: accent }]}
                     >
-                      <Ionicons name="square-outline" size={14} color={editTextBg ? accent : "#888"} />
+                      <Ionicons name="square" size={14} color={editTextBg ? accent : "#888"} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={saveEditText} style={[es.textSave, { backgroundColor: accent }]}>
                       <Text style={es.textSaveText}>Done</Text>
@@ -1270,7 +1270,7 @@ function EditPhase({
                     <ExpoImage source={{ uri: thumbnailUri }} style={StyleSheet.absoluteFill} contentFit="cover" />
                   ) : (
                     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-                      {thumbGen ? <ActivityIndicator size="small" color="#666" /> : <Ionicons name="image-outline" size={22} color="#444" />}
+                      {thumbGen ? <ActivityIndicator size="small" color="#666" /> : <Ionicons name="image" size={22} color="#444" />}
                     </View>
                   )}
                 </View>
@@ -1389,7 +1389,7 @@ function EditPhase({
 
           {/* ── Caption — primary field ── */}
           <View style={[es.captionWrap, { backgroundColor: "#1A1A1A", borderColor: "#333", marginBottom: 4 }]}>
-            <Ionicons name="pencil-outline" size={17} color="#666" style={{ marginTop: 3 }} />
+            <Ionicons name="pencil" size={17} color="#666" style={{ marginTop: 3 }} />
             <TextInput
               style={[es.captionInput, { color: "#fff" }]}
               placeholder="Add a caption… #hashtags @mentions"
@@ -1431,7 +1431,7 @@ function EditPhase({
             }
             return (
               <View style={[es.sizeCard, { flexDirection: "row", alignItems: "center", gap: 10 }]}>
-                <Ionicons name="cloud-upload-outline" size={20} color="#888" />
+                <Ionicons name="cloud-upload" size={20} color="#888" />
                 <View style={{ flex: 1 }}>
                   <Text style={es.sizeCardTitle}>File size: {fmtBytes(fileSize)}</Text>
                   <Text style={es.sizeCardNote}>Will be uploaded as-is.</Text>
@@ -1446,12 +1446,12 @@ function EditPhase({
             onPress={() => { setShowAdvanced((v) => !v); void Haptics.selectionAsync(); }}
             activeOpacity={0.7}
           >
-            <Ionicons name="options-outline" size={16} color="#888" />
+            <Ionicons name="options" size={16} color="#888" />
             <Text style={es.advancedToggleText}>Options</Text>
             <View style={es.advancedPills}>
               <View style={[es.advPill, { backgroundColor: audience === "public" ? "#FFFFFF12" : accent + "22" }]}>
                 <Ionicons
-                  name={audience === "public" ? "globe-outline" : audience === "followers" ? "people-outline" : "lock-closed-outline"}
+                  name={audience === "public" ? "globe" : audience === "followers" ? "people" : "lock-closed"}
                   size={11} color={audience === "public" ? "#888" : accent}
                 />
                 <Text style={[es.advPillText, { color: audience === "public" ? "#888" : accent }]}>
@@ -1482,7 +1482,7 @@ function EditPhase({
                       style={[es.audienceBtn, audience === a && { backgroundColor: accent + "22", borderColor: accent }]}
                     >
                       <Ionicons
-                        name={a === "public" ? "globe-outline" : a === "followers" ? "people-outline" : "lock-closed-outline"}
+                        name={a === "public" ? "globe" : a === "followers" ? "people" : "lock-closed"}
                         size={14} color={audience === a ? accent : "#666"}
                       />
                       <Text style={[es.audienceBtnText, { color: audience === a ? accent : "#666" }]}>
@@ -1505,7 +1505,7 @@ function EditPhase({
                     />
                   ) : (
                     <View style={{ width: 72, height: 52, borderRadius: 6, backgroundColor: "#222", alignItems: "center", justifyContent: "center" }}>
-                      <Ionicons name="image-outline" size={20} color="#444" />
+                      <Ionicons name="image" size={20} color="#444" />
                     </View>
                   )}
                   <TouchableOpacity
@@ -1513,7 +1513,7 @@ function EditPhase({
                     style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="cut-outline" size={13} color={accent} />
+                    <Ionicons name="cut" size={13} color={accent} />
                     <Text style={{ color: accent, fontSize: 12, fontFamily: "Inter_500Medium" }}>
                       Adjust in Trim tab
                     </Text>
@@ -2083,7 +2083,7 @@ function WebPickerScreen({ onPick }: { onPick: () => void }) {
           Select a video from your library to get started. Add filters, text, stickers, and more.
         </Text>
         <TouchableOpacity onPress={onPick} style={[{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 28, backgroundColor: accent }]} activeOpacity={0.85}>
-          <Ionicons name="images-outline" size={20} color="#fff" />
+          <Ionicons name="images" size={20} color="#fff" />
           <Text style={{ color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 16 }}>Choose from Library</Text>
         </TouchableOpacity>
       </View>

@@ -293,7 +293,7 @@ export default function RootLayout() {
         msg,
         videoCount > 0 ? "Watch now" : "",
         () => router.push("/shorts" as any),
-        { type: "warning", duration: 0, id: TOAST_ID, icon: "wifi-outline" },
+        { type: "warning", duration: 0, id: TOAST_ID, icon: "wifi" },
       );
     }
 

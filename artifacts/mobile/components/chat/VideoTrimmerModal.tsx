@@ -208,7 +208,7 @@ export default function VideoTrimmerModal({
             <Text style={[s.infoTime, { color: "#fff" }]}>{fmtTime(trimStart)}</Text>
           </View>
           <View style={[s.durationBadge, { backgroundColor: accent + "22", borderColor: accent + "50" }]}>
-            <Ionicons name="cut-outline" size={13} color={accent} />
+            <Ionicons name="cut" size={13} color={accent} />
             <Text style={[s.durationText, { color: accent }]}>
               {fmtTime(clipDuration)} clip
             </Text>
@@ -315,7 +315,7 @@ export default function VideoTrimmerModal({
             disabled={clipDuration < 0.5}
             style={[s.confirmBtn, { backgroundColor: accent, opacity: clipDuration < 0.5 ? 0.5 : 1 }]}
           >
-            <Ionicons name="cut-outline" size={18} color="#fff" />
+            <Ionicons name="cut" size={18} color="#fff" />
             <Text style={s.confirmText}>Use {fmtTime(clipDuration)}</Text>
           </TouchableOpacity>
         </View>

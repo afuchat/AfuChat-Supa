@@ -77,7 +77,7 @@ export default function ShortsRedirect() {
 
       {error ? (
         <View style={styles.errorWrap}>
-          <Ionicons name="wifi-outline" size={48} color={colors.textMuted} style={{ marginBottom: 16 }} />
+          <Ionicons name="wifi" size={48} color={colors.textMuted} style={{ marginBottom: 16 }} />
           <Text style={[styles.errorTitle, { color: colors.text }]}>You're offline</Text>
           <Text style={[styles.errorText, { color: colors.textMuted }]}>
             No internet connection. Watch some videos while online and they'll be saved here automatically.
@@ -87,7 +87,7 @@ export default function ShortsRedirect() {
             onPress={() => router.push("/settings/offline-videos")}
             activeOpacity={0.8}
           >
-            <Ionicons name="cloud-download-outline" size={16} color="#fff" />
+            <Ionicons name="cloud-download" size={16} color="#fff" />
             <Text style={styles.offlineBtnText}>View Offline Library</Text>
           </TouchableOpacity>
         </View>

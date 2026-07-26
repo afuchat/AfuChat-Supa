@@ -373,7 +373,7 @@ export default function GiftMarketplaceScreen() {
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
               <View style={[styles.emptyIconWrap, { backgroundColor: "rgba(255,149,0,0.1)" }]}>
-                <Ionicons name="storefront-outline" size={48} color="#FF9500" />
+                <Ionicons name="storefront" size={48} color="#FF9500" />
               </View>
               <Text style={[styles.emptyTitle, { color: colors.text }]}>No listings yet</Text>
               <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
@@ -406,7 +406,7 @@ export default function GiftMarketplaceScreen() {
             )}
 
             <View style={[styles.sellerInfoRow, { backgroundColor: colors.inputBg }]}>
-              <Ionicons name="person-circle-outline" size={18} color={colors.textMuted} />
+              <Ionicons name="person-circle" size={18} color={colors.textMuted} />
               <View style={{ flexDirection: "row", alignItems: "center", gap: 4, flex: 1 }}>
                 <Text style={[styles.sellerInfoText, { color: colors.textSecondary }]}>Listed by </Text>
                 <Text style={{ fontFamily: "Inter_600SemiBold", color: colors.text }}>{selectedListing?.seller_name}</Text>

@@ -214,7 +214,7 @@ export default function CommunitiesScreen() {
               <Text style={[ss.cardDesc, { color: colors.textMuted }]} numberOfLines={2}>{item.description}</Text>
             ) : null}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
-              <Ionicons name="people-outline" size={12} color={BRAND} />
+              <Ionicons name="people" size={12} color={BRAND} />
               <Text style={[ss.cardMeta, { color: BRAND }]}>
                 {item.member_count.toLocaleString()} members
               </Text>
@@ -273,7 +273,7 @@ export default function CommunitiesScreen() {
               <Text style={[ss.cardDesc, { color: colors.textMuted }]} numberOfLines={1}>{item.description}</Text>
             ) : null}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
-              <Ionicons name="people-outline" size={12} color={PURPLE} />
+              <Ionicons name="people" size={12} color={PURPLE} />
               <Text style={[ss.cardMeta, { color: PURPLE }]}>
                 {item.subscriber_count.toLocaleString()} subscribers
               </Text>
@@ -362,7 +362,7 @@ export default function CommunitiesScreen() {
             <View style={ss.empty}>
               <View style={[ss.emptyIcon, { backgroundColor: colors.surface }]}>
                 <Ionicons
-                  name={activeTab === "groups" ? "people-outline" : "megaphone-outline"}
+                  name={activeTab === "groups" ? "people" : "megaphone"}
                   size={40}
                   color={colors.textMuted}
                 />

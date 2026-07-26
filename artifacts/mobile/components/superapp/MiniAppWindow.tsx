@@ -66,7 +66,7 @@ function MiniAppCrashScreen({
 }) {
   return (
     <View style={eb.container}>
-      <Ionicons name="warning-outline" size={40} color="#FF3B30" />
+      <Ionicons name="warning" size={40} color="#FF3B30" />
       <Text style={eb.title}>{appName} crashed</Text>
       <Text style={eb.msg}>{error.message || "Unknown error"}</Text>
       <ScrollView style={eb.stackWrap} contentContainerStyle={{ padding: 10 }}>

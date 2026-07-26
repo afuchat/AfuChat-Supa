@@ -314,7 +314,7 @@ function ContactPickerSheet({ visible, gradient, eventName, onClose, onSelect }:
 
         {/* Search */}
         <View style={[sh.searchRow, { backgroundColor: colors.inputBg }]}>
-          <Ionicons name="search-outline" size={16} color={colors.textMuted} />
+          <Ionicons name="search" size={16} color={colors.textMuted} />
           <TextInput
             style={[sh.searchInput, { color: colors.text }]}
             placeholder="Search contacts..."
@@ -338,7 +338,7 @@ function ContactPickerSheet({ visible, gradient, eventName, onClose, onSelect }:
           </View>
         ) : filtered.length === 0 ? (
           <View style={sh.emptyBox}>
-            <Ionicons name="people-outline" size={40} color={colors.textMuted} />
+            <Ionicons name="people" size={40} color={colors.textMuted} />
             <Text style={[sh.emptyText, { color: colors.textMuted }]}>
               {search ? "No contacts match your search" : "No contacts yet — follow someone first"}
             </Text>
@@ -359,7 +359,7 @@ function ContactPickerSheet({ visible, gradient, eventName, onClose, onSelect }:
                   <Text style={[sh.rowHandle, { color: colors.textMuted }]} numberOfLines={1}>@{item.handle}</Text>
                 </View>
                 <View style={[sh.giftChip, { backgroundColor: colors.inputBg }]}>
-                  <Ionicons name="gift-outline" size={14} color={colors.accent} />
+                  <Ionicons name="gift" size={14} color={colors.accent} />
                   <Text style={[sh.giftChipText, { color: colors.accent }]}>Gift</Text>
                 </View>
               </TouchableOpacity>
@@ -453,7 +453,7 @@ export function HomeBanner() {
                 result.push({
                   id: bKey,
                   type: "red_envelope",
-                  icon: "gift-outline",
+                  icon: "gift",
                   emoji: "🧧",
                   title: "Unclaimed Red Envelope",
                   subtitle: env.message || `${env.total_amount.toLocaleString()} ACoin in your group`,
@@ -486,7 +486,7 @@ export function HomeBanner() {
         result.push({
           id: bKey,
           type: "promo",
-          icon: (p.icon as any) || "megaphone-outline",
+          icon: (p.icon as any) || "megaphone",
           title: p.title,
           subtitle: p.subtitle ?? undefined,
           gradient: [c, c + "BB"] as const,
@@ -510,7 +510,7 @@ export function HomeBanner() {
       result.push({
         id: bKey,
         type: "holiday",
-        icon: "calendar-outline",
+        icon: "calendar",
         emoji: ev.emoji,
         title,
         subtitle,
@@ -610,7 +610,7 @@ export function HomeBanner() {
             {(banner.giftAction || banner.action) ? (
               <View style={st.ctaChip}>
                 <Text style={st.ctaText}>{banner.giftAction ? "Pick contact" : "Open"}</Text>
-                <Ionicons name={banner.giftAction ? "people-outline" : "arrow-forward"} size={12} color="#fff" />
+                <Ionicons name={banner.giftAction ? "people" : "arrow-forward"} size={12} color="#fff" />
               </View>
             ) : null}
 

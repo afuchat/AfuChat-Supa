@@ -19,11 +19,11 @@ type Props = {
 };
 
 const REASONS: { key: DismissReason; label: string; icon: string }[] = [
-  { key: "not_interested",  label: "Not interested in this",         icon: "thumbs-down-outline"  },
-  { key: "not_relevant",   label: "Not relevant to me",              icon: "funnel-outline"        },
-  { key: "already_seen",   label: "I've already seen this",          icon: "eye-off-outline"       },
-  { key: "mute_author",    label: "Too many posts from this person", icon: "volume-mute-outline"   },
-  { key: "spam",           label: "It looks like spam",              icon: "alert-circle-outline"  },
+  { key: "not_interested",  label: "Not interested in this",         icon: "thumbs-down"  },
+  { key: "not_relevant",   label: "Not relevant to me",              icon: "funnel"        },
+  { key: "already_seen",   label: "I've already seen this",          icon: "eye-off"       },
+  { key: "mute_author",    label: "Too many posts from this person", icon: "volume-mute"   },
+  { key: "spam",           label: "It looks like spam",              icon: "alert-circle"  },
 ];
 
 export function DismissSheet({ visible, authorHandle: _authorHandle, onSelect, onClose }: Props) {

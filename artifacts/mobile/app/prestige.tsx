@@ -142,14 +142,14 @@ export default function PrestigeScreen() {
     if (txRes.data) {
       setTransactions(txRes.data.map((t: any) => {
         let label = t.transaction_type.replace(/_/g, " ");
-        let icon  = "diamond-outline";
+        let icon  = "diamond";
         let color = t.amount > 0 ? "#34C759" : "#FF9500";
-        if (t.transaction_type === "status_good_purchase") { label = `${t.metadata?.good_emoji || ""} ${t.metadata?.good_name || "Status Good"}`; icon = "star-outline"; color = "#AF52DE"; }
-        else if (t.transaction_type === "conversion")       { label = "Nexa converted to ACoin"; icon = "swap-horizontal-outline"; color = "#FF9500"; }
-        else if (t.transaction_type === "topup")            { label = "ACoin Top-Up"; icon = "card-outline"; color = "#34C759"; }
-        else if (t.transaction_type === "subscription")     { label = `Premium — ${t.metadata?.plan_name || "Plan"}`; icon = "diamond-outline"; color = "#FF9500"; }
-        else if (t.transaction_type === "gift_sent")        { label = `Gift sent — ${t.metadata?.gift_name || ""}`; icon = "gift-outline"; color = "#FF9500"; }
-        else if (t.transaction_type === "gift_received")    { label = `Gift received — ${t.metadata?.gift_name || ""}`; icon = "gift-outline"; color = "#34C759"; }
+        if (t.transaction_type === "status_good_purchase") { label = `${t.metadata?.good_emoji || ""} ${t.metadata?.good_name || "Status Good"}`; icon = "star"; color = "#AF52DE"; }
+        else if (t.transaction_type === "conversion")       { label = "Nexa converted to ACoin"; icon = "swap-horizontal"; color = "#FF9500"; }
+        else if (t.transaction_type === "topup")            { label = "ACoin Top-Up"; icon = "card"; color = "#34C759"; }
+        else if (t.transaction_type === "subscription")     { label = `Premium — ${t.metadata?.plan_name || "Plan"}`; icon = "diamond"; color = "#FF9500"; }
+        else if (t.transaction_type === "gift_sent")        { label = `Gift sent — ${t.metadata?.gift_name || ""}`; icon = "gift"; color = "#FF9500"; }
+        else if (t.transaction_type === "gift_received")    { label = `Gift received — ${t.metadata?.gift_name || ""}`; icon = "gift"; color = "#34C759"; }
         return { ...t, label, icon, color };
       }));
     }
@@ -221,10 +221,10 @@ export default function PrestigeScreen() {
 
 
   const TABS: { id: Tab; label: string; icon: string }[] = [
-    { id: "overview", label: "Overview", icon: "layers-outline" },
-    { id: "shop",     label: "Shop",     icon: "storefront-outline" },
-    { id: "ranks",    label: "Ranks",    icon: "trophy-outline" },
-    { id: "history",  label: "History",  icon: "receipt-outline" },
+    { id: "overview", label: "Overview", icon: "layers" },
+    { id: "shop",     label: "Shop",     icon: "storefront" },
+    { id: "ranks",    label: "Ranks",    icon: "trophy" },
+    { id: "history",  label: "History",  icon: "receipt" },
   ];
 
   return (
@@ -248,7 +248,7 @@ export default function PrestigeScreen() {
             </TouchableOpacity>
             <Text style={s.navTitle}>Prestige</Text>
             <TouchableOpacity style={s.navBtn} onPress={() => router.push("/wallet")} hitSlop={12}>
-              <Ionicons name="wallet-outline" size={20} color="#fff" />
+              <Ionicons name="wallet" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
 
@@ -410,7 +410,7 @@ export default function PrestigeScreen() {
                           <Ionicons name={perk.icon as any} size={16} color={nextTier.color + "88"} />
                         </View>
                         <Text style={[s.perkText, { color: colors.textMuted }]}>{perk.text}</Text>
-                        <Ionicons name="lock-closed-outline" size={14} color={colors.textMuted} />
+                        <Ionicons name="lock-closed" size={14} color={colors.textMuted} />
                       </View>
                     </View>
                   ))}
@@ -542,7 +542,7 @@ export default function PrestigeScreen() {
                                 {owned && <View style={[s.shopOwnedChip, { backgroundColor: itemTier.color + "22" }]}><Text style={[s.shopOwnedText, { color: itemTier.color }]}>Owned</Text></View>}
                               </View>
                               <View style={[s.whereRow]}>
-                                <Ionicons name="eye-outline" size={11} color={colors.textMuted} />
+                                <Ionicons name="eye" size={11} color={colors.textMuted} />
                                 <Text style={[s.shopCardWhere, { color: colors.textMuted }]}>{item.where}</Text>
                               </View>
                               <Text style={[s.shopCardDesc, { color: colors.textSecondary }]}>{item.description}</Text>
@@ -717,7 +717,7 @@ export default function PrestigeScreen() {
             <SectionHeader title="TRANSACTION HISTORY" subtitle={`${transactions.length} transactions`} colors={colors} />
             {transactions.length === 0 ? (
               <View style={s.empty}>
-                <Ionicons name="receipt-outline" size={44} color={colors.textMuted} />
+                <Ionicons name="receipt" size={44} color={colors.textMuted} />
                 <Text style={[s.emptyTitle, { color: colors.text }]}>No transactions yet</Text>
                 <Text style={[s.emptySub, { color: colors.textMuted }]}>Purchase Status Goods or top up to see activity here</Text>
                 <TouchableOpacity style={[s.emptyBtn, { backgroundColor: tier.color }]} onPress={() => router.push("/wallet")}>

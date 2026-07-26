@@ -173,7 +173,7 @@ export default function ChatDangerScreen() {
       >
         {/* ── Warning banner ── */}
         <View style={[s.warnCard, { backgroundColor: "#FF3B3012", borderColor: "#FF3B3030" }]}>
-          <Ionicons name="warning-outline" size={20} color="#FF3B30" />
+          <Ionicons name="warning" size={20} color="#FF3B30" />
           <Text style={[s.warnText, { color: colors.text }]}>
             Actions on this page affect your account. Some cannot be undone.
           </Text>
@@ -185,7 +185,7 @@ export default function ChatDangerScreen() {
             <SectionTitle label="USER SAFETY" colors={colors} />
             <View style={[s.group, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Row
-                icon={isBlocked ? "checkmark-circle-outline" : "ban-outline"}
+                icon={isBlocked ? "checkmark-circle" : "ban"}
                 bg={isBlocked ? "#34C759" : "#FF9500"}
                 label={isBlocked ? `Unblock ${name}` : `Block ${name}`}
                 sub={isBlocked ? "They cannot message you right now" : "Stop receiving messages from this person"}
@@ -194,7 +194,7 @@ export default function ChatDangerScreen() {
               />
               <Sep color={colors.border} />
               <Row
-                icon="flag-outline"
+                icon="flag"
                 bg="#FF3B30"
                 label={`Report ${name}`}
                 sub="Report spam, harassment, or inappropriate content"
@@ -209,7 +209,7 @@ export default function ChatDangerScreen() {
         <SectionTitle label="CHAT DATA" colors={colors} />
         <View style={[s.group, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Row
-            icon="trash-outline"
+            icon="trash"
             bg="#FF9500"
             label="Clear Chat History"
             sub="Removes all messages for you only — cannot be undone"
@@ -218,7 +218,7 @@ export default function ChatDangerScreen() {
           />
           <Sep color={colors.border} />
           <Row
-            icon={isGroup || isChannel ? "exit-outline" : "close-circle-outline"}
+            icon={isGroup || isChannel ? "exit" : "close-circle"}
             bg="#FF3B30"
             label={isChannel ? "Leave Channel" : isGroup ? "Leave Group" : "Delete Conversation"}
             sub={

@@ -191,14 +191,14 @@ function PublicProfileScreen({ handle }: { handle: string }) {
 
           {profile.country ? (
             <View style={pub.metaRow}>
-              <Ionicons name="location-outline" size={13} color={colors.textMuted} />
+              <Ionicons name="location" size={13} color={colors.textMuted} />
               <Text style={[pub.metaText, { color: colors.textMuted }]}>{profile.country}</Text>
             </View>
           ) : null}
 
           {profile.current_grade ? (
             <View style={pub.metaRow}>
-              <Ionicons name="flash-outline" size={13} color={colors.textMuted} />
+              <Ionicons name="flash" size={13} color={colors.textMuted} />
               <Text style={[pub.metaText, { color: colors.textMuted }]}>
                 {profile.current_grade} · {profile.xp.toLocaleString()} Nexa
               </Text>
@@ -230,7 +230,7 @@ function PublicProfileScreen({ handle }: { handle: string }) {
             onPress={() => router.push("/(auth)/login" as any)}
             activeOpacity={0.85}
           >
-            <Ionicons name="person-add-outline" size={17} color="#fff" />
+            <Ionicons name="person-add" size={17} color="#fff" />
             <Text style={pub.btnPrimaryText}>Follow</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -238,7 +238,7 @@ function PublicProfileScreen({ handle }: { handle: string }) {
             onPress={() => router.push("/(auth)/login" as any)}
             activeOpacity={0.85}
           >
-            <Ionicons name="chatbubble-outline" size={17} color={colors.text} />
+            <Ionicons name="chatbubble" size={17} color={colors.text} />
             <Text style={[pub.btnSecondaryText, { color: colors.text }]}>Message</Text>
           </TouchableOpacity>
         </View>

@@ -66,7 +66,7 @@ export default function TransferScreen() {
 
         <Text style={[styles.label, { color: colors.text }]}>Recipient Username or Phone</Text>
         <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Ionicons name="person-outline" size={18} color={colors.textMuted} />
+          <Ionicons name="person" size={18} color={colors.textMuted} />
           <TextInput
             style={[styles.input, { color: colors.text }]}
             value={recipient}
@@ -92,7 +92,7 @@ export default function TransferScreen() {
 
         <Text style={[styles.label, { color: colors.text }]}>Note (Optional)</Text>
         <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Ionicons name="chatbubble-outline" size={18} color={colors.textMuted} />
+          <Ionicons name="chatbubble" size={18} color={colors.textMuted} />
           <TextInput
             style={[styles.input, { color: colors.text }]}
             value={note}
@@ -117,7 +117,7 @@ export default function TransferScreen() {
                 })}
               >
                 <Text style={[styles.feeLinkText, { color: colors.accent }]}>Transfer Fee ({fee.feePercent}%)</Text>
-                <Ionicons name="information-circle-outline" size={14} color={colors.accent} />
+                <Ionicons name="information-circle" size={14} color={colors.accent} />
               </TouchableOpacity>
               <Text style={[styles.feeValue, { color: "#FF9800" }]}>+{fee.feeAmount} ACoins</Text>
             </View>

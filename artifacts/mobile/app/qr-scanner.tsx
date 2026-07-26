@@ -284,7 +284,7 @@ function ResultSheet({
 
         {result.type === "afuchat_url" && (
           <TouchableOpacity style={[sheet.actionBtn, { backgroundColor: Colors.brand }]} onPress={handleAfuChatUrl}>
-            <Ionicons name="open-outline" size={18} color="#fff" />
+            <Ionicons name="open" size={18} color="#fff" />
             <Text style={sheet.actionBtnText}>Open in AfuChat</Text>
           </TouchableOpacity>
         )}
@@ -341,7 +341,7 @@ function ResultSheet({
           style={[sheet.actionBtn, sheet.actionBtnSecondary, { borderColor: colors.border }]}
           onPress={() => copyToClipboard(result.raw)}
         >
-          <Ionicons name="copy-outline" size={18} color={colors.text} />
+          <Ionicons name="copy" size={18} color={colors.text} />
           <Text style={[sheet.actionBtnText, { color: colors.text }]}>Copy</Text>
         </TouchableOpacity>
 
@@ -492,7 +492,7 @@ export default function QRScannerScreen() {
             <Ionicons name={torch ? "flash" : "flash-off"} size={22} color={torch ? "#FFD60A" : "#fff"} />
           </TouchableOpacity>
           <TouchableOpacity style={s.iconBtn} onPress={() => { loadHistory().then(setHistory); setShowHistory(true); }}>
-            <Ionicons name="time-outline" size={22} color="#fff" />
+            <Ionicons name="time" size={22} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
@@ -537,7 +537,7 @@ export default function QRScannerScreen() {
           <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
             {history.length === 0 ? (
               <View style={[s.histEmpty]}>
-                <Ionicons name="time-outline" size={48} color={colors.textMuted} />
+                <Ionicons name="time" size={48} color={colors.textMuted} />
                 <Text style={[s.histEmptyText, { color: colors.textMuted }]}>No scan history yet</Text>
               </View>
             ) : (

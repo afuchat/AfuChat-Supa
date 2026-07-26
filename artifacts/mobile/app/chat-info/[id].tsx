@@ -217,13 +217,13 @@ export default function ChatInfoScreen() {
         <SectionTitle label="GENERAL" colors={colors} />
         <View style={[s.group, { backgroundColor: colors.surface }]}>
           <Row
-            colors={colors} icon="star-outline" bg="#FF9500"
+            colors={colors} icon="star" bg="#FF9500"
             label="Starred Messages"
             onPress={() => router.push({ pathname: "/saved-posts", params: { tab: "messages" } } as any)}
           />
           <Sep color={colors.border} />
           <Row
-            colors={colors} icon="color-palette-outline" bg={BRAND}
+            colors={colors} icon="color-palette" bg={BRAND}
             label="Chat Appearance"
             sub="Wallpaper & bubble style"
             onPress={() => router.push({ pathname: "/chat-info/appearance/[id]", params: { id, displayName } } as any)}
@@ -235,7 +235,7 @@ export default function ChatInfoScreen() {
         <View style={[s.group, { backgroundColor: colors.surface }]}>
           <Row
             colors={colors}
-            icon={isMuted ? "notifications-off-outline" : "notifications-outline"}
+            icon={isMuted ? "notifications-off" : "notifications"}
             bg={isMuted ? "#8E8E93" : "#007AFF"}
             label={isMuted ? "Unmute Notifications" : "Mute Notifications"}
             sub={muteLabel() || undefined}
@@ -245,7 +245,7 @@ export default function ChatInfoScreen() {
           {showMutePicker && !isMuted && (
             <View style={[s.subGroup, { borderTopColor: colors.border }]}>
               {MUTE_OPTIONS.map((o) => (
-                <SubRow key={o.label} colors={colors} icon="time-outline" label={o.label} onPress={() => handleMute(o.hours)} />
+                <SubRow key={o.label} colors={colors} icon="time" label={o.label} onPress={() => handleMute(o.hours)} />
               ))}
             </View>
           )}
@@ -257,7 +257,7 @@ export default function ChatInfoScreen() {
             <SectionTitle label="PRIVACY" colors={colors} />
             <View style={[s.group, { backgroundColor: colors.surface }]}>
               <Row
-                colors={colors} icon="timer-outline" bg="#34C759"
+                colors={colors} icon="timer" bg="#34C759"
                 label="Disappearing Messages"
                 sub={disappearLabel}
                 chevron
@@ -271,7 +271,7 @@ export default function ChatInfoScreen() {
                       : (disappearingEnabled && disappearingTimer === o.seconds);
                     return (
                       <SubRow
-                        key={o.seconds} colors={colors} icon="time-outline"
+                        key={o.seconds} colors={colors} icon="time"
                         label={o.label} checked={active}
                         onPress={() => handleDisappear(o.seconds)}
                       />
@@ -287,7 +287,7 @@ export default function ChatInfoScreen() {
         <SectionTitle label="SAFETY & PRIVACY" colors={colors} />
         <View style={[s.group, { backgroundColor: colors.surface }]}>
           <Row
-            colors={colors} icon="shield-outline" bg="#FF3B30"
+            colors={colors} icon="shield" bg="#FF3B30"
             label="Block, Report & Delete"
             sub="Manage safety options for this chat"
             onPress={() => router.push({ pathname: "/chat-info/danger/[id]", params: dangerParams } as any)}

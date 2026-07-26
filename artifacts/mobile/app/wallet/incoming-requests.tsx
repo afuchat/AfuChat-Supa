@@ -307,7 +307,7 @@ export default function IncomingRequestsScreen() {
         >
           {tab === "incoming" && (
             incoming.length === 0 ? (
-              <EmptyState icon="hand-left-outline" title="No Requests" sub="Money requests sent to you will appear here." colors={colors} />
+              <EmptyState icon="hand-left" title="No Requests" sub="Money requests sent to you will appear here." colors={colors} />
             ) : (
               incoming.map((req) => (
                 <RequestCard
@@ -325,7 +325,7 @@ export default function IncomingRequestsScreen() {
 
           {tab === "sent" && (
             sent.length === 0 ? (
-              <EmptyState icon="paper-plane-outline" title="No Sent Requests" sub="Requests you send will appear here." colors={colors} />
+              <EmptyState icon="paper-plane" title="No Sent Requests" sub="Requests you send will appear here." colors={colors} />
             ) : (
               sent.map((req) => (
                 <RequestCard
@@ -362,11 +362,11 @@ function RequestCard({
   const isExpired = isPending && new Date(req.expires_at) < new Date();
 
   const statusConfig: Record<string, { label: string; color: string; icon: string }> = {
-    pending:   { label: isExpired ? "Expired" : "Pending",  color: "#FF9500", icon: "time-outline" },
+    pending:   { label: isExpired ? "Expired" : "Pending",  color: "#FF9500", icon: "time" },
     accepted:  { label: "Accepted",  color: "#34C759", icon: "checkmark-circle" },
     denied:    { label: "Declined",  color: "#FF3B30", icon: "close-circle" },
-    expired:   { label: "Expired",   color: "#8E8E93", icon: "time-outline" },
-    cancelled: { label: "Cancelled", color: "#8E8E93", icon: "ban-outline" },
+    expired:   { label: "Expired",   color: "#8E8E93", icon: "time" },
+    cancelled: { label: "Cancelled", color: "#8E8E93", icon: "ban" },
   };
   const sc = statusConfig[isExpired ? "expired" : req.status] || statusConfig.pending;
   const currColor = req.currency === "acoin" ? "#34C759" : "#FF9500";
@@ -402,7 +402,7 @@ function RequestCard({
 
       {req.note ? (
         <View style={[s.noteBox, { backgroundColor: colors.inputBg }]}>
-          <Ionicons name="chatbubble-ellipses-outline" size={13} color={colors.textMuted} />
+          <Ionicons name="chatbubble-ellipses" size={13} color={colors.textMuted} />
           <Text style={[s.noteText, { color: colors.textSecondary }]} numberOfLines={2}>
             {req.note}
           </Text>

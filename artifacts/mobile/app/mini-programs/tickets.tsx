@@ -92,10 +92,10 @@ export default function TicketsScreen() {
             <View style={{ flex: 1 }}>
               <Text style={[styles.eventName, { color: colors.text }]}>{e.name}</Text>
               <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
-                <Ionicons name="calendar-outline" size={12} /> {e.date}
+                <Ionicons name="calendar" size={12} /> {e.date}
               </Text>
               <Text style={[styles.eventLocation, { color: colors.textMuted }]}>
-                <Ionicons name="location-outline" size={12} /> {e.location}
+                <Ionicons name="location" size={12} /> {e.location}
               </Text>
             </View>
             <View style={{ alignItems: "flex-end" }}>
@@ -153,7 +153,7 @@ export default function TicketsScreen() {
                 })}
               >
                 <Text style={[styles.feeLinkText, { color: colors.accent }]}>Service Fee ({fee.feePercent}%)</Text>
-                <Ionicons name="information-circle-outline" size={14} color={colors.accent} />
+                <Ionicons name="information-circle" size={14} color={colors.accent} />
               </TouchableOpacity>
               <Text style={[styles.feeValue, { color: "#FF9800" }]}>+{fee.feeAmount} ACoins</Text>
             </View>

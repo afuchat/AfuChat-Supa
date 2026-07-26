@@ -163,7 +163,7 @@ function ProfileCompletionBar({ profile, isPremium, colors, accent }: { profile:
           <View style={pc.checks}>
             {checks.map((c) => (
               <View key={c.label} style={pc.checkItem}>
-                <Ionicons name={c.done ? "checkmark-circle" : "ellipse-outline"} size={14} color={c.done ? "#34C759" : colors.border} />
+                <Ionicons name={c.done ? "checkmark-circle" : "ellipse"} size={14} color={c.done ? "#34C759" : colors.border} />
                 <Text style={[pc.checkLabel, { color: c.done ? colors.textSecondary : colors.textMuted }]}>{c.label}</Text>
               </View>
             ))}
@@ -368,7 +368,7 @@ export default function MeScreen() {
             justifyContent: "center",
           }}
         >
-          <Ionicons name="settings-outline" size={19} color={colors.text} />
+          <Ionicons name="settings" size={19} color={colors.text} />
         </TouchableOpacity>
       )}
 
@@ -427,7 +427,7 @@ export default function MeScreen() {
               >
                 {purchaseLoading && <ActivityIndicator size="small" color={colors.textMuted} style={{ marginRight: 4 }} />}
                 <Text style={[s.heroHandle, { color: colors.textMuted }]}>@{profile?.handle || "handle"}</Text>
-                <Ionicons name="information-circle-outline" size={13} color={colors.textMuted} style={{ opacity: 0.6 }} />
+                <Ionicons name="information-circle" size={13} color={colors.textMuted} style={{ opacity: 0.6 }} />
               </TouchableOpacity>
 
               {profile?.is_organization_verified && (
@@ -492,10 +492,10 @@ export default function MeScreen() {
         {/* ── Quick Actions ───────────────────────────────────────────────── */}
         <View style={[s.quickRow, { backgroundColor: colors.surface }]}>
           {[
-            { icon: "create-outline",    label: "Edit Profile", color: accent, onPress: () => router.push("/profile/edit") },
-            { icon: "person-outline",    label: "My Profile",   color: accent, onPress: () => profile?.handle && router.push(`/@${profile.handle}` as any) },
-            { icon: "qr-code-outline",   label: "QR Code",      color: accent, onPress: () => router.push("/qr-scanner" as any) },
-            { icon: "card-outline",      label: "Digital ID",   color: accent, onPress: () => router.push("/digital-id" as any) },
+            { icon: "create",    label: "Edit Profile", color: accent, onPress: () => router.push("/profile/edit") },
+            { icon: "person",    label: "My Profile",   color: accent, onPress: () => profile?.handle && router.push(`/@${profile.handle}` as any) },
+            { icon: "qr-code",   label: "QR Code",      color: accent, onPress: () => router.push("/qr-scanner" as any) },
+            { icon: "card",      label: "Digital ID",   color: accent, onPress: () => router.push("/digital-id" as any) },
           ].map((a) => (
             <TouchableOpacity key={a.label} style={s.quickBtn} onPress={a.onPress} activeOpacity={0.75}>
               <View style={[s.quickIconWrap, { backgroundColor: a.color + "15" }]}>
@@ -548,7 +548,7 @@ export default function MeScreen() {
           <SectionLabel label="My Content" colors={colors} />
           <MenuCard colors={colors}>
             <MenuItem
-              icon="grid-outline"
+              icon="grid"
               iconColor={accent}
               label="My Posts"
               value={`${fmtCount(postCount)} posts`}
@@ -557,7 +557,7 @@ export default function MeScreen() {
               colors={colors}
             />
             <MenuItem
-              icon="bookmark-outline"
+              icon="bookmark"
               iconColor={accent}
               label="Saved Posts"
               onPress={() => router.push("/saved-posts" as any)}
@@ -565,7 +565,7 @@ export default function MeScreen() {
               colors={colors}
             />
             <MenuItem
-              icon="time-outline"
+              icon="time"
               iconColor={accent}
               label="Watch History"
               onPress={() => router.push("/watch-history" as any)}
@@ -573,7 +573,7 @@ export default function MeScreen() {
               colors={colors}
             />
             <MenuItem
-              icon="document-text-outline"
+              icon="document-text"
               iconColor={accent}
               label="My Notes"
               badge={notesLoading ? "…" : undefined}
@@ -588,7 +588,7 @@ export default function MeScreen() {
           <SectionLabel label="Social & Growth" colors={colors} />
           <MenuCard colors={colors}>
             <MenuItem
-              icon="people-outline"
+              icon="people"
               iconColor={accent}
               label="Find People"
               onPress={() => router.push("/user-discovery")}
@@ -596,7 +596,7 @@ export default function MeScreen() {
               colors={colors}
             />
             <MenuItem
-              icon="gift-outline"
+              icon="gift"
               iconColor={accent}
               label="Referral Program"
               badge="Earn ACoin"
@@ -605,7 +605,7 @@ export default function MeScreen() {
               colors={colors}
             />
             <MenuItem
-              icon="trophy-outline"
+              icon="trophy"
               iconColor={accent}
               label="Prestige & Rewards"
               badge="NEW"
@@ -614,7 +614,7 @@ export default function MeScreen() {
               colors={colors}
             />
             <MenuItem
-              icon="people-circle-outline"
+              icon="people-circle"
               iconColor={accent}
               label="Phone Contacts"
               onPress={() => router.push("/phone-contacts" as any)}
@@ -622,7 +622,7 @@ export default function MeScreen() {
               colors={colors}
             />
             <MenuItem
-              icon="ribbon-outline"
+              icon="ribbon"
               iconColor={accent}
               label="Achievements"
               onPress={() => router.push("/achievements" as any)}
@@ -676,14 +676,14 @@ export default function MeScreen() {
                 <Text style={{ fontSize: 26, fontFamily: "Inter_700Bold", color: accent }}>@{purchasePopup?.handle}</Text>
               </View>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 8 }}>
-                <Ionicons name="storefront-outline" size={13} color="#34C759" />
+                <Ionicons name="storefront" size={13} color="#34C759" />
                 <Text style={{ fontSize: 12, fontFamily: "Inter_500Medium", color: "#34C759" }}>Purchased from Marketplace</Text>
               </View>
             </View>
             <View style={{ gap: 12, backgroundColor: colors.backgroundSecondary, borderRadius: 14, padding: 14 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
-                  <Ionicons name="cash-outline" size={16} color={colors.icon} />
+                  <Ionicons name="cash" size={16} color={colors.icon} />
                   <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: colors.textSecondary }}>Price Paid</Text>
                 </View>
                 <Text style={{ fontSize: 15, fontFamily: "Inter_700Bold", color: "#FFD60A" }}>🪙 {purchasePopup?.price.toLocaleString()} ACoin</Text>
@@ -691,7 +691,7 @@ export default function MeScreen() {
               <View style={{ height: 0.5, backgroundColor: colors.border }} />
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
-                  <Ionicons name="calendar-outline" size={16} color={colors.icon} />
+                  <Ionicons name="calendar" size={16} color={colors.icon} />
                   <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: colors.textSecondary }}>Purchased On</Text>
                 </View>
                 <Text style={{ fontSize: 14, fontFamily: "Inter_600SemiBold", color: colors.text }}>{purchasePopup ? fmtDate(purchasePopup.purchasedAt) : "—"}</Text>
@@ -701,7 +701,7 @@ export default function MeScreen() {
                   <View style={{ height: 0.5, backgroundColor: colors.border }} />
                   <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
-                      <Ionicons name="person-outline" size={16} color={colors.icon} />
+                      <Ionicons name="person" size={16} color={colors.icon} />
                       <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: colors.textSecondary }}>Sold By</Text>
                     </View>
                     <Text style={{ fontSize: 14, fontFamily: "Inter_600SemiBold", color: colors.text }}>@{purchasePopup.sellerHandle}</Text>

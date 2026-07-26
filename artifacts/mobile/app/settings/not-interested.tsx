@@ -53,23 +53,23 @@ const TOPIC_LABELS: Record<string, string> = {
 };
 
 const TOPIC_ICONS: Record<string, string> = {
-  technology: "hardware-chip-outline",
-  music: "musical-notes-outline",
-  sports: "trophy-outline",
-  fashion: "shirt-outline",
-  food: "restaurant-outline",
-  travel: "airplane-outline",
-  art: "color-palette-outline",
-  gaming: "game-controller-outline",
-  fitness: "barbell-outline",
-  photography: "camera-outline",
-  business: "briefcase-outline",
-  education: "school-outline",
-  movies: "film-outline",
-  reading: "book-outline",
-  nature: "leaf-outline",
-  politics: "megaphone-outline",
-  science: "flask-outline",
+  technology: "hardware-chip",
+  music: "musical-notes",
+  sports: "trophy",
+  fashion: "shirt",
+  food: "restaurant",
+  travel: "airplane",
+  art: "color-palette",
+  gaming: "game-controller",
+  fitness: "barbell",
+  photography: "camera",
+  business: "briefcase",
+  education: "school",
+  movies: "film",
+  reading: "book",
+  nature: "leaf",
+  politics: "megaphone",
+  science: "flask",
   crypto: "logo-bitcoin",
 };
 
@@ -173,7 +173,7 @@ export default function NotInterestedScreen() {
         </View>
       ) : isEmpty ? (
         <View style={styles.center}>
-          <Ionicons name="heart-outline" size={52} color={colors.textMuted} />
+          <Ionicons name="heart" size={52} color={colors.textMuted} />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>All clear</Text>
           <Text style={[styles.emptySub, { color: colors.textMuted }]}>
             Authors and topics you mute will appear here.
@@ -229,7 +229,7 @@ export default function NotInterestedScreen() {
               <View style={[styles.card, { backgroundColor: sectionBg }]}>
                 {topics.map((topic, i) => {
                   const label = TOPIC_LABELS[topic] ?? topic.charAt(0).toUpperCase() + topic.slice(1);
-                  const icon = (TOPIC_ICONS[topic] ?? "pricetag-outline") as any;
+                  const icon = (TOPIC_ICONS[topic] ?? "pricetag") as any;
                   return (
                     <View key={topic}>
                       {i > 0 && <View style={[styles.sep, { backgroundColor: separatorBg }]} />}
@@ -262,7 +262,7 @@ export default function NotInterestedScreen() {
               onPress={handleResetAll}
               activeOpacity={0.75}
             >
-              <Ionicons name="refresh-outline" size={16} color="#FF3B30" />
+              <Ionicons name="refresh" size={16} color="#FF3B30" />
               <Text style={styles.resetTxt}>Reset all preferences</Text>
             </TouchableOpacity>
             <Text style={[styles.resetHint, { color: colors.textMuted }]}>

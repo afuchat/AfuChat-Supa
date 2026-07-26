@@ -33,7 +33,7 @@ export default function NotFoundScreen() {
 
       <View style={styles.content}>
         <View style={[styles.iconCircle, { backgroundColor: colors.surface }]}>
-          <Ionicons name="compass-outline" size={44} color={colors.accent} />
+          <Ionicons name="compass" size={44} color={colors.accent} />
         </View>
 
         <Text style={[styles.code, { color: colors.accent }]}>404</Text>
@@ -54,7 +54,7 @@ export default function NotFoundScreen() {
             onPress={() => router.replace("/(tabs)/discover")}
             activeOpacity={0.85}
           >
-            <Ionicons name="home-outline" size={18} color="#fff" />
+            <Ionicons name="home" size={18} color="#fff" />
             <Text style={styles.primaryBtnText}>Go to Discover</Text>
           </TouchableOpacity>
 
@@ -76,10 +76,10 @@ export default function NotFoundScreen() {
           </Text>
           <View style={styles.suggestionRow}>
             {[
-              { label: "Chats", icon: "chatbubble-outline" as const, path: "/(tabs)/chats" as const },
-              { label: "Apps", icon: "grid-outline" as const, path: "/(tabs)/apps" as const },
-              { label: "Moments", icon: "images-outline" as const, path: "/moments" as const },
-              { label: "Search", icon: "search-outline" as const, path: "/(tabs)/search" as const },
+              { label: "Chats", icon: "chatbubble" as const, path: "/(tabs)/chats" as const },
+              { label: "Apps", icon: "grid" as const, path: "/(tabs)/apps" as const },
+              { label: "Moments", icon: "images" as const, path: "/moments" as const },
+              { label: "Search", icon: "search" as const, path: "/(tabs)/search" as const },
             ].map((s) => (
               <TouchableOpacity
                 key={s.label}

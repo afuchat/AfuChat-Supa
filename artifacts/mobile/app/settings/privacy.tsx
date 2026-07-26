@@ -88,7 +88,7 @@ export default function PrivacySettingsScreen() {
         {/* ── ACCOUNT ──────────────────────────────────────────────────── */}
         <Section title="ACCOUNT" colors={colors}>
           <Row
-            icon="lock-closed-outline"
+            icon="lock-closed"
             iconColor="#0A84FF"
             label="Account Privacy"
             sublabel="Private account, online status, profile visibility"
@@ -96,7 +96,7 @@ export default function PrivacySettingsScreen() {
             colors={colors}
           />
           <Row
-            icon="eye-off-outline"
+            icon="eye-off"
             iconColor="#AF52DE"
             label="Visibility"
             sublabel="Who can see your followers and following list"
@@ -109,7 +109,7 @@ export default function PrivacySettingsScreen() {
         {/* ── INTERACTIONS ─────────────────────────────────────────────── */}
         <Section title="INTERACTIONS" colors={colors}>
           <Row
-            icon="chatbubble-ellipses-outline"
+            icon="chatbubble-ellipses"
             iconColor="#30D158"
             label="Messages"
             sublabel="Who can send you messages and calls"
@@ -117,7 +117,7 @@ export default function PrivacySettingsScreen() {
             colors={colors}
           />
           <Row
-            icon="heart-outline"
+            icon="heart"
             iconColor="#FF2D55"
             label="Reactions & Tags"
             sublabel="Who can like, comment and tag you"
@@ -130,7 +130,7 @@ export default function PrivacySettingsScreen() {
         {/* ── SAFETY ───────────────────────────────────────────────────── */}
         <Section title="SAFETY" colors={colors}>
           <Row
-            icon="ban-outline"
+            icon="ban"
             iconColor="#FF3B30"
             label="Blocked Users"
             sublabel="Manage accounts you have blocked"
@@ -139,7 +139,7 @@ export default function PrivacySettingsScreen() {
             colors={colors}
           />
           <Row
-            icon="flag-outline"
+            icon="flag"
             iconColor="#FF9500"
             label="Restricted Accounts"
             sublabel="Limit interactions without blocking"
@@ -152,7 +152,7 @@ export default function PrivacySettingsScreen() {
         {/* ── DATA ─────────────────────────────────────────────────────── */}
         <Section title="DATA" colors={colors}>
           <Row
-            icon="analytics-outline"
+            icon="analytics"
             iconColor="#0A84FF"
             label="Activity Data"
             sublabel="Manage how your activity is used"
@@ -166,7 +166,7 @@ export default function PrivacySettingsScreen() {
         <Section title="MESSAGING PRIVACY" colors={colors}>
           <View style={s.toggleRow}>
             <View style={[s.iconWrap, { backgroundColor: "#8E8E93" + "18" }]}>
-              <Ionicons name="chatbox-ellipses-outline" size={18} color="#8E8E93" />
+              <Ionicons name="chatbox-ellipses" size={18} color="#8E8E93" />
             </View>
             <View style={s.rowText}>
               <Text style={[s.rowLabel, { color: colors.text }]}>Auto-Reply</Text>
@@ -184,7 +184,7 @@ export default function PrivacySettingsScreen() {
           <View style={[s.divider, { backgroundColor: colors.separator }]} />
           <View style={s.toggleRow}>
             <View style={[s.iconWrap, { backgroundColor: "#FF3B30" + "18" }]}>
-              <Ionicons name="timer-outline" size={18} color="#FF3B30" />
+              <Ionicons name="timer" size={18} color="#FF3B30" />
             </View>
             <View style={s.rowText}>
               <Text style={[s.rowLabel, { color: colors.text }]}>Temporary Chats</Text>

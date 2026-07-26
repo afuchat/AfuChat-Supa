@@ -314,7 +314,7 @@ export default function ChannelDetailScreen() {
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={st.center}>
-          <Ionicons name="megaphone-outline" size={64} color={colors.textMuted} />
+          <Ionicons name="megaphone" size={64} color={colors.textMuted} />
           <Text style={[st.notFoundTitle, { color: colors.text }]}>Channel Not Found</Text>
           <Text style={[st.notFoundSub, { color: colors.textMuted }]}>
             This channel may have been deleted or is no longer available.
@@ -375,7 +375,7 @@ export default function ChannelDetailScreen() {
             <Text style={[st.bubbleTime, { color: colors.textMuted }]}>{fmtTime(post.created_at)}</Text>
             <TouchableOpacity onPress={() => toggleLike(post.id)} hitSlop={8} style={st.likeBtn}>
               <Ionicons
-                name={post.myLike ? "heart" : "heart-outline"}
+                name={post.myLike ? "heart" : "heart"}
                 size={13}
                 color={post.myLike ? "#FF2D55" : colors.textMuted}
               />
@@ -408,7 +408,7 @@ export default function ChannelDetailScreen() {
         <Text style={[st.infoBannerDesc, { color: colors.textMuted }]}>{channel.description}</Text>
       ) : null}
       <View style={st.infoBannerStats}>
-        <Ionicons name="people-outline" size={14} color={colors.textMuted} />
+        <Ionicons name="people" size={14} color={colors.textMuted} />
         <Text style={[st.infoBannerStatText, { color: colors.textMuted }]}>
           {fmtNum(channel.subscriber_count)} subscribers
         </Text>
@@ -438,7 +438,7 @@ export default function ChannelDetailScreen() {
           ) : (
             <>
               <Ionicons
-                name={isSubscribed ? "notifications" : "notifications-outline"}
+                name={isSubscribed ? "notifications" : "notifications"}
                 size={15}
                 color={isSubscribed ? colors.textMuted : "#fff"}
               />
@@ -495,7 +495,7 @@ export default function ChannelDetailScreen() {
 
         <View style={{ flexDirection: "row", gap: 2, alignItems: "center" }}>
           <TouchableOpacity onPress={shareChannel} hitSlop={12} style={st.topBarBtn}>
-            <Ionicons name="share-outline" size={22} color={colors.text} />
+            <Ionicons name="share" size={22} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
@@ -510,7 +510,7 @@ export default function ChannelDetailScreen() {
         ListHeaderComponent={<ListHeader />}
         ListEmptyComponent={
           <View style={st.emptyWrap}>
-            <Ionicons name="megaphone-outline" size={44} color={colors.textMuted} />
+            <Ionicons name="megaphone" size={44} color={colors.textMuted} />
             <Text style={[st.emptyTitle, { color: colors.text }]}>
               {isOwner ? "Start broadcasting" : "No messages yet"}
             </Text>
@@ -550,7 +550,7 @@ export default function ChannelDetailScreen() {
             >
               {uploadingImage
                 ? <ActivityIndicator size="small" color={PURPLE} />
-                : <Ionicons name="image-outline" size={22} color={PURPLE} />
+                : <Ionicons name="image" size={22} color={PURPLE} />
               }
             </TouchableOpacity>
 
@@ -579,7 +579,7 @@ export default function ChannelDetailScreen() {
         </View>
       ) : (
         <View style={[st.readOnlyBar, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: insets.bottom || 10 }]}>
-          <Ionicons name="megaphone-outline" size={15} color={colors.textMuted} />
+          <Ionicons name="megaphone" size={15} color={colors.textMuted} />
           <Text style={[st.readOnlyText, { color: colors.textMuted }]}>
             {isSubscribed
               ? "You're subscribed — only the owner can broadcast."

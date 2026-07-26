@@ -31,13 +31,13 @@ const STEP5_WAIT   = 15;
 const FINAL_PHRASE = "PERMANENTLY DELETE MY ACCOUNT";
 
 const CONSEQUENCES = [
-  { id: "posts",    icon: "newspaper-outline"   as const, text: "All posts, stories and moments will be permanently erased" },
-  { id: "chats",    icon: "chatbubbles-outline"  as const, text: "Every chat, message and media file will be removed forever" },
-  { id: "coins",    icon: "wallet-outline"       as const, text: "Your entire ACoins balance will be forfeited — no refund" },
-  { id: "friends",  icon: "people-outline"       as const, text: "All followers, contacts and community memberships will be lost" },
-  { id: "premium",  icon: "star-outline"         as const, text: "Active Premium or Platinum subscriptions will NOT be refunded" },
-  { id: "media",    icon: "images-outline"       as const, text: "Every photo, video and file you uploaded will be deleted" },
-  { id: "irrev",    icon: "warning-outline"      as const, text: "After 30 days this is irreversible — your data is gone forever" },
+  { id: "posts",    icon: "newspaper"   as const, text: "All posts, stories and moments will be permanently erased" },
+  { id: "chats",    icon: "chatbubbles"  as const, text: "Every chat, message and media file will be removed forever" },
+  { id: "coins",    icon: "wallet"       as const, text: "Your entire ACoins balance will be forfeited — no refund" },
+  { id: "friends",  icon: "people"       as const, text: "All followers, contacts and community memberships will be lost" },
+  { id: "premium",  icon: "star"         as const, text: "Active Premium or Platinum subscriptions will NOT be refunded" },
+  { id: "media",    icon: "images"       as const, text: "Every photo, video and file you uploaded will be deleted" },
+  { id: "irrev",    icon: "warning"      as const, text: "After 30 days this is irreversible — your data is gone forever" },
 ];
 
 const LEAVE_REASONS = [
@@ -167,7 +167,7 @@ function Step2({
 
       {!timerDone ? (
         <View style={[st.timerBox, { backgroundColor: colors.backgroundTertiary }]}>
-          <Ionicons name="time-outline" size={16} color="#FF9F0A" />
+          <Ionicons name="time" size={16} color="#FF9F0A" />
           <View style={{ flex: 1 }}>
             <Text style={[st.timerLabel, { color: colors.text }]}>
               Please wait {seconds}s before you can continue
@@ -376,7 +376,7 @@ function Step5({
       </Text>
 
       <View style={[st.warnBox, { backgroundColor: "#FF3B3012", borderColor: "#FF3B3035" }]}>
-        <Ionicons name="skull-outline" size={20} color="#FF3B30" />
+        <Ionicons name="skull" size={20} color="#FF3B30" />
         <Text style={[st.warnText, { color: colors.text }]}>
           After 30 days your account and{" "}
           <Text style={{ fontFamily: "Inter_700Bold", color: "#FF3B30" }}>all associated data</Text>
@@ -409,7 +409,7 @@ function Step5({
 
       {phraseMatch && !ready && (
         <View style={[st.timerBox, { backgroundColor: colors.backgroundTertiary }]}>
-          <Ionicons name="hourglass-outline" size={15} color="#FF9F0A" />
+          <Ionicons name="hourglass" size={15} color="#FF9F0A" />
           <Text style={[st.timerLabel, { color: colors.textMuted }]}>
             Delete button unlocks in {countdown}s — this is your last chance to reconsider
           </Text>
@@ -560,10 +560,10 @@ export default function DangerZoneScreen() {
 
               <GlassCard style={s.warnCard} variant="medium">
                 {[
-                  { icon: "time-outline" as const,          text: "5-step verification process with mandatory waiting periods" },
-                  { icon: "shield-outline" as const,        text: "2FA identity check required before you can begin" },
-                  { icon: "hourglass-outline" as const,     text: "30-day grace period — you can restore your account during this time" },
-                  { icon: "trash-outline" as const,         text: "After 30 days all data is permanently erased with no recovery" },
+                  { icon: "time" as const,          text: "5-step verification process with mandatory waiting periods" },
+                  { icon: "shield" as const,        text: "2FA identity check required before you can begin" },
+                  { icon: "hourglass" as const,     text: "30-day grace period — you can restore your account during this time" },
+                  { icon: "trash" as const,         text: "After 30 days all data is permanently erased with no recovery" },
                 ].map(item => (
                   <View key={item.text} style={s.warnRow}>
                     <Ionicons name={item.icon} size={16} color="#FF9F0A" />
@@ -577,7 +577,7 @@ export default function DangerZoneScreen() {
                 onPress={() => setShowGate(true)}
                 activeOpacity={0.8}
               >
-                <Ionicons name="lock-closed-outline" size={16} color="#FF3B30" />
+                <Ionicons name="lock-closed" size={16} color="#FF3B30" />
                 <Text style={s.beginBtnText}>Begin Account Closure Process</Text>
               </TouchableOpacity>
 

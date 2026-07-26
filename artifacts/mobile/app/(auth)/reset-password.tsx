@@ -94,7 +94,7 @@ export default function ResetPasswordNative() {
 
         {/* Icon — flat, no box */}
         <Ionicons
-          name={step === "email" ? "key-outline" : "lock-closed-outline"}
+          name={step === "email" ? "key" : "lock-closed"}
           size={40}
           color={accent}
           style={{ marginBottom: 20 }}
@@ -120,7 +120,7 @@ export default function ResetPasswordNative() {
         {step === "email" ? (
           <>
             <View style={[s.inputWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
-              <Ionicons name="mail-outline" size={17} color={colors.textMuted} style={{ marginRight: 8 }} />
+              <Ionicons name="mail" size={17} color={colors.textMuted} style={{ marginRight: 8 }} />
               <TextInput
                 style={[s.input, { color: colors.text }]}
                 placeholder="you@example.com"
@@ -150,7 +150,7 @@ export default function ResetPasswordNative() {
           <>
             {/* OTP code */}
             <View style={[s.inputWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
-              <Ionicons name="keypad-outline" size={17} color={colors.textMuted} style={{ marginRight: 8 }} />
+              <Ionicons name="keypad" size={17} color={colors.textMuted} style={{ marginRight: 8 }} />
               <TextInput
                 style={[s.input, { color: colors.text }]}
                 placeholder="6-digit code from email"
@@ -163,7 +163,7 @@ export default function ResetPasswordNative() {
             </View>
             {/* New password */}
             <View style={[s.inputWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
-              <Ionicons name="lock-closed-outline" size={17} color={colors.textMuted} style={{ marginRight: 8 }} />
+              <Ionicons name="lock-closed" size={17} color={colors.textMuted} style={{ marginRight: 8 }} />
               <TextInput
                 style={[s.input, { color: colors.text }]}
                 placeholder="New password"
@@ -173,12 +173,12 @@ export default function ResetPasswordNative() {
                 secureTextEntry={!showPwd}
               />
               <TouchableOpacity onPress={() => setShowPwd(p => !p)} style={{ padding: 4 }}>
-                <Ionicons name={showPwd ? "eye-off-outline" : "eye-outline"} size={17} color={colors.textMuted} />
+                <Ionicons name={showPwd ? "eye-off" : "eye"} size={17} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
             {/* Confirm password */}
             <View style={[s.inputWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
-              <Ionicons name="lock-closed-outline" size={17} color={colors.textMuted} style={{ marginRight: 8 }} />
+              <Ionicons name="lock-closed" size={17} color={colors.textMuted} style={{ marginRight: 8 }} />
               <TextInput
                 style={[s.input, { color: colors.text }]}
                 placeholder="Confirm new password"

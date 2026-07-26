@@ -134,7 +134,7 @@ export default function MoneyRequestScreen() {
         </View>
       ) : !target ? (
         <View style={s.centered}>
-          <Ionicons name="person-outline" size={48} color={colors.textMuted} />
+          <Ionicons name="person" size={48} color={colors.textMuted} />
           <Text style={[s.hint, { color: colors.textMuted }]}>No user found</Text>
         </View>
       ) : (
@@ -144,7 +144,7 @@ export default function MoneyRequestScreen() {
         >
           {/* Info banner */}
           <View style={[s.banner, { backgroundColor: "#FF9500" + "14", borderColor: "#FF9500" + "30" }]}>
-            <Ionicons name="hand-left-outline" size={16} color="#FF9500" />
+            <Ionicons name="hand-left" size={16} color="#FF9500" />
             <Text style={{ color: "#FF9500", fontSize: 13, fontFamily: "Inter_400Regular", flex: 1, lineHeight: 18 }}>
               You're requesting money from this user. They can accept or deny.
             </Text>

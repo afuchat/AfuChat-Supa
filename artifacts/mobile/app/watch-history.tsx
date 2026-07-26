@@ -181,14 +181,14 @@ function HistoryRow({ item, colors, onPress, onDelete }: RowProps) {
               {item.title || "Video"}
             </Text>
             <View style={styles.meta}>
-              <Ionicons name="time-outline" size={12} color={colors.textMuted} />
+              <Ionicons name="time" size={12} color={colors.textMuted} />
               <Text style={[styles.metaText, { color: colors.textMuted }]}>
                 {formatRelative(item.watchedAt)}
               </Text>
               {item.watchCount > 1 && (
                 <>
                   <Text style={[styles.dot, { color: colors.textMuted }]}>·</Text>
-                  <Ionicons name="repeat-outline" size={12} color={colors.textMuted} />
+                  <Ionicons name="repeat" size={12} color={colors.textMuted} />
                   <Text style={[styles.metaText, { color: colors.textMuted }]}>
                     {item.watchCount}×
                   </Text>
@@ -211,7 +211,7 @@ function HistoryRow({ item, colors, onPress, onDelete }: RowProps) {
             hitSlop={12}
             style={styles.deleteBtn}
           >
-            <Ionicons name="trash-outline" size={18} color={colors.textMuted} />
+            <Ionicons name="trash" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         </TouchableOpacity>
       </Animated.View>
@@ -339,7 +339,7 @@ export default function WatchHistoryScreen() {
         </View>
       ) : !user ? (
         <View style={styles.center}>
-          <Ionicons name="person-outline" size={48} color={colors.textMuted} />
+          <Ionicons name="person" size={48} color={colors.textMuted} />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>
             Sign in to see watch history
           </Text>
@@ -347,7 +347,7 @@ export default function WatchHistoryScreen() {
       ) : items.length === 0 ? (
         <View style={styles.center}>
           <View style={[styles.emptyIcon, { backgroundColor: "#00BCD410" }]}>
-            <Ionicons name="time-outline" size={42} color="#00BCD4" />
+            <Ionicons name="time" size={42} color="#00BCD4" />
           </View>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>
             No watch history yet
@@ -360,7 +360,7 @@ export default function WatchHistoryScreen() {
         <>
           {/* Algorithm info banner */}
           <View style={[styles.infoBanner, { backgroundColor: "#00BCD408", borderColor: "#00BCD420" }]}>
-            <Ionicons name="sparkles-outline" size={14} color="#00BCD4" />
+            <Ionicons name="sparkles" size={14} color="#00BCD4" />
             <Text style={[styles.infoText, { color: colors.textMuted }]}>
               {items.length} video{items.length !== 1 ? "s" : ""} · Clearing history resets your For You algorithm
             </Text>

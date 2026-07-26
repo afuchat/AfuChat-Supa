@@ -27,10 +27,10 @@ const FILTERS: {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
 }[] = [
-  { key: "personal", label: "Personal", icon: "person-outline" },
-  { key: "groups",   label: "Groups",   icon: "people-outline" },
-  { key: "channels", label: "Channels", icon: "megaphone-outline" },
-  { key: "unread",   label: "Unread",   icon: "mail-unread-outline" },
+  { key: "personal", label: "Personal", icon: "person" },
+  { key: "groups",   label: "Groups",   icon: "people" },
+  { key: "channels", label: "Channels", icon: "megaphone" },
+  { key: "unread",   label: "Unread",   icon: "mail-unread" },
 ];
 
 type Props = {
@@ -191,7 +191,7 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
                     onPress={onDelete}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="trash-outline" size={16} color="#FF3B30" />
+                    <Ionicons name="trash" size={16} color="#FF3B30" />
                     <Text style={[st.deleteBtnText, { color: "#FF3B30" }]}>Delete</Text>
                   </TouchableOpacity>
                 )}

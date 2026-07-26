@@ -90,14 +90,14 @@ export default function VerifiedBadge({
 
   const REASONS: { icon: string; label: string; premiumLink?: boolean }[] = isOrg
     ? [
-        { icon: "business-outline",        label: "Confirmed authentic business, brand, or organization" },
-        { icon: "shield-checkmark-outline", label: "Notable presence in its industry or community", premiumLink: true },
-        { icon: "document-text-outline",   label: "Compliant with AfuChat's community guidelines" },
+        { icon: "business",        label: "Confirmed authentic business, brand, or organization" },
+        { icon: "shield-checkmark", label: "Notable presence in its industry or community", premiumLink: true },
+        { icon: "document-text",   label: "Compliant with AfuChat's community guidelines" },
       ]
     : [
-        { icon: "person-circle-outline",   label: "Confirmed authentic identity as a real person" },
-        { icon: "star-outline",            label: "Notable creator, public figure, or professional", premiumLink: true },
-        { icon: "checkmark-done-outline",  label: "Compliant with AfuChat's community guidelines" },
+        { icon: "person-circle",   label: "Confirmed authentic identity as a real person" },
+        { icon: "star",            label: "Notable creator, public figure, or professional", premiumLink: true },
+        { icon: "checkmark-done",  label: "Compliant with AfuChat's community guidelines" },
       ];
 
   return (
@@ -157,7 +157,7 @@ export default function VerifiedBadge({
                   </View>
                   <Text style={[s.bulletText, { color: colors.textSecondary, flex: 1 }]}>{r.label}</Text>
                   <View style={[s.premiumPill, { backgroundColor: badgeColor + "22" }]}>
-                    <Ionicons name="diamond-outline" size={10} color={badgeColor} />
+                    <Ionicons name="diamond" size={10} color={badgeColor} />
                     <Text style={[s.premiumPillText, { color: badgeColor }]}>Premium</Text>
                   </View>
                 </TouchableOpacity>
@@ -181,7 +181,7 @@ export default function VerifiedBadge({
                 router.push(isOrg ? "/business-verification" : "/premium");
               }}
             >
-              <Ionicons name={isOrg ? "business-outline" : "ribbon-outline"} size={16} color="#fff" />
+              <Ionicons name={isOrg ? "business" : "ribbon"} size={16} color="#fff" />
               <Text style={s.ctaBtnText}>{isOrg ? "Apply for Verification" : "Get Verified"}</Text>
             </TouchableOpacity>
 

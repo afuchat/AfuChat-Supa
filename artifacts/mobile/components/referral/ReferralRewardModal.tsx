@@ -201,7 +201,7 @@ export function ReferralRewardModal({
                 <Text style={[styles.referrerHandle, { color: colors.textSecondary }]}>@{referrerHandle}</Text>
               </View>
               <View style={[styles.friendBadge, { backgroundColor: PLATINUM + "20" }]}>
-                <Ionicons name="people-outline" size={12} color={PLATINUM} />
+                <Ionicons name="people" size={12} color={PLATINUM} />
                 <Text style={[styles.friendBadgeText, { color: PLATINUM }]}>Friend</Text>
               </View>
             </View>

@@ -408,7 +408,7 @@ const ShortCard = React.memo(function ShortCard({
             paddingVertical: 5,
           }}
         >
-          <Ionicons name={autoScroll ? "play-forward" : "play-forward-outline"} size={14} color="#fff" />
+          <Ionicons name={autoScroll ? "play-forward" : "play-forward"} size={14} color="#fff" />
           <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>
             {autoScroll ? "Auto-scroll: On" : "Auto-scroll"}
           </Text>
@@ -589,7 +589,7 @@ function OfflineEndPanel({
         {/* Header */}
         <View style={endStyles.header}>
           <View style={endStyles.iconWrap}>
-            <Ionicons name="albums-outline" size={22} color="#fff" />
+            <Ionicons name="albums" size={22} color="#fff" />
           </View>
           <Text style={endStyles.titleText}>End of cached shorts</Text>
           <Text style={endStyles.subtitleText}>
@@ -883,7 +883,7 @@ export default function ShortsFeed({
     if (wasOnline && !online && postsRef.current.length > 0) {
       showToast(
         `Watching offline · ${postsRef.current.length} cached video${postsRef.current.length === 1 ? "" : "s"}`,
-        { type: "info", duration: 3500, icon: "cloud-offline-outline" },
+        { type: "info", duration: 3500, icon: "cloud-offline" },
       );
     }
     // Reconnected: dismiss end panel if it was showing
@@ -1047,7 +1047,7 @@ export default function ShortsFeed({
     return (
       <View style={[styles.loading, { backgroundColor: isFullscreen ? "#000" : colors.background }]}>
         <Ionicons
-          name={online ? "videocam-outline" : "cloud-offline-outline"}
+          name={online ? "videocam" : "cloud-offline"}
           size={48}
           color={isFullscreen ? "rgba(255,255,255,0.6)" : colors.textMuted}
         />

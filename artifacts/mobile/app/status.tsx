@@ -63,7 +63,7 @@ const OVERALL_CONFIG: Record<HeroState, { bg: string; text: string; title: strin
     bg: "#4B5563", text: "#fff",
     title: "Status Unavailable",
     sub: "Could not reach the status server.",
-    icon: "cloud-offline-outline",
+    icon: "cloud-offline",
   },
 };
 
@@ -252,7 +252,7 @@ export default function StatusPage() {
       >
         {error ? (
           <View style={[styles.errorBox, { backgroundColor: colors.surface, borderColor: "#EF4444" + "40" }]}>
-            <Ionicons name="wifi-outline" size={28} color="#EF4444" />
+            <Ionicons name="wifi" size={28} color="#EF4444" />
             <Text style={[styles.errorText, { color: colors.text }]}>{error}</Text>
             <TouchableOpacity
               style={[styles.retryBtn, { backgroundColor: colors.accent }]}

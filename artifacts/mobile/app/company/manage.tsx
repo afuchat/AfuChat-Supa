@@ -329,7 +329,7 @@ export default function ManageCompanyPageScreen() {
           <View style={{ width: 24 }} />
         </View>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12 }}>
-          <Ionicons name="lock-closed-outline" size={40} color={colors.textMuted} />
+          <Ionicons name="lock-closed" size={40} color={colors.textMuted} />
           <Text style={{ color: colors.textMuted, fontSize: 16 }}>Access denied.</Text>
         </View>
       </View>
@@ -344,7 +344,7 @@ export default function ManageCompanyPageScreen() {
         </TouchableOpacity>
         <Text style={[styles.navTitle, { color: colors.text }]}>Manage Page</Text>
         <TouchableOpacity onPress={() => router.push(`/company/${page.slug}` as any)} hitSlop={12}>
-          <Ionicons name="eye-outline" size={22} color={colors.accent} />
+          <Ionicons name="eye" size={22} color={colors.accent} />
         </TouchableOpacity>
       </View>
 
@@ -366,7 +366,7 @@ export default function ManageCompanyPageScreen() {
                 />
               ) : (
                 <View style={[styles.coverPlaceholder, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                  <Ionicons name="image-outline" size={28} color={colors.textMuted} />
+                  <Ionicons name="image" size={28} color={colors.textMuted} />
                   <Text style={[styles.placeholderLabel, { color: colors.textMuted }]}>Tap to add cover image</Text>
                 </View>
               )}
@@ -415,7 +415,7 @@ export default function ManageCompanyPageScreen() {
             <StatItem icon="newspaper" value={page.posts_count} label="Updates" accent={colors.accent} />
             <View style={[styles.statDivider, { backgroundColor: colors.accent + "30" }]} />
             <TouchableOpacity style={styles.statCta} onPress={() => router.push(`/company/${page.slug}` as any)}>
-              <Ionicons name="open-outline" size={14} color={colors.accent} />
+              <Ionicons name="open" size={14} color={colors.accent} />
               <Text style={[styles.statCtaText, { color: colors.accent }]}>View live</Text>
             </TouchableOpacity>
           </View>
@@ -478,13 +478,13 @@ export default function ManageCompanyPageScreen() {
           </Field>
           <Field label="Registration Number" colors={colors}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Ionicons name="document-text-outline" size={15} color={colors.textMuted} />
+              <Ionicons name="document-text" size={15} color={colors.textMuted} />
               <TextInput style={[styles.input, { color: colors.text, flex: 1 }]} value={form.registration_number} onChangeText={(v) => set("registration_number", v)} autoCapitalize="characters" maxLength={50} placeholder="Government registration number" placeholderTextColor={colors.textMuted} />
             </View>
           </Field>
           <Field label="Physical Address" colors={colors}>
             <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
-              <Ionicons name="location-outline" size={15} color={colors.textMuted} style={{ marginTop: 6 }} />
+              <Ionicons name="location" size={15} color={colors.textMuted} style={{ marginTop: 6 }} />
               <TextInput
                 style={[styles.input, styles.textarea, { color: colors.text, flex: 1, minHeight: 54 }]}
                 value={form.physical_address}
@@ -521,7 +521,7 @@ export default function ManageCompanyPageScreen() {
 
           {/* Slug note */}
           <View style={[styles.slugNote, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Ionicons name="link-outline" size={14} color={colors.textMuted} />
+            <Ionicons name="link" size={14} color={colors.textMuted} />
             <Text style={[styles.slugNoteText, { color: colors.textMuted }]}>
               Page URL: <Text style={{ fontFamily: "Inter_600SemiBold", color: colors.textSecondary }}>afuchat.com/company/{page.slug}</Text>
             </Text>
@@ -541,7 +541,7 @@ export default function ManageCompanyPageScreen() {
             </View>
           ) : verifyRequest?.status === "pending" ? (
             <View style={[styles.verifyCard, { backgroundColor: colors.accent + "10", borderColor: colors.accent + "30" }]}>
-              <Ionicons name="time-outline" size={22} color={colors.accent} />
+              <Ionicons name="time" size={22} color={colors.accent} />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.verifyCardTitle, { color: colors.accent }]}>Verification Pending</Text>
                 <Text style={[styles.verifyCardSub, { color: colors.textMuted }]}>
@@ -555,7 +555,7 @@ export default function ManageCompanyPageScreen() {
               onPress={openVerifyModal}
               activeOpacity={0.8}
             >
-              <Ionicons name="close-circle-outline" size={22} color="#FF3B30" />
+              <Ionicons name="close-circle" size={22} color="#FF3B30" />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.verifyCardTitle, { color: "#FF3B30" }]}>Verification Not Approved</Text>
                 <Text style={[styles.verifyCardSub, { color: colors.textMuted }]}>
@@ -571,7 +571,7 @@ export default function ManageCompanyPageScreen() {
               activeOpacity={0.8}
             >
               <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: GOLD + "18", alignItems: "center", justifyContent: "center" }}>
-                <Ionicons name="checkmark-circle-outline" size={22} color={GOLD} />
+                <Ionicons name="checkmark-circle" size={22} color={GOLD} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.verifyCardTitle, { color: colors.text }]}>Apply for Verification</Text>
@@ -589,7 +589,7 @@ export default function ManageCompanyPageScreen() {
           >
             {saving ? <ActivityIndicator color="#fff" size="small" /> : (
               <>
-                <Ionicons name="checkmark-circle-outline" size={18} color="#fff" />
+                <Ionicons name="checkmark-circle" size={18} color="#fff" />
                 <Text style={styles.saveBtnText}>Save Changes</Text>
               </>
             )}
@@ -611,7 +611,7 @@ export default function ManageCompanyPageScreen() {
 
               <View style={verSt.headerRow}>
                 <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: GOLD + "18", alignItems: "center", justifyContent: "center" }}>
-                  <Ionicons name="checkmark-circle-outline" size={22} color={GOLD} />
+                  <Ionicons name="checkmark-circle" size={22} color={GOLD} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[verSt.title, { color: colors.text }]}>Apply for Verification</Text>
@@ -642,7 +642,7 @@ export default function ManageCompanyPageScreen() {
                 onPress={() => { setVerPickerKey("industry"); setVerPickerVisible(true); }}
                 activeOpacity={0.8}
               >
-                <Ionicons name="briefcase-outline" size={15} color={verIndustry ? GOLD : colors.textMuted} />
+                <Ionicons name="briefcase" size={15} color={verIndustry ? GOLD : colors.textMuted} />
                 <Text style={[verSt.dropdownText, { color: verIndustry ? colors.text : colors.textMuted, flex: 1 }]}>
                   {verIndustry || "Select industry…"}
                 </Text>
@@ -667,7 +667,7 @@ export default function ManageCompanyPageScreen() {
 
               <View style={[verSt.infoBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
                 <View style={verSt.infoRow}>
-                  <Ionicons name="document-text-outline" size={14} color={colors.textMuted} />
+                  <Ionicons name="document-text" size={14} color={colors.textMuted} />
                   <View style={{ flex: 1 }}>
                     <Text style={[verSt.infoLabel, { color: colors.textMuted }]}>Registration Number *</Text>
                     <TextInput
@@ -682,7 +682,7 @@ export default function ManageCompanyPageScreen() {
                   </View>
                 </View>
                 <View style={[verSt.infoRow, { borderTopColor: colors.border, paddingTop: 10 }]}>
-                  <Ionicons name="mail-outline" size={14} color={colors.textMuted} />
+                  <Ionicons name="mail" size={14} color={colors.textMuted} />
                   <View style={{ flex: 1 }}>
                     <Text style={[verSt.infoLabel, { color: colors.textMuted }]}>Contact Email</Text>
                     <TextInput
@@ -698,7 +698,7 @@ export default function ManageCompanyPageScreen() {
                   </View>
                 </View>
                 <View style={[verSt.infoRow, { borderTopColor: colors.border, paddingTop: 10 }]}>
-                  <Ionicons name="location-outline" size={14} color={colors.textMuted} />
+                  <Ionicons name="location" size={14} color={colors.textMuted} />
                   <View style={{ flex: 1 }}>
                     <Text style={[verSt.infoLabel, { color: colors.textMuted }]}>Physical Address</Text>
                     <TextInput
@@ -739,7 +739,7 @@ export default function ManageCompanyPageScreen() {
                 {submittingVerify
                   ? <ActivityIndicator color="#fff" size="small" />
                   : <>
-                      <Ionicons name="send-outline" size={16} color="#fff" />
+                      <Ionicons name="send" size={16} color="#fff" />
                       <Text style={verSt.submitBtnText}>Submit Request</Text>
                     </>
                 }

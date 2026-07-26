@@ -43,7 +43,7 @@ export function ProfileNotFoundView({
   return (
     <View style={[styles.body, { backgroundColor: colors.background }]}>
       <View style={[styles.iconWrap, { backgroundColor: colors.surface }]}>
-        <Ionicons name="person-remove-outline" size={46} color={colors.textMuted} />
+        <Ionicons name="person-remove" size={46} color={colors.textMuted} />
       </View>
 
       <Text style={[styles.title, { color: colors.text }]}>
@@ -61,7 +61,7 @@ export function ProfileNotFoundView({
         onPress={() => router.push("/user-discovery" as any)}
         activeOpacity={0.85}
       >
-        <Ionicons name="search-outline" size={16} color="#fff" />
+        <Ionicons name="search" size={16} color="#fff" />
         <Text style={styles.btnText}>Find People</Text>
       </TouchableOpacity>
 

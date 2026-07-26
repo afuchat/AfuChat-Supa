@@ -213,13 +213,13 @@ function ArticleReplyCard({
           </RichText>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 16, marginTop: 8, marginBottom: 4 }}>
             <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", gap: 4 }} onPress={handleLike} activeOpacity={0.7}>
-              <Ionicons name={liked ? "heart" : "heart-outline"} size={14} color={liked ? "#FF2D55" : colors.textMuted} />
+              <Ionicons name={liked ? "heart" : "heart"} size={14} color={liked ? "#FF2D55" : colors.textMuted} />
               {localLikes > 0 && (
                 <Text style={{ color: liked ? "#FF2D55" : colors.textMuted, fontSize: 12, fontFamily: "Inter_600SemiBold" }}>{localLikes}</Text>
               )}
             </TouchableOpacity>
             <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", gap: 4 }} onPress={() => onReplyTo(item)} activeOpacity={0.7}>
-              <Ionicons name="arrow-undo-outline" size={14} color={colors.textMuted} />
+              <Ionicons name="arrow-undo" size={14} color={colors.textMuted} />
               <Text style={{ color: colors.textMuted, fontSize: 12, fontFamily: "Inter_600SemiBold" }}>Reply</Text>
             </TouchableOpacity>
             {hasChildren && (
@@ -228,7 +228,7 @@ function ArticleReplyCard({
                 onPress={() => setCollapsed((c) => !c)}
                 activeOpacity={0.7}
               >
-                <Ionicons name={collapsed ? "chevron-down-circle-outline" : "chevron-up-circle-outline"} size={13} color={threadColor} />
+                <Ionicons name={collapsed ? "chevron-down-circle" : "chevron-up-circle"} size={13} color={threadColor} />
                 <Text style={{ color: threadColor, fontSize: 12, fontFamily: "Inter_600SemiBold" }}>
                   {collapsed ? `${item.children!.length} ${item.children!.length === 1 ? "reply" : "replies"}` : "Hide"}
                 </Text>
@@ -464,7 +464,7 @@ export default function ArticleDetailScreen() {
               <Ionicons name="arrow-back" size={20} color="#fff" />
             </TouchableOpacity>
             <TouchableOpacity onPress={handleShare} style={styles.backBtnOverlay} hitSlop={8}>
-              <Ionicons name="share-outline" size={20} color="#fff" />
+              <Ionicons name="share" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
           {/* Title + author overlaid at bottom */}
@@ -475,7 +475,7 @@ export default function ArticleDetailScreen() {
                 <Text style={[styles.articleBadgeText, { color: "#1f95ff" }]}>Article</Text>
               </View>
               <View style={styles.readTimeBadge}>
-                <Ionicons name="time-outline" size={12} color="rgba(255,255,255,0.6)" />
+                <Ionicons name="time" size={12} color="rgba(255,255,255,0.6)" />
                 <Text style={[styles.readTimeText, { color: "rgba(255,255,255,0.6)" }]}>{readTime}</Text>
               </View>
             </View>
@@ -509,7 +509,7 @@ export default function ArticleDetailScreen() {
             <Ionicons name="chevron-back" size={22} color={colors.accent} />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleShare} style={styles.backBtnPlain} hitSlop={8}>
-            <Ionicons name="share-outline" size={20} color={colors.text} />
+            <Ionicons name="share" size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
       )}
@@ -524,7 +524,7 @@ export default function ArticleDetailScreen() {
                 <Text style={[styles.articleBadgeText, { color: colors.accent }]}>Article</Text>
               </View>
               <View style={styles.readTimeBadge}>
-                <Ionicons name="time-outline" size={12} color={colors.textMuted} />
+                <Ionicons name="time" size={12} color={colors.textMuted} />
                 <Text style={[styles.readTimeText, { color: colors.textMuted }]}>{readTime}</Text>
               </View>
             </View>
@@ -572,36 +572,36 @@ export default function ArticleDetailScreen() {
 
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
-            <Ionicons name="eye-outline" size={15} color={colors.textMuted} />
+            <Ionicons name="eye" size={15} color={colors.textMuted} />
             <Text style={[styles.statText, { color: colors.textMuted }]}>{article.view_count.toLocaleString()}</Text>
           </View>
           <View style={[styles.statDot, { backgroundColor: colors.textMuted }]} />
           <View style={styles.statItem}>
-            <Ionicons name="heart-outline" size={15} color={colors.textMuted} />
+            <Ionicons name="heart" size={15} color={colors.textMuted} />
             <Text style={[styles.statText, { color: colors.textMuted }]}>{article.likeCount.toLocaleString()}</Text>
           </View>
           <View style={[styles.statDot, { backgroundColor: colors.textMuted }]} />
           <View style={styles.statItem}>
-            <Ionicons name="chatbubble-outline" size={14} color={colors.textMuted} />
+            <Ionicons name="chatbubble" size={14} color={colors.textMuted} />
             <Text style={[styles.statText, { color: colors.textMuted }]}>{article.replyCount.toLocaleString()}</Text>
           </View>
         </View>
 
         <View style={[styles.actionBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <TouchableOpacity style={styles.actionBtn} onPress={toggleLike} disabled={liking} activeOpacity={0.7}>
-            <Ionicons name={article.liked ? "heart" : "heart-outline"} size={22} color={article.liked ? "#FF3B30" : colors.textMuted} />
+            <Ionicons name={article.liked ? "heart" : "heart"} size={22} color={article.liked ? "#FF3B30" : colors.textMuted} />
             <Text style={[styles.actionLabel, { color: article.liked ? "#FF3B30" : colors.textMuted }]}>
               {article.liked ? "Liked" : "Like"}
             </Text>
           </TouchableOpacity>
           <View style={[styles.actionDivider, { backgroundColor: colors.border }]} />
           <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
-            <Ionicons name="chatbubble-outline" size={20} color={colors.textMuted} />
+            <Ionicons name="chatbubble" size={20} color={colors.textMuted} />
             <Text style={[styles.actionLabel, { color: colors.textMuted }]}>Comment</Text>
           </TouchableOpacity>
           <View style={[styles.actionDivider, { backgroundColor: colors.border }]} />
           <TouchableOpacity style={styles.actionBtn} onPress={handleShare} activeOpacity={0.7}>
-            <Ionicons name="share-outline" size={20} color={colors.textMuted} />
+            <Ionicons name="share" size={20} color={colors.textMuted} />
             <Text style={[styles.actionLabel, { color: colors.textMuted }]}>Share</Text>
           </TouchableOpacity>
         </View>
@@ -627,7 +627,7 @@ export default function ArticleDetailScreen() {
           )}
           ListEmptyComponent={
             <View style={{ alignItems: "center", paddingVertical: 32, paddingHorizontal: 20 }}>
-              <Ionicons name="chatbubbles-outline" size={36} color={colors.textMuted + "60"} />
+              <Ionicons name="chatbubbles" size={36} color={colors.textMuted + "60"} />
               <Text style={{ color: colors.textMuted, fontFamily: "Inter_400Regular", fontSize: 14, marginTop: 10 }}>No comments yet. Be the first!</Text>
             </View>
           }

@@ -525,7 +525,7 @@ export default function MatchProfileEditScreen() {
                 onPress={() => managingGift && hideGift(managingGift.id)}
               >
                 <View style={[styles.giftSheetOptionIcon, { backgroundColor: "#8E8E9320" }]}>
-                  <Ionicons name="eye-off-outline" size={20} color="#8E8E93" />
+                  <Ionicons name="eye-off" size={20} color="#8E8E93" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.giftSheetOptionTitle, { color: colors.text }]}>Hide from Profile</Text>

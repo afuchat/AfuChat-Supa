@@ -66,7 +66,7 @@ function VideoPlayerSection({ videoUrl }: { videoUrl: string | null }) {
   if (!videoUrl || !_VideoView || !_useVideoPlayer) {
     return (
       <View style={{ width: "100%", aspectRatio: 9 / 16, backgroundColor: "#000", alignItems: "center", justifyContent: "center" }}>
-        <Ionicons name="play-circle-outline" size={56} color="rgba(255,255,255,0.4)" />
+        <Ionicons name="play-circle" size={56} color="rgba(255,255,255,0.4)" />
       </View>
     );
   }
@@ -100,7 +100,7 @@ function VideoDetailHeader({ colors, insets, onMenu }: { colors: any; insets: an
         paddingVertical: 7,
         gap: 7,
       }}>
-        <Ionicons name="search-outline" size={14} color={colors.textMuted} />
+        <Ionicons name="search" size={14} color={colors.textMuted} />
         <TextInput
           style={{ flex: 1, fontSize: 14, color: colors.text, fontFamily: "Inter_400Regular", paddingVertical: 0 }}
           placeholder="Find related content"
@@ -235,16 +235,16 @@ function ReplyCard({ item, colors, depth, onReplyTo }: { item: Reply; colors: an
           )}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 16, marginTop: 8, marginBottom: 4 }}>
             <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", gap: 4 }} onPress={() => { const next = !liked; setLiked(next); setLocalLikes((c) => next ? c + 1 : Math.max(0, c - 1)); }} activeOpacity={0.7}>
-              <Ionicons name={liked ? "heart" : "heart-outline"} size={14} color={liked ? "#FF2D55" : colors.textMuted} />
+              <Ionicons name={liked ? "heart" : "heart"} size={14} color={liked ? "#FF2D55" : colors.textMuted} />
               {localLikes > 0 && <Text style={{ color: liked ? "#FF2D55" : colors.textMuted, fontSize: 12, fontFamily: "Inter_600SemiBold" }}>{localLikes}</Text>}
             </TouchableOpacity>
             <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", gap: 4 }} onPress={() => onReplyTo(item)} activeOpacity={0.7}>
-              <Ionicons name="arrow-undo-outline" size={14} color={colors.textMuted} />
+              <Ionicons name="arrow-undo" size={14} color={colors.textMuted} />
               <Text style={{ color: colors.textMuted, fontSize: 12, fontFamily: "Inter_600SemiBold" }}>Reply</Text>
             </TouchableOpacity>
             {hasChildren && (
               <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", gap: 4 }} onPress={() => setCollapsed((c) => !c)} activeOpacity={0.7}>
-                <Ionicons name={collapsed ? "chevron-down-circle-outline" : "chevron-up-circle-outline"} size={14} color={threadColor} />
+                <Ionicons name={collapsed ? "chevron-down-circle" : "chevron-up-circle"} size={14} color={threadColor} />
                 <Text style={{ color: threadColor, fontSize: 12, fontFamily: "Inter_600SemiBold" }}>{collapsed ? `${item.children!.length} ${item.children!.length === 1 ? "reply" : "replies"}` : "Hide"}</Text>
               </TouchableOpacity>
             )}
@@ -534,22 +534,22 @@ export default function PostShortLinkScreen() {
     return (
       <View style={[styles.engagementBar, { borderColor: colors.border }]}>
         <TouchableOpacity style={styles.engagementBtn} onPress={toggleLike} activeOpacity={0.7}>
-          <Ionicons name={post!.liked ? "heart" : "heart-outline"} size={22} color={post!.liked ? "#FF3B30" : colors.textSecondary} />
+          <Ionicons name={post!.liked ? "heart" : "heart"} size={22} color={post!.liked ? "#FF3B30" : colors.textSecondary} />
           <Text style={[styles.engagementCount, { color: post!.liked ? "#FF3B30" : colors.textSecondary }]}>{post!.likeCount}</Text>
         </TouchableOpacity>
         <View style={[styles.engagementDivider, { backgroundColor: colors.border }]} />
         <View style={styles.engagementBtn}>
-          <Ionicons name="chatbubble-outline" size={20} color={colors.textSecondary} />
+          <Ionicons name="chatbubble" size={20} color={colors.textSecondary} />
           <Text style={[styles.engagementCount, { color: colors.textSecondary }]}>{post!.replyCount}</Text>
         </View>
         <View style={[styles.engagementDivider, { backgroundColor: colors.border }]} />
         <View style={styles.engagementBtn}>
-          <Ionicons name="eye-outline" size={20} color={colors.textSecondary} />
+          <Ionicons name="eye" size={20} color={colors.textSecondary} />
           <Text style={[styles.engagementCount, { color: colors.textSecondary }]}>{post!.view_count}</Text>
         </View>
         <View style={[styles.engagementDivider, { backgroundColor: colors.border }]} />
         <TouchableOpacity style={styles.engagementBtn} onPress={() => sharePost({ postId: post!.id, authorName: post!.author.display_name, content: post!.content })} activeOpacity={0.7}>
-          <Ionicons name="share-outline" size={20} color={colors.textSecondary} />
+          <Ionicons name="share" size={20} color={colors.textSecondary} />
           <Text style={[styles.engagementCount, { color: colors.textSecondary }]}>Share</Text>
         </TouchableOpacity>
       </View>
@@ -581,7 +581,7 @@ export default function PostShortLinkScreen() {
       <View style={[styles.repliesHeader, { borderColor: colors.border }]}>
         <View style={[styles.repliesHeaderLine, { backgroundColor: colors.border }]} />
         <View style={[styles.repliesHeaderBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Ionicons name="chatbubble-outline" size={13} color={colors.textMuted} />
+          <Ionicons name="chatbubble" size={13} color={colors.textMuted} />
           <Text style={[styles.repliesHeaderText, { color: colors.textMuted }]}>{replies.length} {replies.length === 1 ? "Reply" : "Replies"}</Text>
         </View>
         <View style={[styles.repliesHeaderLine, { backgroundColor: colors.border }]} />
@@ -770,7 +770,7 @@ export default function PostShortLinkScreen() {
         ) : (
           <View style={[styles.signInBar, { paddingBottom: insets.bottom > 0 ? insets.bottom : 8, borderTopColor: colors.border, backgroundColor: colors.surface }]}>
             <TouchableOpacity onPress={() => router.push("/(auth)/login")} style={[styles.signInBtn, { backgroundColor: colors.accent }]}>
-              <Ionicons name="log-in-outline" size={18} color="#fff" />
+              <Ionicons name="log-in" size={18} color="#fff" />
               <Text style={styles.signInBtnText}>Sign in to reply</Text>
             </TouchableOpacity>
           </View>
@@ -782,29 +782,29 @@ export default function PostShortLinkScreen() {
           <View style={[styles.menuSheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 12 }]}>
             <View style={[styles.menuHandle, { backgroundColor: colors.border }]} />
             <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); sharePost({ postId: post.id, authorName: post.author.display_name, content: post.content }); }}>
-              <View style={[styles.menuIconWrap, { backgroundColor: colors.accent + "15" }]}><Ionicons name="share-outline" size={20} color={colors.accent} /></View>
+              <View style={[styles.menuIconWrap, { backgroundColor: colors.accent + "15" }]}><Ionicons name="share" size={20} color={colors.accent} /></View>
               <Text style={[styles.menuText, { color: colors.text }]}>Share Post</Text>
             </TouchableOpacity>
             {isOwner && (
               <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); setEditContent(post.content); setEditMode(true); }}>
-                <View style={[styles.menuIconWrap, { backgroundColor: colors.accent + "15" }]}><Ionicons name="create-outline" size={20} color={colors.accent} /></View>
+                <View style={[styles.menuIconWrap, { backgroundColor: colors.accent + "15" }]}><Ionicons name="create" size={20} color={colors.accent} /></View>
                 <Text style={[styles.menuText, { color: colors.text }]}>Edit Post</Text>
               </TouchableOpacity>
             )}
             {isOwner && (
               <TouchableOpacity style={styles.menuItem} onPress={handleDelete}>
-                <View style={[styles.menuIconWrap, { backgroundColor: "#FF3B3015" }]}><Ionicons name="trash-outline" size={20} color="#FF3B30" /></View>
+                <View style={[styles.menuIconWrap, { backgroundColor: "#FF3B3015" }]}><Ionicons name="trash" size={20} color="#FF3B30" /></View>
                 <Text style={[styles.menuText, { color: "#FF3B30" }]}>Delete Post</Text>
               </TouchableOpacity>
             )}
             {!isOwner && user && (
               <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); setReportVisible(true); }}>
-                <View style={[styles.menuIconWrap, { backgroundColor: "#FF950015" }]}><Ionicons name="flag-outline" size={20} color="#FF9500" /></View>
+                <View style={[styles.menuIconWrap, { backgroundColor: "#FF950015" }]}><Ionicons name="flag" size={20} color="#FF9500" /></View>
                 <Text style={[styles.menuText, { color: "#FF9500" }]}>Report Post</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity style={[styles.menuItem, { marginTop: 4 }]} onPress={() => setMenuVisible(false)}>
-              <View style={[styles.menuIconWrap, { backgroundColor: colors.border }]}><Ionicons name="close-outline" size={20} color={colors.textMuted} /></View>
+              <View style={[styles.menuIconWrap, { backgroundColor: colors.border }]}><Ionicons name="close" size={20} color={colors.textMuted} /></View>
               <Text style={[styles.menuText, { color: colors.textMuted }]}>Cancel</Text>
             </TouchableOpacity>
           </View>

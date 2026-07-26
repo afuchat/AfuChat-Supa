@@ -543,7 +543,7 @@ export default function PremiumScreen() {
             onPress={() => router.push("/wallet")}
             activeOpacity={0.7}
           >
-            <Ionicons name="wallet-outline" size={15} color={colors.accent} />
+            <Ionicons name="wallet" size={15} color={colors.accent} />
             <Text style={[s.walletTxt, { color: colors.textMuted }]}>
               Balance:{" "}
               <Text style={{ color: colors.text, fontFamily: "Inter_600SemiBold" }}>

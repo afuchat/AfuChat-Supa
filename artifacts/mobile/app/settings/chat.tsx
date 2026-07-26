@@ -239,11 +239,11 @@ export default function ChatSettingsScreen() {
 
         {/* Layout toggles */}
         <View style={[s.group, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <TogRow colors={colors} themeColor={themeColor} icon="reorder-four-outline"
+          <TogRow colors={colors} themeColor={themeColor} icon="reorder-four"
             label="Compact Mode" desc="Tighter message spacing for more content on screen"
             value={prefs.compact_mode} onChange={(v) => updatePref("compact_mode", v)} />
           <Sep color={colors.border} />
-          <TogRow colors={colors} themeColor={themeColor} icon="people-outline"
+          <TogRow colors={colors} themeColor={themeColor} icon="people"
             label="Message Grouping" desc="Group consecutive messages from the same sender"
             value={prefs.message_grouping} onChange={(v) => updatePref("message_grouping", v)} />
         </View>
@@ -267,7 +267,7 @@ export default function ChatSettingsScreen() {
             label="Link Previews" desc="Show rich previews for URLs in messages"
             value={prefs.link_previews} onChange={(v) => updatePref("link_previews", v)} />
           <Sep color={colors.border} />
-          <TogRow colors={colors} themeColor={themeColor} icon="happy-outline"
+          <TogRow colors={colors} themeColor={themeColor} icon="happy"
             label="Emoji Reactions" desc="Let others react to your messages with emojis"
             value={prefs.reactions_enabled} onChange={(v) => updatePref("reactions_enabled", v)} />
           {(
@@ -277,7 +277,7 @@ export default function ChatSettingsScreen() {
                 label="Enter Key to Send" desc="Use Enter to send instead of new line"
                 value={prefs.enter_to_send} onChange={(v) => updatePref("enter_to_send", v)} />
               <Sep color={colors.border} />
-              <TogRow colors={colors} themeColor={themeColor} icon="phone-portrait-outline"
+              <TogRow colors={colors} themeColor={themeColor} icon="phone-portrait"
                 label="Haptic Feedback" desc="Vibrate when you send or receive messages"
                 value={prefs.send_haptics} onChange={(v) => updatePref("send_haptics", v)} />
             </>
@@ -287,54 +287,54 @@ export default function ChatSettingsScreen() {
         {/* ── SMART FEATURES ───────────────────────────────── */}
         <SectionTitle label="SMART FEATURES" />
         <View style={[s.group, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <TogRow colors={colors} themeColor={themeColor} icon="folder-outline"
+          <TogRow colors={colors} themeColor={themeColor} icon="folder"
             label="Chat Folders"
             desc="Organise chats into Personal, Groups, Channels and Unread tabs"
             value={adv.chat_folders} onChange={(v) => setFeature("chat_folders", v)} />
           <Sep color={colors.border} />
-          <TogRow colors={colors} themeColor={themeColor} icon="mic-outline"
+          <TogRow colors={colors} themeColor={themeColor} icon="mic"
             label="Voice to Text"
             desc="Transcribe voice messages to text with a tap"
             value={adv.voice_to_text} onChange={(v) => setFeature("voice_to_text", v)} />
           <Sep color={colors.border} />
-          <TogRow colors={colors} themeColor={themeColor} icon="volume-high-outline"
+          <TogRow colors={colors} themeColor={themeColor} icon="volume-high"
             label="Text to Speech"
             desc="Have received messages read aloud to you"
             value={adv.text_to_speech} onChange={(v) => setFeature("text_to_speech", v)} />
           <Sep color={colors.border} />
-          <TogRow colors={colors} themeColor={themeColor} icon="sparkles-outline"
+          <TogRow colors={colors} themeColor={themeColor} icon="sparkles"
             label="Chat Summary"
             desc="AI-generated summary of any conversation from the ⋮ menu"
             value={adv.chat_summary} onChange={(v) => setFeature("chat_summary", v)} />
           <Sep color={colors.border} />
-          <TogRow colors={colors} themeColor={themeColor} icon="language-outline"
+          <TogRow colors={colors} themeColor={themeColor} icon="language"
             label="Message Translation"
             desc="Translate any message to your preferred language"
             value={adv.message_translation} onChange={(v) => setFeature("message_translation", v)} />
           <Sep color={colors.border} />
-          <TogRow colors={colors} themeColor={themeColor} icon="at-outline"
+          <TogRow colors={colors} themeColor={themeColor} icon="at"
             label="User Tagging"
             desc="Tag people in group chats with @mention"
             value={adv.user_tagging} onChange={(v) => setFeature("user_tagging", v)} />
           <Sep color={colors.border} />
-          <TogRow colors={colors} themeColor={themeColor} icon="person-circle-outline"
+          <TogRow colors={colors} themeColor={themeColor} icon="person-circle"
             label="Mini Profile Popup"
             desc="Tap an avatar in chat to see a quick profile preview"
             value={adv.mini_profile_popup} onChange={(v) => setFeature("mini_profile_popup", v)} />
           <Sep color={colors.border} />
-          <TogRow colors={colors} themeColor={themeColor} icon="create-outline"
+          <TogRow colors={colors} themeColor={themeColor} icon="create"
             label="Message Edit History"
             desc="See the original text of edited messages"
             value={adv.message_edit_history} onChange={(v) => setFeature("message_edit_history", v)} />
           <Sep color={colors.border} />
-          <TogRow colors={colors} themeColor={themeColor} icon="pin-outline"
+          <TogRow colors={colors} themeColor={themeColor} icon="pin"
             label="Offline Drafts"
             desc="Save unsent messages locally so you never lose them"
             value={adv.offline_drafts} onChange={(v) => setFeature("offline_drafts", v)} />
           {(
             <>
               <Sep color={colors.border} />
-              <TogRow colors={colors} themeColor={themeColor} icon="cloud-upload-outline"
+              <TogRow colors={colors} themeColor={themeColor} icon="cloud-upload"
                 label="Drag & Drop Upload"
                 desc="Drag files directly into the chat to send them"
                 value={adv.drag_drop_upload} onChange={(v) => setFeature("drag_drop_upload", v)} />
@@ -474,7 +474,7 @@ export default function ChatSettingsScreen() {
         </View>
 
         <View style={s.footer}>
-          <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
+          <Ionicons name="information-circle" size={14} color={colors.textMuted} />
           <Text style={[s.footerText, { color: colors.textMuted }]}>
             Settings are saved automatically and synced across your devices.
           </Text>

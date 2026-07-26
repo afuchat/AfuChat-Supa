@@ -172,7 +172,7 @@ function UserCard({
   })();
 
   const badgeColor = user.mutualCount > 0 ? MUTUAL_COLOR : accent;
-  const badgeIcon  = user.mutualCount > 0 ? "person-add-outline" : "people-outline";
+  const badgeIcon  = user.mutualCount > 0 ? "person-add" : "people";
 
   return (
     <TouchableOpacity

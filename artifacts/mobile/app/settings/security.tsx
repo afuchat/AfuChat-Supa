@@ -227,7 +227,7 @@ export default function SecuritySettingsScreen() {
               backgroundColor: mfaStatus === "enabled" ? "rgba(48,209,88,0.18)" : "rgba(142,142,147,0.14)",
             }]}>
               <Ionicons
-                name={mfaStatus === "enabled" ? "shield-checkmark" : "shield-outline"}
+                name={mfaStatus === "enabled" ? "shield-checkmark" : "shield"}
                 size={28}
                 color={mfaStatus === "enabled" ? "#30D158" : colors.textMuted}
               />
@@ -262,7 +262,7 @@ export default function SecuritySettingsScreen() {
         {/* ── SECURITY ─────────────────────────────────────────────────── */}
         <Section title="SECURITY" colors={colors}>
           <Row
-            icon="key-outline"
+            icon="key"
             iconColor="#0A84FF"
             label="Change Password"
             sublabel="Update your account password"
@@ -270,7 +270,7 @@ export default function SecuritySettingsScreen() {
             colors={colors}
           />
           <Row
-            icon="phone-portrait-outline"
+            icon="phone-portrait"
             iconColor="#30D158"
             label="Device Security"
             sublabel="PIN lock, biometrics, trusted devices"
@@ -283,7 +283,7 @@ export default function SecuritySettingsScreen() {
         {/* ── YOUR DATA ────────────────────────────────────────────────── */}
         <Section title="YOUR DATA" colors={colors}>
           <Row
-            icon="cloud-download-outline"
+            icon="cloud-download"
             iconColor="#0A84FF"
             label="Download My Data"
             sublabel="Export profile, posts, contacts & transactions"
@@ -297,7 +297,7 @@ export default function SecuritySettingsScreen() {
         {/* ── SIGN OUT ──────────────────────────────────────────────────── */}
         <Section title="SESSION" colors={colors}>
           <Row
-            icon="exit-outline"
+            icon="exit"
             iconColor="#FF9500"
             label="Sign Out of This Device"
             sublabel="Removes all local data from this device"
@@ -393,7 +393,7 @@ export default function SecuritySettingsScreen() {
                 "Your account and data on our servers are safe",
               ].map((item) => (
                 <View key={item} style={styles.checklistRow}>
-                  <Ionicons name="checkmark-circle-outline" size={16} color={colors.textMuted} />
+                  <Ionicons name="checkmark-circle" size={16} color={colors.textMuted} />
                   <Text style={[styles.checklistText, { color: colors.textMuted }]}>{item}</Text>
                 </View>
               ))}

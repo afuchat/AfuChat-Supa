@@ -282,7 +282,7 @@ function ViewerChrome({
         )}
 
         <TouchableOpacity onPress={handleShare} hitSlop={12} style={styles.glassBtn}>
-          <Ionicons name="share-outline" size={20} color="#fff" />
+          <Ionicons name="share" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
 

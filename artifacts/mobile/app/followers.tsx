@@ -352,7 +352,7 @@ export default function FollowersScreen() {
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Ionicons
-                  name={type === "followers" ? "people-outline" : "person-add-outline"}
+                  name={type === "followers" ? "people" : "person-add"}
                   size={48}
                   color={colors.textMuted}
                 />

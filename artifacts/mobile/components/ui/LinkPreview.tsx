@@ -294,7 +294,7 @@ function UrlPreviewCard({
       </View>
 
       <Ionicons
-        name="open-outline"
+        name="open"
         size={13}
         color={mutedColor}
         style={st.openIcon}

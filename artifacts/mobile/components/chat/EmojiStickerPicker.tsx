@@ -334,7 +334,7 @@ export default function EmojiStickerPicker({
           hitSlop={8}
         >
           <Ionicons
-            name="backspace-outline"
+            name="backspace"
             size={22}
             color={colors.textMuted as string}
           />

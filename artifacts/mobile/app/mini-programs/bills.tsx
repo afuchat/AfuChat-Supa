@@ -88,7 +88,7 @@ export default function BillsScreen() {
 
         <Text style={[styles.label, { color: colors.text }]}>Account / Meter Number</Text>
         <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Ionicons name="document-text-outline" size={18} color={colors.textMuted} />
+          <Ionicons name="document-text" size={18} color={colors.textMuted} />
           <TextInput
             style={[styles.input, { color: colors.text }]}
             value={accountNumber}
@@ -126,7 +126,7 @@ export default function BillsScreen() {
                 })}
               >
                 <Text style={[styles.feeLinkText, { color: colors.accent }]}>Fee ({fee.feePercent}%)</Text>
-                <Ionicons name="information-circle-outline" size={14} color={colors.accent} />
+                <Ionicons name="information-circle" size={14} color={colors.accent} />
               </TouchableOpacity>
               <Text style={[styles.feeValue, { color: "#FF9800" }]}>+{fee.feeAmount} ACoins</Text>
             </View>

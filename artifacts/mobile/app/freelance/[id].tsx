@@ -86,7 +86,7 @@ function Stars({ n }: { n: number }) {
       {[1, 2, 3, 4, 5].map((i) => (
         <Ionicons
           key={i}
-          name={n >= i ? "star" : n >= i - 0.5 ? "star-half" : "star-outline"}
+          name={n >= i ? "star" : n >= i - 0.5 ? "star-half" : "star"}
           size={12}
           color="#FBBF24"
         />
@@ -265,7 +265,7 @@ export default function FreelanceListingScreen() {
       <View style={[st.root, { backgroundColor: colors.background }]}>
         <SafeHeader title="Not Found" onBack={() => router.back()} colors={colors} insets={insets} />
         <View style={st.center}>
-          <Ionicons name="briefcase-outline" size={56} color={colors.textMuted} />
+          <Ionicons name="briefcase" size={56} color={colors.textMuted} />
           <Text style={[st.notFoundTitle, { color: colors.text }]}>Listing not found</Text>
           <Text style={[st.notFoundSub, { color: colors.textMuted }]}>
             This service may have been removed or the link is incorrect.
@@ -492,7 +492,7 @@ function SafeHeader({
 
       {onShare ? (
         <TouchableOpacity onPress={onShare} style={st.headerBtn} hitSlop={10}>
-          <Ionicons name="share-outline" size={22} color={colors.accent ?? Colors.brand} />
+          <Ionicons name="share" size={22} color={colors.accent ?? Colors.brand} />
         </TouchableOpacity>
       ) : (
         <View style={{ width: 44 }} />

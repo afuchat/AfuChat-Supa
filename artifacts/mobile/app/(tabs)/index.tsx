@@ -1363,7 +1363,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               );
               await supabase.from("chats").update({ is_pinned: !next }).eq("id", item.id);
             },
-            { type: "info", icon: next ? "pin" : "pin-outline" },
+            { type: "info", icon: next ? "pin" : "pin" },
           );
         }
         return;
@@ -1390,7 +1390,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               );
               await supabase.from("chats").update({ is_archived: !next }).eq("id", item.id);
             },
-            { type: "info", icon: next ? "archive" : "archive-outline" },
+            { type: "info", icon: next ? "archive" : "archive" },
           );
         }
         return;
@@ -1435,7 +1435,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         if (action === "unmute") {
           setChats((prev) => prev.map((c) => c.id === item.id ? { ...c, muted_until: undefined } : c));
           await supabase.from("chat_mutes").delete().eq("user_id", user.id).eq("chat_id", item.id);
-          showToast("Notifications unmuted", { type: "info", icon: "notifications-outline" });
+          showToast("Notifications unmuted", { type: "info", icon: "notifications" });
         } else {
           // Quick mute: 8 hours by default from the list; full duration picker is inside the chat
           const until = new Date(Date.now() + 8 * 3600_000).toISOString();
@@ -1447,7 +1447,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
           showActionToast("Muted for 8 hours", "Undo", async () => {
             setChats((prev) => prev.map((c) => c.id === item.id ? { ...c, muted_until: undefined } : c));
             await supabase.from("chat_mutes").delete().eq("user_id", user.id).eq("chat_id", item.id);
-          }, { type: "info", icon: "notifications-off-outline" });
+          }, { type: "info", icon: "notifications-off" });
         }
         return;
       }
@@ -1691,11 +1691,11 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   const channelsCount = chats.filter((c) => c.is_channel || c.kind === "channel_broadcast").length;
 
   const TABS: { key: ChatTabKey; label: string; icon: keyof typeof Ionicons.glyphMap; count: number }[] = [
-    { key: "all", label: "All chats", icon: "chatbubbles-outline", count: chats.length },
-    { key: "unread", label: "Unread", icon: "mail-unread-outline", count: totalUnread },
-    { key: "personal", label: "Personal", icon: "person-outline", count: personalCount },
-    { key: "groups", label: "Groups", icon: "people-outline", count: groupsCount },
-    { key: "channels", label: "Channels", icon: "megaphone-outline", count: channelsCount },
+    { key: "all", label: "All chats", icon: "chatbubbles", count: chats.length },
+    { key: "unread", label: "Unread", icon: "mail-unread", count: totalUnread },
+    { key: "personal", label: "Personal", icon: "person", count: personalCount },
+    { key: "groups", label: "Groups", icon: "people", count: groupsCount },
+    { key: "channels", label: "Channels", icon: "megaphone", count: channelsCount },
   ];
 
   // ── Folder system ─────────────────────────────────────────────────────────
@@ -1818,7 +1818,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               style={[styles.panelHeaderBtn, { backgroundColor: colors.backgroundSecondary }]}
               activeOpacity={0.7}
             >
-              <Ionicons name="create-outline" size={18} color={colors.text} />
+              <Ionicons name="create" size={18} color={colors.text} />
             </TouchableOpacity>
           </View>
         </View>
@@ -1893,7 +1893,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.backgroundSecondary, alignItems: "center", justifyContent: "center" }}
               activeOpacity={0.7}
             >
-              <Ionicons name="search-outline" size={20} color={colors.text} />
+              <Ionicons name="search" size={20} color={colors.text} />
             </TouchableOpacity>
           ) : null}
         </View>
@@ -2434,7 +2434,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
             disabled={selectedIds.size === 0}
             activeOpacity={0.82}
           >
-            <Ionicons name="trash-outline" size={18} color={selectedIds.size > 0 ? "#fff" : colors.textMuted} />
+            <Ionicons name="trash" size={18} color={selectedIds.size > 0 ? "#fff" : colors.textMuted} />
             <Text style={[selStyles.deleteBtnText, { color: selectedIds.size > 0 ? "#fff" : colors.textMuted }]}>
               {selectedIds.size > 0
                 ? `Delete ${selectedIds.size} chat${selectedIds.size !== 1 ? "s" : ""}`
@@ -2450,7 +2450,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
           onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/chat/new" as any); }}
           activeOpacity={0.85}
         >
-          <Ionicons name="create-outline" size={24} color="#fff" />
+          <Ionicons name="create" size={24} color="#fff" />
         </TouchableOpacity>
       )}
 
@@ -2478,7 +2478,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
             onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/chat/new" as any); }}
             activeOpacity={0.85}
           >
-            <Ionicons name="create-outline" size={24} color="#fff" />
+            <Ionicons name="create" size={24} color="#fff" />
           </TouchableOpacity>
         </Animated.View>
       )}

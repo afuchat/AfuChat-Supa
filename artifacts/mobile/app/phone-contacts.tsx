@@ -160,7 +160,7 @@ export default function PhoneContactsScreen() {
 
       {state === "denied" && (
         <View style={styles.center}>
-          <Ionicons name="people-outline" size={56} color={colors.textMuted} />
+          <Ionicons name="people" size={56} color={colors.textMuted} />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>Contacts Access Denied</Text>
           <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
             Allow contacts permission in your phone settings to find your friends on AfuChat.
@@ -173,7 +173,7 @@ export default function PhoneContactsScreen() {
 
       {state === "done" && onAfuChat.length === 0 && notOnAfuChat.length === 0 && (
         <View style={styles.center}>
-          <Ionicons name="person-outline" size={56} color={colors.textMuted} />
+          <Ionicons name="person" size={56} color={colors.textMuted} />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>No contacts found</Text>
           <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
             No phone contacts were found. Make sure your contacts are synced.
@@ -247,7 +247,7 @@ export default function PhoneContactsScreen() {
                       style={[styles.card, { backgroundColor: colors.surface }]}
                     >
                       <View style={[styles.avatarPlaceholder, { backgroundColor: colors.backgroundSecondary }]}>
-                        <Ionicons name="person-outline" size={22} color={colors.textMuted} />
+                        <Ionicons name="person" size={22} color={colors.textMuted} />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.displayName, { color: colors.text }]}>{item.name}</Text>
@@ -257,7 +257,7 @@ export default function PhoneContactsScreen() {
                         style={[styles.actionBtn, { backgroundColor: colors.backgroundSecondary, borderWidth: 1.5, borderColor: colors.accent }]}
                         onPress={() => sendInvite(item.name, item.phone)}
                       >
-                        <Ionicons name="share-outline" size={16} color={colors.accent} />
+                        <Ionicons name="share" size={16} color={colors.accent} />
                       </TouchableOpacity>
                     </View>
                   ))}

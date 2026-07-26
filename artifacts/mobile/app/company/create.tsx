@@ -21,15 +21,15 @@ import { showAlert } from "@/lib/alert";
 import { aiGenerateOrgTagline, aiGenerateOrgDescription, type OrgAiContext } from "@/lib/aiHelper";
 
 const ORG_TYPES = [
-  { label: "Company", icon: "business-outline" },
-  { label: "Brand", icon: "pricetag-outline" },
-  { label: "Non-Profit / NGO", icon: "heart-outline" },
-  { label: "Government", icon: "flag-outline" },
-  { label: "Media / Press", icon: "newspaper-outline" },
-  { label: "Education", icon: "school-outline" },
-  { label: "Religious Org", icon: "leaf-outline" },
-  { label: "Sports / Entertainment", icon: "trophy-outline" },
-  { label: "Other", icon: "ellipsis-horizontal-circle-outline" },
+  { label: "Company", icon: "business" },
+  { label: "Brand", icon: "pricetag" },
+  { label: "Non-Profit / NGO", icon: "heart" },
+  { label: "Government", icon: "flag" },
+  { label: "Media / Press", icon: "newspaper" },
+  { label: "Education", icon: "school" },
+  { label: "Religious Org", icon: "leaf" },
+  { label: "Sports / Entertainment", icon: "trophy" },
+  { label: "Other", icon: "ellipsis-horizontal-circle" },
 ];
 
 const SIZE_OPTIONS = [
@@ -271,7 +271,7 @@ export default function CreateCompanyPageScreen() {
             onPress={() => router.replace("/company" as any)}
             activeOpacity={0.85}
           >
-            <Ionicons name="business-outline" size={18} color="#fff" />
+            <Ionicons name="business" size={18} color="#fff" />
             <Text style={styles.submitBtnText}>Go to My Page</Text>
           </TouchableOpacity>
         </View>
@@ -302,7 +302,7 @@ export default function CreateCompanyPageScreen() {
             onPress={() => router.push("/premium")}
             activeOpacity={0.85}
           >
-            <Ionicons name="diamond-outline" size={18} color="#fff" />
+            <Ionicons name="diamond" size={18} color="#fff" />
             <Text style={styles.submitBtnText}>Get Verified</Text>
           </TouchableOpacity>
         </View>
@@ -414,7 +414,7 @@ export default function CreateCompanyPageScreen() {
               <View style={[styles.registryCard, { backgroundColor: colors.surface, borderColor: colors.accent + "40" }]}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
                   <View style={[styles.registryIconWrap, { backgroundColor: colors.accent + "14" }]}>
-                    <Ionicons name="shield-checkmark-outline" size={18} color={colors.accent} />
+                    <Ionicons name="shield-checkmark" size={18} color={colors.accent} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.registryTitle, { color: colors.text }]}>Find Your Registered Company</Text>
@@ -434,7 +434,7 @@ export default function CreateCompanyPageScreen() {
 
                 {/* Search input */}
                 <View style={[styles.regSearchRow, { backgroundColor: isDark ? colors.background : "#f5f5f7", borderColor: colors.border }]}>
-                  <Ionicons name="search-outline" size={16} color={colors.textMuted} />
+                  <Ionicons name="search" size={16} color={colors.textMuted} />
                   <TextInput
                     style={[styles.regSearchInput, { color: colors.text }]}
                     placeholder="Type registered company name…"
@@ -542,7 +542,7 @@ export default function CreateCompanyPageScreen() {
                 <View style={[styles.inputGroup, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <Text style={[styles.inputLabel, { color: colors.textMuted }]}>REGISTRATION NUMBER</Text>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                    <Ionicons name="document-text-outline" size={15} color={colors.textMuted} />
+                    <Ionicons name="document-text" size={15} color={colors.textMuted} />
                     <TextInput
                       style={[styles.inputField, { color: colors.text, flex: 1 }]}
                       placeholder="Government registration number"
@@ -667,7 +667,7 @@ export default function CreateCompanyPageScreen() {
               <View style={[styles.inputGroup, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Text style={[styles.inputLabel, { color: colors.textMuted }]}>WEBSITE</Text>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                  <Ionicons name="globe-outline" size={16} color={colors.textMuted} />
+                  <Ionicons name="globe" size={16} color={colors.textMuted} />
                   <TextInput
                     style={[styles.inputField, { color: colors.text, flex: 1 }]}
                     placeholder="https://yourcompany.com"
@@ -745,7 +745,7 @@ export default function CreateCompanyPageScreen() {
               <View style={[styles.inputGroup, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Text style={[styles.inputLabel, { color: colors.textMuted }]}>PHYSICAL ADDRESS</Text>
                 <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
-                  <Ionicons name="location-outline" size={16} color={colors.textMuted} style={{ marginTop: 4 }} />
+                  <Ionicons name="location" size={16} color={colors.textMuted} style={{ marginTop: 4 }} />
                   <TextInput
                     style={[styles.inputField, { color: colors.text, flex: 1, minHeight: 54, textAlignVertical: "top" }]}
                     placeholder={"Street address, building, floor…"}
@@ -812,7 +812,7 @@ export default function CreateCompanyPageScreen() {
 
               {/* Preview card */}
               <View style={[styles.previewCard, { backgroundColor: colors.accent + "0C", borderColor: colors.accent + "30" }]}>
-                <Ionicons name="eye-outline" size={16} color={colors.accent} />
+                <Ionicons name="eye" size={16} color={colors.accent} />
                 <View style={{ flex: 1 }}>
                   <Text style={[{ fontSize: 13, fontFamily: "Inter_600SemiBold", color: colors.accent }]}>Page Preview</Text>
                   <Text style={[{ fontSize: 12, fontFamily: "Inter_400Regular", color: colors.textMuted, lineHeight: 17, marginTop: 2 }]}>
@@ -857,7 +857,7 @@ export default function CreateCompanyPageScreen() {
             </>
           ) : (
             <>
-              <Ionicons name="business-outline" size={18} color="#fff" />
+              <Ionicons name="business" size={18} color="#fff" />
               <Text style={styles.nextBtnText}>Create Page</Text>
             </>
           )}

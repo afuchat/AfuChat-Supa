@@ -26,11 +26,11 @@ import { getTotalUnread, subscribeUnread } from "@/lib/chatUnreadEvents";
 
 // Visible bottom bar tabs
 const BOTTOM_TABS = [
-  { route: "/(tabs)/discover", iconOn: "home",             iconOff: "home-outline"           },
-  { route: "/(tabs)/shorts",   iconOn: "play-circle",      iconOff: "play-circle-outline"    },
+  { route: "/(tabs)/discover", iconOn: "home",             iconOff: "home"           },
+  { route: "/(tabs)/shorts",   iconOn: "play-circle",      iconOff: "play-circle"    },
   // index 2 is the CREATE button — handled separately
-  { route: "/(tabs)/apps",     iconOn: "grid",             iconOff: "grid-outline"           },
-  { route: "/(tabs)/chats",    iconOn: "chatbubble",       iconOff: "chatbubble-outline"     },
+  { route: "/(tabs)/apps",     iconOn: "grid",             iconOff: "grid"           },
+  { route: "/(tabs)/chats",    iconOn: "chatbubble",       iconOff: "chatbubble"     },
 ] as const;
 
 function normalizeTabPath(p: string): string {
@@ -90,10 +90,10 @@ function CompactTabBar({
   const [showCreatePicker, setShowCreatePicker] = useState(false);
 
   const CREATE_OPTIONS = [
-    { icon: "camera-outline",        label: "Story",   desc: "Share a photo or video story",     route: "/stories/camera",         color: "#FF9F0A"       },
-    { icon: "create-outline",        label: "Post",    desc: "Share a thought, photo, or link", route: "/moments/create",         color: colors.accent   },
-    { icon: "videocam-outline",      label: "Video",   desc: "Share a short video clip",         route: "/moments/create-video",   color: "#FF3B30"       },
-    { icon: "document-text-outline", label: "Article", desc: "Write a long-form article",        route: "/moments/create-article", color: "#007AFF"       },
+    { icon: "camera",        label: "Story",   desc: "Share a photo or video story",     route: "/stories/camera",         color: "#FF9F0A"       },
+    { icon: "create",        label: "Post",    desc: "Share a thought, photo, or link", route: "/moments/create",         color: colors.accent   },
+    { icon: "videocam",      label: "Video",   desc: "Share a short video clip",         route: "/moments/create-video",   color: "#FF3B30"       },
+    { icon: "document-text", label: "Article", desc: "Write a long-form article",        route: "/moments/create-article", color: "#007AFF"       },
   ];
 
   const BAR_BG     = isDark ? "#0C0C0C" : "#FFFFFF";

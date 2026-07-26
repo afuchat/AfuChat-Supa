@@ -313,7 +313,7 @@ function BookmarkButton({ bookmarked, onPress }: { bookmarked: boolean; onPress:
   return (
     <Animated.View style={[styles.footerStat, { transform: [{ scale }] }]}>
       <TouchableOpacity onPress={handlePress} hitSlop={8}>
-        <Ionicons name={bookmarked ? "bookmark" : "bookmark-outline"} size={21} color={bookmarked ? Colors.gold : colors.textMuted} />
+        <Ionicons name={bookmarked ? "bookmark" : "bookmark"} size={21} color={bookmarked ? Colors.gold : colors.textMuted} />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -619,7 +619,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                       onPress={() => safeRouter.push(`/company/${item.org_slug}` as any)}
                       activeOpacity={0.7}
                     >
-                      <Ionicons name="business-outline" size={13} color={colors.accent} />
+                      <Ionicons name="business" size={13} color={colors.accent} />
                       <Text style={[styles.followBtnText, { color: colors.accent }]}>View Page</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -795,7 +795,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
             >
               <Animated.View style={{ transform: [{ scale: heartScale }] }}>
                 <Ionicons
-                  name={item.liked ? "heart" : "heart-outline"}
+                  name={item.liked ? "heart" : "heart"}
                   size={21}
                   color={item.liked ? "#FF9500" : colors.textMuted}
                 />
@@ -811,14 +811,14 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
               onPress={() => onOpenComments(item.id, item.author_id)}
               activeOpacity={0.7}
             >
-              <Ionicons name="chatbubble-outline" size={21} color={colors.textMuted} />
+              <Ionicons name="chatbubble" size={21} color={colors.textMuted} />
               <RecentCommenters postId={item.id} replyCount={item.replyCount} bgColor={colors.background} accentColor={colors.accent} />
               <Text style={[styles.footerStatNum, { color: colors.textMuted }]}>{formatNum(item.replyCount)}</Text>
             </TouchableOpacity>
 
             {/* Views */}
             <View style={styles.footerStat}>
-              <Ionicons name="eye-outline" size={21} color={colors.textMuted} />
+              <Ionicons name="eye" size={21} color={colors.textMuted} />
               <Text style={[styles.footerStatNum, { color: colors.textMuted }]}>{formatNum(item.view_count)}</Text>
             </View>
 
@@ -834,7 +834,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
               }}
               activeOpacity={0.7}
             >
-              <Ionicons name="arrow-redo-outline" size={21} color={colors.textMuted} />
+              <Ionicons name="arrow-redo" size={21} color={colors.textMuted} />
             </TouchableOpacity>
 
             {/* Bookmark */}
@@ -893,11 +893,11 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
               style={styles.menuItem}
               onPress={() => { setMenuVisible(false); item.post_type === "video" ? shareVideo({ postId: item.id, authorName: item.profile.display_name, caption: item.content }) : sharePost({ postId: item.id, authorName: item.profile.display_name, content: item.content }); }}
             >
-              <Ionicons name="share-outline" size={22} color={colors.accent} />
+              <Ionicons name="share" size={22} color={colors.accent} />
               <Text style={[styles.menuItemText, { color: colors.text }]}>Share Post</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.menuItem} onPress={capturePostImage}>
-              <Ionicons name="image-outline" size={22} color={colors.accent} />
+              <Ionicons name="image" size={22} color={colors.accent} />
               <Text style={[styles.menuItemText, { color: colors.text }]}>Save as Image</Text>
             </TouchableOpacity>
             {!isOwnPost && (
@@ -907,21 +907,21 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                   style={styles.menuItem}
                   onPress={() => { setMenuVisible(false); setTimeout(() => onDismiss?.(item.id), 150); }}
                 >
-                  <Ionicons name="thumbs-down-outline" size={22} color={colors.textMuted} />
+                  <Ionicons name="thumbs-down" size={22} color={colors.textMuted} />
                   <Text style={[styles.menuItemText, { color: colors.text }]}>Not interested</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.menuItem}
                   onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setMenuVisible(false); onMuteAuthor?.(item.author_id, item.profile.handle); }}
                 >
-                  <Ionicons name="volume-mute-outline" size={22} color={colors.textMuted} />
+                  <Ionicons name="volume-mute" size={22} color={colors.textMuted} />
                   <Text style={[styles.menuItemText, { color: colors.text }]}>Mute @{item.profile.handle}</Text>
                 </TouchableOpacity>
               </>
             )}
             <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
             <TouchableOpacity style={styles.menuItem} onPress={() => setMenuVisible(false)}>
-              <Ionicons name="close-outline" size={22} color={colors.textMuted} />
+              <Ionicons name="close" size={22} color={colors.textMuted} />
               <Text style={[styles.menuItemText, { color: colors.textMuted }]}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -2443,7 +2443,7 @@ export default function DiscoverScreen() {
               accessibilityRole="button"
               accessibilityLabel="Search"
             >
-              <Ionicons name="search-outline" size={24} color={colors.icon} />
+              <Ionicons name="search" size={24} color={colors.icon} />
             </TouchableOpacity>
           </View>
         </View>
@@ -2570,7 +2570,7 @@ export default function DiscoverScreen() {
             {feedTab === "following" ? (
               !user ? (
                 <View style={[styles.center, { paddingTop: headerHeight + 80 }]}>
-                  <Ionicons name="lock-closed-outline" size={56} color={colors.textMuted} />
+                  <Ionicons name="lock-closed" size={56} color={colors.textMuted} />
                   <Text style={[styles.emptyTitle, { color: colors.text }]}>Sign in to see Following</Text>
                   <Text style={[styles.emptySub, { color: colors.textSecondary }]}>Follow people to see their posts here</Text>
                   <TouchableOpacity style={[styles.createBtn, { backgroundColor: colors.accent }]} onPress={() => safeRouter.push("/(auth)/login")}>
@@ -2579,7 +2579,7 @@ export default function DiscoverScreen() {
                 </View>
               ) : followingEmpty ? (
                 <View style={[styles.center, { paddingTop: headerHeight + 80 }]}>
-                  <Ionicons name="people-outline" size={56} color={colors.textMuted} />
+                  <Ionicons name="people" size={56} color={colors.textMuted} />
                   <Text style={[styles.emptyTitle, { color: colors.text }]}>No one followed yet</Text>
                   <Text style={[styles.emptySub, { color: colors.textSecondary }]}>Follow people to see their posts here</Text>
                   <TouchableOpacity style={[styles.createBtn, { backgroundColor: colors.accent }]} onPress={() => { setFeedTab("for_you"); pagerRef.current?.setPage(0); }}>
@@ -2640,7 +2640,7 @@ export default function DiscoverScreen() {
       ) : (
         feedTab === "following" && !user ? (
           <View style={[styles.center, { paddingTop: headerHeight + 80 }]}>
-            <Ionicons name="lock-closed-outline" size={56} color={colors.textMuted} />
+            <Ionicons name="lock-closed" size={56} color={colors.textMuted} />
             <Text style={[styles.emptyTitle, { color: colors.text }]}>Sign in to see Following</Text>
             <Text style={[styles.emptySub, { color: colors.textSecondary }]}>Follow people to see their posts here</Text>
             <TouchableOpacity style={[styles.createBtn, { backgroundColor: colors.accent }]} onPress={() => safeRouter.push("/(auth)/login")}>
@@ -2649,7 +2649,7 @@ export default function DiscoverScreen() {
           </View>
         ) : feedTab === "following" && followingEmpty ? (
           <View style={[styles.center, { paddingTop: headerHeight + 80 }]}>
-            <Ionicons name="people-outline" size={56} color={colors.textMuted} />
+            <Ionicons name="people" size={56} color={colors.textMuted} />
             <Text style={[styles.emptyTitle, { color: colors.text }]}>No one followed yet</Text>
             <Text style={[styles.emptySub, { color: colors.textSecondary }]}>Follow people to see their posts here</Text>
             <TouchableOpacity style={[styles.createBtn, { backgroundColor: colors.accent }]} onPress={() => setFeedTab("for_you")}>
@@ -2732,9 +2732,9 @@ export default function DiscoverScreen() {
             <View style={[styles.createPickerHandle, { backgroundColor: colors.border }]} />
             <Text style={[styles.createPickerTitle, { color: colors.text }]}>What would you like to create?</Text>
             {[
-              { icon: "create-outline", label: "Post", desc: "Share a thought, photo, or link", route: "/moments/create", color: colors.accent },
-              { icon: "videocam-outline", label: "Video", desc: "Share a short video clip", route: "/moments/create-video", color: "#FF3B30" },
-              { icon: "document-text-outline", label: "Article", desc: "Write a long-form article", route: "/moments/create-article", color: "#007AFF" },
+              { icon: "create", label: "Post", desc: "Share a thought, photo, or link", route: "/moments/create", color: colors.accent },
+              { icon: "videocam", label: "Video", desc: "Share a short video clip", route: "/moments/create-video", color: "#FF3B30" },
+              { icon: "document-text", label: "Article", desc: "Write a long-form article", route: "/moments/create-article", color: "#007AFF" },
             ].map((opt) => (
               <TouchableOpacity
                 key={opt.label}

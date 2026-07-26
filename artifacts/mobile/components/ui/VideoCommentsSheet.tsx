@@ -428,7 +428,7 @@ function VideoReplyItem({
         <View style={{ alignItems: "center", paddingTop: 4, paddingLeft: 4, minWidth: 40 }}>
           <TouchableOpacity onPress={handleLike} activeOpacity={0.7}>
             <Animated.View style={{ transform: [{ scale: likeScale }] }}>
-              <Ionicons name={liked ? "heart" : "heart-outline"} size={18} color={liked ? "#FF2D55" : ri_textMuted} />
+              <Ionicons name={liked ? "heart" : "heart"} size={18} color={liked ? "#FF2D55" : ri_textMuted} />
             </Animated.View>
           </TouchableOpacity>
           {localLikes > 0 && (
@@ -1102,7 +1102,7 @@ export function VideoCommentsSheet({
                 activeOpacity={0.7}
                 style={[cStyles.actionIconBtn, attachedImage && { backgroundColor: accent + "30" }]}
               >
-                <Ionicons name="image-outline" size={22} color={attachedImage ? accent : attachIconCl} />
+                <Ionicons name="image" size={22} color={attachedImage ? accent : attachIconCl} />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setShowEmojiPanel((p) => !p)}
@@ -1110,7 +1110,7 @@ export function VideoCommentsSheet({
                 activeOpacity={0.7}
                 style={[cStyles.actionIconBtn, showEmojiPanel && { backgroundColor: accent + "25" }]}
               >
-                <Ionicons name={showEmojiPanel ? "happy" : "happy-outline"} size={22} color={showEmojiPanel ? accent : attachIconCl} />
+                <Ionicons name={showEmojiPanel ? "happy" : "happy"} size={22} color={showEmojiPanel ? accent : attachIconCl} />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => { setText((t) => t + "@"); setTimeout(() => inputRef.current?.focus(), 50); }}
@@ -1127,7 +1127,7 @@ export function VideoCommentsSheet({
                 style={[cStyles.actionIconBtn, recordState === "recorded" && { backgroundColor: accent + "30" }]}
               >
                 <Ionicons
-                  name={recordState === "recorded" ? "mic" : "mic-outline"}
+                  name={recordState === "recorded" ? "mic" : "mic"}
                   size={22}
                   color={recordState === "recorded" ? accent : attachIconCl}
                 />
@@ -1141,7 +1141,7 @@ export function VideoCommentsSheet({
           onPress={() => { onClose(); router.push("/(auth)/login"); }}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 18, paddingVertical: 9, borderRadius: 20, borderWidth: 1, borderColor: accent + "50", backgroundColor: accent + "18" }}>
-            <Ionicons name="person-circle-outline" size={16} color={accent} />
+            <Ionicons name="person-circle" size={16} color={accent} />
             <Text style={{ fontSize: 14, fontFamily: "Inter_600SemiBold", color: accent }}>Sign in to comment</Text>
           </View>
         </TouchableOpacity>
@@ -1174,7 +1174,7 @@ export function VideoCommentsSheet({
             backgroundColor: sortMode === "top" ? accent + "22" : (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"),
           }}
         >
-          <Ionicons name="funnel-outline" size={13} color={sortMode === "top" ? accent : sortTabTxt} />
+          <Ionicons name="funnel" size={13} color={sortMode === "top" ? accent : sortTabTxt} />
           <Text style={{ color: sortMode === "top" ? accent : sortTabTxt, fontSize: 12, fontFamily: "Inter_600SemiBold" }}>
             {sortMode === "recent" ? "Recent" : "Top"}
           </Text>
@@ -1192,7 +1192,7 @@ export function VideoCommentsSheet({
           <CommentSkeleton isDark={isDark} />
         ) : sortedTree.length === 0 ? (
           <View style={[cStyles.emptyBox, { flex: 1, justifyContent: "center" }]}>
-            <Ionicons name="chatbubble-outline" size={32} color={emptyIconClr} />
+            <Ionicons name="chatbubble" size={32} color={emptyIconClr} />
             <Text style={[cStyles.emptyText, { color: emptyTxtClr }]}>No comments yet</Text>
             <Text style={[cStyles.emptySub, { color: emptySubClr }]}>Be the first to comment</Text>
           </View>

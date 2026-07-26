@@ -48,7 +48,7 @@ export default function UpdatePrompt() {
 
           {/* Icon */}
           <View style={[s.iconWrap, { backgroundColor: accent + "18" }]}>
-            <Ionicons name="rocket-outline" size={36} color={accent} />
+            <Ionicons name="rocket" size={36} color={accent} />
           </View>
 
           {/* Title */}
@@ -68,7 +68,7 @@ export default function UpdatePrompt() {
             onPress={openStore}
             style={({ pressed }) => [s.primaryBtn, { backgroundColor: accent, opacity: pressed ? 0.85 : 1 }]}
           >
-            <Ionicons name="download-outline" size={18} color="#fff" />
+            <Ionicons name="download" size={18} color="#fff" />
             <Text style={s.primaryTxt}>Update Now</Text>
           </Pressable>
 

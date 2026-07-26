@@ -781,21 +781,21 @@ function VideoMoreSheet({ visible, item, onClose, onNotInterested }: MoreSheetPr
 
   // Row 1: Share platforms (horizontal scroll)
   const SHARE_ROW = [
-    { id: "repost",    label: "Repost",     icon: "repeat-outline",                 onPress: doNativeShare },
-    { id: "copy",      label: "Copy link",  icon: "link-outline",                   onPress: doCopy },
+    { id: "repost",    label: "Repost",     icon: "repeat",                 onPress: doNativeShare },
+    { id: "copy",      label: "Copy link",  icon: "link",                   onPress: doCopy },
     { id: "whatsapp",  label: "WhatsApp",   icon: "logo-whatsapp",                  onPress: () => openUrl(`https://wa.me/?text=${encodeURIComponent(videoUrl)}`) },
-    { id: "telegram",  label: "Telegram",   icon: "paper-plane-outline",            onPress: () => openUrl(`https://t.me/share/url?url=${encodeURIComponent(videoUrl)}`) },
-    { id: "sms",       label: "SMS",        icon: "chatbubble-outline",             onPress: () => openUrl(`sms:?body=${encodeURIComponent(videoUrl)}`) },
-    { id: "more",      label: "More",       icon: "ellipsis-horizontal-circle-outline", onPress: doNativeShare },
+    { id: "telegram",  label: "Telegram",   icon: "paper-plane",            onPress: () => openUrl(`https://t.me/share/url?url=${encodeURIComponent(videoUrl)}`) },
+    { id: "sms",       label: "SMS",        icon: "chatbubble",             onPress: () => openUrl(`sms:?body=${encodeURIComponent(videoUrl)}`) },
+    { id: "more",      label: "More",       icon: "ellipsis-horizontal-circle", onPress: doNativeShare },
   ] as const;
 
   // Row 2: Extra actions
   const ACTION_ROW = [
-    { id: "notinterested", label: "Not interested", icon: "heart-dislike-outline", onPress: () => { onNotInterested(item); onClose(); } },
-    { id: "report",        label: "Report",         icon: "flag-outline",          onPress: onClose },
-    { id: "download",      label: "Save",           icon: "download-outline",      onPress: onClose },
-    { id: "story",         label: "Add to Story",   icon: "add-circle-outline",    onPress: onClose },
-    { id: "cast",          label: "Cast",           icon: "tv-outline",            onPress: onClose },
+    { id: "notinterested", label: "Not interested", icon: "heart-dislike", onPress: () => { onNotInterested(item); onClose(); } },
+    { id: "report",        label: "Report",         icon: "flag",          onPress: onClose },
+    { id: "download",      label: "Save",           icon: "download",      onPress: onClose },
+    { id: "story",         label: "Add to Story",   icon: "add-circle",    onPress: onClose },
+    { id: "cast",          label: "Cast",           icon: "tv",            onPress: onClose },
   ] as const;
 
   return (
@@ -1360,7 +1360,7 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
         await undoNotInterested(marked.authorId, marked.topics);
         setPosts((prev) => (prev.some((p) => p.id === item.id) ? prev : [item, ...prev]));
       },
-      { type: "info", icon: "eye-off-outline" },
+      { type: "info", icon: "eye-off" },
     );
   }, []);
 
@@ -1427,7 +1427,7 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
       <View style={[styles.center, { flex: 1, backgroundColor: "#000" }]}>
         <TikTokHeader tab={tab} onTabChange={setTab} top={TAB_TOP} />
         <View style={styles.emptyIcon}>
-          <Ionicons name="videocam-outline" size={44} color="rgba(255,255,255,0.25)" />
+          <Ionicons name="videocam" size={44} color="rgba(255,255,255,0.25)" />
         </View>
         <Text style={styles.emptyTitle}>
           {tab === "following" && !user
@@ -1542,7 +1542,7 @@ function TikTokHeader({
     <View style={[styles.header, { top } as any]}>
       {/* LIVE pill */}
       <TouchableOpacity style={styles.livePill} activeOpacity={0.8}>
-        <Ionicons name="tv-outline" size={13} color="#fff" />
+        <Ionicons name="tv" size={13} color="#fff" />
         <Text style={styles.liveText}>LIVE</Text>
       </TouchableOpacity>
 

@@ -45,14 +45,14 @@ function buildDeviceInfo(): string {
 }
 
 const CATEGORIES = [
-  { id: "account",     label: "Account & Login",     icon: "person-circle-outline",  desc: "Password, login, profile" },
-  { id: "payments",    label: "Payments & ACoins",   icon: "wallet-outline",          desc: "Top-up, refunds, disputes" },
-  { id: "marketplace", label: "AfuMarket Orders",    icon: "bag-handle-outline",      desc: "Orders, shipping, escrow" },
-  { id: "messages",    label: "Messaging",           icon: "chatbubbles-outline",     desc: "Chats, media, encryption" },
-  { id: "content",     label: "Content & Posts",     icon: "newspaper-outline",       desc: "Posts, stories, videos" },
-  { id: "safety",      label: "Safety & Privacy",    icon: "shield-checkmark-outline", desc: "Reports, privacy, data" },
-  { id: "technical",   label: "Technical Issue",     icon: "construct-outline",       desc: "Crashes, bugs, performance" },
-  { id: "general",     label: "General Enquiry",     icon: "help-circle-outline",     desc: "Questions, feedback" },
+  { id: "account",     label: "Account & Login",     icon: "person-circle",  desc: "Password, login, profile" },
+  { id: "payments",    label: "Payments & ACoins",   icon: "wallet",          desc: "Top-up, refunds, disputes" },
+  { id: "marketplace", label: "AfuMarket Orders",    icon: "bag-handle",      desc: "Orders, shipping, escrow" },
+  { id: "messages",    label: "Messaging",           icon: "chatbubbles",     desc: "Chats, media, encryption" },
+  { id: "content",     label: "Content & Posts",     icon: "newspaper",       desc: "Posts, stories, videos" },
+  { id: "safety",      label: "Safety & Privacy",    icon: "shield-checkmark", desc: "Reports, privacy, data" },
+  { id: "technical",   label: "Technical Issue",     icon: "construct",       desc: "Crashes, bugs, performance" },
+  { id: "general",     label: "General Enquiry",     icon: "help-circle",     desc: "Questions, feedback" },
 ];
 
 const PRIORITIES = [
@@ -205,9 +205,9 @@ export default function SupportCenter() {
   }
 
   const TABS: { id: TabId; label: string; icon: string; activeIcon: string }[] = [
-    { id: "home",    label: "Help",       icon: "home-outline",    activeIcon: "home" },
-    { id: "new",     label: "New Ticket", icon: "create-outline",  activeIcon: "create" },
-    { id: "tickets", label: "My Tickets", icon: "receipt-outline", activeIcon: "receipt" },
+    { id: "home",    label: "Help",       icon: "home",    activeIcon: "home" },
+    { id: "new",     label: "New Ticket", icon: "create",  activeIcon: "create" },
+    { id: "tickets", label: "My Tickets", icon: "receipt", activeIcon: "receipt" },
   ];
 
   return (
@@ -288,9 +288,9 @@ export default function SupportCenter() {
           {/* Stats strip */}
           <View style={[st.statsRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {[
-              { icon: "flash-outline", label: "Instant AI Reply", val: "< 1 min" },
-              { icon: "person-outline", label: "Human Follow-up", val: "2–4 hrs" },
-              { icon: "star-outline",   label: "Satisfaction",    val: "97%" },
+              { icon: "flash", label: "Instant AI Reply", val: "< 1 min" },
+              { icon: "person", label: "Human Follow-up", val: "2–4 hrs" },
+              { icon: "star",   label: "Satisfaction",    val: "97%" },
             ].map((s) => (
               <View key={s.label} style={st.statItem}>
                 <Ionicons name={s.icon as any} size={16} color={BRAND} />
@@ -328,7 +328,7 @@ export default function SupportCenter() {
               onPress={() => setTab("new")}
               activeOpacity={0.85}
             >
-              <Ionicons name="create-outline" size={17} color="#fff" />
+              <Ionicons name="create" size={17} color="#fff" />
               <Text style={st.primaryBtnText}>Open a Support Ticket</Text>
             </TouchableOpacity>
             {tickets.length > 0 && (
@@ -336,7 +336,7 @@ export default function SupportCenter() {
                 style={[st.ghostBtn, { borderColor: colors.border }]}
                 onPress={() => setTab("tickets")}
               >
-                <Ionicons name="receipt-outline" size={17} color={BRAND} />
+                <Ionicons name="receipt" size={17} color={BRAND} />
                 <Text style={[st.ghostBtnText, { color: BRAND }]}>My Tickets</Text>
               </TouchableOpacity>
             )}
@@ -353,7 +353,7 @@ export default function SupportCenter() {
                 activeOpacity={0.8}
               >
                 <View style={st.faqHeader}>
-                  <Ionicons name="help-circle-outline" size={16} color={BRAND} />
+                  <Ionicons name="help-circle" size={16} color={BRAND} />
                   <Text style={[st.faqQ, { color: colors.text }]}>{item.q}</Text>
                   <Ionicons
                     name={expandedFaq === i ? "chevron-up" : "chevron-down"}
@@ -373,7 +373,7 @@ export default function SupportCenter() {
           {/* Email contact */}
           <View style={[st.emailCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={[st.emailIcon, { backgroundColor: BRAND + "14" }]}>
-              <Ionicons name="mail-outline" size={18} color={BRAND} />
+              <Ionicons name="mail" size={18} color={BRAND} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[st.emailTitle, { color: colors.text }]}>Email us directly</Text>
@@ -444,7 +444,7 @@ export default function SupportCenter() {
                   fetchTickets();
                 }}
               >
-                <Ionicons name="receipt-outline" size={17} color="#fff" />
+                <Ionicons name="receipt" size={17} color="#fff" />
                 <Text style={st.primaryBtnText}>View My Tickets</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -595,7 +595,7 @@ export default function SupportCenter() {
                     { backgroundColor: includeDeviceInfo ? BRAND + "18" : colors.border + "40" },
                   ]}>
                     <Ionicons
-                      name="phone-portrait-outline"
+                      name="phone-portrait"
                       size={16}
                       color={includeDeviceInfo ? BRAND : colors.textMuted}
                     />
@@ -620,7 +620,7 @@ export default function SupportCenter() {
                     activeOpacity={0.7}
                   >
                     <Ionicons
-                      name={showDevicePreview ? "eye-off-outline" : "eye-outline"}
+                      name={showDevicePreview ? "eye-off" : "eye"}
                       size={13}
                       color={colors.textMuted}
                     />
@@ -689,7 +689,7 @@ export default function SupportCenter() {
           ) : tickets.length === 0 ? (
             <View style={st.empty}>
               <View style={[st.emptyIconWrap, { backgroundColor: BRAND + "12" }]}>
-                <Ionicons name="chatbubble-ellipses-outline" size={40} color={BRAND} />
+                <Ionicons name="chatbubble-ellipses" size={40} color={BRAND} />
               </View>
               <Text style={[st.emptyTitle, { color: colors.text }]}>No tickets yet</Text>
               <Text style={[st.emptySub, { color: colors.textMuted }]}>
@@ -699,7 +699,7 @@ export default function SupportCenter() {
                 style={[st.primaryBtn, { backgroundColor: BRAND, marginTop: 8, alignSelf: "center", paddingHorizontal: 28 }]}
                 onPress={() => setTab("new")}
               >
-                <Ionicons name="create-outline" size={16} color="#fff" />
+                <Ionicons name="create" size={16} color="#fff" />
                 <Text style={st.primaryBtnText}>Open Your First Ticket</Text>
               </TouchableOpacity>
             </View>

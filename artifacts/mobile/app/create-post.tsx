@@ -26,9 +26,9 @@ import * as Haptics from "@/lib/haptics";
 type Visibility = "public" | "followers" | "private";
 
 const VISIBILITY_OPTIONS: { key: Visibility; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { key: "public",    label: "Everyone",   icon: "globe-outline" },
-  { key: "followers", label: "Followers",  icon: "people-outline" },
-  { key: "private",   label: "Only me",    icon: "lock-closed-outline" },
+  { key: "public",    label: "Everyone",   icon: "globe" },
+  { key: "followers", label: "Followers",  icon: "people" },
+  { key: "private",   label: "Only me",    icon: "lock-closed" },
 ];
 
 export default function CreatePostScreen() {
@@ -196,7 +196,7 @@ export default function CreatePostScreen() {
       {/* Bottom toolbar */}
       <View style={[s.toolbar, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: insets.bottom + 8 }]}>
         <TouchableOpacity style={s.toolbarBtn} onPress={pickImage} hitSlop={8}>
-          <Ionicons name="image-outline" size={24} color={colors.accent} />
+          <Ionicons name="image" size={24} color={colors.accent} />
           <Text style={[s.toolbarLabel, { color: colors.textMuted }]}>Photo</Text>
         </TouchableOpacity>
         <View style={{ flex: 1 }} />

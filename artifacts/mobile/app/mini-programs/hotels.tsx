@@ -94,7 +94,7 @@ export default function HotelsScreen() {
             <View style={{ flex: 1 }}>
               <Text style={[styles.hotelName, { color: colors.text }]}>{h.name}</Text>
               <Text style={[styles.hotelLocation, { color: colors.textSecondary }]}>
-                <Ionicons name="location-outline" size={12} /> {h.location}
+                <Ionicons name="location" size={12} /> {h.location}
               </Text>
               <View style={styles.ratingRow}>
                 <Ionicons name="star" size={12} color="#FFD60A" />
@@ -170,7 +170,7 @@ export default function HotelsScreen() {
                 })}
               >
                 <Text style={[styles.feeLinkText, { color: colors.accent }]}>Booking Fee ({fee.feePercent}%)</Text>
-                <Ionicons name="information-circle-outline" size={14} color={colors.accent} />
+                <Ionicons name="information-circle" size={14} color={colors.accent} />
               </TouchableOpacity>
               <Text style={[styles.feeValue, { color: "#FF9800" }]}>+{fee.feeAmount} 🪙</Text>
             </View>

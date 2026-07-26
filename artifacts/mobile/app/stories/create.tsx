@@ -242,7 +242,7 @@ export default function CreateStoryScreen() {
             onPress={pickMedia}
             hitSlop={12}
           >
-            <Ionicons name="images-outline" size={22} color="#fff" />
+            <Ionicons name="images" size={22} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
@@ -280,29 +280,29 @@ export default function CreateStoryScreen() {
               <View style={styles.sideToolbar}>
                 {/* Retake → go back to camera */}
                 <TouchableOpacity style={styles.sideBtn} onPress={() => router.back()} activeOpacity={0.75}>
-                  <Ionicons name="camera-reverse-outline" size={22} color="#fff" />
+                  <Ionicons name="camera-reverse" size={22} color="#fff" />
                 </TouchableOpacity>
                 {/* Text → focus caption */}
                 <TouchableOpacity style={styles.sideBtn} activeOpacity={0.75}
                   onPress={() => { setShowEmojis(false); setShowColors(false); captionRef.current?.focus(); }}>
-                  <Ionicons name="text-outline" size={22} color="#fff" />
+                  <Ionicons name="text" size={22} color="#fff" />
                 </TouchableOpacity>
                 {/* Emoji picker toggle */}
                 <TouchableOpacity style={[styles.sideBtn, showEmojis && { backgroundColor: "rgba(255,255,255,0.35)" }]}
                   activeOpacity={0.75}
                   onPress={() => { setShowColors(false); setShowEmojis((v) => !v); }}>
-                  <Ionicons name="happy-outline" size={22} color="#fff" />
+                  <Ionicons name="happy" size={22} color="#fff" />
                 </TouchableOpacity>
                 {/* Colour tint toggle */}
                 <TouchableOpacity style={[styles.sideBtn, showColors && { backgroundColor: "rgba(255,255,255,0.35)" }]}
                   activeOpacity={0.75}
                   onPress={() => { setShowEmojis(false); setShowColors((v) => !v); }}>
-                  <Ionicons name="brush-outline" size={22} color={tintColor ? "#fff" : "#fff"} />
+                  <Ionicons name="brush" size={22} color={tintColor ? "#fff" : "#fff"} />
                 </TouchableOpacity>
                 {/* Music → coming soon */}
                 <TouchableOpacity style={styles.sideBtn} activeOpacity={0.75}
                   onPress={() => showAlert("Music", "Adding music to stories is coming soon! 🎵")}>
-                  <Ionicons name="musical-notes-outline" size={22} color="#fff" />
+                  <Ionicons name="musical-notes" size={22} color="#fff" />
                 </TouchableOpacity>
               </View>
 
@@ -402,7 +402,7 @@ export default function CreateStoryScreen() {
             </TouchableOpacity>
 
             <View style={styles.expiryChip}>
-              <Ionicons name="time-outline" size={13} color="rgba(255,255,255,0.5)" />
+              <Ionicons name="time" size={13} color="rgba(255,255,255,0.5)" />
               <Text style={styles.expiryText}>24h</Text>
             </View>
           </View>

@@ -115,13 +115,13 @@ function NativeCameraScreen() {
     return (
       <View style={[st.root, { backgroundColor: "#000" }]}>
         <View style={st.permWrap}>
-          <Ionicons name="camera-outline" size={56} color="rgba(255,255,255,0.5)" />
+          <Ionicons name="camera" size={56} color="rgba(255,255,255,0.5)" />
           <Text style={st.permText}>Camera access is needed to take photos and videos for stories.</Text>
           <TouchableOpacity style={[st.permBtn, { backgroundColor: accent }]} onPress={requestCamPermission}>
             <Text style={st.permBtnText}>Allow Camera</Text>
           </TouchableOpacity>
           <TouchableOpacity style={st.permSecondary} onPress={openGallery}>
-            <Ionicons name="images-outline" size={18} color="rgba(255,255,255,0.7)" />
+            <Ionicons name="images" size={18} color="rgba(255,255,255,0.7)" />
             <Text style={[st.permBtnText, { color: "rgba(255,255,255,0.7)" }]}>Choose from Gallery</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.back()}>
@@ -156,7 +156,7 @@ function NativeCameraScreen() {
           <Ionicons name={flash === "off" ? "flash-off" : "flash"} size={22} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity onPress={openGallery} style={st.topBtn}>
-          <Ionicons name="grid-outline" size={22} color="#fff" />
+          <Ionicons name="grid" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
 
@@ -165,7 +165,7 @@ function NativeCameraScreen() {
       <View style={[st.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
         <TouchableOpacity style={st.galleryThumb} onPress={openGallery}>
           <View style={[st.galleryImg, { backgroundColor: "rgba(255,255,255,0.15)" }]}>
-            <Ionicons name="images-outline" size={20} color="rgba(255,255,255,0.5)" />
+            <Ionicons name="images" size={20} color="rgba(255,255,255,0.5)" />
           </View>
         </TouchableOpacity>
 
@@ -188,7 +188,7 @@ function NativeCameraScreen() {
           style={st.flipBtn}
           onPress={() => setFacing(facing === "back" ? "front" : "back")}
         >
-          <Ionicons name="camera-reverse-outline" size={28} color="#fff" />
+          <Ionicons name="camera-reverse" size={28} color="#fff" />
         </TouchableOpacity>
       </View>
 

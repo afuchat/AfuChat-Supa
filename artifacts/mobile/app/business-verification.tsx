@@ -22,15 +22,15 @@ import { showAlert } from "@/lib/alert";
 const GOLD = "#D4A853";
 
 const ORG_TYPES = [
-  { label: "Company / Corporation", icon: "business-outline" },
-  { label: "Brand", icon: "pricetag-outline" },
-  { label: "Non-Profit / NGO", icon: "heart-outline" },
-  { label: "Government / Public Body", icon: "flag-outline" },
-  { label: "Media / Press", icon: "newspaper-outline" },
-  { label: "Educational Institution", icon: "school-outline" },
-  { label: "Religious Organization", icon: "leaf-outline" },
-  { label: "Sports / Entertainment", icon: "trophy-outline" },
-  { label: "Other", icon: "ellipsis-horizontal-circle-outline" },
+  { label: "Company / Corporation", icon: "business" },
+  { label: "Brand", icon: "pricetag" },
+  { label: "Non-Profit / NGO", icon: "heart" },
+  { label: "Government / Public Body", icon: "flag" },
+  { label: "Media / Press", icon: "newspaper" },
+  { label: "Educational Institution", icon: "school" },
+  { label: "Religious Organization", icon: "leaf" },
+  { label: "Sports / Entertainment", icon: "trophy" },
+  { label: "Other", icon: "ellipsis-horizontal-circle" },
 ];
 
 const INDUSTRIES = [
@@ -195,7 +195,7 @@ export default function BusinessVerificationScreen() {
         <NavBar />
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 20 }}>
           <View style={{ width: 88, height: 88, borderRadius: 22, backgroundColor: "#FF9500" + "22", alignItems: "center", justifyContent: "center" }}>
-            <Ionicons name="time-outline" size={44} color="#FF9500" />
+            <Ionicons name="time" size={44} color="#FF9500" />
           </View>
           <Text style={[st.bigTitle, { color: colors.text }]}>Under Review</Text>
           <Text style={[st.bigSub, { color: colors.textMuted }]}>
@@ -203,7 +203,7 @@ export default function BusinessVerificationScreen() {
           </Text>
           {existingApp?.created_at ? (
             <View style={[st.dateBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Ionicons name="calendar-outline" size={14} color={colors.textMuted} />
+              <Ionicons name="calendar" size={14} color={colors.textMuted} />
               <Text style={[st.dateBadgeText, { color: colors.textMuted }]}>
                 Submitted {new Date(existingApp.created_at).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}
               </Text>
@@ -220,13 +220,13 @@ export default function BusinessVerificationScreen() {
         <NavBar />
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 20 }}>
           <View style={{ width: 88, height: 88, borderRadius: 22, backgroundColor: "#FF3B30" + "22", alignItems: "center", justifyContent: "center" }}>
-            <Ionicons name="close-circle-outline" size={44} color="#FF3B30" />
+            <Ionicons name="close-circle" size={44} color="#FF3B30" />
           </View>
           <Text style={[st.bigTitle, { color: colors.text }]}>Not Approved</Text>
           {existingApp?.admin_note ? (
             <View style={[st.noteBox, { backgroundColor: colors.surface, borderColor: GOLD + "40" }]}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                <Ionicons name="chatbox-outline" size={14} color={GOLD} />
+                <Ionicons name="chatbox" size={14} color={GOLD} />
                 <Text style={[st.noteLabel, { color: GOLD }]}>Reviewer Note</Text>
               </View>
               <Text style={[st.noteText, { color: colors.text }]}>{existingApp.admin_note}</Text>
@@ -241,7 +241,7 @@ export default function BusinessVerificationScreen() {
             onPress={() => { setExistingApp(null); setPageStatus("idle"); }}
             activeOpacity={0.85}
           >
-            <Ionicons name="refresh-outline" size={18} color="#fff" />
+            <Ionicons name="refresh" size={18} color="#fff" />
             <Text style={st.submitBtnText}>Reapply</Text>
           </TouchableOpacity>
         </View>
@@ -273,10 +273,10 @@ export default function BusinessVerificationScreen() {
           <View style={[st.criteriaCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[st.sectionMicro, { color: colors.textMuted }]}>REQUIREMENTS</Text>
             {[
-              { icon: "business-outline", text: "Registered business, brand, or recognized organization" },
-              { icon: "call-outline", text: "Valid business contact phone number" },
-              { icon: "document-text-outline", text: "Registration number or official documentation" },
-              { icon: "shield-checkmark-outline", text: "Notable presence — website, press, or industry recognition" },
+              { icon: "business", text: "Registered business, brand, or recognized organization" },
+              { icon: "call", text: "Valid business contact phone number" },
+              { icon: "document-text", text: "Registration number or official documentation" },
+              { icon: "shield-checkmark", text: "Notable presence — website, press, or industry recognition" },
             ].map((c, i) => (
               <View key={i} style={st.criteriaRow}>
                 <View style={[st.criteriaIconWrap, { backgroundColor: GOLD + "18" }]}>
@@ -363,7 +363,7 @@ export default function BusinessVerificationScreen() {
 
           <Field label="Business Phone" required colors={colors} hint="Include country code, e.g. +254 712 345678">
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Ionicons name="call-outline" size={16} color={colors.textMuted} />
+              <Ionicons name="call" size={16} color={colors.textMuted} />
               <TextInput style={[st.input, { color: colors.text, flex: 1 }]} placeholder="+254 712 345 678"
                 placeholderTextColor={colors.textMuted} value={form.phone}
                 onChangeText={(v) => set("phone", v)} keyboardType="phone-pad" maxLength={30} />
@@ -372,7 +372,7 @@ export default function BusinessVerificationScreen() {
 
           <Field label="Official Website" colors={colors}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Ionicons name="globe-outline" size={16} color={colors.textMuted} />
+              <Ionicons name="globe" size={16} color={colors.textMuted} />
               <TextInput style={[st.input, { color: colors.text, flex: 1 }]} placeholder="https://yourorganization.com"
                 placeholderTextColor={colors.textMuted} value={form.website_url}
                 onChangeText={(v) => set("website_url", v)} autoCapitalize="none" keyboardType="url" maxLength={200} />
@@ -442,7 +442,7 @@ export default function BusinessVerificationScreen() {
           <TouchableOpacity style={[st.notableBanner, { backgroundColor: GOLD + "0E", borderColor: GOLD + "50" }]}
             onPress={() => router.push("/premium")} activeOpacity={0.8}>
             <View style={[st.bannerIconWrap, { backgroundColor: GOLD + "22" }]}>
-              <Ionicons name="diamond-outline" size={14} color={GOLD} />
+              <Ionicons name="diamond" size={14} color={GOLD} />
             </View>
             <Text style={[st.notableBannerText, { color: colors.textSecondary }]}>
               <Text style={{ fontFamily: "Inter_600SemiBold", color: GOLD }}>Premium members</Text> get priority review and a dedicated support contact.
@@ -459,7 +459,7 @@ export default function BusinessVerificationScreen() {
               <ActivityIndicator color="#fff" size="small" />
             ) : (
               <>
-                <Ionicons name="ribbon-outline" size={18} color="#fff" />
+                <Ionicons name="ribbon" size={18} color="#fff" />
                 <Text style={st.submitBtnText}>Submit Verification Request</Text>
               </>
             )}

@@ -59,9 +59,9 @@ const LANGUAGES = [
 ];
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
-  { key: "translate", label: "Translate", icon: "language-outline" },
-  { key: "style",     label: "Style",     icon: "color-wand-outline" },
-  { key: "fix",       label: "Fix",       icon: "construct-outline" },
+  { key: "translate", label: "Translate", icon: "language" },
+  { key: "style",     label: "Style",     icon: "color-wand" },
+  { key: "fix",       label: "Fix",       icon: "construct" },
 ];
 
 // ─── AiEditorSheet ────────────────────────────────────────────────────────────

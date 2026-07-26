@@ -347,7 +347,7 @@ export default function LabScreen() {
           onPress={() => setFacing(f => f === "back" ? "front" : "back")}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
-          <Ionicons name="camera-reverse-outline" size={22} color="#fff" />
+          <Ionicons name="camera-reverse" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
 
@@ -367,7 +367,7 @@ export default function LabScreen() {
       >
         <View style={styles.queryRow}>
           <View style={styles.queryInput}>
-            <Ionicons name="chatbubble-ellipses-outline" size={18} color="rgba(255,255,255,0.6)" style={{ marginRight: 8 }} />
+            <Ionicons name="chatbubble-ellipses" size={18} color="rgba(255,255,255,0.6)" style={{ marginRight: 8 }} />
             <TextInput
               style={styles.queryText}
               placeholder="Ask something specific… (optional)"
@@ -388,7 +388,7 @@ export default function LabScreen() {
         {/* ── Error ── */}
         {error && (
           <View style={styles.errorBanner}>
-            <Ionicons name="alert-circle-outline" size={16} color="#FF453A" />
+            <Ionicons name="alert-circle" size={16} color="#FF453A" />
             <Text style={styles.errorText}>{error}</Text>
             <TouchableOpacity onPress={() => setError(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Ionicons name="close" size={14} color="rgba(255,255,255,0.6)" />
@@ -415,7 +415,7 @@ export default function LabScreen() {
 
           {result && (
             <TouchableOpacity style={styles.sideBtn} onPress={showSheet} activeOpacity={0.8}>
-              <Ionicons name="list-outline" size={24} color="#fff" />
+              <Ionicons name="list" size={24} color="#fff" />
               <Text style={styles.sideBtnText}>Results</Text>
             </TouchableOpacity>
           )}
@@ -498,7 +498,7 @@ export default function LabScreen() {
                     borderLeftWidth: 3, borderLeftColor: BRAND,
                   }}>
                     <View style={{ flexDirection: "row", gap: 6, alignItems: "flex-start", marginBottom: 5 }}>
-                      <Ionicons name="help-circle-outline" size={14} color={BRAND} style={{ marginTop: 1 }} />
+                      <Ionicons name="help-circle" size={14} color={BRAND} style={{ marginTop: 1 }} />
                       <Text style={{ flex: 1, fontSize: 13, fontWeight: "700", color: BRAND }}>{item.q}</Text>
                     </View>
                     <Text style={{ fontSize: 13, lineHeight: 19, color: "rgba(255,255,255,0.85)", paddingLeft: 20 }}>{item.a}</Text>
@@ -569,7 +569,7 @@ export default function LabScreen() {
               </TouchableOpacity>
 
               <View style={[styles.actionBtn, { flex: 1, opacity: 0.45 }]}>
-                <Ionicons name="sparkles-outline" size={16} color={BRAND} />
+                <Ionicons name="sparkles" size={16} color={BRAND} />
                 <Text style={[styles.actionBtnText, { color: BRAND }]}>Coming Soon</Text>
               </View>
             </View>

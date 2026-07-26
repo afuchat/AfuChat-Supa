@@ -445,7 +445,7 @@ export default function NewChatScreen() {
           onPress={() => router.push("/qr-scanner")}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons name="qr-code-outline" size={22} color={accent} />
+          <Ionicons name="qr-code" size={22} color={accent} />
         </TouchableOpacity>
       </View>
 
@@ -522,7 +522,7 @@ export default function NewChatScreen() {
               </View>
             ) : searchResults.length === 0 ? (
               <View style={styles.emptySearch}>
-                <Ionicons name="search-outline" size={44} color={colors.textMuted} />
+                <Ionicons name="search" size={44} color={colors.textMuted} />
                 <Text style={[styles.emptyTitle, { color: colors.text }]}>
                   No results for "{query}"
                 </Text>
@@ -641,7 +641,7 @@ export default function NewChatScreen() {
                 !loading ? (
                   <View style={styles.emptyCenter}>
                     <Ionicons
-                      name="people-circle-outline"
+                      name="people-circle"
                       size={72}
                       color={colors.textMuted}
                     />
@@ -668,7 +668,7 @@ export default function NewChatScreen() {
                       .map((item) => (
                         <View key={item.phone} style={[styles.contactRow, { backgroundColor: colors.surface }]}>
                           <View style={[styles.avatarWrap, { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.backgroundSecondary, alignItems: "center", justifyContent: "center" }]}>
-                            <Ionicons name="person-outline" size={22} color={colors.textMuted} />
+                            <Ionicons name="person" size={22} color={colors.textMuted} />
                           </View>
                           <View style={styles.contactContent}>
                             <Text style={[styles.contactName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
@@ -827,7 +827,7 @@ function ListHeader({
                   <Text style={[styles.contactName, { color: colors.text }]} numberOfLines={1}>{g.name}</Text>
                   <Text style={[styles.contactHandle, { color: colors.textMuted }]}>Group</Text>
                 </View>
-                <Ionicons name="chatbubbles-outline" size={16} color={colors.textMuted} />
+                <Ionicons name="chatbubbles" size={16} color={colors.textMuted} />
               </TouchableOpacity>
               {i < groups.length - 1 && <Separator indent={70} />}
             </View>
@@ -858,7 +858,7 @@ function ListHeader({
                   </View>
                   <Text style={[styles.contactHandle, { color: colors.textMuted }]}>Channel</Text>
                 </View>
-                <Ionicons name="megaphone-outline" size={16} color={colors.textMuted} />
+                <Ionicons name="megaphone" size={16} color={colors.textMuted} />
               </TouchableOpacity>
               {i < channels.length - 1 && <Separator indent={70} />}
             </View>
@@ -920,7 +920,7 @@ function ListHeader({
                   </Text>
                 </View>
                 <Ionicons
-                  name="chatbubble-ellipses-outline"
+                  name="chatbubble-ellipses"
                   size={18}
                   color={colors.textMuted}
                 />
@@ -1065,7 +1065,7 @@ function ContactRow({
 
       {!isSelected && (
         <Ionicons
-          name="chatbubble-outline"
+          name="chatbubble"
           size={16}
           color={colors.textMuted}
         />

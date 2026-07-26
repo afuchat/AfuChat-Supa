@@ -147,7 +147,7 @@ export default function OfflineVideoToast() {
         <View style={st.row}>
           {/* Icon bubble */}
           <Animated.View style={[st.iconBubble, { transform: [{ scale: pulseAnim }] }]}>
-            <Ionicons name="wifi-outline" size={22} color="#fff" />
+            <Ionicons name="wifi" size={22} color="#fff" />
             <View style={st.iconDot} />
           </Animated.View>
 

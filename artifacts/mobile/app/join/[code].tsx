@@ -197,7 +197,7 @@ export default function JoinGroupScreen() {
       ) : error ? (
         <View style={st.center}>
           <View style={[st.errorIcon, { backgroundColor: surfaceColor }]}>
-            <Ionicons name="link-outline" size={40} color="#FF3B30" />
+            <Ionicons name="link" size={40} color="#FF3B30" />
           </View>
           <Text style={[st.errorTitle, { color: labelColor }]}>Invalid Link</Text>
           <Text style={[st.errorBody, { color: mutedColor }]}>{error}</Text>
@@ -245,14 +245,14 @@ export default function JoinGroupScreen() {
           {/* Type + member count */}
           <View style={st.metaRow}>
             <View style={[st.metaChip, { backgroundColor: surfaceColor, borderColor }]}>
-              <Ionicons name="people-outline" size={13} color={mutedColor} style={{ marginRight: 5 }} />
+              <Ionicons name="people" size={13} color={mutedColor} style={{ marginRight: 5 }} />
               <Text style={[st.metaText, { color: mutedColor }]}>
                 {group.member_count.toLocaleString()} {group.member_count === 1 ? "member" : "members"}
               </Text>
             </View>
             <View style={[st.metaChip, { backgroundColor: surfaceColor, borderColor }]}>
               <Ionicons
-                name={group.is_channel ? "megaphone-outline" : "people-circle-outline"}
+                name={group.is_channel ? "megaphone" : "people-circle"}
                 size={13}
                 color={mutedColor}
                 style={{ marginRight: 5 }}
@@ -272,13 +272,13 @@ export default function JoinGroupScreen() {
 
           {/* Invite link box */}
           <View style={[st.linkBox, { backgroundColor: surfaceColor, borderColor }]}>
-            <Ionicons name="link-outline" size={16} color={mutedColor} style={{ marginRight: 8 }} />
+            <Ionicons name="link" size={16} color={mutedColor} style={{ marginRight: 8 }} />
             <Text style={[st.linkText, { color: mutedColor }]} numberOfLines={1} ellipsizeMode="middle">
               {generateGroupInviteLink(group.id)}
             </Text>
             <TouchableOpacity onPress={handleCopyLink} hitSlop={8} style={{ marginLeft: 8 }}>
               <Ionicons
-                name={copied ? "checkmark-circle" : "copy-outline"}
+                name={copied ? "checkmark-circle" : "copy"}
                 size={18}
                 color={copied ? "#34C759" : BRAND}
               />
@@ -298,7 +298,7 @@ export default function JoinGroupScreen() {
                 onPress={handleOpen}
                 activeOpacity={0.85}
               >
-                <Ionicons name="chatbubbles-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
+                <Ionicons name="chatbubbles" size={18} color="#fff" style={{ marginRight: 8 }} />
                 <Text style={st.joinBtnText}>Open Chat</Text>
               </TouchableOpacity>
               <Text style={[st.alreadyMember, { color: mutedColor }]}>
@@ -315,7 +315,7 @@ export default function JoinGroupScreen() {
               {joining ? (
                 <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
               ) : (
-                <Ionicons name="enter-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
+                <Ionicons name="enter" size={18} color="#fff" style={{ marginRight: 8 }} />
               )}
               <Text style={st.joinBtnText}>{joining ? "Joining…" : "Join Group"}</Text>
             </TouchableOpacity>
@@ -323,7 +323,7 @@ export default function JoinGroupScreen() {
 
           {/* Share row */}
           <TouchableOpacity style={st.shareRow} onPress={handleShare}>
-            <Ionicons name="share-social-outline" size={16} color={mutedColor} style={{ marginRight: 6 }} />
+            <Ionicons name="share-social" size={16} color={mutedColor} style={{ marginRight: 6 }} />
             <Text style={[st.shareText, { color: mutedColor }]}>Share this link</Text>
           </TouchableOpacity>
 

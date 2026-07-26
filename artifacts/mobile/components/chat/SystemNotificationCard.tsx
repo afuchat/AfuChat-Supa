@@ -213,76 +213,76 @@ function buildActions(data: SysNotifData): Action[] {
   switch (data.type) {
     case "new_follower":
       if (data.actor_handle) {
-        actions.push({ label: "Follow Back", icon: "person-add-outline", route: `/@${data.actor_handle}?followBack=1`, primary: true });
-        actions.push({ label: "View Profile", icon: "person-outline", route: `/@${data.actor_handle}` });
+        actions.push({ label: "Follow Back", icon: "person-add", route: `/@${data.actor_handle}?followBack=1`, primary: true });
+        actions.push({ label: "View Profile", icon: "person", route: `/@${data.actor_handle}` });
       }
       break;
     case "new_like":
     case "new_reply":
     case "new_mention":
       if (data.post_id) {
-        actions.push({ label: "View Post", icon: "document-text-outline", route: `/post/${data.post_id}`, primary: true });
+        actions.push({ label: "View Post", icon: "document-text", route: `/post/${data.post_id}`, primary: true });
       }
       if (data.actor_handle) {
-        actions.push({ label: "View Profile", icon: "person-outline", route: `/@${data.actor_handle}` });
+        actions.push({ label: "View Profile", icon: "person", route: `/@${data.actor_handle}` });
       }
       break;
     case "missed_call":
       if (data.actor_id || d.actorId) {
         const actorId = data.actor_id || d.actorId;
-        actions.push({ label: "Call Back", icon: "call-outline", route: `/contact/${actorId}?call=1`, primary: true });
+        actions.push({ label: "Call Back", icon: "call", route: `/contact/${actorId}?call=1`, primary: true });
       }
-      actions.push({ label: "Call History", icon: "time-outline", route: "/call-history" });
+      actions.push({ label: "Call History", icon: "time", route: "/call-history" });
       break;
     case "gift":
-      actions.push({ label: "View Gifts", icon: "gift-outline", route: "/gifts", primary: true });
+      actions.push({ label: "View Gifts", icon: "gift", route: "/gifts", primary: true });
       break;
     case "order_placed":
     case "order_shipped":
     case "dispute_raised":
     case "shop_review": {
       const orderId = d.orderId || data.entity_id;
-      if (orderId) actions.push({ label: "View Order", icon: "bag-outline", route: `/shop/order/${orderId}`, primary: true });
+      if (orderId) actions.push({ label: "View Order", icon: "bag", route: `/shop/order/${orderId}`, primary: true });
       if (data.type === "order_shipped") {
-        if (orderId) actions.push({ label: "Confirm Delivery", icon: "checkmark-circle-outline", route: `/shop/order/${orderId}?confirm=1` });
+        if (orderId) actions.push({ label: "Confirm Delivery", icon: "checkmark-circle", route: `/shop/order/${orderId}?confirm=1` });
       }
       break;
     }
     case "escrow_released":
     case "refund_issued": {
       const orderId = d.orderId || data.entity_id;
-      if (orderId) actions.push({ label: "View Order", icon: "bag-outline", route: `/shop/order/${orderId}` });
-      actions.push({ label: "View Wallet", icon: "wallet-outline", route: "/wallet", primary: true });
+      if (orderId) actions.push({ label: "View Order", icon: "bag", route: `/shop/order/${orderId}` });
+      actions.push({ label: "View Wallet", icon: "wallet", route: "/wallet", primary: true });
       break;
     }
     case "acoin_received":
     case "acoin_sent":
-      actions.push({ label: "View Wallet", icon: "wallet-outline", route: "/wallet", primary: true });
+      actions.push({ label: "View Wallet", icon: "wallet", route: "/wallet", primary: true });
       break;
     case "live_started":
     case "channel_post": {
       const channelId = d.channelId || data.entity_id;
-      if (channelId) actions.push({ label: data.type === "live_started" ? "Watch Now" : "View Post", icon: data.type === "live_started" ? "play-circle-outline" : "radio-outline", route: `/channel/${channelId}`, primary: true });
+      if (channelId) actions.push({ label: data.type === "live_started" ? "Watch Now" : "View Post", icon: data.type === "live_started" ? "play-circle" : "radio", route: `/channel/${channelId}`, primary: true });
       break;
     }
     case "subscription_activated":
-      actions.push({ label: "Explore Premium", icon: "star-outline", route: "/monetize", primary: true });
+      actions.push({ label: "Explore Premium", icon: "star", route: "/monetize", primary: true });
       break;
     case "seller_approved":
-      actions.push({ label: "Go to Shop", icon: "storefront-outline", route: "/shop/manage", primary: true });
+      actions.push({ label: "Go to Shop", icon: "storefront", route: "/shop/manage", primary: true });
       break;
     case "seller_rejected":
-      actions.push({ label: "Update Application", icon: "create-outline", route: "/shop/apply", primary: true });
+      actions.push({ label: "Update Application", icon: "create", route: "/shop/apply", primary: true });
       break;
     case "verification_approved":
-      actions.push({ label: "View Profile", icon: "person-outline", route: "/me", primary: true });
+      actions.push({ label: "View Profile", icon: "person", route: "/me", primary: true });
       break;
     case "system_welcome":
-      actions.push({ label: "Discover People", icon: "search-outline", route: "/discover", primary: true });
-      actions.push({ label: "Edit Profile", icon: "create-outline", route: "/profile/edit" });
+      actions.push({ label: "Discover People", icon: "search", route: "/discover", primary: true });
+      actions.push({ label: "Edit Profile", icon: "create", route: "/profile/edit" });
       break;
     default:
-      if (d.url) actions.push({ label: "View", icon: "arrow-forward-circle-outline", route: d.url, primary: true });
+      if (d.url) actions.push({ label: "View", icon: "arrow-forward-circle", route: d.url, primary: true });
       break;
   }
 

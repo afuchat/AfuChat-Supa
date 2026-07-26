@@ -562,7 +562,7 @@ export default function MatchOnboarding() {
                     </>
                   ) : geoFailed && !country ? (
                     <>
-                      <Ionicons name="warning-outline" size={16} color="#FF9500" style={{ marginRight: 6 }} />
+                      <Ionicons name="warning" size={16} color="#FF9500" style={{ marginRight: 6 }} />
                       <Text style={[styles.lockedText, { color: colors.textMuted, flex: 1 }]}>
                         Could not detect
                       </Text>

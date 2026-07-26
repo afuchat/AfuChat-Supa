@@ -76,7 +76,7 @@ function OrderCard({ order, onPress }: { order: ShopOrder; onPress: () => void }
           ? <Image source={{ uri: img }} style={st.itemThumb} resizeMode="cover" />
           : (
             <View style={[st.itemThumb, { backgroundColor: colors.backgroundSecondary, alignItems: "center", justifyContent: "center" }]}>
-              <Ionicons name="cube-outline" size={20} color={colors.textMuted} />
+              <Ionicons name="cube" size={20} color={colors.textMuted} />
             </View>
           )}
         <View style={{ flex: 1, gap: 3 }}>
@@ -99,7 +99,7 @@ function OrderCard({ order, onPress }: { order: ShopOrder; onPress: () => void }
 
       {order.escrow_status === "held" && (order.status === "shipped" || order.status === "delivered") && (
         <View style={[st.actionBanner, { backgroundColor: "#FF9500" + "12", borderColor: "#FF9500" + "30" }]}>
-          <Ionicons name="lock-closed-outline" size={14} color="#FF9500" />
+          <Ionicons name="lock-closed" size={14} color="#FF9500" />
           <Text style={{ color: "#FF9500", fontSize: 12, fontFamily: "Inter_500Medium", flex: 1 }}>
             Item shipped — open to confirm receipt and release payment
           </Text>
@@ -109,7 +109,7 @@ function OrderCard({ order, onPress }: { order: ShopOrder; onPress: () => void }
 
       {order.escrow_status === "disputed" && (
         <View style={[st.actionBanner, { backgroundColor: "#FF3B30" + "12", borderColor: "#FF3B30" + "30" }]}>
-          <Ionicons name="alert-circle-outline" size={14} color="#FF3B30" />
+          <Ionicons name="alert-circle" size={14} color="#FF3B30" />
           <Text style={{ color: "#FF3B30", fontSize: 12, fontFamily: "Inter_500Medium", flex: 1 }}>
             Dispute open — our team is reviewing this order
           </Text>
@@ -198,7 +198,7 @@ export default function MyOrdersScreen() {
         title="My Orders"
         right={
           <TouchableOpacity onPress={() => router.push("/store" as any)} hitSlop={8}>
-            <Ionicons name="storefront-outline" size={20} color={BRAND} />
+            <Ionicons name="storefront" size={20} color={BRAND} />
           </TouchableOpacity>
         }
       />
@@ -211,17 +211,17 @@ export default function MyOrdersScreen() {
         {/* Stats row */}
         <View style={st.statsRow}>
           <View style={[st.statCard, { backgroundColor: colors.surface }]}>
-            <Ionicons name="cube-outline" size={20} color={BRAND} />
+            <Ionicons name="cube" size={20} color={BRAND} />
             <Text style={[st.statVal, { color: colors.text }]}>{orders.length}</Text>
             <Text style={[st.statLabel, { color: colors.textMuted }]}>Total Orders</Text>
           </View>
           <View style={[st.statCard, { backgroundColor: colors.surface }]}>
-            <Ionicons name="time-outline" size={20} color="#FF9500" />
+            <Ionicons name="time" size={20} color="#FF9500" />
             <Text style={[st.statVal, { color: colors.text }]}>{activeCount}</Text>
             <Text style={[st.statLabel, { color: colors.textMuted }]}>Active</Text>
           </View>
           <View style={[st.statCard, { backgroundColor: colors.surface }]}>
-            <Ionicons name="wallet-outline" size={20} color={GOLD} />
+            <Ionicons name="wallet" size={20} color={GOLD} />
             <Text style={[st.statVal, { color: colors.text }]}>{formatShopAcoin(totalSpent)}</Text>
             <Text style={[st.statLabel, { color: colors.textMuted }]}>Spent</Text>
           </View>
@@ -229,7 +229,7 @@ export default function MyOrdersScreen() {
 
         {/* Escrow info card */}
         <View style={[st.escrowInfo, { backgroundColor: BRAND + "10", borderColor: BRAND + "25" }]}>
-          <Ionicons name="shield-checkmark-outline" size={22} color={BRAND} />
+          <Ionicons name="shield-checkmark" size={22} color={BRAND} />
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={{ color: BRAND, fontFamily: "Inter_700Bold", fontSize: 13 }}>AfuPay Escrow Protection</Text>
             <Text style={{ color: BRAND, fontFamily: "Inter_400Regular", fontSize: 12, lineHeight: 17 }}>
@@ -258,7 +258,7 @@ export default function MyOrdersScreen() {
         {filtered.length === 0 ? (
           <View style={st.emptyWrap}>
             <LinearGradient colors={[BRAND + "20", BRAND + "06"]} style={st.emptyIcon}>
-              <Ionicons name="cube-outline" size={36} color={BRAND} />
+              <Ionicons name="cube" size={36} color={BRAND} />
             </LinearGradient>
             <Text style={[st.emptyTitle, { color: colors.text }]}>
               {filter === "all" ? "No orders yet" : `No ${filter} orders`}

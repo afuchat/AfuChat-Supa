@@ -256,7 +256,7 @@ export default function MomentsScreen() {
           style={styles.addBtn}
           onPress={() => router.push("/stories/camera")}
         >
-          <Ionicons name="add-circle-outline" size={24} color={Colors.brand} />
+          <Ionicons name="add-circle" size={24} color={Colors.brand} />
         </TouchableOpacity>
       </View>
 
@@ -267,7 +267,7 @@ export default function MomentsScreen() {
       ) : storyUsers.length === 0 ? (
         <View style={styles.centered}>
           <Ionicons
-            name="images-outline"
+            name="images"
             size={52}
             color={colors.textSecondary}
           />
@@ -281,7 +281,7 @@ export default function MomentsScreen() {
             style={[styles.createBtn, { backgroundColor: Colors.brand }]}
             onPress={() => router.push("/stories/camera")}
           >
-            <Ionicons name="camera-outline" size={18} color="#fff" />
+            <Ionicons name="camera" size={18} color="#fff" />
             <Text style={styles.createBtnText}>Create Moment</Text>
           </TouchableOpacity>
         </View>

@@ -23,16 +23,16 @@ import { supabase } from "@/lib/supabase";
 const GOLD = "#D4A853";
 
 const CATEGORIES = [
-  { label: "All", icon: "apps-outline" },
-  { label: "Technology", icon: "laptop-outline" },
-  { label: "Finance", icon: "card-outline" },
-  { label: "Healthcare", icon: "medkit-outline" },
-  { label: "Education", icon: "school-outline" },
-  { label: "Media", icon: "newspaper-outline" },
-  { label: "NGO", icon: "heart-outline" },
-  { label: "Government", icon: "flag-outline" },
-  { label: "Retail", icon: "storefront-outline" },
-  { label: "Other", icon: "ellipsis-horizontal-circle-outline" },
+  { label: "All", icon: "apps" },
+  { label: "Technology", icon: "laptop" },
+  { label: "Finance", icon: "card" },
+  { label: "Healthcare", icon: "medkit" },
+  { label: "Education", icon: "school" },
+  { label: "Media", icon: "newspaper" },
+  { label: "NGO", icon: "heart" },
+  { label: "Government", icon: "flag" },
+  { label: "Retail", icon: "storefront" },
+  { label: "Other", icon: "ellipsis-horizontal-circle" },
 ];
 
 type PageRow = {
@@ -178,7 +178,7 @@ export default function CompanyIndexScreen() {
               </View>
             ) : null}
             <View style={styles.followerRow}>
-              <Ionicons name="people-outline" size={12} color={colors.textMuted} />
+              <Ionicons name="people" size={12} color={colors.textMuted} />
               <Text style={[styles.cardFollowers, { color: colors.textMuted }]}>{fmtCount(item.followers_count)}</Text>
             </View>
             {isOwned && (
@@ -187,7 +187,7 @@ export default function CompanyIndexScreen() {
                 onPress={() => router.push(`/company/manage?slug=${item.slug}` as any)}
                 hitSlop={8}
               >
-                <Ionicons name="settings-outline" size={12} color={colors.textMuted} />
+                <Ionicons name="settings" size={12} color={colors.textMuted} />
                 <Text style={[styles.manageBtnText, { color: colors.textMuted }]}>Manage</Text>
               </TouchableOpacity>
             )}
@@ -222,7 +222,7 @@ export default function CompanyIndexScreen() {
 
         {/* Search bar */}
         <View style={[styles.searchBar, { backgroundColor: colors.background, borderColor: colors.border }]}>
-          <Ionicons name="search-outline" size={16} color={colors.textMuted} />
+          <Ionicons name="search" size={16} color={colors.textMuted} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
             placeholder="Search pages…"
@@ -320,7 +320,7 @@ export default function CompanyIndexScreen() {
                   activeOpacity={0.85}
                 >
                   <View style={[styles.ctaIcon, { backgroundColor: GOLD + "20" }]}>
-                    <Ionicons name="checkmark-circle-outline" size={22} color={GOLD} />
+                    <Ionicons name="checkmark-circle" size={22} color={GOLD} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: colors.text, fontFamily: "Inter_700Bold", fontSize: 14 }}>Get verified to create a page</Text>
@@ -334,7 +334,7 @@ export default function CompanyIndexScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <View style={[styles.emptyIcon, { backgroundColor: colors.surface }]}>
-                <Ionicons name="business-outline" size={36} color={colors.textMuted} />
+                <Ionicons name="business" size={36} color={colors.textMuted} />
               </View>
               {search.trim() ? (
                 <>

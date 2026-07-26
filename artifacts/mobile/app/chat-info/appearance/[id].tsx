@@ -76,7 +76,7 @@ function WallpaperMini({ type, bg }: { type?: string; bg: string }) {
   if (!type || type === "none") {
     return (
       <View style={[wm.box, { backgroundColor: bg, alignItems: "center", justifyContent: "center" }]}>
-        <Ionicons name="ban-outline" size={18} color="#ccc" />
+        <Ionicons name="ban" size={18} color="#ccc" />
       </View>
     );
   }
@@ -282,7 +282,7 @@ export default function ChatAppearanceScreen() {
         {/* ── Auto-save indicator ── */}
         {saving && (
           <View style={[s.savingBanner, { backgroundColor: colors.accent + "15" }]}>
-            <Ionicons name="checkmark-circle-outline" size={14} color={colors.accent} />
+            <Ionicons name="checkmark-circle" size={14} color={colors.accent} />
             <Text style={[s.savingText, { color: colors.accent }]}>Saving…</Text>
           </View>
         )}
@@ -402,7 +402,7 @@ export default function ChatAppearanceScreen() {
                 activeOpacity={0.65}
               >
                 <View style={[s.iconBadge, { backgroundColor: "#FF3B3018" }]}>
-                  <Ionicons name="refresh-outline" size={17} color="#FF3B30" />
+                  <Ionicons name="refresh" size={17} color="#FF3B30" />
                 </View>
                 <Text style={[s.resetLabel, { color: "#FF3B30" }]}>Reset to Default</Text>
               </TouchableOpacity>

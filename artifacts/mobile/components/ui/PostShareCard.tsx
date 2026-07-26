@@ -131,7 +131,7 @@ export const ShareCard = React.forwardRef<View, ShareCardProps>(function ShareCa
       {(post.post_type === "article" || post.post_type === "video") && (
         <View style={[s.ctaBtn, { backgroundColor: accent }]}>
           <Ionicons
-            name={post.post_type === "video" ? "play-circle-outline" : "book-outline"}
+            name={post.post_type === "video" ? "play-circle" : "book"}
             size={14}
             color="#fff"
           />
@@ -147,24 +147,24 @@ export const ShareCard = React.forwardRef<View, ShareCardProps>(function ShareCa
       {/* ── Stats row ── */}
       <View style={s.statsRow}>
         <View style={s.stat}>
-          <Ionicons name="heart-outline" size={15} color="#9CA3AF" />
+          <Ionicons name="heart" size={15} color="#9CA3AF" />
           <Text style={s.statNum}>{fmtNum(post.like_count)}</Text>
         </View>
         <View style={s.stat}>
-          <Ionicons name="chatbubble-outline" size={14} color="#9CA3AF" />
+          <Ionicons name="chatbubble" size={14} color="#9CA3AF" />
           <Text style={s.statNum}>{fmtNum(post.reply_count)}</Text>
         </View>
         <View style={s.stat}>
-          <Ionicons name="arrow-redo-outline" size={15} color="#9CA3AF" />
+          <Ionicons name="arrow-redo" size={15} color="#9CA3AF" />
           <Text style={s.statNum}>Share</Text>
         </View>
         <View style={{ flex: 1 }} />
         <View style={s.stat}>
-          <Ionicons name="eye-outline" size={14} color="#9CA3AF" />
+          <Ionicons name="eye" size={14} color="#9CA3AF" />
           <Text style={s.statNum}>{fmtNum(post.view_count)}</Text>
         </View>
         <Ionicons
-          name={post.bookmarked ? "bookmark" : "bookmark-outline"}
+          name={post.bookmarked ? "bookmark" : "bookmark"}
           size={15}
           color="#9CA3AF"
         />
@@ -364,7 +364,7 @@ export function PostShareCaptureModal({
               ) : (
                 <>
                   <Ionicons
-                    name="share-outline"
+                    name="share"
                     size={19}
                     color="#fff"
                   />

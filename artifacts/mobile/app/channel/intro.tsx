@@ -56,7 +56,7 @@ function PhoneIllustration() {
 
       {/* Views badge (bottom-right overlap) */}
       <View style={[styles.viewsBadge, { backgroundColor: colors.surface }]}>
-        <Ionicons name="eye-outline" size={14} color={colors.textMuted} />
+        <Ionicons name="eye" size={14} color={colors.textMuted} />
         <Text style={[styles.viewsBadgeText, { color: colors.text }]}>1K</Text>
       </View>
     </View>

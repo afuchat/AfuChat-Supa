@@ -292,7 +292,7 @@ export default function CreateDuetScreen() {
         >
           {/* Duet label */}
           <View style={[s.duetBadge, { backgroundColor: colors.accent + "20" }]}>
-            <Ionicons name="git-branch-outline" size={16} color={colors.accent} />
+            <Ionicons name="git-branch" size={16} color={colors.accent} />
             <Text style={[s.duetBadgeText, { color: colors.accent }]}>
               Duet with @{original.profile.handle}
             </Text>
@@ -346,7 +346,7 @@ export default function CreateDuetScreen() {
                   />
                 ) : (
                   <View style={{ alignItems: "center", gap: 8 }}>
-                    <Ionicons name="add-circle-outline" size={36} color={colors.textMuted} />
+                    <Ionicons name="add-circle" size={36} color={colors.textMuted} />
                     <Text style={[s.pickText, { color: colors.textMuted }]}>Tap to pick video</Text>
                   </View>
                 )}
@@ -382,7 +382,7 @@ export default function CreateDuetScreen() {
 
           {/* Info card */}
           <View style={[s.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Ionicons name="information-circle-outline" size={18} color={colors.textMuted} />
+            <Ionicons name="information-circle" size={18} color={colors.textMuted} />
             <Text style={[s.infoText, { color: colors.textMuted }]}>
               Your duet will appear side-by-side with the original video in the feed. It will be public on your profile.
             </Text>

@@ -34,17 +34,17 @@ const SECTIONS: SectionData[] = [
   {
     title: "Daily Services",
     items: [
-      { icon: "phone-portrait-outline", label: "Mobile\nTop Up", color: "#007AFF", route: "/mini-programs/airtime" },
-      { icon: "flash-outline", label: "Utilities", color: "#4CD964", route: "/mini-programs/bills" },
-      { icon: "cellular-outline", label: "Data\nBundles", color: "#5856D6", route: "/mini-programs/data-bundles" },
-      { icon: "receipt-outline", label: "Fee\nDetails", color: "#FF9500", route: "/mini-programs/fee-details" },
+      { icon: "phone-portrait", label: "Mobile\nTop Up", color: "#007AFF", route: "/mini-programs/airtime" },
+      { icon: "flash", label: "Utilities", color: "#4CD964", route: "/mini-programs/bills" },
+      { icon: "cellular", label: "Data\nBundles", color: "#5856D6", route: "/mini-programs/data-bundles" },
+      { icon: "receipt", label: "Fee\nDetails", color: "#FF9500", route: "/mini-programs/fee-details" },
     ],
   },
   {
     title: "Travel & Entertainment",
     items: [
-      { icon: "bed-outline", label: "Hotels &\nHomes", color: "#FF3B30", route: "/mini-programs/hotels" },
-      { icon: "ticket-outline", label: "Event\nTickets", color: "#AF52DE", route: "/mini-programs/tickets" },
+      { icon: "bed", label: "Hotels &\nHomes", color: "#FF3B30", route: "/mini-programs/hotels" },
+      { icon: "ticket", label: "Event\nTickets", color: "#AF52DE", route: "/mini-programs/tickets" },
     ],
   },
 ];
@@ -99,7 +99,7 @@ export default function PayAndServicesScreen() {
           </TouchableOpacity>
           <TouchableOpacity style={styles.topBtn} activeOpacity={0.7} onPress={() => router.push("/wallet" as any)}>
             <View style={styles.topIconWrap}>
-              <Ionicons name="wallet-outline" size={28} color="#fff" />
+              <Ionicons name="wallet" size={28} color="#fff" />
             </View>
             <Text style={styles.topLabel}>Wallet</Text>
           </TouchableOpacity>

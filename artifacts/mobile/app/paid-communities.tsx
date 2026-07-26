@@ -231,7 +231,7 @@ export default function PaidCommunitiesScreen() {
             <TextInput style={[styles.fieldInput, { color: colors.text }]} placeholder="Description (optional)" placeholderTextColor={colors.textMuted} value={createDesc} onChangeText={setCreateDesc} multiline numberOfLines={3} />
           </View>
           <View style={[styles.field, { backgroundColor: colors.surface }]}>
-            <Ionicons name="wallet-outline" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
+            <Ionicons name="wallet" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
             <TextInput style={[styles.fieldInput, { color: colors.text }]} placeholder="Entry price in ACoin" placeholderTextColor={colors.textMuted} value={createPrice} onChangeText={setCreatePrice} keyboardType="number-pad" />
             <Text style={{ color: colors.textMuted, fontFamily: "Inter_500Medium" }}>ACoin</Text>
           </View>

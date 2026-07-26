@@ -209,7 +209,7 @@ export function CompressionCard({ est, style }: CardProps) {
 
       {/* ── Footer ── */}
       <View style={cs.footer}>
-        <Ionicons name="cloud-upload-outline" size={12} color="#555" />
+        <Ionicons name="cloud-upload" size={12} color="#555" />
         <Text style={cs.footerText}>
           Upload time on {est.networkLabel}: <Text style={{ color: "#aaa" }}>{est.uploadTimeLabel}</Text>
         </Text>

@@ -8,7 +8,7 @@ export default function UpdatePasswordNative() {
   const { colors } = useTheme();
   return (
     <View style={[s.root, { backgroundColor: colors.background }]}>
-      <Ionicons name="lock-closed-outline" size={48} color={colors.textMuted} style={{ marginBottom: 16 }} />
+      <Ionicons name="lock-closed" size={48} color={colors.textMuted} style={{ marginBottom: 16 }} />
       <Text style={[s.title, { color: colors.text }]}>Password Reset</Text>
       <Text style={[s.body, { color: colors.textMuted }]}>
         To reset your password, please use the AfuChat mobile app — tap "Forgot password?" on the sign-in screen.

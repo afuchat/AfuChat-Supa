@@ -146,7 +146,7 @@ export default function RedEnvelopeScreen() {
         <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
         <Text style={styles.headerTitle}>🧧 Red Envelope</Text>
         <TouchableOpacity onPress={() => shareRedEnvelope({ envelopeId: id!, senderName: envelope.sender.display_name })}>
-          <Ionicons name="share-outline" size={22} color="#fff" />
+          <Ionicons name="share" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
 

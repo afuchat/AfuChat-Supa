@@ -108,7 +108,7 @@ export default function RegionPickerInput({ value, onChange, country, placeholde
         disabled={noCountry && !loading}
       >
         <Ionicons
-          name="location-outline"
+          name="location"
           size={18}
           color={hasValue ? BRAND : colors.textMuted}
           style={{ marginRight: 10 }}
@@ -198,7 +198,7 @@ export default function RegionPickerInput({ value, onChange, country, placeholde
             <View style={{ padding: 12, gap: 8 }}>{[1,2,3,4,5,6].map(i => <ListRowSkeleton key={i} />)}</View>
           ) : filtered.length === 0 ? (
             <View style={styles.centeredWrap}>
-              <Ionicons name="location-outline" size={48} color={colors.textMuted} />
+              <Ionicons name="location" size={48} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                 {searchQuery ? "No matching cities found" : "No cities available"}
               </Text>

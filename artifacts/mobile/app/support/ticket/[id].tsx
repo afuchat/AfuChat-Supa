@@ -256,7 +256,7 @@ export default function TicketDetail() {
       {/* ── Info strip ──────────────────────────────────── */}
       <View style={[st.infoStrip, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <View style={st.infoChip}>
-          <Ionicons name="folder-outline" size={12} color={colors.textMuted} />
+          <Ionicons name="folder" size={12} color={colors.textMuted} />
           <Text style={[st.infoChipText, { color: colors.textMuted }]} numberOfLines={1}>
             {ticket?.category?.replace(/_/g, " ")}
           </Text>
@@ -277,7 +277,7 @@ export default function TicketDetail() {
         </View>
         <View style={st.infoSep} />
         <View style={st.infoChip}>
-          <Ionicons name="calendar-outline" size={12} color={colors.textMuted} />
+          <Ionicons name="calendar" size={12} color={colors.textMuted} />
           <Text style={[st.infoChipText, { color: colors.textMuted }]}>
             {ticket ? new Date(ticket.created_at).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : ""}
           </Text>
@@ -294,7 +294,7 @@ export default function TicketDetail() {
           onLayout={() => listRef.current?.scrollToEnd({ animated: false })}
           ListHeaderComponent={
             <View style={[st.threadBanner, { backgroundColor: BRAND + "10", borderColor: BRAND + "28" }]}>
-              <Ionicons name="information-circle-outline" size={15} color={BRAND} />
+              <Ionicons name="information-circle" size={15} color={BRAND} />
               <Text style={[st.threadBannerText, { color: BRAND }]}>
                 Replies appear here and via email. Our AI drafts an instant reply; a human reviews and follows up.
               </Text>
@@ -303,7 +303,7 @@ export default function TicketDetail() {
           ListFooterComponent={showAiTyping ? <AiTypingIndicator colors={colors} /> : null}
           ListEmptyComponent={
             <View style={st.emptyMsgs}>
-              <Ionicons name="chatbubble-outline" size={36} color={colors.textMuted} />
+              <Ionicons name="chatbubble" size={36} color={colors.textMuted} />
               <Text style={[st.emptyMsgsText, { color: colors.textMuted }]}>
                 No messages yet. Add more context below to help us assist you faster.
               </Text>
@@ -319,7 +319,7 @@ export default function TicketDetail() {
               return (
                 <View style={st.systemRow}>
                   <View style={[st.systemPill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                    <Ionicons name="information-circle-outline" size={11} color={colors.textMuted} />
+                    <Ionicons name="information-circle" size={11} color={colors.textMuted} />
                     <Text style={[st.systemText, { color: colors.textMuted }]}>{item.message}</Text>
                   </View>
                 </View>
@@ -399,7 +399,7 @@ export default function TicketDetail() {
         {ticket?.status === "closed" ? (
           <View style={[st.closedBar, { borderTopColor: colors.border, paddingBottom: insets.bottom + 8, backgroundColor: colors.surface }]}>
             <View style={[st.closedIcon, { backgroundColor: colors.background }]}>
-              <Ionicons name="lock-closed-outline" size={15} color={colors.textMuted} />
+              <Ionicons name="lock-closed" size={15} color={colors.textMuted} />
             </View>
             <Text style={[st.closedText, { color: colors.textMuted }]}>
               Ticket closed. Open a new ticket if you need further help.

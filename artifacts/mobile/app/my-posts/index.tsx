@@ -74,7 +74,7 @@ function MyPostCard({ item, profile, onDelete }: { item: PostItem; profile: any;
           </View>
         </View>
         <TouchableOpacity onPress={() => onDelete(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Ionicons name="trash-outline" size={18} color={colors.textMuted} />
+          <Ionicons name="trash" size={18} color={colors.textMuted} />
         </TouchableOpacity>
       </View>
       <RichText style={[styles.cardContent, { color: colors.text }]} numberOfLines={4}>{displayText}</RichText>
@@ -87,19 +87,19 @@ function MyPostCard({ item, profile, onDelete }: { item: PostItem; profile: any;
       )}
       <View style={[styles.statsRow, { borderTopColor: colors.separator }]}>
         <View style={styles.stat}>
-          <Ionicons name="heart-outline" size={16} color={colors.textMuted} />
+          <Ionicons name="heart" size={16} color={colors.textMuted} />
           <Text style={[styles.statText, { color: colors.textMuted }]}>{item.likeCount}</Text>
         </View>
         <View style={styles.stat}>
-          <Ionicons name="chatbubble-outline" size={16} color={colors.textMuted} />
+          <Ionicons name="chatbubble" size={16} color={colors.textMuted} />
           <Text style={[styles.statText, { color: colors.textMuted }]}>{item.replyCount}</Text>
         </View>
         <View style={styles.stat}>
-          <Ionicons name="eye-outline" size={16} color={colors.textMuted} />
+          <Ionicons name="eye" size={16} color={colors.textMuted} />
           <Text style={[styles.statText, { color: colors.textMuted }]}>{item.view_count}</Text>
         </View>
         <TouchableOpacity style={styles.stat} onPress={() => item.post_type === "video" ? shareVideo({ postId: item.id, authorName: profile?.display_name || "Me", caption: item.content }) : sharePost({ postId: item.id, authorName: profile?.display_name || "Me", content: item.content })}>
-          <Ionicons name="share-outline" size={16} color={colors.textMuted} />
+          <Ionicons name="share" size={16} color={colors.textMuted} />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -172,7 +172,7 @@ export default function MyPostsScreen() {
         title="My Posts"
         right={
           <TouchableOpacity onPress={() => router.push("/moments/create")} hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}>
-            <Ionicons name="add-circle-outline" size={24} color={colors.accent} />
+            <Ionicons name="add-circle" size={24} color={colors.accent} />
           </TouchableOpacity>
         }
       />
@@ -191,7 +191,7 @@ export default function MyPostsScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={colors.accent} />}
           ListEmptyComponent={
             <View style={styles.center}>
-              <Ionicons name="newspaper-outline" size={64} color={colors.textMuted} />
+              <Ionicons name="newspaper" size={64} color={colors.textMuted} />
               <Text style={[styles.emptyTitle, { color: colors.text }]}>No posts yet</Text>
               <Text style={[styles.emptySub, { color: colors.textSecondary }]}>Share your first post!</Text>
               <TouchableOpacity style={[styles.createBtn, { backgroundColor: colors.accent }]} onPress={() => router.push("/moments/create")}>

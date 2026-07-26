@@ -140,7 +140,7 @@ export default function OfflineVideosScreen() {
       <View style={[styles.statsCard, { backgroundColor: colors.surface }]}>
         <View style={styles.statsTop}>
           <View style={[styles.iconBadge, { backgroundColor: accent + "22" }]}>
-            <Ionicons name="cloud-download-outline" size={22} color={accent} />
+            <Ionicons name="cloud-download" size={22} color={accent} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.statsTitle, { color: colors.text }]}>
@@ -162,17 +162,17 @@ export default function OfflineVideosScreen() {
         {/* Info pills */}
         <View style={styles.pillRow}>
           <View style={[styles.pill, { backgroundColor: accent + "18" }]}>
-            <Ionicons name="wifi-outline" size={13} color={accent} />
+            <Ionicons name="wifi" size={13} color={accent} />
             <Text style={[styles.pillText, { color: accent }]}>Watch offline anytime</Text>
           </View>
           <View style={[styles.pill, { backgroundColor: colors.backgroundSecondary }]}>
-            <Ionicons name="sync-outline" size={13} color={colors.textMuted} />
+            <Ionicons name="sync" size={13} color={colors.textMuted} />
             <Text style={[styles.pillText, { color: colors.textMuted }]}>No re-download</Text>
           </View>
         </View>
 
         <View style={[styles.infoBox, { backgroundColor: colors.backgroundSecondary }]}>
-          <Ionicons name="information-circle-outline" size={15} color={colors.textMuted} />
+          <Ionicons name="information-circle" size={15} color={colors.textMuted} />
           <Text style={[styles.infoText, { color: colors.textMuted }]}>
             Videos you watch in the feed are saved automatically. They live on your device
             permanently — open them here to re-watch without any internet connection.
@@ -185,7 +185,7 @@ export default function OfflineVideosScreen() {
   const EmptyState = (
     <View style={[styles.emptyCard, { backgroundColor: colors.surface }]}>
       <View style={[styles.emptyIconWrap, { backgroundColor: colors.backgroundSecondary }]}>
-        <Ionicons name="cloud-offline-outline" size={40} color={colors.textMuted} />
+        <Ionicons name="cloud-offline" size={40} color={colors.textMuted} />
       </View>
       <Text style={[styles.emptyTitle, { color: colors.text }]}>No offline videos yet</Text>
       <Text style={[styles.emptyText, { color: colors.textMuted }]}>
@@ -269,7 +269,7 @@ export default function OfflineVideosScreen() {
 
         {/* Remove */}
         <TouchableOpacity onPress={() => handleRemove(item.postId)} hitSlop={8} style={styles.removeBtn}>
-          <Ionicons name="trash-outline" size={18} color="#FF3B30" />
+          <Ionicons name="trash" size={18} color="#FF3B30" />
         </TouchableOpacity>
       </View>
     );

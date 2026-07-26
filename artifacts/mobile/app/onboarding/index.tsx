@@ -47,23 +47,23 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 const TOTAL_STEPS  = 5;
 
 const INTERESTS = [
-  { id: "technology", label: "Technology",   icon: "laptop-outline"         },
-  { id: "music",      label: "Music",         icon: "musical-notes-outline"  },
-  { id: "sports",     label: "Sports",         icon: "football-outline"       },
-  { id: "fashion",    label: "Fashion",        icon: "shirt-outline"          },
-  { id: "food",       label: "Food & Cooking", icon: "restaurant-outline"     },
-  { id: "travel",     label: "Travel",         icon: "airplane-outline"       },
-  { id: "art",        label: "Art & Design",   icon: "color-palette-outline"  },
-  { id: "gaming",     label: "Gaming",         icon: "game-controller-outline"},
-  { id: "fitness",    label: "Fitness",        icon: "barbell-outline"        },
-  { id: "photography",label: "Photography",    icon: "camera-outline"         },
-  { id: "business",   label: "Business",       icon: "briefcase-outline"      },
-  { id: "education",  label: "Education",      icon: "school-outline"         },
-  { id: "movies",     label: "Movies & TV",    icon: "film-outline"           },
-  { id: "reading",    label: "Reading",        icon: "book-outline"           },
-  { id: "nature",     label: "Nature",         icon: "leaf-outline"           },
-  { id: "politics",   label: "Politics",       icon: "megaphone-outline"      },
-  { id: "science",    label: "Science",        icon: "flask-outline"          },
+  { id: "technology", label: "Technology",   icon: "laptop"         },
+  { id: "music",      label: "Music",         icon: "musical-notes"  },
+  { id: "sports",     label: "Sports",         icon: "football"       },
+  { id: "fashion",    label: "Fashion",        icon: "shirt"          },
+  { id: "food",       label: "Food & Cooking", icon: "restaurant"     },
+  { id: "travel",     label: "Travel",         icon: "airplane"       },
+  { id: "art",        label: "Art & Design",   icon: "color-palette"  },
+  { id: "gaming",     label: "Gaming",         icon: "game-controller"},
+  { id: "fitness",    label: "Fitness",        icon: "barbell"        },
+  { id: "photography",label: "Photography",    icon: "camera"         },
+  { id: "business",   label: "Business",       icon: "briefcase"      },
+  { id: "education",  label: "Education",      icon: "school"         },
+  { id: "movies",     label: "Movies & TV",    icon: "film"           },
+  { id: "reading",    label: "Reading",        icon: "book"           },
+  { id: "nature",     label: "Nature",         icon: "leaf"           },
+  { id: "politics",   label: "Politics",       icon: "megaphone"      },
+  { id: "science",    label: "Science",        icon: "flask"          },
   { id: "crypto",     label: "Crypto & Web3",  icon: "logo-bitcoin"           },
 ];
 
@@ -545,7 +545,7 @@ export default function OnboardingScreen() {
           <View style={st.fieldWrap}>
             <Text style={[st.fieldLabel, { color: colors.textSecondary }]}>Display Name</Text>
             <View style={[st.field, { backgroundColor: colors.inputBg }]}>
-              <Ionicons name="person-outline" size={18} color={focusedField === "displayName" ? colors.accent : colors.textMuted} style={st.fieldIcon} />
+              <Ionicons name="person" size={18} color={focusedField === "displayName" ? colors.accent : colors.textMuted} style={st.fieldIcon} />
               <TextInput
                 style={[st.input, { color: colors.text }]}
                 placeholder="e.g. John Doe"
@@ -564,7 +564,7 @@ export default function OnboardingScreen() {
             <Text style={[st.fieldLabel, { color: colors.textSecondary }]}>Username</Text>
             <View style={[st.field, { backgroundColor: colors.inputBg }]}>
               <Ionicons
-                name="at-outline"
+                name="at"
                 size={18}
                 color={handleStatus === "available" ? "#34C759" : handleStatus === "taken" || handleStatus === "invalid_format" ? "#FF3B30" : focusedField === "handle" ? colors.accent : colors.textMuted}
                 style={st.fieldIcon}
@@ -629,7 +629,7 @@ export default function OnboardingScreen() {
                 </>
               ) : (
                 <>
-                  <Ionicons name="globe-outline" size={18} color={colors.textMuted} style={st.fieldIcon} />
+                  <Ionicons name="globe" size={18} color={colors.textMuted} style={st.fieldIcon} />
                   <Text style={[st.placeholderText, { color: colors.textMuted }]}>Select your country</Text>
                 </>
               )}
@@ -753,7 +753,7 @@ export default function OnboardingScreen() {
           <View style={[st.accentCard, { backgroundColor: colors.inputBg }]}>
             <View style={st.accentCardTop}>
               <View style={[st.accentIconWrap, { backgroundColor: colors.accent + "22" }]}>
-                <Ionicons name="color-palette-outline" size={18} color={colors.accent} />
+                <Ionicons name="color-palette" size={18} color={colors.accent} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[st.accentCardLabel, { color: colors.text }]}>App Accent Color</Text>
@@ -855,14 +855,14 @@ export default function OnboardingScreen() {
             </Text>
             {referralAutoFilled && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: colors.accent + "20", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
-                <Ionicons name="link-outline" size={10} color={colors.accent} />
+                <Ionicons name="link" size={10} color={colors.accent} />
                 <Text style={{ color: colors.accent, fontSize: 10, fontFamily: "Inter_600SemiBold" }}>Auto-filled</Text>
               </View>
             )}
           </View>
           <View style={[st.field, { backgroundColor: colors.inputBg }]}>
             <Ionicons
-              name="gift-outline"
+              name="gift"
               size={18}
               color={referralCode.trim() ? colors.accent : colors.textMuted}
               style={st.fieldIcon}

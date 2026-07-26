@@ -27,7 +27,7 @@ export function ComingSoonView({ title, description }: Props) {
 
       <View style={styles.body}>
         <View style={[styles.iconWrap, { backgroundColor: colors.accent + "15" }]}>
-          <Ionicons name="hourglass-outline" size={52} color={colors.accent} />
+          <Ionicons name="hourglass" size={52} color={colors.accent} />
         </View>
         <View style={[styles.badge, { backgroundColor: colors.accent + "20" }]}>
           <Text style={[styles.badgeText, { color: colors.accent }]}>COMING SOON</Text>

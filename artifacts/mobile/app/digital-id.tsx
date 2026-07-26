@@ -210,7 +210,7 @@ export default function DigitalIdScreen() {
         {/* FLIP INDICATOR */}
         <View style={s.flipRow}>
           <View style={[s.flipPill, { backgroundColor: isDark ? "#ffffff12" : "#00000010" }]}>
-            <Ionicons name="sync-outline" size={11} color={colors.textMuted} />
+            <Ionicons name="sync" size={11} color={colors.textMuted} />
             <Text style={[s.flipTxt, { color: colors.textMuted }]}>
               {showBack ? "Showing back — tap to flip" : "Tap card to flip"}
             </Text>
@@ -221,15 +221,15 @@ export default function DigitalIdScreen() {
 
         {/* ACTION BUTTONS */}
         <View style={s.actionRow}>
-          <ActionBtn label="Save Front" icon="download-outline" color={BRAND}
+          <ActionBtn label="Save Front" icon="download" color={BRAND}
             loading={dlState === "front"} disabled={dlState !== "idle"} onPress={() => download("front")} />
-          <ActionBtn label="Save Back" icon="download-outline" color={theme.primary}
+          <ActionBtn label="Save Back" icon="download" color={theme.primary}
             loading={dlState === "back"} disabled={dlState !== "idle"} onPress={() => download("back")} />
         </View>
 
         {/* HINT */}
         <View style={[s.tip, { backgroundColor: isDark ? "#ffffff07" : "#00000007", borderColor: BRAND + "22" }]}>
-          <Ionicons name="scan-circle-outline" size={13} color={BRAND} />
+          <Ionicons name="scan-circle" size={13} color={BRAND} />
           <Text style={[s.tipText, { color: colors.textMuted }]}>
             Show your QR code so others can scan and send you payments instantly.
           </Text>

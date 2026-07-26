@@ -159,7 +159,7 @@ export default function ProductDetailScreen() {
         </TouchableOpacity>
         <View style={{ flexDirection: "row", gap: 8 }}>
           <TouchableOpacity style={[st.topBarBtn, { backgroundColor: "rgba(0,0,0,0.35)" }]} onPress={() => router.push("/shop/cart")}>
-            <Ionicons name="cart-outline" size={20} color="#fff" />
+            <Ionicons name="cart" size={20} color="#fff" />
             {cartCount > 0 && (
               <View style={[st.cartBadge, { backgroundColor: colors.accent }]}>
                 <Text style={st.cartBadgeText}>{cartCount > 9 ? "9+" : cartCount}</Text>
@@ -185,7 +185,7 @@ export default function ProductDetailScreen() {
             </ScrollView>
           ) : (
             <View style={[st.imgPlaceholder, { height: imgH, backgroundColor: colors.backgroundSecondary }]}>
-              <Ionicons name="image-outline" size={60} color={colors.textMuted} />
+              <Ionicons name="image" size={60} color={colors.textMuted} />
               <Text style={[{ color: colors.textMuted, marginTop: 8, fontFamily: "Inter_400Regular" }]}>No image</Text>
             </View>
           )}
@@ -219,7 +219,7 @@ export default function ProductDetailScreen() {
             </View>
             {product.sales_count > 0 && (
               <View style={[st.catTag, { backgroundColor: colors.backgroundSecondary }]}>
-                <Ionicons name="bag-check-outline" size={11} color={colors.textMuted} />
+                <Ionicons name="bag-check" size={11} color={colors.textMuted} />
                 <Text style={[st.catTagText, { color: colors.textMuted }]}>{product.sales_count} sold</Text>
               </View>
             )}
@@ -287,7 +287,7 @@ export default function ProductDetailScreen() {
                 {shop.rating > 0 && (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginTop: 2 }}>
                     {[1,2,3,4,5].map(s => (
-                      <Ionicons key={s} name={s <= Math.round(shop.rating) ? "star" : "star-outline"} size={12} color="#FF9500" />
+                      <Ionicons key={s} name={s <= Math.round(shop.rating) ? "star" : "star"} size={12} color="#FF9500" />
                     ))}
                     <Text style={[st.ratingText, { color: colors.textMuted }]}>{shop.rating.toFixed(1)} · {shop.total_sales} sales</Text>
                   </View>
@@ -302,8 +302,8 @@ export default function ProductDetailScreen() {
         <View style={[st.guaranteeCard, { backgroundColor: colors.surface }]}>
           {[
             { icon: "shield-checkmark", label: "Buyer Protection", desc: "Full refund if order doesn't arrive" },
-            { icon: "wallet-outline", label: "ACoins Wallet", desc: "Secure, instant payment from your wallet" },
-            { icon: "refresh-outline", label: "Easy Returns", desc: "Hassle-free return process" },
+            { icon: "wallet", label: "ACoins Wallet", desc: "Secure, instant payment from your wallet" },
+            { icon: "refresh", label: "Easy Returns", desc: "Hassle-free return process" },
           ].map((g) => (
             <View key={g.label} style={st.guaranteeRow}>
               <View style={[st.guaranteeIcon, { backgroundColor: colors.accent + "18" }]}>
@@ -323,7 +323,7 @@ export default function ProductDetailScreen() {
       {/* ── Sticky CTA buttons ── */}
       {isOwnListing ? (
         <View style={[st.ctaBar, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: insets.bottom + 8, justifyContent: "center", alignItems: "center", gap: 6 }]}>
-          <Ionicons name="storefront-outline" size={20} color={colors.textMuted} />
+          <Ionicons name="storefront" size={20} color={colors.textMuted} />
           <Text style={{ fontFamily: "Inter_500Medium", fontSize: 14, color: colors.textMuted }}>This is your listing</Text>
           <TouchableOpacity onPress={() => router.push("/shop/manage" as any)}>
             <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 13, color: colors.accent }}>Go to Store Manager</Text>
@@ -340,7 +340,7 @@ export default function ProductDetailScreen() {
               <ActivityIndicator size="small" color={colors.accent} />
             ) : (
               <>
-                <Ionicons name="cart-outline" size={18} color={colors.accent} />
+                <Ionicons name="cart" size={18} color={colors.accent} />
                 <Text style={[st.cartCtaText, { color: colors.accent }]}>Add to Cart</Text>
               </>
             )}
@@ -424,7 +424,7 @@ export default function ProductDetailScreen() {
 
               {/* Wallet balance */}
               <View style={[st.walletRow, { backgroundColor: canAfford ? "#34C75910" : "#FF3B3010", borderColor: canAfford ? "#34C75930" : "#FF3B3030" }]}>
-                <Ionicons name="wallet-outline" size={18} color={canAfford ? "#34C759" : "#FF3B30"} />
+                <Ionicons name="wallet" size={18} color={canAfford ? "#34C759" : "#FF3B30"} />
                 <View style={{ flex: 1 }}>
                   <Text style={[st.walletLabel, { color: canAfford ? "#34C759" : "#FF3B30" }]}>
                     {canAfford ? "Sufficient balance" : "Insufficient balance"}
@@ -454,7 +454,7 @@ export default function ProductDetailScreen() {
 
               {/* Security note */}
               <View style={st.secureNote}>
-                <Ionicons name="lock-closed-outline" size={12} color={colors.textMuted} />
+                <Ionicons name="lock-closed" size={12} color={colors.textMuted} />
                 <Text style={[st.secureNoteText, { color: colors.textMuted }]}>
                   Payment is processed securely via AfuChat Wallet. Funds are held in escrow until order is confirmed.
                 </Text>

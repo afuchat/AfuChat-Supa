@@ -215,7 +215,7 @@ export default function CreateChannelScreen() {
       >
         <View style={styles.visibilityLeft}>
           <Ionicons
-            name={isPublic ? "globe-outline" : "lock-closed-outline"}
+            name={isPublic ? "globe" : "lock-closed"}
             size={20}
             color={isPublic ? PURPLE : colors.textMuted}
           />
@@ -246,7 +246,7 @@ export default function CreateChannelScreen() {
       </TouchableOpacity>
 
       <View style={[styles.tipCard, { backgroundColor: PURPLE + "0E", marginHorizontal: 14, marginTop: 14, borderRadius: 14, borderWidth: 1, borderColor: PURPLE + "30", padding: 14 }]}>
-        <Ionicons name="megaphone-outline" size={16} color={PURPLE} />
+        <Ionicons name="megaphone" size={16} color={PURPLE} />
         <Text style={[styles.tipText, { color: PURPLE }]}>
           As the channel owner, only you can post broadcasts. Subscribers can like and comment on your posts.
         </Text>

@@ -76,13 +76,13 @@ type AiInsight = {
 };
 
 const TABS: { id: TabId; label: string; icon: string; premium?: boolean }[] = [
-  { id: "chats",    label: "Chats",    icon: "chatbubble-ellipses-outline" },
-  { id: "people",   label: "People",   icon: "person-outline" },
-  { id: "channels", label: "Channels", icon: "megaphone-outline" },
-  { id: "groups",   label: "Groups",   icon: "people-outline" },
-  { id: "messages", label: "Messages", icon: "mail-open-outline", premium: true },
-  { id: "media",    label: "Media",    icon: "images-outline" },
-  { id: "links",    label: "Links",    icon: "link-outline" },
+  { id: "chats",    label: "Chats",    icon: "chatbubble-ellipses" },
+  { id: "people",   label: "People",   icon: "person" },
+  { id: "channels", label: "Channels", icon: "megaphone" },
+  { id: "groups",   label: "Groups",   icon: "people" },
+  { id: "messages", label: "Messages", icon: "mail-open", premium: true },
+  { id: "media",    label: "Media",    icon: "images" },
+  { id: "links",    label: "Links",    icon: "link" },
 ];
 
 function timeAgo(iso: string) {
@@ -526,7 +526,7 @@ export default function ChatSearchScreen() {
           }}
           activeOpacity={0.7}
         >
-          <Ionicons name="chatbubble-outline" size={13} color={colors.accent} />
+          <Ionicons name="chatbubble" size={13} color={colors.accent} />
         </TouchableOpacity>
       </TouchableOpacity>
     );
@@ -676,7 +676,7 @@ export default function ChatSearchScreen() {
             {item.sender_name} in {item.chat_name} · {timeAgo(item.sent_at)}
           </Text>
         </View>
-        <Ionicons name="open-outline" size={14} color={colors.textMuted} />
+        <Ionicons name="open" size={14} color={colors.textMuted} />
       </TouchableOpacity>
     );
   }
@@ -731,7 +731,7 @@ export default function ChatSearchScreen() {
 
               {aiInsight.resultSummary ? (
                 <View style={{ flexDirection: "row", gap: 6, backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)", borderRadius: 8, padding: 8, marginBottom: 8, alignItems: "flex-start" }}>
-                  <Ionicons name="bulb-outline" size={13} color={AI_TEAL} style={{ marginTop: 1 }} />
+                  <Ionicons name="bulb" size={13} color={AI_TEAL} style={{ marginTop: 1 }} />
                   <Text style={{ color: colors.textSecondary, fontSize: 12, lineHeight: 17, flex: 1 }}>{aiInsight.resultSummary}</Text>
                 </View>
               ) : null}
@@ -760,7 +760,7 @@ export default function ChatSearchScreen() {
                       style={{ backgroundColor: AI_TEAL + "20", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, flexDirection: "row", alignItems: "center", gap: 4 }}
                       onPress={() => { setQuery(f); onChangeQuery(f); }}
                     >
-                      <Ionicons name="filter-outline" size={9} color={AI_TEAL} />
+                      <Ionicons name="filter" size={9} color={AI_TEAL} />
                       <Text style={{ color: AI_TEAL, fontSize: 11, fontFamily: "Inter_500Medium" }}>{f}</Text>
                     </TouchableOpacity>
                   ))}
@@ -794,13 +794,13 @@ export default function ChatSearchScreen() {
 
   function EmptyState({ tabId }: { tabId: TabId }) {
     const cfg: Record<TabId, { icon: string; title: string; sub: string }> = {
-      chats:    { icon: "chatbubbles-outline",   title: "No chats found",    sub: "Try a name or username" },
-      people:   { icon: "person-outline",        title: "No people found",   sub: "Try a different name or @handle" },
-      channels: { icon: "megaphone-outline",     title: "No channels found", sub: "Try different keywords" },
-      groups:   { icon: "people-outline",        title: "No groups found",   sub: "Try different keywords" },
-      messages: { icon: "mail-open-outline",     title: "No messages found", sub: "Try different keywords in public channels and groups" },
-      media:    { icon: "images-outline",        title: "No media found",    sub: "Photos and videos you've shared will appear here" },
-      links:    { icon: "link-outline",          title: "No links found",    sub: "Links shared in your chats will appear here" },
+      chats:    { icon: "chatbubbles",   title: "No chats found",    sub: "Try a name or username" },
+      people:   { icon: "person",        title: "No people found",   sub: "Try a different name or @handle" },
+      channels: { icon: "megaphone",     title: "No channels found", sub: "Try different keywords" },
+      groups:   { icon: "people",        title: "No groups found",   sub: "Try different keywords" },
+      messages: { icon: "mail-open",     title: "No messages found", sub: "Try different keywords in public channels and groups" },
+      media:    { icon: "images",        title: "No media found",    sub: "Photos and videos you've shared will appear here" },
+      links:    { icon: "link",          title: "No links found",    sub: "Links shared in your chats will appear here" },
     };
     const { icon, title, sub } = cfg[tabId];
     return (
@@ -842,14 +842,14 @@ export default function ChatSearchScreen() {
       return (
         <View style={ss.empty}>
           <LinearGradient colors={[AI_PURPLE + "28", AI_TEAL + "14"]} style={ss.searchHintBg}>
-            <Ionicons name="search-outline" size={30} color={AI_PURPLE} />
+            <Ionicons name="search" size={30} color={AI_PURPLE} />
           </LinearGradient>
           <Text style={[ss.emptyTitle, { color: colors.text }]}>Search across AfuChat</Text>
           <Text style={[ss.emptySub, { color: colors.textMuted }]}>
             {"Find your chats, people, channels,\ngroups and messages all in one place"}
           </Text>
           <View style={{ flexDirection: "row", gap: 8, marginTop: 12, flexWrap: "wrap", justifyContent: "center" }}>
-            {[{ icon: "sparkles-outline", label: "Tap AI for smart search" }, { icon: "lock-closed-outline", label: "Messages need Silver" }].map((h, i) => (
+            {[{ icon: "sparkles", label: "Tap AI for smart search" }, { icon: "lock-closed", label: "Messages need Silver" }].map((h, i) => (
               <View key={i} style={[ss.hintChip, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
                 <Ionicons name={h.icon as any} size={11} color={colors.textMuted} />
                 <Text style={{ color: colors.textMuted, fontSize: 11, fontFamily: "Inter_400Regular" }}>{h.label}</Text>
@@ -908,7 +908,7 @@ export default function ChatSearchScreen() {
         </TouchableOpacity>
 
         <View style={[ss.inputWrap, { backgroundColor: isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.06)", borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.10)" }]}>
-          <Ionicons name="search-outline" size={17} color={colors.textMuted} />
+          <Ionicons name="search" size={17} color={colors.textMuted} />
           <TextInput
             ref={inputRef}
             style={[ss.input, { color: colors.text }]}
@@ -938,7 +938,7 @@ export default function ChatSearchScreen() {
             </LinearGradient>
           ) : (
             <View style={[ss.aiToggleOff, { borderColor: colors.border }]}>
-              <Ionicons name="sparkles-outline" size={12} color={colors.textMuted} />
+              <Ionicons name="sparkles" size={12} color={colors.textMuted} />
               <Text style={[ss.aiToggleOffText, { color: colors.textMuted }]}>AI</Text>
             </View>
           )}

@@ -406,7 +406,7 @@ function ReplyCard({
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginTop: 6, marginBottom: 3 }}>
             <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", gap: 3 }} onPress={handleLike} activeOpacity={0.7}>
               <Animated.View style={{ transform: [{ scale: likeScale }] }}>
-                <Ionicons name={liked ? "heart" : "heart-outline"} size={13} color={liked ? "#FF2D55" : colors.textMuted} />
+                <Ionicons name={liked ? "heart" : "heart"} size={13} color={liked ? "#FF2D55" : colors.textMuted} />
               </Animated.View>
               <Text style={{ color: liked ? "#FF2D55" : colors.textMuted, fontSize: 11, fontFamily: "Inter_600SemiBold" }}>
                 {localLikes > 0 ? localLikes : "Like"}
@@ -414,7 +414,7 @@ function ReplyCard({
             </TouchableOpacity>
 
             <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", gap: 3 }} onPress={() => onReplyTo(item)} activeOpacity={0.7}>
-              <Ionicons name="arrow-undo-outline" size={13} color={colors.textMuted} />
+              <Ionicons name="arrow-undo" size={13} color={colors.textMuted} />
               <Text style={{ color: colors.textMuted, fontSize: 11, fontFamily: "Inter_600SemiBold" }}>Reply</Text>
             </TouchableOpacity>
 
@@ -964,7 +964,7 @@ export default function PostDetailScreen() {
       <View style={[styles.engagementBar, { borderColor: colors.border }]}>
         <TouchableOpacity style={styles.engagementBtn} onPress={toggleLike} activeOpacity={0.7}>
           <Ionicons
-            name={post!.liked ? "heart" : "heart-outline"}
+            name={post!.liked ? "heart" : "heart"}
             size={22}
             color={post!.liked ? "#FF3B30" : colors.textSecondary}
           />
@@ -976,14 +976,14 @@ export default function PostDetailScreen() {
         <View style={[styles.engagementDivider, { backgroundColor: colors.border }]} />
 
         <View style={styles.engagementBtn}>
-          <Ionicons name="chatbubble-outline" size={20} color={colors.textSecondary} />
+          <Ionicons name="chatbubble" size={20} color={colors.textSecondary} />
           <Text style={[styles.engagementCount, { color: colors.textSecondary }]}>{post!.replyCount}</Text>
         </View>
 
         <View style={[styles.engagementDivider, { backgroundColor: colors.border }]} />
 
         <View style={styles.engagementBtn}>
-          <Ionicons name="eye-outline" size={20} color={colors.textSecondary} />
+          <Ionicons name="eye" size={20} color={colors.textSecondary} />
           <Text style={[styles.engagementCount, { color: colors.textSecondary }]}>{post!.view_count}</Text>
         </View>
 
@@ -994,7 +994,7 @@ export default function PostDetailScreen() {
           onPress={() => sharePost({ postId: post!.id, authorName: post!.author.display_name, content: post!.content })}
           activeOpacity={0.7}
         >
-          <Ionicons name="share-outline" size={20} color={colors.textSecondary} />
+          <Ionicons name="share" size={20} color={colors.textSecondary} />
           <Text style={[styles.engagementCount, { color: colors.textSecondary }]}>Share</Text>
         </TouchableOpacity>
       </View>
@@ -1043,7 +1043,7 @@ export default function PostDetailScreen() {
       <View style={[styles.repliesHeader, { borderColor: colors.border }]}>
         <View style={[styles.repliesHeaderLine, { backgroundColor: colors.border }]} />
         <View style={[styles.repliesHeaderBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Ionicons name="chatbubble-outline" size={13} color={colors.textMuted} />
+          <Ionicons name="chatbubble" size={13} color={colors.textMuted} />
           <Text style={[styles.repliesHeaderText, { color: colors.textMuted }]}>
             {replies.length} {replies.length === 1 ? "Reply" : "Replies"}
           </Text>
@@ -1321,11 +1321,11 @@ export default function PostDetailScreen() {
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
                   <TouchableOpacity onPress={pickImage} activeOpacity={0.7} hitSlop={6}
                     style={[styles.attachBtn, attachedImage && { backgroundColor: accent + "25" }]}>
-                    <Ionicons name="image-outline" size={19} color={attachedImage ? accent : colors.textMuted} />
+                    <Ionicons name="image" size={19} color={attachedImage ? accent : colors.textMuted} />
                   </TouchableOpacity>
                   {recordState === "idle" && (
                     <TouchableOpacity onPress={startRecording} activeOpacity={0.7} hitSlop={6} style={styles.attachBtn}>
-                      <Ionicons name="mic-outline" size={19} color={colors.textMuted} />
+                      <Ionicons name="mic" size={19} color={colors.textMuted} />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -1350,7 +1350,7 @@ export default function PostDetailScreen() {
               onPress={() => router.push("/(auth)/login")}
               style={[styles.signInBtn, { backgroundColor: accent }]}
             >
-              <Ionicons name="log-in-outline" size={18} color="#fff" />
+              <Ionicons name="log-in" size={18} color="#fff" />
               <Text style={styles.signInBtnText}>Sign in to reply</Text>
             </TouchableOpacity>
           </View>
@@ -1364,33 +1364,33 @@ export default function PostDetailScreen() {
             <View style={[styles.menuHandle, { backgroundColor: colors.border }]} />
 
             <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); sharePost({ postId: post.id, authorName: post.author.display_name, content: post.content }); }}>
-              <View style={[styles.menuIconWrap, { backgroundColor: colors.accent + "15" }]}><Ionicons name="share-outline" size={20} color={colors.accent} /></View>
+              <View style={[styles.menuIconWrap, { backgroundColor: colors.accent + "15" }]}><Ionicons name="share" size={20} color={colors.accent} /></View>
               <Text style={[styles.menuText, { color: colors.text }]}>Share Post</Text>
             </TouchableOpacity>
 
             {isOwner && (
               <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); setEditContent(post.content); setEditMode(true); }}>
-                <View style={[styles.menuIconWrap, { backgroundColor: colors.accent + "15" }]}><Ionicons name="create-outline" size={20} color={colors.accent} /></View>
+                <View style={[styles.menuIconWrap, { backgroundColor: colors.accent + "15" }]}><Ionicons name="create" size={20} color={colors.accent} /></View>
                 <Text style={[styles.menuText, { color: colors.text }]}>Edit Post</Text>
               </TouchableOpacity>
             )}
 
             {isOwner && (
               <TouchableOpacity style={styles.menuItem} onPress={handleDelete}>
-                <View style={[styles.menuIconWrap, { backgroundColor: "#FF3B3015" }]}><Ionicons name="trash-outline" size={20} color="#FF3B30" /></View>
+                <View style={[styles.menuIconWrap, { backgroundColor: "#FF3B3015" }]}><Ionicons name="trash" size={20} color="#FF3B30" /></View>
                 <Text style={[styles.menuText, { color: "#FF3B30" }]}>Delete Post</Text>
               </TouchableOpacity>
             )}
 
             {!isOwner && user && (
               <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); setReportVisible(true); }}>
-                <View style={[styles.menuIconWrap, { backgroundColor: "#FF950015" }]}><Ionicons name="flag-outline" size={20} color="#FF9500" /></View>
+                <View style={[styles.menuIconWrap, { backgroundColor: "#FF950015" }]}><Ionicons name="flag" size={20} color="#FF9500" /></View>
                 <Text style={[styles.menuText, { color: "#FF9500" }]}>Report Post</Text>
               </TouchableOpacity>
             )}
 
             <TouchableOpacity style={[styles.menuItem, { marginTop: 4 }]} onPress={() => setMenuVisible(false)}>
-              <View style={[styles.menuIconWrap, { backgroundColor: colors.border }]}><Ionicons name="close-outline" size={20} color={colors.textMuted} /></View>
+              <View style={[styles.menuIconWrap, { backgroundColor: colors.border }]}><Ionicons name="close" size={20} color={colors.textMuted} /></View>
               <Text style={[styles.menuText, { color: colors.textMuted }]}>Cancel</Text>
             </TouchableOpacity>
           </View>

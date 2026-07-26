@@ -74,7 +74,7 @@ function formatLastSeen(iso: string): string {
 }
 
 const PLATFORM_ICON: Record<string, string> = {
-  ios: "logo-apple", android: "logo-android", web: "globe-outline", default: "phone-portrait-outline",
+  ios: "logo-apple", android: "logo-android", web: "globe", default: "phone-portrait",
 };
 
 const DOTS = 4;
@@ -136,7 +136,7 @@ function PinKeypad({
               if (!k) return <View key={ki} style={pkStyles.keyBtn} />;
               if (k === "del") return (
                 <TouchableOpacity key="del" style={pkStyles.keyBtn} onPress={backspace}>
-                  <Ionicons name="backspace-outline" size={22} color={colors.accent} />
+                  <Ionicons name="backspace" size={22} color={colors.accent} />
                 </TouchableOpacity>
               );
               return (
@@ -421,7 +421,7 @@ export default function DeviceSecurityScreen() {
             onPress={() => setActiveTab(t)}
           >
             <Ionicons
-              name={t === "devices" ? "phone-portrait-outline" : "shield-checkmark-outline"}
+              name={t === "devices" ? "phone-portrait" : "shield-checkmark"}
               size={16}
               color={activeTab === t ? colors.accent : colors.textMuted}
             />
@@ -448,7 +448,7 @@ export default function DeviceSecurityScreen() {
             ListHeaderComponent={
               otherDeviceCount > 0 ? (
                 <TouchableOpacity style={[styles.revokeAllBtn, { borderColor: "#FF3B30" }]} onPress={revokeAll}>
-                  <Ionicons name="log-out-outline" size={18} color="#FF3B30" />
+                  <Ionicons name="log-out" size={18} color="#FF3B30" />
                   <Text style={styles.revokeAllText}>Sign Out All Other Devices</Text>
                 </TouchableOpacity>
               ) : null
@@ -482,7 +482,7 @@ export default function DeviceSecurityScreen() {
                     {item.ip_address ? ` · ${item.ip_address}` : ""}
                   </Text>
                   <View style={styles.deviceMetaRow}>
-                    <Ionicons name="time-outline" size={11} color={colors.textMuted} />
+                    <Ionicons name="time" size={11} color={colors.textMuted} />
                     <Text style={[styles.deviceMeta, { color: colors.textMuted }]}>
                       {formatLastSeen(item.last_seen)}
                       {item.location ? ` · ${item.location}` : ""}
@@ -493,14 +493,14 @@ export default function DeviceSecurityScreen() {
                   <TouchableOpacity onPress={() => revokeSession(item)} disabled={revoking === item.id} hitSlop={8}>
                     {revoking === item.id
                       ? <ActivityIndicator size="small" color="#FF3B30" />
-                      : <Ionicons name="close-circle-outline" size={24} color="#FF3B30" />}
+                      : <Ionicons name="close-circle" size={24} color="#FF3B30" />}
                   </TouchableOpacity>
                 )}
               </View>
             )}
             ListEmptyComponent={
               <View style={styles.empty}>
-                <Ionicons name="phone-portrait-outline" size={48} color={colors.textMuted} />
+                <Ionicons name="phone-portrait" size={48} color={colors.textMuted} />
                 <Text style={[styles.emptyText, { color: colors.textMuted }]}>No devices found</Text>
               </View>
             }
@@ -512,7 +512,7 @@ export default function DeviceSecurityScreen() {
 
           <View style={[styles.prefCard, { backgroundColor: colors.surface }]}>
             <PrefRow
-              icon="finger-print-outline"
+              icon="finger-print"
               iconColor="#5856D6"
               label="Biometric Lock"
               desc={
@@ -528,7 +528,7 @@ export default function DeviceSecurityScreen() {
             />
             <View style={[styles.sep, { backgroundColor: colors.border }]} />
             <PrefRow
-              icon="keypad-outline"
+              icon="keypad"
               iconColor="#FF9500"
               label="Require PIN"
               desc={prefs.require_pin ? "4-digit PIN is active" : "Set a 4-digit PIN to lock the app"}
@@ -538,7 +538,7 @@ export default function DeviceSecurityScreen() {
             />
             <View style={[styles.sep, { backgroundColor: colors.border }]} />
             <PrefRow
-              icon="camera-off-outline"
+              icon="camera-off"
               iconColor="#34C759"
               label="Screenshot Protection"
               desc="Blocks screenshots and screen recording"
@@ -551,7 +551,7 @@ export default function DeviceSecurityScreen() {
           <Text style={[styles.secGroup, { color: colors.textMuted }]}>ALERTS & NOTIFICATIONS</Text>
           <View style={[styles.prefCard, { backgroundColor: colors.surface }]}>
             <PrefRow
-              icon="notifications-outline"
+              icon="notifications"
               iconColor={colors.accent}
               label="Login Alerts"
               desc="Get a push notification when a new device signs in to your account"
@@ -568,7 +568,7 @@ export default function DeviceSecurityScreen() {
               onPress={() => router.push("/settings/security" as any)}
             >
               <View style={[styles.actionIcon, { backgroundColor: "#007AFF" }]}>
-                <Ionicons name="key-outline" size={17} color="#fff" />
+                <Ionicons name="key" size={17} color="#fff" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.actionLabel, { color: colors.text }]}>Change Password</Text>
@@ -579,7 +579,7 @@ export default function DeviceSecurityScreen() {
             <View style={[styles.sep, { backgroundColor: colors.border }]} />
             <View style={styles.actionRow}>
               <View style={[styles.actionIcon, { backgroundColor: "#5856D6" }]}>
-                <Ionicons name="shield-outline" size={17} color="#fff" />
+                <Ionicons name="shield" size={17} color="#fff" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.actionLabel, { color: colors.text }]}>Two-Factor Authentication</Text>

@@ -39,7 +39,7 @@ function ProductCard({ item, cardW, onPress, onAddCart, adding }: { item: ShopPr
           <Image source={{ uri: img }} style={st.cardImg} resizeMode="cover" />
         ) : (
           <View style={[st.imgPlaceholder, { backgroundColor: colors.backgroundSecondary }]}>
-            <Ionicons name="image-outline" size={28} color={colors.textMuted} />
+            <Ionicons name="image" size={28} color={colors.textMuted} />
           </View>
         )}
         {!item.is_unlimited_stock && item.stock < 5 && item.stock > 0 && (
@@ -141,7 +141,7 @@ export default function StoreStorefront() {
           <Ionicons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity style={[st.floatBtn, { backgroundColor: "rgba(0,0,0,0.35)" }]} onPress={() => router.push("/shop/cart")}>
-          <Ionicons name="cart-outline" size={20} color="#fff" />
+          <Ionicons name="cart" size={20} color="#fff" />
           {cartCount > 0 && (
             <View style={[st.cartBadge, { backgroundColor: colors.accent }]}>
               <Text style={st.cartBadgeText}>{cartCount > 9 ? "9+" : cartCount}</Text>
@@ -210,7 +210,7 @@ export default function StoreStorefront() {
                     {shop.rating > 0 && (
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginTop: 4 }}>
                         {[1,2,3,4,5].map(s => (
-                          <Ionicons key={s} name={s <= Math.round(shop.rating) ? "star" : "star-outline"} size={12} color="#FF9500" />
+                          <Ionicons key={s} name={s <= Math.round(shop.rating) ? "star" : "star"} size={12} color="#FF9500" />
                         ))}
                         <Text style={[st.ratingText, { color: colors.textMuted }]}>{shop.rating.toFixed(1)}</Text>
                       </View>
@@ -239,7 +239,7 @@ export default function StoreStorefront() {
                 {/* Address if available */}
                 {shop.address ? (
                   <View style={[st.addressRow, { borderTopColor: colors.border }]}>
-                    <Ionicons name="location-outline" size={14} color={colors.textMuted} />
+                    <Ionicons name="location" size={14} color={colors.textMuted} />
                     <Text style={[st.addressText, { color: colors.textMuted }]}>{shop.address}</Text>
                   </View>
                 ) : null}
@@ -294,7 +294,7 @@ export default function StoreStorefront() {
                       </View>
                       <View style={{ flexDirection: "row", gap: 2 }}>
                         {[1,2,3,4,5].map(s => (
-                          <Ionicons key={s} name={s <= r.rating ? "star" : "star-outline"} size={13} color={s <= r.rating ? "#D4A853" : "#ccc"} />
+                          <Ionicons key={s} name={s <= r.rating ? "star" : "star"} size={13} color={s <= r.rating ? "#D4A853" : "#ccc"} />
                         ))}
                       </View>
                     </View>

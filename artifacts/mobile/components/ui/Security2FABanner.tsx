@@ -97,7 +97,7 @@ export function Security2FABanner({ userId }: Props) {
         }}
       >
         <View style={st.iconWrap}>
-          <Ionicons name="shield-outline" size={20} color="#5856D6" />
+          <Ionicons name="shield" size={20} color="#5856D6" />
         </View>
         <View style={st.textCol}>
           <Text style={st.title} numberOfLines={1}>Secure your account</Text>

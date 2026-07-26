@@ -164,7 +164,7 @@ export default function QRPosterSheet({
           {saving ? (
             <ActivityIndicator color={accent} size="small" style={s.actionIcon} />
           ) : (
-            <Ionicons name="share-social-outline" size={24} color={accent} style={s.actionIcon} />
+            <Ionicons name="share-social" size={24} color={accent} style={s.actionIcon} />
           )}
           <Text style={[s.actionLabel, { color: accent }]}>Share</Text>
         </TouchableOpacity>
@@ -177,7 +177,7 @@ export default function QRPosterSheet({
           disabled={saving}
           activeOpacity={0.65}
         >
-          <Ionicons name="download-outline" size={24} color={colors.text} style={s.actionIcon} />
+          <Ionicons name="download" size={24} color={colors.text} style={s.actionIcon} />
           <Text style={[s.actionLabel, { color: colors.text }]}>Save Image</Text>
         </TouchableOpacity>
 

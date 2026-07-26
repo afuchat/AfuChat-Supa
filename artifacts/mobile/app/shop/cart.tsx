@@ -195,7 +195,7 @@ export default function CartScreen() {
                           <Image source={{ uri: prod.images[0] }} style={styles.cartItemImg} resizeMode="cover" />
                         ) : (
                           <View style={[styles.cartItemImg, { backgroundColor: colors.accent + "18", alignItems: "center", justifyContent: "center" }]}>
-                            <Ionicons name="cube-outline" size={24} color={colors.accent} />
+                            <Ionicons name="cube" size={24} color={colors.accent} />
                           </View>
                         )}
                         <View style={{ flex: 1 }}>
@@ -207,7 +207,7 @@ export default function CartScreen() {
                               onPress={() => handleUpdateQty(item, item.quantity - 1)}
                               disabled={updatingId === item.product_id}
                             >
-                              <Ionicons name={item.quantity === 1 ? "trash-outline" : "remove"} size={14} color={item.quantity === 1 ? "#FF3B30" : colors.text} />
+                              <Ionicons name={item.quantity === 1 ? "trash" : "remove"} size={14} color={item.quantity === 1 ? "#FF3B30" : colors.text} />
                             </TouchableOpacity>
                             {updatingId === item.product_id
                               ? <ActivityIndicator size="small" color={colors.accent} style={{ width: 28 }} />
@@ -225,7 +225,7 @@ export default function CartScreen() {
                         <View style={styles.cartItemRight}>
                           <Text style={[styles.cartItemTotal, { color: colors.text }]}>{formatShopAcoin((prod?.price_acoin || 0) * item.quantity)}</Text>
                           <TouchableOpacity onPress={() => handleRemove(item)} hitSlop={10} style={{ marginTop: 8 }}>
-                            <Ionicons name="close-circle-outline" size={20} color={colors.textMuted} />
+                            <Ionicons name="close-circle" size={20} color={colors.textMuted} />
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -280,7 +280,7 @@ export default function CartScreen() {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <>
-                  <Ionicons name="wallet-outline" size={20} color="#fff" />
+                  <Ionicons name="wallet" size={20} color="#fff" />
                   <Text style={styles.checkoutBtnText}>Pay with AfuPay · {formatShopAcoin(total)}</Text>
                 </>
               )}

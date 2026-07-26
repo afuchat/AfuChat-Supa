@@ -407,7 +407,7 @@ export default function GiftsScreen() {
       {/* "Sending to" pill — shown when arriving from the banner contact picker */}
       {isOwnProfile && !!params.recipientHandle && (
         <View style={[styles.recipientPill, { backgroundColor: colors.surface, borderColor: colors.accent }]}>
-          <Ionicons name="gift-outline" size={14} color={colors.accent} />
+          <Ionicons name="gift" size={14} color={colors.accent} />
           <Text style={[styles.recipientPillText, { color: colors.text }]}>
             Sending to{" "}
             <Text style={{ color: colors.accent, fontFamily: "Inter_700Bold" }}>
@@ -436,7 +436,7 @@ export default function GiftsScreen() {
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
               <View style={[styles.emptyIconWrap, { backgroundColor: "rgba(212,168,83,0.1)" }]}>
-                <Ionicons name="gift-outline" size={48} color={Colors.gold} />
+                <Ionicons name="gift" size={48} color={Colors.gold} />
               </View>
               <Text style={[styles.emptyTitle, { color: colors.text }]}>No gifts yet</Text>
               <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
@@ -496,7 +496,7 @@ export default function GiftsScreen() {
                   )}
                   {isMarketDriven && lastSale != null && lastSale > 0 && (
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 4, justifyContent: "center" }}>
-                      <Ionicons name="storefront-outline" size={12} color={colors.textMuted} />
+                      <Ionicons name="storefront" size={12} color={colors.textMuted} />
                       <Text style={{ fontSize: 11, fontFamily: "Inter_400Regular", color: colors.textMuted }}>
                         Last sold: <Text style={{ fontFamily: "Inter_600SemiBold", color: colors.text }}>{lastSale} AC</Text>
                       </Text>
@@ -512,7 +512,7 @@ export default function GiftsScreen() {
 
             {selectedGift?.sender_name && (
               <View style={[styles.senderRow, { backgroundColor: colors.inputBg }]}>
-                <Ionicons name="person-outline" size={14} color={colors.textMuted} />
+                <Ionicons name="person" size={14} color={colors.textMuted} />
                 <Text style={[styles.senderText, { color: colors.textSecondary }]}>From <Text style={{ fontFamily: "Inter_600SemiBold", color: colors.text }}>{selectedGift.sender_name}</Text></Text>
                 <Text style={[styles.dateText, { color: colors.textMuted }]}>{selectedGift ? formatDate(selectedGift.acquired_at) : ""}</Text>
               </View>
@@ -550,14 +550,14 @@ export default function GiftsScreen() {
                 style={styles.sellRow}
                 onPress={() => { setShowListModal(true); setListPrice(String(getDynamicPrice(selectedGift.gift.id, selectedGift.gift.base_xp_cost))); }}
               >
-                <Ionicons name="storefront-outline" size={16} color="#FF9500" />
+                <Ionicons name="storefront" size={16} color="#FF9500" />
                 <Text style={[styles.sellLink, { color: "#FF9500" }]}>Sell on Marketplace</Text>
               </TouchableOpacity>
             )}
 
             {isOwnProfile && (
               <TouchableOpacity style={styles.pinRow} onPress={() => { if (selectedGift) togglePin(selectedGift); setSelectedGift(null); }}>
-                <Ionicons name={selectedGift?.is_pinned ? "pin" : "pin-outline"} size={16} color={colors.textSecondary} />
+                <Ionicons name={selectedGift?.is_pinned ? "pin" : "pin"} size={16} color={colors.textSecondary} />
                 <Text style={[styles.pinLink, { color: colors.textSecondary }]}>
                   {selectedGift?.is_pinned ? "Unpin from profile" : "Pin to profile"}
                 </Text>

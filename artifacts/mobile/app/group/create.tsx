@@ -154,7 +154,7 @@ export default function CreateGroupScreen() {
 
       <View style={[styles.nameRow, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <View style={[styles.groupIconWrap, { backgroundColor: colors.inputBg }]}>
-          <Ionicons name="camera-outline" size={20} color={colors.textMuted} />
+          <Ionicons name="camera" size={20} color={colors.textMuted} />
         </View>
         <TextInput
           style={[styles.nameInput, { color: colors.text }]}
@@ -210,7 +210,7 @@ export default function CreateGroupScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Ionicons name="people-outline" size={48} color={colors.textMuted} />
+              <Ionicons name="people" size={48} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
                 Follow people first to add them to a group
               </Text>

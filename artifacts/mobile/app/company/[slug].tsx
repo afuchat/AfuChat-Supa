@@ -415,7 +415,7 @@ export default function CompanyPageScreen() {
         </View>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 14 }}>
           <View style={[styles.emptyIcon, { backgroundColor: colors.surface }]}>
-            <Ionicons name="business-outline" size={36} color={colors.textMuted} />
+            <Ionicons name="business" size={36} color={colors.textMuted} />
           </View>
           <Text style={{ color: colors.textMuted, fontSize: 16, fontFamily: "Inter_400Regular" }}>This page doesn't exist.</Text>
           <TouchableOpacity onPress={() => router.back()} style={[styles.emptyBtn, { backgroundColor: colors.accent }]} activeOpacity={0.8}>
@@ -464,7 +464,7 @@ export default function CompanyPageScreen() {
             onPress={() => router.push(`/company/manage?slug=${page.slug}` as any)}
             activeOpacity={0.8}
           >
-            <Ionicons name="pencil-outline" size={14} color={colors.text} />
+            <Ionicons name="pencil" size={14} color={colors.text} />
             <Text style={[styles.editPageBtnText, { color: colors.text }]}>Edit Page</Text>
           </TouchableOpacity>
         )}
@@ -489,11 +489,11 @@ export default function CompanyPageScreen() {
 
         {/* Meta chips */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.metaRow}>
-          {page.industry ? <MetaChip icon="briefcase-outline" text={page.industry} colors={colors} /> : null}
-          {page.location ? <MetaChip icon="location-outline" text={page.location} colors={colors} /> : null}
-          {page.size ? <MetaChip icon="people-outline" text={page.size} colors={colors} /> : null}
-          {page.founded_year ? <MetaChip icon="calendar-outline" text={`Est. ${page.founded_year}`} colors={colors} /> : null}
-          {page.org_type ? <MetaChip icon="business-outline" text={page.org_type} colors={colors} /> : null}
+          {page.industry ? <MetaChip icon="briefcase" text={page.industry} colors={colors} /> : null}
+          {page.location ? <MetaChip icon="location" text={page.location} colors={colors} /> : null}
+          {page.size ? <MetaChip icon="people" text={page.size} colors={colors} /> : null}
+          {page.founded_year ? <MetaChip icon="calendar" text={`Est. ${page.founded_year}`} colors={colors} /> : null}
+          {page.org_type ? <MetaChip icon="business" text={page.org_type} colors={colors} /> : null}
         </ScrollView>
 
         {/* Stats row */}
@@ -547,7 +547,7 @@ export default function CompanyPageScreen() {
               onPress={() => setShowPageFollowModal(true)}
               activeOpacity={0.8}
             >
-              <Ionicons name="business-outline" size={18} color={colors.text} />
+              <Ionicons name="business" size={18} color={colors.text} />
             </TouchableOpacity>
           )}
 
@@ -568,7 +568,7 @@ export default function CompanyPageScreen() {
               onPress={() => openLink(page.website!.startsWith("http") ? page.website! : `https://${page.website}`)}
               activeOpacity={0.8}
             >
-              <Ionicons name="globe-outline" size={18} color={colors.text} />
+              <Ionicons name="globe" size={18} color={colors.text} />
             </TouchableOpacity>
           ) : null}
 
@@ -577,7 +577,7 @@ export default function CompanyPageScreen() {
             onPress={sharePage}
             activeOpacity={0.8}
           >
-            <Ionicons name="share-outline" size={18} color={colors.text} />
+            <Ionicons name="share" size={18} color={colors.text} />
           </TouchableOpacity>
         </View>
 
@@ -620,7 +620,7 @@ export default function CompanyPageScreen() {
                 onPress={() => Linking.openURL(`mailto:${page.email}`)}
                 activeOpacity={0.8}
               >
-                <Ionicons name="mail-outline" size={14} color={colors.accent} />
+                <Ionicons name="mail" size={14} color={colors.accent} />
                 <Text style={[styles.socialChipText, { color: colors.accent }]}>Email</Text>
               </TouchableOpacity>
             ) : null}
@@ -654,9 +654,9 @@ export default function CompanyPageScreen() {
         {(page.registration_number || page.physical_address) ? (
           <View style={[styles.detailsBox, { borderTopColor: colors.border }]}>
             {page.registration_number && (
-              <DetailRow icon="document-text-outline" text={`Reg. No. ${page.registration_number}${page.jurisdiction_code ? ` (${page.jurisdiction_code.toUpperCase()})` : ""}`} colors={colors} />
+              <DetailRow icon="document-text" text={`Reg. No. ${page.registration_number}${page.jurisdiction_code ? ` (${page.jurisdiction_code.toUpperCase()})` : ""}`} colors={colors} />
             )}
-            {page.physical_address && <DetailRow icon="location-outline" text={page.physical_address} colors={colors} />}
+            {page.physical_address && <DetailRow icon="location" text={page.physical_address} colors={colors} />}
           </View>
         ) : null}
       </View>
@@ -665,7 +665,7 @@ export default function CompanyPageScreen() {
       {isAdmin && !page.is_verified && !verifyBannerDismissed && (
         <View style={[styles.verifyBanner, { backgroundColor: GOLD + "12", borderColor: GOLD + "35" }]}>
           <View style={styles.verifyBannerIcon}>
-            <Ionicons name="shield-checkmark-outline" size={22} color={GOLD} />
+            <Ionicons name="shield-checkmark" size={22} color={GOLD} />
           </View>
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={[styles.verifyBannerTitle, { color: GOLD }]}>Get your page verified</Text>
@@ -677,7 +677,7 @@ export default function CompanyPageScreen() {
               onPress={() => router.push(`/company/manage?slug=${page.slug}` as any)}
               activeOpacity={0.85}
             >
-              <Ionicons name="checkmark-circle-outline" size={14} color="#fff" />
+              <Ionicons name="checkmark-circle" size={14} color="#fff" />
               <Text style={styles.verifyBannerBtnText}>Apply for Verification</Text>
             </TouchableOpacity>
           </View>
@@ -713,12 +713,12 @@ export default function CompanyPageScreen() {
         ))}
         {isAdmin && activeTab === "updates" && (
           <TouchableOpacity style={styles.tabAction} onPress={() => setShowPostModal(true)} hitSlop={8}>
-            <Ionicons name="add-circle-outline" size={22} color={colors.accent} />
+            <Ionicons name="add-circle" size={22} color={colors.accent} />
           </TouchableOpacity>
         )}
         {isAdmin && activeTab === "jobs" && (
           <TouchableOpacity style={styles.tabAction} onPress={() => setShowJobModal(true)} hitSlop={8}>
-            <Ionicons name="add-circle-outline" size={22} color={colors.accent} />
+            <Ionicons name="add-circle" size={22} color={colors.accent} />
           </TouchableOpacity>
         )}
       </View>
@@ -743,7 +743,7 @@ export default function CompanyPageScreen() {
             onPress={() => router.push(`/company/manage?slug=${page.slug}` as any)}
             hitSlop={12}
           >
-            <Ionicons name="settings-outline" size={20} color="#fff" />
+            <Ionicons name="settings" size={20} color="#fff" />
           </TouchableOpacity>
         ) : null}
       </View>
@@ -758,7 +758,7 @@ export default function CompanyPageScreen() {
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <View style={[styles.emptyIcon, { backgroundColor: colors.surface }]}>
-                <Ionicons name="newspaper-outline" size={32} color={colors.textMuted} />
+                <Ionicons name="newspaper" size={32} color={colors.textMuted} />
               </View>
               <Text style={[styles.emptyTitle, { color: colors.text }]}>No updates yet</Text>
               <Text style={[styles.emptySub, { color: colors.textMuted }]}>
@@ -796,7 +796,7 @@ export default function CompanyPageScreen() {
                   </View>
                   {isAdmin && (
                     <TouchableOpacity onPress={() => deletePost(item.id)} hitSlop={10}>
-                      <Ionicons name="trash-outline" size={15} color={colors.textMuted} />
+                      <Ionicons name="trash" size={15} color={colors.textMuted} />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -818,7 +818,7 @@ export default function CompanyPageScreen() {
                     disabled={!user}
                   >
                     <Ionicons
-                      name={isLiked ? "heart" : "heart-outline"}
+                      name={isLiked ? "heart" : "heart"}
                       size={18}
                       color={isLiked ? "#FF3B30" : colors.textMuted}
                     />
@@ -833,7 +833,7 @@ export default function CompanyPageScreen() {
                     onPress={sharePage}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="share-outline" size={17} color={colors.textMuted} />
+                    <Ionicons name="share" size={17} color={colors.textMuted} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -851,7 +851,7 @@ export default function CompanyPageScreen() {
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <View style={[styles.emptyIcon, { backgroundColor: colors.surface }]}>
-                <Ionicons name="people-outline" size={32} color={colors.textMuted} />
+                <Ionicons name="people" size={32} color={colors.textMuted} />
               </View>
               <Text style={[styles.emptyTitle, { color: colors.text }]}>No followers yet</Text>
               <Text style={[styles.emptySub, { color: colors.textMuted }]}>Share this page to grow your audience.</Text>
@@ -903,7 +903,7 @@ export default function CompanyPageScreen() {
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <View style={[styles.emptyIcon, { backgroundColor: colors.surface }]}>
-                <Ionicons name="briefcase-outline" size={32} color={colors.textMuted} />
+                <Ionicons name="briefcase" size={32} color={colors.textMuted} />
               </View>
               <Text style={[styles.emptyTitle, { color: colors.text }]}>No open positions</Text>
               <Text style={[styles.emptySub, { color: colors.textMuted }]}>
@@ -947,7 +947,7 @@ export default function CompanyPageScreen() {
                       </View>
                       {job.location ? (
                         <View style={[styles.jobLocBadge, { backgroundColor: colors.background }]}>
-                          <Ionicons name="location-outline" size={11} color={colors.textMuted} />
+                          <Ionicons name="location" size={11} color={colors.textMuted} />
                           <Text style={[styles.jobLocText, { color: colors.textMuted }]}>{job.location}</Text>
                         </View>
                       ) : null}
@@ -1097,7 +1097,7 @@ export default function CompanyPageScreen() {
                           setAiLoading(null);
                         }}
                       >
-                        <Ionicons name="create-outline" size={14} color={colors.text} />
+                        <Ionicons name="create" size={14} color={colors.text} />
                         <Text style={[styles.aiActionBtnText, { color: colors.text }]}>Improve</Text>
                       </TouchableOpacity>
 
@@ -1118,7 +1118,7 @@ export default function CompanyPageScreen() {
                           setAiLoading(null);
                         }}
                       >
-                        <Ionicons name="pricetag-outline" size={14} color={colors.text} />
+                        <Ionicons name="pricetag" size={14} color={colors.text} />
                         <Text style={[styles.aiActionBtnText, { color: colors.text }]}>Hashtags</Text>
                       </TouchableOpacity>
                     </View>
@@ -1146,7 +1146,7 @@ export default function CompanyPageScreen() {
                     activeOpacity={0.7}
                     disabled={posting}
                   >
-                    <Ionicons name="image-outline" size={20} color={colors.accent} />
+                    <Ionicons name="image" size={20} color={colors.accent} />
                     <Text style={[styles.attachBtnText, { color: colors.accent }]}>Photo</Text>
                   </TouchableOpacity>
 
@@ -1178,7 +1178,7 @@ export default function CompanyPageScreen() {
 
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 2 }}>
                   <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.accent + "18", alignItems: "center", justifyContent: "center" }}>
-                    <Ionicons name="briefcase-outline" size={18} color={colors.accent} />
+                    <Ionicons name="briefcase" size={18} color={colors.accent} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.modalTitle, { color: colors.text, marginBottom: 0 }]}>Post a Job</Text>

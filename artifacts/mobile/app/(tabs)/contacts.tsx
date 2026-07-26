@@ -93,7 +93,7 @@ function ContactRow({ item, phonebookName }: { item: Contact; phonebookName?: st
           </Text>
         )}
       </View>
-      <Ionicons name="chatbubble-outline" size={18} color={colors.accent} />
+      <Ionicons name="chatbubble" size={18} color={colors.accent} />
     </TouchableOpacity>
   );
 }
@@ -221,13 +221,13 @@ export default function ContactsScreen() {
           onPress={() => setAdding(true)}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons name="person-add-outline" size={22} color="#fff" />
+          <Ionicons name="person-add" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
 
       <View style={[styles.searchWrap, { backgroundColor: colors.surface }]}>
         <View style={[styles.searchBox, { backgroundColor: colors.inputBg }]}>
-          <Ionicons name="search-outline" size={16} color={colors.textMuted} />
+          <Ionicons name="search" size={16} color={colors.textMuted} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
             placeholder="Search contacts"
@@ -349,7 +349,7 @@ export default function ContactsScreen() {
 
             {!loading && filtered.length === 0 && !search && (
               <View style={styles.emptyCenter}>
-                <Ionicons name="people-outline" size={56} color={colors.textMuted} />
+                <Ionicons name="people" size={56} color={colors.textMuted} />
                 <Text style={[styles.emptyTitle, { color: colors.text }]}>No contacts yet</Text>
                 <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
                   Tap the + icon to find and follow people

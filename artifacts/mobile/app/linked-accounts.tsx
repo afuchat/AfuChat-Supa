@@ -278,7 +278,7 @@ export default function LinkedAccountsScreen() {
                           hitSlop={{ top: 10, left: 10, right: 10, bottom: 10 }}
                           disabled={isBusy}
                         >
-                          <Ionicons name="trash-outline" size={18} color={colors.textMuted} />
+                          <Ionicons name="trash" size={18} color={colors.textMuted} />
                         </TouchableOpacity>
                       </View>
                     )}
@@ -324,7 +324,7 @@ export default function LinkedAccountsScreen() {
           <View
             style={[styles.limitNotice, { backgroundColor: colors.surface, borderColor: colors.border }]}
           >
-            <Ionicons name="lock-closed-outline" size={16} color={colors.textMuted} />
+            <Ionicons name="lock-closed" size={16} color={colors.textMuted} />
             <Text style={[styles.limitNoticeText, { color: colors.textMuted }]}>
               You've reached the maximum of {MAX_ACCOUNTS_NON_ADMIN} linked accounts.
             </Text>
@@ -362,7 +362,7 @@ export default function LinkedAccountsScreen() {
             <View
               style={[styles.inputWrap, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
             >
-              <Ionicons name="mail-outline" size={18} color={colors.textMuted} />
+              <Ionicons name="mail" size={18} color={colors.textMuted} />
               <TextInput
                 style={[styles.input, { color: colors.text }]}
                 placeholder="Email address"
@@ -380,7 +380,7 @@ export default function LinkedAccountsScreen() {
             <View
               style={[styles.inputWrap, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
             >
-              <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} />
+              <Ionicons name="lock-closed" size={18} color={colors.textMuted} />
               <TextInput
                 style={[styles.input, { color: colors.text }]}
                 placeholder="Password"
@@ -397,7 +397,7 @@ export default function LinkedAccountsScreen() {
                 hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
               >
                 <Ionicons
-                  name={showPw ? "eye-off-outline" : "eye-outline"}
+                  name={showPw ? "eye-off" : "eye"}
                   size={18}
                   color={colors.textMuted}
                 />
@@ -421,7 +421,7 @@ export default function LinkedAccountsScreen() {
 
         {/* ── Info strip ── */}
         <View style={[styles.infoStrip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Ionicons name="shield-checkmark-outline" size={16} color={colors.textMuted} />
+          <Ionicons name="shield-checkmark" size={16} color={colors.textMuted} />
           <Text style={[styles.infoText, { color: colors.textMuted }]}>
             Session tokens are stored securely on this device only. Switching accounts wipes all
             local caches so no data leaks between accounts.

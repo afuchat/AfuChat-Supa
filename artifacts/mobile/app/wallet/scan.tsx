@@ -165,7 +165,7 @@ export default function WalletScanPage() {
         </View>
       ) : !recipient ? (
         <View style={s.centered}>
-          <Ionicons name="person-outline" size={48} color={colors.textMuted} />
+          <Ionicons name="person" size={48} color={colors.textMuted} />
           <Text style={[s.loadingText, { color: colors.textMuted }]}>No recipient found</Text>
         </View>
       ) : (

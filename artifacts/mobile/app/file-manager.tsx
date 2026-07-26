@@ -32,10 +32,10 @@ function formatBytes(bytes: number): string {
 
 function typeIcon(type: FileItem["type"]): keyof typeof Ionicons.glyphMap {
   switch (type) {
-    case "image": return "image-outline";
-    case "video": return "videocam-outline";
-    case "audio": return "musical-notes-outline";
-    default: return "document-outline";
+    case "image": return "image";
+    case "video": return "videocam";
+    case "audio": return "musical-notes";
+    default: return "document";
   }
 }
 
@@ -112,7 +112,7 @@ export default function FileManagerScreen() {
         </View>
       ) : files.length === 0 ? (
         <View style={styles.center}>
-          <Ionicons name="folder-open-outline" size={52} color={colors.textMuted} />
+          <Ionicons name="folder-open" size={52} color={colors.textMuted} />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>No files yet</Text>
           <Text style={[styles.emptyDesc, { color: colors.textMuted }]}>
             Files from your posts and messages will appear here.

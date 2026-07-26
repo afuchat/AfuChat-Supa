@@ -836,7 +836,7 @@ export default function SearchScreen() {
           {p.image_url && <ExpoImage source={{ uri: p.image_url }} style={ss.postImage} contentFit="cover" cachePolicy="memory-disk" />}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 8 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <Ionicons name="eye-outline" size={12} color={colors.textMuted} />
+              <Ionicons name="eye" size={12} color={colors.textMuted} />
               <Text style={{ color: colors.textMuted, fontSize: 11 }}>{fmtNum(p.view_count)}</Text>
             </View>
             {p.post_type === "article" && (
@@ -897,7 +897,7 @@ export default function SearchScreen() {
         <LinearGradient colors={["transparent", "#00000099"]} style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: 8, paddingBottom: 10 }}>
           <Text style={{ color: "#fff", fontSize: 11, fontFamily: "Inter_500Medium", lineHeight: 15 }} numberOfLines={2}>{v.content || v.author_name}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
-            <Ionicons name="eye-outline" size={10} color="#ffffffaa" />
+            <Ionicons name="eye" size={10} color="#ffffffaa" />
             <Text style={{ color: "#ffffffaa", fontSize: 10 }}>{fmtNum(v.view_count)}</Text>
             {v.author_name ? (
               <>
@@ -930,7 +930,7 @@ export default function SearchScreen() {
             <Text style={[ss.rowTitle, { color: colors.text }]} numberOfLines={1}>{gr.name}</Text>
             {gr.description ? <Text style={[ss.rowSub, { color: colors.textMuted }]} numberOfLines={1}>{gr.description}</Text> : null}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <Ionicons name="people-outline" size={11} color={BRAND} />
+              <Ionicons name="people" size={11} color={BRAND} />
               <Text style={{ color: BRAND, fontSize: 11, fontFamily: "Inter_600SemiBold" }}>{fmtNum(gr.member_count)} members</Text>
             </View>
           </View>
@@ -959,7 +959,7 @@ export default function SearchScreen() {
                 ? <Text style={[ss.rowSub, { color: colors.textMuted }]} numberOfLines={1}>{ch.description}</Text>
                 : null}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <Ionicons name="people-outline" size={11} color={PURPLE} />
+              <Ionicons name="people" size={11} color={PURPLE} />
               <Text style={{ color: PURPLE, fontSize: 11, fontFamily: "Inter_600SemiBold" }}>{fmtNum(ch.subscriber_count)} subscribers</Text>
             </View>
           </View>
@@ -1079,24 +1079,24 @@ export default function SearchScreen() {
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
                 {j.job_type && (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: tc + "1A", paddingHorizontal: 7, paddingVertical: 3, borderRadius: 7 }}>
-                    <Ionicons name="briefcase-outline" size={10} color={tc} />
+                    <Ionicons name="briefcase" size={10} color={tc} />
                     <Text style={{ color: tc, fontSize: 10, fontFamily: "Inter_600SemiBold" }}>{j.job_type}</Text>
                   </View>
                 )}
                 {j.location && (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: colors.backgroundSecondary, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 7 }}>
-                    <Ionicons name="location-outline" size={10} color={colors.textMuted} />
+                    <Ionicons name="location" size={10} color={colors.textMuted} />
                     <Text style={{ color: colors.textMuted, fontSize: 10 }}>{j.location}</Text>
                   </View>
                 )}
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: colors.backgroundSecondary, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 7 }}>
-                  <Ionicons name="time-outline" size={10} color={colors.textMuted} />
+                  <Ionicons name="time" size={10} color={colors.textMuted} />
                   <Text style={{ color: colors.textMuted, fontSize: 10 }}>{timeAgo(j.created_at)}</Text>
                 </View>
               </View>
             </View>
             <View style={{ backgroundColor: SUCCESS, width: 30, height: 30, borderRadius: 8, alignItems: "center", justifyContent: "center" }}>
-              <Ionicons name="open-outline" size={14} color="#fff" />
+              <Ionicons name="open" size={14} color="#fff" />
             </View>
           </View>
           {j.description ? <Text style={{ color: colors.textSecondary, fontSize: 12, lineHeight: 18, marginTop: 8 }} numberOfLines={2}>{j.description}</Text> : null}
@@ -1108,9 +1108,9 @@ export default function SearchScreen() {
   // ─── AI Insight card ─────────────────────────────────────────────────────────
 
   const INTENT_ICONS: Record<string, string> = {
-    person: "person-outline", content: "document-text-outline", video: "videocam-outline",
-    topic: "pricetag-outline", product: "bag-outline", event: "calendar-outline",
-    job: "briefcase-outline", mixed: "search-outline",
+    person: "person", content: "document-text", video: "videocam",
+    topic: "pricetag", product: "bag", event: "calendar",
+    job: "briefcase", mixed: "search",
   };
   const CAT_LABELS: Record<string, string> = {
     people: "People", posts: "Posts", videos: "Videos", channels: "Channels",
@@ -1130,7 +1130,7 @@ export default function SearchScreen() {
     }
     if (!aiInsight) return null;
 
-    const intentIcon = (INTENT_ICONS[aiInsight.intent] || "search-outline") as any;
+    const intentIcon = (INTENT_ICONS[aiInsight.intent] || "search") as any;
     const catLabel   = CAT_LABELS[aiInsight.bestCategory] || aiInsight.bestCategory;
 
     return (
@@ -1178,7 +1178,7 @@ export default function SearchScreen() {
                   style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: BRAND + "18", borderRadius: 10, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: BRAND + "40" }}
                 >
                   <View style={{ width: 34, height: 34, borderRadius: 9, backgroundColor: BRAND, alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Ionicons name="navigate-outline" size={17} color="#fff" />
+                    <Ionicons name="navigate" size={17} color="#fff" />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: BRAND, fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 0.5 }}>TAKE ME THERE</Text>
@@ -1210,7 +1210,7 @@ export default function SearchScreen() {
                   }}
                   style={{ flexDirection: "row", alignItems: "flex-start", gap: 6, backgroundColor: PURPLE + "12", borderRadius: 8, padding: 8, marginBottom: 10 }}
                 >
-                  <Ionicons name="bulb-outline" size={13} color={PURPLE} style={{ marginTop: 1 }} />
+                  <Ionicons name="bulb" size={13} color={PURPLE} style={{ marginTop: 1 }} />
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: PURPLE, fontSize: 10, fontFamily: "Inter_700Bold", marginBottom: 2 }}>
                       Best results in: <Text style={{ color: colors.text }}>{catLabel}</Text>
@@ -1218,7 +1218,7 @@ export default function SearchScreen() {
                     </Text>
                     <Text style={{ color: colors.textSecondary, fontSize: 11, lineHeight: 16 }}>{aiInsight.explanation}</Text>
                   </View>
-                  <Ionicons name="arrow-forward-circle-outline" size={16} color={PURPLE} style={{ alignSelf: "center" }} />
+                  <Ionicons name="arrow-forward-circle" size={16} color={PURPLE} style={{ alignSelf: "center" }} />
                 </TouchableOpacity>
               ) : null}
 
@@ -1246,7 +1246,7 @@ export default function SearchScreen() {
                       style={{ backgroundColor: isDark ? "#ffffff14" : "#00000010", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, flexDirection: "row", alignItems: "center", gap: 4 }}
                       onPress={() => onHistoryPress(term)}
                     >
-                      <Ionicons name="key-outline" size={9} color={colors.textMuted} />
+                      <Ionicons name="key" size={9} color={colors.textMuted} />
                       <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: "Inter_500Medium" }}>{term}</Text>
                     </TouchableOpacity>
                   ))}
@@ -1260,7 +1260,7 @@ export default function SearchScreen() {
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
                     {aiInsight.suggestions.map((s, i) => (
                       <TouchableOpacity key={i} style={{ backgroundColor: PURPLE + "1A", borderColor: PURPLE + "30", borderWidth: 1, borderRadius: 20, paddingHorizontal: 11, paddingVertical: 5, flexDirection: "row", alignItems: "center", gap: 4 }} onPress={() => onHistoryPress(s)}>
-                        <Ionicons name="search-outline" size={10} color={PURPLE} />
+                        <Ionicons name="search" size={10} color={PURPLE} />
                         <Text style={{ color: PURPLE, fontSize: 12, fontFamily: "Inter_500Medium" }}>{s}</Text>
                       </TouchableOpacity>
                     ))}
@@ -1287,7 +1287,7 @@ export default function SearchScreen() {
           <View style={{ marginBottom: 20, alignItems: "center", justifyContent: "center" }}>
             <LinearGradient colors={[BRAND + "30", BRAND + "08"]} style={{ width: 110, height: 110, borderRadius: 55, alignItems: "center", justifyContent: "center" }}>
               <LinearGradient colors={[BRAND + "60", BRAND + "25"]} style={{ width: 75, height: 75, borderRadius: 38, alignItems: "center", justifyContent: "center" }}>
-                <Ionicons name="search-outline" size={36} color={BRAND} />
+                <Ionicons name="search" size={36} color={BRAND} />
               </LinearGradient>
             </LinearGradient>
           </View>
@@ -1494,7 +1494,7 @@ export default function SearchScreen() {
         {history.length > 0 && (
           <View style={{ paddingHorizontal: PH, paddingTop: 16, paddingBottom: 4 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 10 }}>
-              <Ionicons name="time-outline" size={15} color={colors.textMuted} />
+              <Ionicons name="time" size={15} color={colors.textMuted} />
               <Text style={{ fontSize: 14, fontFamily: "Inter_700Bold", color: colors.text, flex: 1 }}>Recent</Text>
               <TouchableOpacity onPress={() => clearHistory().then(() => setHistory([]))}>
                 <Text style={{ color: colors.textMuted, fontSize: 12 }}>Clear all</Text>
@@ -1508,7 +1508,7 @@ export default function SearchScreen() {
                   onPress={() => onHistoryPress(term)}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="time-outline" size={12} color={colors.textMuted} />
+                  <Ionicons name="time" size={12} color={colors.textMuted} />
                   <Text style={{ fontSize: 13, color: colors.text, fontFamily: "Inter_500Medium" }}>{term}</Text>
                   <TouchableOpacity hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }} onPress={() => removeFromHistory(term).then(setHistory)}>
                     <Ionicons name="close" size={12} color={colors.textMuted} />
@@ -1691,7 +1691,7 @@ export default function SearchScreen() {
                         >
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                             <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-                              <Ionicons name="eye-outline" size={11} color="#fff" />
+                              <Ionicons name="eye" size={11} color="#fff" />
                               <Text style={{ color: "#fff", fontSize: 11, fontFamily: "Inter_600SemiBold" }}>{fmtNum(v.view_count)}</Text>
                             </View>
                             {v.duration_seconds != null && (
@@ -1795,7 +1795,7 @@ export default function SearchScreen() {
                 style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: colors.inputBg, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: colors.border }}
                 activeOpacity={0.75}
               >
-                <Ionicons name="time-outline" size={13} color={colors.textMuted} />
+                <Ionicons name="time" size={13} color={colors.textMuted} />
                 <Text style={{ color: colors.text, fontSize: 13, fontFamily: "Inter_400Regular" }} numberOfLines={1}>{s}</Text>
               </TouchableOpacity>
             ))}
@@ -1814,7 +1814,7 @@ export default function SearchScreen() {
           </TouchableOpacity>
           {(["relevance", "recent", "popular"] as SortMode[]).map(s => (
             <TouchableOpacity key={s} style={[ss.filterPill, sortMode === s && { backgroundColor: BRAND + "18", borderColor: BRAND + "44" }]} onPress={() => onSortPress(s)}>
-              <Ionicons name={s === "relevance" ? "flash-outline" : s === "recent" ? "time-outline" : "trending-up-outline"} size={12} color={sortMode === s ? BRAND : colors.textMuted} />
+              <Ionicons name={s === "relevance" ? "flash" : s === "recent" ? "time" : "trending-up"} size={12} color={sortMode === s ? BRAND : colors.textMuted} />
               <Text style={{ color: sortMode === s ? BRAND : colors.textSecondary, fontSize: 11, fontFamily: "Inter_500Medium", textTransform: "capitalize" }}>{s}</Text>
             </TouchableOpacity>
           ))}

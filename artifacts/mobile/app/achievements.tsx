@@ -64,10 +64,10 @@ const RARITY_LABEL: Record<Rarity, string> = {
 };
 
 const RANK_TIERS = [
-  { min: 0,   max: 15,  title: "Rookie",      icon: "leaf-outline",         color: "#8E8E93" },
-  { min: 15,  max: 25,  title: "Scout",       icon: "compass-outline",      color: "#34C759" },
-  { min: 25,  max: 35,  title: "Challenger",  icon: "shield-outline",       color: "#0A84FF" },
-  { min: 35,  max: 42,  title: "Champion",    icon: "medal-outline",        color: "#BF5AF2" },
+  { min: 0,   max: 15,  title: "Rookie",      icon: "leaf",         color: "#8E8E93" },
+  { min: 15,  max: 25,  title: "Scout",       icon: "compass",      color: "#34C759" },
+  { min: 25,  max: 35,  title: "Challenger",  icon: "shield",       color: "#0A84FF" },
+  { min: 35,  max: 42,  title: "Champion",    icon: "medal",        color: "#BF5AF2" },
   { min: 42,  max: 100, title: "Legend",      icon: "flame",                color: "#FF9F0A" },
 ];
 

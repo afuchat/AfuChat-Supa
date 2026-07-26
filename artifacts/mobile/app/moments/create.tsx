@@ -42,9 +42,9 @@ import { LANG_LABELS } from "@/lib/translate";
 type Audience = "public" | "followers" | "private";
 
 const AUDIENCE_OPTIONS: { key: Audience; label: string; icon: string; desc: string }[] = [
-  { key: "public", label: "Everyone", icon: "globe-outline", desc: "Anyone can see this post" },
-  { key: "followers", label: "Followers", icon: "people-outline", desc: "Only your followers" },
-  { key: "private", label: "Only Me", icon: "lock-closed-outline", desc: "Visible only to you" },
+  { key: "public", label: "Everyone", icon: "globe", desc: "Anyone can see this post" },
+  { key: "followers", label: "Followers", icon: "people", desc: "Only your followers" },
+  { key: "private", label: "Only Me", icon: "lock-closed", desc: "Visible only to you" },
 ];
 
 const LANG_LIST = Object.entries(LANG_LABELS).map(([code, label]) => ({ code, label }));
@@ -356,7 +356,7 @@ export default function CreatePostScreen() {
                 onPress={pickImage}
                 activeOpacity={0.7}
               >
-                <Ionicons name="image-outline" size={28} color={colors.textMuted} />
+                <Ionicons name="image" size={28} color={colors.textMuted} />
                 <Text style={[styles.addImgLabel, { color: colors.textMuted }]}>
                   {images.length === 0 ? "Add Photos" : "Add More"}
                 </Text>
@@ -419,7 +419,7 @@ export default function CreatePostScreen() {
               activeOpacity={0.7}
             >
               <View style={[styles.aiIconCircle, { backgroundColor: "#6366F1" + "18" }]}>
-                <Ionicons name="color-wand-outline" size={18} color="#6366F1" />
+                <Ionicons name="color-wand" size={18} color="#6366F1" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.aiOptionTitle, { color: colors.text }]}>Enhance</Text>
@@ -445,7 +445,7 @@ export default function CreatePostScreen() {
               activeOpacity={0.7}
             >
               <View style={[styles.aiIconCircle, { backgroundColor: "#F59E0B" + "18" }]}>
-                <Ionicons name="pricetag-outline" size={18} color="#F59E0B" />
+                <Ionicons name="pricetag" size={18} color="#F59E0B" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.aiOptionTitle, { color: colors.text }]}>Hashtags</Text>
@@ -467,7 +467,7 @@ export default function CreatePostScreen() {
               activeOpacity={0.7}
             >
               <View style={[styles.aiIconCircle, { backgroundColor: "#10B981" + "18" }]}>
-                <Ionicons name="bulb-outline" size={18} color="#10B981" />
+                <Ionicons name="bulb" size={18} color="#10B981" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.aiOptionTitle, { color: colors.text }]}>Auto Caption</Text>
@@ -480,19 +480,19 @@ export default function CreatePostScreen() {
 
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 6, backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <TouchableOpacity style={styles.bottomAction} onPress={pickImage}>
-          <Ionicons name="image-outline" size={21} color={images.length > 0 ? colors.accent : colors.textSecondary} />
+          <Ionicons name="image" size={21} color={images.length > 0 ? colors.accent : colors.textSecondary} />
           <Text style={[styles.bottomActionLabel, { color: images.length > 0 ? colors.accent : colors.textSecondary }]}>Photo</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.bottomAction} onPress={() => setShowMentionModal(true)}>
-          <Ionicons name="at-outline" size={21} color={colors.textSecondary} />
+          <Ionicons name="at" size={21} color={colors.textSecondary} />
           <Text style={[styles.bottomActionLabel, { color: colors.textSecondary }]}>Mention</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.bottomAction} onPress={() => setShowLocationModal(true)}>
-          <Ionicons name="location-outline" size={21} color={locationTag ? colors.accent : colors.textSecondary} />
+          <Ionicons name="location" size={21} color={locationTag ? colors.accent : colors.textSecondary} />
           <Text style={[styles.bottomActionLabel, { color: locationTag ? colors.accent : colors.textSecondary }]}>Location</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.bottomAction} onPress={() => setShowLangModal(true)}>
-          <Ionicons name="globe-outline" size={21} color={langCode ? colors.accent : colors.textSecondary} />
+          <Ionicons name="globe" size={21} color={langCode ? colors.accent : colors.textSecondary} />
           <Text style={[styles.bottomActionLabel, { color: langCode ? colors.accent : colors.textSecondary }]}>Language</Text>
         </TouchableOpacity>
         <View style={{ flex: 1 }} />

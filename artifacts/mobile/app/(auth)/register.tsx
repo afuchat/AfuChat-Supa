@@ -166,7 +166,7 @@ function EmailVerifyModal({ visible, email, onClose, onVerified, isDark, accent 
           {sending ? "Sending verification code…" : `We sent a 6-digit code to ${email}`}
         </Text>
         <View style={{ gap: 12 }}>
-          <AuthInput icon="keypad-outline" placeholder="6-digit code" value={code} onChangeText={setCode} keyboardType="number-pad" returnKeyType="go" onSubmitEditing={verify} accent={accent} />
+          <AuthInput icon="keypad" placeholder="6-digit code" value={code} onChangeText={setCode} keyboardType="number-pad" returnKeyType="go" onSubmitEditing={verify} accent={accent} />
           <TouchableOpacity style={[sc.primaryBtn, (loading || sending) && { opacity: 0.6 }]} onPress={verify} disabled={loading || sending} activeOpacity={0.85}>
             <LinearGradient colors={[accent, "#1a7fd4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
               {(loading || sending) ? <ActivityIndicator color="#fff" size="small" /> : <Text style={sc.primaryText}>Verify email</Text>}
@@ -356,7 +356,7 @@ export default function SignUpScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity style={sc.glassBtn} onPress={goToEmail} activeOpacity={0.78}>
-              <Ionicons name="mail-outline" size={20} color="rgba(255,255,255,0.75)" />
+              <Ionicons name="mail" size={20} color="rgba(255,255,255,0.75)" />
               <Text style={sc.glassBtnText}>Continue with email</Text>
             </TouchableOpacity>
           </View>
@@ -410,7 +410,7 @@ export default function SignUpScreen() {
 
             <View style={{ gap: 14 }}>
               <AuthInput
-                icon="mail-outline" placeholder="Email address"
+                icon="mail" placeholder="Email address"
                 value={email} onChangeText={setEmail}
                 keyboardType="email-address" autoComplete="email"
                 returnKeyType="next"
@@ -419,14 +419,14 @@ export default function SignUpScreen() {
               />
               <AuthInput
                 inputRef={pwdRef}
-                icon="lock-closed-outline" placeholder="Password (min. 8 characters)"
+                icon="lock-closed" placeholder="Password (min. 8 characters)"
                 value={password} onChangeText={setPassword}
                 secureTextEntry={!showPwd} autoComplete="new-password"
                 returnKeyType="go" onSubmitEditing={handleSignup}
                 accent="#AF52DE"
                 rightElement={
                   <TouchableOpacity onPress={() => setShowPwd(p => !p)} style={{ padding: 4 }}>
-                    <Ionicons name={showPwd ? "eye-off-outline" : "eye-outline"} size={18} color="rgba(255,255,255,0.35)" />
+                    <Ionicons name={showPwd ? "eye-off" : "eye"} size={18} color="rgba(255,255,255,0.35)" />
                   </TouchableOpacity>
                 }
               />

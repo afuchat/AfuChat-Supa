@@ -221,7 +221,7 @@ export default function StorageSettingsScreen() {
       >
         {error && !usage ? (
           <View style={[styles.errorCard, { backgroundColor: colors.surface }]}>
-            <Ionicons name="cloud-offline-outline" size={28} color={colors.textMuted} />
+            <Ionicons name="cloud-offline" size={28} color={colors.textMuted} />
             <Text style={[styles.errorText, { color: colors.textMuted }]}>{error}</Text>
             <TouchableOpacity
               onPress={() => { setError(null); load(); }}
@@ -320,7 +320,7 @@ export default function StorageSettingsScreen() {
               {/* SQLite */}
               <View style={styles.row}>
                 <View style={[styles.iconWrap, { backgroundColor: "#5856D6" }]}>
-                  <Ionicons name="server-outline" size={18} color="#fff" />
+                  <Ionicons name="server" size={18} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.rowLabel, { color: colors.text }]}>Chat & Feed Database</Text>
@@ -338,7 +338,7 @@ export default function StorageSettingsScreen() {
               {/* Offline videos */}
               <TouchableOpacity activeOpacity={0.6} style={styles.row} onPress={clearVideos}>
                 <View style={[styles.iconWrap, { backgroundColor: "#FF3B30" }]}>
-                  <Ionicons name="videocam-outline" size={18} color="#fff" />
+                  <Ionicons name="videocam" size={18} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.rowLabel, { color: colors.text }]}>Offline Videos</Text>
@@ -354,7 +354,7 @@ export default function StorageSettingsScreen() {
                   <Text style={[styles.rowSize, { color: "#FF3B30" }]}>{fmtBytes(deviceStats.videoBytes)}</Text>
                 )}
                 {clearing !== "videos" && !deviceLoading && (
-                  <Ionicons name="trash-outline" size={18} color="#FF3B30" style={{ marginLeft: 4 }} />
+                  <Ionicons name="trash" size={18} color="#FF3B30" style={{ marginLeft: 4 }} />
                 )}
               </TouchableOpacity>
 
@@ -363,7 +363,7 @@ export default function StorageSettingsScreen() {
               {/* Chat images */}
               <View style={styles.row}>
                 <View style={[styles.iconWrap, { backgroundColor: "#32D74B" }]}>
-                  <Ionicons name="image-outline" size={18} color="#fff" />
+                  <Ionicons name="image" size={18} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.rowLabel, { color: colors.text }]}>Chat Images</Text>
@@ -383,7 +383,7 @@ export default function StorageSettingsScreen() {
               {/* Voice notes */}
               <View style={styles.row}>
                 <View style={[styles.iconWrap, { backgroundColor: "#AF52DE" }]}>
-                  <Ionicons name="mic-outline" size={18} color="#fff" />
+                  <Ionicons name="mic" size={18} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.rowLabel, { color: colors.text }]}>Voice Notes</Text>
@@ -403,7 +403,7 @@ export default function StorageSettingsScreen() {
               {/* Chat files */}
               <View style={styles.row}>
                 <View style={[styles.iconWrap, { backgroundColor: "#FF9500" }]}>
-                  <Ionicons name="document-outline" size={18} color="#fff" />
+                  <Ionicons name="document" size={18} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.rowLabel, { color: colors.text }]}>Chat Files & GIFs</Text>
@@ -423,7 +423,7 @@ export default function StorageSettingsScreen() {
               {/* Profile / thumbnail cache */}
               <TouchableOpacity activeOpacity={0.6} style={styles.row} onPress={clearMedia}>
                 <View style={[styles.iconWrap, { backgroundColor: "#007AFF" }]}>
-                  <Ionicons name="person-outline" size={18} color="#fff" />
+                  <Ionicons name="person" size={18} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.rowLabel, { color: colors.text }]}>Profiles & Thumbnails</Text>
@@ -439,7 +439,7 @@ export default function StorageSettingsScreen() {
                   <Text style={[styles.rowSize, { color: "#007AFF" }]}>{fmtBytes(deviceStats.profileCacheBytes)}</Text>
                 )}
                 {clearing !== "media" && !deviceLoading && (
-                  <Ionicons name="trash-outline" size={18} color="#007AFF" style={{ marginLeft: 4 }} />
+                  <Ionicons name="trash" size={18} color="#007AFF" style={{ marginLeft: 4 }} />
                 )}
               </TouchableOpacity>
             </View>
@@ -468,7 +468,7 @@ export default function StorageSettingsScreen() {
               {/* Temp cache */}
               <TouchableOpacity activeOpacity={0.6} style={styles.row} onPress={clearTemp}>
                 <View style={[styles.iconWrap, { backgroundColor: "#8E8E93" }]}>
-                  <Ionicons name="folder-open-outline" size={18} color="#fff" />
+                  <Ionicons name="folder-open" size={18} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.rowLabel, { color: colors.text }]}>Temp Files</Text>
@@ -486,7 +486,7 @@ export default function StorageSettingsScreen() {
                   <Text style={[styles.rowSize, { color: "#8E8E93" }]}>{fmtBytes(deviceStats.tempCacheBytes)}</Text>
                 )}
                 {clearing !== "tempcache" && !deviceLoading && (
-                  <Ionicons name="trash-outline" size={18} color="#8E8E93" style={{ marginLeft: 4 }} />
+                  <Ionicons name="trash" size={18} color="#8E8E93" style={{ marginLeft: 4 }} />
                 )}
               </TouchableOpacity>
 
@@ -495,7 +495,7 @@ export default function StorageSettingsScreen() {
               {/* expo-image disk cache */}
               <TouchableOpacity activeOpacity={0.6} style={styles.row} onPress={clearImageCache}>
                 <View style={[styles.iconWrap, { backgroundColor: "#5AC8FA" }]}>
-                  <Ionicons name="cloud-download-outline" size={18} color="#fff" />
+                  <Ionicons name="cloud-download" size={18} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.rowLabel, { color: colors.text }]}>Image Decode Cache</Text>
@@ -506,7 +506,7 @@ export default function StorageSettingsScreen() {
                 {clearing === "imgcache" ? (
                   <ActivityIndicator size="small" color="#5AC8FA" />
                 ) : (
-                  <Ionicons name="trash-outline" size={18} color="#5AC8FA" style={{ marginLeft: 4 }} />
+                  <Ionicons name="trash" size={18} color="#5AC8FA" style={{ marginLeft: 4 }} />
                 )}
               </TouchableOpacity>
 
@@ -515,7 +515,7 @@ export default function StorageSettingsScreen() {
               {/* Pending sync */}
               <View style={styles.row}>
                 <View style={[styles.iconWrap, { backgroundColor: "#34C759" }]}>
-                  <Ionicons name="sync-outline" size={18} color="#fff" />
+                  <Ionicons name="sync" size={18} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.rowLabel, { color: colors.text }]}>Pending Sync</Text>

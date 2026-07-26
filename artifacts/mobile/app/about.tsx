@@ -26,12 +26,12 @@ const BUILD   = (Constants.expoConfig?.android as any)?.versionCode
 const ACCENT = Colors.brand;
 
 const FEATURES = [
-  { icon: "chatbubbles-outline",   label: "Messaging",    desc: "End-to-end encrypted chats, voice & video calls" },
-  { icon: "film-outline",          label: "Video & Reels", desc: "Short videos, Shorts, Duets & live streaming" },
-  { icon: "sparkles-outline",      label: "AfuAI",        desc: "AI chat assistant, image generation & smart replies" },
-  { icon: "wallet-outline",        label: "Wallet",       desc: "ACoins, peer transfers, Red Envelopes & gifts" },
-  { icon: "storefront-outline",    label: "Market",       desc: "Buy & sell goods, services and freelance work" },
-  { icon: "people-outline",        label: "Community",    desc: "Groups, channels, communities & AfuMatch" },
+  { icon: "chatbubbles",   label: "Messaging",    desc: "End-to-end encrypted chats, voice & video calls" },
+  { icon: "film",          label: "Video & Reels", desc: "Short videos, Shorts, Duets & live streaming" },
+  { icon: "sparkles",      label: "AfuAI",        desc: "AI chat assistant, image generation & smart replies" },
+  { icon: "wallet",        label: "Wallet",       desc: "ACoins, peer transfers, Red Envelopes & gifts" },
+  { icon: "storefront",    label: "Market",       desc: "Buy & sell goods, services and freelance work" },
+  { icon: "people",        label: "Community",    desc: "Groups, channels, communities & AfuMatch" },
 ] as const;
 
 const STATS = [
@@ -41,11 +41,11 @@ const STATS = [
 ] as const;
 
 const LINKS = [
-  { icon: "document-text-outline", label: "Terms of Service",   onPress: () => Linking.openURL("https://afuchat.com/terms").catch(() => {}) },
-  { icon: "shield-outline",        label: "Privacy Policy",     onPress: () => Linking.openURL("https://afuchat.com/privacy").catch(() => {}) },
-  { icon: "help-buoy-outline",     label: "Help & Support",     onPress: () => router.push("/support" as any) },
-  { icon: "globe-outline",         label: "Visit afuchat.com",  onPress: () => Linking.openURL("https://afuchat.com").catch(() => {}) },
-  { icon: "mail-outline",          label: "Contact Us",         onPress: () => Linking.openURL("mailto:hello@afuchat.com").catch(() => {}) },
+  { icon: "document-text", label: "Terms of Service",   onPress: () => Linking.openURL("https://afuchat.com/terms").catch(() => {}) },
+  { icon: "shield",        label: "Privacy Policy",     onPress: () => Linking.openURL("https://afuchat.com/privacy").catch(() => {}) },
+  { icon: "help-buoy",     label: "Help & Support",     onPress: () => router.push("/support" as any) },
+  { icon: "globe",         label: "Visit afuchat.com",  onPress: () => Linking.openURL("https://afuchat.com").catch(() => {}) },
+  { icon: "mail",          label: "Contact Us",         onPress: () => Linking.openURL("mailto:hello@afuchat.com").catch(() => {}) },
 ] as const;
 
 export default function AboutScreen() {

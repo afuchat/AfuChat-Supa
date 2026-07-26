@@ -361,7 +361,7 @@ function SwipeCard({
           )}
           {/* Info expand hint */}
           <Pressable style={styles.expandHint} onPress={onTap}>
-            <Ionicons name="information-circle-outline" size={20} color="rgba(255,255,255,0.8)" />
+            <Ionicons name="information-circle" size={20} color="rgba(255,255,255,0.8)" />
           </Pressable>
         </View>
       </LinearGradient>
@@ -502,7 +502,7 @@ function MatchesTab() {
 
   if (matches.length === 0) return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
-      <View style={[styles.emptyIcon, { backgroundColor: BRAND }]}><Ionicons name="heart-outline" size={40} color="#fff" /></View>
+      <View style={[styles.emptyIcon, { backgroundColor: BRAND }]}><Ionicons name="heart" size={40} color="#fff" /></View>
       <Text style={[styles.emptyTitle, { color: colors.text }]}>No matches yet</Text>
       <Text style={[styles.emptySub, { color: colors.textMuted }]}>Keep swiping to find your matches!</Text>
     </View>
@@ -783,7 +783,7 @@ export default function MatchScreen() {
           <LinearGradient colors={[BRAND, "#FF6B6B"]} style={styles.headerLogo}><Ionicons name="heart" size={16} color="#fff" /></LinearGradient>
           <Text style={[styles.headerTitle, { color: colors.text }]}>AfuMatch</Text>
         </View>
-        <Pressable style={styles.headerBtn} onPress={() => router.push("/match/settings" as any)}><Ionicons name="settings-outline" size={22} color={colors.textMuted} /></Pressable>
+        <Pressable style={styles.headerBtn} onPress={() => router.push("/match/settings" as any)}><Ionicons name="settings" size={22} color={colors.textMuted} /></Pressable>
       </View>
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32 }}>
         <View style={[styles.pausedIcon, { backgroundColor: "#FF950022" }]}><Ionicons name="pause-circle" size={56} color="#FF9500" /></View>
@@ -824,10 +824,10 @@ export default function MatchScreen() {
             <Text style={styles.acoinBadgeText}>{acoinBalance}</Text>
           </Pressable>
           <Pressable style={styles.headerBtn} onPress={() => router.push("/match/preferences" as any)} hitSlop={{ top: 8, left: 8, bottom: 8, right: 8 }}>
-            <Ionicons name="options-outline" size={22} color={colors.textMuted} />
+            <Ionicons name="options" size={22} color={colors.textMuted} />
           </Pressable>
           <Pressable style={styles.headerBtn} onPress={() => router.push("/match/settings" as any)} hitSlop={{ top: 8, left: 8, bottom: 8, right: 8 }}>
-            <Ionicons name="settings-outline" size={20} color={colors.textMuted} />
+            <Ionicons name="settings" size={20} color={colors.textMuted} />
           </Pressable>
         </View>
       </View>
@@ -855,7 +855,7 @@ export default function MatchScreen() {
               </View>
             ) : displayStack.length === 0 ? (
               <View style={[styles.card, { width: CARD_W, height: CARD_H, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", padding: 32 }]}>
-                <View style={[styles.emptyIcon, { backgroundColor: BRAND }]}><Ionicons name="search-outline" size={40} color="#fff" /></View>
+                <View style={[styles.emptyIcon, { backgroundColor: BRAND }]}><Ionicons name="search" size={40} color="#fff" /></View>
                 <Text style={[styles.emptyTitle, { color: colors.text }]}>You've seen everyone!</Text>
                 <Text style={[styles.emptySub, { color: colors.textMuted }]}>New people join every day. Check back later or adjust your preferences.</Text>
                 <Pressable style={styles.refreshBtn} onPress={fetchCandidates}>

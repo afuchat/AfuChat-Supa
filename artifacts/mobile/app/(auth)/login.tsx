@@ -171,7 +171,7 @@ function ForgotPasswordModal({ visible, onClose, accent }: { visible: boolean; o
         <View style={{ gap: 12 }}>
           {step === "email" ? (
             <>
-              <AuthInput icon="mail-outline" placeholder="Email address" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" returnKeyType="go" onSubmitEditing={sendCode} accent={accent} />
+              <AuthInput icon="mail" placeholder="Email address" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" returnKeyType="go" onSubmitEditing={sendCode} accent={accent} />
               <TouchableOpacity style={[sc.primaryBtn, loading && { opacity: 0.6 }]} onPress={sendCode} disabled={loading} activeOpacity={0.85}>
                 <LinearGradient colors={[accent, "#1a7fd4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
                   {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={sc.primaryText}>Send reset code</Text>}
@@ -180,11 +180,11 @@ function ForgotPasswordModal({ visible, onClose, accent }: { visible: boolean; o
             </>
           ) : (
             <>
-              <AuthInput icon="keypad-outline" placeholder="6-digit code from email" value={code} onChangeText={setCode} keyboardType="number-pad" accent={accent} />
-              <AuthInput icon="lock-closed-outline" placeholder="New password" value={newPwd} onChangeText={setNewPwd} secureTextEntry={!showPwd} accent={accent}
-                rightElement={<TouchableOpacity onPress={() => setShowPwd(p => !p)} style={{ padding: 4 }}><Ionicons name={showPwd ? "eye-off-outline" : "eye-outline"} size={17} color="rgba(255,255,255,0.35)" /></TouchableOpacity>}
+              <AuthInput icon="keypad" placeholder="6-digit code from email" value={code} onChangeText={setCode} keyboardType="number-pad" accent={accent} />
+              <AuthInput icon="lock-closed" placeholder="New password" value={newPwd} onChangeText={setNewPwd} secureTextEntry={!showPwd} accent={accent}
+                rightElement={<TouchableOpacity onPress={() => setShowPwd(p => !p)} style={{ padding: 4 }}><Ionicons name={showPwd ? "eye-off" : "eye"} size={17} color="rgba(255,255,255,0.35)" /></TouchableOpacity>}
               />
-              <AuthInput icon="lock-closed-outline" placeholder="Confirm password" value={confirmPwd} onChangeText={setConfirmPwd} secureTextEntry={!showPwd} returnKeyType="go" onSubmitEditing={doReset} accent={accent} />
+              <AuthInput icon="lock-closed" placeholder="Confirm password" value={confirmPwd} onChangeText={setConfirmPwd} secureTextEntry={!showPwd} returnKeyType="go" onSubmitEditing={doReset} accent={accent} />
               <TouchableOpacity style={[sc.primaryBtn, loading && { opacity: 0.6 }]} onPress={doReset} disabled={loading} activeOpacity={0.85}>
                 <LinearGradient colors={[accent, "#1a7fd4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
                   {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={sc.primaryText}>Update password</Text>}
@@ -239,7 +239,7 @@ function EmailVerifyModal({ visible, email, onClose, onVerified, isDark, accent 
           {sending ? "Sending verification code…" : `We sent a 6-digit code to ${email}`}
         </Text>
         <View style={{ gap: 12 }}>
-          <AuthInput icon="keypad-outline" placeholder="6-digit code" value={code} onChangeText={setCode} keyboardType="number-pad" returnKeyType="go" onSubmitEditing={verify} accent={accent} />
+          <AuthInput icon="keypad" placeholder="6-digit code" value={code} onChangeText={setCode} keyboardType="number-pad" returnKeyType="go" onSubmitEditing={verify} accent={accent} />
           <TouchableOpacity style={[sc.primaryBtn, (loading || sending) && { opacity: 0.6 }]} onPress={verify} disabled={loading || sending} activeOpacity={0.85}>
             <LinearGradient colors={[accent, "#1a7fd4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
               {(loading || sending) ? <ActivityIndicator color="#fff" size="small" /> : <Text style={sc.primaryText}>Verify email</Text>}
@@ -280,7 +280,7 @@ export default function SignInScreen() {
   const [bioAvailable, setBioAvailable] = useState(false);
   const [bioStored, setBioStored] = useState(false);
   const [bioLabel, setBioLabel] = useState<"Face ID" | "Touch ID" | "Biometrics">("Biometrics");
-  const [bioIcon, setBioIcon] = useState<"scan-outline" | "finger-print-outline">("scan-outline");
+  const [bioIcon, setBioIcon] = useState<"scan" | "finger-print">("scan");
   const [bioLoading, setBioLoading] = useState(false);
 
   useEffect(() => {
@@ -294,9 +294,9 @@ export default function SignInScreen() {
         setBioAvailable(true);
         const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
         if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
-          setBioLabel("Face ID"); setBioIcon("scan-outline");
+          setBioLabel("Face ID"); setBioIcon("scan");
         } else if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
-          setBioLabel("Touch ID"); setBioIcon("finger-print-outline");
+          setBioLabel("Touch ID"); setBioIcon("finger-print");
         }
         const stored = await SecureStore.getItemAsync(BIO_REFRESH_KEY);
         setBioStored(!!stored);
@@ -502,7 +502,7 @@ export default function SignInScreen() {
   function handleGoogle() { nativeGoogleSignIn(); }
 
   const idType = detectType(identifier);
-  const idIcon = idType === "email" ? "mail-outline" : idType === "phone" ? "call-outline" : "at-outline";
+  const idIcon = idType === "email" ? "mail" : idType === "phone" ? "call" : "at";
   const showBioBtn = bioAvailable && bioStored;
 
   return (
@@ -568,7 +568,7 @@ export default function SignInScreen() {
 
             {/* Email */}
             <TouchableOpacity style={sc.glassBtn} onPress={goToEmail} activeOpacity={0.78}>
-              <Ionicons name="mail-outline" size={20} color="rgba(255,255,255,0.75)" />
+              <Ionicons name="mail" size={20} color="rgba(255,255,255,0.75)" />
               <Text style={sc.glassBtnText}>Continue with email</Text>
             </TouchableOpacity>
           </View>
@@ -637,14 +637,14 @@ export default function SignInScreen() {
               />
               <AuthInput
                 inputRef={pwdRef}
-                icon="lock-closed-outline" placeholder="Password"
+                icon="lock-closed" placeholder="Password"
                 value={password} onChangeText={setPassword}
                 secureTextEntry={!showPwd} autoComplete="current-password"
                 returnKeyType="go" onSubmitEditing={handleLogin}
                 accent={accent}
                 rightElement={
                   <TouchableOpacity onPress={() => setShowPwd(p => !p)} style={{ padding: 4 }}>
-                    <Ionicons name={showPwd ? "eye-off-outline" : "eye-outline"} size={18} color="rgba(255,255,255,0.35)" />
+                    <Ionicons name={showPwd ? "eye-off" : "eye"} size={18} color="rgba(255,255,255,0.35)" />
                   </TouchableOpacity>
                 }
               />

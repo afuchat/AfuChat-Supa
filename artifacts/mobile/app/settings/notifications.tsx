@@ -560,14 +560,14 @@ export default function NotificationSettingsScreen() {
               {testingSound ? (
                 <ActivityIndicator size="small" color={accent} />
               ) : (
-                <Ionicons name="volume-high-outline" size={16} color={soundMode === "silent" ? colors.textMuted : accent} />
+                <Ionicons name="volume-high" size={16} color={soundMode === "silent" ? colors.textMuted : accent} />
               )}
               <Text style={[st.testBtnText, { color: soundMode === "silent" ? colors.textMuted : accent }]}>
                 {testingSound ? "Playing…" : "Test Sound"}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity style={st.sysSettingsBtn} onPress={() => Linking.openSettings()} activeOpacity={0.7}>
-              <Ionicons name="settings-outline" size={14} color={colors.textMuted} />
+              <Ionicons name="settings" size={14} color={colors.textMuted} />
               <Text style={[st.sysSettingsText, { color: colors.textMuted }]}>
                 Change push sound in system settings →
               </Text>
@@ -672,7 +672,7 @@ export default function NotificationSettingsScreen() {
                 }}
                 activeOpacity={0.7}
               >
-                <Ionicons name="locate-outline" size={13} color={colors.textSecondary} />
+                <Ionicons name="locate" size={13} color={colors.textSecondary} />
                 <Text style={[st.tzBadgeText, { color: colors.textSecondary }]}>
                   {shortTz(prefs.quiet_hours_timezone)}
                 </Text>
@@ -681,7 +681,7 @@ export default function NotificationSettingsScreen() {
 
             {/* Info pill */}
             <View style={[st.quietInfo, { backgroundColor: accent + "10", marginHorizontal: 16, marginBottom: 12 }]}>
-              <Ionicons name="call-outline" size={14} color={accent} />
+              <Ionicons name="call" size={14} color={accent} />
               <Text style={[st.quietInfoText, { color: accent }]}>
                 Incoming calls always come through — quiet hours only silence messages & social alerts.
               </Text>

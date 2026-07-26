@@ -164,7 +164,7 @@ export default function MiniProfilePopup({ userId, visible, onClose, currentChat
   const fBw    = (fState === "following" || fState === "friends") ? 1 : 0;
   const fTc    = (fState === "follow" || fState === "follow_back") ? "#fff" : fState === "friends" ? "#34C759" : colors.textMuted;
   const fLabel = fState === "follow" ? "Follow" : fState === "follow_back" ? "Follow Back" : fState === "following" ? "Following" : "Friends ♡";
-  const fIcon: any = fState === "follow" ? "person-add-outline" : fState === "follow_back" ? "person-add" : fState === "following" ? "checkmark" : "heart";
+  const fIcon: any = fState === "follow" ? "person-add" : fState === "follow_back" ? "person-add" : fState === "following" ? "checkmark" : "heart";
 
   return (
     <SwipeableBottomSheet visible={visible} onClose={onClose} maxHeight="78%" backgroundColor={colors.surface}>
@@ -226,14 +226,14 @@ export default function MiniProfilePopup({ userId, visible, onClose, currentChat
                 <TouchableOpacity
                   style={[st.pill, { backgroundColor: accent + "18" }]}
                   onPress={handleMessage} activeOpacity={0.78}>
-                  <Ionicons name="chatbubble-outline" size={17} color={accent} />
+                  <Ionicons name="chatbubble" size={17} color={accent} />
                 </TouchableOpacity>
               )}
               <TouchableOpacity
                 style={[st.pill, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.07)" }]}
                 onPress={() => { onClose(); router.push({ pathname: "/contact/[id]", params: { id: profile.id } }); }}
                 activeOpacity={0.78}>
-                <Ionicons name="person-outline" size={17} color={colors.text} />
+                <Ionicons name="person" size={17} color={colors.text} />
               </TouchableOpacity>
             </View>
           </View>
@@ -259,7 +259,7 @@ export default function MiniProfilePopup({ userId, visible, onClose, currentChat
               <View style={st.metaRow}>
                 {profile.country ? (
                   <View style={st.metaItem}>
-                    <Ionicons name="location-outline" size={12} color={colors.textMuted} />
+                    <Ionicons name="location" size={12} color={colors.textMuted} />
                     <Text style={[st.metaText, { color: colors.textMuted }]}>{profile.country}</Text>
                   </View>
                 ) : null}
@@ -270,7 +270,7 @@ export default function MiniProfilePopup({ userId, visible, onClose, currentChat
                         ? profile.website_url! : `https://${profile.website_url!}`;
                       Linking.openURL(url).catch(() => {});
                     }}>
-                    <Ionicons name="link-outline" size={12} color={accent} />
+                    <Ionicons name="link" size={12} color={accent} />
                     <Text style={[st.metaText, { color: accent }]} numberOfLines={1}>
                       {profile.website_url.replace(/^https?:\/\//, "")}
                     </Text>

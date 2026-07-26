@@ -102,7 +102,7 @@ const VID_THREAD_COLORS = ["#1f95ff", "#5C6BC0", "#26A69A", "#EF6C00", "#8E24AA"
 const QUICK_EMOJIS = ["🔥", "❤️", "😂", "😮", "👏", "💯", "🙌", "😍"];
 const SOCIAL_PLATFORMS = [
   { id: "whatsapp",  label: "WhatsApp",  icon: "logo-whatsapp",      color: "#25D366", scheme: (u: string) => `https://wa.me/?text=${encodeURIComponent(u)}` },
-  { id: "telegram",  label: "Telegram",  icon: "paper-plane-outline", color: "#0088CC", scheme: (u: string) => `https://t.me/share/url?url=${encodeURIComponent(u)}` },
+  { id: "telegram",  label: "Telegram",  icon: "paper-plane", color: "#0088CC", scheme: (u: string) => `https://t.me/share/url?url=${encodeURIComponent(u)}` },
   { id: "twitter",   label: "X",         icon: "logo-twitter",        color: "#111",    scheme: (u: string) => `https://x.com/intent/tweet?text=${encodeURIComponent(u)}` },
   { id: "facebook",  label: "Facebook",  icon: "logo-facebook",       color: "#1877F2", scheme: (u: string) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(u)}` },
   { id: "instagram", label: "Instagram", icon: "logo-instagram",      color: "#E1306C", scheme: (_: string) => `instagram://app` },
@@ -221,7 +221,7 @@ function SocialShareSheet({ visible, onClose, url, title }: { visible: boolean; 
   return (
     <SmartSheet visible={visible} onClose={onClose} peekFraction={0.36}>
       <View style={ssStyles.header}>
-        <Ionicons name="search-outline" size={20} color="#bbb" />
+        <Ionicons name="search" size={20} color="#bbb" />
         <Text style={ssStyles.title}>Send to</Text>
         <TouchableOpacity onPress={onClose} hitSlop={10}>
           <Ionicons name="close" size={22} color="#555" />
@@ -1574,7 +1574,7 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
         await undoNotInterested(marked.authorId, marked.topics);
         setVideos((prev) => (prev.some((v) => v.id === item.id) ? prev : [item, ...prev]));
       },
-      { type: "info", icon: "eye-off-outline" },
+      { type: "info", icon: "eye-off" },
     );
   }
   function handleReport(item: VideoPost) {
@@ -1674,7 +1674,7 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
           </View>
           <View style={mStyles.headerRight}>
             <TouchableOpacity hitSlop={8} onPress={() => router.push("/search" as any)}>
-              <Ionicons name="search-outline" size={20} color="#fff" />
+              <Ionicons name="search" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>
@@ -1708,7 +1708,7 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
         </View>
         <View style={mStyles.headerRight}>
           <TouchableOpacity hitSlop={8} onPress={() => router.push("/search" as any)}>
-            <Ionicons name="search-outline" size={20} color="#fff" />
+            <Ionicons name="search" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
@@ -1717,7 +1717,7 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
       {videos.length === 0 ? (
         <View style={mStyles.emptyState}>
           <View style={mStyles.emptyIcon}>
-            <Ionicons name={isOffline ? "cloud-offline-outline" : "videocam-outline"} size={44} color="rgba(255,255,255,0.25)" />
+            <Ionicons name={isOffline ? "cloud-offline" : "videocam"} size={44} color="rgba(255,255,255,0.25)" />
           </View>
           <Text style={mStyles.emptyTitle}>{isOffline ? "You're offline" : "No videos yet"}</Text>
           <Text style={mStyles.emptySubtitle}>

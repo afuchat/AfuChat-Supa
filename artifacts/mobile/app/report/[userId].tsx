@@ -28,14 +28,14 @@ type Category = {
 };
 
 const CATEGORIES: Category[] = [
-  { id: "spam",           icon: "warning-outline",         color: "#FF9500", label: "Spam",                 description: "Unsolicited ads, bots, or repetitive content" },
-  { id: "harassment",     icon: "hand-left-outline",       color: "#FF3B30", label: "Harassment",           description: "Bullying, threats, or unwanted contact" },
-  { id: "hate_speech",    icon: "megaphone-outline",       color: "#AF52DE", label: "Hate Speech",          description: "Slurs, discrimination, or targeted abuse" },
-  { id: "inappropriate",  icon: "eye-off-outline",         color: "#FF2D55", label: "Inappropriate Content",description: "Sexual, violent, or disturbing material" },
-  { id: "misinformation", icon: "newspaper-outline",       color: "#5AC8FA", label: "Misinformation",       description: "False info, scams, or fraud" },
-  { id: "impersonation",  icon: "person-outline",          color: "#FF6B00", label: "Impersonation",        description: "Pretending to be someone else" },
-  { id: "underage",       icon: "shield-checkmark-outline",color: "#34C759", label: "Underage User",        description: "Appears to be under the minimum age" },
-  { id: "other",          icon: "ellipsis-horizontal-circle-outline", color: "#636366", label: "Other", description: "Something not covered above" },
+  { id: "spam",           icon: "warning",         color: "#FF9500", label: "Spam",                 description: "Unsolicited ads, bots, or repetitive content" },
+  { id: "harassment",     icon: "hand-left",       color: "#FF3B30", label: "Harassment",           description: "Bullying, threats, or unwanted contact" },
+  { id: "hate_speech",    icon: "megaphone",       color: "#AF52DE", label: "Hate Speech",          description: "Slurs, discrimination, or targeted abuse" },
+  { id: "inappropriate",  icon: "eye-off",         color: "#FF2D55", label: "Inappropriate Content",description: "Sexual, violent, or disturbing material" },
+  { id: "misinformation", icon: "newspaper",       color: "#5AC8FA", label: "Misinformation",       description: "False info, scams, or fraud" },
+  { id: "impersonation",  icon: "person",          color: "#FF6B00", label: "Impersonation",        description: "Pretending to be someone else" },
+  { id: "underage",       icon: "shield-checkmark",color: "#34C759", label: "Underage User",        description: "Appears to be under the minimum age" },
+  { id: "other",          icon: "ellipsis-horizontal-circle", color: "#636366", label: "Other", description: "Something not covered above" },
 ];
 
 export default function ReportUserScreen() {
@@ -136,7 +136,7 @@ export default function ReportUserScreen() {
                 <Ionicons name={category.icon as any} size={18} color={category.color} />
                 <Text style={[s.selectedLabel, { color: category.color }]}>{category.label}</Text>
                 <TouchableOpacity onPress={() => animateToStep(1)} style={{ marginLeft: "auto" }}>
-                  <Ionicons name="pencil-outline" size={15} color={category.color} />
+                  <Ionicons name="pencil" size={15} color={category.color} />
                 </TouchableOpacity>
               </View>
             )}
@@ -162,7 +162,7 @@ export default function ReportUserScreen() {
             </View>
 
             <View style={[s.infoCard, { backgroundColor: "#5AC8FA14", borderColor: "#5AC8FA33" }]}>
-              <Ionicons name="information-circle-outline" size={18} color="#5AC8FA" />
+              <Ionicons name="information-circle" size={18} color="#5AC8FA" />
               <Text style={[s.infoText, { color: colors.textMuted }]}>
                 Your identity is kept private. Only our Trust & Safety team can see who filed this report.
               </Text>

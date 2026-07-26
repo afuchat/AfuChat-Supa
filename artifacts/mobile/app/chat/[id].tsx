@@ -708,7 +708,7 @@ function AiInvoiceCard({ invoice, colors: c }: { invoice: AiInvoiceData; colors:
   return (
     <View style={{ backgroundColor: c.inputBg, borderRadius: 12, borderWidth: 1, borderColor: c.border, padding: 12, marginTop: 8 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
-        <Ionicons name="receipt-outline" size={14} color="#1f95ff" />
+        <Ionicons name="receipt" size={14} color="#1f95ff" />
         <Text style={{ fontSize: 12, fontFamily: "Inter_600SemiBold", color: "#1f95ff", textTransform: "uppercase", letterSpacing: 0.5 }}>Invoice</Text>
       </View>
       {rows.map((r, i) => <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 3 }}><Text style={{ fontSize: 13, color: c.textMuted, fontFamily: "Inter_400Regular" }}>{r.label}</Text><Text style={{ fontSize: 13, color: r.highlight ? "#1f95ff" : c.text, fontFamily: "Inter_600SemiBold" }}>{r.value}</Text></View>)}
@@ -862,7 +862,7 @@ function LensContextCard({ msg, onSuggestionTap }: {
                 borderLeftWidth: 3, borderLeftColor: BRAND_C + "60",
               }}>
                 <View style={{ flexDirection: "row", gap: 6, marginBottom: 4, alignItems: "flex-start" }}>
-                  <Ionicons name="help-circle-outline" size={13} color={BRAND_C} style={{ marginTop: 1 }} />
+                  <Ionicons name="help-circle" size={13} color={BRAND_C} style={{ marginTop: 1 }} />
                   <Text style={{ flex: 1, fontSize: 13, fontWeight: "600", color: colors.text }}>{item.q}</Text>
                 </View>
                 <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 18, paddingLeft: 19 }}>{item.a}</Text>
@@ -1275,7 +1275,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                   {transcribing ? (
                     <ActivityIndicator size={10} color={colors.textMuted} style={{ marginRight: 3 }} />
                   ) : (
-                    <Ionicons name="mic-outline" size={11} color={showTranscript ? BRAND : colors.textMuted} style={{ marginRight: 3 }} />
+                    <Ionicons name="mic" size={11} color={showTranscript ? BRAND : colors.textMuted} style={{ marginRight: 3 }} />
                   )}
                   <Text style={[st.translateChipText, { color: showTranscript ? BRAND : colors.textMuted }]}>
                     {transcribing ? "Transcribing…" : showTranscript ? "Hide transcript" : "Transcribe"}
@@ -1301,7 +1301,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                       name={
                         attachUri && !attachUri.startsWith("http")
                           ? "document-text"
-                          : "download-outline"
+                          : "download"
                       }
                       size={22}
                       color={textColor}
@@ -1450,8 +1450,8 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                           <TouchableOpacity onPress={() => onStatusPress?.(msg)} hitSlop={8} activeOpacity={0.65} disabled={!onStatusPress}>
                             <Ionicons
                               name={
-                                msg.status === "failed" ? "alert-circle-outline" :
-                                isPending ? "time-outline" :
+                                msg.status === "failed" ? "alert-circle" :
+                                isPending ? "time" :
                                 msg.status === "read" ? "checkmark-done" :
                                 msg.status === "delivered" ? "checkmark-done" : "checkmark"
                               }
@@ -1541,7 +1541,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
               hitSlop={8}
             >
               <Ionicons
-                name={isSpeaking ? "stop-circle-outline" : "volume-medium-outline"}
+                name={isSpeaking ? "stop-circle" : "volume-medium"}
                 size={11}
                 color={isSpeaking ? BRAND : colors.textMuted}
                 style={{ marginRight: 3 }}
@@ -1566,8 +1566,8 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                 <TouchableOpacity onPress={() => onStatusPress?.(msg)} hitSlop={8} activeOpacity={0.65} disabled={!onStatusPress}>
                   <Ionicons
                     name={
-                      msg.status === "failed" ? "alert-circle-outline" :
-                      isPending ? "time-outline" :
+                      msg.status === "failed" ? "alert-circle" :
+                      isPending ? "time" :
                       msg.status === "read" ? "checkmark-done" :
                       msg.status === "delivered" ? "checkmark-done" : "checkmark"
                     }
@@ -4279,7 +4279,7 @@ STRICT RULES:
           } else {
             setMessages((prev) => prev.filter((m) => m.id !== msg.id));
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            globalShowToast("Message deleted", { type: "info", icon: "trash-outline" });
+            globalShowToast("Message deleted", { type: "info", icon: "trash" });
           }
         },
       },
@@ -6006,7 +6006,7 @@ STRICT RULES:
         <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
           {chatInfo?.is_group && iAmChatAdmin && (
             <TouchableOpacity style={st.headerAction} hitSlop={8} onPress={handleOpenAddMembers}>
-              <Ionicons name="person-add-outline" size={20} color={colors.text} />
+              <Ionicons name="person-add" size={20} color={colors.text} />
             </TouchableOpacity>
           )}
           {chatInfo && (
@@ -6020,7 +6020,7 @@ STRICT RULES:
       {/* ── In-chat search bar ─────────────────────────────────────────────── */}
       {searchActive && (
         <View style={[st.searchBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-          <Ionicons name="search-outline" size={16} color={colors.textMuted} />
+          <Ionicons name="search" size={16} color={colors.textMuted} />
           <TextInput
             ref={searchInputRef}
             style={[st.searchInput, { color: colors.text }]}
@@ -6068,7 +6068,7 @@ STRICT RULES:
         <View style={[st.strangerBanner, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 }}>
             <View style={[st.strangerIconWrap, { backgroundColor: "#FF9500" + "18" }]}>
-              <Ionicons name="person-add-outline" size={18} color="#FF9500" />
+              <Ionicons name="person-add" size={18} color="#FF9500" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[st.strangerTitle, { color: colors.text }]}>New message request</Text>
@@ -6082,7 +6082,7 @@ STRICT RULES:
               style={[st.strangerBtn, { backgroundColor: BRAND }]}
               onPress={() => { setIsStranger(false); chatInputRef.current?.focus(); }}
             >
-              <Ionicons name="chatbubble-outline" size={13} color="#fff" />
+              <Ionicons name="chatbubble" size={13} color="#fff" />
               <Text style={st.strangerBtnText}>Accept & Reply</Text>
             </TouchableOpacity>
             {(
@@ -6106,7 +6106,7 @@ STRICT RULES:
                   } catch {}
                 }}
               >
-                <Ionicons name="person-add-outline" size={13} color={colors.text} />
+                <Ionicons name="person-add" size={13} color={colors.text} />
                 <Text style={[st.strangerBtnOutlineText, { color: colors.text }]}>Save Contact</Text>
               </TouchableOpacity>
             )}
@@ -6118,7 +6118,7 @@ STRICT RULES:
                 setIsStranger(false);
               }}
             >
-              <Ionicons name="person-outline" size={13} color={colors.text} />
+              <Ionicons name="person" size={13} color={colors.text} />
               <Text style={[st.strangerBtnOutlineText, { color: colors.text }]}>Follow</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -6135,7 +6135,7 @@ STRICT RULES:
                 ]);
               }}
             >
-              <Ionicons name="ban-outline" size={13} color="#FF3B30" />
+              <Ionicons name="ban" size={13} color="#FF3B30" />
               <Text style={[st.strangerBtnOutlineText, { color: "#FF3B30" }]}>Block</Text>
             </TouchableOpacity>
           </View>
@@ -6152,7 +6152,7 @@ STRICT RULES:
             {isSelfChat ? (
               <>
                 <View style={[st.emptyIconWrap, { backgroundColor: "#5856D614" }]}>
-                  <Ionicons name="bookmark-outline" size={48} color="#5856D6" />
+                  <Ionicons name="bookmark" size={48} color="#5856D6" />
                 </View>
                 <Text style={[st.emptyTitle, { color: colors.text }]}>My Notes</Text>
                 <Text style={[st.emptySub, { color: colors.textMuted }]}>
@@ -6162,7 +6162,7 @@ STRICT RULES:
             ) : (
               <>
                 <View style={[st.emptyIconWrap, { backgroundColor: BRAND + "14" }]}>
-                  <Ionicons name="chatbubbles-outline" size={48} color={BRAND} />
+                  <Ionicons name="chatbubbles" size={48} color={BRAND} />
                 </View>
                 <Text style={[st.emptyTitle, { color: colors.text }]}>No messages yet</Text>
                 <Text style={[st.emptySub, { color: colors.textMuted }]}>
@@ -6327,7 +6327,7 @@ STRICT RULES:
                 style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: BRAND + "18", marginRight: 4 }}
                 hitSlop={8}
               >
-                <Ionicons name="cut-outline" size={16} color={BRAND} />
+                <Ionicons name="cut" size={16} color={BRAND} />
               </TouchableOpacity>
             )}
             <TouchableOpacity onPress={() => setAttachmentPreview(null)} style={st.attachPreviewClose} hitSlop={8}>
@@ -6408,7 +6408,7 @@ STRICT RULES:
           </View>
         ) : chatInfo?.is_channel && !iAmChatAdmin ? (
           <View style={[st.channelReadOnlyBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-            <Ionicons name="megaphone-outline" size={16} color={colors.textMuted} />
+            <Ionicons name="megaphone" size={16} color={colors.textMuted} />
             <Text style={[st.channelReadOnlyText, { color: colors.textMuted }]}>
               Only admins can post in this channel
             </Text>
@@ -6433,7 +6433,7 @@ STRICT RULES:
                     {isRecording && !recLocked ? (
                       <>
                         <TouchableOpacity onPress={cancelVoiceRecording} hitSlop={12} style={st.recTrashBtn}>
-                          <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+                          <Ionicons name="trash" size={20} color="#FF3B30" />
                         </TouchableOpacity>
                         <View style={st.recWaveRow}>
                           <VoiceWaveform active={isRecording} color={BRAND} amplitudes={recAmplitudes} />
@@ -6459,7 +6459,7 @@ STRICT RULES:
                             setShowEmojiStickerPicker(true);
                           }
                         }}>
-                          <Ionicons name={showEmojiStickerPicker ? "keypad-outline" : "happy-outline"} size={23} color={colors.textMuted} />
+                          <Ionicons name={showEmojiStickerPicker ? "keypad" : "happy"} size={23} color={colors.textMuted} />
                         </TouchableOpacity>
                         <TextInput
                           ref={chatInputRef}
@@ -6503,7 +6503,7 @@ STRICT RULES:
                           <>
                             {!chatInfo?.is_group && !chatInfo?.is_channel && !isAfuAiDirectChat && (
                               <TouchableOpacity onPress={() => setShowGiftPicker(true)} hitSlop={8} style={st.pillIcon}>
-                                <Ionicons name="gift-outline" size={22} color={colors.textMuted} />
+                                <Ionicons name="gift" size={22} color={colors.textMuted} />
                               </TouchableOpacity>
                             )}
                             {(chatInfo?.is_group || chatInfo?.is_channel) && (
@@ -6629,11 +6629,11 @@ STRICT RULES:
           const contentH = SHEET_H - TAB_PILL_H - TAB_PILL_MARGIN_BOTTOM - 28; // 28 = handle area
 
           const TABS: { key: typeof attachTab; icon: string; label: string }[] = [
-            { key: "Gallery",  icon: "images-outline",        label: "Gallery"  },
-            { key: "Wallet",   icon: "wallet-outline",         label: "Wallet"   },
-            { key: "File",     icon: "document-text-outline",  label: "File"     },
-            { key: "Poll",     icon: "bar-chart-outline",      label: "Poll"     },
-            { key: "Contact",  icon: "person-circle-outline",  label: "Contact"  },
+            { key: "Gallery",  icon: "images",        label: "Gallery"  },
+            { key: "Wallet",   icon: "wallet",         label: "Wallet"   },
+            { key: "File",     icon: "document-text",  label: "File"     },
+            { key: "Poll",     icon: "bar-chart",      label: "Poll"     },
+            { key: "Contact",  icon: "person-circle",  label: "Contact"  },
           ];
 
           const renderContent = () => {
@@ -6642,7 +6642,7 @@ STRICT RULES:
               const NATIVE_PICKS = [
                 {
                   label: "Photos & Videos",
-                  icon: "images-outline" as const,
+                  icon: "images" as const,
                   color: "#007AFF",
                   onPress: async () => {
                     setShowAttachPanel(false);
@@ -6666,13 +6666,13 @@ STRICT RULES:
                 },
                 {
                   label: "Camera",
-                  icon: "camera-outline" as const,
+                  icon: "camera" as const,
                   color: "#EF4444",
                   onPress: () => { setShowAttachPanel(false); pickFromCamera(); },
                 },
                 {
                   label: "Audio File",
-                  icon: "musical-notes-outline" as const,
+                  icon: "musical-notes" as const,
                   color: "#10B981",
                   onPress: async () => {
                     setShowAttachPanel(false);
@@ -6687,7 +6687,7 @@ STRICT RULES:
                 },
                 {
                   label: "Document",
-                  icon: "document-text-outline" as const,
+                  icon: "document-text" as const,
                   color: "#3B82F6",
                   onPress: async () => {
                     setShowAttachPanel(false);
@@ -6767,7 +6767,7 @@ STRICT RULES:
               if (contactList.length === 0) {
                 return (
                   <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 10, paddingHorizontal: 32 }}>
-                    <Ionicons name="people-outline" size={40} color={colors.textMuted} />
+                    <Ionicons name="people" size={40} color={colors.textMuted} />
                     <Text style={{ fontSize: 15, fontFamily: "Inter_600SemiBold", color: colors.text }}>No contacts found</Text>
                     <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: colors.textMuted, textAlign: "center" }}>
                       Allow contacts access in your device settings to share contacts here.
@@ -6841,7 +6841,7 @@ STRICT RULES:
                         {contactSending === item.id ? (
                           <ActivityIndicator size="small" color="#007AFF" />
                         ) : (
-                          <Ionicons name="arrow-forward-circle-outline" size={22} color="#007AFF" />
+                          <Ionicons name="arrow-forward-circle" size={22} color="#007AFF" />
                         )}
                       </TouchableOpacity>
                     )}
@@ -6870,7 +6870,7 @@ STRICT RULES:
               if (isGroup) {
                 return (
                   <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 10, paddingHorizontal: 32 }}>
-                    <Ionicons name="wallet-outline" size={40} color={colors.textMuted} />
+                    <Ionicons name="wallet" size={40} color={colors.textMuted} />
                     <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: colors.textMuted, textAlign: "center" }}>Payments are only available in direct messages.</Text>
                   </View>
                 );
@@ -6920,7 +6920,7 @@ STRICT RULES:
                   <View style={{ marginBottom: 12 }}>
                     <Text style={{ fontSize: 12, fontFamily: "Inter_600SemiBold", color: colors.textMuted, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Amount</Text>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, height: 48, borderRadius: 14, backgroundColor: colors.inputBg, borderWidth: 1, borderColor: walletAmount && parseInt(walletAmount) > currentBal ? "#FF3B30" : colors.border }}>
-                      <Ionicons name={walletCurrency === "acoin" ? "cash-outline" : "flash-outline"} size={18} color={colors.textMuted} />
+                      <Ionicons name={walletCurrency === "acoin" ? "cash" : "flash"} size={18} color={colors.textMuted} />
                       <TextInput
                         value={walletAmount}
                         onChangeText={(v) => setWalletAmount(v.replace(/[^0-9]/g, ""))}
@@ -7144,7 +7144,7 @@ STRICT RULES:
           if (isGift) return null;
           return (
             <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={async () => { await Clipboard.setStringAsync(txt); setShowReactions(null); showAlert("Copied", "Message text copied to clipboard."); }}>
-              <Ionicons name="copy-outline" size={24} color="#111" style={st.reactRowIcon} />
+              <Ionicons name="copy" size={24} color="#111" style={st.reactRowIcon} />
               <Text style={st.reactRowLabel}>Copy Text</Text>
             </TouchableOpacity>
           );
@@ -7163,7 +7163,7 @@ STRICT RULES:
           if (isGift) return null;
           return (
             <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) handleStarMessage(showReactions); }}>
-              <Ionicons name="star-outline" size={24} color="#111" style={st.reactRowIcon} />
+              <Ionicons name="star" size={24} color="#111" style={st.reactRowIcon} />
               <Text style={st.reactRowLabel}>Star Message</Text>
             </TouchableOpacity>
           );
@@ -7172,14 +7172,14 @@ STRICT RULES:
         {/* Save to Phone */}
         {showReactions?.attachment_url && showReactions.attachment_type !== "video" && (
           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) handleSaveToPhone(showReactions); }}>
-            <Ionicons name="download-outline" size={24} color="#111" style={st.reactRowIcon} />
+            <Ionicons name="download" size={24} color="#111" style={st.reactRowIcon} />
             <Text style={st.reactRowLabel}>Save to Phone</Text>
           </TouchableOpacity>
         )}
 
         {/* Translate */}
         <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) openTranslatePicker(showReactions); }}>
-          <Ionicons name="language-outline" size={24} color="#111" style={st.reactRowIcon} />
+          <Ionicons name="language" size={24} color="#111" style={st.reactRowIcon} />
           <Text style={st.reactRowLabel}>Translate</Text>
           <Ionicons name="chevron-forward" size={18} color="#111" />
         </TouchableOpacity>
@@ -7187,7 +7187,7 @@ STRICT RULES:
         {/* Edit (own non-gift messages) */}
         {showReactions?.sender_id === user?.id && !showReactions?.attachment_url && !showReactions?.encrypted_content.startsWith("🎁 ") && !showReactions?.encrypted_content.startsWith("🧧") && !showReactions?.encrypted_content.includes("|giftId:") && (
           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) startEditMessage(showReactions); }}>
-            <Ionicons name="pencil-outline" size={24} color="#111" style={st.reactRowIcon} />
+            <Ionicons name="pencil" size={24} color="#111" style={st.reactRowIcon} />
             <Text style={st.reactRowLabel}>Edit</Text>
           </TouchableOpacity>
         )}
@@ -7195,7 +7195,7 @@ STRICT RULES:
         {/* Message Info */}
         {showReactions?.sender_id === user?.id && (
           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { setMsgInfoTarget(showReactions); setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); }}>
-            <Ionicons name="information-circle-outline" size={24} color="#111" style={st.reactRowIcon} />
+            <Ionicons name="information-circle" size={24} color="#111" style={st.reactRowIcon} />
             <Text style={st.reactRowLabel}>Message Info</Text>
           </TouchableOpacity>
         )}
@@ -7203,7 +7203,7 @@ STRICT RULES:
         {/* View Edit History */}
         {advancedFeatures.message_edit_history && showReactions?.edited_at && (
           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) handleViewEditHistory(showReactions); }}>
-            <Ionicons name="time-outline" size={24} color="#111" style={st.reactRowIcon} />
+            <Ionicons name="time" size={24} color="#111" style={st.reactRowIcon} />
             <Text style={st.reactRowLabel}>View Edit History</Text>
           </TouchableOpacity>
         )}
@@ -7211,7 +7211,7 @@ STRICT RULES:
         {/* Remind Me */}
         {advancedFeatures.message_reminders && showReactions?.encrypted_content && !showReactions.encrypted_content.startsWith("🎁 ") && !showReactions.encrypted_content.startsWith("🧧") && !["📷 Photo", "🎥 Video", "GIF"].includes(showReactions.encrypted_content) && (
           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { setReminderMsg(showReactions); setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); }}>
-            <Ionicons name="alarm-outline" size={24} color="#111" style={st.reactRowIcon} />
+            <Ionicons name="alarm" size={24} color="#111" style={st.reactRowIcon} />
             <Text style={st.reactRowLabel}>Remind Me</Text>
           </TouchableOpacity>
         )}
@@ -7223,7 +7223,7 @@ STRICT RULES:
           if (isGift) return null;
           return (
             <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); router.push({ pathname: "/create-post", params: { prefill: txt } } as any); }}>
-              <Ionicons name="share-social-outline" size={24} color="#111" style={st.reactRowIcon} />
+              <Ionicons name="share-social" size={24} color="#111" style={st.reactRowIcon} />
               <Text style={st.reactRowLabel}>Share to Feed</Text>
             </TouchableOpacity>
           );
@@ -7235,7 +7235,7 @@ STRICT RULES:
         {/* Delete (own messages) */}
         {showReactions?.sender_id === user?.id && (
           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) handleDeleteMessage(showReactions); }}>
-            <Ionicons name="trash-outline" size={24} color="#FF3B30" style={st.reactRowIcon} />
+            <Ionicons name="trash" size={24} color="#FF3B30" style={st.reactRowIcon} />
             <Text style={[st.reactRowLabel, { color: "#FF3B30" }]}>Delete</Text>
           </TouchableOpacity>
         )}
@@ -7243,7 +7243,7 @@ STRICT RULES:
         {/* Report Message (others' messages) */}
         {showReactions?.sender_id !== user?.id && (
           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) handleReportMessage(showReactions); }}>
-            <Ionicons name="flag-outline" size={24} color="#FF3B30" style={st.reactRowIcon} />
+            <Ionicons name="flag" size={24} color="#FF3B30" style={st.reactRowIcon} />
             <Text style={[st.reactRowLabel, { color: "#FF3B30" }]}>Report Message</Text>
           </TouchableOpacity>
         )}
@@ -7258,13 +7258,13 @@ STRICT RULES:
             </View>
             {showReactions && showReactions.encrypted_content.length >= 500 && (
               <TouchableOpacity style={[st.reactRow, { opacity: aiLoading && aiResultType === "summary" ? 0.5 : 1 }]} activeOpacity={0.65} disabled={aiLoading} onPress={() => { if (showReactions) handleAiSummarize(showReactions); }}>
-                <Ionicons name="document-text-outline" size={24} color="#111" style={st.reactRowIcon} />
+                <Ionicons name="document-text" size={24} color="#111" style={st.reactRowIcon} />
                 <Text style={st.reactRowLabel}>Summarize Message</Text>
                 {aiLoading && aiResultType === "summary" && <ActivityIndicator color={colors.accent} size="small" />}
               </TouchableOpacity>
             )}
             <TouchableOpacity style={[st.reactRow, { opacity: aiLoading && aiResultType === "replies" ? 0.5 : 1 }]} activeOpacity={0.65} disabled={aiLoading} onPress={handleAiSuggestReply}>
-              <Ionicons name="chatbubbles-outline" size={24} color="#111" style={st.reactRowIcon} />
+              <Ionicons name="chatbubbles" size={24} color="#111" style={st.reactRowIcon} />
               <Text style={st.reactRowLabel}>Smart Replies</Text>
               {aiLoading && aiResultType === "replies" && <ActivityIndicator color={colors.accent} size="small" />}
             </TouchableOpacity>
@@ -7317,7 +7317,7 @@ STRICT RULES:
             onPress={clearAfuAiChatHistory}
           >
             <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: "#FF3B3018", alignItems: "center", justifyContent: "center" }}>
-              <Ionicons name="trash-outline" size={19} color="#FF3B30" />
+              <Ionicons name="trash" size={19} color="#FF3B30" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 15, fontFamily: "Inter_600SemiBold", color: "#FF3B30" }}>Clear chat history</Text>
@@ -7331,7 +7331,7 @@ STRICT RULES:
         <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 }}>
             <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.accent + "18", alignItems: "center", justifyContent: "center" }}>
-              <Ionicons name="alarm-outline" size={20} color={colors.accent} />
+              <Ionicons name="alarm" size={20} color={colors.accent} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 16, fontFamily: "Inter_700Bold", color: colors.text }}>Remind Me</Text>
@@ -7341,17 +7341,17 @@ STRICT RULES:
             </View>
           </View>
           {[
-            { label: "In 30 minutes", icon: "time-outline" as const, seconds: 30 * 60 },
-            { label: "In 1 hour",     icon: "time-outline" as const, seconds: 60 * 60 },
-            { label: "In 4 hours",    icon: "time-outline" as const, seconds: 4 * 60 * 60 },
-            { label: "Tomorrow morning", icon: "sunny-outline" as const, seconds: (() => {
+            { label: "In 30 minutes", icon: "time" as const, seconds: 30 * 60 },
+            { label: "In 1 hour",     icon: "time" as const, seconds: 60 * 60 },
+            { label: "In 4 hours",    icon: "time" as const, seconds: 4 * 60 * 60 },
+            { label: "Tomorrow morning", icon: "sunny" as const, seconds: (() => {
                 const now = new Date();
                 const tom = new Date(now);
                 tom.setDate(tom.getDate() + 1);
                 tom.setHours(8, 0, 0, 0);
                 return Math.max(3600, Math.floor((tom.getTime() - now.getTime()) / 1000));
               })() },
-            { label: "Next week",     icon: "calendar-outline" as const, seconds: 7 * 24 * 60 * 60 },
+            { label: "Next week",     icon: "calendar" as const, seconds: 7 * 24 * 60 * 60 },
           ].map((opt) => (
             <TouchableOpacity
               key={opt.label}
@@ -7373,7 +7373,7 @@ STRICT RULES:
             <TouchableOpacity onPress={() => { setShowLangPicker(false); setTranslateMsg(null); setAiResult(null); setAiResultType(null); }} hitSlop={12}>
               <Ionicons name="chevron-back" size={22} color={colors.text} />
             </TouchableOpacity>
-            <Ionicons name="language-outline" size={20} color={colors.accent} />
+            <Ionicons name="language" size={20} color={colors.accent} />
             <Text style={{ fontSize: 16, fontFamily: "Inter_700Bold", color: colors.text }}>Translate to</Text>
           </View>
           {translatingLang && <ActivityIndicator color={colors.accent} size="small" />}
@@ -7742,7 +7742,7 @@ STRICT RULES:
                 }}
               >
                 <View style={[st.optionsIcon, { backgroundColor: "#FF3B30" }]}>
-                  <Ionicons name="trash-outline" size={16} color="#fff" />
+                  <Ionicons name="trash" size={16} color="#fff" />
                 </View>
                 <Text style={[st.optionsLabel, { color: "#FF3B30" }]}>Clear All Notifications</Text>
               </TouchableOpacity>
@@ -7768,7 +7768,7 @@ STRICT RULES:
           <View style={[st.ddCard, { backgroundColor: colors.surface, top: insets.top + 54 }]}>
             <ScrollView bounces={false} showsVerticalScrollIndicator={false} style={{ maxHeight: 520 }}>
               {/* Search */}
-              <DdRow colors={colors} icon="search-outline" label="Search"
+              <DdRow colors={colors} icon="search" label="Search"
                 onPress={() => {
                   setShowChatOptions(false);
                   setSearchActive(true);
@@ -7779,24 +7779,24 @@ STRICT RULES:
               <DdDivider colors={colors} />
               {/* Group / Channel Info */}
               {(chatInfo?.is_group || chatInfo?.is_channel) && (
-                <DdRow colors={colors} icon="people-outline"
+                <DdRow colors={colors} icon="people"
                   label={chatInfo?.is_channel ? "Channel Info" : "Group Info & Members"}
                   onPress={() => { setShowChatOptions(false); router.push({ pathname: "/group/[id]", params: { id: id as string } }); }} />
               )}
               {/* Invite via link — group admins only */}
               {(chatInfo?.is_group || chatInfo?.is_channel) && iAmChatAdmin && (
-                <DdRow colors={colors} icon="link-outline"
+                <DdRow colors={colors} icon="link"
                   label="Invite via Link"
                   onPress={() => { setShowChatOptions(false); setShowInviteLink(true); }} />
               )}
               {advancedFeatures.chat_summary && (
-                <DdRow colors={colors} icon="sparkles-outline" label="Summarize Chat"
+                <DdRow colors={colors} icon="sparkles" label="Summarize Chat"
                   onPress={() => { setShowChatOptions(false); handleChatSummaryFull(); }} />
               )}
               {/* Per-chat appearance */}
               <DdRow
                 colors={colors}
-                icon="color-palette-outline"
+                icon="color-palette"
                 label="Chat Appearance"
                 sub="Wallpaper & bubble colour"
                 onPress={() => {
@@ -7806,7 +7806,7 @@ STRICT RULES:
               />
               <DdDivider colors={colors} />
               {/* Single entry → dedicated per-chat settings page */}
-              <DdRow colors={colors} icon="information-circle-outline" label="Chat Info & Settings"
+              <DdRow colors={colors} icon="information-circle" label="Chat Info & Settings"
                 onPress={() => {
                   setShowChatOptions(false);
                   router.push({
@@ -7843,7 +7843,7 @@ STRICT RULES:
                 </TouchableOpacity>
               </View>
               <View style={[st.forwardPreview, { backgroundColor: colors.inputBg }]}>
-                <Ionicons name="arrow-redo-outline" size={14} color={colors.textMuted} style={{ marginTop: 1 }} />
+                <Ionicons name="arrow-redo" size={14} color={colors.textMuted} style={{ marginTop: 1 }} />
                 <Text style={[st.forwardPreviewText, { color: colors.textSecondary }]} numberOfLines={2}>
                   {forwardMsg.encrypted_content}
                 </Text>
@@ -7962,11 +7962,11 @@ STRICT RULES:
                     ? <ActivityIndicator color={BRAND} />
                     : addMemberSearch.length > 0
                       ? <>
-                          <Ionicons name="search-outline" size={36} color={colors.textMuted} />
+                          <Ionicons name="search" size={36} color={colors.textMuted} />
                           <Text style={{ color: colors.textMuted, fontSize: 14, fontFamily: "Inter_400Regular" }}>No users found</Text>
                         </>
                       : <>
-                          <Ionicons name="people-outline" size={40} color={colors.textMuted} />
+                          <Ionicons name="people" size={40} color={colors.textMuted} />
                           <Text style={{ color: colors.textMuted, fontSize: 14, fontFamily: "Inter_400Regular" }}>Search for people to add</Text>
                         </>
                   }
@@ -8062,7 +8062,7 @@ STRICT RULES:
               paddingVertical: 12,
               marginBottom: 16,
             }}>
-              <Ionicons name="link-outline" size={15} color={colors.textMuted} style={{ marginRight: 8 }} />
+              <Ionicons name="link" size={15} color={colors.textMuted} style={{ marginRight: 8 }} />
               <Text style={{ flex: 1, fontSize: 13, fontFamily: "Inter_400Regular", color: colors.textSecondary }} numberOfLines={1} ellipsizeMode="middle">
                 {getInviteLink()}
               </Text>
@@ -8088,7 +8088,7 @@ STRICT RULES:
                 activeOpacity={0.75}
               >
                 <Ionicons
-                  name={inviteLinkCopied ? "checkmark-circle" : "copy-outline"}
+                  name={inviteLinkCopied ? "checkmark-circle" : "copy"}
                   size={18}
                   color={inviteLinkCopied ? "#34C759" : BRAND}
                 />
@@ -8112,14 +8112,14 @@ STRICT RULES:
                 onPress={handleShareInviteLink}
                 activeOpacity={0.85}
               >
-                <Ionicons name="share-social-outline" size={18} color="#fff" />
+                <Ionicons name="share-social" size={18} color="#fff" />
                 <Text style={{ fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#fff" }}>Share</Text>
               </TouchableOpacity>
             </View>
 
             {/* Info note */}
             <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, padding: 12, backgroundColor: colors.inputBg, borderRadius: 12 }}>
-              <Ionicons name="information-circle-outline" size={15} color={colors.textMuted} style={{ marginTop: 1 }} />
+              <Ionicons name="information-circle" size={15} color={colors.textMuted} style={{ marginTop: 1 }} />
               <Text style={{ flex: 1, fontSize: 12, fontFamily: "Inter_400Regular", color: colors.textMuted, lineHeight: 17 }}>
                 This link is permanent and unique to this {chatInfo?.is_channel ? "channel" : "group"}. Anyone who taps it can join directly without needing approval.
               </Text>
@@ -8140,7 +8140,7 @@ STRICT RULES:
           <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: insets.bottom + 16, maxHeight: "80%" }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 16, borderBottomColor: colors.border }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <Ionicons name="time-outline" size={20} color={colors.accent} />
+                <Ionicons name="time" size={20} color={colors.accent} />
                 <Text style={{ fontSize: 16, fontFamily: "Inter_700Bold", color: colors.text }}>Edit History</Text>
               </View>
               <TouchableOpacity onPress={() => { setEditHistoryMsg(null); setEditHistoryItems([]); }} hitSlop={12}>
@@ -8171,7 +8171,7 @@ STRICT RULES:
 
                 {editHistoryItems.length === 0 ? (
                   <View style={{ alignItems: "center", paddingVertical: 32 }}>
-                    <Ionicons name="document-text-outline" size={36} color={colors.textMuted} />
+                    <Ionicons name="document-text" size={36} color={colors.textMuted} />
                     <Text style={{ fontSize: 14, color: colors.textMuted, marginTop: 8, textAlign: "center" }}>
                       No previous versions found.{"\n"}History is recorded from this point on.
                     </Text>

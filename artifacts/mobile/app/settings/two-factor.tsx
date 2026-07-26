@@ -64,7 +64,7 @@ function ShieldHero({ enrolled }: { enrolled: boolean }) {
       {/* Shield icon */}
       <View style={[hero.iconBg, { backgroundColor: bgColor }]}>
         <Ionicons
-          name={enrolled ? "shield-checkmark" : "shield-outline"}
+          name={enrolled ? "shield-checkmark" : "shield"}
           size={44}
           color={color}
         />
@@ -373,7 +373,7 @@ export default function TwoFactorScreen() {
 
             {enrolled && enrolledDate && (
               <View style={s.heroBadge}>
-                <Ionicons name="calendar-outline" size={12} color="rgba(48,209,88,0.8)" />
+                <Ionicons name="calendar" size={12} color="rgba(48,209,88,0.8)" />
                 <Text style={s.heroBadgeText}>Active since {enrolledDate}</Text>
               </View>
             )}
@@ -462,7 +462,7 @@ export default function TwoFactorScreen() {
               <View style={[s.actionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <TouchableOpacity style={s.actionRow} onPress={() => setShowDisableGate(true)} activeOpacity={0.75}>
                   <View style={[s.actionIcon, { backgroundColor: "#FF3B30" }]}>
-                    <Ionicons name="shield-outline" size={18} color="#fff" />
+                    <Ionicons name="shield" size={18} color="#fff" />
                   </View>
                   <View style={s.actionMeta}>
                     <Text style={[s.actionLabel, { color: colors.text }]}>Disable Two-Factor Auth</Text>
@@ -542,7 +542,7 @@ export default function TwoFactorScreen() {
           >
             {/* Warning banner */}
             <Animated.View style={[s.warnBanner, { transform: [{ scale: pulseAnim }] }]}>
-              <Ionicons name="time-outline" size={15} color="#FF9F0A" />
+              <Ionicons name="time" size={15} color="#FF9F0A" />
               <Text style={s.warnText}>
                 2FA is <Text style={{ fontFamily: "Inter_700Bold" }}>not active yet</Text> — complete all steps below
               </Text>
@@ -598,7 +598,7 @@ export default function TwoFactorScreen() {
                 onPress={() => setSecretVisible(v => !v)}
                 activeOpacity={0.75}
               >
-                <Ionicons name={secretVisible ? "eye-off-outline" : "key-outline"} size={14} color={colors.accent} />
+                <Ionicons name={secretVisible ? "eye-off" : "key"} size={14} color={colors.accent} />
                 <Text style={[s.secretToggleText, { color: colors.accent }]}>
                   {secretVisible ? "Hide" : "Can't scan? Show"} manual key
                 </Text>

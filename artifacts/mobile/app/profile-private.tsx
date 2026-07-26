@@ -137,7 +137,7 @@ export function ProfilePrivateView({
           ) : (
             <>
               <Ionicons
-                name={followed ? "checkmark" : "person-add-outline"}
+                name={followed ? "checkmark" : "person-add"}
                 size={16}
                 color={followed ? colors.textMuted : "#fff"}
               />
@@ -153,7 +153,7 @@ export function ProfilePrivateView({
           onPress={() => router.push("/(auth)/login" as any)}
           activeOpacity={0.85}
         >
-          <Ionicons name="log-in-outline" size={16} color="#fff" />
+          <Ionicons name="log-in" size={16} color="#fff" />
           <Text style={[styles.btnText, { color: "#fff" }]}>Sign in to Follow</Text>
         </TouchableOpacity>
       ) : null}
