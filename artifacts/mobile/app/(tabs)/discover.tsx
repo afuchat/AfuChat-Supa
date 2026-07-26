@@ -2436,7 +2436,7 @@ export default function DiscoverScreen() {
               </TouchableOpacity>
             )}
             <TouchableOpacity
-              onPress={() => { Haptics.selectionAsync(); safeRouter.push("/(tabs)/search" as any); }}
+              onPress={() => { Haptics.selectionAsync(); router.push("/search" as any); }}
               style={[styles.searchBtn, { backgroundColor: "transparent" }]}
               activeOpacity={0.7}
               hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}

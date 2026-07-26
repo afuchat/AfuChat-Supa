@@ -1830,7 +1830,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         ]}
       >
         <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 0 }]} />
-        {/* Compact story previews — left side (hidden in select mode) */}
+        {/* Left side: Cancel in select mode, else user profile avatar */}
         {selectMode ? (
           <TouchableOpacity
             onPress={exitSelectMode}
@@ -1839,9 +1839,24 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
             <Text style={[selStyles.cancelText, { color: colors.accent }]}>Cancel</Text>
           </TouchableOpacity>
         ) : user ? (
-          <Animated.View style={{ opacity: compactAvatarAnim, transform: [{ scale: compactAvatarAnim.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] }) }] }}>
-            <CompactStoryHeader userId={user.id} colors={colors} onExpand={expandStories} />
-          </Animated.View>
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/me" as any)}
+            activeOpacity={0.8}
+            hitSlop={{ top: 6, right: 6, bottom: 6, left: 6 }}
+          >
+            {profile?.avatar_url ? (
+              <Image
+                source={{ uri: profile.avatar_url }}
+                style={{ width: 34, height: 34, borderRadius: 17 }}
+              />
+            ) : (
+              <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: colors.accent, alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ color: "#fff", fontSize: 13, fontFamily: "Inter_700Bold" }}>
+                  {(profile?.display_name?.[0] ?? profile?.handle?.[0] ?? "A").toUpperCase()}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
         ) : null}
 
         {/* Title — absolutely centered so it stays in the middle
