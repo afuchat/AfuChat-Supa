@@ -5,6 +5,7 @@ import {
   FlatList,
   Image,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -72,6 +73,7 @@ export default function MediaGalleryPicker({
   const [hasMore, setHasMore] = useState(false);
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [permission, setPermission] = useState<"checking" | "granted" | "denied">("checking");
+  const [resolving, setResolving] = useState(false);
   const loadingMoreRef = useRef(false);
 
   const mediaTypesForTab = useCallback((t: MediaTab): MediaLibrary.MediaTypeValue[] => {
@@ -143,9 +145,36 @@ export default function MediaGalleryPicker({
     });
   }
 
-  function handleDone() {
-    onSelect(Array.from(selected.values()));
-    onClose();
+  async function handleDone() {
+    if (resolving) return;
+    setResolving(true);
+    try {
+      const selectedAssets = Array.from(selected.values());
+
+      // Android 13+ returns content:// URIs from getAssetsAsync. These cannot
+      // be rendered by React Native Image at full size or copied by FileSystem.
+      // Resolve each one to a file:// localUri via getAssetInfoAsync first.
+      const resolved = await Promise.all(
+        selectedAssets.map(async (asset) => {
+          if (Platform.OS !== "android" || !asset.uri.startsWith("content://")) {
+            return asset;
+          }
+          try {
+            const info = await MediaLibrary.getAssetInfoAsync(asset.id, {
+              shouldDownloadFromNetwork: false,
+            });
+            const localUri = info.localUri;
+            if (localUri) return { ...asset, uri: localUri };
+          } catch {}
+          return asset;
+        }),
+      );
+
+      onSelect(resolved);
+      onClose();
+    } finally {
+      setResolving(false);
+    }
   }
 
   function loadMore() {
@@ -177,11 +206,16 @@ export default function MediaGalleryPicker({
           {selectedCount > 0 ? (
             <TouchableOpacity
               onPress={handleDone}
-              style={[s.doneBtn, { backgroundColor: colors.accent }]}
+              disabled={resolving}
+              style={[s.doneBtn, { backgroundColor: colors.accent, opacity: resolving ? 0.6 : 1 }]}
             >
-              <Text style={s.doneTxt}>
-                Done{maxSelection > 1 ? ` (${selectedCount})` : ""}
-              </Text>
+              {resolving ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={s.doneTxt}>
+                  Done{maxSelection > 1 ? ` (${selectedCount})` : ""}
+                </Text>
+              )}
             </TouchableOpacity>
           ) : (
             <View style={s.headerSide} />
