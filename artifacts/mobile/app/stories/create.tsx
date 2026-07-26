@@ -30,6 +30,7 @@ import Colors from "@/constants/colors";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { showAlert } from "@/lib/alert";
 import { uploadToStorage } from "@/lib/mediaUpload";
+import * as FileSystem from "expo-file-system/legacy";
 import { isOnline } from "@/lib/offlineStore";
 import { getDailyUsage, recordDailyUsage } from "@/lib/featureUsage";
 import {
@@ -116,12 +117,37 @@ export default function CreateStoryScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     // Capture for background closure before navigation
-    const _mediaUri = mediaUri;
     const _mediaType = mediaType;
     const _mediaMimeType = mediaMimeType;
     const _caption = caption.trim();
     const _privacy = privacy;
     const _userId = user.id;
+
+    // ── Stable file copy (Android) ─────────────────────────────────────────
+    // Camera/gallery temp files live inside the Expo experience cache and are
+    // deleted the moment the screen unmounts. We must copy to cacheDirectory
+    // BEFORE dismissing so the background upload always has a valid source.
+    let _mediaUri = mediaUri;
+    if (
+      mediaUri.startsWith("file://") &&
+      FileSystem.cacheDirectory &&
+      !mediaUri.startsWith(FileSystem.cacheDirectory)
+    ) {
+      try {
+        const rawExt = mediaUri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
+        const stablePath = `${FileSystem.cacheDirectory}story_src_${Date.now()}.${rawExt}`;
+        await FileSystem.copyAsync({ from: mediaUri, to: stablePath });
+        _mediaUri = stablePath;
+      } catch (copyErr: any) {
+        setStarting(false);
+        showAlert(
+          "Could not read file",
+          "The selected photo or video could not be accessed. Please try again.",
+        );
+        console.error("[Story Publish] Pre-copy failed:", copyErr?.message || copyErr);
+        return;
+      }
+    }
 
     // Navigate immediately — screen closes right away
     if (router.canDismiss()) {
