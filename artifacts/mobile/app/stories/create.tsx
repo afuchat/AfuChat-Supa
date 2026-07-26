@@ -123,18 +123,21 @@ export default function CreateStoryScreen() {
     const _privacy = privacy;
     const _userId = user.id;
 
-    // ── Stable file copy (Android) ─────────────────────────────────────────
-    // Camera/gallery temp files live inside the Expo experience cache and are
-    // deleted the moment the screen unmounts. We must copy to cacheDirectory
-    // BEFORE dismissing so the background upload always has a valid source.
+    // ── Stable file copy (native) ──────────────────────────────────────────
+    // Camera and gallery URIs on Android (file://, content://, or bare paths)
+    // point to volatile temp locations that are wiped when the screen unmounts.
+    // Copy to a stable cacheDirectory file NOW — before dismissing — so the
+    // background upload always has a readable source.
+    // We skip data: and blob: (already in-memory) and web (no FileSystem).
     let _mediaUri = mediaUri;
-    if (
-      mediaUri.startsWith("file://") &&
-      FileSystem.cacheDirectory &&
-      !mediaUri.startsWith(FileSystem.cacheDirectory)
-    ) {
+    const isNativeFileUri =
+      Platform.OS !== "web" &&
+      !mediaUri.startsWith("data:") &&
+      !mediaUri.startsWith("blob:");
+    if (isNativeFileUri && FileSystem.cacheDirectory) {
       try {
-        const rawExt = mediaUri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
+        const rawExt =
+          mediaUri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
         const stablePath = `${FileSystem.cacheDirectory}story_src_${Date.now()}.${rawExt}`;
         await FileSystem.copyAsync({ from: mediaUri, to: stablePath });
         _mediaUri = stablePath;
