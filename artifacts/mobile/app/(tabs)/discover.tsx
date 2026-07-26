@@ -133,44 +133,54 @@ function extractFirstUrl(text: string): string | null {
   return m?.[0] ?? null;
 }
 
-// ── OG image cache & fetcher ─────────────────────────────────────────────────
-const _ogCache: Record<string, string | null> = {};
-async function fetchOgImage(url: string): Promise<string | null> {
+// ── OG data cache & fetcher ───────────────────────────────────────────────────
+type _OgData = { image: string | null; title: string | null };
+const _ogCache: Record<string, _OgData> = {};
+async function fetchOgData(url: string): Promise<_OgData> {
   if (url in _ogCache) return _ogCache[url];
+  const empty: _OgData = { image: null, title: null };
   try {
     const res = await fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; AfuChatBot/1.0)" },
     });
     const html = await res.text();
-    const m =
+    // og:image / twitter:image
+    const imgMatch =
       html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
       html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i) ||
       html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i) ||
       html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i);
-    let img = m ? m[1] : null;
-    // Resolve relative URLs against the page origin
-    if (img && !img.startsWith("http")) {
-      try {
-        const base = new URL(res.url);
-        img = new URL(img, base.origin).href;
-      } catch {}
+    let image = imgMatch ? imgMatch[1] : null;
+    if (image && !image.startsWith("http")) {
+      try { image = new URL(image, new URL(res.url).origin).href; } catch {}
     }
-    _ogCache[url] = img;
-    return img;
+    // og:title / twitter:title / <title>
+    const titleMatch =
+      html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) ||
+      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i) ||
+      html.match(/<meta[^>]+name=["']twitter:title["'][^>]+content=["']([^"']+)["']/i) ||
+      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:title["']/i) ||
+      html.match(/<title[^>]*>([^<]{1,120})<\/title>/i);
+    const title = titleMatch ? titleMatch[1].trim() : null;
+    const data: _OgData = { image, title };
+    _ogCache[url] = data;
+    return data;
   } catch {
-    _ogCache[url] = null;
-    return null;
+    _ogCache[url] = empty;
+    return empty;
   }
 }
 
 function LinkPreviewCard({ url, colors }: { url: string; colors: any }) {
   const openLink = useOpenLink();
   const [ogImage, setOgImage] = useState<string | null>(null);
+  const [ogTitle, setOgTitle] = useState<string | null>(null);
   let domain = url;
   try { domain = new URL(url).hostname.replace(/^www\./, ""); } catch {}
+  const faviconUri = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
 
   useEffect(() => {
-    fetchOgImage(url).then(setOgImage);
+    fetchOgData(url).then((d) => { setOgImage(d.image); setOgTitle(d.title); });
   }, [url]);
 
   return (
@@ -185,20 +195,29 @@ function LinkPreviewCard({ url, colors }: { url: string; colors: any }) {
         overflow: "hidden",
         flexDirection: "row",
         alignItems: "stretch",
+        minHeight: 80,
         backgroundColor: colors.card,
       }}
     >
-      {/* OG image or fallback globe */}
-      <View style={{ width: 90, minHeight: 90, backgroundColor: colors.backgroundTertiary, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+      {/* Thumbnail: og:image if available, otherwise large favicon */}
+      <View style={{ width: 90, minHeight: 80, backgroundColor: colors.backgroundTertiary, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
         {ogImage ? (
-          <ExpoImage source={{ uri: ogImage }} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} contentFit="cover" />
+          <ExpoImage source={{ uri: ogImage }} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} contentFit="cover" cachePolicy="memory-disk" />
         ) : (
-          <Ionicons name="globe-outline" size={28} color={colors.textMuted} />
+          <ExpoImage source={{ uri: faviconUri }} style={{ width: 36, height: 36 }} contentFit="contain" cachePolicy="memory-disk" />
         )}
       </View>
-      <View style={{ flex: 1, padding: 10, gap: 4, justifyContent: "center" }}>
-        <Text style={{ fontSize: 13, fontFamily: "Inter_600SemiBold", color: colors.textMuted }} numberOfLines={1}>{domain}</Text>
-        <Text style={{ fontSize: 12, fontFamily: "Inter_600SemiBold", color: "#FF9500", marginTop: 2 }}>Visit link ›</Text>
+      {/* Text */}
+      <View style={{ flex: 1, paddingHorizontal: 10, paddingVertical: 10, gap: 4, justifyContent: "center" }}>
+        {/* favicon + hostname */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <ExpoImage source={{ uri: faviconUri }} style={{ width: 13, height: 13, borderRadius: 2 }} contentFit="contain" cachePolicy="memory-disk" />
+          <Text style={{ fontSize: 11, fontFamily: "Inter_400Regular", color: colors.textMuted, flex: 1 }} numberOfLines={1}>{domain}</Text>
+        </View>
+        {/* title (og:title preferred, else domain) */}
+        <Text style={{ fontSize: 13, fontFamily: "Inter_600SemiBold", color: colors.text, lineHeight: 18 }} numberOfLines={2}>
+          {ogTitle || domain}
+        </Text>
       </View>
     </TouchableOpacity>
   );

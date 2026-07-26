@@ -1,3 +1,16 @@
+/**
+ * LinkPreview — rich preview cards for URLs and @mentions in chat bubbles.
+ *
+ * URL cards fetch:
+ *   1. og:image / twitter:image  — displayed as a left-side thumbnail
+ *   2. og:title / twitter:title  — displayed as the card title
+ *   3. favicon                   — shown when no og:image is available
+ *      (Google's reliable favicon CDN: /s2/favicons?domain=…&sz=64)
+ *
+ * All results are module-level cached so the same URL is only ever fetched once
+ * per app session.
+ */
+
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -32,43 +45,86 @@ type UrlCard = {
   url: string;
   title: string;
   hostname: string;
+  ogImage: string | null;
+  favicon: string | null;
 };
 
 type PreviewData = ProfileCard | UrlCard | null;
 
 // ─── Regex helpers ────────────────────────────────────────────────────────────
 
-const AFUCHAT_HANDLE_URL = /https?:\/\/(?:afuchat\.app|afuchat\.com|www\.afuchat\.app|www\.afuchat\.com)\/@([\w]{1,30})/i;
+const AFUCHAT_HANDLE_URL =
+  /https?:\/\/(?:afuchat\.app|afuchat\.com|www\.afuchat\.app|www\.afuchat\.com)\/@([\w]{1,30})/i;
 const BARE_MENTION = /^@([\w]{1,30})$/;
 const PLAIN_URL = /https?:\/\/[^\s<)]{5,}/i;
 
-/**
- * Extract the first "interesting" segment from a message:
- * - An afuchat profile URL  →  render a profile card
- * - A lone @mention (the entire trimmed message is a @handle)  →  profile card
- * - Any other http(s) URL  →  url card
- */
 function extractPreviewTarget(
   text: string
 ): { type: "profile"; handle: string } | { type: "url"; url: string } | null {
   if (!text) return null;
-
-  // 1. afuchat.com/@handle URL anywhere in text
   const afuMatch = AFUCHAT_HANDLE_URL.exec(text);
   if (afuMatch) return { type: "profile", handle: afuMatch[1] };
-
-  // 2. Entire message is a bare @mention
   const bareMatch = BARE_MENTION.exec(text.trim());
   if (bareMatch) return { type: "profile", handle: bareMatch[1] };
-
-  // 3. Any plain URL
   const urlMatch = PLAIN_URL.exec(text);
   if (urlMatch) return { type: "url", url: urlMatch[0] };
-
   return null;
 }
 
-// ─── Cache ────────────────────────────────────────────────────────────────────
+// ─── OG + favicon fetcher ────────────────────────────────────────────────────
+
+type OgData = { title: string | null; image: string | null };
+const _ogCache: Record<string, OgData> = {};
+
+async function fetchOgData(url: string): Promise<OgData> {
+  if (url in _ogCache) return _ogCache[url];
+  const empty: OgData = { title: null, image: null };
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; AfuChatBot/1.0)" },
+    });
+    const html = await res.text();
+
+    // ── og:image / twitter:image ──────────────────────────────────────────
+    const imgMatch =
+      html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
+      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i) ||
+      html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i) ||
+      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i);
+
+    let image = imgMatch ? imgMatch[1] : null;
+    if (image && !image.startsWith("http")) {
+      try {
+        const base = new URL(res.url);
+        image = new URL(image, base.origin).href;
+      } catch {}
+    }
+
+    // ── og:title / twitter:title / <title> ───────────────────────────────
+    const titleMatch =
+      html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) ||
+      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i) ||
+      html.match(/<meta[^>]+name=["']twitter:title["'][^>]+content=["']([^"']+)["']/i) ||
+      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:title["']/i) ||
+      html.match(/<title[^>]*>([^<]{1,120})<\/title>/i);
+
+    const title = titleMatch ? titleMatch[1].trim() : null;
+
+    const data: OgData = { title, image };
+    _ogCache[url] = data;
+    return data;
+  } catch {
+    _ogCache[url] = empty;
+    return empty;
+  }
+}
+
+/** Google's favicon CDN — returns the site's actual favicon at the requested size. */
+function faviconUrl(hostname: string): string {
+  return `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`;
+}
+
+// ─── Profile & URL caches ─────────────────────────────────────────────────────
 
 const profileCache: Record<string, ProfileCard | "miss"> = {};
 const urlCache: Record<string, UrlCard> = {};
@@ -86,22 +142,23 @@ function ProfilePreviewCard({
 }) {
   const { colors } = useTheme();
 
-  function handlePress() {
-    router.push({ pathname: "/contact/[id]", params: { id: card.id } });
-  }
-
   const bg = isMe ? "rgba(255,255,255,0.12)" : colors.backgroundSecondary;
   const borderColor = isMe ? "rgba(255,255,255,0.2)" : colors.border;
 
   return (
     <TouchableOpacity
-      onPress={handlePress}
+      onPress={() => router.push({ pathname: "/contact/[id]", params: { id: card.id } })}
       activeOpacity={0.8}
       style={[st.card, { backgroundColor: bg, borderColor }]}
     >
       <View style={st.profileRow}>
         {card.avatar_url ? (
-          <ExpoImage source={{ uri: card.avatar_url }} style={st.avatar} contentFit="cover" cachePolicy="memory-disk" />
+          <ExpoImage
+            source={{ uri: card.avatar_url }}
+            style={st.avatar}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+          />
         ) : (
           <View style={[st.avatarPlaceholder, { backgroundColor: accent + "30" }]}>
             <Ionicons name="person" size={18} color={accent} />
@@ -119,16 +176,24 @@ function ProfilePreviewCard({
               <Ionicons name="checkmark-circle" size={13} color={accent} />
             )}
           </View>
-          <Text style={[st.profileHandle, { color: isMe ? "rgba(255,255,255,0.65)" : colors.textMuted }]}>
+          <Text
+            style={[st.profileHandle, { color: isMe ? "rgba(255,255,255,0.65)" : colors.textMuted }]}
+          >
             @{card.handle}
           </Text>
           {card.followers_count > 0 && (
-            <Text style={[st.profileMeta, { color: isMe ? "rgba(255,255,255,0.55)" : colors.textMuted }]}>
+            <Text
+              style={[st.profileMeta, { color: isMe ? "rgba(255,255,255,0.55)" : colors.textMuted }]}
+            >
               {card.followers_count.toLocaleString()} followers
             </Text>
           )}
         </View>
-        <Ionicons name="chevron-forward" size={14} color={isMe ? "rgba(255,255,255,0.5)" : colors.textMuted} />
+        <Ionicons
+          name="chevron-forward"
+          size={14}
+          color={isMe ? "rgba(255,255,255,0.5)" : colors.textMuted}
+        />
       </View>
       {card.bio ? (
         <Text
@@ -154,39 +219,86 @@ function UrlPreviewCard({
   const { colors } = useTheme();
   const openLink = useOpenLink();
 
-  function handlePress() {
-    openLink(card.url);
-  }
+  // Fetch og data (image + title) after initial render so card builds fast
+  const [ogImage, setOgImage] = useState<string | null>(card.ogImage);
+  const [ogTitle, setOgTitle] = useState<string | null>(null);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+
+  useEffect(() => {
+    if (card.ogImage !== undefined) {
+      setOgImage(card.ogImage);
+    }
+    fetchOgData(card.url).then((data) => {
+      if (!mounted.current) return;
+      if (data.image) setOgImage(data.image);
+      if (data.title) setOgTitle(data.title);
+    });
+  }, [card.url]);
 
   const bg = isMe ? "rgba(255,255,255,0.12)" : colors.backgroundSecondary;
   const borderColor = isMe ? "rgba(255,255,255,0.2)" : colors.border;
+  const textColor = isMe ? "#fff" : colors.text;
+  const mutedColor = isMe ? "rgba(255,255,255,0.55)" : colors.textMuted;
+  const displayTitle = ogTitle || card.title;
 
   return (
     <TouchableOpacity
-      onPress={handlePress}
+      onPress={() => openLink(card.url)}
       activeOpacity={0.8}
-      style={[st.card, { backgroundColor: bg, borderColor }]}
+      style={[st.card, st.urlCard, { backgroundColor: bg, borderColor }]}
     >
-      <View style={st.urlRow}>
-        <View style={[st.urlIconBg, { backgroundColor: accent + "20" }]}>
-          <Ionicons name="link" size={14} color={accent} />
-        </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text
-            style={[st.urlTitle, { color: isMe ? "#fff" : colors.text }]}
-            numberOfLines={2}
-          >
-            {card.title}
-          </Text>
-          <Text
-            style={[st.urlHost, { color: isMe ? "rgba(255,255,255,0.55)" : colors.textMuted }]}
-            numberOfLines={1}
-          >
+      {/* ── Thumbnail: og:image or favicon ── */}
+      <View style={st.thumbWrap}>
+        {ogImage ? (
+          <ExpoImage
+            source={{ uri: ogImage }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+          />
+        ) : (
+          /* favicon via Google CDN — always returns a 16×16+ icon */
+          <ExpoImage
+            source={{ uri: faviconUrl(card.hostname) }}
+            style={st.faviconImg}
+            contentFit="contain"
+            cachePolicy="memory-disk"
+          />
+        )}
+      </View>
+
+      {/* ── Text content ── */}
+      <View style={st.urlBody}>
+        {/* favicon + hostname row */}
+        <View style={st.hostRow}>
+          <ExpoImage
+            source={{ uri: faviconUrl(card.hostname) }}
+            style={st.faviconInline}
+            contentFit="contain"
+            cachePolicy="memory-disk"
+          />
+          <Text style={[st.urlHost, { color: mutedColor }]} numberOfLines={1}>
             {card.hostname}
           </Text>
         </View>
-        <Ionicons name="open-outline" size={13} color={isMe ? "rgba(255,255,255,0.5)" : colors.textMuted} />
+
+        {/* title */}
+        <Text style={[st.urlTitle, { color: textColor }]} numberOfLines={2}>
+          {displayTitle}
+        </Text>
       </View>
+
+      <Ionicons
+        name="open-outline"
+        size={13}
+        color={mutedColor}
+        style={st.openIcon}
+      />
     </TouchableOpacity>
   );
 }
@@ -257,17 +369,37 @@ export function LinkPreview({
         // @ts-ignore
         .catch(() => { if (mounted.current) setLoading(false); });
     } else {
+      // Build a skeleton card instantly so the bubble doesn't jump
+      let hostname = "";
+      try { hostname = new URL(target.url).hostname.replace(/^www\./, ""); } catch { hostname = target.url; }
       const cacheKey = target.url;
+
       if (urlCache[cacheKey]) {
         setPreview(urlCache[cacheKey]);
         return;
       }
-      let hostname = "";
-      try { hostname = new URL(target.url).hostname; } catch { hostname = target.url; }
-      const title = hostname.replace(/^www\./, "");
-      const card: UrlCard = { kind: "url", url: target.url, title: decodeURIComponent(target.url.split("?")[0].slice(-60)), hostname };
-      urlCache[cacheKey] = card;
-      setPreview(card);
+
+      const skeleton: UrlCard = {
+        kind: "url",
+        url: target.url,
+        title: hostname,
+        hostname,
+        ogImage: null,
+        favicon: faviconUrl(hostname),
+      };
+      setPreview(skeleton);
+
+      // Hydrate with real og data in background
+      fetchOgData(target.url).then((data) => {
+        if (!mounted.current) return;
+        const full: UrlCard = {
+          ...skeleton,
+          title: data.title || hostname,
+          ogImage: data.image,
+        };
+        urlCache[cacheKey] = full;
+        if (mounted.current) setPreview(full);
+      });
     }
   }, [text]);
 
@@ -290,18 +422,74 @@ export function LinkPreview({
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
+const THUMB_SIZE = 72;
+
 const st = StyleSheet.create({
   card: {
     marginTop: 6,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
     overflow: "hidden",
-    padding: 10,
   },
+  urlCard: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    minHeight: THUMB_SIZE,
+  },
+
+  // ── Thumbnail ──────────────────────────────────────────────────────────────
+  thumbWrap: {
+    width: THUMB_SIZE,
+    minHeight: THUMB_SIZE,
+    backgroundColor: "rgba(128,128,128,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  faviconImg: {
+    width: 32,
+    height: 32,
+  },
+
+  // ── Text body ──────────────────────────────────────────────────────────────
+  urlBody: {
+    flex: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    gap: 4,
+    justifyContent: "center",
+  },
+  hostRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  faviconInline: {
+    width: 14,
+    height: 14,
+    borderRadius: 2,
+  },
+  urlHost: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    flex: 1,
+  },
+  urlTitle: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    lineHeight: 18,
+  },
+  openIcon: {
+    alignSelf: "center",
+    marginRight: 10,
+  },
+
+  // ── Profile card ───────────────────────────────────────────────────────────
   profileRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+    padding: 10,
   },
   avatar: {
     width: 40,
@@ -332,31 +520,13 @@ const st = StyleSheet.create({
   profileBio: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
-    marginTop: 7,
+    marginTop: 4,
     lineHeight: 17,
+    paddingHorizontal: 10,
+    paddingBottom: 10,
   },
-  urlRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  urlIconBg: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  urlTitle: {
-    fontSize: 13,
-    fontFamily: "Inter_500Medium",
-    lineHeight: 18,
-  },
-  urlHost: {
-    fontSize: 11,
-    fontFamily: "Inter_400Regular",
-    marginTop: 2,
-  },
+
+  // ── Loading ────────────────────────────────────────────────────────────────
   loadingWrap: {
     marginTop: 6,
     paddingVertical: 4,
