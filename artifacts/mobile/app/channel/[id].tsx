@@ -459,7 +459,7 @@ export default function ChannelDetailScreen() {
   return (
     <KeyboardAvoidingView
       style={[st.root, { backgroundColor: colors.background }]}
-      behavior="padding"
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={0}
     >
       {/* Header */}
@@ -533,7 +533,7 @@ export default function ChannelDetailScreen() {
 
       {/* Composer (owner) or read-only notice (subscriber) */}
       {isOwner ? (
-        <View style={[st.composer, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: insets.bottom || 12 }]}>
+        <View style={[st.composer, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 12) }]}>
           {attachImage && (
             <View style={st.attachPreviewWrap}>
               <Image source={{ uri: attachImage }} style={st.attachPreview} contentFit="cover" />
@@ -578,7 +578,7 @@ export default function ChannelDetailScreen() {
           </View>
         </View>
       ) : (
-        <View style={[st.readOnlyBar, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: insets.bottom || 10 }]}>
+        <View style={[st.readOnlyBar, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 10) }]}>
           <Ionicons name="megaphone" size={15} color={colors.textMuted} />
           <Text style={[st.readOnlyText, { color: colors.textMuted }]}>
             {isSubscribed

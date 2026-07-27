@@ -116,8 +116,8 @@ export default function BroadcastScreen() {
   return (
     <KeyboardAvoidingView
       style={[styles.root, { backgroundColor: colors.background }]}
-      behavior="padding"
-      keyboardVerticalOffset={insets.bottom}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={0}
     >
       <GlassHeader
         title="New Broadcast"

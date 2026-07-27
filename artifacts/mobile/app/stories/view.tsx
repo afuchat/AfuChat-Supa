@@ -3,6 +3,7 @@ import {
   Animated,
   FlatList,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -68,6 +69,21 @@ export default function ViewStoryScreen() {
   const storyVideoRef = useRef<VideoView>(null);
   const [inPip, setInPip] = useState(false);
   const videoFinishedRef = React.useRef(false);
+
+  // Keyboard height — needed because bottomRow is position:absolute so
+  // KeyboardAvoidingView cannot lift it; we track manually on both platforms.
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => setKeyboardHeight(e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboardHeight(0),
+    );
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   // Viewers sheet
   const [showViewers, setShowViewers] = useState(false);
@@ -641,7 +657,10 @@ export default function ViewStoryScreen() {
 
       {/* ── Bottom action row — always visible ───────────────────────────── */}
       {!showViewers && !showShareSheet && (
-        <View style={[styles.bottomRow, { paddingBottom: insets.bottom + 12 }]}>
+        <View style={[styles.bottomRow, {
+          bottom: keyboardHeight,
+          paddingBottom: keyboardHeight > 0 ? 12 : insets.bottom + 12,
+        }]}>
 
           {/* Owner: viewer pill + count (tappable to open sheet) */}
           {isOwner ? (
