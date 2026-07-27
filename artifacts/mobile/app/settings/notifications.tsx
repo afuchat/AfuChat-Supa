@@ -278,7 +278,9 @@ function TimePickerSheet({ visible, label, value, onConfirm, onClose }: TimePick
   const COLUMN_W = 64;
 
   const overlayStyle = SHEET_OVERLAY_STYLE;
-  const animType = "slide" as const;
+  // Use "none" + BottomSheetContainer's own slide-in so there is no native
+  // spring/bounce on the modal entry animation.
+  const animType = "none" as const;
 
   return (
     <Modal visible={visible} transparent animationType={animType} onRequestClose={onClose}>

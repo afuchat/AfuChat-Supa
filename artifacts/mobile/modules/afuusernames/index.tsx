@@ -3,8 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -14,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SmartSheet } from "@/components/ui/SmartSheet";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
@@ -202,46 +201,39 @@ function BidSheet({
   );
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={undefined}
-      >
-        <TouchableOpacity style={s.sheetBackdrop} activeOpacity={1} onPress={onClose} />
-        <View style={[s.sheet, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={[s.sheetHandle, { backgroundColor: colors.border }]} />
-          <Text style={[s.sheetTitle, { color: colors.text }]}>Place a Bid</Text>
-          <Text style={[s.sheetSub, { color: colors.textMuted }]}>
-            @{listing.username} · min {minBid} ACoin
-          </Text>
+    <SmartSheet visible={visible} onClose={onClose} peekFraction={0.50} backgroundColor={colors.surface}>
+      <View style={s.sheetContent}>
+        <Text style={[s.sheetTitle, { color: colors.text }]}>Place a Bid</Text>
+        <Text style={[s.sheetSub, { color: colors.textMuted }]}>
+          @{listing.username} · min {minBid} ACoin
+        </Text>
 
-          <View style={[s.inputRow, { borderColor: colors.border, backgroundColor: colors.inputBg }]}>
-            <Text style={[s.inputPrefix, { color: Colors.brand }]}>⚡</Text>
-            <TextInput
-              style={[s.sheetInput, { color: colors.text }]}
-              placeholder={`Min ${minBid}`}
-              placeholderTextColor={colors.textMuted}
-              keyboardType="number-pad"
-              value={amount}
-              onChangeText={setAmount}
-            />
-            <Text style={[s.inputSuffix, { color: colors.textMuted }]}>ACoin</Text>
-          </View>
-
-          <TouchableOpacity
-            style={[s.sheetBtn, { backgroundColor: "#FF9F0A", opacity: submitting ? 0.65 : 1 }]}
-            onPress={placeBid}
-            disabled={submitting}
-            activeOpacity={0.8}
-          >
-            {submitting
-              ? <ActivityIndicator color="#fff" size="small" />
-              : <Text style={s.sheetBtnText}>Place Bid</Text>
-            }
-          </TouchableOpacity>
+        <View style={[s.inputRow, { borderColor: colors.border, backgroundColor: colors.inputBg }]}>
+          <Text style={[s.inputPrefix, { color: Colors.brand }]}>⚡</Text>
+          <TextInput
+            style={[s.sheetInput, { color: colors.text }]}
+            placeholder={`Min ${minBid}`}
+            placeholderTextColor={colors.textMuted}
+            keyboardType="number-pad"
+            value={amount}
+            onChangeText={setAmount}
+          />
+          <Text style={[s.inputSuffix, { color: colors.textMuted }]}>ACoin</Text>
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+
+        <TouchableOpacity
+          style={[s.sheetBtn, { backgroundColor: "#FF9F0A", opacity: submitting ? 0.65 : 1 }]}
+          onPress={placeBid}
+          disabled={submitting}
+          activeOpacity={0.8}
+        >
+          {submitting
+            ? <ActivityIndicator color="#fff" size="small" />
+            : <Text style={s.sheetBtnText}>Place Bid</Text>
+          }
+        </TouchableOpacity>
+      </View>
+    </SmartSheet>
   );
 }
 
@@ -308,96 +300,87 @@ function ListSheet({
   }
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={undefined}
-      >
-        <TouchableOpacity style={s.sheetBackdrop} activeOpacity={1} onPress={onClose} />
-        <View style={[s.sheet, s.sheetTall, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={[s.sheetHandle, { backgroundColor: colors.border }]} />
-          <Text style={[s.sheetTitle, { color: colors.text }]}>List a Username</Text>
-          <Text style={[s.sheetSub, { color: colors.textMuted }]}>
-            Sell an @handle you own or that's unclaimed
-          </Text>
+    <SmartSheet visible={visible} onClose={onClose} peekFraction={0.75} backgroundColor={colors.surface}>
+      <View style={s.sheetContent}>
+        <Text style={[s.sheetTitle, { color: colors.text }]}>List a Username</Text>
+        <Text style={[s.sheetSub, { color: colors.textMuted }]}>
+          Sell an @handle you own or that's unclaimed
+        </Text>
 
-          <ScrollView showsVerticalScrollIndicator={false} style={{ width: "100%" }}>
-            <Text style={[s.fieldLabel, { color: colors.textSecondary }]}>Username</Text>
+        <Text style={[s.fieldLabel, { color: colors.textSecondary }]}>Username</Text>
+        <View style={[s.inputRow, { borderColor: colors.border, backgroundColor: colors.inputBg }]}>
+          <Text style={[s.inputPrefix, { color: Colors.brand }]}>@</Text>
+          <TextInput
+            style={[s.sheetInput, { color: colors.text }]}
+            placeholder="username"
+            placeholderTextColor={colors.textMuted}
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={username}
+            onChangeText={t => setUsername(t.replace(/[^a-zA-Z0-9_]/g, ""))}
+          />
+        </View>
+
+        <Text style={[s.fieldLabel, { color: colors.textSecondary, marginTop: 14 }]}>
+          {isAuction ? "Reserve Price (ACoin)" : "Price (ACoin)"}
+        </Text>
+        <View style={[s.inputRow, { borderColor: colors.border, backgroundColor: colors.inputBg }]}>
+          <Text style={[s.inputPrefix, { color: Colors.brand }]}>⚡</Text>
+          <TextInput
+            style={[s.sheetInput, { color: colors.text }]}
+            placeholder="e.g. 1000"
+            placeholderTextColor={colors.textMuted}
+            keyboardType="number-pad"
+            value={price}
+            onChangeText={setPrice}
+          />
+          <Text style={[s.inputSuffix, { color: colors.textMuted }]}>ACoin</Text>
+        </View>
+
+        <View style={[s.switchRow, { borderColor: colors.border }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[s.switchLabel, { color: colors.text }]}>Auction mode</Text>
+            <Text style={[s.switchSub, { color: colors.textMuted }]}>Bidders compete for the handle</Text>
+          </View>
+          <Switch
+            value={isAuction}
+            onValueChange={setIsAuction}
+            trackColor={{ false: colors.border, true: "#FF9F0A66" }}
+            thumbColor={isAuction ? "#FF9F0A" : colors.textMuted}
+          />
+        </View>
+
+        {isAuction && (
+          <>
+            <Text style={[s.fieldLabel, { color: colors.textSecondary, marginTop: 14 }]}>Auction Duration (hours)</Text>
             <View style={[s.inputRow, { borderColor: colors.border, backgroundColor: colors.inputBg }]}>
-              <Text style={[s.inputPrefix, { color: Colors.brand }]}>@</Text>
+              <Ionicons name="time-outline" size={16} color={colors.textMuted} />
               <TextInput
                 style={[s.sheetInput, { color: colors.text }]}
-                placeholder="username"
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize="none"
-                autoCorrect={false}
-                value={username}
-                onChangeText={t => setUsername(t.replace(/[^a-zA-Z0-9_]/g, ""))}
-              />
-            </View>
-
-            <Text style={[s.fieldLabel, { color: colors.textSecondary, marginTop: 14 }]}>
-              {isAuction ? "Reserve Price (ACoin)" : "Price (ACoin)"}
-            </Text>
-            <View style={[s.inputRow, { borderColor: colors.border, backgroundColor: colors.inputBg }]}>
-              <Text style={[s.inputPrefix, { color: Colors.brand }]}>⚡</Text>
-              <TextInput
-                style={[s.sheetInput, { color: colors.text }]}
-                placeholder="e.g. 1000"
+                placeholder="24"
                 placeholderTextColor={colors.textMuted}
                 keyboardType="number-pad"
-                value={price}
-                onChangeText={setPrice}
+                value={hoursLeft}
+                onChangeText={setHoursLeft}
               />
-              <Text style={[s.inputSuffix, { color: colors.textMuted }]}>ACoin</Text>
+              <Text style={[s.inputSuffix, { color: colors.textMuted }]}>hours</Text>
             </View>
+          </>
+        )}
 
-            <View style={[s.switchRow, { borderColor: colors.border }]}>
-              <View style={{ flex: 1 }}>
-                <Text style={[s.switchLabel, { color: colors.text }]}>Auction mode</Text>
-                <Text style={[s.switchSub, { color: colors.textMuted }]}>Bidders compete for the handle</Text>
-              </View>
-              <Switch
-                value={isAuction}
-                onValueChange={setIsAuction}
-                trackColor={{ false: colors.border, true: "#FF9F0A66" }}
-                thumbColor={isAuction ? "#FF9F0A" : colors.textMuted}
-              />
-            </View>
-
-            {isAuction && (
-              <>
-                <Text style={[s.fieldLabel, { color: colors.textSecondary, marginTop: 14 }]}>Auction Duration (hours)</Text>
-                <View style={[s.inputRow, { borderColor: colors.border, backgroundColor: colors.inputBg }]}>
-                  <Ionicons name="time-outline" size={16} color={colors.textMuted} />
-                  <TextInput
-                    style={[s.sheetInput, { color: colors.text }]}
-                    placeholder="24"
-                    placeholderTextColor={colors.textMuted}
-                    keyboardType="number-pad"
-                    value={hoursLeft}
-                    onChangeText={setHoursLeft}
-                  />
-                  <Text style={[s.inputSuffix, { color: colors.textMuted }]}>hours</Text>
-                </View>
-              </>
-            )}
-
-            <TouchableOpacity
-              style={[s.sheetBtn, { backgroundColor: Colors.brand, marginTop: 20, opacity: submitting ? 0.65 : 1 }]}
-              onPress={submit}
-              disabled={submitting}
-              activeOpacity={0.8}
-            >
-              {submitting
-                ? <ActivityIndicator color="#fff" size="small" />
-                : <Text style={s.sheetBtnText}>List Username</Text>
-              }
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+        <TouchableOpacity
+          style={[s.sheetBtn, { backgroundColor: Colors.brand, marginTop: 20, opacity: submitting ? 0.65 : 1 }]}
+          onPress={submit}
+          disabled={submitting}
+          activeOpacity={0.8}
+        >
+          {submitting
+            ? <ActivityIndicator color="#fff" size="small" />
+            : <Text style={s.sheetBtnText}>List Username</Text>
+          }
+        </TouchableOpacity>
+      </View>
+    </SmartSheet>
   );
 }
 
@@ -692,10 +675,8 @@ const s = StyleSheet.create({
   emptyTitle:    { fontSize: 16, fontFamily: "Inter_600SemiBold", textAlign: "center" },
   emptySub:      { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" },
 
-  sheetBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)" },
-  sheet:         { borderTopLeftRadius: 22, borderTopRightRadius: 22, borderWidth: 0.5, paddingHorizontal: 20, paddingBottom: 32, paddingTop: 12, alignItems: "center", gap: 6 },
-  sheetTall:     { maxHeight: "80%" },
-  sheetHandle:   { width: 40, height: 4, borderRadius: 2, marginBottom: 8 },
+  // sheetContent: inner padding for SmartSheet bodies (SmartSheet owns position/bg/handle)
+  sheetContent:  { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8, alignItems: "center", gap: 6, width: "100%" },
   sheetTitle:    { fontSize: 18, fontFamily: "Inter_700Bold" },
   sheetSub:      { fontSize: 13, fontFamily: "Inter_400Regular", marginBottom: 12, textAlign: "center" },
   fieldLabel:    { fontSize: 12, fontFamily: "Inter_500Medium", marginBottom: 6, alignSelf: "flex-start" },

@@ -342,7 +342,8 @@ function VideoReplyItem({
   useEffect(() => {
     if (!isNew) return;
     Animated.parallel([
-      Animated.spring(slideAnim, { toValue: 0, tension: 180, friction: 22, useNativeDriver: USE_NATIVE }),
+      // Timing instead of spring — no bounce overshoot when new comments appear.
+      Animated.timing(slideAnim, { toValue: 0, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: USE_NATIVE }),
       Animated.timing(fadeAnim, { toValue: 1, duration: 280, useNativeDriver: USE_NATIVE }),
     ]).start();
   }, []);

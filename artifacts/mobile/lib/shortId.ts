@@ -17,10 +17,17 @@ function bytesToHex(bytes: number[]): string {
 
 // Hermes does not support BigInt("0x...") hex-string syntax.
 // Accumulate digit-by-digit using only BigInt(number) which is safe everywhere.
+// Guard against NaN: parseInt("?", 16) returns NaN for invalid chars, and
+// BigInt(NaN) throws "number is not integral" on Hermes (RangeError).
 function hexToBigInt(hex: string): bigint {
   let result = 0n;
   for (let i = 0; i < hex.length; i++) {
-    result = result * 16n + BigInt(parseInt(hex[i], 16));
+    const digit = parseInt(hex[i], 16);
+    // NaN comparisons always return false, so this catches NaN + out-of-range.
+    if (!(digit >= 0 && digit <= 15)) {
+      throw new Error(`hexToBigInt: invalid hex character '${hex[i]}' at position ${i}`);
+    }
+    result = result * 16n + BigInt(digit);
   }
   return result;
 }

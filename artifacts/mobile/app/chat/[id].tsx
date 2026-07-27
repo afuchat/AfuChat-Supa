@@ -3787,9 +3787,12 @@ function ChatScreen() {
     );
   }
 
-  // ── Invite Link handlers ──────────────────────────────────────────────────
+  // ── Invite Link helpers ───────────────────────────────────────────────────
 
-  function getInviteLink(): string {
+  // Memoised so the JSX render path never throws during React's render phase
+  // even in dev mode where concurrent-renderer error boundaries can re-throw
+  // caught exceptions.  Event handlers (copy / share) also use this value.
+  const inviteLink = useMemo((): string => {
     const chatId = isDraft ? realChatId : id;
     if (!chatId) return "";
     try {
@@ -3797,7 +3800,9 @@ function ChatScreen() {
     } catch {
       return "";
     }
-  }
+  }, [isDraft, realChatId, id]);
+
+  function getInviteLink(): string { return inviteLink; }
 
   async function handleCopyInviteLink() {
     const link = getInviteLink();
