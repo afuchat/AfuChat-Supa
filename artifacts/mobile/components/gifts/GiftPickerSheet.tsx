@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Animated,
   Dimensions,
+  Easing,
   FlatList,
   KeyboardAvoidingView,
   Modal,
@@ -226,7 +227,7 @@ export default function GiftPickerSheet({
 
   useEffect(() => {
     if (visible) {
-      Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true, tension: 60, friction: 11 }).start();
+      Animated.timing(sheetTranslateY, { toValue: 0, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
     } else {
       sheetTranslateY.setValue(1000);
     }
@@ -244,7 +245,7 @@ export default function GiftPickerSheet({
       if (g.dy > 80 || g.vy > 0.5) {
         Animated.timing(sheetTranslateY, { toValue: 1000, duration: 220, useNativeDriver: true }).start(() => onClose());
       } else {
-        Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true, tension: 80, friction: 12 }).start();
+        Animated.timing(sheetTranslateY, { toValue: 0, duration: 200, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
       }
     },
   })).current;

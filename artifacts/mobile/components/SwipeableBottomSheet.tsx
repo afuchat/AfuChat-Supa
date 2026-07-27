@@ -13,6 +13,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Easing,
   Modal,
   PanResponder,
   Pressable,
@@ -111,14 +112,14 @@ function MobileSheet({ visible, onClose, children, backgroundColor, maxHeight = 
   snapToFullRef.current = () => {
     isFullRef.current = true;
     setIsFull(true);
-    Animated.spring(sheetH, { toValue: fullHRef.current, useNativeDriver: false, tension: 58, friction: 9 }).start();
+    Animated.timing(sheetH, { toValue: fullHRef.current, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
   };
 
   snapToPeekRef.current = () => {
     isFullRef.current = false;
     setIsFull(false);
     scrollRef.current?.scrollTo({ y: 0, animated: false });
-    Animated.spring(sheetH, { toValue: peekHRef.current, useNativeDriver: false, tension: 58, friction: 9 }).start();
+    Animated.timing(sheetH, { toValue: peekHRef.current, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
   };
 
   dismissRef.current = () => {
@@ -136,7 +137,7 @@ function MobileSheet({ visible, onClose, children, backgroundColor, maxHeight = 
       isFullRef.current = false;
       setIsFull(false);
       sheetH.setValue(0);
-      Animated.spring(sheetH, { toValue: peekHRef.current, useNativeDriver: false, tension: 58, friction: 10 }).start();
+      Animated.timing(sheetH, { toValue: peekHRef.current, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
     }
   }, [visible]);
 
@@ -210,7 +211,7 @@ function MobileSheet({ visible, onClose, children, backgroundColor, maxHeight = 
 
       {/* Sheet */}
       <Animated.View
-        style={[ms.sheet, { height: sheetH, backgroundColor: mobileBg }]}
+        style={[ms.sheet, { height: sheetH, backgroundColor: mobileBg, paddingBottom: insets.bottom }]}
         {...panResponder.panHandlers}
       >
         {/* Subtle top border glow */}
@@ -225,9 +226,9 @@ function MobileSheet({ visible, onClose, children, backgroundColor, maxHeight = 
         <ScrollView
           ref={scrollRef}
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: insets.bottom }}
+          contentContainerStyle={{ flexGrow: 1 }}
           scrollEnabled={isFull}
-          bounces
+          bounces={false}
           showsVerticalScrollIndicator={false}
           onScroll={(e) => { scrollYRef.current = e.nativeEvent.contentOffset.y; }}
           onScrollEndDrag={handleScrollEndDrag}

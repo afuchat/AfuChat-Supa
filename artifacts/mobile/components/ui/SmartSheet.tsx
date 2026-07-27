@@ -15,6 +15,7 @@ import React, {
 } from "react";
 import {
   Animated,
+  Easing,
   Modal,
   PanResponder,
   Platform,
@@ -78,11 +79,11 @@ export function SmartSheet({
   snapToFullRef.current = () => {
     isFullRef.current = true;
     setIsFull(true);
-    Animated.spring(sheetH, {
+    Animated.timing(sheetH, {
       toValue: fullHRef.current,
+      duration: 240,
+      easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
-      tension: 58,
-      friction: 9,
     }).start();
   };
 
@@ -90,11 +91,11 @@ export function SmartSheet({
     isFullRef.current = false;
     setIsFull(false);
     scrollRef.current?.scrollTo({ y: 0, animated: false });
-    Animated.spring(sheetH, {
+    Animated.timing(sheetH, {
       toValue: peekHRef.current,
+      duration: 240,
+      easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
-      tension: 58,
-      friction: 9,
     }).start();
   };
 
@@ -118,11 +119,11 @@ export function SmartSheet({
       isFullRef.current = false;
       setIsFull(false);
       sheetH.setValue(0);
-      Animated.spring(sheetH, {
+      Animated.timing(sheetH, {
         toValue: peekHRef.current,
+        duration: 320,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: false,
-        tension: 58,
-        friction: 10,
       }).start();
     }
   }, [visible]);
@@ -229,7 +230,7 @@ export function SmartSheet({
 
       {/* The sheet itself — panHandlers on the whole view */}
       <Animated.View
-        style={[styles.sheet, { height: sheetH, backgroundColor: resolvedBg }]}
+        style={[styles.sheet, { height: sheetH, backgroundColor: resolvedBg, paddingBottom: insets.bottom }]}
         {...panResponder.panHandlers}
       >
         {/* Drag handle indicator */}
@@ -241,9 +242,9 @@ export function SmartSheet({
         <ScrollView
           ref={scrollRef}
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: insets.bottom }}
+          contentContainerStyle={{ flexGrow: 1 }}
           scrollEnabled={isFull}
-          bounces
+          bounces={false}
           showsVerticalScrollIndicator={false}
           onScroll={(e) => {
             scrollYRef.current = e.nativeEvent.contentOffset.y;

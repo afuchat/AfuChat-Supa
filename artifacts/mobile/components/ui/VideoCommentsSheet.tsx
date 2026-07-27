@@ -14,6 +14,7 @@ import React, {
 import {
   ActivityIndicator,
   Animated,
+  Easing,
   FlatList,
   Image,
   Keyboard,
@@ -583,7 +584,7 @@ export function VideoCommentsSheet({
     if (visible) {
       isFullSheetRef.current = false;
       animSheetH.setValue(peekSHRef.current || 400);
-      Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true, tension: 60, friction: 11 }).start();
+      Animated.timing(sheetTranslateY, { toValue: 0, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
     } else {
       sheetTranslateY.setValue(1000);
     }
@@ -987,12 +988,12 @@ export function VideoCommentsSheet({
   // Keep ref-stable snap functions up to date
   snapToFullRef.current = () => {
     isFullSheetRef.current = true;
-    Animated.spring(animSheetH, { toValue: fullSHRef.current, useNativeDriver: false, tension: 55, friction: 9 }).start();
+    Animated.timing(animSheetH, { toValue: fullSHRef.current, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
   };
   snapToPeekRef.current = () => {
     isFullSheetRef.current = false;
     listRef.current?.scrollToOffset({ offset: 0, animated: false });
-    Animated.spring(animSheetH, { toValue: peekSHRef.current, useNativeDriver: false, tension: 55, friction: 9 }).start();
+    Animated.timing(animSheetH, { toValue: peekSHRef.current, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
   };
   dismissSheetRef.current = dismissSheet;
 
