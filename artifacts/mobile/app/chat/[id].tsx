@@ -2102,6 +2102,8 @@ function ChatScreen() {
 
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [gifSearch, setGifSearch] = useState("");
+  const [gifResults, setGifResults] = useState<{ id: string; preview: string; url: string }[]>([]);
+  const [gifLoading, setGifLoading] = useState(false);
   const [attachmentPreview, setAttachmentPreview] = useState<{ uri: string; type: string; name?: string; mimeType?: string; trimStart?: number; trimEnd?: number } | null>(null);
   const [showVideoTrimmer, setShowVideoTrimmer] = useState(false);
   const [pendingVideoUri, setPendingVideoUri] = useState<{ uri: string; mimeType: string } | null>(null);
@@ -5097,6 +5099,36 @@ STRICT RULES:
     }
   }
 
+  // ── Tenor GIF search / trending ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!showGifPicker) return;
+    let cancelled = false;
+    const delay = gifSearch.trim() ? 350 : 0; // debounce search; trending fires immediately
+    const timer = setTimeout(async () => {
+      setGifLoading(true);
+      try {
+        const q = gifSearch.trim();
+        const endpoint = q
+          ? `https://g.tenor.com/v1/search?q=${encodeURIComponent(q)}&key=LIVEGIF&limit=24&media_filter=minimal`
+          : `https://g.tenor.com/v1/trending?key=LIVEGIF&limit=24&media_filter=minimal`;
+        const res  = await fetch(endpoint);
+        const json = await res.json();
+        if (cancelled) return;
+        const items = (json.results ?? []).map((r: any) => ({
+          id:      r.id,
+          preview: r.media?.[0]?.tinygif?.url ?? r.media?.[0]?.gif?.url ?? "",
+          url:     r.media?.[0]?.gif?.url     ?? r.media?.[0]?.tinygif?.url ?? "",
+        })).filter((g: any) => g.url);
+        setGifResults(items);
+      } catch {
+        if (!cancelled) setGifResults([]);
+      } finally {
+        if (!cancelled) setGifLoading(false);
+      }
+    }, delay);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [showGifPicker, gifSearch]);
+
   async function sendGifMessage(gifUrl: string) {
     if (!user) return;
     if (messageLimited) {
@@ -6468,6 +6500,22 @@ STRICT RULES:
                         />
                         {!input.trim() && (
                           <>
+                            {/* GIF button — always visible when idle */}
+                            {!isAfuAiDirectChat && (
+                              <TouchableOpacity
+                                hitSlop={8}
+                                style={[st.pillIcon, showGifPicker && { backgroundColor: colors.accent + "18", borderRadius: 8 }]}
+                                onPress={() => {
+                                  Keyboard.dismiss();
+                                  setShowEmojiStickerPicker(false);
+                                  setShowAttachPanel(false);
+                                  setGifSearch("");
+                                  setShowGifPicker((v) => !v);
+                                }}
+                              >
+                                <Text style={{ fontSize: 11, fontFamily: "Inter_700Bold", color: showGifPicker ? colors.accent : colors.textMuted, letterSpacing: -0.3 }}>GIF</Text>
+                              </TouchableOpacity>
+                            )}
                             {!chatInfo?.is_group && !chatInfo?.is_channel && !isAfuAiDirectChat && (
                               <TouchableOpacity onPress={() => setShowGiftPicker(true)} hitSlop={8} style={st.pillIcon}>
                                 <Ionicons name="gift" size={22} color={colors.textMuted} />
@@ -7068,7 +7116,7 @@ STRICT RULES:
             style={[st.reactEmojiPillBtn, showMoreEmojis && { backgroundColor: colors.inputBg }]}
             onPress={() => setShowMoreEmojis((v) => !v)}
           >
-            <Ionicons name={showMoreEmojis ? "chevron-up" : "add"} size={22} color="#111" />
+            <Ionicons name={showMoreEmojis ? "chevron-up" : "add"} size={22} color={colors.text} />
           </TouchableOpacity>
         </View>
 
@@ -7100,8 +7148,8 @@ STRICT RULES:
 
         {/* Reply */}
         <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) { setReplyTo(showReactions); setTimeout(() => chatInputRef.current?.focus(), 50); setShowReactions(null); } }}>
-          <Ionicons name="arrow-undo" size={24} color="#111" style={st.reactRowIcon} />
-          <Text style={st.reactRowLabel}>Reply</Text>
+          <Ionicons name="arrow-undo" size={24} color={colors.text} style={st.reactRowIcon} />
+          <Text style={[st.reactRowLabel, { color: colors.text }]}>Reply</Text>
         </TouchableOpacity>
 
         {/* Copy Text */}
@@ -7111,16 +7159,16 @@ STRICT RULES:
           if (isGift) return null;
           return (
             <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={async () => { await Clipboard.setStringAsync(txt); setShowReactions(null); showAlert("Copied", "Message text copied to clipboard."); }}>
-              <Ionicons name="copy" size={24} color="#111" style={st.reactRowIcon} />
-              <Text style={st.reactRowLabel}>Copy Text</Text>
+              <Ionicons name="copy" size={24} color={colors.text} style={st.reactRowIcon} />
+              <Text style={[st.reactRowLabel, { color: colors.text }]}>Copy Text</Text>
             </TouchableOpacity>
           );
         })()}
 
         {/* Forward */}
         <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) { openForward(showReactions); setShowReactions(null); } }}>
-          <Ionicons name="arrow-redo" size={24} color="#111" style={st.reactRowIcon} />
-          <Text style={st.reactRowLabel}>Forward</Text>
+          <Ionicons name="arrow-redo" size={24} color={colors.text} style={st.reactRowIcon} />
+          <Text style={[st.reactRowLabel, { color: colors.text }]}>Forward</Text>
         </TouchableOpacity>
 
         {/* Star Message */}
@@ -7130,8 +7178,8 @@ STRICT RULES:
           if (isGift) return null;
           return (
             <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) handleStarMessage(showReactions); }}>
-              <Ionicons name="star" size={24} color="#111" style={st.reactRowIcon} />
-              <Text style={st.reactRowLabel}>Star Message</Text>
+              <Ionicons name="star" size={24} color={colors.text} style={st.reactRowIcon} />
+              <Text style={[st.reactRowLabel, { color: colors.text }]}>Star Message</Text>
             </TouchableOpacity>
           );
         })()}
@@ -7139,47 +7187,47 @@ STRICT RULES:
         {/* Save to Phone */}
         {showReactions?.attachment_url && showReactions.attachment_type !== "video" && (
           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) handleSaveToPhone(showReactions); }}>
-            <Ionicons name="download" size={24} color="#111" style={st.reactRowIcon} />
-            <Text style={st.reactRowLabel}>Save to Phone</Text>
+            <Ionicons name="download" size={24} color={colors.text} style={st.reactRowIcon} />
+            <Text style={[st.reactRowLabel, { color: colors.text }]}>Save to Phone</Text>
           </TouchableOpacity>
         )}
 
         {/* Translate */}
         <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) openTranslatePicker(showReactions); }}>
-          <Ionicons name="language" size={24} color="#111" style={st.reactRowIcon} />
-          <Text style={st.reactRowLabel}>Translate</Text>
-          <Ionicons name="chevron-forward" size={18} color="#111" />
+          <Ionicons name="language" size={24} color={colors.text} style={st.reactRowIcon} />
+          <Text style={[st.reactRowLabel, { color: colors.text }]}>Translate</Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </TouchableOpacity>
 
         {/* Edit (own non-gift messages) */}
         {showReactions?.sender_id === user?.id && !showReactions?.attachment_url && !showReactions?.encrypted_content.startsWith("🎁 ") && !showReactions?.encrypted_content.startsWith("🧧") && !showReactions?.encrypted_content.includes("|giftId:") && (
           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) startEditMessage(showReactions); }}>
-            <Ionicons name="pencil" size={24} color="#111" style={st.reactRowIcon} />
-            <Text style={st.reactRowLabel}>Edit</Text>
+            <Ionicons name="pencil" size={24} color={colors.text} style={st.reactRowIcon} />
+            <Text style={[st.reactRowLabel, { color: colors.text }]}>Edit</Text>
           </TouchableOpacity>
         )}
 
         {/* Message Info */}
         {showReactions?.sender_id === user?.id && (
           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { setMsgInfoTarget(showReactions); setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); }}>
-            <Ionicons name="information-circle" size={24} color="#111" style={st.reactRowIcon} />
-            <Text style={st.reactRowLabel}>Message Info</Text>
+            <Ionicons name="information-circle" size={24} color={colors.text} style={st.reactRowIcon} />
+            <Text style={[st.reactRowLabel, { color: colors.text }]}>Message Info</Text>
           </TouchableOpacity>
         )}
 
         {/* View Edit History */}
         {advancedFeatures.message_edit_history && showReactions?.edited_at && (
           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) handleViewEditHistory(showReactions); }}>
-            <Ionicons name="time" size={24} color="#111" style={st.reactRowIcon} />
-            <Text style={st.reactRowLabel}>View Edit History</Text>
+            <Ionicons name="time" size={24} color={colors.text} style={st.reactRowIcon} />
+            <Text style={[st.reactRowLabel, { color: colors.text }]}>View Edit History</Text>
           </TouchableOpacity>
         )}
 
         {/* Remind Me */}
         {advancedFeatures.message_reminders && showReactions?.encrypted_content && !showReactions.encrypted_content.startsWith("🎁 ") && !showReactions.encrypted_content.startsWith("🧧") && !["📷 Photo", "🎥 Video", "GIF"].includes(showReactions.encrypted_content) && (
           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { setReminderMsg(showReactions); setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); }}>
-            <Ionicons name="alarm" size={24} color="#111" style={st.reactRowIcon} />
-            <Text style={st.reactRowLabel}>Remind Me</Text>
+            <Ionicons name="alarm" size={24} color={colors.text} style={st.reactRowIcon} />
+            <Text style={[st.reactRowLabel, { color: colors.text }]}>Remind Me</Text>
           </TouchableOpacity>
         )}
 
@@ -7190,8 +7238,8 @@ STRICT RULES:
           if (isGift) return null;
           return (
             <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); router.push({ pathname: "/create-post", params: { prefill: txt } } as any); }}>
-              <Ionicons name="share-social" size={24} color="#111" style={st.reactRowIcon} />
-              <Text style={st.reactRowLabel}>Share to Feed</Text>
+              <Ionicons name="share-social" size={24} color={colors.text} style={st.reactRowIcon} />
+              <Text style={[st.reactRowLabel, { color: colors.text }]}>Share to Feed</Text>
             </TouchableOpacity>
           );
         })()}
@@ -7225,14 +7273,14 @@ STRICT RULES:
             </View>
             {showReactions && showReactions.encrypted_content.length >= 500 && (
               <TouchableOpacity style={[st.reactRow, { opacity: aiLoading && aiResultType === "summary" ? 0.5 : 1 }]} activeOpacity={0.65} disabled={aiLoading} onPress={() => { if (showReactions) handleAiSummarize(showReactions); }}>
-                <Ionicons name="document-text" size={24} color="#111" style={st.reactRowIcon} />
-                <Text style={st.reactRowLabel}>Summarize Message</Text>
+                <Ionicons name="document-text" size={24} color={colors.text} style={st.reactRowIcon} />
+                <Text style={[st.reactRowLabel, { color: colors.text }]}>Summarize Message</Text>
                 {aiLoading && aiResultType === "summary" && <ActivityIndicator color={colors.accent} size="small" />}
               </TouchableOpacity>
             )}
             <TouchableOpacity style={[st.reactRow, { opacity: aiLoading && aiResultType === "replies" ? 0.5 : 1 }]} activeOpacity={0.65} disabled={aiLoading} onPress={handleAiSuggestReply}>
-              <Ionicons name="chatbubbles" size={24} color="#111" style={st.reactRowIcon} />
-              <Text style={st.reactRowLabel}>Smart Replies</Text>
+              <Ionicons name="chatbubbles" size={24} color={colors.text} style={st.reactRowIcon} />
+              <Text style={[st.reactRowLabel, { color: colors.text }]}>Smart Replies</Text>
               {aiLoading && aiResultType === "replies" && <ActivityIndicator color={colors.accent} size="small" />}
             </TouchableOpacity>
 
@@ -7451,39 +7499,76 @@ STRICT RULES:
       />
 
 
-      <BottomSheet visible={showGifPicker} onClose={() => { setShowGifPicker(false); setGifSearch(""); }}>
-        <Text style={[st.sheetTitle, { color: colors.text }]}>Send GIF</Text>
-        <TextInput
-          style={[st.sheetInput, { color: colors.text, backgroundColor: colors.inputBg }]}
-          placeholder="Search GIFs..."
-          placeholderTextColor={colors.textMuted}
-          value={gifSearch}
-          onChangeText={setGifSearch}
-        />
-        <ScrollView style={{ maxHeight: 300 }} showsVerticalScrollIndicator={false}>
-          <View style={st.gifGrid}>
-            {[
-              { label: "Thumbs Up", url: "https://media.giphy.com/media/111ebonMs90YLu/giphy.gif" },
-              { label: "Laughing", url: "https://media.giphy.com/media/ZqlvCTNHpqrio/giphy.gif" },
-              { label: "Love", url: "https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif" },
-              { label: "Dancing", url: "https://media.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif" },
-              { label: "Clapping", url: "https://media.giphy.com/media/7rj2ZgttvgomY/giphy.gif" },
-              { label: "Mind Blown", url: "https://media.giphy.com/media/xT0xeJpnrWC3XWblEk/giphy.gif" },
-              { label: "Celebrate", url: "https://media.giphy.com/media/g9582DNuQppxC/giphy.gif" },
-              { label: "High Five", url: "https://media.giphy.com/media/3oEjHV0z8S7WM4MwnK/giphy.gif" },
-              { label: "Crying", url: "https://media.giphy.com/media/d2lcHJTG5Tscg/giphy.gif" },
-              { label: "Fire", url: "https://media.giphy.com/media/l4FATJpd4LWgeruTK/giphy.gif" },
-              { label: "Cool", url: "https://media.giphy.com/media/62PP2yEIAZF6g/giphy.gif" },
-              { label: "Wave", url: "https://media.giphy.com/media/ASd0Ukj0y3qMM/giphy.gif" },
-            ]
-              .filter((g) => !gifSearch || g.label.toLowerCase().includes(gifSearch.toLowerCase()))
-              .map((gif) => (
-                <TouchableOpacity key={gif.label} style={st.gifItem} onPress={() => sendGifMessage(gif.url)} activeOpacity={0.7}>
-                  <Image source={{ uri: gif.url }} style={st.gifThumb} resizeMode="cover" />
-                  <Text style={[st.gifLabel, { color: colors.textSecondary }]}>{gif.label}</Text>
-                </TouchableOpacity>
-              ))}
-          </View>
+      <BottomSheet visible={showGifPicker} onClose={() => { setShowGifPicker(false); setGifSearch(""); setGifResults([]); }}>
+        {/* Header */}
+        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingBottom: 10, gap: 8 }}>
+          <Text style={[st.sheetTitle, { color: colors.text, marginBottom: 0, flex: 1 }]}>GIF</Text>
+          <Text style={{ fontSize: 11, color: colors.textMuted, fontFamily: "Inter_400Regular" }}>Powered by Tenor</Text>
+        </View>
+
+        {/* Search bar */}
+        <View style={{ flexDirection: "row", alignItems: "center", marginHorizontal: 16, marginBottom: 12, backgroundColor: colors.inputBg, borderRadius: 12, paddingHorizontal: 12, gap: 8 }}>
+          <Ionicons name="search" size={16} color={colors.textMuted} />
+          <TextInput
+            style={[{ flex: 1, paddingVertical: 10, fontSize: 15, fontFamily: "Inter_400Regular", color: colors.text }]}
+            placeholder="Search GIFs…"
+            placeholderTextColor={colors.textMuted}
+            value={gifSearch}
+            onChangeText={setGifSearch}
+            returnKeyType="search"
+            autoCorrect={false}
+          />
+          {gifSearch.length > 0 && (
+            <TouchableOpacity hitSlop={8} onPress={() => setGifSearch("")}>
+              <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Grid */}
+        <ScrollView style={{ maxHeight: 340 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 12 }}>
+          {gifLoading ? (
+            <View style={{ height: 180, alignItems: "center", justifyContent: "center" }}>
+              <ActivityIndicator color={colors.accent} />
+            </View>
+          ) : gifResults.length === 0 ? (
+            <View style={{ height: 180, alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <Text style={{ fontSize: 32 }}>🔍</Text>
+              <Text style={{ fontSize: 14, color: colors.textMuted, fontFamily: "Inter_400Regular" }}>
+                {gifSearch.trim() ? "No GIFs found" : "Loading trending GIFs…"}
+              </Text>
+            </View>
+          ) : (
+            // Masonry-style 2-column grid
+            (() => {
+              const left  = gifResults.filter((_, i) => i % 2 === 0);
+              const right = gifResults.filter((_, i) => i % 2 !== 0);
+              const GifCol = ({ items }: { items: typeof gifResults }) => (
+                <View style={{ flex: 1, gap: 4 }}>
+                  {items.map((gif) => (
+                    <TouchableOpacity
+                      key={gif.id}
+                      activeOpacity={0.75}
+                      onPress={() => sendGifMessage(gif.url)}
+                      style={{ borderRadius: 10, overflow: "hidden", backgroundColor: colors.inputBg }}
+                    >
+                      <Image
+                        source={{ uri: gif.preview }}
+                        style={{ width: "100%", aspectRatio: 1.4 }}
+                        resizeMode="cover"
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              );
+              return (
+                <View style={{ flexDirection: "row", gap: 4 }}>
+                  <GifCol items={left} />
+                  <GifCol items={right} />
+                </View>
+              );
+            })()
+          )}
         </ScrollView>
       </BottomSheet>
 
@@ -8654,7 +8739,7 @@ const st = StyleSheet.create({
   reactRowSep:         { height: StyleSheet.hairlineWidth, marginVertical: 2 },
   reactRow:            { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16, minHeight: 56 },
   reactRowIcon:        { marginRight: 18, width: 24, textAlign: "center" },
-  reactRowLabel:       { flex: 1, fontSize: 16, fontFamily: "Inter_700Bold", color: "#111" },
+  reactRowLabel:       { flex: 1, fontSize: 16, fontFamily: "Inter_700Bold" },
 
   sheetActionRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 4 },
   sheetActionText: { fontSize: 16, fontFamily: "Inter_500Medium" },
