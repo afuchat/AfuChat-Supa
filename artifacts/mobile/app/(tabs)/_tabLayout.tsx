@@ -176,7 +176,12 @@ function CompactTabBar({
               accessibilityLabel={slot.route.replace("/(tabs)/", "")}
               accessibilityState={{ selected: focused }}
             >
-              <View style={pill.iconWrap}>
+              <View
+                style={[
+                  pill.iconWrap,
+                  focused && { backgroundColor: ACCENT + "22", borderRadius: 14 },
+                ]}
+              >
                 <Ionicons
                   name={slot.icon as any}
                   size={24}
@@ -191,13 +196,6 @@ function CompactTabBar({
                   </View>
                 )}
               </View>
-              {/* Active dot */}
-              <View
-                style={[
-                  pill.dot,
-                  { backgroundColor: focused ? ACCENT : "transparent" },
-                ]}
-              />
             </TouchableOpacity>
           );
         })}
@@ -267,18 +265,12 @@ const pill = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     height: 64,
-    gap: 4,
   },
   iconWrap: {
     width: 36,
     height: 36,
     alignItems: "center",
     justifyContent: "center",
-  },
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
   },
   createBtn: {
     width: 48,
