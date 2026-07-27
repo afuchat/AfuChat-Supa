@@ -6361,7 +6361,7 @@ STRICT RULES:
         )}
 
         {isAfuChatSystemChat ? (
-          <View style={[st.inputFloatOuter, { paddingBottom: 8 }]}>
+          <View style={[st.inputFloatOuter, { paddingBottom: Math.max(insets.bottom, 8) }]}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingHorizontal: 12, paddingVertical: 6 }}>
               {([
                 { key: "all",      label: "All",      icon: "notifications" },
@@ -6405,7 +6405,7 @@ STRICT RULES:
             </View>
           </View>
         ) : messageLimited ? (
-          <View style={[st.inputFloatOuter, { paddingBottom: 8 }]}>
+          <View style={[st.inputFloatOuter, { paddingBottom: Math.max(insets.bottom, 8) }]}>
             <View style={[st.limitedGlass, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Ionicons name="lock-closed" size={15} color={colors.textMuted} style={{ marginRight: 8 }} />
               <Text style={[st.limitedText, { color: colors.textSecondary }]}>
@@ -6414,7 +6414,7 @@ STRICT RULES:
             </View>
           </View>
         ) : isRecording && recLocked ? (
-          <View style={[st.inputFloatOuter, { paddingBottom: 8 }]}>
+          <View style={[st.inputFloatOuter, { paddingBottom: Math.max(insets.bottom, 8) }]}>
             <View style={[st.inputGlassPill, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
               <View style={st.recLockedInner}>
                 <TouchableOpacity onPress={cancelVoiceRecording} hitSlop={12} style={st.recLockedTrash}>

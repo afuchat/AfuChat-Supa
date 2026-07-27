@@ -408,7 +408,8 @@ function PostImages({
   const ratio  = imgRatio ?? IMG_RATIO_MIN;
   const imgH   = Math.round(imgW * ratio);
   const CORNER = 12;
-  const BG     = isDark ? "#1c1c1e" : "#e9e9e9";
+  const { colors: imgColors } = useTheme();
+  const BG     = imgColors.backgroundSecondary;
 
   const heartOpacity = useRef(new Animated.Value(0)).current;
   const heartScale   = useRef(new Animated.Value(0.3)).current;
@@ -2567,21 +2568,7 @@ export default function DiscoverScreen() {
       </Animated.View>
       {/* ────────────────────────────────────────────────────────────────── */}
 
-      {/* Top edge fade — content dissolves as it scrolls up under the header */}
-      {headerHeight > 0 && (
-        <LinearGradient
-          colors={[colors.background, "transparent"]}
-          style={{
-            position: "absolute",
-            top: headerHeight,
-            left: 0,
-            right: 0,
-            height: 56,
-            zIndex: 18,
-            pointerEvents: "none",
-          } as any}
-        />
-      )}
+      {/* Edge fade removed — it was overlaying the first row of feed content */}
 
       {_PagerView ? (
         <_PagerView
@@ -3162,7 +3149,7 @@ const styles = StyleSheet.create({
   videoCard: { marginLeft: 66, marginRight: 16, marginBottom: 2 },
   videoThumb: {
     height: 220,
-    backgroundColor: "#0a0a0a",
+    backgroundColor: "transparent",
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
