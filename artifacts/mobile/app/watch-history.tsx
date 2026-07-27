@@ -138,7 +138,7 @@ function HistoryRow({ item, colors, onPress, onDelete }: RowProps) {
                   source={{ uri: item.thumbnail }}
                   style={styles.thumb}
                   contentFit="cover"
-                  transition={200}
+                  transition={0}
                 />
                 <LinearGradient
                   colors={["transparent", "rgba(0,0,0,0.5)"]}

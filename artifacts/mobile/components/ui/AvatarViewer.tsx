@@ -89,7 +89,7 @@ export function AvatarViewer({ visible, uri, name, onClose }: Props) {
               }}
               contentFit="contain"
               cachePolicy="memory-disk"
-              transition={150}
+              transition={0}
             />
           ) : (
             <View

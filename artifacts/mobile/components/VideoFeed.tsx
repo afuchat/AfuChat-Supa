@@ -411,23 +411,18 @@ const VideoItem = React.memo(
           }
           const dur = player.duration;
           if (dur > 0) {
-            const now = Date.now();
-            if (now - lastProgressTs.current >= 100) {
-              lastProgressTs.current = now;
-              const frac = player.currentTime / dur;
-              progressFill.value = frac;
-              if (duration !== dur) setDuration(dur);
+            const frac = player.currentTime / dur;
+            progressFill.value = frac;
+            if (duration !== dur) setDuration(dur);
 
-              // Auto-advance when within 0.3s of end
-              if (!endFired.current && frac >= 0.97) {
-                endFired.current = true;
-                // Loop back to start if no next video available
-                runOnJS(onVideoEnd)();
-              }
+            // Auto-advance when within 0.3s of end
+            if (!endFired.current && frac >= 0.97) {
+              endFired.current = true;
+              runOnJS(onVideoEnd)();
             }
           }
         } catch (_) {}
-      }, 100);
+      }, 250);
       return () => clearInterval(timer);
     }, [isActive, duration, onVideoEnd]);
 

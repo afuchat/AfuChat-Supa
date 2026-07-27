@@ -36,6 +36,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "@/lib/haptics";
 import { ImageViewer, useImageViewer } from "@/components/ImageViewer";
 import * as ImagePicker from "expo-image-picker";
+import { Image as ExpoImage } from "expo-image";
 import * as DocumentPicker from "expo-document-picker";
 import * as Contacts from "expo-contacts";
 import * as FileSystem from "expo-file-system";
@@ -1219,7 +1220,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                   activeOpacity={0.9}
                 >
                   <View>
-                    <Image source={{ uri: attachUri || msg.attachment_url! }} style={st.attachImage} resizeMode="cover" />
+                    <ExpoImage source={{ uri: attachUri || msg.attachment_url! }} style={st.attachImage} contentFit="cover" cachePolicy="memory-disk" transition={0} />
                   </View>
                 </TouchableOpacity>
               {hasTextContent && (
@@ -6161,10 +6162,10 @@ STRICT RULES:
               scrollEventThrottle={16}
               onEndReached={loadMoreMessages}
               onEndReachedThreshold={0.3}
-              windowSize={21}
+              windowSize={5}
               initialNumToRender={20}
-              maxToRenderPerBatch={20}
-              updateCellsBatchingPeriod={20}
+              maxToRenderPerBatch={8}
+              updateCellsBatchingPeriod={50}
               onScrollToIndexFailed={(info) => {
                 setTimeout(() => {
                   flatListRef.current?.scrollToIndex({ index: info.index, animated: true, viewPosition: 0.5 });

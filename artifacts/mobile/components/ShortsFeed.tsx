@@ -146,7 +146,7 @@ function NativeShortsPlayer({
           onEnded();
         }
       } catch {}
-    }, 100);
+    }, 250);
     return () => clearInterval(timer);
   }, [loop, active, onEnded]);
 
