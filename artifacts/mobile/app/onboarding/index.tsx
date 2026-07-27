@@ -1043,7 +1043,7 @@ export default function OnboardingScreen() {
       {/* ── Bottom action bar — positioned absolute so it floats above keyboard ── */}
       <View style={[st.bottomBar, { paddingBottom: insets.bottom > 0 ? insets.bottom : 16, backgroundColor: colors.background }]}>
         <Pressable
-          style={[st.nextBtn, { backgroundColor: colors.accent, opacity: canProceed() ? 1 : 0.4 }]}
+          style={[st.nextBtn, { opacity: canProceed() ? 1 : 0.35 }]}
           onPress={step === TOTAL_STEPS ? handleComplete : goNext}
           disabled={!canProceed() || loading}
         >
@@ -1195,7 +1195,7 @@ const st = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 12,
   },
-  nextBtn:     { backgroundColor: Colors.brand, height: 52, borderRadius: 999, alignItems: "center", justifyContent: "center" },
+  nextBtn:     { backgroundColor: "rgba(255,255,255,0.08)", height: 52, borderRadius: 999, alignItems: "center", justifyContent: "center" },
   nextBtnText: { color: "#fff", fontSize: 17, fontFamily: "Inter_600SemiBold" },
 
   // Modals

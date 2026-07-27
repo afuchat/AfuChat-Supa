@@ -60,6 +60,10 @@ const light = {
   // ── Form inputs ─────────────────────────────────────────────────────────────
   inputBg:           "#EDE8DC",
 
+  // ── Glass surface tokens (light equivalents — subtle shadows) ────────────────
+  glassBg:           "rgba(0,0,0,0.05)",
+  glassBgSubtle:     "rgba(0,0,0,0.03)",
+
   // ── Navigation ──────────────────────────────────────────────────────────────
   header:            "#F5F0E8",
 
@@ -89,16 +93,16 @@ const dark = {
   textSecondary:     "#AAAAAA",
   textMuted:         "#717171",
 
-  // ── Backgrounds ─────────────────────────────────────────────────────────────
-  background:        "#0F0F0F",
-  backgroundSecondary: "#1A1A1A",
-  backgroundTertiary:  "#1F1F1F",
-  surface:           "#0F0F0F",
-  card:              "#1A1A1A",
+  // ── Backgrounds — based on the welcome/onboarding deep-space dark (#06080F) ─
+  background:        "#06080F",
+  backgroundSecondary: "#0C1018",
+  backgroundTertiary:  "#111520",
+  surface:           "#06080F",
+  card:              "#0C1018",
 
   // ── Lines ───────────────────────────────────────────────────────────────────
-  border:            "#2A2A2A",
-  separator:         "#2A2A2A",
+  border:            "rgba(255,255,255,0.10)",
+  separator:         "rgba(255,255,255,0.07)",
 
   // ── Interactive ─────────────────────────────────────────────────────────────
   accent:            BRAND,
@@ -113,14 +117,18 @@ const dark = {
   // ── Chat bubbles ────────────────────────────────────────────────────────────
   bubble:            BRAND,
   bubbleText:        "#FFFFFF",
-  bubbleIncoming:    "#272727",
+  bubbleIncoming:    "#0F1422",
   bubbleIncomingText:"#F1F1F1",
 
-  // ── Form inputs ─────────────────────────────────────────────────────────────
-  inputBg:           "#252528",
+  // ── Form inputs — glass style matching auth screens ──────────────────────────
+  inputBg:           "rgba(255,255,255,0.06)",
+
+  // ── Glass surface tokens (match login / welcome glass aesthetic) ─────────────
+  glassBg:           "rgba(255,255,255,0.08)",
+  glassBgSubtle:     "rgba(255,255,255,0.05)",
 
   // ── Navigation ──────────────────────────────────────────────────────────────
-  header:            "#0F0F0F",
+  header:            "#06080F",
 
   // ── Badges ──────────────────────────────────────────────────────────────────
   badgeBg:           STATUS.error,
@@ -129,7 +137,7 @@ const dark = {
   // ── Presence ────────────────────────────────────────────────────────────────
   online:            BRAND,
   unread:            BRAND,
-  avatar:            "#272727",
+  avatar:            "#131620",
 
   // ── Semantic status (reflected from STATUS for component convenience) ────────
   success:           STATUS.success,
