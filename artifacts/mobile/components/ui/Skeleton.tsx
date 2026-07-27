@@ -110,9 +110,9 @@ function SkeletonFallback({ width, height, borderRadius = 8, style, forceDark }:
   );
 }
 
-// ── Public export: picks Reanimated when available ───────────────────────────
+// ── Public export: picks Reanimated when available (native only) ─────────────
 export function Skeleton(props: SkeletonProps) {
-  if (_ra && _RAView) return <SkeletonNative {...props} />;
+  if (_ra && _RAView && Platform.OS !== "web") return <SkeletonNative {...props} />;
   return <SkeletonFallback {...props} />;
 }
 

@@ -365,7 +365,13 @@ function BookmarkButton({ bookmarked, onPress }: { bookmarked: boolean; onPress:
   );
 }
 
-// ─── PostImages: swipeable carousel, one image at a time ─────────────────────
+// ─── PostImages: swipeable carousel, auto-sized to image orientation ──────────
+// MIN_RATIO = widest landscape (≈16:9). MAX_RATIO = tallest portrait (4:5).
+// The first image in the set drives the container height; all images in the
+// same post share that height so the carousel pages correctly.
+const IMG_RATIO_MIN = 9 / 16;   // ~0.5625  (landscape cap)
+const IMG_RATIO_MAX = 5 / 4;    // 1.25     (portrait cap)
+
 function PostImages({
   images,
   onPress,
@@ -377,13 +383,17 @@ function PostImages({
   onDoubleTap: () => void;
   effectiveW: number;
 }) {
-  const { isDark, colors } = useTheme();
+  const { isDark } = useTheme();
   const [currentIdx, setCurrentIdx] = React.useState(0);
+  // ratio = height/width of the first detected image; null = not yet loaded
+  const [imgRatio, setImgRatio] = React.useState<number | null>(null);
 
-  const L_PAD  = 50;
-  const R_PAD  = 12;
+  const L_PAD  = 66;
+  const R_PAD  = 16;
   const imgW   = effectiveW - L_PAD - R_PAD;
-  const imgH   = Math.round(imgW * 0.62);
+  // Fall back to 16:9 until the first image reports its real dimensions
+  const ratio  = imgRatio ?? IMG_RATIO_MIN;
+  const imgH   = Math.round(imgW * ratio);
   const CORNER = 12;
   const BG     = isDark ? "#1c1c1e" : "#e9e9e9";
 
@@ -443,10 +453,17 @@ function PostImages({
               <ExpoImage
                 source={{ uri }}
                 style={{ width: imgW, height: imgH }}
-                contentFit="cover"
+                contentFit="contain"
                 cachePolicy="memory-disk"
                 priority={i === 0 ? "high" : "normal"}
                 transition={0}
+                onLoad={i === 0 ? (e) => {
+                  const { width: sw, height: sh } = (e as any).source ?? {};
+                  if (sw > 0 && sh > 0) {
+                    const raw = sh / sw;
+                    setImgRatio(Math.min(Math.max(raw, IMG_RATIO_MIN), IMG_RATIO_MAX));
+                  }
+                } : undefined}
               />
             </TouchableOpacity>
           ))}
@@ -3080,19 +3097,17 @@ const styles = StyleSheet.create({
   cardFooter: {
     flexDirection: "row",
     alignItems: "center",
-    paddingLeft: 58,
-    paddingRight: 12,
+    justifyContent: "space-between",
+    paddingLeft: 66,
+    paddingRight: 16,
     paddingTop: 2,
     paddingBottom: 10,
-    gap: 2,
   },
   footerStat: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
+    gap: 5,
     paddingVertical: 4,
-    borderRadius: 8,
   },
   footerStatNum: {
     fontSize: 13,
