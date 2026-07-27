@@ -16,6 +16,7 @@ const IL_MESSAGING  = require("@/assets/illustrations/messaging.png");
 const IL_COMMUNITY  = require("@/assets/illustrations/community.png");
 const IL_AI         = require("@/assets/illustrations/ai.png");
 const IL_WALLET     = require("@/assets/illustrations/wallet.png");
+const LOGO_WHITE    = require("@/assets/images/logo_white.png");
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "@/components/ui/SafeGradient";
@@ -281,7 +282,7 @@ export default function WelcomeScreen() {
       {/* ── Top bar ── */}
       <View style={[s.topBar, { paddingTop: insets.top + 12 }]}>
         <View style={s.logoRow}>
-          <View style={[s.logoDot, { backgroundColor: slide.accent }]} />
+          <Image source={LOGO_WHITE} style={s.logoImg} />
           <Text style={s.logoText}>AfuChat</Text>
         </View>
         <TouchableOpacity onPress={finish} hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}>
@@ -382,10 +383,9 @@ const s = StyleSheet.create({
     alignItems: "center",
     gap: 7,
   },
-  logoDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  logoImg: {
+    width: 26,
+    height: 26,
   },
   logoText: {
     color: "#fff",
