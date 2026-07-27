@@ -296,34 +296,6 @@ function formatDateHeader(iso: string): string {
   return d.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
 }
 
-function PremiumBubbleShimmer() {
-  const shimmer = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const anim = Animated.loop(
-      Animated.sequence([
-        Animated.timing(shimmer, { toValue: 1, duration: 1400, useNativeDriver: true }),
-        Animated.delay(3800),
-      ])
-    );
-    anim.start();
-    return () => anim.stop();
-  }, []);
-  const translateX = shimmer.interpolate({ inputRange: [0, 1], outputRange: [-80, 220] });
-  return (
-    <Animated.View
-      style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16, overflow: "hidden", pointerEvents: "none" }}
-    >
-      <Animated.View style={{ position: "absolute", top: 0, bottom: 0, width: 70, transform: [{ translateX }] }}>
-        <LinearGradient
-          colors={["transparent", "rgba(255,255,255,0.22)", "transparent"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={{ flex: 1 }}
-        />
-      </Animated.View>
-    </Animated.View>
-  );
-}
 
 function BubbleTail({ isMe, color }: { isMe: boolean; color: string }) {
   if (isMe) {
@@ -913,7 +885,7 @@ function LensContextCard({ msg, onSuggestionTap }: {
   );
 }
 
-function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, replyPreview, onTapReply, isHighlighted, onTapEnvelope, onTapGift, onImageTap, isPremiumSender, onConfirmExec, onCancelExec, onSuggestionTap, onSenderPress, onReactionPress, onStatusPress, brandColor, goldNameplate, verifiedStar, statusGlow, flatSurface }: {
+function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, replyPreview, onTapReply, isHighlighted, onTapEnvelope, onTapGift, onImageTap, onConfirmExec, onCancelExec, onSuggestionTap, onSenderPress, onReactionPress, onStatusPress, brandColor, flatSurface }: {
   msg: Message;
   isMe: boolean;
   showTail: boolean;
@@ -926,7 +898,6 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   onTapEnvelope?: (msg: Message) => void;
   onTapGift?: (msg: Message) => void;
   onImageTap?: (images: string[], index: number) => void;
-  isPremiumSender?: boolean;
   onConfirmExec?: (msgId: string) => void;
   onCancelExec?: (msgId: string) => void;
   onSuggestionTap?: (text: string) => void;
@@ -934,9 +905,6 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   onReactionPress?: (msg: Message, emoji: string) => void;
   onStatusPress?: (msg: Message) => void;
   brandColor?: string;
-  goldNameplate?: boolean;
-  verifiedStar?: boolean;
-  statusGlow?: boolean;
   /** When true, renders a flat borderless surface — no bubble bg, no tail, no radius */
   flatSurface?: boolean;
 }) {
@@ -1727,42 +1695,32 @@ function ChatScreen() {
   }, [chatPrefs.sounds_enabled]);
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [goldNameplateIds, setGoldNameplateIds] = useState<Set<string>>(new Set());
-  const [verifiedStarIds, setVerifiedStarIds] = useState<Set<string>>(new Set());
-  const [statusGlowIds, setStatusGlowIds] = useState<Set<string>>(new Set());
   const [senderRingMap, setSenderRingMap] = useState<Map<string, 'crown'|'void'|'diamond'>>(new Map());
 
   useEffect(() => {
     const senderIds = [...new Set(messages.map((m) => m.sender_id).filter((id) => id && id !== user?.id))];
     if (senderIds.length === 0) return;
 
-    const nameplates = new Set<string>();
-    const stars = new Set<string>();
-    const glows = new Set<string>();
     const rings = new Map<string, 'crown'|'void'|'diamond'>();
     const crownCandidates = new Set<string>();
     const platinumIds = new Set<string>();
 
-    // Query 1: status goods (sg4 = gold nameplate, sg5 = verified star, sg8 = glow, sg1-3 = rings)
+    // Query 1: status goods — rings only (sg1-3); nameplate/star/glow props removed
     const goodsPromise = supabase
       .from("status_goods_purchases")
       .select("user_id, good_id")
       .in("user_id", senderIds)
-      .in("good_id", ["sg1", "sg2", "sg3", "sg4", "sg5", "sg8"])
+      .in("good_id", ["sg1", "sg2", "sg3"])
       .eq("equipped", true)
       .then(({ data }) => {
         for (const r of (data || []) as { user_id: string; good_id: string }[]) {
-          if (r.good_id === "sg4") nameplates.add(r.user_id);
-          if (r.good_id === "sg5") stars.add(r.user_id);
-          if (r.good_id === "sg8") glows.add(r.user_id);
           if (r.good_id === "sg1") crownCandidates.add(r.user_id);
           if (r.good_id === "sg2" && !rings.has(r.user_id)) rings.set(r.user_id, 'void');
           if (r.good_id === "sg3" && !rings.has(r.user_id)) rings.set(r.user_id, 'diamond');
         }
       }, () => {});
 
-    // Query 2: Gold/Platinum subscribers get golden names automatically (independent of Query 1).
-    // Platinum is also required before an equipped Crown Aura can render.
+    // Query 2: Platinum required before an equipped Crown Aura can render.
     const subPromise = supabase
       .from("user_subscriptions")
       .select("user_id, subscription_plans(tier)")
@@ -1770,9 +1728,7 @@ function ChatScreen() {
       .eq("is_active", true)
       .then(({ data }) => {
         for (const s of (data || []) as { user_id: string; subscription_plans: any }[]) {
-          const tier = s.subscription_plans?.tier;
-          if (tier === "gold" || tier === "platinum") nameplates.add(s.user_id);
-          if (tier === "platinum") platinumIds.add(s.user_id);
+          if (s.subscription_plans?.tier === "platinum") platinumIds.add(s.user_id);
         }
       }, () => {});
 
@@ -1786,14 +1742,10 @@ function ChatScreen() {
         }
       }, () => {});
 
-    // Apply both results together once all tier/effect queries settle.
     Promise.allSettled([goodsPromise, subPromise, referralPlatinumPromise]).then(() => {
       for (const userId of crownCandidates) {
         if (platinumIds.has(userId) && !rings.has(userId)) rings.set(userId, 'crown');
       }
-      setGoldNameplateIds(new Set(nameplates));
-      setVerifiedStarIds(new Set(stars));
-      setStatusGlowIds(new Set(glows));
       setSenderRingMap(new Map(rings));
     });
   }, [messages.length]);
@@ -5929,7 +5881,6 @@ STRICT RULES:
             onTapEnvelope={handleTapEnvelope}
             onTapGift={handleTapGift}
             onImageTap={imgViewer.openViewer}
-            isPremiumSender={isMe && isPremium}
             onConfirmExec={handleConfirmAiExec}
             onCancelExec={handleCancelAiExec}
             onSuggestionTap={(text) => sendMessage(text)}
@@ -5937,15 +5888,12 @@ STRICT RULES:
             onReactionPress={addReaction}
             onStatusPress={isMe ? (m) => setMsgInfoTarget(m) : undefined}
             brandColor={chatAppearance?.bubbleColor}
-            goldNameplate={goldNameplateIds.has(item.sender_id)}
-            verifiedStar={verifiedStarIds.has(item.sender_id)}
-            statusGlow={isMe ? equippedGoods.has('sg8') : statusGlowIds.has(item.sender_id)}
             flatSurface={isAfuAiDirectChat}
           />
         )}
       </View>
     );
-  }, [listData, messages, user, colors, highlightedMsgId, scrollToMessage, advancedFeatures.mini_profile_popup, notifFilter, isAfuChatSystemChat, notifRowsMap, actorProfileCache, groupedNotifMap, chatAppearance?.bubbleColor, goldNameplateIds, verifiedStarIds, statusGlowIds, equippedGoods]);
+  }, [listData, messages, user, colors, highlightedMsgId, scrollToMessage, advancedFeatures.mini_profile_popup, notifFilter, isAfuChatSystemChat, notifRowsMap, actorProfileCache, groupedNotifMap, chatAppearance?.bubbleColor]);
 
   // Single source of truth for the bottom offset.
   // The floatingInputContainer is position:absolute so it cannot rely on
