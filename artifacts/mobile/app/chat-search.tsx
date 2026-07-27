@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { useOpenLink } from "@/lib/useOpenLink";
 import { LinearGradient } from "@/components/ui/SafeGradient";
+import { AIBrandingBadge } from "@/components/ai/AIBranding";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -785,6 +786,7 @@ export default function ChatSearchScreen() {
                   </View>
                 </>
               )}
+              <AIBrandingBadge compact style={{ marginTop: 8 }} />
             </>
           )}
         </LinearGradient>

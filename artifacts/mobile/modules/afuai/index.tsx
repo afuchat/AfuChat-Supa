@@ -40,6 +40,11 @@ import {
   formatMemoriesForPrompt,
   type AIMemory,
 } from "@/lib/aiMemory";
+import {
+  useAIDisclaimerSeen,
+  AIDisclaimerCard,
+  AIBrandingFooter,
+} from "@/components/ai/AIBranding";
 
 type Role = "user" | "assistant";
 
@@ -309,6 +314,7 @@ export default function AfuAIApp() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const { seen: disclaimerSeen, markSeen: markDisclaimerSeen } = useAIDisclaimerSeen();
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [inputBarHeight, setInputBarHeight] = useState(64);
 
@@ -717,12 +723,20 @@ export default function AfuAIApp() {
         data={messages}
         keyExtractor={(m) => m.id}
         renderItem={renderItem}
+        ListHeaderComponent={
+          disclaimerSeen === false
+            ? <AIDisclaimerCard onDismiss={markDisclaimerSeen} />
+            : null
+        }
         contentContainerStyle={[styles.list, { paddingBottom: inputBarHeight + keyboardHeight + insets.bottom + 12 }]}
         showsVerticalScrollIndicator={false}
         onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
       />
+
+      {/* AI attribution line above the input bar */}
+      <AIBrandingFooter />
 
       {/* Input bar — absolutely positioned so it always floats above the keyboard */}
       <View

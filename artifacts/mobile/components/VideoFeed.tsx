@@ -249,7 +249,8 @@ const VideoItem = React.memo(
     const { accent } = useAppAccent();
     const player = useVideoPlayer(null, (p) => {
       p.loop = false; // we handle loop manually so we can fire onVideoEnd
-      p.muted = globalMuted;
+      p.muted = true; // always start muted — unmuted only after first frame confirmed
+      p.timeUpdateEventInterval = 0.1; // 100ms time-update events for smooth progress bar
     });
 
     const [paused, setPaused] = useState(false);
@@ -295,31 +296,26 @@ const VideoItem = React.memo(
       ? item.video_url
       : (cachedUri ?? resolved.uri ?? item.video_url);
 
+    // Stay muted until the first video frame is confirmed playing.
+    // This prevents the "5-second audio with frozen frame" artifact that occurs
+    // because audio buffers much faster than video frames.
     useEffect(() => {
-      try { player.muted = globalMuted; } catch {}
-    }, [globalMuted]);
+      try { player.muted = videoStarted ? globalMuted : true; } catch {}
+    }, [globalMuted, videoStarted]);
 
-    // Preload into cache when ±1 on WiFi
+    // Preload into cache when ±1 — no artificial delay, check immediately
     useEffect(() => {
       if (!isNearActive || cacheAttempted.current || !item.video_url) return;
       cacheAttempted.current = true;
-      cacheDelayTimer.current = setTimeout(() => {
-        getCachedVideoUri(item.video_url).then((existing) => {
-          if (existing) {
-            setCachedUri(existing);
-          } else if (isWifi()) {
-            cacheVideo(item.video_url).then((local) => {
-              if (local) setCachedUri(local);
-            });
-          }
-        });
-      }, 500);
-      return () => {
-        if (cacheDelayTimer.current) {
-          clearTimeout(cacheDelayTimer.current);
-          cacheDelayTimer.current = null;
+      getCachedVideoUri(item.video_url).then((existing) => {
+        if (existing) {
+          setCachedUri(existing);
+        } else if (isWifi()) {
+          cacheVideo(item.video_url).then((local) => {
+            if (local) setCachedUri(local);
+          });
         }
-      };
+      });
     }, [isNearActive, item.video_url]);
 
     // Reset when scrolled away; record view + watch on arrival
@@ -382,19 +378,30 @@ const VideoItem = React.memo(
       } catch (_) {}
     }, [isActive, isNearActive, paused]);
 
-    // Progress + buffering + duration + auto-advance polling
+    // ── Native event listeners — replaces 250 ms setInterval polling ─────────
+    // playingChange  → instant first-frame detection (no lag, no JS polling)
+    // statusChange   → buffering spinner
+    // playToEnd      → auto-advance at natural end
+    // timeUpdate     → progress bar at 100 ms cadence (set in useVideoPlayer init)
     useEffect(() => {
       if (!isActive) return;
-      const timer = setInterval(() => {
-        if (!mountedRef.current) { clearInterval(timer); return; }
-        try {
-          if (player.playing && !videoStartedRef.current) {
+      const subs: Array<{ remove(): void }> = [];
+      try {
+        // Instant: fires the moment the first frame is decoded and playing
+        subs.push(player.addListener("playingChange", ({ isPlaying }) => {
+          if (!mountedRef.current) return;
+          if (isPlaying && !videoStartedRef.current) {
             videoStartedRef.current = true;
             setVideoStarted(true);
-            if (bufferingTimer.current) { clearTimeout(bufferingTimer.current); bufferingTimer.current = null; }
             setShowBuffering(false);
+            if (bufferingTimer.current) { clearTimeout(bufferingTimer.current); bufferingTimer.current = null; }
           }
-          const isLoading = (player.status as string) === "loading";
+        }));
+
+        // Buffering spinner: show after 400 ms delay to avoid flash on fast buffers
+        subs.push(player.addListener("statusChange", ({ status }) => {
+          if (!mountedRef.current) return;
+          const isLoading = (status as string) === "loading";
           if (isLoading !== bufferingRef.current) {
             bufferingRef.current = isLoading;
             if (isLoading) {
@@ -409,21 +416,34 @@ const VideoItem = React.memo(
               setShowBuffering(false);
             }
           }
-          const dur = player.duration;
-          if (dur > 0) {
-            const frac = player.currentTime / dur;
-            progressFill.value = frac;
-            if (duration !== dur) setDuration(dur);
+        }));
 
-            // Auto-advance when within 0.3s of end
-            if (!endFired.current && frac >= 0.97) {
-              endFired.current = true;
-              runOnJS(onVideoEnd)();
+        // Natural end → auto-advance
+        subs.push(player.addListener("playToEnd", () => {
+          if (!mountedRef.current || endFired.current) return;
+          endFired.current = true;
+          try { onVideoEnd(); } catch {}
+        }));
+
+        // Progress bar + duration + fallback 97% auto-advance
+        subs.push(player.addListener("timeUpdate", ({ currentTime, duration: dur }) => {
+          if (!mountedRef.current) return;
+          try {
+            if (dur > 0) {
+              const frac = currentTime / dur;
+              progressFill.value = frac;
+              if (duration !== dur) setDuration(dur);
+              // Fallback advance in case playToEnd fires late (network stall)
+              if (!endFired.current && frac >= 0.97) {
+                endFired.current = true;
+                onVideoEnd();
+              }
             }
-          }
-        } catch (_) {}
-      }, 250);
-      return () => clearInterval(timer);
+          } catch {}
+        }));
+      } catch {}
+
+      return () => subs.forEach(s => { try { s.remove(); } catch {} });
     }, [isActive, duration, onVideoEnd]);
 
     // ── Animated styles ───────────────────────────────────────────────────────

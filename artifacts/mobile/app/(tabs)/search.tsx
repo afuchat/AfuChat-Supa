@@ -14,6 +14,7 @@ import {
 import { Image as ExpoImage } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "@/components/ui/SafeGradient";
+import { AIBrandingBadge } from "@/components/ai/AIBranding";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import * as Haptics from "@/lib/haptics";
@@ -1267,6 +1268,7 @@ export default function SearchScreen() {
                   </View>
                 </>
               )}
+              <AIBrandingBadge compact style={{ marginTop: 8 }} />
             </>
           )}
         </LinearGradient>
