@@ -220,6 +220,7 @@ function MusicDisc({ isPlaying }: { isPlaying: boolean }) {
 
 type VideoItemProps = {
   item: VideoPost;
+  index: number;
   isActive: boolean;
   isNearActive: boolean;
   screenW: number;
@@ -233,12 +234,14 @@ type VideoItemProps = {
   onMore: (item: VideoPost) => void;
   onToggleMute: () => void;
   onVideoEnd: () => void;
+  onPlayerReady: (index: number, player: ReturnType<typeof useVideoPlayer> | null) => void;
   currentUserId?: string;
 };
 
 const VideoItem = React.memo(
   function VideoItem({
     item,
+    index,
     isActive,
     isNearActive,
     screenW,
@@ -252,6 +255,7 @@ const VideoItem = React.memo(
     onMore,
     onToggleMute,
     onVideoEnd,
+    onPlayerReady,
     currentUserId,
   }: VideoItemProps) {
     const { accent } = useAppAccent();
@@ -296,6 +300,11 @@ const VideoItem = React.memo(
     const cacheDelayTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
     const watchSaved       = useRef(false);
     const endFired         = useRef(false);
+    // Refs so async callbacks (replaceAsync .then) never read stale closure values
+    const isActiveRef      = useRef(isActive);
+    const pausedRef        = useRef(false);
+    useEffect(() => { isActiveRef.current = isActive; }, [isActive]);
+    useEffect(() => { pausedRef.current = paused; }, [paused]);
 
     const resolved = useResolvedVideoSource(item.id, item.video_url, {
       targetHeight: getPreferredVideoHeight(),
@@ -370,15 +379,33 @@ const VideoItem = React.memo(
       return () => { mountedRef.current = false; };
     }, []);
 
-    // Player source
+    // Register player instance with VideoFeed so it can pause/play us immediately
+    // without waiting for a React re-render cycle.
+    useEffect(() => {
+      onPlayerReady(index, player);
+      return () => { onPlayerReady(index, null); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [index, player]);
+
+    // Player source — after loading, immediately play if we are the active item
+    // so we don't depend on the separate play/pause effect racing against replaceAsync.
     useEffect(() => {
       if (!playUri || !isNearActive) return;
-      player.replaceAsync({ uri: playUri }).catch(() => {
-        if (!videoError) setVideoError(true);
-      });
+      player.replaceAsync({ uri: playUri })
+        .then(() => {
+          if (!mountedRef.current) return;
+          // Seek to start so a preloaded (partially-played) source starts fresh
+          try { player.currentTime = 0; } catch {}
+          if (isActiveRef.current && !pausedRef.current) {
+            try { player.play(); } catch {}
+          }
+        })
+        .catch(() => {
+          if (mountedRef.current && !videoError) setVideoError(true);
+        });
     }, [playUri, isNearActive]);
 
-    // Play / pause
+    // Play / pause — handles isActive / paused toggle changes after source is loaded
     useEffect(() => {
       try {
         if (!isNearActive) { player.pause(); return; }
@@ -976,6 +1003,17 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
   const remainderRef      = useRef<VideoPost[]>([]);
   const loopPoolRef       = useRef<VideoPost[]>([]);   // full For You pool for endless cycling
   const followPoolRef     = useRef<VideoPost[]>([]);   // first page of Following for loop-back
+  // Map of index → player instance. Populated by each VideoItem via onPlayerReady.
+  // Allows onViewableItemsChanged to pause/play immediately — no React re-render needed.
+  const playerMapRef      = useRef<Map<number, ReturnType<typeof useVideoPlayer>>>(new Map());
+
+  const handlePlayerReady = useCallback(
+    (idx: number, p: ReturnType<typeof useVideoPlayer> | null) => {
+      if (p) playerMapRef.current.set(idx, p);
+      else playerMapRef.current.delete(idx);
+    },
+    [],
+  );
 
   useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
   useEffect(() => { postsLenRef.current = posts.length; }, [posts.length]);
@@ -1396,6 +1434,15 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       if (viewableItems.length > 0 && viewableItems[0].index !== null) {
         const idx = viewableItems[0].index!;
+        const prevIdx = activeIndexRef.current;
+        // Immediately stop the old video and start the new one via the player
+        // map — this fires synchronously before React has re-rendered, so
+        // there is no perceivable delay between the scroll settling and the
+        // correct video playing/stopping.
+        if (prevIdx !== idx) {
+          try { playerMapRef.current.get(prevIdx)?.pause(); } catch {}
+          try { playerMapRef.current.get(idx)?.play(); } catch {}
+        }
         activeIndexRef.current = idx;
         setActiveIndex(idx);
       }
@@ -1413,6 +1460,7 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
     ({ item, index }: { item: VideoPost; index: number }) => (
       <VideoItem
         item={item}
+        index={index}
         isActive={index === activeIndexRef.current}
         isNearActive={Math.abs(index - activeIndexRef.current) <= 1}
         screenW={SCREEN_W}
@@ -1426,10 +1474,11 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
         onMore={handleMore}
         onToggleMute={handleToggleMute}
         onVideoEnd={handleVideoEnd}
+        onPlayerReady={handlePlayerReady}
         currentUserId={user?.id}
       />
     ),
-    [SCREEN_W, ITEM_H, VIDEO_H, globalMuted, handleLike, handleFollow, handleView, handleBookmark, handleMore, handleToggleMute, handleVideoEnd, user?.id],
+    [SCREEN_W, ITEM_H, VIDEO_H, globalMuted, handleLike, handleFollow, handleView, handleBookmark, handleMore, handleToggleMute, handleVideoEnd, handlePlayerReady, user?.id],
   );
 
   const onEndReached = useCallback(() => {
