@@ -23,7 +23,6 @@ import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import Colors from "@/constants/colors";
 import { showAlert } from "@/lib/alert";
 import { useAutoTranslate } from "@/context/LanguageContext";
-import { encodeId } from "@/lib/shortId";
 
 type PostItem = {
   id: string;
@@ -53,8 +52,8 @@ function MyPostCard({ item, profile, onDelete }: { item: PostItem; profile: any;
   return (
     <TouchableOpacity
       style={[styles.card, { backgroundColor: colors.surface }]}
-      onPress={() => router.push({ pathname: "/p/[id]", params: { id: encodeId(item.id) } })}
-      activeOpacity={0.85}
+      onPress={() => item.post_type === "video" ? router.push({ pathname: "/video/[id]", params: { id: item.id } }) : undefined}
+      activeOpacity={item.post_type === "video" ? 0.85 : 1}
     >
       <View style={styles.cardHeader}>
         <Avatar uri={profile?.avatar_url} name={profile?.display_name} size={40} userId={profile?.id} />

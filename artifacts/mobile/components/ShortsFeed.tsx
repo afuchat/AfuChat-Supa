@@ -41,7 +41,6 @@ import { Avatar } from "@/components/ui/Avatar";
 import UserName from "@/components/ui/UserName";
 import { useResolvedVideoSource } from "@/hooks/useResolvedVideoSource";
 import { sharePost } from "@/lib/share";
-import { encodeId } from "@/lib/shortId";
 import { getPreferredVideoHeight } from "@/lib/networkQuality";
 import { cacheShortsTab, getCachedShortsTab } from "@/lib/offlineStore";
 import { getCachedVideoUri, markVideoWatched, cacheVideo } from "@/lib/videoCache";
@@ -359,7 +358,7 @@ const ShortCard = React.memo(function ShortCard({
             </Animated.View>
 
             <Pressable
-              onPress={() => router.push({ pathname: "/post/[id]", params: { id: item.id } } as any)}
+              onPress={() => router.push({ pathname: "/video/[id]", params: { id: item.id } } as any)}
               style={styles.fullActionItem}
               hitSlop={6}
             >
@@ -478,7 +477,7 @@ const ShortCard = React.memo(function ShortCard({
         </View>
         <View style={styles.actionItem}>
           <Pressable
-            onPress={() => router.push({ pathname: "/p/[id]", params: { id: encodeId(item.id) } } as any)}
+            onPress={() => router.push({ pathname: "/video/[id]", params: { id: item.id } } as any)}
             style={({ hovered }: any) => [
               styles.actionBubble,
               { backgroundColor: hovered ? colors.backgroundTertiary : colors.surface },

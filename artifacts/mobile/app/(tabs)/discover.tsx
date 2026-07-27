@@ -531,35 +531,11 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
       safeRouter.push(`/company/${item.org_slug}` as any);
       return;
     }
-    if (item.post_type === "article") {
-      safeRouter.push({ pathname: "/article/[id]", params: { id: item.id } });
-      return;
-    }
     if (item.post_type === "video") {
       safeRouter.push({ pathname: "/video/[id]", params: { id: item.id } });
       return;
     }
-    safeRouter.push({
-      pathname: "/p/[id]",
-      params: {
-        id: encodeId(item.id),
-        init_name: item.profile.display_name,
-        init_handle: item.profile.handle,
-        init_avatar: item.profile.avatar_url ?? "",
-        init_content: (item.content ?? "").slice(0, 600),
-        init_created_at: item.created_at,
-        init_like_count: String(item.likeCount),
-        init_reply_count: String(item.replyCount),
-        init_view_count: String(item.view_count),
-        init_verified: item.is_verified ? "1" : "0",
-        init_org_verified: item.is_organization_verified ? "1" : "0",
-        init_liked: item.liked ? "1" : "0",
-        init_image: (item.images?.[0] ?? item.image_url) ?? "",
-        init_post_type: item.post_type ?? "",
-        init_article_title: item.article_title ?? "",
-        init_author_id: item.author_id,
-      },
-    });
+    // Non-video posts no longer have a detail page — tap does nothing.
   }
 
   function capturePostImage() {
@@ -788,7 +764,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
           {item.post_type === "video" && item.video_url && (
             <TouchableOpacity
               activeOpacity={0.88}
-              onPress={() => safeRouter.push({ pathname: "/post/[id]", params: { id: item.id } })}
+              onPress={() => safeRouter.push({ pathname: "/video/[id]", params: { id: item.id } })}
               style={styles.videoCard}
             >
               <View style={styles.videoThumb}>

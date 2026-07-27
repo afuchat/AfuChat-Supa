@@ -80,11 +80,11 @@ function getTypeConfig(type: string): TypeConfig {
     case "new_follower":
       return { accent: "#007AFF", badgeIcon: "person-add", badgeBg: "#007AFF", primaryRoute: (d) => d.actor_handle ? `/@${d.actor_handle}` : d.actor_id ? `/contact/${d.actor_id}` : null };
     case "new_like":
-      return { accent: "#FF2D55", badgeIcon: "heart", badgeBg: "#FF2D55", primaryRoute: (d) => d.post_id ? `/post/${d.post_id}` : null };
+      return { accent: "#FF2D55", badgeIcon: "heart", badgeBg: "#FF2D55", primaryRoute: (d) => d.actor_handle ? `/@${d.actor_handle}` : null };
     case "new_reply":
-      return { accent: "#34C759", badgeIcon: "chatbubble-ellipses", badgeBg: "#34C759", primaryRoute: (d) => d.post_id ? `/post/${d.post_id}` : null };
+      return { accent: "#34C759", badgeIcon: "chatbubble-ellipses", badgeBg: "#34C759", primaryRoute: (d) => d.actor_handle ? `/@${d.actor_handle}` : null };
     case "new_mention":
-      return { accent: "#34C759", badgeIcon: "at-circle", badgeBg: "#34C759", primaryRoute: (d) => d.post_id ? `/post/${d.post_id}` : null };
+      return { accent: "#34C759", badgeIcon: "at-circle", badgeBg: "#34C759", primaryRoute: (d) => d.actor_handle ? `/@${d.actor_handle}` : null };
     case "gift":
       return { accent: "#AF52DE", badgeIcon: "gift", badgeBg: "#AF52DE", primaryRoute: () => "/gifts" };
     case "missed_call":
@@ -220,11 +220,8 @@ function buildActions(data: SysNotifData): Action[] {
     case "new_like":
     case "new_reply":
     case "new_mention":
-      if (data.post_id) {
-        actions.push({ label: "View Post", icon: "document-text", route: `/post/${data.post_id}`, primary: true });
-      }
       if (data.actor_handle) {
-        actions.push({ label: "View Profile", icon: "person", route: `/@${data.actor_handle}` });
+        actions.push({ label: "View Profile", icon: "person", route: `/@${data.actor_handle}`, primary: true });
       }
       break;
     case "missed_call":

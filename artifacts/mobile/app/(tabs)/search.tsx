@@ -823,7 +823,7 @@ export default function SearchScreen() {
   function PostCard({ p, i }: { p: PostResult; i: number }) {
     return (
       <View >
-        <TouchableOpacity style={[ss.contentCard, { backgroundColor: colors.surface }]} onPress={() => router.push(`/post/${p.id}` as any)} activeOpacity={0.75}>
+        <View style={[ss.contentCard, { backgroundColor: colors.surface }]}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
             {p.author_avatar
               ? <ExpoImage source={{ uri: p.author_avatar }} style={{ width: 28, height: 28, borderRadius: 14 }} contentFit="cover" cachePolicy="memory-disk" />
@@ -845,7 +845,7 @@ export default function SearchScreen() {
               </View>
             )}
           </View>
-        </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -1678,7 +1678,7 @@ export default function SearchScreen() {
                   <View key={v.id} >
                     <TouchableOpacity
                       style={{ width: vw, backgroundColor: colors.surface, borderRadius: 22, overflow: "hidden", borderWidth: 0.5, borderColor: colors.border }}
-                      onPress={() => router.push(`/post/${v.id}` as any)}
+                      onPress={() => router.push(`/video/${v.id}` as any)}
                       activeOpacity={0.82}
                     >
                       {/* Thumbnail */}
