@@ -20,7 +20,7 @@ import {
 } from "react-native";
 
 import AfuLogo from "@/components/ui/AfuLogo";
-const SafeFlashList: typeof import("react-native").FlatList =
+const SafeFlashList: any =
   (require("@shopify/flash-list").FlashList as any);
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { Redirect, router, useFocusEffect, useNavigation, usePathname } from "expo-router";
@@ -1478,6 +1478,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   // The 600 ms window matches a typical double-tap and is imperceptible to
   // deliberate navigation between different chats.
   const handleChatPress = useCallback((item: ChatItem) => {
+    if (!user) return;
     const now = Date.now();
     if (now - lastChatNavRef.current < 600) return;
     lastChatNavRef.current = now;
@@ -2032,9 +2033,9 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                     ) : (
                       <SafeFlashList
                         data={pageChats}
-                        keyExtractor={(item) => item.id}
+                        keyExtractor={(item: ChatItem) => item.id}
                         estimatedItemSize={74}
-                        renderItem={({ item }) => (
+                        renderItem={({ item }: { item: ChatItem }) => (
                           <ChatRow
                             item={item}
                             phonebookName={!item.is_group && !item.is_channel ? phonebookNames.get(item.other_id) : undefined}
@@ -2108,9 +2109,9 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                     ) : (
                       <SafeFlashList
                         data={pageChats}
-                        keyExtractor={(item) => item.id}
+                        keyExtractor={(item: ChatItem) => item.id}
                         estimatedItemSize={74}
-                        renderItem={({ item }) => (
+                        renderItem={({ item }: { item: ChatItem }) => (
                           <ChatRow
                             item={item}
                             phonebookName={!item.is_group && !item.is_channel ? phonebookNames.get(item.other_id) : undefined}
@@ -2167,9 +2168,9 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
             ) : (
               <SafeFlashList
                 data={filtered}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item: ChatItem) => item.id}
                 estimatedItemSize={74}
-                renderItem={({ item }) => (
+                renderItem={({ item }: { item: ChatItem }) => (
                   <ChatRow
                     item={item}
                     phonebookName={!item.is_group && !item.is_channel ? phonebookNames.get(item.other_id) : undefined}

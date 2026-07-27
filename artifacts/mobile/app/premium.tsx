@@ -258,17 +258,10 @@ export default function PremiumScreen() {
       .eq("is_active", true)
       .order("acoin_price", { ascending: true });
     if (data) {
-      const patched = (data as Plan[]).map((p) => ({
-        ...p,
-        acoin_price: FALLBACK_PRICES[p.tier] ?? p.acoin_price,
-      }));
-      for (const p of patched) {
-        const orig = data.find((d) => d.id === p.id);
-        if (orig && orig.acoin_price !== p.acoin_price) {
-          supabase.from("subscription_plans").update({ acoin_price: p.acoin_price }).eq("id", p.id).then(() => {});
-        }
-      }
-      setPlans(patched);
+      // Prices are authoritative in the database. Never patch or write them
+      // from the client: doing so lets a stale client change billing data.
+      const loadedPlans = data as Plan[];
+      setPlans(loadedPlans);
       const ct = subscription?.plan_tier;
       setActiveTier(ct && TIER_CONFIG[ct] ? ct : "gold");
     }
@@ -294,7 +287,7 @@ export default function PremiumScreen() {
   const daysLeft = subscription
     ? Math.max(0, Math.ceil((new Date(subscription.expires_at).getTime() - Date.now()) / 86400000))
     : 0;
-  const acoinPrice = selectedPlan?.acoin_price ?? FALLBACK_PRICES[activeTier] ?? 0;
+  const acoinPrice = selectedPlan?.acoin_price ?? 0;
   const usdPrice = fmtUSD(acoinPrice);
   const localPrice = localLine(acoinPrice, profile?.country);
 

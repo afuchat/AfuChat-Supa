@@ -3508,11 +3508,21 @@ function ChatScreen() {
         const p = plan as any;
         const live = await freshProfile();
         if (!live || (live.acoin || 0) < p.acoin_price) return { success: false, message: `Insufficient ACoin. Need ${p.acoin_price}` };
-        const { data: ded, error: dedErr } = await supabase.from("profiles").update({ acoin: (live.acoin || 0) - p.acoin_price }).eq("id", user.id).gte("acoin", p.acoin_price).select("id").maybeSingle();
-        if (dedErr || !ded) return { success: false, message: "Could not deduct ACoin" };
+        const { error: dedErr } = await supabase.rpc("deduct_acoin", { p_user_id: user.id, p_amount: p.acoin_price }).maybeSingle();
+        if (dedErr) return { success: false, message: "Could not deduct ACoin" };
         const exp = new Date(); exp.setDate(exp.getDate() + p.duration_days);
-        await supabase.from("user_subscriptions").upsert({ user_id: user.id, plan_id: p.id, started_at: new Date().toISOString(), expires_at: exp.toISOString(), is_active: true, acoin_paid: p.acoin_price }, { onConflict: "user_id" });
-        await supabase.from("acoin_transactions").insert({ user_id: user.id, amount: -p.acoin_price, transaction_type: "subscription", metadata: { plan_name: p.name, plan_tier: p.tier, duration_days: p.duration_days } });
+        const { error: subErr } = await supabase.from("user_subscriptions").upsert({ user_id: user.id, plan_id: p.id, started_at: new Date().toISOString(), expires_at: exp.toISOString(), is_active: true, acoin_paid: p.acoin_price }, { onConflict: "user_id" });
+        if (subErr) {
+          try {
+            await supabase.rpc("credit_acoin", { p_user_id: user.id, p_amount: p.acoin_price });
+          } catch {}
+          return { success: false, message: "Could not activate subscription. ACoin was refunded." };
+        }
+        const { error: txErr } = await supabase.from("acoin_transactions").insert({ user_id: user.id, amount: -p.acoin_price, transaction_type: "subscription", metadata: { plan_name: p.name, plan_tier: p.tier, duration_days: p.duration_days } });
+        if (txErr) {
+          // Entitlement is already active, so do not claim the purchase failed.
+          // The missing ledger row can be repaired by the server/admin audit.
+        }
         return { success: true, message: `Subscribed to ${p.name}! Active for ${p.duration_days} days.`, invoice: { type: "Premium Subscription", date: new Date().toISOString(), amount: p.acoin_price, currency: "ACoin", reference: `SUB-${Date.now().toString(36).toUpperCase()}`, status: "Completed", description: `${p.name} — ${p.duration_days} days` } };
       }
       case "cancel_subscription": {
@@ -3521,22 +3531,7 @@ function ChatScreen() {
         return { success: true, message: "Subscription cancelled. You're now on the free plan." };
       }
       case "convert_nexa": {
-        const { amount } = ea.params;
-        const nAmt = parseInt(amount);
-        if (isNaN(nAmt) || nAmt <= 0) return { success: false, message: "Invalid amount" };
-        const live = await freshProfile();
-        if (!live || nAmt > (live.xp || 0)) return { success: false, message: `Insufficient Nexa. You have ${live?.xp || 0}` };
-        const { data: settings } = await supabase.from("currency_settings").select("nexa_to_acoin_rate, conversion_fee_percent").limit(1).single();
-        if (!settings) return { success: false, message: "Currency settings not available" };
-        const s = settings as any;
-        const raw = nAmt / s.nexa_to_acoin_rate;
-        const fee = Math.ceil(raw * (s.conversion_fee_percent / 100));
-        const net = Math.floor(raw - fee);
-        if (net <= 0) return { success: false, message: "Amount too small after fees" };
-        const { data: cv, error } = await supabase.from("profiles").update({ xp: (live.xp || 0) - nAmt, acoin: (live.acoin || 0) + net }).eq("id", user.id).gte("xp", nAmt).select("id").maybeSingle();
-        if (error || !cv) return { success: false, message: "Conversion failed — balance may have changed" };
-        await supabase.from("acoin_transactions").insert({ user_id: user.id, amount: net, transaction_type: "conversion", nexa_spent: nAmt, fee_charged: fee, metadata: { rate: s.nexa_to_acoin_rate, fee_percent: s.conversion_fee_percent } });
-        return { success: true, message: `Converted ${nAmt} Nexa → ${net} ACoin`, invoice: { type: "Currency Conversion", date: new Date().toISOString(), amount: nAmt, currency: "Nexa", fee, net, reference: `CNV-${Date.now().toString(36).toUpperCase()}`, status: "Completed", description: `Rate: ${s.nexa_to_acoin_rate} Nexa = 1 ACoin, Fee: ${s.conversion_fee_percent}%` } };
+        return { success: false, message: "Nexa conversion is temporarily unavailable while we move it to a server-side transaction." };
       }
       default: return { success: false, message: `Unknown action: ${ea.actionType}` };
     }

@@ -250,8 +250,6 @@ export default function WelcomeScreen() {
             source={src}
             style={s.illustrationBgImage}
             resizeMode="contain"
-            // Rasterise once so the GPU doesn't re-decode on every frame
-            renderToHardwareTextureAndroid
           />
         </Animated.View>
       ))}

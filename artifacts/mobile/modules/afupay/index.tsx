@@ -633,9 +633,21 @@ function SendView({ colors, insets, user, profile, onBack, onSuccess }: any) {
     if (currency === "nexa") {
       const { data: ok, error } = await supabase.from("profiles").update({ xp: (profile?.xp || 0) - amt }).eq("id", user.id).gte("xp", amt).select("id").maybeSingle();
       if (error || !ok) { showAlert("Error", "Could not deduct Nexa."); setSending(false); return; }
-      const { error: ce } = await supabase.rpc("award_xp", { p_user_id: recipient.id, p_action_type: "nexa_transfer_received", p_xp_amount: amt, p_metadata: { from_user_id: user.id } });
-      if (ce) { await supabase.from("profiles").update({ xp: profile?.xp || 0 }).eq("id", user.id); showAlert("Error", "Could not credit recipient."); setSending(false); return; }
-      await supabase.from("xp_transfers").insert({ sender_id: user.id, receiver_id: recipient.id, amount: amt, message: note.trim() || null });
+      const { data: creditResult, error: ce } = await supabase.rpc("award_xp", { p_user_id: recipient.id, p_action_type: "nexa_transfer_received", p_xp_amount: amt, p_metadata: { from_user_id: user.id } });
+      if (ce || !(creditResult as any)?.success) {
+        try {
+          await supabase.rpc("award_xp", { p_user_id: user.id, p_action_type: "nexa_transfer_rollback", p_xp_amount: amt, p_metadata: { recipient_id: recipient.id } });
+        } catch {}
+        showAlert("Error", "Could not credit recipient. Your Nexa was restored."); setSending(false); return;
+      }
+      const { error: transferErr } = await supabase.from("xp_transfers").insert({ sender_id: user.id, receiver_id: recipient.id, amount: amt, message: note.trim() || null });
+      if (transferErr) {
+        await Promise.all([
+          supabase.rpc("award_xp", { p_user_id: user.id, p_action_type: "nexa_transfer_rollback", p_xp_amount: amt, p_metadata: { recipient_id: recipient.id } }),
+          supabase.rpc("award_xp", { p_user_id: recipient.id, p_action_type: "nexa_transfer_reversal", p_xp_amount: -amt, p_metadata: { sender_id: user.id } }),
+        ]).catch(() => {});
+        showAlert("Error", "The transfer could not be recorded. Your Nexa was restored."); setSending(false); return;
+      }
     } else {
       const { error: deductErr } = await supabase.rpc("deduct_acoin", { p_user_id: user.id, p_amount: amt }).maybeSingle();
       if (deductErr) { showAlert("Error", "Could not deduct ACoin."); setSending(false); return; }
