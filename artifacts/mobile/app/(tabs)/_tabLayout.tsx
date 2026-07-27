@@ -26,21 +26,21 @@ import { getTotalUnread, subscribeUnread } from "@/lib/chatUnreadEvents";
 
 // Visible bottom bar tabs
 const BOTTOM_TABS = [
-  { route: "/(tabs)/discover", iconOn: "home",             iconOff: "home"           },
-  { route: "/(tabs)/shorts",   iconOn: "play-circle",      iconOff: "play-circle"    },
+  { route: "/(tabs)/discover", icon: "home"        },
+  { route: "/(tabs)/shorts",   icon: "play-circle" },
   // index 2 is the CREATE button — handled separately
-  { route: "/(tabs)/apps",     iconOn: "grid",             iconOff: "grid"           },
-  { route: "/(tabs)/chats",    iconOn: "chatbubble",       iconOff: "chatbubble"     },
+  { route: "/(tabs)/apps",     icon: "grid"        },
+  { route: "/(tabs)/chats",    icon: "chatbubble"  },
 ] as const;
 
 function normalizeTabPath(p: string): string {
   if (p === "/" || p === "/(tabs)" || p === "/(tabs)/index") return "/(tabs)/discover";
-  if (p === "/chats" || p === "/(tabs)/chats") return "/(tabs)/chats";
-  if (p === "/discover"  || p === "/(tabs)/discover")  return "/(tabs)/discover";
-  if (p === "/shorts"    || p === "/(tabs)/shorts")    return "/(tabs)/shorts";
-  if (p === "/apps"      || p === "/(tabs)/apps")      return "/(tabs)/apps";
-  if (p === "/me"        || p === "/(tabs)/me")        return "/(tabs)/me";
-  if (p === "/search"    || p === "/(tabs)/search")    return "/(tabs)/search";
+  if (p === "/chats"    || p === "/(tabs)/chats")    return "/(tabs)/chats";
+  if (p === "/discover" || p === "/(tabs)/discover") return "/(tabs)/discover";
+  if (p === "/shorts"   || p === "/(tabs)/shorts")   return "/(tabs)/shorts";
+  if (p === "/apps"     || p === "/(tabs)/apps")     return "/(tabs)/apps";
+  if (p === "/me"       || p === "/(tabs)/me")       return "/(tabs)/me";
+  if (p === "/search"   || p === "/(tabs)/search")   return "/(tabs)/search";
   return p;
 }
 
@@ -56,9 +56,6 @@ function useTotalUnread(userId: string | undefined): number {
       const convs = await getLocalConversations();
       setTotal(convs.reduce((s, c) => s + (c.unread_count ?? 0), 0));
     };
-    // Unique suffix prevents Supabase from returning a stale already-subscribed
-    // channel object when the effect re-runs before the previous removeChannel
-    // resolves (StrictMode double-invoke, userId change, etc.).
     const chName = `tab-bar-unread-${userId}-${Date.now()}`;
     const ch = supabase
       .channel(chName)
@@ -75,7 +72,7 @@ function useTotalUnread(userId: string | undefined): number {
   return total;
 }
 
-// ── Full-width bottom tab bar ─────────────────────────────────────────────────
+// ── Floating pill tab bar ─────────────────────────────────────────────────────
 function CompactTabBar({
   userId,
   avatarUrl,
@@ -83,32 +80,30 @@ function CompactTabBar({
   userId: string | undefined;
   avatarUrl: string | null | undefined;
 }) {
-  const pathname        = usePathname();
-  const insets          = useSafeAreaInsets();
+  const pathname           = usePathname();
+  const insets             = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
-  const totalUnread     = useTotalUnread(userId);
-  const active          = normalizeTabPath(pathname);
+  const totalUnread        = useTotalUnread(userId);
+  const active             = normalizeTabPath(pathname);
   const [showCreatePicker, setShowCreatePicker] = useState(false);
 
   const CREATE_OPTIONS = [
-    { icon: "camera",        label: "Story",   desc: "Share a photo or video story",     route: "/stories/camera",         color: "#FF9F0A"       },
-    { icon: "create",        label: "Post",    desc: "Share a thought, photo, or link", route: "/moments/create",         color: colors.accent   },
-    { icon: "videocam",      label: "Video",   desc: "Share a short video clip",         route: "/moments/create-video",   color: "#FF3B30"       },
-    { icon: "document-text", label: "Article", desc: "Write a long-form article",        route: "/moments/create-article", color: "#007AFF"       },
+    { icon: "camera",        label: "Story",   desc: "Share a photo or video story",     route: "/stories/camera",         color: "#FF9F0A"     },
+    { icon: "create",        label: "Post",    desc: "Share a thought, photo, or link",  route: "/moments/create",         color: colors.accent },
+    { icon: "videocam",      label: "Video",   desc: "Share a short video clip",         route: "/moments/create-video",   color: "#FF3B30"     },
+    { icon: "document-text", label: "Article", desc: "Write a long-form article",        route: "/moments/create-article", color: "#007AFF"     },
   ];
 
-  const BAR_BG     = isDark ? "#0C0C0C" : "#FFFFFF";
-  const ICON_SIZE  = 27;
-  const SLOT_COUNT = 5; // home | Fun | CREATE | apps | chats
+  const PILL_BG = isDark ? "#1A1A1A" : "#FFFFFF";
+  const ACCENT  = colors.accent;
 
   function handleTabPress(route: string) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     safeRouter.navigate(route as any);
   }
 
-  // Build the 5 slot array (insert CREATE placeholder at index 2)
   const slots: Array<
-    | { kind: "tab"; route: string; iconOn: string; iconOff: string }
+    | { kind: "tab"; route: string; icon: string }
     | { kind: "create" }
   > = [
     { kind: "tab", ...BOTTOM_TABS[0] },
@@ -120,57 +115,77 @@ function CompactTabBar({
 
   return (
     <>
-      <View style={[bar.container, { paddingBottom: Math.max(insets.bottom, 8), backgroundColor: BAR_BG, borderTopColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)" }]}>
+      {/* Floating pill */}
+      <View
+        style={[
+          pill.wrapper,
+          {
+            bottom: Math.max(insets.bottom, 8) + 10,
+            backgroundColor: PILL_BG,
+            shadowColor: isDark ? "#000" : "#000",
+            shadowOpacity: isDark ? 0.55 : 0.18,
+          },
+        ]}
+        pointerEvents="box-none"
+      >
         {slots.map((slot, idx) => {
           if (slot.kind === "create") {
             return (
-              <View key="create" style={bar.slot}>
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-                    setShowCreatePicker(true);
-                  }}
-                  style={bar.createBtn}
-                  activeOpacity={0.85}
-                >
-                  <Ionicons name="add" size={28} color="#fff" />
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                key="create"
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+                  setShowCreatePicker(true);
+                }}
+                style={[pill.createBtn, { backgroundColor: ACCENT }]}
+                activeOpacity={0.82}
+              >
+                <Ionicons name="add" size={26} color="#fff" />
+              </TouchableOpacity>
             );
           }
 
-          const focused   = active === slot.route;
-          const iconColor = focused ? colors.text : colors.textMuted;
+          const focused = active === slot.route;
+          const iconColor = focused ? ACCENT : (isDark ? "rgba(255,255,255,0.38)" : "rgba(0,0,0,0.32)");
 
           return (
-            <View key={slot.route} style={bar.slot}>
-              <TouchableOpacity
-                style={bar.pressable}
-                onPress={() => handleTabPress(slot.route)}
-                activeOpacity={0.65}
-                accessibilityRole="button"
-                accessibilityLabel={slot.route.replace("/(tabs)/", "")}
-                accessibilityState={{ selected: focused }}
-              >
-                <View style={bar.iconWrap}>
-                  <Ionicons name={slot.iconOn as any} size={ICON_SIZE} color={iconColor} />
-                </View>
-
+            <TouchableOpacity
+              key={slot.route}
+              style={pill.tab}
+              onPress={() => handleTabPress(slot.route)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={slot.route.replace("/(tabs)/", "")}
+              accessibilityState={{ selected: focused }}
+            >
+              <View style={pill.iconWrap}>
+                <Ionicons
+                  name={slot.icon as any}
+                  size={24}
+                  color={iconColor}
+                />
                 {/* Unread badge on chat */}
                 {slot.route === "/(tabs)/chats" && totalUnread > 0 && (
-                  <View style={[bar.badge, { backgroundColor: colors.accent }]}>
-                    <Text style={bar.badgeText} numberOfLines={1}>
+                  <View style={[pill.badge, { backgroundColor: ACCENT }]}>
+                    <Text style={pill.badgeText} numberOfLines={1}>
                       {totalUnread > 99 ? "99+" : String(totalUnread)}
                     </Text>
                   </View>
                 )}
-              </TouchableOpacity>
-            </View>
+              </View>
+              {/* Active dot */}
+              <View
+                style={[
+                  pill.dot,
+                  { backgroundColor: focused ? ACCENT : "transparent" },
+                ]}
+              />
+            </TouchableOpacity>
           );
         })}
       </View>
 
-      {/* Create picker modal */}
+      {/* Create picker sheet */}
       <Modal
         visible={showCreatePicker}
         transparent
@@ -200,7 +215,7 @@ function CompactTabBar({
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[sheet.optionLabel, { color: isDark ? "#FFFFFF" : "#000000" }]}>{opt.label}</Text>
-                  <Text style={[sheet.optionDesc, { color: isDark ? "#8E8E93" : "#6C6C70" }]}>{opt.desc}</Text>
+                  <Text style={[sheet.optionDesc,  { color: isDark ? "#8E8E93" : "#6C6C70" }]}>{opt.desc}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={isDark ? "#48484A" : "#C7C7CC"} />
               </TouchableOpacity>
@@ -212,55 +227,53 @@ function CompactTabBar({
   );
 }
 
-const bar = StyleSheet.create({
-  container: {
+const pill = StyleSheet.create({
+  wrapper: {
     position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+    left: 20,
+    right: 20,
     flexDirection: "row",
     alignItems: "center",
-    height: 56,
-    paddingTop: 0,
+    justifyContent: "space-around",
+    height: 64,
+    borderRadius: 100,
+    paddingHorizontal: 8,
     zIndex: 100,
-    borderTopWidth: 0.5,
-    borderTopColor: "rgba(255,255,255,0.07)",
+    // Shadow
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 24,
+    elevation: 20,
   },
-  slot: {
+  tab: {
     flex: 1,
-    height: 56,
     alignItems: "center",
     justifyContent: "center",
-  },
-  pressable: {
-    width: 52,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
+    height: 64,
+    gap: 4,
   },
   iconWrap: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     alignItems: "center",
     justifyContent: "center",
+  },
+  dot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
   createBtn: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#1f95ff",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#1f95ff",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  avatar: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    elevation: 10,
+    marginHorizontal: 4,
   },
   badge: {
     position: "absolute",
