@@ -446,7 +446,7 @@ function PostImages({
                 contentFit="cover"
                 cachePolicy="memory-disk"
                 priority={i === 0 ? "high" : "normal"}
-                transition={300}
+                transition={0}
               />
             </TouchableOpacity>
           ))}

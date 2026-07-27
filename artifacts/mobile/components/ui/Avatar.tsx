@@ -62,7 +62,7 @@ export function Avatar({ uri, name, size = 44, style, online, premium, square, p
           style={{ width: size, height: size, borderRadius: radius }}
           contentFit="cover"
           cachePolicy="memory-disk"
-          transition={120}
+          transition={0}
         />
       ) : (
         <View

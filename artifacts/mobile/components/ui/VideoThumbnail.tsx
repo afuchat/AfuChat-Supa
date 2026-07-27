@@ -113,7 +113,7 @@ function VideoThumbnailNative({
           style={StyleSheet.absoluteFill}
           contentFit="cover"
           cachePolicy={lowData ? "disk" : "memory-disk"}
-          transition={100}
+          transition={0}
         />
       ) : (
         <View style={[StyleSheet.absoluteFill, { backgroundColor: "#0a0a0a" }]} />
