@@ -103,7 +103,6 @@ import { getDailyUsage, recordDailyUsage } from "@/lib/featureUsage";
 import EmojiStickerPicker from "@/components/chat/EmojiStickerPicker";
 import GiftPickerSheet, { DbGift } from "@/components/gifts/GiftPickerSheet";
 import AiEditorSheet from "@/components/ui/AiEditorSheet";
-import ChatBackground from "@/components/ui/ChatBackground";
 import FormatToolbar from "@/components/chat/FormatToolbar";
 import MiniProfilePopup from "@/components/chat/MiniProfilePopup";
 import { VoiceWaveform } from "@/components/chat/VoiceWaveform";
@@ -6159,8 +6158,7 @@ STRICT RULES:
       )}
 
       {/* ── Message list — fills remaining space, padded so content clears the floating input ── */}
-      <View style={{ flex: 1 }}>
-        <ChatBackground isDark={isDark} />
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         {loading ? (
           <ChatLoadingSkeleton />
         ) : messages.length === 0 ? (
