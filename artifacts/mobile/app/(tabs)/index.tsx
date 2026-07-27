@@ -33,7 +33,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
 import UserName from "@/components/ui/UserName";
-import { StoryRing } from "@/components/ui/StoryRing";
 import { Separator } from "@/components/ui/Separator";
 import Colors from "@/constants/colors";
 import { ChatRowSkeleton } from "@/components/ui/Skeleton";
@@ -65,22 +64,9 @@ import {
   subscribeStoryUpload,
 } from "@/lib/storyUploadStore";
 import PostUploadBannerShared from "@/components/ui/PostUploadBanner";
-import {
-  getViewedUserIds,
-  subscribeStoryViewed,
-} from "@/lib/storyViewedStore";
 import { usePhonebookNames } from "@/hooks/usePhonebookNames";
 import { setTotalUnread } from "@/lib/chatUnreadEvents";
 
-type StoryUser = {
-  userId: string;
-  displayName: string;
-  avatarUrl: string | null;
-  hasUnseen: boolean;
-  storyCount: number;
-  seenCount: number;
-  latestAt: string;
-};
 
 function stripMdPreview(s: string): string {
   return s
@@ -518,225 +504,7 @@ const uploadBannerStyles = StyleSheet.create({
   fill: { height: 3, borderRadius: 2 },
 });
 
-function StoriesBar({ userId, colors }: { userId: string; colors: any }) {
-  const [storyUsers, setStoryUsers] = useState<StoryUser[]>([]);
-  // Used to force re-render when storyViewedStore fires
-  const [_viewedTick, setViewedTick] = useState(0);
 
-  const loadStories = useCallback(async () => {
-    if (!isOnline()) return;
-    const now = new Date().toISOString();
-    let storiesData: any[] | null = null;
-    try {
-      const { data } = await supabase
-        .from("stories")
-        .select("id, user_id, caption, privacy, created_at, profiles!stories_user_id_fkey(display_name, avatar_url)")
-        .gt("expires_at", now)
-        .order("created_at", { ascending: true })
-        .limit(100);
-      storiesData = data;
-    } catch {}
-
-    if (!storiesData || storiesData.length === 0) {
-      setStoryUsers([]);
-      return;
-    }
-
-    const filtered = storiesData.filter((s: any) => {
-      const p = s.privacy || "everyone";
-      if (p === "only_me" && s.user_id !== userId) return false;
-      if (p === "close_friends" && s.user_id !== userId) return false;
-      return true;
-    });
-
-    if (filtered.length === 0) {
-      setStoryUsers([]);
-      return;
-    }
-
-    const storyIds = filtered.map((s: any) => s.id);
-    const { data: viewsData } = await supabase
-      .from("story_views")
-      .select("story_id")
-      .eq("viewer_id", userId)
-      .in("story_id", storyIds);
-
-    const viewedSet = new Set((viewsData || []).map((v: any) => v.story_id));
-    const sessionViewed = getViewedUserIds();
-
-    const userMap = new Map<string, StoryUser>();
-    for (const s of filtered as any[]) {
-      const existing = userMap.get(s.user_id);
-      // Own stories are always "seen" — you created them
-      // Also mark as seen if the session store says this userId was visited
-      const isOwnStory = s.user_id === userId;
-      const sessionSeen = sessionViewed.has(s.user_id);
-      const isSeen = isOwnStory || sessionSeen || viewedSet.has(s.id);
-      if (existing) {
-        existing.storyCount += 1;
-        if (isSeen) existing.seenCount += 1;
-        if (!isSeen) existing.hasUnseen = true;
-        if (s.created_at > existing.latestAt) existing.latestAt = s.created_at;
-      } else {
-        userMap.set(s.user_id, {
-          userId: s.user_id,
-          displayName: s.profiles?.display_name || "User",
-          avatarUrl: s.profiles?.avatar_url || null,
-          hasUnseen: !isSeen,
-          storyCount: 1,
-          seenCount: isSeen ? 1 : 0,
-          latestAt: s.created_at,
-        });
-      }
-    }
-
-    const users = Array.from(userMap.values());
-    users.sort((a, b) => {
-      if (a.hasUnseen && !b.hasUnseen) return -1;
-      if (!a.hasUnseen && b.hasUnseen) return 1;
-      return new Date(b.latestAt).getTime() - new Date(a.latestAt).getTime();
-    });
-
-    setStoryUsers(users);
-  }, [userId]);
-
-  // Refresh ring immediately when the view screen marks stories as viewed
-  useEffect(() => {
-    return subscribeStoryViewed(() => {
-      setViewedTick((t) => t + 1);
-      setStoryUsers((prev) =>
-        prev.map((u) => {
-          if (getViewedUserIds().has(u.userId)) {
-            return { ...u, seenCount: u.storyCount, hasUnseen: false };
-          }
-          return u;
-        })
-      );
-    });
-  }, []);
-
-  useFocusEffect(useCallback(() => { loadStories(); }, [loadStories]));
-
-  useEffect(() => {
-    // Evict any stale channel before creating a fresh one (same fix as chat:id channels).
-    const stale = supabase.getChannels().find(
-      (ch) => ch.topic === "realtime:stories-bar-realtime"
-    );
-    if (stale) supabase.removeChannel(stale);
-
-    const channel = supabase
-      .channel("stories-bar-realtime")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "stories" }, () => {
-        loadStories();
-      })
-      .on("postgres_changes", { event: "DELETE", schema: "public", table: "stories" }, () => {
-        loadStories();
-      })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "stories" }, () => {
-        loadStories();
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [loadStories]);
-
-  // Reload when our own story finishes uploading (in-process backup to Supabase realtime)
-  useEffect(() => {
-    let wasDone = false;
-    return subscribeStoryUpload(() => {
-      const s = getStoryUploadState();
-      if (s?.done && !wasDone) {
-        wasDone = true;
-        // Small delay to let the DB propagate before fetching
-        setTimeout(() => loadStories(), 500);
-      }
-      if (!s) wasDone = false;
-    });
-  }, [loadStories]);
-
-  if (storyUsers.length === 0) return null;
-
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={storyBarStyles.list} nestedScrollEnabled>
-      {storyUsers.map((u) => (
-        <TouchableOpacity
-          key={u.userId}
-          style={storyBarStyles.item}
-          onPress={() => router.push({ pathname: "/stories/view", params: { userId: u.userId } })}
-        >
-          <StoryRing size={52} storyCount={u.storyCount} seenCount={u.seenCount}>
-            <Avatar uri={u.avatarUrl} name={u.displayName} size={52} />
-          </StoryRing>
-          <Text style={[storyBarStyles.name, { color: colors.textSecondary }]} numberOfLines={1}>{u.displayName}</Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
-  );
-}
-
-const storyBarStyles = StyleSheet.create({
-  list: { paddingHorizontal: 12, paddingVertical: 10, gap: 14 },
-  item: { alignItems: "center", width: 68 },
-  addCircle: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: Colors.brand, borderStyle: "dashed" },
-  name: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 4, textAlign: "center" },
-});
-
-// ─── Compact Story Avatars for Header ────────────────────────────────────────
-function CompactStoryHeader({ userId, colors, onExpand }: { userId: string; colors: any; onExpand: () => void }) {
-  const [previews, setPreviews] = useState<Array<{ id: string; avatarUrl: string | null; displayName: string; hasUnseen: boolean }>>([]);
-
-  useEffect(() => {
-    const now = new Date().toISOString();
-    supabase.from("stories")
-      .select("user_id, profiles!stories_user_id_fkey(display_name, avatar_url)")
-      .gt("expires_at", now)
-      .order("created_at", { ascending: false })
-      .limit(30)
-      .then(({ data }) => {
-        if (!data?.length) { setPreviews([]); return; }
-        const seen = new Set<string>();
-        const list: Array<{ id: string; avatarUrl: string | null; displayName: string; hasUnseen: boolean }> = [];
-        for (const s of data as any[]) {
-          if (seen.has(s.user_id)) continue;
-          seen.add(s.user_id);
-          list.push({
-            id: s.user_id,
-            avatarUrl: s.profiles?.avatar_url || null,
-            displayName: s.profiles?.display_name || "User",
-            hasUnseen: s.user_id !== userId,
-          });
-          if (list.length >= 3) break;
-        }
-        setPreviews(list);
-      });
-  }, [userId]);
-
-  if (previews.length === 0) {
-    return null;
-  }
-
-  return (
-    <TouchableOpacity onPress={onExpand} style={{ flexDirection: "row", alignItems: "center", paddingVertical: 2 }} activeOpacity={0.75}>
-      {previews.map((p, i) => (
-        <View
-          key={p.id}
-          style={{
-            marginLeft: i === 0 ? 0 : -9,
-            zIndex: 3 - i,
-            width: 32, height: 32, borderRadius: 16,
-            borderWidth: 2,
-            borderColor: colors.background,
-            overflow: "hidden",
-          }}
-        >
-          <Avatar uri={p.avatarUrl} name={p.displayName} size={28} />
-          {p.hasUnseen && (
-            <View style={{ position: "absolute", bottom: 0, right: 0, width: 9, height: 9, borderRadius: 5, backgroundColor: "#1f95ff", borderWidth: 1.5, borderColor: colors.background }} />
-          )}
-        </View>
-      ))}
-    </TouchableOpacity>
-  );
-}
 
 type ChatTabKey = "all" | "unread" | "personal" | "groups" | "channels";
 
@@ -841,55 +609,19 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   const lastScrollY = useRef(0);
   const fabHidden   = useRef(false);
 
-  // ── Collapsible stories bar (hard pull-down to reveal) ──────────────────
-  const [storiesExpanded, setStoriesExpanded] = useState(true);
-  const storiesExpandedRef = useRef(true);
-  const storiesHeightAnim  = useRef(new Animated.Value(1)).current;
-  // Drives compact avatar opacity/scale in header (1=visible, 0=hidden)
-  const compactAvatarAnim  = useRef(new Animated.Value(0)).current;
-  const pullRevealFiredRef  = useRef(false);
-
-  const expandStories = useCallback(() => {
-    if (storiesExpandedRef.current) return;
-    storiesExpandedRef.current = true;
-    setStoriesExpanded(true);
-    Animated.parallel([
-      Animated.spring(storiesHeightAnim, { toValue: 1, useNativeDriver: false, speed: 18, bounciness: 4 }),
-      Animated.timing(compactAvatarAnim, { toValue: 0, duration: 160, useNativeDriver: true }),
-    ]).start();
-  }, [storiesHeightAnim, compactAvatarAnim]);
-
-  const collapseStories = useCallback(() => {
-    Animated.parallel([
-      Animated.spring(storiesHeightAnim, { toValue: 0, useNativeDriver: false, speed: 24, bounciness: 0 }),
-      Animated.timing(compactAvatarAnim, { toValue: 1, duration: 180, useNativeDriver: true }),
-    ]).start(() => {
-      storiesExpandedRef.current = false;
-      setStoriesExpanded(false);
-    });
-  }, [storiesHeightAnim, compactAvatarAnim]);
-
   const handleFabScroll = useCallback((e: any) => {
     const y  = e.nativeEvent.contentOffset.y;
     const dy = y - lastScrollY.current;
     lastScrollY.current = y;
 
-    // Hard pull-down past threshold → expand stories bar
-    if (y < -50 && !storiesExpandedRef.current && !pullRevealFiredRef.current) {
-      pullRevealFiredRef.current = true;
-      expandStories();
-    }
-    if (y >= 0) pullRevealFiredRef.current = false;
-
     if (dy > 6 && y > 60 && !fabHidden.current) {
       fabHidden.current = true;
       Animated.spring(fabAnim, { toValue: 0, useNativeDriver: true, speed: 24, bounciness: 0 }).start();
-      if (storiesExpandedRef.current) collapseStories();
     } else if (dy < -4 && fabHidden.current) {
       fabHidden.current = false;
       Animated.spring(fabAnim, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 6 }).start();
     }
-  }, [fabAnim, expandStories, collapseStories]);
+  }, [fabAnim]);
 
   const loadChats = useCallback(async (background = false) => {
     if (!user) return;
@@ -1970,31 +1702,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
 
       {!panelMode && !selectMode && <HomeBanner />}
 
-      {/* Stories expansion area — slides in on hard pull-down, above search bar */}
-      {!panelMode && !selectMode && (
-        <Animated.View style={{
-          height: storiesHeightAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 120] }),
-          overflow: "hidden",
-          opacity: storiesHeightAnim.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 0.6, 1] }),
-        }}>
-          {user && (
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View style={{ flex: 1 }}>
-                <StoriesBar userId={user.id} colors={colors} />
-              </View>
-              {/* Collapse chevron — tap to close stories bar */}
-              <TouchableOpacity
-                onPress={collapseStories}
-                style={{ paddingRight: 12, paddingLeft: 4, alignSelf: "center", paddingVertical: 8 }}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                activeOpacity={0.65}
-              >
-                <Ionicons name="chevron-up" size={18} color={colors.textMuted} />
-              </TouchableOpacity>
-            </View>
-          )}
-        </Animated.View>
-      )}
 
 
 
