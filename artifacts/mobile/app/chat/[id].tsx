@@ -5953,10 +5953,13 @@ STRICT RULES:
   // propagate the activity resize to absolutely-positioned children).
   // We therefore apply keyboardHeight manually on BOTH platforms, same as iOS.
   // Custom emoji picker: use emojiKeyboardHeight (system keyboard is closed then).
+  // When the keyboard is open, always keep at least insets.bottom of clearance
+  // so the input bar never intrudes into the gesture-navigation area on
+  // devices where keyboardHeight does not already include that inset.
   const effectiveBottom = showEmojiStickerPicker && !keyboardHeight
     ? emojiKeyboardHeight + insets.bottom
     : keyboardHeight > 0
-      ? keyboardHeight
+      ? Math.max(keyboardHeight, insets.bottom)
       : insets.bottom;
 
   return (

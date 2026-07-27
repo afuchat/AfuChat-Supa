@@ -322,8 +322,9 @@ function StoriesRow({
     return () => { supabase.removeChannel(rt); };
   }, [loadDiscoverStories]);
 
-  // No stories after load → return null so the feed has no top padding
-  if (storiesLoaded && stories.length === 0) return null;
+  // Return null whenever there are no stories — do not wait for storiesLoaded
+  // so the empty horizontal ScrollView (dark placeholder bar) never renders.
+  if (stories.length === 0) return null;
 
   return (
     <ScrollView
