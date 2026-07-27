@@ -6244,6 +6244,20 @@ STRICT RULES:
         )}
       </View>
 
+      {/* ── Bottom message fade — content dissolves before entering the glass input bar ── */}
+      <LinearGradient
+        colors={["transparent", colors.background]}
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: effectiveBottom + floatingInputHeight - 8,
+          height: 100,
+          zIndex: 9,
+          pointerEvents: "none",
+        } as any}
+      />
+
       {/* ── Floating input container ── absolutely positioned, rises with keyboard ── */}
       <View
         style={[st.floatingInputContainer, { bottom: effectiveBottom, pointerEvents: "box-none" }]}
