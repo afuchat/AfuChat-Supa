@@ -251,6 +251,7 @@ function StoriesRow({
 }) {
   const { colors } = useTheme();
   const [stories, setStories] = useState<StoryEntry[]>([]);
+  const [storiesLoaded, setStoriesLoaded] = useState(false);
   const SZ = 58;
 
   const loadDiscoverStories = useCallback(async () => {
@@ -292,6 +293,7 @@ function StoriesRow({
       });
     }
     setStories(Array.from(map.values()).slice(0, 12));
+    setStoriesLoaded(true);
   }, [avatarUrl, displayName, userId]);
 
   // Reload whenever this tab comes into focus — throttled to at most once per
@@ -319,6 +321,9 @@ function StoriesRow({
       .subscribe();
     return () => { supabase.removeChannel(rt); };
   }, [loadDiscoverStories]);
+
+  // No stories after load → return null so the feed has no top padding
+  if (storiesLoaded && stories.length === 0) return null;
 
   return (
     <ScrollView
@@ -1187,14 +1192,20 @@ export default function DiscoverScreen() {
     }).start();
   }
 
-  // Header is now permanently fixed — no scroll-hide behaviour.
-  // Keep scrollYAnim listener only to track prevScrollY for future use.
+  // Auto-hide header when scrolling down, reveal when scrolling up.
   useEffect(() => {
     const id = scrollYAnim.addListener(({ value }) => {
+      const delta = value - prevScrollYRef.current;
+      // Only hide after the user has scrolled past the stories row (~80px)
+      if (value > 80 && delta > 8) {
+        hideHeader(headerHeight);
+      } else if (delta < -4 || value <= 10) {
+        revealHeader();
+      }
       prevScrollYRef.current = value;
     });
     return () => scrollYAnim.removeListener(id);
-  }, []);
+  }, [headerHeight]);
 
   // The Animated.event passed to FlatList — compatible with onEndReached.
   const onFeedScroll = Animated.event(
@@ -2439,13 +2450,13 @@ export default function DiscoverScreen() {
       <PostUploadBanner />
       <>
 
-      {/* ── Fixed header ── */}
-      <View
+      {/* ── Auto-hiding header ── */}
+      <Animated.View
         onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
-        style={styles.headerBlock}
+        style={[styles.headerBlock, { transform: [{ translateY: headerOffset }] }]}
       >
-        {/* Flat header background */}
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? "#0F0F0F" : "#F5F0E8", zIndex: 0 }]} />
+        {/* Flat header background — unified BG, no separate surface colour */}
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 0 }]} />
 
         {/* ── Row 1: user avatar | centered wordmark | bell ── */}
         <View style={[styles.headerTop, { paddingTop: insets.top + 6 }]}>
@@ -2552,13 +2563,13 @@ export default function DiscoverScreen() {
             <Text style={[styles.bgRefreshText, { color: colors.accent }]}>Updating feed…</Text>
           </View>
         )}
-      </View>
+      </Animated.View>
       {/* ────────────────────────────────────────────────────────────────── */}
 
       {/* Top edge fade — content dissolves as it scrolls up under the header */}
       {headerHeight > 0 && (
         <LinearGradient
-          colors={[isDark ? "#0F0F0F" : "#F5F0E8", "transparent"]}
+          colors={[colors.background, "transparent"]}
           style={{
             position: "absolute",
             top: headerHeight,

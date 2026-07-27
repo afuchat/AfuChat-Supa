@@ -30,12 +30,12 @@ const light = {
   textSecondary:     "#5A5040",
   textMuted:         "#8C7F6A",
 
-  // ── Backgrounds ─────────────────────────────────────────────────────────────
+  // ── Backgrounds — flat UI: one universal BG, no card elevation ──────────────
   background:        "#F5F0E8",   // page / screen
-  backgroundSecondary: "#EDE8DC", // cards, sheets
-  backgroundTertiary:  "#E8E2D6", // inset areas, code blocks
+  backgroundSecondary: "#F5F0E8", // same — no layering
+  backgroundTertiary:  "#F5F0E8", // same — no layering
   surface:           "#F5F0E8",   // elevated surfaces
-  card:              "#EDE8DC",
+  card:              "#F5F0E8",
 
   // ── Lines ───────────────────────────────────────────────────────────────────
   border:            "#DDD7C9",
@@ -93,12 +93,12 @@ const dark = {
   textSecondary:     "#AAAAAA",
   textMuted:         "#717171",
 
-  // ── Backgrounds — based on the welcome/onboarding deep-space dark (#06080F) ─
+  // ── Backgrounds — flat UI: one universal BG, no card elevation ──────────────
   background:        "#06080F",
-  backgroundSecondary: "#0C1018",
-  backgroundTertiary:  "#111520",
+  backgroundSecondary: "#06080F", // same — no layering
+  backgroundTertiary:  "#06080F", // same — no layering
   surface:           "#06080F",
-  card:              "#0C1018",
+  card:              "#06080F",
 
   // ── Lines ───────────────────────────────────────────────────────────────────
   border:            "rgba(255,255,255,0.10)",
