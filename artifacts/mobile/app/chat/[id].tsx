@@ -5898,7 +5898,6 @@ STRICT RULES:
             onReactionPress={addReaction}
             onStatusPress={isMe ? (m) => setMsgInfoTarget(m) : undefined}
             brandColor={chatAppearance?.bubbleColor}
-            flatSurface={isAfuAiDirectChat}
             hideTimestamp={isAfuAiDirectChat}
           />
         )}
@@ -5957,13 +5956,9 @@ STRICT RULES:
               )}
               <VerifiedBadge isVerified={chatInfo?.is_verified} isOrganizationVerified={chatInfo?.is_organization_verified} size={16} />
             </View>
-            {(typingUsers.length > 0 || isAfuAiTyping) ? (
-              <Text style={[st.headerSub, { color: isAfuAiTyping && typingUsers.length === 0 ? "#1f95ff" : BRAND }]}>
-                {isAfuAiTyping
-                  ? typingUsers.length > 0
-                    ? `AfuAI & ${typingUsers.join(", ")} typing...`
-                    : "✦ AfuAI is thinking..."
-                  : `${typingUsers.join(", ")} typing...`}
+            {typingUsers.length > 0 ? (
+              <Text style={[st.headerSub, { color: BRAND }]}>
+                {`${typingUsers.join(", ")} typing...`}
               </Text>
             ) : !networkOnline ? (
               <Text style={[st.headerSub, { color: "#FF9500" }]}>Waiting for network...</Text>
@@ -6176,15 +6171,8 @@ STRICT RULES:
                 }, 300);
               }}
               ListHeaderComponent={
-                (typingUsers.length > 0 || isAfuAiTyping)
-                  ? <TypingBubble
-                      names={isAfuAiTyping ? ["AfuAI", ...typingUsers] : typingUsers}
-                      colors={{
-                        ...colors,
-                        bubbleIncoming: isAfuAiTyping && typingUsers.length === 0 ? "#004D5C" : colors.bubbleIncoming,
-                        bubbleIncomingText: isAfuAiTyping && typingUsers.length === 0 ? "#E0F7FA" : colors.bubbleIncomingText,
-                      }}
-                    />
+                typingUsers.length > 0
+                  ? <TypingBubble names={typingUsers} colors={colors} />
                   : null
               }
               ListFooterComponent={
