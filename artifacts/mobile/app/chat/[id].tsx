@@ -288,10 +288,12 @@ function formatMsgInfoTime(iso: string): string {
 function formatDateHeader(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (d.toDateString() === now.toDateString()) return "Today";
+  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
   const diff = now.getTime() - d.getTime();
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  if (days === 0) return "Today";
-  if (days === 1) return "Yesterday";
   if (days < 7) return d.toLocaleDateString([], { weekday: "long" });
   return d.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
 }
@@ -859,9 +861,11 @@ function LensContextCard({ msg, onSuggestionTap }: {
         )}
 
         {/* Timestamp */}
-        <View style={{ paddingHorizontal: 14, paddingBottom: 12, flexDirection: "row", justifyContent: "flex-end" }}>
-          <Text style={{ fontSize: 11, color: colors.textMuted }}>{formatMsgTime(msg.sent_at)}</Text>
-        </View>
+        {!hideTimestamp && (
+          <View style={{ paddingHorizontal: 14, paddingBottom: 12, flexDirection: "row", justifyContent: "flex-end" }}>
+            <Text style={{ fontSize: 11, color: colors.textMuted }}>{formatMsgTime(msg.sent_at)}</Text>
+          </View>
+        )}
       </View>
 
       {/* Suggestion chips */}
@@ -885,7 +889,7 @@ function LensContextCard({ msg, onSuggestionTap }: {
   );
 }
 
-function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, replyPreview, onTapReply, isHighlighted, onTapEnvelope, onTapGift, onImageTap, onConfirmExec, onCancelExec, onSuggestionTap, onSenderPress, onReactionPress, onStatusPress, brandColor, flatSurface }: {
+function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, replyPreview, onTapReply, isHighlighted, onTapEnvelope, onTapGift, onImageTap, onConfirmExec, onCancelExec, onSuggestionTap, onSenderPress, onReactionPress, onStatusPress, brandColor, flatSurface, hideTimestamp }: {
   msg: Message;
   isMe: boolean;
   showTail: boolean;
@@ -907,6 +911,8 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   brandColor?: string;
   /** When true, renders a flat borderless surface — no bubble bg, no tail, no radius */
   flatSurface?: boolean;
+  /** When true, hides per-message timestamps (used in AfuAI chat) */
+  hideTimestamp?: boolean;
 }) {
   const { colors, isDark } = useTheme();
   const BRAND = brandColor ?? colors.accent;
@@ -1523,15 +1529,19 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
           )}
 
           {/* metaRow: only rendered for non-plain-text messages (images, audio, AI, etc.).
-              Plain text messages render their timestamp inline in the text flow above. */}
+              Plain text messages render their timestamp inline in the text flow above.
+              hideTimestamp suppresses the time text but keeps the read-receipt icon
+              so the user still gets delivery confirmation in regular chats. */}
           {!useInlineTimestamp && (
             <View style={[st.metaRow, { marginTop: 3 }]}>
-              {msg.edited_at && (
+              {!hideTimestamp && msg.edited_at && (
                 <Text style={[st.msgTime, { color: isMe ? myTimeColor : colors.textMuted, marginRight: 4 }]}>edited</Text>
               )}
-              <Text style={[st.msgTime, { color: isMe ? myTimeColor : colors.textMuted }]}>
-                {formatMsgTime(msg.sent_at)}
-              </Text>
+              {!hideTimestamp && (
+                <Text style={[st.msgTime, { color: isMe ? myTimeColor : colors.textMuted }]}>
+                  {formatMsgTime(msg.sent_at)}
+                </Text>
+              )}
               {isMe && (
                 <TouchableOpacity onPress={() => onStatusPress?.(msg)} hitSlop={8} activeOpacity={0.65} disabled={!onStatusPress}>
                   <Ionicons
@@ -5663,11 +5673,15 @@ STRICT RULES:
   }
 
   function shouldShowDate(index: number): boolean {
-    if (index === 0) return true;
+    // FlatList is inverted: index 0 = bottom/newest, higher index = older/top.
+    // The date badge renders ABOVE the message (visually), which in an inverted
+    // list means we want it on the OLDEST message of each day group — i.e. when
+    // the next-older message (index + 1) is on a different calendar day.
     const current = listData[index];
-    const prev = listData[index - 1];
-    if (!current?.sent_at || !prev?.sent_at) return true;
-    return new Date(current.sent_at).toDateString() !== new Date(prev.sent_at).toDateString();
+    const older = listData[index + 1]; // one step older in the inverted list
+    if (!current?.sent_at) return false;
+    if (!older?.sent_at) return true; // oldest message in the list — always show
+    return new Date(current.sent_at).toDateString() !== new Date(older.sent_at).toDateString();
   }
 
   const handleScroll = useCallback((e: any) => {
@@ -5723,7 +5737,8 @@ STRICT RULES:
 
   const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => {
     const isMe = item.sender_id === user?.id;
-    const showDate = shouldShowDate(index);
+    // AfuAI chat: suppress date separators and per-message timestamps entirely.
+    const showDate = !isAfuAiDirectChat && shouldShowDate(index);
     const spacing = getMessageSpacing(index);
 
     // Detect @afuchat system notification messages (rich _sys_notif OR raw push-payload)
@@ -5884,6 +5899,7 @@ STRICT RULES:
             onStatusPress={isMe ? (m) => setMsgInfoTarget(m) : undefined}
             brandColor={chatAppearance?.bubbleColor}
             flatSurface={isAfuAiDirectChat}
+            hideTimestamp={isAfuAiDirectChat}
           />
         )}
       </View>
