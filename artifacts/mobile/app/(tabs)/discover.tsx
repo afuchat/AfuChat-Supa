@@ -2555,6 +2555,22 @@ export default function DiscoverScreen() {
       </View>
       {/* ────────────────────────────────────────────────────────────────── */}
 
+      {/* Top edge fade — content dissolves as it scrolls up under the header */}
+      {headerHeight > 0 && (
+        <LinearGradient
+          colors={[isDark ? "#0F0F0F" : "#F5F0E8", "transparent"]}
+          style={{
+            position: "absolute",
+            top: headerHeight,
+            left: 0,
+            right: 0,
+            height: 56,
+            zIndex: 18,
+            pointerEvents: "none",
+          } as any}
+        />
+      )}
+
       {_PagerView ? (
         <_PagerView
           ref={pagerRef}

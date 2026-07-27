@@ -2,6 +2,7 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useRef, useState } from "react";
+import { LinearGradient } from "@/components/ui/SafeGradient";
 import { Security2FABanner } from "@/components/ui/Security2FABanner";
 import {
   Modal,
@@ -94,8 +95,9 @@ function CompactTabBar({
     { icon: "document-text", label: "Article", desc: "Write a long-form article",        route: "/moments/create-article", color: "#007AFF"     },
   ];
 
-  const PILL_BG = isDark ? "#1A1A1A" : "#FFFFFF";
-  const ACCENT  = colors.accent;
+  const PILL_BG      = isDark ? "rgba(10,12,22,0.82)" : "rgba(248,244,238,0.88)";
+  const PILL_BORDER  = isDark ? "rgba(255,255,255,0.13)" : "rgba(0,0,0,0.09)";
+  const ACCENT       = colors.accent;
 
   function handleTabPress(route: string) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -115,6 +117,20 @@ function CompactTabBar({
 
   return (
     <>
+      {/* Bottom content fade — scrolling content fades before it hits the pill */}
+      <LinearGradient
+        colors={["transparent", isDark ? "#06080F" : "#F5F0E8"]}
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: Math.max(insets.bottom, 8) + 10 + 64,
+          height: 80,
+          zIndex: 98,
+          pointerEvents: "none",
+        } as any}
+      />
+
       {/* Floating pill */}
       <View
         style={[
@@ -122,8 +138,10 @@ function CompactTabBar({
           {
             bottom: Math.max(insets.bottom, 8) + 10,
             backgroundColor: PILL_BG,
-            shadowColor: isDark ? "#000" : "#000",
-            shadowOpacity: isDark ? 0.55 : 0.18,
+            borderWidth: 0.5,
+            borderColor: PILL_BORDER,
+            shadowColor: "#000",
+            shadowOpacity: isDark ? 0.45 : 0.12,
           },
         ]}
         pointerEvents="box-none"

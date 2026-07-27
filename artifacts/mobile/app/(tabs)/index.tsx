@@ -1919,6 +1919,22 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
           </View>
         )}
 
+        {/* Folder bar top fade — chat items dissolve below the folder pill bar */}
+        {showFolderUI && (
+          <LinearGradient
+            colors={[colors.background + "FF", "transparent"] as any}
+            style={{
+              position: "absolute",
+              top: 52,
+              left: 0,
+              right: 0,
+              height: 48,
+              zIndex: 19,
+              pointerEvents: "none",
+            } as any}
+          />
+        )}
+
         {/* ── Floating folder tab bar ──────────────────────────────────────── */}
         {showFolderUI && (
           <View
