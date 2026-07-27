@@ -1195,7 +1195,6 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
             replyPreview ? st.bubbleWithReply : null,
             isPending && { opacity: 0.6 },
           ]}>
-          {(isPremiumSender || statusGlow) && <PremiumBubbleShimmer />}
           {!isMe && showName && (
             onSenderPress ? (
               <TouchableOpacity
