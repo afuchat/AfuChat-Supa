@@ -119,6 +119,13 @@ const ChatFontSizeCtx = React.createContext<number>(14);
 // always calls the same hook function — satisfying React Rules of Hooks.
 const _ra = (() => {
   try {
+    // Expo Go may load a different native Reanimated runtime than the
+    // bundled Reanimated 4 / Worklets pair. Prefer the safe JS fallbacks
+    // there instead of passing an updater object into native styleUpdater.
+    const Constants = require("expo-constants").default;
+    if (Constants?.appOwnership === "expo" || Constants?.executionEnvironment === "storeClient") {
+      return null;
+    }
     const m = require("react-native-reanimated"); // eslint-disable-line @typescript-eslint/no-var-requires
     if (m && typeof m.useSharedValue === "function") return m;
   } catch {}
@@ -862,11 +869,9 @@ function LensContextCard({ msg, onSuggestionTap }: {
         )}
 
         {/* Timestamp */}
-        {!hideTimestamp && (
-          <View style={{ paddingHorizontal: 14, paddingBottom: 12, flexDirection: "row", justifyContent: "flex-end" }}>
-            <Text style={{ fontSize: 11, color: colors.textMuted }}>{formatMsgTime(msg.sent_at)}</Text>
-          </View>
-        )}
+        <View style={{ paddingHorizontal: 14, paddingBottom: 12, flexDirection: "row", justifyContent: "flex-end" }}>
+          <Text style={{ fontSize: 11, color: colors.textMuted }}>{formatMsgTime(msg.sent_at)}</Text>
+        </View>
       </View>
 
       {/* Suggestion chips */}

@@ -24,6 +24,7 @@ function getAvatarDir(): string { return getBaseDir() + "avatars/"; }
 
 // In-memory hot cache for the current session (reset on app restart)
 const _memCache = new Map<string, string>();
+const _inflight = new Map<string, Promise<string | null>>();
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -104,8 +105,12 @@ export async function downloadAndCache(
 ): Promise<string | null> {
   if (!url || !url.startsWith("http")) return null;
   if (_memCache.has(url)) return _memCache.get(url)!;
+  if (Platform.OS === "web") return null;
+  const running = _inflight.get(url);
+  if (running) return running;
 
-  try {
+  const promise = (async () => {
+    try {
     const dir = type === "avatar" ? getAvatarDir() : getThumbDir();
     await ensureDir(dir);
     const localPath = urlToFilename(url, dir);
@@ -126,13 +131,18 @@ export async function downloadAndCache(
     _memCache.set(url, result.uri);
     await registerInDB(url, result.uri, type, (check as any).size ?? 0);
     return result.uri;
-  } catch {
-    return null;
-  }
+    } catch {
+      return null;
+    }
+  })();
+  _inflight.set(url, promise);
+  promise.finally(() => _inflight.delete(url)).catch(() => {});
+  return promise;
 }
 
-/** Preload a list of image URLs silently in background (no-op on web) */
+/** Preload a list of image URLs silently in background. */
 export function preloadImages(urls: string[], type: "avatar" | "thumb" = "thumb"): void {
+  if (Platform.OS === "web") return;
   for (const url of urls) {
     if (!url || _memCache.has(url)) continue;
     downloadAndCache(url, type).catch(() => {});
@@ -144,6 +154,7 @@ export async function clearMediaCache(): Promise<void> {
   try {
     await FileSystem.deleteAsync(getBaseDir(), { idempotent: true });
     _memCache.clear();
+    _inflight.clear();
     const db = await getDB();
     await db.runAsync("DELETE FROM media_cache");
   } catch {}

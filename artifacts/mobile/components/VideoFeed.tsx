@@ -83,6 +83,14 @@ import { useAnimationGuard } from "@/hooks/useAnimationGuard";
 // ── Lazy-load Reanimated ──────────────────────────────────────────────────────
 const _raVF = (() => {
   try {
+    // Expo Go can provide a native Reanimated runtime that does not match the
+    // app's bundled Reanimated 4 / Worklets JS runtime. In that case
+    // useAnimatedStyle receives the transformed updater object and crashes in
+    // styleUpdater. Use the existing non-Reanimated fallbacks in Expo Go.
+    const Constants = require("expo-constants").default;
+    if (Constants?.appOwnership === "expo" || Constants?.executionEnvironment === "storeClient") {
+      return null;
+    }
     const m = require("react-native-reanimated");
     if (m && typeof m.useSharedValue === "function") return m;
   } catch {}
@@ -426,9 +434,10 @@ const VideoItem = React.memo(
         }));
 
         // Progress bar + duration + fallback 97% auto-advance
-        subs.push(player.addListener("timeUpdate", ({ currentTime, duration: dur }) => {
+        subs.push(player.addListener("timeUpdate", ({ currentTime }) => {
           if (!mountedRef.current) return;
           try {
+            const dur = player.duration;
             if (dur > 0) {
               const frac = currentTime / dur;
               progressFill.value = frac;

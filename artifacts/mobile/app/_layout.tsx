@@ -20,7 +20,8 @@ import { Stack, usePathname, router } from "expo-router";
 import { setCurrentPage, resolvePageInfo } from "@/lib/pageTracker";
 import { StatusBar } from "expo-status-bar";
 import * as Font from "expo-font";
-import * as SplashScreen from "expo-splash-screen";
+import { Asset } from "expo-asset";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import {
   getCachedUserId,
@@ -48,7 +49,6 @@ import { AdvancedFeaturesProvider } from "@/context/AdvancedFeaturesContext";
 import { ChatPreferencesProvider } from "@/context/ChatPreferencesContext";
 import { DataModeProvider } from "@/context/DataModeContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { SplashScreenView } from "@/components/ui/SplashScreenView";
 import { ToastContainer } from "@/components/ui/ToastContainer";
 import AlertModal from "@/components/ui/AlertModal";
 import OfflineBanner from "@/components/ui/OfflineBanner";
@@ -70,49 +70,12 @@ import { AnimationGuardInit } from "@/components/AnimationGuardInit";
 // Conversations pre-warm remains in the useEffect below (not at module-eval time)
 // so MMKV is only accessed after the full native runtime is ready.
 
-// ─── Splash screen — hold immediately at module-evaluation time ───────────────
-// This runs before any component renders, ensuring the native splash stays
-// visible until we explicitly call hideAsync() below. Without this, Expo
-// auto-hides the splash when the first JS frame renders, which is before auth
-// resolves — causing a flash of onboarding / welcome screens for signed-in users.
-SplashScreen.preventAutoHideAsync().catch(() => {});
-
 // Lock out system-level font scaling so the app always renders at its
 // intended sizes regardless of the device's accessibility font-size setting.
 (Text as any).defaultProps = { ...((Text as any).defaultProps ?? {}), allowFontScaling: false };
 (TextInput as any).defaultProps = { ...((TextInput as any).defaultProps ?? {}), allowFontScaling: false };
 
 LogBox.ignoreLogs(['"shadow*" style props are deprecated', "props.pointerEvents is deprecated"]);
-
-// ─── AppReadyGate ─────────────────────────────────────────────────────────────
-// Sits inside AuthProvider so it can read auth loading state.
-// Signals the parent when BOTH fonts and auth are resolved so the JS splash
-// can animate out before the native splash is hidden.
-function AppReadyGate({
-  fontsReady,
-  onReady,
-}: {
-  fontsReady: boolean;
-  onReady?: () => void;
-}) {
-  const { loading } = useAuth();
-  const fired = useRef(false);
-
-  const fire = useCallback(() => {
-    if (fired.current) return;
-    fired.current = true;
-    if (typeof onReady === "function") onReady();
-    else SplashScreen.hideAsync().catch(() => {});
-  }, [onReady]);
-
-  // Normal path: both fonts and auth resolved
-  useEffect(() => {
-    if (!fontsReady || loading) return;
-    fire();
-  }, [fontsReady, loading, fire]);
-
-  return null;
-}
 
 function ActivityTrackerSync() {
   const { user } = useAuth();
@@ -246,33 +209,15 @@ function ThemedRoot({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = Font.useFonts({
+  // Load custom fonts without blocking the first render. The app intentionally
+  // has no launch splash or JS splash overlay; text uses platform fallbacks
+  // until these fonts finish loading.
+  Font.useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
   });
-
-  // Track when both fonts + auth are resolved (triggers JS splash fade-out)
-  const [appReady, setAppReady] = useState(false);
-  // Track when the JS splash fade-out animation has fully completed
-  const [splashGone, setSplashGone] = useState(false);
-
-  const handleAppReady = useCallback(() => setAppReady(true), []);
-
-  const handleSplashDone = useCallback(() => {
-    setSplashGone(true);
-    SplashScreen.hideAsync().catch(() => {});
-  }, []);
-
-  // Safety: force the splash away after 2.5 s on native, 1 s on web (no native
-  // splash to sync with). The normal path (AppReadyGate) fires sooner when
-  // both fonts + auth resolve quickly.
-  useEffect(() => {
-    const timeout = Platform.OS === "web" ? 1000 : 2500;
-    const t = setTimeout(() => setAppReady(true), timeout);
-    return () => clearTimeout(t);
-  }, []);
 
   // Enable react-native-screens optimisation. Called here (inside a component,
   // not at module-eval time) so the Android activity is guaranteed to be fully
@@ -287,8 +232,6 @@ export default function RootLayout() {
   useEffect(() => {
     verifyDeepLinks().catch(() => {});
   }, []);
-
-  const fontsReady = fontsLoaded || !!fontError;
 
   useEffect(() => {
     async function handleUrl(url: string | null) {
@@ -322,6 +265,19 @@ export default function RootLayout() {
     if (getCachedUserId()) {
       preloadConversations();
     }
+
+    // Decode bundled visuals and icon glyphs while the first route is mounting.
+    // These assets are shipped inside the app and do not require internet.
+    Asset.loadAsync([
+      require("@/assets/images/icon.png"),
+      require("@/assets/images/logo_white.png"),
+      require("@/assets/images/logo_black.png"),
+      require("@/assets/illustrations/messaging.png"),
+      require("@/assets/illustrations/community.png"),
+      require("@/assets/illustrations/ai.png"),
+      require("@/assets/illustrations/wallet.png"),
+    ]).catch(() => {});
+    Ionicons.loadFont().catch(() => {});
 
     // Start the offline sync engine and action queue auto-drain.
     // These are idempotent — safe to call multiple times (they guard internally).
@@ -377,8 +333,6 @@ export default function RootLayout() {
     return unsub;
   }, []);
 
-  if (!fontsReady) return null;
-
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={styles.root}>
@@ -390,8 +344,6 @@ export default function RootLayout() {
               <AnimationGuardInit />
               <DataModeProvider>
                 <AuthProvider>
-                  {/* Gate signals onReady when fonts + auth are both resolved */}
-                  <AppReadyGate fontsReady={fontsReady} onReady={handleAppReady} />
                   <ActivityTrackerSync />
                   <CrashReporterUserSync />
                   <CrashSupportHandler />
@@ -418,10 +370,6 @@ export default function RootLayout() {
           </ThemedRoot>
         </ThemeProvider>
 
-        {/* JS splash overlay — sits above everything, fades out when ready */}
-        {!splashGone && (
-          <SplashScreenView ready={appReady} onDone={handleSplashDone} />
-        )}
       </GestureHandlerRootView>
     </ErrorBoundary>
   );

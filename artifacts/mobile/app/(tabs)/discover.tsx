@@ -36,6 +36,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
+import CachedImage from "@/components/ui/CachedImage";
 import { RichText } from "@/components/ui/RichText";
 import Colors from "@/constants/colors";
 import { PostSkeleton } from "@/components/ui/Skeleton";
@@ -203,16 +204,16 @@ function LinkPreviewCard({ url, colors }: { url: string; colors: any }) {
       {/* Thumbnail: og:image if available, otherwise large favicon */}
       <View style={{ width: 90, minHeight: 80, backgroundColor: colors.backgroundTertiary, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
         {ogImage ? (
-          <ExpoImage source={{ uri: ogImage }} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} contentFit="cover" cachePolicy="memory-disk" />
+          <CachedImage uri={ogImage} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} contentFit="cover" />
         ) : (
-          <ExpoImage source={{ uri: faviconUri }} style={{ width: 36, height: 36 }} contentFit="contain" cachePolicy="memory-disk" />
+          <CachedImage uri={faviconUri} style={{ width: 36, height: 36 }} contentFit="contain" />
         )}
       </View>
       {/* Text */}
       <View style={{ flex: 1, paddingHorizontal: 10, paddingVertical: 10, gap: 4, justifyContent: "center" }}>
         {/* favicon + hostname */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-          <ExpoImage source={{ uri: faviconUri }} style={{ width: 13, height: 13, borderRadius: 2 }} contentFit="contain" cachePolicy="memory-disk" />
+          <CachedImage uri={faviconUri} style={{ width: 13, height: 13, borderRadius: 2 }} contentFit="contain" />
           <Text style={{ fontSize: 11, fontFamily: "Inter_400Regular", color: colors.textMuted, flex: 1 }} numberOfLines={1}>{domain}</Text>
         </View>
         {/* title (og:title preferred, else domain) */}
@@ -333,7 +334,7 @@ function StoriesRow({
           <StoryRing size={SZ} storyCount={s.storyCount} seenCount={s.seenCount}>
             <View style={{ width: SZ, height: SZ, borderRadius: SZ / 2, overflow: "hidden", backgroundColor: colors.backgroundSecondary, alignItems: "center", justifyContent: "center" }}>
               {s.avatar_url ? (
-                <ExpoImage source={{ uri: s.avatar_url }} style={{ width: SZ, height: SZ }} contentFit="cover" cachePolicy="memory-disk" />
+                <CachedImage uri={s.avatar_url} cacheType="avatar" style={{ width: SZ, height: SZ }} contentFit="cover" />
               ) : (
                 <Text style={{ color: colors.accent, fontSize: 20, fontFamily: "Inter_700Bold" }}>{(s.name[0] ?? "?").toUpperCase()}</Text>
               )}
@@ -450,13 +451,11 @@ function PostImages({
               onPress={() => handleTap(i)}
               style={{ width: imgW, height: imgH }}
             >
-              <ExpoImage
-                source={{ uri }}
+              <CachedImage
+                uri={uri}
                 style={{ width: imgW, height: imgH }}
                 contentFit="contain"
-                cachePolicy="memory-disk"
                 priority={i === 0 ? "high" : "normal"}
-                transition={0}
                 onLoad={i === 0 ? (e) => {
                   const { width: sw, height: sh } = (e as any).source ?? {};
                   if (sw > 0 && sh > 0) {
@@ -714,11 +713,10 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
               style={[styles.articleCard, { backgroundColor: colors.card }]}
             >
               {allImages.length > 0 && (
-                <ExpoImage
-                  source={{ uri: allImages[0] }}
+                <CachedImage
+                  uri={allImages[0]}
                   style={styles.articleCover}
                   contentFit="cover"
-                  cachePolicy="memory-disk"
                   priority="normal"
                 />
               )}
@@ -2443,11 +2441,11 @@ export default function DiscoverScreen() {
             activeOpacity={0.8}
           >
             {profile?.avatar_url ? (
-              <ExpoImage
-                source={{ uri: profile.avatar_url }}
+              <CachedImage
+                uri={profile.avatar_url}
+                cacheType="avatar"
                 style={{ width: 34, height: 34, borderRadius: 17 }}
                 contentFit="cover"
-                cachePolicy="memory-disk"
               />
             ) : (
               <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: colors.accent, alignItems: "center", justifyContent: "center" }}>
@@ -2873,11 +2871,11 @@ export default function DiscoverScreen() {
                 style={[styles.newPostsAvatarCircle, { marginLeft: i > 0 ? -10 : 0, zIndex: 10 - i }]}
               >
                 {a.avatar_url ? (
-                  <ExpoImage
-                    source={{ uri: a.avatar_url }}
+                  <CachedImage
+                    uri={a.avatar_url}
+                    cacheType="avatar"
                     style={{ width: 28, height: 28, borderRadius: 14 }}
                     contentFit="cover"
-                    cachePolicy="memory-disk"
                   />
                 ) : (
                   <View style={styles.newPostsAvatarFallback}>

@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View, ViewStyle } from "react-native";
-import { Image } from "expo-image";
+import { CachedImage } from "./CachedImage";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { PremiumRing } from "./PremiumRing";
 import { useUserEffects } from "@/hooks/useUserEffects";
@@ -57,12 +57,11 @@ export function Avatar({ uri, name, size = 44, style, online, premium, square, p
   const innerNode = (
     <View style={{ width: size, height: size }}>
       {uri ? (
-        <Image
-          source={{ uri }}
+        <CachedImage
+          uri={uri}
+          cacheType="avatar"
           style={{ width: size, height: size, borderRadius: radius }}
           contentFit="cover"
-          cachePolicy="memory-disk"
-          transition={0}
         />
       ) : (
         <View

@@ -46,3 +46,4 @@
 - [Shared Supabase auth cookie (web)](shared-auth-cookie-web.md) — mobile app's web build uses createBrowserClient + .afuchat.com cookie to share login with the marketing site; native unaffected.
 - [Supabase realtime channel ownership](supabase-realtime-channel-ownership.md) — configure every handler before subscribe, and give each logical chat channel one lifecycle owner to avoid post-subscribe callback crashes.
 - [Story upload media lifecycle](story-upload-expo-go.md) — detach Android picker/camera media from Expo Go temporary host-cache paths before background publishing.
+- [Expo Go Reanimated updater mismatch](reanimated-expo-go-updater.md) — use the Worklets Babel plugin and plain animation fallbacks when Expo Go's native Reanimated runtime differs from bundled JS.

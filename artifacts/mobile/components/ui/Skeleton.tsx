@@ -1,25 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Platform, StyleSheet, View, ViewStyle } from "react-native";
+import { Animated, StyleSheet, View, ViewStyle } from "react-native";
 import { useTheme } from "../../hooks/useTheme";
-
-// ---------------------------------------------------------------------------
-// Lazy-load Reanimated so the shimmer runs on the UI thread (zero JS cost).
-// Falls back to a simple static pulse if Reanimated is unavailable (web/web-
-// only builds where the native module is absent).
-// ---------------------------------------------------------------------------
-const _ra = (() => {
-  try {
-    const m = require("react-native-reanimated");
-    if (m && typeof m.useSharedValue === "function") return m;
-  } catch {}
-  return null;
-})();
-
-const _useSharedValue   = _ra?.useSharedValue   as typeof import("react-native-reanimated").useSharedValue   | undefined;
-const _useAnimatedStyle = _ra?.useAnimatedStyle as typeof import("react-native-reanimated").useAnimatedStyle | undefined;
-const _withRepeat       = _ra?.withRepeat       as typeof import("react-native-reanimated").withRepeat       | undefined;
-const _withTiming       = _ra?.withTiming       as typeof import("react-native-reanimated").withTiming       | undefined;
-const _RAView           = _ra?.default?.View    as typeof import("react-native-reanimated").default["View"]  | undefined;
 
 type SkeletonProps = {
   width: number | string;
@@ -29,58 +10,10 @@ type SkeletonProps = {
   forceDark?: boolean;
 };
 
-// ── Reanimated-powered shimmer (runs on UI thread) ───────────────────────────
-function SkeletonNative({ width, height, borderRadius = 8, style, forceDark }: SkeletonProps) {
-  const { isDark } = useTheme();
-  const useDark = forceDark ?? isDark;
-  const baseColor      = useDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)";
-  const highlightColor = useDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.11)";
-
-  // progress: 0 → 1, looping, reversed (0→1→0→1…)
-  const progress = _useSharedValue!(0);
-  // containerWidth as a shared value so the worklet can read it without JS round-trip
-  const cwSV = _useSharedValue!(typeof width === "number" ? width : 240);
-
-  useEffect(() => {
-    // withRepeat with reverse=true gives us a smooth 0→1→0 wave, all on the UI thread
-    progress.value = _withRepeat!(
-      _withTiming!(1, { duration: 900 }),
-      -1,
-      true,
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const shimmerStyle = _useAnimatedStyle!(() => {
-    const p  = progress.value;
-    const cw = cwSV.value;
-    // opacity: bell-curve centred at p=0.5
-    const op = p < 0.5 ? p * 2 : (1 - p) * 2;
-    // translateX: sweep from -80% to +160% of container width
-    const tx = -cw * 0.8 + p * cw * 2.4;
-    return { opacity: op, transform: [{ translateX: tx }] };
-  });
-
-  return (
-    <View
-      style={[{ width: width as any, height, borderRadius, backgroundColor: baseColor, overflow: "hidden" }, style]}
-      onLayout={(e) => {
-        const w = e.nativeEvent.layout.width;
-        if (w > 0) cwSV.value = w;
-      }}
-    >
-      {/* _RAView is guaranteed non-null here — guarded by the Skeleton() check */}
-      {React.createElement(_RAView as React.ComponentType<any>, {
-        style: [
-          { position: "absolute", top: 0, bottom: 0, width: "55%", backgroundColor: highlightColor },
-          shimmerStyle,
-        ],
-      })}
-    </View>
-  );
-}
-
-// ── Fallback: simple opacity pulse via native-driver Animated (web / no RA) ──
+// ── Opacity pulse via the built-in native-driver Animated API ────────────────
+// Keep this component independent of Reanimated. Skeletons mount on nearly
+// every loading path, so they must not be able to take down the app when the
+// Reanimated/Worklets native runtime is unavailable or mismatched.
 function SkeletonFallback({ width, height, borderRadius = 8, style, forceDark }: SkeletonProps) {
   const { isDark } = useTheme();
   const useDark = forceDark ?? isDark;
@@ -110,9 +43,7 @@ function SkeletonFallback({ width, height, borderRadius = 8, style, forceDark }:
   );
 }
 
-// ── Public export: picks Reanimated when available (native only) ─────────────
 export function Skeleton(props: SkeletonProps) {
-  if (_ra && _RAView && Platform.OS !== "web") return <SkeletonNative {...props} />;
   return <SkeletonFallback {...props} />;
 }
 

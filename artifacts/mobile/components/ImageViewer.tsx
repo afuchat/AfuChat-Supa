@@ -26,6 +26,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const _RA: typeof import("react-native-reanimated") | null = (() => {
   try {
+    // Expo Go may load a native Reanimated version that differs from the
+    // bundled Worklets transform. The plain viewer is safer than mixing
+    // those runtimes and calling styleUpdater with an object.
+    const Constants = require("expo-constants").default;
+    if (Constants?.appOwnership === "expo" || Constants?.executionEnvironment === "storeClient") {
+      return null;
+    }
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const m = require("react-native-reanimated");
     if (m && typeof m.useSharedValue === "function") return m;

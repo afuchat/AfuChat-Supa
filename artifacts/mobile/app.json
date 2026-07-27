@@ -5,11 +5,6 @@
     "version": "2.2.7",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "splash": {
-      "image": "./assets/images/logo_white.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#000000"
-    },
     "scheme": "afuchat",
     "userInterfaceStyle": "automatic",
     "jsEngine": "hermes",

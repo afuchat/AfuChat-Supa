@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Image } from "expo-image";
+import CachedImage from "./CachedImage";
 
 const SEEK_TIME = 1.0;
 
@@ -108,12 +108,11 @@ function VideoThumbnailNative({
   return (
     <View style={style}>
       {source ? (
-        <Image
-          source={{ uri: source }}
+        <CachedImage
+          uri={source}
+          cacheType="thumb"
           style={StyleSheet.absoluteFill}
           contentFit="cover"
-          cachePolicy={lowData ? "disk" : "memory-disk"}
-          transition={0}
         />
       ) : (
         <View style={[StyleSheet.absoluteFill, { backgroundColor: "#0a0a0a" }]} />

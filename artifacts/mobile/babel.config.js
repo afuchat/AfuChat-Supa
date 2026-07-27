@@ -1,7 +1,10 @@
 module.exports = function (api) {
   api.cache(true);
   const isProd = process.env.NODE_ENV === "production" || process.env.BABEL_ENV === "production";
-  const plugins = ["react-native-reanimated/plugin"];
+  // Reanimated 4 uses Worklets as its Babel transform. The Reanimated
+  // compatibility re-export still exists, but using the canonical plugin
+  // avoids mixing the legacy plugin entry point with the Worklets runtime.
+  const plugins = ["react-native-worklets/plugin"];
   if (isProd) {
     plugins.push(["transform-remove-console", { exclude: ["error"] }]);
   }
