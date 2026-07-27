@@ -9,9 +9,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Image } from "expo-image";
-import { useFocusEffect } from "expo-router";
-import { safeRouter } from "@/lib/navUtils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -19,13 +16,23 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { GlassHeader } from "@/components/ui/GlassHeader";
+import { CachedImage } from "@/components/ui/CachedImage";
 import { ListRowSkeleton } from "@/components/ui/Skeleton";
 import { showAlert } from "@/lib/alert";
 import { isOnline } from "@/lib/offlineStore";
+import { safeRouter } from "@/lib/navUtils";
 import * as Haptics from "@/lib/haptics";
+import { queryCacheReadSync, queryCacheFetch, queryCacheWrite, queryCacheInvalidate } from "@/lib/storage/queryCache";
+import { useThrottledFocusEffect } from "@/lib/hooks/useThrottledFocusEffect";
+import { prefetchAvatars } from "@/lib/storage/imagePrefetcher";
 
 const BRAND = "#1f95ff";
 const PURPLE = "#8B5CF6";
+
+// 3-minute stale window — communities don't change that fast
+const CACHE_TTL_MS = 3 * 60 * 1000;
+const GROUPS_KEY = "communities:groups";
+const CHANNELS_KEY = "communities:channels";
 
 type Group = {
   id: string;
@@ -55,45 +62,51 @@ export default function CommunitiesScreen() {
   const insets = useSafeAreaInsets();
 
   const [activeTab, setActiveTab] = useState<CommunityTab>("groups");
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [channels, setChannels] = useState<Channel[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // ── Initialise from MMKV instantly (no async, no waterfall) ─────────────────
+  const [groups, setGroups] = useState<Group[]>(() => {
+    return queryCacheReadSync<Group[]>(GROUPS_KEY)?.data ?? [];
+  });
+  const [channels, setChannels] = useState<Channel[]>(() => {
+    return queryCacheReadSync<Channel[]>(CHANNELS_KEY)?.data ?? [];
+  });
+
+  // Only show skeleton when truly cold (nothing in cache at all)
+  const [loading, setLoading] = useState(() => {
+    const hasGroups = (queryCacheReadSync<Group[]>(GROUPS_KEY)?.data?.length ?? 0) > 0;
+    const hasChannels = (queryCacheReadSync<Channel[]>(CHANNELS_KEY)?.data?.length ?? 0) > 0;
+    return !hasGroups && !hasChannels;
+  });
   const [refreshing, setRefreshing] = useState(false);
   const [joiningId, setJoiningId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  // ── Network fetch (used by initial load + pull-to-refresh) ──────────────────
+  const fetchFromNetwork = useCallback(async (force = false) => {
     if (!user) return;
 
-    const [
-      { data: groupsData },
-      { data: channelsData },
-      { data: myMemberships },
-      { data: mySubscriptions },
-    ] = await Promise.all([
-      supabase
-        .from("chats")
-        .select("id, name, description, avatar_url, is_group, is_channel, is_public, chat_members(count)")
-        .eq("is_group", true)
-        .eq("is_public", true)
-        .order("updated_at", { ascending: false })
-        .limit(50),
-      supabase
-        .from("channels")
-        .select(
-          "id, name, description, avatar_url, subscriber_count, is_verified, is_public, profiles!channels_owner_id_fkey(display_name, handle)"
-        )
-        .eq("is_public", true)
-        .order("subscriber_count", { ascending: false })
-        .limit(60),
-      supabase.from("chat_members").select("chat_id").eq("user_id", user.id),
-      supabase.from("channel_subscriptions").select("channel_id").eq("user_id", user.id),
-    ]);
+    // Pull-to-refresh: invalidate cache so queryCacheFetch waits for fresh data
+    // instead of returning the stale snapshot and refreshing in background.
+    if (force) {
+      queryCacheInvalidate(GROUPS_KEY);
+      queryCacheInvalidate(CHANNELS_KEY);
+    }
 
-    const memberSet = new Set(((myMemberships || []) as any[]).map((m) => m.chat_id));
-    const subSet = new Set(((mySubscriptions || []) as any[]).map((s) => s.channel_id));
-
-    setGroups(
-      (groupsData || []).map((c: any) => {
+    const fetchGroups = async (): Promise<Group[]> => {
+      const [
+        { data: groupsData },
+        { data: myMemberships },
+      ] = await Promise.all([
+        supabase
+          .from("chats")
+          .select("id, name, description, avatar_url, is_group, is_channel, is_public, chat_members(count)")
+          .eq("is_group", true)
+          .eq("is_public", true)
+          .order("updated_at", { ascending: false })
+          .limit(50),
+        supabase.from("chat_members").select("chat_id").eq("user_id", user.id),
+      ]);
+      const memberSet = new Set(((myMemberships || []) as any[]).map((m) => m.chat_id));
+      return (groupsData || []).map((c: any) => {
         const countArr = c.chat_members;
         const member_count =
           Array.isArray(countArr) && countArr[0]?.count != null
@@ -107,11 +120,26 @@ export default function CommunitiesScreen() {
           member_count,
           am_member: memberSet.has(c.id),
         };
-      })
-    );
+      });
+    };
 
-    setChannels(
-      (channelsData || []).map((c: any) => ({
+    const fetchChannels = async (): Promise<Channel[]> => {
+      const [
+        { data: channelsData },
+        { data: mySubscriptions },
+      ] = await Promise.all([
+        supabase
+          .from("channels")
+          .select(
+            "id, name, description, avatar_url, subscriber_count, is_verified, is_public, profiles!channels_owner_id_fkey(display_name, handle)"
+          )
+          .eq("is_public", true)
+          .order("subscriber_count", { ascending: false })
+          .limit(60),
+        supabase.from("channel_subscriptions").select("channel_id").eq("user_id", user.id),
+      ]);
+      const subSet = new Set(((mySubscriptions || []) as any[]).map((s) => s.channel_id));
+      return (channelsData || []).map((c: any) => ({
         id: c.id,
         name: c.name || "Unnamed",
         description: c.description || null,
@@ -122,32 +150,64 @@ export default function CommunitiesScreen() {
         owner: c.profiles
           ? { display_name: c.profiles.display_name, handle: c.profiles.handle }
           : null,
-      }))
-    );
+      }));
+    };
+
+    // Run both fetches in parallel
+    const [freshGroups, freshChannels] = await Promise.all([
+      queryCacheFetch<Group[]>(GROUPS_KEY, fetchGroups, { ttlMs: CACHE_TTL_MS }),
+      queryCacheFetch<Channel[]>(CHANNELS_KEY, fetchChannels, { ttlMs: CACHE_TTL_MS }),
+    ]);
+
+    if (freshGroups.data) {
+      setGroups(freshGroups.data);
+      prefetchAvatars(freshGroups.data.map((g) => g.avatar_url));
+    }
+    if (freshChannels.data) {
+      setChannels(freshChannels.data);
+      prefetchAvatars(freshChannels.data.map((c) => c.avatar_url));
+    }
 
     setLoading(false);
     setRefreshing(false);
   }, [user]);
 
-  useEffect(() => { load(); }, [load]);
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  // ── Initial load on mount ────────────────────────────────────────────────────
+  useEffect(() => {
+    // Prefetch avatars for already-cached data immediately
+    const cachedGroups = groups;
+    const cachedChannels = channels;
+    if (cachedGroups.length) prefetchAvatars(cachedGroups.map((g) => g.avatar_url));
+    if (cachedChannels.length) prefetchAvatars(cachedChannels.map((c) => c.avatar_url));
 
+    fetchFromNetwork();
+  }, [fetchFromNetwork]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Throttled focus refresh — at most once every 3 minutes ──────────────────
+  useThrottledFocusEffect(
+    useCallback(() => {
+      if (isOnline()) fetchFromNetwork();
+    }, [fetchFromNetwork]),
+    { intervalMs: CACHE_TTL_MS, storageKey: "tfx:communities" },
+  );
+
+  // ── Realtime: update membership/subscription state on own changes only ───────
   useEffect(() => {
     if (!user) return;
-    // Subscribe to the user's own chat_members and channel_subscriptions rows
-    // instead of the full chats/channels tables (which would receive every
-    // community update from every user in the system).
     const ch = supabase
       .channel("communities-realtime")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_members", filter: `user_id=eq.${user.id}` }, () => load())
-      .on("postgres_changes", { event: "DELETE", schema: "public", table: "chat_members", filter: `user_id=eq.${user.id}` }, () => load())
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "channel_subscriptions", filter: `user_id=eq.${user.id}` }, () => load())
-      .on("postgres_changes", { event: "DELETE", schema: "public", table: "channel_subscriptions", filter: `user_id=eq.${user.id}` }, () => load())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_members", filter: `user_id=eq.${user.id}` }, () => fetchFromNetwork(true))
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "chat_members", filter: `user_id=eq.${user.id}` }, () => fetchFromNetwork(true))
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "channel_subscriptions", filter: `user_id=eq.${user.id}` }, () => fetchFromNetwork(true))
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "channel_subscriptions", filter: `user_id=eq.${user.id}` }, () => fetchFromNetwork(true))
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [user, load]);
+  }, [user, fetchFromNetwork]);
 
-  async function refresh() { setRefreshing(true); await load(); }
+  async function refresh() {
+    setRefreshing(true);
+    await fetchFromNetwork(true);
+  }
 
   async function joinOrOpenGroup(item: Group) {
     if (!user) return;
@@ -159,9 +219,12 @@ export default function CommunitiesScreen() {
     setJoiningId(item.id);
     await supabase.from("chat_members").insert({ chat_id: item.id, user_id: user.id, is_admin: false });
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setGroups((prev) =>
-      prev.map((g) => g.id === item.id ? { ...g, am_member: true, member_count: g.member_count + 1 } : g)
-    );
+    // Optimistic update + cache write
+    setGroups((prev) => {
+      const updated = prev.map((g) => g.id === item.id ? { ...g, am_member: true, member_count: g.member_count + 1 } : g);
+      queryCacheWrite(GROUPS_KEY, updated);
+      return updated;
+    });
     setJoiningId(null);
     safeRouter.push({ pathname: "/chat/[id]", params: { id: item.id } });
   }
@@ -179,18 +242,19 @@ export default function CommunitiesScreen() {
       .upsert({ channel_id: item.id, user_id: user.id }, { onConflict: "channel_id,user_id" });
     await supabase.rpc("increment_channel_subscriber", { p_channel_id: item.id });
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setChannels((prev) =>
-      prev.map((c) =>
-        c.id === item.id
-          ? { ...c, am_subscriber: true, subscriber_count: c.subscriber_count + 1 }
-          : c
-      )
-    );
+    // Optimistic update + cache write
+    setChannels((prev) => {
+      const updated = prev.map((c) =>
+        c.id === item.id ? { ...c, am_subscriber: true, subscriber_count: c.subscriber_count + 1 } : c
+      );
+      queryCacheWrite(CHANNELS_KEY, updated);
+      return updated;
+    });
     setJoiningId(null);
     safeRouter.push({ pathname: "/channel/[id]", params: { id: item.id } } as any);
   }
 
-  function GroupCard({ item, index }: { item: Group; index: number }) {
+  function GroupCard({ item }: { item: Group }) {
     const isJoining = joiningId === item.id;
     return (
       <View>
@@ -201,7 +265,12 @@ export default function CommunitiesScreen() {
         >
           <View style={ss.cardAvatarWrap}>
             {item.avatar_url ? (
-              <Image source={{ uri: item.avatar_url }} style={ss.cardAvatar} contentFit="cover" cachePolicy="memory-disk" />
+              <CachedImage
+                uri={item.avatar_url}
+                cacheType="avatar"
+                style={ss.cardAvatar}
+                contentFit="cover"
+              />
             ) : (
               <View style={[ss.cardAvatarPlaceholder, { backgroundColor: BRAND + "22" }]}>
                 <Ionicons name="people" size={26} color={BRAND} />
@@ -239,7 +308,7 @@ export default function CommunitiesScreen() {
     );
   }
 
-  function ChannelCard({ item, index }: { item: Channel; index: number }) {
+  function ChannelCard({ item }: { item: Channel }) {
     const isJoining = joiningId === item.id;
     return (
       <View>
@@ -250,7 +319,12 @@ export default function CommunitiesScreen() {
         >
           <View style={ss.cardAvatarWrap}>
             {item.avatar_url ? (
-              <Image source={{ uri: item.avatar_url }} style={ss.cardAvatar} contentFit="cover" cachePolicy="memory-disk" />
+              <CachedImage
+                uri={item.avatar_url}
+                cacheType="avatar"
+                style={ss.cardAvatar}
+                contentFit="cover"
+              />
             ) : (
               <View style={[ss.cardAvatarPlaceholder, { backgroundColor: PURPLE + "22" }]}>
                 <Ionicons name="megaphone" size={26} color={PURPLE} />
@@ -390,11 +464,11 @@ export default function CommunitiesScreen() {
             <FlatList
               data={listData as any[]}
               keyExtractor={(item) => item.id}
-              renderItem={({ item, index }) =>
+              renderItem={({ item }) =>
                 activeTab === "groups" ? (
-                  <GroupCard item={item as Group} index={index} />
+                  <GroupCard item={item as Group} />
                 ) : (
-                  <ChannelCard item={item as Channel} index={index} />
+                  <ChannelCard item={item as Channel} />
                 )
               }
               contentContainerStyle={{ padding: 12, gap: 10, paddingBottom: insets.bottom + 90 }}
@@ -409,7 +483,6 @@ export default function CommunitiesScreen() {
             />
           )}
         </View>
-
       </View>
     </View>
   );

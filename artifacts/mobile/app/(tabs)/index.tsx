@@ -66,6 +66,7 @@ import {
 import PostUploadBannerShared from "@/components/ui/PostUploadBanner";
 import { usePhonebookNames } from "@/hooks/usePhonebookNames";
 import { setTotalUnread } from "@/lib/chatUnreadEvents";
+import { prefetchListImages } from "@/lib/storage/imagePrefetcher";
 
 
 function stripMdPreview(s: string): string {
@@ -1019,6 +1020,9 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     });
 
     setChats(finalItems);
+    // Prefetch avatars for all visible conversations so they render instantly
+    // next time, even if the app is restarted before the user opens those chats.
+    prefetchListImages(finalItems, { avatarFields: ["avatar_url", "other_avatar"] });
     // Reconciliation complete — allow realtime events to increment unread again.
     suppressUnreadIncrementRef.current = false;
     // Discard the in-memory preload — SQLite is now fresh so next app launch

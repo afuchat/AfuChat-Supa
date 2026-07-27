@@ -70,6 +70,8 @@ import { StoryRing } from "@/components/ui/StoryRing";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { useUserEffects } from "@/hooks/useUserEffects";
 import { getViewedUserIds } from "@/lib/storyViewedStore";
+import { prefetchAvatars, prefetchThumbnails, prefetchListImages } from "@/lib/storage/imagePrefetcher";
+import { useThrottledFocusEffect } from "@/lib/hooks/useThrottledFocusEffect";
 
 type PostItem = {
   id: string;
@@ -292,8 +294,12 @@ function StoriesRow({
     setStories(Array.from(map.values()).slice(0, 12));
   }, [avatarUrl, displayName, userId]);
 
-  // Reload whenever this tab comes into focus so freshly-posted stories appear.
-  useFocusEffect(useCallback(() => { loadDiscoverStories(); }, [loadDiscoverStories]));
+  // Reload whenever this tab comes into focus — throttled to at most once per
+  // 90 seconds so rapid tab switches don't hammer Supabase.
+  useThrottledFocusEffect(
+    useCallback(() => { loadDiscoverStories(); }, [loadDiscoverStories]),
+    { intervalMs: 90_000, storageKey: "tfx:stories-discover" },
+  );
 
   // Realtime: pick up new stories without requiring a tab switch.
   useEffect(() => {
@@ -1473,6 +1479,10 @@ export default function DiscoverScreen() {
           if (p.author_id && profile?.handle) setHandleId(profile.handle, p.author_id);
         }
 
+        // Prefetch author avatars and post images in the background
+        prefetchAvatars(mapped.map((p) => p.profile?.avatar_url));
+        prefetchThumbnails(mapped.map((p) => p.image_url));
+
         if (isRefresh) {
           tabPostsCache.current[activeTab] = mapped;
           tabCacheTimestamp.current[activeTab] = Date.now();
@@ -1800,6 +1810,11 @@ export default function DiscoverScreen() {
 
       // Diversify: no same-author back-to-back, no 3 same post-types in a row
       const diversified = diversifyFeed(sampled.map((p) => ({ ...p, postType: p.post_type })));
+
+      // Prefetch author avatars + post thumbnails in the background now so they
+      // are on disk before the user scrolls to each item.
+      prefetchAvatars(diversified.map((p) => (p as any).profile?.avatar_url));
+      prefetchThumbnails(diversified.map((p) => (p as any).image_url));
 
       // Mark these posts as seen so they get demoted on the next refresh
       markPostsSeen(diversified.map((p) => p.id)).catch(() => {});

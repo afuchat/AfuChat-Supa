@@ -54,6 +54,18 @@ async function ensureDir(dir: string) {
 // ─── Main API ──────────────────────────────────────────────────────────────────
 
 /**
+ * Synchronous in-memory lookup only. Returns the local file path if this URL
+ * has already been downloaded and is still in the session's hot cache.
+ * Returns null if the path is not in memory (need to call getCachedImageUri).
+ *
+ * Use this to provide an instant initial render value without any I/O.
+ */
+export function getCachedImageUriSync(url: string | null | undefined): string | null {
+  if (!url) return null;
+  return _memCache.get(url) ?? null;
+}
+
+/**
  * Get a local URI for a remote image URL.
  * - If already on disk → return local path instantly (no network).
  * - Otherwise → start background download and return original URL immediately.
