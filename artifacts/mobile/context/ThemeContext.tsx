@@ -16,11 +16,13 @@ const THEME_KEY = "@afuchat_theme";
 // Module-level cache — persists across hot-reloads and navigation so the
 // theme is available synchronously on every subsequent render without
 // waiting for AsyncStorage again → no flash on re-mount.
+// Default is "dark" because the entire app is designed as a dark-first product
+// (welcome, login, and all auth screens hardcode the #06080F dark background).
 let _moduleCache: ThemeMode | null = null;
 
 const ThemeContext = createContext<ThemeContextType>({
-  themeMode: "system",
-  isDark: false,
+  themeMode: "dark",
+  isDark: true,
   setThemeMode: () => {},
   setForceDark: () => {},
 });
@@ -30,8 +32,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Use the module-level cache as the initial value so hot-reloads and
   // re-mounts instantly show the correct theme without an async round-trip.
+  // Fall back to "dark" (not "system") so the app is always dark until the
+  // user explicitly chooses otherwise in Settings.
   const [themeMode, setThemeModeState] = useState<ThemeMode>(
-    _moduleCache ?? "system"
+    _moduleCache ?? "dark"
   );
   const [forceDark, setForceDarkState] = useState(false);
 
@@ -42,7 +46,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     loaded.current = true;
     AsyncStorage.getItem(THEME_KEY)
       .then((val) => {
-        if (val === "light" || val === "dark" || val === "system") {
+        // Only honour an explicitly stored "light" or "dark" choice.
+        // A stored "system" value is treated as no preference — the app
+        // defaults to "dark" because every screen is designed for the dark
+        // palette and light-mode devices would otherwise see the wrong theme.
+        if (val === "light" || val === "dark") {
           _moduleCache = val;
           setThemeModeState((prev) => (prev === val ? prev : val));
         }
