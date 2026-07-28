@@ -744,8 +744,8 @@ export default function AfuAIApp() {
           position: "absolute",
           left: 0,
           right: 0,
-          bottom: keyboardHeight > 0 ? keyboardHeight : insets.bottom,
-          paddingBottom: keyboardHeight > 0 ? 8 : Math.max(insets.bottom > 0 ? 0 : 8, 0),
+          bottom: keyboardHeight > 0 ? keyboardHeight : 0,
+          paddingBottom: keyboardHeight > 0 ? 8 : Math.max(insets.bottom, 8),
           backgroundColor: colors.background,
         }]}
         onLayout={(e) => setInputBarHeight(e.nativeEvent.layout.height)}

@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
 import type { ChatFolder, FolderFilter } from "@/lib/storage/chatFolders";
 
@@ -43,6 +44,7 @@ type Props = {
 
 export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Props) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [name, setName]     = useState("");
   const [icon, setIcon]     = useState("📁");
   const [filter, setFilter] = useState<FolderFilter>("personal");
@@ -86,7 +88,7 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
           <Animated.View
             style={[
               st.sheet,
-              { backgroundColor: colors.surface, transform: [{ translateY: slideAnim }] },
+              { backgroundColor: colors.surface, paddingBottom: Math.max(insets.bottom, 8), transform: [{ translateY: slideAnim }] },
             ]}
           >
             <Pressable onPress={() => {}}>
@@ -223,7 +225,6 @@ const st = StyleSheet.create({
   sheet: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingBottom: 36,
     paddingTop: 10,
   },
   handle: {

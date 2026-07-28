@@ -142,7 +142,7 @@ export default function BroadcastScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 14 }]}
         keyboardShouldPersistTaps="handled"
       >
         <View style={[styles.composerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
