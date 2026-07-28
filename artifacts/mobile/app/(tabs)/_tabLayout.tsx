@@ -181,29 +181,26 @@ function CompactTabBar({
         })}
       </View>
 
-      {/* FAB — Create, floats above the pill, centred horizontally */}
-      <View
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: PILL_BOTTOM + PILL_H + 12,
-          alignItems: "center",
-          zIndex: 101,
-          pointerEvents: "box-none",
-        } as any}
-      >
+      {/* FAB — Create, right side, discover tab only */}
+      {active === "/(tabs)/discover" && (
         <TouchableOpacity
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
             setShowCreatePicker(true);
           }}
-          style={[pill.fab, { backgroundColor: ACCENT }]}
+          style={[
+            pill.fab,
+            {
+              bottom: PILL_BOTTOM + PILL_H + 12,
+              right: 24,
+              backgroundColor: ACCENT,
+            },
+          ]}
           activeOpacity={0.82}
         >
           <Ionicons name="add" size={28} color="#fff" />
         </TouchableOpacity>
-      </View>
+      )}
 
       {/* Create picker sheet */}
       <Modal
@@ -282,6 +279,7 @@ const pill = StyleSheet.create({
     textAlign: "center",
   },
   fab: {
+    position: "absolute",
     width: 52,
     height: 52,
     borderRadius: 26,
