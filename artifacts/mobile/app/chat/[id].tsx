@@ -6780,6 +6780,7 @@ STRICT RULES:
             height={emojiKeyboardHeight}
             onEmojiSelected={(emoji) => setInput((prev) => prev + emoji)}
             onSendSticker={sendStickerMessage}
+            onSendGif={(url) => { setShowEmojiStickerPicker(false); sendGifMessage(url); }}
             onDelete={() => setInput((prev) => prev.slice(0, -1))}
             onClose={() => setShowEmojiStickerPicker(false)}
           />

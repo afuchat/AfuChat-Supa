@@ -6,9 +6,10 @@
  * The tab bar sits at the BOTTOM exactly like a native keyboard (as per design).
  * The ⌫ delete button on the right deletes the last character from the input.
  */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FlatList,
+  Image,
   Platform,
   ScrollView,
   StyleSheet,
@@ -101,17 +102,49 @@ const STICKER_CATEGORIES: { label: string; icon: string; stickers: string[] }[] 
 
 // ─── GIF panel ────────────────────────────────────────────────────────────────
 
-const TRENDING_GIFS = [
-  "😂","🤣","👏","🔥","💯","🤩","😍","🥳","😎","🤗",
-  "🙌","💪","✨","🎉","🥺","😭","❤️","😅","🤦","🤷",
-];
+type GifItem = { id: string; preview: string; url: string };
 
-function GifPanel({ onSendSticker }: { onSendSticker: (s: string) => void }) {
+function GifPanel({ onSendGif }: { onSendGif: (url: string) => void }) {
   const { colors } = useTheme();
   const [q, setQ] = useState("");
+  const [results, setResults] = useState<GifItem[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const delay = q.trim() ? 350 : 0;
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const endpoint = q.trim()
+          ? `https://g.tenor.com/v1/search?q=${encodeURIComponent(q.trim())}&key=LIVEGIF&limit=24&media_filter=minimal`
+          : `https://g.tenor.com/v1/trending?key=LIVEGIF&limit=24&media_filter=minimal`;
+        const res = await fetch(endpoint);
+        const json = await res.json();
+        if (cancelled) return;
+        const items: GifItem[] = (json.results ?? [])
+          .map((r: any) => ({
+            id:      r.id,
+            preview: r.media?.[0]?.tinygif?.url ?? r.media?.[0]?.gif?.url ?? "",
+            url:     r.media?.[0]?.gif?.url     ?? r.media?.[0]?.tinygif?.url ?? "",
+          }))
+          .filter((g: GifItem) => g.url);
+        setResults(items);
+      } catch {
+        if (!cancelled) setResults([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }, delay);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [q]);
+
+  const left  = results.filter((_, i) => i % 2 === 0);
+  const right = results.filter((_, i) => i % 2 !== 0);
 
   return (
     <View style={{ flex: 1 }}>
+      {/* Search bar */}
       <View style={[gs.searchRow, { backgroundColor: colors.inputBg, borderColor: (colors.border as string) ?? "#ccc" }]}>
         <Ionicons name="search" size={16} color={colors.textMuted as string} style={{ marginRight: 6 }} />
         <TextInput
@@ -121,20 +154,57 @@ function GifPanel({ onSendSticker }: { onSendSticker: (s: string) => void }) {
           placeholderTextColor={colors.textMuted as string}
           style={[gs.searchInput, { color: colors.text as string }]}
           returnKeyType="search"
+          autoCorrect={false}
         />
+        {q.length > 0 && (
+          <TouchableOpacity hitSlop={8} onPress={() => setQ("")}>
+            <Ionicons name="close-circle" size={16} color={colors.textMuted as string} />
+          </TouchableOpacity>
+        )}
       </View>
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12 }}>
-        <Text style={{ fontSize: 42 }}>🎬</Text>
-        <Text style={[gs.gifNotice, { color: colors.textSecondary as string }]}>GIFs coming soon</Text>
-        <Text style={[gs.gifSub, { color: colors.textMuted as string }]}>Connect a GIF provider in settings</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 20, paddingVertical: 8 }}>
-          {TRENDING_GIFS.map((e, i) => (
-            <TouchableOpacity key={i} onPress={() => onSendSticker(e)} style={[gs.trendChip, { backgroundColor: colors.inputBg as string }]}>
-              <Text style={{ fontSize: 28 }}>{e}</Text>
-            </TouchableOpacity>
-          ))}
+
+      {/* Attribution */}
+      <Text style={[gs.poweredBy, { color: colors.textMuted as string }]}>Powered by Tenor</Text>
+
+      {/* Grid */}
+      {loading ? (
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <ActivityIndicator color={colors.accent as string} />
+        </View>
+      ) : results.length === 0 ? (
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <Text style={{ fontSize: 32 }}>🔍</Text>
+          <Text style={[gs.gifNotice, { color: colors.textSecondary as string }]}>
+            {q.trim() ? "No GIFs found" : "Loading trending GIFs…"}
+          </Text>
+        </View>
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ padding: 8, paddingTop: 2 }}
+        >
+          <View style={{ flexDirection: "row", gap: 4 }}>
+            {[left, right].map((col, ci) => (
+              <View key={ci} style={{ flex: 1, gap: 4 }}>
+                {col.map((gif) => (
+                  <TouchableOpacity
+                    key={gif.id}
+                    activeOpacity={0.75}
+                    onPress={() => onSendGif(gif.url)}
+                    style={{ borderRadius: 8, overflow: "hidden", backgroundColor: colors.inputBg as string }}
+                  >
+                    <Image
+                      source={{ uri: gif.preview }}
+                      style={{ width: "100%", aspectRatio: 1.4 }}
+                      resizeMode="cover"
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ))}
+          </View>
         </ScrollView>
-      </View>
+      )}
     </View>
   );
 }
@@ -151,8 +221,7 @@ const gs = StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular" },
   gifNotice: { fontSize: 16, fontFamily: "Inter_600SemiBold" },
-  gifSub: { fontSize: 13, fontFamily: "Inter_400Regular" },
-  trendChip: { borderRadius: 12, padding: 8, alignItems: "center", justifyContent: "center", width: 52, height: 52 },
+  poweredBy: { fontSize: 11, fontFamily: "Inter_400Regular", textAlign: "right", paddingHorizontal: 12, paddingBottom: 2 },
 });
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -163,6 +232,7 @@ interface Props {
   height: number;
   onEmojiSelected: (emoji: string) => void;
   onSendSticker: (emoji: string) => void;
+  onSendGif?: (url: string) => void;
   onDelete?: () => void;
   onClose?: () => void;
 }
@@ -173,6 +243,7 @@ export default function EmojiStickerPicker({
   height,
   onEmojiSelected,
   onSendSticker,
+  onSendGif,
   onDelete,
   onClose,
 }: Props) {
@@ -234,7 +305,7 @@ export default function EmojiStickerPicker({
         )}
 
         {tab === "gifs" && (
-          <GifPanel onSendSticker={onSendSticker} />
+          <GifPanel onSendGif={onSendGif ?? (() => {})} />
         )}
 
         {tab === "stickers" && (
