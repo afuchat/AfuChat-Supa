@@ -1056,7 +1056,7 @@ export function VideoCommentsSheet({
       )}
 
       {user ? (
-        <View style={[cStyles.inputRow, { borderTopColor: borderTopClr, paddingBottom: kbHeight > 0 ? 4 : Math.max(insets.bottom, 16) }]}>
+        <View style={[cStyles.inputRow, { borderTopColor: borderTopClr, paddingBottom: kbHeight > 0 ? Math.max(insets.bottom, 8) : Math.max(insets.bottom, 16) }]}>
           <Avatar uri={profile?.avatar_url} name={profile?.display_name || "You"} size={32} />
 
           <View style={[cStyles.inputPill, { backgroundColor: inputBg }]}>

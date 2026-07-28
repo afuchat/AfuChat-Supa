@@ -6442,7 +6442,7 @@ STRICT RULES:
             {!isRecording && (chatInfo?.is_group || chatInfo?.is_channel) && (
               <SmartReplyBar messages={messages} myId={user?.id || ""} input={input} onSend={handleSmartReply} colors={colors} />
             )}
-            <View style={[st.inputFloatOuter, { paddingBottom: 8 }]}>
+            <View style={[st.inputFloatOuter, { paddingBottom: Math.max(insets.bottom, 8) }]}>
               <FormatToolbar
                 visible={inputSelection.start < inputSelection.end && input.length > 0}
                 selection={inputSelection}
