@@ -1057,7 +1057,10 @@ export function VideoCommentsSheet({
 
       {user ? (
         <View style={[cStyles.inputRow, { paddingBottom: kbHeight > 0 ? Math.max(insets.bottom, 8) : Math.max(insets.bottom, 16) }]}>
-          {/* ── Glass pill — everything lives inside ── */}
+          {/* Avatar — sits to the left of the pill, never inside it */}
+          <Avatar uri={profile?.avatar_url} name={profile?.display_name || "You"} size={32} />
+
+          {/* ── Glass pill — text + all buttons on the right ── */}
           <View style={[cStyles.inputGlassPill, { backgroundColor: inputBg, borderColor: isDark ? "rgba(255,255,255,0.13)" : "rgba(26,18,8,0.13)" }]}>
             <View style={cStyles.inputBarRow}>
               {recordState === "recording" ? (
@@ -1065,17 +1068,7 @@ export function VideoCommentsSheet({
                 <RecordingBar elapsed={recordElapsed} onStop={() => stopRecording()} accent={accent} />
               ) : (
                 <>
-                  {/* Left: emoji / quick-emoji toggle */}
-                  <TouchableOpacity
-                    onPress={() => setShowEmojiPanel((p) => !p)}
-                    hitSlop={6}
-                    activeOpacity={0.7}
-                    style={[cStyles.pillIconBtn, showEmojiPanel && { backgroundColor: accent + "25" }]}
-                  >
-                    <Ionicons name="happy-outline" size={20} color={showEmojiPanel ? accent : attachIconCl} />
-                  </TouchableOpacity>
-
-                  {/* Centre: text input */}
+                  {/* Text input — grows to fill available space */}
                   <TextInput
                     ref={inputRef}
                     style={[cStyles.input, { color: inputTxt }]}
@@ -1087,16 +1080,25 @@ export function VideoCommentsSheet({
                     maxLength={500}
                   />
 
-                  {/* Char counter (overlaid inside pill) */}
+                  {/* Char counter */}
                   {text.length > 400 && (
                     <Text style={[cStyles.charCounter, { color: charLeft < 20 ? "#FF453A" : inputPH }]}>
                       {charLeft}
                     </Text>
                   )}
 
-                  {/* Right: action icons — only when nothing to send yet */}
+                  {/* Right: action icons — shown when idle */}
                   {!canSend && (
                     <>
+                      <TouchableOpacity
+                        onPress={() => setShowEmojiPanel((p) => !p)}
+                        hitSlop={6}
+                        activeOpacity={0.7}
+                        style={[cStyles.pillIconBtn, showEmojiPanel && { backgroundColor: accent + "25" }]}
+                      >
+                        <Ionicons name="happy-outline" size={20} color={showEmojiPanel ? accent : attachIconCl} />
+                      </TouchableOpacity>
+
                       <TouchableOpacity
                         onPress={pickImage}
                         hitSlop={6}
@@ -1126,7 +1128,7 @@ export function VideoCommentsSheet({
                     </>
                   )}
 
-                  {/* Right: send button (appears when there's content) */}
+                  {/* Right: send button — replaces icons when content is ready */}
                   {canSend && (
                     <Animated.View style={{ transform: [{ scale: sendScale }] }}>
                       <TouchableOpacity
@@ -1317,8 +1319,9 @@ const cStyles = StyleSheet.create({
   emojiBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 6, gap: 2 },
   emojiBtn: { flex: 1, alignItems: "center", paddingVertical: 6 },
   emojiText: { fontSize: 20 },
-  inputRow: { paddingHorizontal: 12, paddingVertical: 8 },
+  inputRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 8 },
   inputGlassPill: {
+    flex: 1,
     borderRadius: 28,
     borderWidth: 0.5,
     overflow: "hidden",
