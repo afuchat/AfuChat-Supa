@@ -539,6 +539,10 @@ export function VideoCommentsSheet({
   const { isDark } = useTheme();
   const { user, profile } = useAuth();
   const insets = useSafeAreaInsets();
+  // Stable ref so the keyboard listeners (set up with [] deps) always read the
+  // latest insets value — mirrors the pattern used in the chat input bar.
+  const insetsRef = useRef(insets);
+  useEffect(() => { insetsRef.current = insets; }, [insets]);
 
   // ── Theme tokens ─────────────────────────────────────────────────────────
   const sheetBg      = isDark ? "#111115"                   : "#F5F0E8";
@@ -563,7 +567,7 @@ export function VideoCommentsSheet({
 
   const sheetTranslateY = useRef(new Animated.Value(1000)).current;
   // Animated keyboard offset — drives ONLY the input bar (no driver restrictions: useNativeDriver: false)
-  const kbAnim = useRef(new Animated.Value(0)).current;
+  const kbAnim = useRef(new Animated.Value(insets.bottom)).current;
 
   // ── Smart expand / collapse ──────────────────────────────────────────────────
   // animSheetH drives the sheet's visible height (peek ↔ full).
@@ -662,12 +666,15 @@ export function VideoCommentsSheet({
       const h = e.endCoordinates.height;
       const dur = Platform.OS === "ios" ? (e.duration ?? 250) : 220;
       setKbHeight(h);
-      Animated.timing(kbAnim, { toValue: h, duration: dur, useNativeDriver: false }).start();
+      // Match chat bar: use max(keyboardHeight, insets.bottom) so the bar never
+      // sits lower than the safe area on any device.
+      Animated.timing(kbAnim, { toValue: Math.max(h, insetsRef.current.bottom), duration: dur, useNativeDriver: false }).start();
     });
     const hide = Keyboard.addListener(hideEvent, (e) => {
       const dur = Platform.OS === "ios" ? (e.duration ?? 200) : 180;
       setKbHeight(0);
-      Animated.timing(kbAnim, { toValue: 0, duration: dur, useNativeDriver: false }).start();
+      // Rest position = safe area bottom, not 0 — mirrors effectiveBottom in chat.
+      Animated.timing(kbAnim, { toValue: insetsRef.current.bottom, duration: dur, useNativeDriver: false }).start();
     });
     return () => { show.remove(); hide.remove(); };
   }, []);
@@ -1056,7 +1063,7 @@ export function VideoCommentsSheet({
       )}
 
       {user ? (
-        <View style={[cStyles.inputRow, { paddingBottom: kbHeight > 0 ? Math.max(insets.bottom, 8) : Math.max(insets.bottom, 16) }]}>
+        <View style={[cStyles.inputRow, { paddingBottom: kbHeight > 0 ? 8 : 12 }]}>
           {/* Avatar — sits to the left of the pill, never inside it */}
           <Avatar uri={profile?.avatar_url} name={profile?.display_name || "You"} size={32} />
 
@@ -1150,7 +1157,7 @@ export function VideoCommentsSheet({
         </View>
       ) : (
         <TouchableOpacity
-          style={{ paddingVertical: 14, alignItems: "center", paddingBottom: kbHeight > 0 ? 8 : Math.max(insets.bottom + 14, 20) }}
+          style={{ paddingVertical: 14, alignItems: "center", paddingBottom: kbHeight > 0 ? 8 : 14 }}
           onPress={() => { onClose(); router.push("/(auth)/login"); }}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 18, paddingVertical: 9, borderRadius: 20, borderWidth: 1, borderColor: accent + "50", backgroundColor: accent + "18" }}>
