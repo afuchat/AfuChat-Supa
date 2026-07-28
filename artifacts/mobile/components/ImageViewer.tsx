@@ -331,31 +331,49 @@ function AnimatedZoomSlide({
 // ─── Simple slide fallback (pinch + double-tap zoom via PanResponder) ─────────
 
 function SimpleZoomSlide({ uri, width, height, onSwipeLeft, onSwipeRight, onScaleChange, onSingleTap }: ZoomSlideProps) {
-  const scale       = useRef(new Animated.Value(1)).current;
-  const scaleVal    = useRef(1);
-  const transX      = useRef(new Animated.Value(0)).current;
-  const transY      = useRef(new Animated.Value(0)).current;
-  const transXVal   = useRef(0);
-  const transYVal   = useRef(0);
-  const lastTap     = useRef(0);
-  const tapTimer    = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pinchDist0  = useRef(0);
-  const pinchScale0 = useRef(1);
-  // Track whether the current gesture used 2 fingers at any point.
-  // Used to skip swipe/tap detection and avoid applying pinch deltas as pan.
-  const hadPinch    = useRef(false);
-  // Tracks the last committed single-touch pan position so release can commit
-  // correctly without re-applying the full cumulative gesture delta.
-  const panX0       = useRef(0);
-  const panY0       = useRef(0);
+  const scale  = useRef(new Animated.Value(1)).current;
+  const transX = useRef(new Animated.Value(0)).current;
+  const transY = useRef(new Animated.Value(0)).current;
+
+  // Committed translation — the stable position at the END of each gesture.
+  // Used as the baseline for the NEXT gesture so moves don't jump.
+  const commitX = useRef(0);
+  const commitY = useRef(0);
+  // Live translation written on every pan move event (used to commit on release).
+  const liveX   = useRef(0);
+  const liveY   = useRef(0);
+  // Current scale value kept in sync with the Animated.Value.
+  const scaleVal = useRef(1);
+
+  // Pinch — reset on every new 2-finger phase.
+  const pinchInitDist  = useRef(1);
+  const pinchInitScale = useRef(1);
+
+  // Pan — reset on every new 1-finger phase.
+  const panTouchX = useRef(0);  // touch X when 1-finger phase started
+  const panTouchY = useRef(0);
+
+  // Gesture state.
+  const nTouches      = useRef(0);   // current live touch count
+  const hadMultiTouch = useRef(false); // any 2-finger contact in this gesture?
+
+  const lastTap  = useRef(0);
+  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function clamp(val: number, s: number, dim: number) {
     const max = Math.max(0, (dim * s - dim) / 2);
     return Math.max(-max, Math.min(max, val));
   }
 
+  function pinchDist(t: any[]) {
+    const dx = t[0].pageX - t[1].pageX, dy = t[0].pageY - t[1].pageY;
+    return Math.sqrt(dx * dx + dy * dy) || 1;
+  }
+
   function springReset() {
-    scaleVal.current = 1; transXVal.current = 0; transYVal.current = 0;
+    commitX.current = 0; commitY.current = 0;
+    liveX.current   = 0; liveY.current   = 0;
+    scaleVal.current = 1;
     Animated.spring(scale,  { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 3 }).start();
     Animated.spring(transX, { toValue: 0, useNativeDriver: true, speed: 40, bounciness: 3 }).start();
     Animated.spring(transY, { toValue: 0, useNativeDriver: true, speed: 40, bounciness: 3 }).start();
@@ -363,106 +381,132 @@ function SimpleZoomSlide({ uri, width, height, onSwipeLeft, onSwipeRight, onScal
   }
 
   function zoomTo(target: number, fx = 0, fy = 0) {
-    const newOffX = clamp(-fx * (target - 1), target, width);
-    const newOffY = clamp(-fy * (target - 1), target, height);
-    scaleVal.current   = target;
-    transXVal.current  = newOffX;
-    transYVal.current  = newOffY;
-    Animated.spring(scale,  { toValue: target,  useNativeDriver: true, speed: 40, bounciness: 3 }).start();
-    Animated.spring(transX, { toValue: newOffX, useNativeDriver: true, speed: 40, bounciness: 3 }).start();
-    Animated.spring(transY, { toValue: newOffY, useNativeDriver: true, speed: 40, bounciness: 3 }).start();
+    const ox = clamp(-fx * (target - 1), target, width);
+    const oy = clamp(-fy * (target - 1), target, height);
+    commitX.current = ox; commitY.current = oy;
+    liveX.current   = ox; liveY.current   = oy;
+    scaleVal.current = target;
+    Animated.spring(scale,  { toValue: target, useNativeDriver: true, speed: 40, bounciness: 3 }).start();
+    Animated.spring(transX, { toValue: ox,     useNativeDriver: true, speed: 40, bounciness: 3 }).start();
+    Animated.spring(transY, { toValue: oy,     useNativeDriver: true, speed: 40, bounciness: 3 }).start();
     onScaleChange(target);
   }
 
   const pr = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (e, g) =>
-      e.nativeEvent.touches.length === 2 || Math.abs(g.dx) > 3 || Math.abs(g.dy) > 3,
+    // Always claim move events so we receive every touch-move regardless of
+    // whether another responder is trying to take over.
+    onMoveShouldSetPanResponder:  () => true,
+
     onPanResponderGrant: (e) => {
-      hadPinch.current = false;
       const t = e.nativeEvent.touches;
-      if (t.length === 2) {
-        hadPinch.current = true;
-        const dx = t[0].pageX - t[1].pageX, dy = t[0].pageY - t[1].pageY;
-        pinchDist0.current  = Math.sqrt(dx * dx + dy * dy) || 1;
-        pinchScale0.current = scaleVal.current;
+      nTouches.current      = t.length;
+      hadMultiTouch.current = t.length >= 2;
+
+      if (t.length >= 2) {
+        // Two fingers already down at grant time.
+        pinchInitDist.current  = pinchDist(t);
+        pinchInitScale.current = scaleVal.current;
+      } else {
+        // Single touch — initialise pan baseline from committed position.
+        panTouchX.current = t[0]?.pageX ?? 0;
+        panTouchY.current = t[0]?.pageY ?? 0;
+        liveX.current = commitX.current;
+        liveY.current = commitY.current;
       }
     },
-    onPanResponderMove: (e, g) => {
-      const t = e.nativeEvent.touches;
-      if (t.length === 2) {
-        // Initialize pinch data the first time we see 2 touches (covers the
-        // case where the gesture started with 1 finger and a second joined).
-        if (!hadPinch.current) {
-          hadPinch.current = true;
-          const idx = t[0].pageX - t[1].pageX, idy = t[0].pageY - t[1].pageY;
-          pinchDist0.current  = Math.sqrt(idx * idx + idy * idy) || 1;
-          pinchScale0.current = scaleVal.current;
+
+    onPanResponderMove: (e) => {
+      // NOTE: intentionally ignoring the `g` argument — g.dx/g.dy track only
+      // the PRIMARY touch and accumulate from gesture start, making them
+      // unusable once a second finger has joined or left.
+      const t    = e.nativeEvent.touches;
+      const prev = nTouches.current;
+      nTouches.current = t.length;
+
+      if (t.length >= 2) {
+        hadMultiTouch.current = true;
+
+        if (prev < 2) {
+          // Second finger just appeared — reinitialise pinch from scratch.
+          pinchInitDist.current  = pinchDist(t);
+          pinchInitScale.current = scaleVal.current;
+          // Anchor committed translation so the image doesn't jump.
+          commitX.current = liveX.current;
+          commitY.current = liveY.current;
         }
-        const dx = t[0].pageX - t[1].pageX, dy = t[0].pageY - t[1].pageY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const s = Math.max(1, Math.min(MAX_SCALE, pinchScale0.current * dist / pinchDist0.current));
+
+        const s = Math.max(1, Math.min(MAX_SCALE,
+          pinchInitScale.current * pinchDist(t) / pinchInitDist.current));
         scaleVal.current = s;
         scale.setValue(s);
         onScaleChange(s);
-      } else if (t.length === 1 && scaleVal.current > 1.02) {
-        // Single-touch pan while zoomed. g.dx/g.dy are cumulative from gesture
-        // start (which may include a 2-finger phase). Use panX0/panY0 which
-        // we reset when transitioning from 2→1 touch to get a clean baseline.
-        const nx = clamp(panX0.current + g.dx, scaleVal.current, width);
-        const ny = clamp(panY0.current + g.dy, scaleVal.current, height);
-        transX.setValue(nx);
-        transY.setValue(ny);
+
+      } else if (t.length === 1) {
+
+        if (prev >= 2) {
+          // One finger lifted — transition from pinch to single-touch pan.
+          // Re-baseline so the pan starts from exactly where the image sits.
+          panTouchX.current = t[0].pageX;
+          panTouchY.current = t[0].pageY;
+          commitX.current   = liveX.current;
+          commitY.current   = liveY.current;
+        }
+
+        if (scaleVal.current > 1.02) {
+          const nx = clamp(commitX.current + (t[0].pageX - panTouchX.current), scaleVal.current, width);
+          const ny = clamp(commitY.current + (t[0].pageY - panTouchY.current), scaleVal.current, height);
+          liveX.current = nx;
+          liveY.current = ny;
+          transX.setValue(nx);
+          transY.setValue(ny);
+        }
       }
     },
+
     onPanResponderRelease: (e, g) => {
       if (e.nativeEvent.touches.length > 0) {
-        // A finger lifted but others remain. If transitioning from 2→1 touch,
-        // snapshot the current position as the baseline for single-touch pan.
-        if (e.nativeEvent.touches.length === 1 && hadPinch.current) {
-          transXVal.current = clamp(transXVal.current, scaleVal.current, width);
-          transYVal.current = clamp(transYVal.current, scaleVal.current, height);
-          panX0.current = transXVal.current;
-          panY0.current = transYVal.current;
-        }
+        // Finger lifted but gesture not over — update live count.
+        nTouches.current = e.nativeEvent.touches.length;
         return;
       }
 
-      const wasPinch = hadPinch.current;
-      hadPinch.current = false;
+      // All fingers lifted — finalise the gesture.
+      const wasPinch = hadMultiTouch.current;
+      hadMultiTouch.current = false;
+      nTouches.current      = 0;
 
       if (scaleVal.current > 1.02) {
-        if (!wasPinch) {
-          // Pure single-touch pan: commit the final position.
-          transXVal.current = clamp(panX0.current + g.dx, scaleVal.current, width);
-          transYVal.current = clamp(panY0.current + g.dy, scaleVal.current, height);
-        }
-        // For a pinch release, transXVal/Y stay at whatever was last set
-        // during the 2-finger phase — don't apply g.dx/g.dy (pinch motion).
-        transX.setValue(transXVal.current);
-        transY.setValue(transYVal.current);
+        // Commit whatever liveX/Y is now (set by the last pan move, or the
+        // pre-pinch commit if it was a pure pinch with no pan after).
+        commitX.current = clamp(liveX.current, scaleVal.current, width);
+        commitY.current = clamp(liveY.current, scaleVal.current, height);
+        transX.setValue(commitX.current);
+        transY.setValue(commitY.current);
         return;
       }
 
-      // Gesture returned to 1× scale. If it involved a pinch, skip swipe and
-      // tap detection — the accumulated g.dx/g.dy from the pinch motion would
-      // otherwise trigger false swipes or taps.
+      // Scale returned to 1× — clear any residual translation.
+      commitX.current = 0; commitY.current = 0;
+      liveX.current   = 0; liveY.current   = 0;
+      transX.setValue(0);
+      transY.setValue(0);
+
+      // Multi-touch gestures never trigger swipes or taps.
       if (wasPinch) return;
 
+      // Single-touch: swipe detection (g.dx is reliable here).
       if (g.dx < -SWIPE_THRESHOLD || g.vx < -0.4) { onSwipeLeft();  return; }
       if (g.dx >  SWIPE_THRESHOLD || g.vx >  0.4) { onSwipeRight(); return; }
 
+      // Tap detection.
       if (Math.abs(g.dx) < 12 && Math.abs(g.dy) < 12) {
         const now = Date.now();
         if (now - lastTap.current < 300 && lastTap.current > 0) {
           lastTap.current = 0;
           if (tapTimer.current) { clearTimeout(tapTimer.current); tapTimer.current = null; }
-          // Double-tap: zoom out if already zoomed in, zoom in if at 1×.
-          if (scaleVal.current > 1.5) {
-            springReset();
-          } else {
-            zoomTo(3, 0, 0);
-          }
+          // Double-tap: toggle between 1× and 3×.
+          if (scaleVal.current > 1.5) { springReset(); } else { zoomTo(3, 0, 0); }
         } else {
           lastTap.current = now;
           tapTimer.current = setTimeout(() => {
