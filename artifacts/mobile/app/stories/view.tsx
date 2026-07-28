@@ -1031,12 +1031,16 @@ const styles = StyleSheet.create({
   commentInputWrap: {
     flex: 1,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.16)",
+    borderRadius: 26,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderWidth: 0.5,
+    borderColor: "rgba(255,255,255,0.28)",
     justifyContent: "center",
     paddingHorizontal: 14,
+    ...Platform.select({
+      web: { boxShadow: "0 2px 14px rgba(0,0,0,0.28)" } as any,
+      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.28, shadowRadius: 8, elevation: 4 },
+    }),
   },
   commentInput: {
     color: "#fff",

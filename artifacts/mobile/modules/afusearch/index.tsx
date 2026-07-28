@@ -4,6 +4,7 @@ import {
   FlatList,
   Image,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -523,7 +524,7 @@ export default function AfuSearchApp() {
     <View style={[s.root, { backgroundColor: colors.background }]}>
       {/* Search bar */}
       <View style={[s.searchBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <View style={[s.inputWrap, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+        <View style={[s.inputWrap, { backgroundColor: colors.inputBg, borderColor: colors.border, ...Platform.select({ web: { boxShadow: "0 2px 14px rgba(0,0,0,0.13)" } as any, default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.13, shadowRadius: 8, elevation: 4 } }) }]}>
           <Ionicons name="search" size={17} color={colors.textMuted} />
           <TextInput
             ref={inputRef}
@@ -629,7 +630,7 @@ export default function AfuSearchApp() {
 const s = StyleSheet.create({
   root: { flex: 1 },
   searchBar: { paddingHorizontal: 14, paddingVertical: 10 },
-  inputWrap: { flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 22, borderWidth: 1, paddingHorizontal: 14, height: 44 },
+  inputWrap: { flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 26, borderWidth: 0.5, paddingHorizontal: 14, height: 44 },
   input: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular" },
   tabBar: { maxHeight: 48 },
   tabBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, height: 46 },

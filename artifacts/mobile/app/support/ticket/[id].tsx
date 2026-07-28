@@ -408,20 +408,27 @@ export default function TicketDetail() {
         ) : (
           <View style={[
             st.inputBar,
-            { borderTopColor: colors.border, paddingBottom: insets.bottom + 8, backgroundColor: colors.background },
+            { paddingBottom: insets.bottom + 8 },
           ]}>
-            <TextInput
-              style={[
-                st.replyInput,
-                { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text },
-              ]}
-              value={reply}
-              onChangeText={setReply}
-              placeholder="Write a message…"
-              placeholderTextColor={colors.textMuted}
-              multiline
-              maxLength={2000}
-            />
+            <View style={[
+              st.replyPill,
+              { backgroundColor: colors.inputBg, borderColor: colors.border,
+                ...Platform.select({
+                  web: { boxShadow: "0 2px 14px rgba(0,0,0,0.13)" } as any,
+                  default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.13, shadowRadius: 8, elevation: 4 },
+                }),
+              },
+            ]}>
+              <TextInput
+                style={[st.replyInput, { color: colors.text }]}
+                value={reply}
+                onChangeText={setReply}
+                placeholder="Write a message…"
+                placeholderTextColor={colors.textMuted}
+                multiline
+                maxLength={2000}
+              />
+            </View>
             <TouchableOpacity
               style={[
                 st.sendBtn,
@@ -531,10 +538,16 @@ const st = StyleSheet.create({
     flexDirection: "row", alignItems: "flex-end", gap: 8,
     padding: 12, paddingTop: 10, 
   },
+  replyPill: {
+    flex: 1,
+    borderRadius: 26,
+    borderWidth: 0.5,
+    overflow: "hidden",
+    justifyContent: "center",
+  },
   replyInput: {
-    flex: 1, borderRadius: 22,
+    flex: 1,
     paddingHorizontal: 16, paddingVertical: 11,
-    borderWidth: 1,
     fontSize: 15, fontFamily: "Inter_400Regular", maxHeight: 110,
   },
   sendBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },

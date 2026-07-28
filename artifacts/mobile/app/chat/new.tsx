@@ -10,6 +10,7 @@ import {
   FlatList,
   Keyboard,
   Linking,
+  Platform,
   Pressable,
   RefreshControl,
   SectionList,
@@ -462,7 +463,7 @@ export default function NewChatScreen() {
       >
         <Text style={[styles.toLabel, { color: colors.textMuted }]}>To:</Text>
 
-        <View style={[styles.toPill, { backgroundColor: colors.backgroundSecondary }]}>
+        <View style={[styles.toPill, { backgroundColor: colors.inputBg, borderColor: colors.border, ...Platform.select({ web: { boxShadow: "0 2px 14px rgba(0,0,0,0.13)" } as any, default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.13, shadowRadius: 8, elevation: 4 } }) }]}>
           {/* Selected chips */}
           {selected.size > 0 && (
             <FlatList
@@ -1104,7 +1105,8 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 22,
+    borderRadius: 26,
+    borderWidth: 0.5,
     paddingHorizontal: 14,
     height: 40,
     gap: 9,

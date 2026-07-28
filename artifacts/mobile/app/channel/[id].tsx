@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   Keyboard,
+  Platform,
   RefreshControl,
   Share,
   StyleSheet,
@@ -534,7 +535,7 @@ export default function ChannelDetailScreen() {
 
       {/* Composer (owner) or read-only notice (subscriber) */}
       {isOwner ? (
-        <View style={[st.composer, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <View style={[st.composer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           {attachImage && (
             <View style={st.attachPreviewWrap}>
               <Image source={{ uri: attachImage }} style={st.attachPreview} contentFit="cover" />
@@ -555,15 +556,17 @@ export default function ChannelDetailScreen() {
               }
             </TouchableOpacity>
 
-            <TextInput
-              style={[st.composerInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-              placeholder="Broadcast a message…"
-              placeholderTextColor={colors.textMuted}
-              value={text}
-              onChangeText={setText}
-              multiline
-              maxLength={2000}
-            />
+            <View style={[st.composerPill, { backgroundColor: colors.inputBg, borderColor: colors.border, ...Platform.select({ web: { boxShadow: "0 2px 14px rgba(0,0,0,0.13)" } as any, default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.13, shadowRadius: 8, elevation: 4 } }) }]}>
+              <TextInput
+                style={[st.composerInput, { color: colors.text }]}
+                placeholder="Broadcast a message…"
+                placeholderTextColor={colors.textMuted}
+                value={text}
+                onChangeText={setText}
+                multiline
+                maxLength={2000}
+              />
+            </View>
 
             <TouchableOpacity
               style={[st.sendBtn, { backgroundColor: (text.trim() || attachImage) && !sending ? PURPLE : colors.border }]}
@@ -716,12 +719,17 @@ const st = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  composerInput: {
+  composerPill: {
     flex: 1,
     minHeight: 38,
     maxHeight: 120,
-    borderRadius: 19,
+    borderRadius: 26,
     borderWidth: 0.5,
+    overflow: "hidden",
+    justifyContent: "center",
+  },
+  composerInput: {
+    flex: 1,
     paddingHorizontal: 14,
     paddingVertical: 8,
     fontSize: 14,

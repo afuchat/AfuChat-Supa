@@ -434,7 +434,7 @@ export default function MatchConversationScreen() {
         />
 
         {/* Input bar */}
-        <View style={[styles.inputBar, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: showEmoji ? 8 : insets.bottom + 8 }]}>
+        <View style={[styles.inputBar, { paddingBottom: showEmoji ? 8 : insets.bottom + 8 }]}>
           <Pressable style={styles.inputAction} onPress={toggleGifts}>
             <Ionicons name="gift" size={22} color={showGifts ? BRAND : colors.textMuted} />
           </Pressable>
@@ -446,19 +446,21 @@ export default function MatchConversationScreen() {
               color={showEmoji ? BRAND : colors.textMuted}
             />
           </Pressable>
-          <TextInput
-            ref={inputRef}
-            style={[styles.inputField, { backgroundColor: colors.backgroundSecondary, color: colors.text }]}
-            placeholder="Type a message…"
-            placeholderTextColor={colors.textMuted}
-            value={text}
-            onChangeText={(v) => { setText(v); setShowQuick(false); }}
-            multiline
-            maxLength={1000}
-            returnKeyType="default"
-            onFocus={() => { setShowEmoji(false); setShowGifts(false); }}
-            showSoftInputOnFocus={!showEmoji}
-          />
+          <View style={[styles.inputPill, { backgroundColor: colors.inputBg, borderColor: colors.border, ...Platform.select({ web: { boxShadow: "0 2px 14px rgba(0,0,0,0.13)" } as any, default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.13, shadowRadius: 8, elevation: 4 } }) }]}>
+            <TextInput
+              ref={inputRef}
+              style={[styles.inputField, { color: colors.text }]}
+              placeholder="Type a message…"
+              placeholderTextColor={colors.textMuted}
+              value={text}
+              onChangeText={(v) => { setText(v); setShowQuick(false); }}
+              multiline
+              maxLength={1000}
+              returnKeyType="default"
+              onFocus={() => { setShowEmoji(false); setShowGifts(false); }}
+              showSoftInputOnFocus={!showEmoji}
+            />
+          </View>
           <Pressable
             style={[styles.sendBtn, { backgroundColor: text.trim() ? BRAND : colors.border }]}
             onPress={() => send(text)}
@@ -624,7 +626,8 @@ const styles = StyleSheet.create({
   giftSendBtnText: { color: "#fff", fontSize: 14, fontFamily: "Inter_700Bold" },
   inputBar: { flexDirection: "row", alignItems: "flex-end", gap: 8, paddingHorizontal: 12, paddingTop: 10,},
   inputAction: { width: 34, height: 34, alignItems: "center", justifyContent: "center" },
-  inputField: { flex: 1, borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, fontFamily: "Inter_400Regular", maxHeight: 120 },
+  inputPill: { flex: 1, borderRadius: 26, borderWidth: 0.5, overflow: "hidden", justifyContent: "center" },
+  inputField: { flex: 1, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, fontFamily: "Inter_400Regular", maxHeight: 120 },
   sendBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   emojiPanel: { height: EMOJI_PANEL_HEIGHT },
   emojiTabs: { flexDirection: "row", borderBottomColor: "#3A3A3C" },

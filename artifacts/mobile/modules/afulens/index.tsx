@@ -388,9 +388,10 @@ export default function AfuLensApp() {
                 <Text style={[s.sectionLabel, { marginBottom: 8 }]}>Ask more about this</Text>
                 <View style={{
                   flexDirection: "row", gap: 8, alignItems: "flex-end",
-                  backgroundColor: BRAND_BG, borderRadius: 16,
-                  borderWidth: 1.5, borderColor: BRAND + "40",
+                  backgroundColor: BRAND_BG, borderRadius: 26,
+                  borderWidth: 1, borderColor: BRAND + "40",
                   paddingHorizontal: 14, paddingVertical: 6,
+                  shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
                 }}>
                   <TextInput
                     ref={moreInputRef}
