@@ -50,6 +50,21 @@ author = "agent"
 task = "workflow.run"
 args = "Start application"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "EAS AAB Build"
+
+[[workflows.workflow]]
+name = "EAS AAB Build"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd artifacts/mobile && EAS_NO_VCS=1 EXPO_TOKEN=$EXPO_TOKEN npx --yes eas-cli@latest build --platform android --profile production --non-interactive --no-wait"
+
 [[ports]]
 localPort = 5000
 externalPort = 80
