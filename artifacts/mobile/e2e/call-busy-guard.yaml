@@ -1,0 +1,53 @@
+# ─── Maestro Flow: Busy-call guard ───────────────────────────────────────────
+# Scenario: Device A is in an active call; Device B calls Device A.
+#
+# Expected outcomes:
+#   • Device B sees a "User is busy" toast and the call ends cleanly.
+#   • Device A's active call is completely unaffected.
+#   • No zombie ICE connections; both devices return to idle.
+#
+# Prerequisites:
+#   • Three Expo Go installs on three physical Android devices.
+#   • All three logged in to different AfuChat accounts (A, B, C).
+#   • A and C are contacts; B and A are contacts.
+#   • Supabase project is live with Realtime enabled.
+#   • Run this flow on Device B AFTER manually starting a call between A↔C.
+#
+# Run:
+#   maestro test e2e/call-busy-guard.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+
+appId: com.afuchat.mobile
+
+---
+
+# Step 1 — Confirm Device B is on the home screen (call not yet active)
+- assertVisible: "Home"
+
+# Step 2 — Navigate to Device A's profile / chat and tap the call button
+- tapOn:
+    text: "Call"
+
+# Step 3 — Call screen should open on Device B showing "Ringing…"
+- assertVisible: "Ringing…"
+
+# Step 4 — Wait up to 5 s for the busy signal to arrive
+#           (Supabase Realtime typically delivers in < 500 ms)
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Step 5 — "User is busy" toast must be visible on Device B
+- assertVisible: "User is busy"
+
+# Step 6 — Call screen disappears; Device B returns to the previous screen
+- assertNotVisible: "Ringing…"
+- assertNotVisible: "Connecting…"
+
+# Step 7 — No lingering "ended" state: status label should be gone
+- assertNotVisible: "Call ended"
+
+# ── Verification checklist (manual, run in parallel on Devices A and C) ──────
+# [ ] Device A still shows the active call timer counting up
+# [ ] Device C still shows the active call timer counting up
+# [ ] Neither Device A nor C received any error toast
+# [ ] Audio is still flowing between A and C (speak and listen to confirm)

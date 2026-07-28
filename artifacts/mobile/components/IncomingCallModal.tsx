@@ -20,6 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Avatar } from "@/components/ui/Avatar";
 import { useCall } from "@/context/CallContext";
+import { useAuth } from "@/context/AuthContext";
 import { notifyMissedCall } from "@/lib/notifyUser";
 import { GLASS } from "@/constants/glass";
 
@@ -38,6 +39,7 @@ const RING_BASE   = AVATAR_SIZE + 28;
 
 export function IncomingCallModal() {
   const { incomingNotice, acceptCall, declineCall, status } = useCall();
+  const { user } = useAuth();
   const insets = useSafeAreaInsets();
 
   // ── Animated values ────────────────────────────────────────────────────────
@@ -123,8 +125,10 @@ export function IncomingCallModal() {
     // Auto-decline
     autoDeclineTimer.current = setTimeout(() => {
       if (incomingNotice) {
+        // calleeId = current user (the one who didn't answer)
+        // callerId = the person who placed the call
         notifyMissedCall({
-          calleeId: incomingNotice.callerId,
+          calleeId: user?.id ?? incomingNotice.callerId,
           callerId: incomingNotice.callerId,
           callId: incomingNotice.callId,
           callType: "voice",

@@ -65,8 +65,11 @@ const ICE_SERVERS = [
 
 // ─── Ring timeout: auto-hangup if callee doesn't answer ──────────────────────
 // Exposed as a named constant so it can be tuned per-network condition.
-export const RING_TIMEOUT_MS = 30_000; // 30 s ringing before declaring missed
-const CONNECT_TIMEOUT_MS = 20_000; // 20 s for ICE after SDP exchange
+export const RING_TIMEOUT_MS       = 30_000; // 30 s ringing before declaring missed
+const CONNECT_TIMEOUT_MS           = 20_000; // 20 s for ICE after SDP exchange
+const DISCONNECT_WATCHDOG_MS       = 10_000; // escalate ICE "disconnected" → lost after 10 s
+const HEARTBEAT_INTERVAL_MS        =  5_000; // send & check heartbeat every 5 s
+const HEARTBEAT_TIMEOUT_MS         = 15_000; // 3 missed beats → assume peer force-quit
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -77,7 +80,8 @@ export type CallStatus =
   | "connecting"         // SDP exchanged, establishing ICE
   | "active"             // audio flowing
   | "ended"              // brief terminal state before reset
-  | "unreachable";       // ring timeout fired — callee was offline/unreachable
+  | "unreachable"        // ring timeout fired — callee was offline/unreachable
+  | "connection_lost";   // peer force-quit or network dropped mid-call
 
 export interface CallInfo {
   callId: string;
@@ -125,6 +129,10 @@ let _isMuted = false;
 let _isSpeaker = false;
 let _ringTimer: ReturnType<typeof setTimeout> | null = null;
 let _connectTimer: ReturnType<typeof setTimeout> | null = null;
+let _disconnectWatchdog: ReturnType<typeof setTimeout> | null = null;
+let _heartbeatSendTimer: ReturnType<typeof setInterval> | null = null;
+let _heartbeatWatchdogTimer: ReturnType<typeof setInterval> | null = null;
+let _lastHeartbeatAt = 0;
 let _listeners = new Set<Listener>();
 let _keepAwakeTag = "afucall";
 let _keepAwakeActive = false;
@@ -420,6 +428,10 @@ async function _subscribeSignaling(callId: string, isCaller: boolean): Promise<v
         emit({ type: "busy" });
         _doHangup("ended");
       })
+      .on("broadcast", { event: "heartbeat" }, () => {
+        // Peer is alive — reset the missed-beat counter
+        _lastHeartbeatAt = Date.now();
+      })
       .subscribe((status: string) => {
         if (status === "SUBSCRIBED") resolve();
       });
@@ -466,18 +478,37 @@ function _createPC(): any {
     emit({ type: "ice_state", state });
 
     if (state === "connected" || state === "completed") {
+      // ICE (re)connected — cancel any pending disconnect watchdog
+      _clearDisconnectWatchdog();
       if (_status === "connecting") {
         if (_info) _info.answeredAt = _info.answeredAt ?? Date.now();
         _clearConnectTimer();
         setStatus("active");
+        // Begin heartbeat exchange so we can detect peer force-quit
+        _startHeartbeat();
       }
     } else if (state === "failed") {
-      emit({ type: "error", message: "Connection failed. Check your network." });
-      _doHangup("ended");
+      // Distinguish "never connected" from "was active then lost"
+      const wasActive = !!_info?.answeredAt;
+      emit({
+        type: "error",
+        message: wasActive ? "Connection lost." : "Connection failed. Check your network.",
+      });
+      _doHangup(wasActive ? "connection_lost" : "ended");
     } else if (state === "disconnected") {
-      // Brief disconnect — wait for reconnect or failure
+      // Brief glitch — common on mobile; give 10 s for ICE to self-heal before
+      // declaring the call lost (avoids false positives on short network hiccups).
+      _clearDisconnectWatchdog();
+      _disconnectWatchdog = setTimeout(() => {
+        if (_status === "active" || _status === "connecting") {
+          emit({ type: "error", message: "Connection lost." });
+          _doHangup("connection_lost");
+        }
+      }, DISCONNECT_WATCHDOG_MS);
     } else if (state === "closed") {
-      if (_status === "active") _doHangup("ended");
+      if (_status === "active" || _status === "connecting") {
+        _doHangup("connection_lost");
+      }
     }
   };
 
@@ -653,9 +684,42 @@ function _clearConnectTimer() {
   if (_connectTimer) { clearTimeout(_connectTimer); _connectTimer = null; }
 }
 
+function _clearDisconnectWatchdog() {
+  if (_disconnectWatchdog) { clearTimeout(_disconnectWatchdog); _disconnectWatchdog = null; }
+}
+
+// ─── Internal: heartbeat — detects peer force-quit when ICE stays "connected" ─
+// Both sides send a broadcast every 5 s once the call is active. If we receive
+// nothing for 15 s (3 missed beats) we assume the peer process was killed.
+
+function _startHeartbeat() {
+  _stopHeartbeat();
+  _lastHeartbeatAt = Date.now(); // grace period — peer may not support heartbeats
+
+  _heartbeatSendTimer = setInterval(() => {
+    if (_status !== "active") return;
+    _signalingCh?.send({ type: "broadcast", event: "heartbeat", payload: {} });
+  }, HEARTBEAT_INTERVAL_MS);
+
+  _heartbeatWatchdogTimer = setInterval(() => {
+    if (_status !== "active") return;
+    if (Date.now() - _lastHeartbeatAt > HEARTBEAT_TIMEOUT_MS) {
+      emit({ type: "error", message: "Connection lost." });
+      _doHangup("connection_lost");
+    }
+  }, HEARTBEAT_INTERVAL_MS);
+}
+
+function _stopHeartbeat() {
+  if (_heartbeatSendTimer)    { clearInterval(_heartbeatSendTimer);    _heartbeatSendTimer    = null; }
+  if (_heartbeatWatchdogTimer){ clearInterval(_heartbeatWatchdogTimer); _heartbeatWatchdogTimer = null; }
+}
+
 function _doHangup(finalStatus: CallStatus) {
   _clearRingTimer();
   _clearConnectTimer();
+  _clearDisconnectWatchdog();
+  _stopHeartbeat();
 
   // Cleanup peer connection
   if (_pc) {
@@ -688,10 +752,18 @@ function _doHangup(finalStatus: CallStatus) {
 
   setStatus(finalStatus);
 
-  // After "ended"/"unreachable" briefly shown, reset to idle
-  if (finalStatus === "ended" || finalStatus === "unreachable") {
+  // After terminal status briefly shown, reset to idle
+  if (
+    finalStatus === "ended" ||
+    finalStatus === "unreachable" ||
+    finalStatus === "connection_lost"
+  ) {
     setTimeout(() => {
-      if (_status === "ended" || _status === "unreachable") {
+      if (
+        _status === "ended" ||
+        _status === "unreachable" ||
+        _status === "connection_lost"
+      ) {
         _info = null;
         setStatus("idle");
       }

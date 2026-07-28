@@ -127,16 +127,20 @@ export default function CallScreen() {
   const remoteAvatar = isCaller ? (callInfo?.calleeAvatar ?? null) : (callInfo?.callerAvatar ?? null);
 
   const statusLabel =
-    status === "outgoing_ringing" ? "Ringing…"
-    : status === "incoming_ringing" ? "Incoming call"
-    : status === "connecting"       ? "Connecting…"
-    : status === "active"           ? formatDuration(seconds)
-    : status === "ended"            ? "Call ended"
-    : status === "unreachable"      ? `Couldn't reach ${remoteName}`
+    status === "outgoing_ringing"  ? "Ringing…"
+    : status === "incoming_ringing"  ? "Incoming call"
+    : status === "connecting"        ? "Connecting…"
+    : status === "active"            ? formatDuration(seconds)
+    : status === "ended"             ? "Call ended"
+    : status === "unreachable"       ? `Couldn't reach ${remoteName}`
+    : status === "connection_lost"   ? "Connection lost"
     : "";
 
   const isLive = status === "active";
-  const isEnding = status === "ended" || status === "idle";
+  const isEnding =
+    status === "ended" ||
+    status === "idle" ||
+    status === "connection_lost";
 
   // Shimmer opacity for status label during connecting/ringing
   const statusOpacity = shimmer.interpolate({
