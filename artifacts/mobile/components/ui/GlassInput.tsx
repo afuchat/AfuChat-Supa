@@ -136,6 +136,6 @@ const s = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     height: 56,
     color: "#F1F1F1",
-    outlineStyle: "none",
+    outlineStyle: "none" as any,
   },
 });

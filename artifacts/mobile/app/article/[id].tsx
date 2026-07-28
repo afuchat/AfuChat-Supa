@@ -161,7 +161,7 @@ export default function ArticleDetailScreen() {
   // ── Like toggle ───────────────────────────────────────────────────────────
   const toggleLike = useCallback(async () => {
     if (!user || !article) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     heartScale.setValue(1);
     Animated.sequence([
       Animated.spring(heartScale, { toValue: 1.4, useNativeDriver: true, speed: 50, bounciness: 14 }),
@@ -183,7 +183,7 @@ export default function ArticleDetailScreen() {
   // ── Bookmark toggle ───────────────────────────────────────────────────────
   const toggleBookmark = useCallback(async () => {
     if (!user || !article) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (bookmarked) {
       setBookmarked(false);
       await supabase.from("bookmarks").delete().eq("post_id", article.id).eq("user_id", user.id);
@@ -355,7 +355,8 @@ export default function ArticleDetailScreen() {
         <VideoCommentsSheet
           visible={commentsOpen}
           postId={article.id}
-          authorId={article.author_id}
+          postAuthorId={article.author_id}
+          onReplyCountChange={() => {}}
           onClose={() => setCommentsOpen(false)}
         />
       )}

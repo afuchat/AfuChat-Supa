@@ -297,7 +297,7 @@ export default function PostDetailScreen() {
   // ── Refs ─────────────────────────────────────────────────────────────────────
   const listRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
-  const { images: viewerImages, initialIndex: viewerIndex, isOpen: viewerOpen, openViewer, closeViewer } = useImageViewer();
+  const { images: viewerImages, index: viewerIndex, visible: viewerOpen, openViewer, closeViewer } = useImageViewer();
 
   // ── Keyboard listener ────────────────────────────────────────────────────────
   useEffect(() => {
