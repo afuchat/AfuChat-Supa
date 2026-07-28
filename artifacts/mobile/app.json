@@ -57,6 +57,26 @@
             "BROWSABLE",
             "DEFAULT"
           ]
+        },
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "afuchat.com",
+              "pathPrefix": "/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.afuchat.com",
+              "pathPrefix": "/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
       "versionCode": 227
@@ -169,7 +189,12 @@
       "output": "single"
     },
     "ios": {
-      "buildNumber": "2.2.7"
+      "bundleIdentifier": "com.afuchat.afuapp",
+      "buildNumber": "2.2.7",
+      "associatedDomains": [
+        "applinks:afuchat.com",
+        "applinks:www.afuchat.com"
+      ]
     }
   }
 }
