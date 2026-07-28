@@ -11,13 +11,14 @@
  *
  * Also renders URLs, @mentions, and #hashtags as tappable links.
  */
-import React, { useMemo, useState } from "react";
-import { Linking, Platform, StyleSheet, Text } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { Image, Linking, Platform, StyleSheet, Text } from "react-native";
 import { router } from "expo-router";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { useOpenLink, useOpenLinkActions } from "@/lib/useOpenLink";
 import { useAuth } from "@/context/AuthContext";
 import { navigateToProfile } from "@/lib/navigateToProfile";
+import { supabase } from "@/lib/supabase";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -130,6 +131,85 @@ function extractColor(style: any, fallback: string): string {
     }
   }
   return fallback;
+}
+
+// ─── Mention avatar ───────────────────────────────────────────────────────────
+
+/** Simple module-level cache: handle (no @) → avatar_url | null */
+const _avatarCache = new Map<string, string | null>();
+
+/**
+ * Renders an @mention as a small rounded profile picture when the handle
+ * resolves to a known user, or as bold unclickable text when not found.
+ * On web, always renders as text (inline Image in Text is unreliable there).
+ */
+function MentionAvatar({
+  handle,
+  onPress,
+  textColor,
+}: {
+  handle: string;       // includes the leading @
+  onPress?: () => void;
+  textColor: string;
+}) {
+  const raw = handle.replace("@", "").toLowerCase();
+  const [avatarUrl, setAvatarUrl] = useState<string | null | undefined>(
+    _avatarCache.has(raw) ? _avatarCache.get(raw) : undefined
+  );
+
+  useEffect(() => {
+    if (_avatarCache.has(raw)) return;   // already resolved
+    let cancelled = false;
+    supabase
+      .from("profiles")
+      .select("avatar_url")
+      .eq("handle", raw)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        const url = (data as any)?.avatar_url ?? null;
+        _avatarCache.set(raw, url);
+        setAvatarUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) { _avatarCache.set(raw, null); setAvatarUrl(null); }
+      });
+    return () => { cancelled = true; };
+  }, [raw]);
+
+  // Still loading — show @handle as a placeholder so layout doesn't jump
+  if (avatarUrl === undefined) {
+    return (
+      <Text style={[styles.mention, { color: textColor }]}>{handle}</Text>
+    );
+  }
+
+  // User not found — bold, unclickable
+  if (avatarUrl === null) {
+    return (
+      <Text style={[styles.bold, { color: textColor }]}>{handle}</Text>
+    );
+  }
+
+  // Web — inline Image inside Text is unreliable; fall back to tappable text
+  if (Platform.OS === "web") {
+    return (
+      <Text
+        style={[styles.mention, { color: textColor }]}
+        onPress={onPress}
+        suppressHighlighting
+      >
+        {handle}
+      </Text>
+    );
+  }
+
+  // Native — small rounded avatar inline with the message text
+  return (
+    <Text onPress={onPress} suppressHighlighting>
+      <Image source={{ uri: avatarUrl }} style={styles.mentionAvatar} />
+    </Text>
+  );
 }
 
 // ─── Spoiler span ─────────────────────────────────────────────────────────────
@@ -329,15 +409,12 @@ export function RichText({
             );
           case "mention":
             return (
-              <Text
+              <MentionAvatar
                 key={i}
-                style={[styles.mention, { color: inheritedColor }]}
-                onPress={() => handlePress(span)}
-                selectable={selectable}
-                suppressHighlighting
-              >
-                {span.text}
-              </Text>
+                handle={span.text}
+                onPress={plainMentions ? undefined : () => handlePress(span)}
+                textColor={inheritedColor}
+              />
             );
           case "email":
             return (
@@ -391,5 +468,11 @@ const styles = StyleSheet.create({
   },
   mention: {
     fontFamily: "Inter_600SemiBold",
+  },
+  mentionAvatar: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    overflow: "hidden" as const,
   },
 });

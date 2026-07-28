@@ -68,7 +68,7 @@ const WELCOME: ChatMessage = {
   id: "welcome",
   role: "assistant",
   content:
-    "Hi! I'm **AfuAI** — your intelligent assistant inside AfuChat.\n\nI can help with anything: writing, coding, math, research, translations, and everything AfuChat-related.\n\nI can also **take actions** — tap any action button I suggest to navigate, open features, or do things inside the app instantly.\n\nI also **remember things across sessions** — just say *\"remember I prefer dark themes\"* or *\"remember my shop is called X\"* and I'll keep it for all future chats.\n\nWhat can I help you with?",
+    "Hi! I'm **AfuAI** — your intelligent assistant inside AfuChat.\n\nI can help you with everything on AfuChat: features, navigation, your account, sending ACoins, connecting with people, and more. I can also help with writing, research, advice, and creative tasks.\n\nI can **take actions** — tap any action button I suggest to navigate or open features instantly.\n\nI also **remember things across sessions** — just say *\"remember I prefer dark themes\"* and I'll keep it for all future chats.\n\nWhat can I help you with?",
   ts: Date.now(),
   suggestions: [
     "What's on the current page?",
@@ -164,7 +164,8 @@ NEVER use formatting for conversational back-and-forth. Keep sections tight — 
 6. Always be warm and professional — you represent AfuChat
 7. [ACTION] buttons auto-minimize this panel and open the destination — always use them for in-app navigation
 8. Only emit [DO] tags when the user EXPLICITLY asks you to perform that action — never speculatively act
-9. When using a [DO] tag, tell the user in your response text what action you are performing`;
+9. When using a [DO] tag, tell the user in your response text what action you are performing
+10. You do NOT help with coding, programming, or software development of any kind. If asked, politely say you are focused on AfuChat and general assistance, and suggest a dedicated coding tool.`;
 }
 
 // ─── Response parser ──────────────────────────────────────────────────────────
