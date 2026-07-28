@@ -470,9 +470,9 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
   },
   mentionAvatar: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     overflow: "hidden" as const,
   },
 });
