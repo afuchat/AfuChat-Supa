@@ -1,5 +1,6 @@
-// ─── IncomingCallModal ────────────────────────────────────────────────────────
-// Full-screen incoming call overlay — renders above everything else.
+// ─── IncomingCallModal — Liquid Glass Edition ────────────────────────────────
+// Full-screen incoming call overlay that matches the glass visual language of
+// call/[id].tsx. Renders above everything via a Modal.
 // Auto-declines after 30 s if the user doesn't interact.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -7,88 +8,120 @@ import React, { useCallback, useEffect, useRef } from "react";
 import {
   Animated,
   Modal,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
   Vibration,
-  Platform,
+  View,
 } from "react-native";
+import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Avatar } from "@/components/ui/Avatar";
 import { useCall } from "@/context/CallContext";
 import { notifyMissedCall } from "@/lib/notifyUser";
-import { declineCall as engineDecline } from "@/lib/callEngine";
+import { GLASS } from "@/constants/glass";
 
 const AUTO_DECLINE_MS = 30_000;
 
-// Vibration pattern: buzz-pause repeated
 const VIBRATION_PATTERN =
   Platform.OS === "android"
     ? [0, 600, 400, 600, 400, 600]
     : [0, 400, 200, 400];
 
+// ─── Avatar size constants ────────────────────────────────────────────────────
+const AVATAR_SIZE = 100;
+const RING_BASE   = AVATAR_SIZE + 28;
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function IncomingCallModal() {
   const { incomingNotice, acceptCall, declineCall } = useCall();
   const insets = useSafeAreaInsets();
 
-  const ringScale1 = useRef(new Animated.Value(1)).current;
-  const ringScale2 = useRef(new Animated.Value(1)).current;
-  const ringOpacity1 = useRef(new Animated.Value(0.6)).current;
-  const ringOpacity2 = useRef(new Animated.Value(0.4)).current;
-  const slideIn = useRef(new Animated.Value(60)).current;
-  const fadeIn  = useRef(new Animated.Value(0)).current;
+  // ── Animated values ────────────────────────────────────────────────────────
+  const slideIn     = useRef(new Animated.Value(80)).current;
+  const fadeIn      = useRef(new Animated.Value(0)).current;
+
+  // Pulsing ring waves
+  const ringScale1  = useRef(new Animated.Value(1)).current;
+  const ringScale2  = useRef(new Animated.Value(1)).current;
+  const ringOpacity1= useRef(new Animated.Value(0.55)).current;
+  const ringOpacity2= useRef(new Animated.Value(0.35)).current;
+
+  // Shimmer label pulse
+  const labelPulse  = useRef(new Animated.Value(0.55)).current;
 
   const autoDeclineTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const animLoopRef = useRef<Animated.CompositeAnimation | null>(null);
+  const ringLoopRef      = useRef<Animated.CompositeAnimation | null>(null);
+  const labelLoopRef     = useRef<Animated.CompositeAnimation | null>(null);
 
   const visible = !!incomingNotice;
 
-  // ── Entrance animation + ring loop ────────────────────────────────────────
+  // ── Animations ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!visible) {
-      animLoopRef.current?.stop();
-      animLoopRef.current = null;
+      // Stop every tracked loop in one place so none can outlive the modal
+      ringLoopRef.current?.stop();
+      ringLoopRef.current = null;
+      labelLoopRef.current?.stop();
+      labelLoopRef.current = null;
       Vibration.cancel();
+      // Reset values for the next open
+      slideIn.setValue(80);
+      fadeIn.setValue(0);
+      ringScale1.setValue(1); ringOpacity1.setValue(0.55);
+      ringScale2.setValue(1); ringOpacity2.setValue(0.35);
+      labelPulse.setValue(0.55);
       return;
     }
 
-    // Slide in + fade
+    // Entrance
     Animated.parallel([
-      Animated.spring(slideIn, { toValue: 0, useNativeDriver: true, damping: 18, stiffness: 200 }),
-      Animated.timing(fadeIn, { toValue: 1, duration: 200, useNativeDriver: true }),
+      Animated.spring(slideIn, {
+        toValue: 0, useNativeDriver: true,
+        damping: 20, stiffness: 220,
+      }),
+      Animated.timing(fadeIn, {
+        toValue: 1, duration: 220, useNativeDriver: true,
+      }),
     ]).start();
 
-    // Pulsing ring waves
-    const loop = Animated.loop(
-      Animated.stagger(300, [
+    // Ring pulse loop — stored in ref so cleanup path can always reach it
+    const ringLoop = Animated.loop(
+      Animated.stagger(350, [
         Animated.parallel([
-          Animated.timing(ringScale1, { toValue: 1.6, duration: 1000, useNativeDriver: true }),
-          Animated.timing(ringOpacity1, { toValue: 0, duration: 1000, useNativeDriver: true }),
+          Animated.timing(ringScale1, { toValue: 1.65, duration: 1100, useNativeDriver: true }),
+          Animated.timing(ringOpacity1, { toValue: 0, duration: 1100, useNativeDriver: true }),
         ]),
         Animated.parallel([
-          Animated.timing(ringScale2, { toValue: 1.6, duration: 1000, useNativeDriver: true }),
-          Animated.timing(ringOpacity2, { toValue: 0, duration: 1000, useNativeDriver: true }),
+          Animated.timing(ringScale2, { toValue: 1.65, duration: 1100, useNativeDriver: true }),
+          Animated.timing(ringOpacity2, { toValue: 0, duration: 1100, useNativeDriver: true }),
         ]),
       ]),
     );
-    animLoopRef.current = loop;
-    loop.start();
+    ringLoopRef.current = ringLoop;
+    ringLoop.start();
 
-    // Reset ring values each loop via a separate reset (Animated.loop handles restart)
-    ringScale1.setValue(1); ringOpacity1.setValue(0.6);
-    ringScale2.setValue(1); ringOpacity2.setValue(0.4);
+    // Label shimmer — also stored in ref
+    const labelLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(labelPulse, { toValue: 1,    duration: 700, useNativeDriver: true }),
+        Animated.timing(labelPulse, { toValue: 0.55, duration: 700, useNativeDriver: true }),
+      ]),
+    );
+    labelLoopRef.current = labelLoop;
+    labelLoop.start();
 
-    // Vibration
+    // Vibrate
     Vibration.vibrate(VIBRATION_PATTERN, true);
 
     // Auto-decline
     autoDeclineTimer.current = setTimeout(() => {
       if (incomingNotice) {
-        // Record as missed on callee side
         notifyMissedCall({
-          calleeId: incomingNotice.callerId, // notify caller that we missed
+          calleeId: incomingNotice.callerId,
           callerId: incomingNotice.callerId,
           callId: incomingNotice.callId,
           callType: "voice",
@@ -103,12 +136,12 @@ export function IncomingCallModal() {
         clearTimeout(autoDeclineTimer.current);
         autoDeclineTimer.current = null;
       }
-      animLoopRef.current?.stop();
+      // Stop both loops through their refs — single cleanup path, no splits
+      ringLoopRef.current?.stop();
+      ringLoopRef.current = null;
+      labelLoopRef.current?.stop();
+      labelLoopRef.current = null;
       Vibration.cancel();
-      slideIn.setValue(60);
-      fadeIn.setValue(0);
-      ringScale1.setValue(1); ringOpacity1.setValue(0.6);
-      ringScale2.setValue(1); ringOpacity2.setValue(0.4);
     };
   }, [visible]);
 
@@ -133,186 +166,397 @@ export function IncomingCallModal() {
       hardwareAccelerated
       onRequestClose={handleDecline}
     >
+      {/* ── Background: deep dark + colour orbs ─────────────────────────── */}
       <View style={styles.root}>
-        {/* Dark gradient background */}
-        <View style={StyleSheet.absoluteFill}>
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: "#0a0a0f" }]} />
-          <View style={[StyleSheet.absoluteFill, styles.radialGlow]} />
-        </View>
+        <View style={[StyleSheet.absoluteFill, styles.bg]} />
+        <View style={[styles.orb, styles.orbGreen]} />
+        <View style={[styles.orb, styles.orbBlue]} />
+        <View style={[styles.orb, styles.orbPurple]} />
 
+        {/* ── Main content card — slides up ─────────────────────────────── */}
         <Animated.View
           style={[
             styles.content,
-            { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 32 },
-            { transform: [{ translateY: slideIn }], opacity: fadeIn },
+            {
+              paddingTop: insets.top + 28,
+              paddingBottom: insets.bottom + 32,
+              transform: [{ translateY: slideIn }],
+              opacity: fadeIn,
+            },
           ]}
         >
-          {/* Avatar + ring waves */}
+          {/* Glass "Voice Call" label at top */}
+          <BlurView intensity={GLASS.blur.light} tint="dark" style={styles.topPill}>
+            <View style={styles.topPillInner}>
+              <Ionicons name="call" size={11} color="rgba(52,199,89,0.85)" />
+              <Text style={styles.topPillText}>Incoming Voice Call</Text>
+            </View>
+          </BlurView>
+
+          {/* ── Avatar + pulse rings ─────────────────────────────────────── */}
           <View style={styles.avatarSection}>
-            <Animated.View
-              style={[
-                styles.ring,
-                { transform: [{ scale: ringScale1 }], opacity: ringOpacity1 },
-              ]}
-            />
+            {/* Outer ring wave */}
             <Animated.View
               style={[
                 styles.ring,
                 { transform: [{ scale: ringScale2 }], opacity: ringOpacity2 },
               ]}
             />
-            <View style={styles.avatarBorder}>
-              <Avatar
-                uri={incomingNotice.callerAvatar}
-                name={incomingNotice.callerName}
-                size={96}
-              />
-            </View>
+            {/* Inner ring wave */}
+            <Animated.View
+              style={[
+                styles.ring,
+                { transform: [{ scale: ringScale1 }], opacity: ringOpacity1 },
+              ]}
+            />
+
+            {/* Glass avatar card */}
+            <BlurView intensity={GLASS.blur.heavy} tint="dark" style={styles.avatarCard}>
+              <View style={styles.avatarCardInner}>
+                {/* Specular top edge */}
+                <View style={styles.avatarCardSpecular} />
+                <View style={styles.avatarRingBorder}>
+                  <Avatar
+                    uri={incomingNotice.callerAvatar}
+                    name={incomingNotice.callerName}
+                    size={AVATAR_SIZE}
+                  />
+                </View>
+              </View>
+            </BlurView>
           </View>
 
-          {/* Caller info */}
+          {/* Name */}
           <Text style={styles.callerName} numberOfLines={1}>
             {incomingNotice.callerName}
           </Text>
-          <View style={styles.callTypeBadge}>
-            <Ionicons name="call" size={12} color="#34C759" />
-            <Text style={styles.callTypeText}>Voice Call</Text>
-          </View>
 
-          <Text style={styles.subtitle}>Incoming voice call…</Text>
+          {/* Pulsing status label */}
+          <Animated.Text style={[styles.subtitle, { opacity: labelPulse }]}>
+            Calling you…
+          </Animated.Text>
 
           {/* Spacer */}
           <View style={{ flex: 1 }} />
 
-          {/* Action buttons */}
-          <View style={styles.actionRow}>
-            {/* Decline */}
-            <View style={styles.btnWrapper}>
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.declineBtn]}
-                onPress={handleDecline}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="call" size={28} color="#fff" style={styles.rotated} />
-              </TouchableOpacity>
-              <Text style={styles.btnLabel}>Decline</Text>
-            </View>
+          {/* ── Glass control panel ──────────────────────────────────────── */}
+          <BlurView intensity={GLASS.blur.heavy} tint="dark" style={styles.controlsGlass}>
+            <View style={styles.controlsInner}>
+              {/* Specular top edge */}
+              <View style={styles.controlsSpecular} />
 
-            {/* Accept */}
-            <View style={styles.btnWrapper}>
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.acceptBtn]}
-                onPress={handleAccept}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="call" size={28} color="#fff" />
-              </TouchableOpacity>
-              <Text style={styles.btnLabel}>Accept</Text>
+              <View style={styles.actionRow}>
+                {/* Decline — red glass */}
+                <GlassActionBtn
+                  type="decline"
+                  icon="call"
+                  label="Decline"
+                  onPress={handleDecline}
+                />
+
+                {/* Accept — green glass */}
+                <GlassActionBtn
+                  type="accept"
+                  icon="call"
+                  label="Accept"
+                  onPress={handleAccept}
+                />
+              </View>
             </View>
-          </View>
+          </BlurView>
         </Animated.View>
       </View>
     </Modal>
   );
 }
 
-const AVATAR_SIZE = 96;
-const RING_SIZE = AVATAR_SIZE + 32;
+// ─── Glass action button ──────────────────────────────────────────────────────
+
+function GlassActionBtn({
+  type,
+  icon,
+  label,
+  onPress,
+}: {
+  type: "accept" | "decline";
+  icon: React.ComponentProps<typeof Ionicons>["name"];
+  label: string;
+  onPress: () => void;
+}) {
+  const isDecline = type === "decline";
+  const borderColor = isDecline
+    ? "rgba(255,59,48,0.50)"
+    : "rgba(52,199,89,0.50)";
+  const overlayColor = isDecline
+    ? "rgba(255,59,48,0.78)"
+    : "rgba(52,199,89,0.78)";
+  const glowColor = isDecline ? "#FF3B30" : "#34C759";
+
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePress = () => {
+    Animated.sequence([
+      Animated.spring(scaleAnim, { toValue: 0.88, useNativeDriver: true, speed: 80 }),
+      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, speed: 40 }),
+    ]).start();
+    onPress();
+  };
+
+  return (
+    <View style={styles.btnWrapper}>
+      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={handlePress}
+          style={[
+            styles.actionBtn,
+            {
+              borderColor,
+              ...Platform.select({
+                ios: {
+                  shadowColor: glowColor,
+                  shadowOpacity: 0.60,
+                  shadowRadius: 18,
+                  shadowOffset: { width: 0, height: 4 },
+                },
+                android: { elevation: 12 },
+                web: { boxShadow: `0 4px 22px ${glowColor}66` } as any,
+              }),
+            },
+          ]}
+        >
+          <BlurView intensity={60} tint="dark" style={styles.actionBtnBlur}>
+            <View style={[styles.actionBtnOverlay, { backgroundColor: overlayColor }]}>
+              <Ionicons
+                name={icon}
+                size={30}
+                color="#fff"
+                style={isDecline ? styles.rotated : undefined}
+              />
+            </View>
+          </BlurView>
+        </TouchableOpacity>
+      </Animated.View>
+      <Text style={styles.btnLabel}>{label}</Text>
+    </View>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
-  radialGlow: {
-    borderRadius: 0,
-    backgroundColor: "rgba(52,199,89,0.06)",
+
+  // Background
+  bg: {
+    backgroundColor: "#050810",
   },
+  orb: {
+    position: "absolute",
+    borderRadius: 999,
+    ...Platform.select({
+      web: { filter: "blur(90px)" } as any,
+      default: {},
+    }),
+  },
+  orbGreen: {
+    width: 360, height: 360,
+    top: -80, left: -100,
+    backgroundColor: "#00C170",
+    opacity: 0.22,
+  },
+  orbBlue: {
+    width: 280, height: 280,
+    bottom: 40, right: -80,
+    backgroundColor: "#0A6EFF",
+    opacity: 0.16,
+  },
+  orbPurple: {
+    width: 200, height: 200,
+    top: "40%", left: "35%",
+    backgroundColor: "#7B2FBE",
+    opacity: 0.11,
+  },
+
+  // Content slide-up panel
   content: {
     flex: 1,
     alignItems: "center",
-    paddingHorizontal: 32,
+    paddingHorizontal: 28,
   },
+
+  // Top pill
+  topPill: {
+    borderRadius: GLASS.radius.pill,
+    overflow: "hidden",
+    borderWidth: 0.5,
+    borderColor: "rgba(52,199,89,0.30)",
+    marginBottom: 48,
+  },
+  topPillInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: "rgba(52,199,89,0.10)",
+  },
+  topPillText: {
+    color: "rgba(255,255,255,0.70)",
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+    letterSpacing: 0.3,
+  },
+
+  // Avatar + rings
   avatarSection: {
-    marginTop: 60,
-    width: RING_SIZE + 40,
-    height: RING_SIZE + 40,
+    width: RING_BASE + 48,
+    height: RING_BASE + 48,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 28,
+    marginBottom: 32,
   },
   ring: {
     position: "absolute",
-    width: RING_SIZE,
-    height: RING_SIZE,
-    borderRadius: RING_SIZE / 2,
+    width: RING_BASE,
+    height: RING_BASE,
+    borderRadius: RING_BASE / 2,
     borderWidth: 1.5,
-    borderColor: "rgba(52,199,89,0.5)",
+    borderColor: "rgba(52,199,89,0.45)",
   },
-  avatarBorder: {
+
+  // Glass avatar card
+  avatarCard: {
+    borderRadius: GLASS.radius.xl,
+    overflow: "hidden",
+    borderWidth: 0.5,
+    borderColor: GLASS.border.dark,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOpacity: 0.50,
+        shadowRadius: 28,
+        shadowOffset: { width: 0, height: 10 },
+      },
+      android: { elevation: 16 },
+      web: { boxShadow: "0 10px 32px rgba(0,0,0,0.60)" } as any,
+    }),
+  },
+  avatarCardInner: {
+    padding: 20,
+    backgroundColor: GLASS.fill.dark,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarCardSpecular: {
+    position: "absolute",
+    top: 0, left: 0, right: 0,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.18)",
+  },
+  avatarRingBorder: {
     width: AVATAR_SIZE + 6,
     height: AVATAR_SIZE + 6,
     borderRadius: (AVATAR_SIZE + 6) / 2,
-    borderWidth: 2,
-    borderColor: "rgba(52,199,89,0.6)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.14)",
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
   },
+
+  // Caller name
   callerName: {
     color: "#fff",
-    fontSize: 26,
+    fontSize: 28,
     fontFamily: "Inter_700Bold",
     textAlign: "center",
-    maxWidth: 280,
+    maxWidth: 290,
     marginBottom: 10,
+    ...Platform.select({
+      web: { textShadow: "0 2px 14px rgba(0,0,0,0.65)" } as any,
+      default: {
+        shadowColor: "#000",
+        shadowOpacity: 0.55,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 2 },
+      },
+    }),
   },
-  callTypeBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: "rgba(52,199,89,0.14)",
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 20,
-    marginBottom: 12,
-  },
-  callTypeText: {
-    color: "#34C759",
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-  },
+
+  // Subtitle pulse label
   subtitle: {
-    color: "rgba(255,255,255,0.45)",
-    fontSize: 14,
+    color: "rgba(255,255,255,0.52)",
+    fontSize: 15,
     fontFamily: "Inter_400Regular",
   },
+
+  // Controls glass panel
+  controlsGlass: {
+    width: "100%",
+    borderRadius: GLASS.radius.xl,
+    overflow: "hidden",
+    borderWidth: 0.5,
+    borderColor: GLASS.border.dark,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOpacity: 0.45,
+        shadowRadius: 24,
+        shadowOffset: { width: 0, height: 8 },
+      },
+      android: { elevation: 14 },
+      web: { boxShadow: "0 8px 28px rgba(0,0,0,0.55)" } as any,
+    }),
+  },
+  controlsInner: {
+    backgroundColor: GLASS.fill.dark,
+    paddingVertical: 28,
+    paddingHorizontal: 24,
+  },
+  controlsSpecular: {
+    position: "absolute",
+    top: 0, left: 0, right: 0,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.14)",
+  },
+
+  // Action row
   actionRow: {
     flexDirection: "row",
     justifyContent: "space-around",
-    width: "100%",
-    marginBottom: 8,
+    alignItems: "center",
   },
   btnWrapper: {
     alignItems: "center",
-    gap: 10,
+    gap: 12,
   },
+
+  // Individual action button
   actionBtn: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    overflow: "hidden",
+    borderWidth: 1,
+  },
+  actionBtnBlur: {
+    flex: 1,
+  },
+  actionBtnOverlay: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
-  declineBtn: {
-    backgroundColor: "#FF3B30",
-  },
-  acceptBtn: {
-    backgroundColor: "#34C759",
-  },
   btnLabel: {
-    color: "rgba(255,255,255,0.7)",
+    color: "rgba(255,255,255,0.65)",
     fontSize: 13,
     fontFamily: "Inter_500Medium",
   },
+
+  // Icon transforms
   rotated: {
     transform: [{ rotate: "135deg" }],
   },
