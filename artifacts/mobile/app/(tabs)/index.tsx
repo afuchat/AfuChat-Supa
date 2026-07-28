@@ -1318,9 +1318,12 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
 
   useEffect(() => {
     if (!user) return;
-    // Listen for new chats being created (new chat_member rows for this user)
+    // Listen for new chats being created (new chat_member rows for this user).
+    // Use a unique channel name per mount so Supabase's internal registry never
+    // returns an already-subscribed channel (which would throw "cannot add
+    // postgres_changes callbacks after subscribe()").
     const memberChannel = supabase
-      .channel(`chatlist-member-inserts:${user.id}`)
+      .channel(`chatlist-member-inserts:${user.id}:${Date.now()}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "chat_members", filter: `user_id=eq.${user.id}` },
