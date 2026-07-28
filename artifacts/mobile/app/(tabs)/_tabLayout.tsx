@@ -25,13 +25,13 @@ import { getLocalConversations } from "@/lib/storage/localConversations";
 import { supabase } from "@/lib/supabase";
 import { getTotalUnread, subscribeUnread } from "@/lib/chatUnreadEvents";
 
-// Visible bottom bar tabs
+// Visible bottom bar tabs — Chat · Discover · Shorts · Apps · Account
 const BOTTOM_TABS = [
-  { route: "/(tabs)/discover", icon: "home"        },
-  { route: "/(tabs)/shorts",   icon: "play-circle" },
-  // index 2 is the CREATE button — handled separately
-  { route: "/(tabs)/apps",     icon: "grid"        },
-  { route: "/(tabs)/chats",    icon: "chatbubble"  },
+  { route: "/(tabs)/chats",    icon: "chatbubble",  label: "Chat"     },
+  { route: "/(tabs)/discover", icon: "home",        label: "Discover" },
+  { route: "/(tabs)/shorts",   icon: "play-circle", label: "Shorts"   },
+  { route: "/(tabs)/apps",     icon: "grid",        label: "Apps"     },
+  { route: "/(tabs)/me",       icon: "person",      label: "Account"  },
 ] as const;
 
 function normalizeTabPath(p: string): string {
@@ -98,45 +98,41 @@ function CompactTabBar({
   const PILL_BG      = isDark ? "rgba(10,12,22,0.82)" : "rgba(248,244,238,0.88)";
   const PILL_BORDER  = isDark ? "rgba(255,255,255,0.13)" : "rgba(0,0,0,0.09)";
   const ACCENT       = colors.accent;
+  const PILL_BOTTOM  = Math.max(insets.bottom, 8) + 10;
+  const PILL_H       = 72;
+
+  // Cream label colours — warm & legible on both pill backgrounds
+  const LABEL_ACTIVE   = isDark ? "#F5EDCE" : "#6B4F1E";
+  const LABEL_INACTIVE = isDark ? "rgba(245,237,206,0.38)" : "rgba(107,79,30,0.38)";
 
   function handleTabPress(route: string) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     safeRouter.navigate(route as any);
   }
 
-  const slots: Array<
-    | { kind: "tab"; route: string; icon: string }
-    | { kind: "create" }
-  > = [
-    { kind: "tab", ...BOTTOM_TABS[0] },
-    { kind: "tab", ...BOTTOM_TABS[1] },
-    { kind: "create" },
-    { kind: "tab", ...BOTTOM_TABS[2] },
-    { kind: "tab", ...BOTTOM_TABS[3] },
-  ];
-
   return (
     <>
-      {/* Bottom content fade — scrolling content fades before it hits the pill */}
+      {/* Bottom content fade */}
       <LinearGradient
         colors={["transparent", isDark ? "#000000" : "#F5F0E8"]}
         style={{
           position: "absolute",
           left: 0,
           right: 0,
-          bottom: Math.max(insets.bottom, 8) + 10 + 64,
-          height: 80,
+          bottom: PILL_BOTTOM + PILL_H,
+          height: 90,
           zIndex: 98,
           pointerEvents: "none",
         } as any}
       />
 
-      {/* Floating pill */}
+      {/* Floating pill — 5 tabs with icon + label */}
       <View
         style={[
           pill.wrapper,
           {
-            bottom: Math.max(insets.bottom, 8) + 10,
+            bottom: PILL_BOTTOM,
+            height: PILL_H,
             backgroundColor: PILL_BG,
             borderWidth: 0.5,
             borderColor: PILL_BORDER,
@@ -146,34 +142,19 @@ function CompactTabBar({
         ]}
         pointerEvents="box-none"
       >
-        {slots.map((slot, idx) => {
-          if (slot.kind === "create") {
-            return (
-              <TouchableOpacity
-                key="create"
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-                  setShowCreatePicker(true);
-                }}
-                style={[pill.createBtn, { backgroundColor: ACCENT }]}
-                activeOpacity={0.82}
-              >
-                <Ionicons name="add" size={26} color="#fff" />
-              </TouchableOpacity>
-            );
-          }
-
-          const focused = active === slot.route;
-          const iconColor = focused ? ACCENT : (isDark ? "rgba(255,255,255,0.38)" : "rgba(0,0,0,0.32)");
+        {BOTTOM_TABS.map((tab) => {
+          const focused    = active === tab.route;
+          const iconColor  = focused ? ACCENT : (isDark ? "rgba(255,255,255,0.38)" : "rgba(0,0,0,0.32)");
+          const labelColor = focused ? LABEL_ACTIVE : LABEL_INACTIVE;
 
           return (
             <TouchableOpacity
-              key={slot.route}
+              key={tab.route}
               style={pill.tab}
-              onPress={() => handleTabPress(slot.route)}
+              onPress={() => handleTabPress(tab.route)}
               activeOpacity={0.7}
               accessibilityRole="button"
-              accessibilityLabel={slot.route.replace("/(tabs)/", "")}
+              accessibilityLabel={tab.label}
               accessibilityState={{ selected: focused }}
             >
               <View
@@ -182,13 +163,9 @@ function CompactTabBar({
                   focused && { backgroundColor: ACCENT + "22", borderRadius: 14 },
                 ]}
               >
-                <Ionicons
-                  name={slot.icon as any}
-                  size={24}
-                  color={iconColor}
-                />
-                {/* Unread badge on chat */}
-                {slot.route === "/(tabs)/chats" && totalUnread > 0 && (
+                <Ionicons name={tab.icon as any} size={22} color={iconColor} />
+                {/* Unread badge on Chat */}
+                {tab.route === "/(tabs)/chats" && totalUnread > 0 && (
                   <View style={[pill.badge, { backgroundColor: ACCENT }]}>
                     <Text style={pill.badgeText} numberOfLines={1}>
                       {totalUnread > 99 ? "99+" : String(totalUnread)}
@@ -196,9 +173,36 @@ function CompactTabBar({
                   </View>
                 )}
               </View>
+              <Text style={[pill.label, { color: labelColor }]} numberOfLines={1}>
+                {tab.label}
+              </Text>
             </TouchableOpacity>
           );
         })}
+      </View>
+
+      {/* FAB — Create, floats above the pill, centred horizontally */}
+      <View
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: PILL_BOTTOM + PILL_H + 12,
+          alignItems: "center",
+          zIndex: 101,
+          pointerEvents: "box-none",
+        } as any}
+      >
+        <TouchableOpacity
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+            setShowCreatePicker(true);
+          }}
+          style={[pill.fab, { backgroundColor: ACCENT }]}
+          activeOpacity={0.82}
+        >
+          <Ionicons name="add" size={28} color="#fff" />
+        </TouchableOpacity>
       </View>
 
       {/* Create picker sheet */}
@@ -251,11 +255,9 @@ const pill = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    height: 64,
     borderRadius: 100,
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
     zIndex: 100,
-    // Shadow
     shadowOffset: { width: 0, height: 8 },
     shadowRadius: 24,
     elevation: 20,
@@ -264,26 +266,32 @@ const pill = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    height: 64,
+    paddingVertical: 8,
+    gap: 3,
   },
   iconWrap: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
     alignItems: "center",
     justifyContent: "center",
   },
-  createBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  label: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.1,
+    textAlign: "center",
+  },
+  fab: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#1f95ff",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.45,
-    shadowRadius: 10,
-    elevation: 10,
-    marginHorizontal: 4,
+    shadowRadius: 12,
+    elevation: 12,
   },
   badge: {
     position: "absolute",
