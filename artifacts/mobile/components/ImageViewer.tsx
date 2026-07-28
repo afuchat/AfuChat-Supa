@@ -341,6 +341,13 @@ function SimpleZoomSlide({ uri, width, height, onSwipeLeft, onSwipeRight, onScal
   const tapTimer    = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pinchDist0  = useRef(0);
   const pinchScale0 = useRef(1);
+  // Track whether the current gesture used 2 fingers at any point.
+  // Used to skip swipe/tap detection and avoid applying pinch deltas as pan.
+  const hadPinch    = useRef(false);
+  // Tracks the last committed single-touch pan position so release can commit
+  // correctly without re-applying the full cumulative gesture delta.
+  const panX0       = useRef(0);
+  const panY0       = useRef(0);
 
   function clamp(val: number, s: number, dim: number) {
     const max = Math.max(0, (dim * s - dim) / 2);
@@ -372,8 +379,10 @@ function SimpleZoomSlide({ uri, width, height, onSwipeLeft, onSwipeRight, onScal
     onMoveShouldSetPanResponder: (e, g) =>
       e.nativeEvent.touches.length === 2 || Math.abs(g.dx) > 3 || Math.abs(g.dy) > 3,
     onPanResponderGrant: (e) => {
+      hadPinch.current = false;
       const t = e.nativeEvent.touches;
       if (t.length === 2) {
+        hadPinch.current = true;
         const dx = t[0].pageX - t[1].pageX, dy = t[0].pageY - t[1].pageY;
         pinchDist0.current  = Math.sqrt(dx * dx + dy * dy) || 1;
         pinchScale0.current = scaleVal.current;
@@ -382,6 +391,14 @@ function SimpleZoomSlide({ uri, width, height, onSwipeLeft, onSwipeRight, onScal
     onPanResponderMove: (e, g) => {
       const t = e.nativeEvent.touches;
       if (t.length === 2) {
+        // Initialize pinch data the first time we see 2 touches (covers the
+        // case where the gesture started with 1 finger and a second joined).
+        if (!hadPinch.current) {
+          hadPinch.current = true;
+          const idx = t[0].pageX - t[1].pageX, idy = t[0].pageY - t[1].pageY;
+          pinchDist0.current  = Math.sqrt(idx * idx + idy * idy) || 1;
+          pinchScale0.current = scaleVal.current;
+        }
         const dx = t[0].pageX - t[1].pageX, dy = t[0].pageY - t[1].pageY;
         const dist = Math.sqrt(dx * dx + dy * dy);
         const s = Math.max(1, Math.min(MAX_SCALE, pinchScale0.current * dist / pinchDist0.current));
@@ -389,20 +406,48 @@ function SimpleZoomSlide({ uri, width, height, onSwipeLeft, onSwipeRight, onScal
         scale.setValue(s);
         onScaleChange(s);
       } else if (t.length === 1 && scaleVal.current > 1.02) {
-        transX.setValue(clamp(transXVal.current + g.dx, scaleVal.current, width));
-        transY.setValue(clamp(transYVal.current + g.dy, scaleVal.current, height));
+        // Single-touch pan while zoomed. g.dx/g.dy are cumulative from gesture
+        // start (which may include a 2-finger phase). Use panX0/panY0 which
+        // we reset when transitioning from 2→1 touch to get a clean baseline.
+        const nx = clamp(panX0.current + g.dx, scaleVal.current, width);
+        const ny = clamp(panY0.current + g.dy, scaleVal.current, height);
+        transX.setValue(nx);
+        transY.setValue(ny);
       }
     },
     onPanResponderRelease: (e, g) => {
-      if (e.nativeEvent.touches.length > 0) return;
+      if (e.nativeEvent.touches.length > 0) {
+        // A finger lifted but others remain. If transitioning from 2→1 touch,
+        // snapshot the current position as the baseline for single-touch pan.
+        if (e.nativeEvent.touches.length === 1 && hadPinch.current) {
+          transXVal.current = clamp(transXVal.current, scaleVal.current, width);
+          transYVal.current = clamp(transYVal.current, scaleVal.current, height);
+          panX0.current = transXVal.current;
+          panY0.current = transYVal.current;
+        }
+        return;
+      }
+
+      const wasPinch = hadPinch.current;
+      hadPinch.current = false;
 
       if (scaleVal.current > 1.02) {
-        transXVal.current = clamp(transXVal.current + g.dx, scaleVal.current, width);
-        transYVal.current = clamp(transYVal.current + g.dy, scaleVal.current, height);
+        if (!wasPinch) {
+          // Pure single-touch pan: commit the final position.
+          transXVal.current = clamp(panX0.current + g.dx, scaleVal.current, width);
+          transYVal.current = clamp(panY0.current + g.dy, scaleVal.current, height);
+        }
+        // For a pinch release, transXVal/Y stay at whatever was last set
+        // during the 2-finger phase — don't apply g.dx/g.dy (pinch motion).
         transX.setValue(transXVal.current);
         transY.setValue(transYVal.current);
         return;
       }
+
+      // Gesture returned to 1× scale. If it involved a pinch, skip swipe and
+      // tap detection — the accumulated g.dx/g.dy from the pinch motion would
+      // otherwise trigger false swipes or taps.
+      if (wasPinch) return;
 
       if (g.dx < -SWIPE_THRESHOLD || g.vx < -0.4) { onSwipeLeft();  return; }
       if (g.dx >  SWIPE_THRESHOLD || g.vx >  0.4) { onSwipeRight(); return; }
@@ -412,7 +457,12 @@ function SimpleZoomSlide({ uri, width, height, onSwipeLeft, onSwipeRight, onScal
         if (now - lastTap.current < 300 && lastTap.current > 0) {
           lastTap.current = 0;
           if (tapTimer.current) { clearTimeout(tapTimer.current); tapTimer.current = null; }
-          zoomTo(3, 0, 0);
+          // Double-tap: zoom out if already zoomed in, zoom in if at 1×.
+          if (scaleVal.current > 1.5) {
+            springReset();
+          } else {
+            zoomTo(3, 0, 0);
+          }
         } else {
           lastTap.current = now;
           tapTimer.current = setTimeout(() => {
