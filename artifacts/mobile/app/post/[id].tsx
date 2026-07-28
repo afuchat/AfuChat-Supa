@@ -46,7 +46,6 @@ import { sharePost } from "@/lib/share";
 import { notifyPostLike, notifyPostReply } from "@/lib/notifyUser";
 import { uploadToStorage } from "@/lib/mediaUpload";
 import { showAlert } from "@/lib/alert";
-import Colors from "@/constants/colors";
 import {
   VideoReplyItem,
   CommentSkeleton,
@@ -720,40 +719,6 @@ export default function PostDetailScreen() {
       {/* Link preview */}
       {previewUrl && <LinkPreviewCard url={previewUrl} colors={colors} />}
 
-      {/* Action bar */}
-      <View style={[st.actionBar, { borderTopColor: separatorClr, borderBottomColor: separatorClr }]}>
-        <TouchableOpacity style={st.actionBtn} onPress={toggleLike} activeOpacity={0.7}>
-          <Animated.View style={{ transform: [{ scale: heartScale }] }}>
-            <Ionicons name="heart" size={22} color={liked ? "#FF9500" : colors.textMuted} />
-          </Animated.View>
-          <Text style={[st.actionCount, { color: liked ? "#FF9500" : colors.textMuted }]}>{formatNum(likeCount)}</Text>
-        </TouchableOpacity>
-
-        <View style={st.actionBtn}>
-          <Ionicons name="chatbubble" size={22} color={colors.textMuted} />
-          {replies.length > 0 && (
-            <Text style={[st.actionCount, { color: colors.textMuted }]}>{formatNum(replies.length)}</Text>
-          )}
-        </View>
-
-        <View style={st.actionBtn}>
-          <Ionicons name="eye" size={22} color={colors.textMuted} />
-          <Text style={[st.actionCount, { color: colors.textMuted }]}>{formatNum(post.view_count)}</Text>
-        </View>
-
-        <TouchableOpacity
-          style={st.actionBtn}
-          onPress={() => sharePost({ postId: post.id, authorName: post.profile.display_name, content: post.content })}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="arrow-redo" size={22} color={colors.textMuted} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={st.actionBtn} onPress={toggleBookmark} activeOpacity={0.7}>
-          <Ionicons name="bookmark" size={22} color={bookmarked ? Colors.gold : colors.textMuted} />
-        </TouchableOpacity>
-      </View>
-
       {/* Comments section header */}
       <View style={[st.commentsHeader, { borderBottomColor: separatorClr }]}>
         <Text style={[st.commentsTitle, { color: colors.text }]}>
@@ -779,12 +744,11 @@ export default function PostDetailScreen() {
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <View style={[st.root, { backgroundColor: colors.background }]}>
-      {/* Fixed header */}
-      <View style={[st.header, { paddingTop: insets.top + 6, backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+      {/* Floating header — overlays the scroll content, true edge-to-edge */}
+      <View style={[st.header, { paddingTop: insets.top + 2 }]} pointerEvents="box-none">
         <TouchableOpacity onPress={() => router.back()} hitSlop={10} style={st.headerBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[st.headerTitle, { color: colors.text }]}>Post</Text>
         <TouchableOpacity
           onPress={() => post && sharePost({ postId: post.id, authorName: post.profile.display_name, content: post.content })}
           hitSlop={10}
@@ -810,7 +774,7 @@ export default function PostDetailScreen() {
           data={sortedTree}
           keyExtractor={(r) => r.id}
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingTop: 16, paddingBottom: inputBarH + kbHeight + insets.bottom + 16 }}
+          contentContainerStyle={{ paddingTop: insets.top + 52, paddingBottom: inputBarH + kbHeight + insets.bottom + 16 }}
           showsVerticalScrollIndicator={false}
           scrollEventThrottle={16}
           keyboardShouldPersistTaps="handled"
@@ -913,6 +877,7 @@ export default function PostDetailScreen() {
             <View style={st.inputRow}>
               <Avatar uri={profile?.avatar_url} name={profile?.display_name || "You"} size={32} />
 
+              {/* Glass pill — text + secondary icons + send */}
               <View style={[st.inputPill, {
                 backgroundColor: inputBg,
                 borderColor: isDark ? "rgba(255,255,255,0.13)" : "rgba(26,18,8,0.13)",
@@ -957,13 +922,6 @@ export default function PostDetailScreen() {
                           >
                             <Text style={{ color: attachIconCl, fontSize: 15, fontFamily: "Inter_700Bold", lineHeight: 20 }}>@</Text>
                           </TouchableOpacity>
-                          <TouchableOpacity
-                            onPress={recordState === "recorded" ? discardRecording : startRecording}
-                            hitSlop={6} activeOpacity={0.7}
-                            style={[st.iconBtn, recordState === "recorded" && { backgroundColor: accent + "30" }]}
-                          >
-                            <Ionicons name="mic-outline" size={20} color={recordState === "recorded" ? accent : attachIconCl} />
-                          </TouchableOpacity>
                         </>
                       )}
                       {canSend && (
@@ -979,6 +937,53 @@ export default function PostDetailScreen() {
                   )}
                 </View>
               </View>
+
+              {/* Mic — standalone circle button, separated from the pill */}
+              <TouchableOpacity
+                onPress={
+                  recordState === "recording"
+                    ? () => stopRecording()
+                    : recordState === "recorded"
+                    ? discardRecording
+                    : startRecording
+                }
+                activeOpacity={0.75}
+                style={[
+                  st.micBtn,
+                  {
+                    backgroundColor:
+                      recordState === "recording"
+                        ? "#FF2D55" + "22"
+                        : recordState === "recorded"
+                        ? accent + "22"
+                        : inputBg,
+                    borderColor:
+                      recordState === "recording"
+                        ? "#FF2D55" + "60"
+                        : recordState === "recorded"
+                        ? accent + "60"
+                        : isDark ? "rgba(255,255,255,0.13)" : "rgba(26,18,8,0.13)",
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={
+                    recordState === "recording"
+                      ? "stop"
+                      : recordState === "recorded"
+                      ? "mic"
+                      : "mic-outline"
+                  }
+                  size={20}
+                  color={
+                    recordState === "recording"
+                      ? "#FF2D55"
+                      : recordState === "recorded"
+                      ? accent
+                      : attachIconCl
+                  }
+                />
+              </TouchableOpacity>
             </View>
           ) : (
             <TouchableOpacity
@@ -1005,10 +1010,13 @@ const st = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
 
-  // Header
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 8, paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  // Header — absolute overlay, edge-to-edge, no bottom border
+  header: {
+    position: "absolute", top: 0, left: 0, right: 0, zIndex: 10,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 4, paddingBottom: 8,
+  },
   headerBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontFamily: "Inter_700Bold", flex: 1, textAlign: "center" },
 
   // Post content
   authorRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, marginBottom: 14 },
@@ -1019,11 +1027,6 @@ const st = StyleSheet.create({
   linkCard: { flexDirection: "row", alignItems: "stretch", marginHorizontal: 16, marginBottom: 10, borderRadius: 14, overflow: "hidden", minHeight: 80 },
   linkThumb: { width: 90, minHeight: 80, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   linkBody: { flex: 1, paddingHorizontal: 10, paddingVertical: 10, gap: 4, justifyContent: "center" },
-
-  // Action bar
-  actionBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-around", paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, marginVertical: 4 },
-  actionBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 8 },
-  actionCount: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
 
   // Comments section header
   commentsHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 14, paddingBottom: 10, borderBottomWidth: StyleSheet.hairlineWidth },
@@ -1047,6 +1050,7 @@ const st = StyleSheet.create({
   emojiBtn: { flex: 1, alignItems: "center", paddingVertical: 6 },
   emojiText: { fontSize: 20 },
   inputRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 10 },
+  micBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", borderWidth: 0.5 },
   inputPill: {
     flex: 1, borderRadius: 28, borderWidth: 0.5, overflow: "hidden",
     ...Platform.select({
