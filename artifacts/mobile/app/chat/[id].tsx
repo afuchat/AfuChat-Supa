@@ -7690,35 +7690,37 @@ STRICT RULES:
       )}
 
       <BottomSheet visible={showRedEnvelope} onClose={() => setShowRedEnvelope(false)}>
-        <Text style={[st.sheetTitle, { color: colors.text }]}>🧧 Red Envelope</Text>
-        <TextInput
-          style={[st.sheetInput, { color: colors.text, backgroundColor: colors.inputBg }]}
-          placeholder="Amount (ACoin)"
-          placeholderTextColor={colors.textMuted}
-          value={envelopeAmount}
-          onChangeText={setEnvelopeAmount}
-          keyboardType="number-pad"
-        />
-        <TextInput
-          style={[st.sheetInput, { color: colors.text, backgroundColor: colors.inputBg }]}
-          placeholder="Message (optional)"
-          placeholderTextColor={colors.textMuted}
-          value={envelopeMsg}
-          onChangeText={setEnvelopeMsg}
-        />
-        {chatInfo?.is_group && (
+        <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 14 }}>
+          <Text style={[st.sheetTitle, { color: colors.text }]}>🧧 Red Envelope</Text>
           <TextInput
             style={[st.sheetInput, { color: colors.text, backgroundColor: colors.inputBg }]}
-            placeholder="How many can claim?"
+            placeholder="Amount (ACoin)"
             placeholderTextColor={colors.textMuted}
-            value={envelopeCount}
-            onChangeText={setEnvelopeCount}
+            value={envelopeAmount}
+            onChangeText={setEnvelopeAmount}
             keyboardType="number-pad"
           />
-        )}
-        <TouchableOpacity style={st.redEnvBtn} onPress={sendRedEnvelope}>
-          <Text style={st.redEnvBtnText}>Send Red Envelope</Text>
-        </TouchableOpacity>
+          <TextInput
+            style={[st.sheetInput, { color: colors.text, backgroundColor: colors.inputBg }]}
+            placeholder="Message (optional)"
+            placeholderTextColor={colors.textMuted}
+            value={envelopeMsg}
+            onChangeText={setEnvelopeMsg}
+          />
+          {chatInfo?.is_group && (
+            <TextInput
+              style={[st.sheetInput, { color: colors.text, backgroundColor: colors.inputBg }]}
+              placeholder="How many can claim?"
+              placeholderTextColor={colors.textMuted}
+              value={envelopeCount}
+              onChangeText={setEnvelopeCount}
+              keyboardType="number-pad"
+            />
+          )}
+          <TouchableOpacity style={st.redEnvBtn} onPress={sendRedEnvelope}>
+            <Text style={st.redEnvBtnText}>Send Red Envelope</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </BottomSheet>
 
       <GiftPickerSheet
@@ -9003,7 +9005,7 @@ const st = StyleSheet.create({
   envRevealFrom: { fontSize: 13, fontFamily: "Inter_400Regular" },
   envRevealMsg: { fontSize: 16, fontFamily: "Inter_500Medium", textAlign: "center", fontStyle: "italic" },
   envRevealStats: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 4 },
-  envRevealBtn: { backgroundColor: "#FF3B30", marginHorizontal: 24, marginBottom: 20, paddingVertical: 14, borderRadius: 14, alignItems: "center" },
+  envRevealBtn: { backgroundColor: "#FF3B30", marginHorizontal: 24, marginBottom: 20, paddingVertical: 14, borderRadius: 999, alignItems: "center" },
   envRevealBtnText: { color: "#fff", fontSize: 16, fontFamily: "Inter_600SemiBold" },
 
   giftRevealOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", padding: 24 },
