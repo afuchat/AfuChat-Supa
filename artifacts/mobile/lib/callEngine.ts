@@ -123,6 +123,7 @@ let _ringTimer: ReturnType<typeof setTimeout> | null = null;
 let _connectTimer: ReturnType<typeof setTimeout> | null = null;
 let _listeners = new Set<Listener>();
 let _keepAwakeTag = "afucall";
+let _keepAwakeActive = false;
 
 // ─── Event bus ───────────────────────────────────────────────────────────────
 
@@ -597,11 +598,19 @@ function _deactivateAudioMode() {
 // ─── Internal: keep-awake ─────────────────────────────────────────────────────
 
 function _activateKeepAwake() {
-  try { _KA?.activateKeepAwakeAsync(_keepAwakeTag); } catch {}
+  if (_keepAwakeActive) return;
+  try { _KA?.activateKeepAwakeAsync(_keepAwakeTag); _keepAwakeActive = true; } catch {}
 }
 
 function _deactivateKeepAwake() {
-  try { _KA?.deactivateKeepAwake(_keepAwakeTag); } catch {}
+  if (!_keepAwakeActive) return; // never activated — skip to avoid the "not activated yet" warning
+  _keepAwakeActive = false;
+  try {
+    // deactivateKeepAwake is async on web (Wake Lock API) — swallow both sync
+    // throws and async rejections so no unhandledrejection fires in the browser.
+    const p: any = _KA?.deactivateKeepAwake(_keepAwakeTag);
+    if (p && typeof p.catch === "function") p.catch(() => {});
+  } catch {}
 }
 
 // ─── Internal: busy signal ────────────────────────────────────────────────────

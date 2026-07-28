@@ -62,10 +62,28 @@ interface CallContextValue {
 
 const CallContext = createContext<CallContextValue | null>(null);
 
+// Safe no-op returned when useCall() is called outside CallProvider (e.g. during
+// hot-reload transitions or in screens that rendered before the provider mounted).
+// isAvailable: false means the call button never shows, so the user can't
+// accidentally trigger a call in this transient state.
+const _NOOP_CTX: CallContextValue = {
+  status: "idle",
+  callInfo: null,
+  incomingNotice: null,
+  isMuted: false,
+  isSpeaker: false,
+  isAvailable: false,
+  startCall: async () => {},
+  acceptCall: async () => {},
+  declineCall: () => {},
+  endCall: () => {},
+  toggleMute: () => {},
+  toggleSpeaker: () => {},
+  handlePushIncoming: () => {},
+};
+
 export function useCall(): CallContextValue {
-  const ctx = useContext(CallContext);
-  if (!ctx) throw new Error("useCall must be used inside CallProvider");
-  return ctx;
+  return useContext(CallContext) ?? _NOOP_CTX;
 }
 
 // ─── Provider ─────────────────────────────────────────────────────────────────

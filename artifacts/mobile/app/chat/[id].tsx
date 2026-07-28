@@ -99,6 +99,7 @@ import { playNotificationSound as playMgrSound } from "@/lib/soundManager";
 import { AFUAI_BOT_ID } from "@/lib/afuAiBot";
 import { AFUCHAT_SYSTEM_ID } from "@/lib/afuSystemChat";
 import { useCall } from "@/context/CallContext";
+import { BlurView } from "expo-blur";
 import { SystemNotificationCard, GroupedSystemNotificationCard, tryParseSysNotif, type GroupedSysNotifData } from "@/components/chat/SystemNotificationCard";
 import WallpaperOverlay from "@/components/chat/WallpaperOverlay";
 import { getDailyUsage, recordDailyUsage } from "@/lib/featureUsage";
@@ -6167,9 +6168,8 @@ STRICT RULES:
               <Ionicons name="person-add" size={20} color={colors.text} />
             </TouchableOpacity>
           )}
-          {/* Voice call button — only for 1-on-1 DMs, not groups/channels/bots/self */}
-          {callAvailable &&
-            chatInfo &&
+          {/* Voice call — glass pill, 1-on-1 DMs only */}
+          {chatInfo &&
             !chatInfo.is_group &&
             !chatInfo.is_channel &&
             !isSelfChat &&
@@ -6178,8 +6178,8 @@ STRICT RULES:
             chatInfo.other_id &&
             callStatus === "idle" && (
             <TouchableOpacity
-              style={st.headerAction}
-              hitSlop={8}
+              hitSlop={10}
+              activeOpacity={0.72}
               onPress={() => {
                 callStart({
                   calleeId: chatInfo.other_id!,
@@ -6189,7 +6189,29 @@ STRICT RULES:
                 });
               }}
             >
-              <Ionicons name="call-outline" size={21} color={colors.text} />
+              <BlurView
+                intensity={42}
+                tint={isDark ? "dark" : "light"}
+                style={{
+                  width: 36, height: 36, borderRadius: 18,
+                  overflow: "hidden",
+                  alignItems: "center", justifyContent: "center",
+                  borderWidth: 0.5,
+                  borderColor: isDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.07)",
+                }}
+              >
+                <View style={{
+                  ...StyleSheet.absoluteFillObject,
+                  backgroundColor: isDark
+                    ? "rgba(255,255,255,0.07)"
+                    : "rgba(255,255,255,0.52)",
+                }} />
+                <Ionicons
+                  name="call-outline"
+                  size={17}
+                  color={isDark ? "rgba(255,255,255,0.85)" : "#1c1c1e"}
+                />
+              </BlurView>
             </TouchableOpacity>
           )}
           {chatInfo && (
