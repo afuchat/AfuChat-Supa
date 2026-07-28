@@ -367,7 +367,7 @@ export default function PostDetailScreen() {
 
       if (user) {
         const [likeRes, bmRes] = await Promise.all([
-          supabase.from("post_likes").select("id").eq("post_id", id).eq("user_id", user.id).maybeSingle(),
+          supabase.from("post_acknowledgments").select("post_id").eq("post_id", id).eq("user_id", user.id).maybeSingle(),
           supabase.from("bookmarks").select("id").eq("post_id", id).eq("user_id", user.id).maybeSingle(),
         ]);
         setLiked(!!likeRes.data);
@@ -452,10 +452,10 @@ export default function PostDetailScreen() {
     ]).start();
     if (liked) {
       setLiked(false); setLikeCount((n) => Math.max(0, n - 1));
-      await supabase.from("post_likes").delete().eq("post_id", post.id).eq("user_id", user.id);
+      await supabase.from("post_acknowledgments").delete().eq("post_id", post.id).eq("user_id", user.id);
     } else {
       setLiked(true); setLikeCount((n) => n + 1);
-      await supabase.from("post_likes").insert({ post_id: post.id, user_id: user.id });
+      await supabase.from("post_acknowledgments").upsert({ post_id: post.id, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
       if (post.author_id !== user.id) {
         notifyPostLike({ postAuthorId: post.author_id, likerName: "", likerUserId: user.id, postId: post.id });
       }

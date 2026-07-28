@@ -158,7 +158,7 @@ export default function ChannelDetailScreen() {
     let likedSet = new Set<string>();
     if (user) {
       const { data: likesData } = await supabase
-        .from("post_likes")
+        .from("post_acknowledgments")
         .select("post_id")
         .eq("user_id", user.id)
         .in("post_id", data.map((p) => p.id));
@@ -245,10 +245,10 @@ export default function ChannelDetailScreen() {
     );
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (nowLiked) {
-      await supabase.from("post_likes").upsert({ post_id: postId, user_id: user.id }, { onConflict: "post_id,user_id" });
+      await supabase.from("post_acknowledgments").upsert({ post_id: postId, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
       await supabase.rpc("increment_post_like", { p_post_id: postId });
     } else {
-      await supabase.from("post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
+      await supabase.from("post_acknowledgments").delete().eq("post_id", postId).eq("user_id", user.id);
       await supabase.rpc("decrement_post_like", { p_post_id: postId });
     }
   }

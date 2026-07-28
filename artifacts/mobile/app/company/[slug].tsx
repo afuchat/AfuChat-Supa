@@ -218,7 +218,7 @@ export default function CompanyPageScreen() {
     if (user && postsData && postsData.length > 0) {
       const postIds = postsData.map((p: any) => p.id);
       const { data: likedData } = await supabase
-        .from("org_post_likes")
+        .from("post_acknowledgments")
         .select("post_id")
         .eq("user_id", user.id)
         .in("post_id", postIds);
@@ -287,9 +287,9 @@ export default function CompanyPageScreen() {
     });
     setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, likes: wasLiked ? Math.max(0, p.likes - 1) : p.likes + 1 } : p));
     if (wasLiked) {
-      await supabase.from("org_post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
+      await supabase.from("post_acknowledgments").delete().eq("post_id", postId).eq("user_id", user.id);
     } else {
-      await supabase.from("org_post_likes").upsert({ post_id: postId, user_id: user.id });
+      await supabase.from("post_acknowledgments").upsert({ post_id: postId, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
     }
   }
 
