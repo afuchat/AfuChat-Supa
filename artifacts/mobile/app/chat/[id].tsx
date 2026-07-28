@@ -193,6 +193,7 @@ type Message = {
   edited_at?: string | null;
   _pending?: boolean;
   _isAi?: boolean;
+  _streaming?: boolean;
   _aiActions?: AiActionButton[];
   _aiSuggestions?: string[];
   _aiInvoices?: AiInvoiceData[];
@@ -414,6 +415,24 @@ function SmartReplyBar({ messages, myId, input, onSend, colors }: {
         </TouchableOpacity>
       ))}
     </Animated.View>
+  );
+}
+
+// Blinking cursor shown at the tail of a streaming AI message
+function StreamingCursor({ color }: { color: string }) {
+  const opacity = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.15, duration: 420, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 1,    duration: 420, useNativeDriver: true }),
+      ])
+    );
+    anim.start();
+    return () => anim.stop();
+  }, []);
+  return (
+    <Animated.Text style={{ opacity, color, fontSize: 13, lineHeight: 20 }}>{"\u258B"}</Animated.Text>
   );
 }
 
@@ -1455,7 +1474,23 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
               ) : (
                 <TouchableOpacity onLongPress={() => onLongPress(msg)} delayLongPress={500} activeOpacity={0.9}>
                   {msg._isAi
-                    ? <AiRichContent content={displayText} colors={colors} isUser={isMe} />
+                    ? (
+                      <>
+                        {msg._streaming && !displayText ? (
+                          // Empty streaming bubble — show bouncing dots while first tokens arrive
+                          <View style={{ flexDirection: "row", gap: 4, alignItems: "center", paddingVertical: 2 }}>
+                            {[0, 1, 2].map((i) => (
+                              <View key={i} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textMuted, opacity: 0.5 }} />
+                            ))}
+                          </View>
+                        ) : (
+                          <AiRichContent content={displayText} colors={colors} isUser={isMe} />
+                        )}
+                        {msg._streaming && !!displayText && (
+                          <StreamingCursor color={colors.textMuted} />
+                        )}
+                      </>
+                    )
                     : (
                       <RichText
                         style={[st.bubbleText, {
@@ -3270,18 +3305,19 @@ function ChatScreen() {
 
   async function handleAfuAiLensIntro(ctx: NonNullable<typeof lensContextRef.current>, chatId: string) {
     setIsAfuAiTyping(true);
-    const thinkingId = `lens_thinking_${Date.now()}`;
+    const lensStreamId = `lens_s_${Date.now()}`;
     setMessages(prev => [{
-      id: thinkingId,
+      id: lensStreamId,
       chat_id: chatId,
       sender_id: AFUAI_BOT_ID,
-      encrypted_content: "…",
+      encrypted_content: "",
       sent_at: new Date().toISOString(),
       sender: { display_name: "AfuAI", avatar_url: null, handle: "afuai" },
       reactions: [],
       _isAi: true,
-      _pending: true,
+      _streaming: true,
     }, ...prev]);
+
     const contextLines = [
       `Title: ${ctx.title}`,
       `Category: ${ctx.category}`,
@@ -3292,49 +3328,72 @@ function ChatScreen() {
         ? `Questions the user already asked in the Lab session:\n${ctx.history.map(h => `  Q: ${h.q}\n  A: ${h.a}`).join("\n")}`
         : null,
     ].filter(Boolean).join("\n");
+
     try {
       const engagera = getEngagera();
-      const lensAiRes = await engagera.chat.create({
-        messages: [
-          {
-            role: "system" as const,
-            content: `You are AfuAI. The user scanned something with AI Lens and has brought the result into this conversation. Give a rich, expert, engaging introduction to the subject. Be informative, warm and enthusiastic. Highlight the most interesting aspects. End by inviting the user to ask more. Use up to 3 [SUGGEST:...] tags for great follow-up questions.`,
-          },
-          {
-            role: "user" as const,
-            content: `I scanned this with AfuChat AI Lens:\n\n${contextLines}\n\nGive me a detailed, expert breakdown with the most fascinating details.`,
-          },
-        ],
-      });
-      if (lensAiRes.content) {
-        const rawReply = lensAiRes.content.trim() || "I've reviewed your scan. What would you like to know?";
-        const parsed = parseAfuAiTags(rawReply);
-        let savedId: string | null = null;
-        try {
-          const { data: rpcId } = await supabase.rpc("insert_afuai_message", { p_chat_id: chatId, p_content: rawReply });
-          if (typeof rpcId === "string") savedId = rpcId;
-        } catch {}
-        setMessages(prev => {
-          const filtered = prev.filter(m => m.id !== thinkingId);
-          return [{
-            id: savedId || `lens_reply_${Date.now()}`,
-            chat_id: chatId,
-            sender_id: AFUAI_BOT_ID,
-            encrypted_content: parsed.text || rawReply,
-            sent_at: new Date().toISOString(),
-            sender: { display_name: "AfuAI", avatar_url: null, handle: "afuai" },
-            reactions: [],
-            _isAi: true,
-            _aiSuggestions: parsed.suggestions.length > 0 ? parsed.suggestions : [
-              `Tell me more about ${ctx.title}`,
-              `What are the main uses of ${ctx.title}?`,
-              `Any interesting history or origin?`,
-            ],
-          }, ...filtered];
-        });
+
+      let accumulated = "";
+      let lastFlushed = "";
+      const flushTimer = setInterval(() => {
+        if (accumulated !== lastFlushed) {
+          const snap = accumulated;
+          lastFlushed = snap;
+          setMessages(prev => prev.map(m => m.id === lensStreamId ? { ...m, encrypted_content: snap } : m));
+        }
+      }, 40);
+
+      let doneContent = "";
+      try {
+        for await (const event of engagera.chat.stream({
+          messages: [
+            {
+              role: "system" as const,
+              content: `You are AfuAI. The user scanned something with AI Lens and has brought the result into this conversation. Give a rich, expert, engaging introduction to the subject. Be informative, warm and enthusiastic. Highlight the most interesting aspects. End by inviting the user to ask more. Use up to 3 [SUGGEST:...] tags for great follow-up questions.`,
+            },
+            {
+              role: "user" as const,
+              content: `I scanned this with AfuChat AI Lens:\n\n${contextLines}\n\nGive me a detailed, expert breakdown with the most fascinating details.`,
+            },
+          ],
+          model: "engagera-2.1",
+        })) {
+          if (event.type === "text") {
+            accumulated += event.text;
+          } else if (event.type === "done") {
+            doneContent = event.content;
+          } else if (event.type === "error") {
+            throw new Error(event.message);
+          }
+        }
+      } finally {
+        clearInterval(flushTimer);
       }
+
+      const rawReply = (doneContent || accumulated).trim() || "I've reviewed your scan. What would you like to know?";
+      const parsed = parseAfuAiTags(rawReply);
+      let savedId: string | null = null;
+      try {
+        const { data: rpcId } = await supabase.rpc("insert_afuai_message", { p_chat_id: chatId, p_content: rawReply });
+        if (typeof rpcId === "string") savedId = rpcId;
+      } catch {}
+
+      setMessages(prev => prev.map(m => m.id === lensStreamId ? {
+        ...m,
+        id: savedId || lensStreamId,
+        encrypted_content: parsed.text || rawReply,
+        sent_at: new Date().toISOString(),
+        _streaming: false,
+        _aiSuggestions: parsed.suggestions.length > 0 ? parsed.suggestions : [
+          `Tell me more about ${ctx.title}`,
+          `What are the main uses of ${ctx.title}?`,
+          `Any interesting history or origin?`,
+        ],
+      } : m));
     } catch {
-      setMessages(prev => prev.filter(m => m.id !== thinkingId));
+      setMessages(prev => prev.map(m => m.id === lensStreamId
+        ? { ...m, encrypted_content: "I couldn't analyse that right now. Please try again.", _streaming: false }
+        : m
+      ));
     } finally {
       setIsAfuAiTyping(false);
     }
@@ -3953,6 +4012,20 @@ function ChatScreen() {
     }
     // ── End voice-activated navigation ────────────────────────────────────────
 
+    // Inject streaming placeholder immediately — replaces the typing indicator
+    const streamingId = `afuai_s_${Date.now()}`;
+    setMessages((prev) => [{
+      id: streamingId,
+      chat_id: chatId,
+      sender_id: AFUAI_BOT_ID,
+      encrypted_content: "",
+      sent_at: new Date().toISOString(),
+      sender: { display_name: "AfuAI", avatar_url: null, handle: "afuai" },
+      reactions: [],
+      _isAi: true,
+      _streaming: true,
+    }, ...prev]);
+
     try {
       const userContext = await getAfuAiUserContext();
       const platformContext = buildNavigationContext();
@@ -4069,11 +4142,43 @@ STRICT RULES:
       conversationMessages.push({ role: "user", content: userText.replace(/@afuai/gi, "").trim() || userText });
 
       const engagera = getEngagera();
-      const chatAiRes = await engagera.chat.create({
-        messages: [{ role: "system" as const, content: systemPrompt + lensAddition }, ...conversationMessages],
-      });
-      if (!chatAiRes.content) throw new Error("AI returned empty response");
-      const rawReply = chatAiRes.content.trim() || "Sorry, I couldn't process that. Please try again.";
+
+      // Detect web-search intent to enable AfuBot live crawling
+      const isWebQuery = /\b(search for|look up|latest news|current|today['']s|weather|price of|stock price|who is|what happened|wikipedia)\b/i.test(userText);
+
+      // Token accumulator — flush to state every 40 ms for smooth per-token display
+      let accumulated = "";
+      let lastFlushed = "";
+      const flushTimer = setInterval(() => {
+        if (accumulated !== lastFlushed) {
+          const snap = accumulated;
+          lastFlushed = snap;
+          setMessages((prev) =>
+            prev.map((m) => m.id === streamingId ? { ...m, encrypted_content: snap } : m)
+          );
+        }
+      }, 40);
+
+      let doneContent = "";
+      try {
+        for await (const event of engagera.chat.stream({
+          messages: [{ role: "system" as const, content: systemPrompt + lensAddition }, ...conversationMessages],
+          model: "engagera-2.1",
+          useAfuBot: isWebQuery,
+        })) {
+          if (event.type === "text") {
+            accumulated += event.text;
+          } else if (event.type === "done") {
+            doneContent = event.content;
+          } else if (event.type === "error") {
+            throw new Error(event.message);
+          }
+        }
+      } finally {
+        clearInterval(flushTimer);
+      }
+
+      const rawReply = (doneContent || accumulated).trim() || "Sorry, I couldn't process that. Please try again.";
       const parsed = parseAfuAiTags(rawReply);
       const cleanText = parsed.text || rawReply;
       const sentAt = new Date().toISOString();
@@ -4111,30 +4216,42 @@ STRICT RULES:
         return { id: `exec_${Date.now()}`, actionType: at, params: p, label: labelMap[at] || "Confirm action", description: descMap[at] || "", status: "pending" as const };
       })() : undefined;
 
-      setMessages((prev) => [{
-        id: savedId || `afuai_${Date.now()}`,
-        chat_id: chatId,
-        sender_id: AFUAI_BOT_ID,
-        encrypted_content: cleanText,
-        sent_at: sentAt,
-        sender: { display_name: "AfuAI", avatar_url: null, handle: "afuai" },
-        reactions: [],
-        _isAi: true,
-        _aiActions: parsed.actions.length > 0 ? parsed.actions : undefined,
-        _aiSuggestions: parsed.suggestions.length > 0 ? parsed.suggestions : undefined,
-        _aiInvoices: parsed.invoices.length > 0 ? parsed.invoices : undefined,
-        _aiExecAction: execAction,
-      }, ...prev]);
+      // Replace streaming placeholder with the fully-parsed final message
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === streamingId ? {
+            ...m,
+            id: savedId || streamingId,
+            encrypted_content: cleanText,
+            sent_at: sentAt,
+            _streaming: false,
+            _aiActions: parsed.actions.length > 0 ? parsed.actions : undefined,
+            _aiSuggestions: parsed.suggestions.length > 0 ? parsed.suggestions : undefined,
+            _aiInvoices: parsed.invoices.length > 0 ? parsed.invoices : undefined,
+            _aiExecAction: execAction,
+          } : m
+        )
+      );
     } catch {
-      setMessages((prev) => [{
-        id: `afuai_err_${Date.now()}`,
-        chat_id: chatId,
-        sender_id: AFUAI_BOT_ID,
-        encrypted_content: "Sorry, I couldn't respond right now. Please try again.",
-        sent_at: new Date().toISOString(),
-        sender: { display_name: "AfuAI", avatar_url: null, handle: "afuai" },
-        reactions: [],
-      }, ...prev]);
+      // Update the streaming placeholder to show the error in-place
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === streamingId)) {
+          return prev.map((m) => m.id === streamingId ? {
+            ...m,
+            encrypted_content: "Sorry, I couldn't respond right now. Please try again.",
+            _streaming: false,
+          } : m);
+        }
+        return [{
+          id: `afuai_err_${Date.now()}`,
+          chat_id: chatId,
+          sender_id: AFUAI_BOT_ID,
+          encrypted_content: "Sorry, I couldn't respond right now. Please try again.",
+          sent_at: new Date().toISOString(),
+          sender: { display_name: "AfuAI", avatar_url: null, handle: "afuai" },
+          reactions: [],
+        }, ...prev];
+      });
     } finally {
       setIsAfuAiTyping(false);
     }
