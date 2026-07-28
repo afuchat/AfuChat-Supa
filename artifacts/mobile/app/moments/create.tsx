@@ -4,6 +4,7 @@ import {
   Animated,
   FlatList,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -14,20 +15,18 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  useWindowDimensions,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import Svg, { Circle } from "react-native-svg";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "@/lib/haptics";
 import { supabase } from "@/lib/supabase";
-import { GlassHeader } from "@/components/ui/GlassHeader";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { useLanguage } from "@/context/LanguageContext";
 import { Avatar } from "@/components/ui/Avatar";
-import Colors from "@/constants/colors";
 import { showAlert } from "@/lib/alert";
 import { uploadToStorage } from "@/lib/mediaUpload";
 import { aiEnhancePost, aiGenerateHashtags, aiGenerateCaption } from "@/lib/aiHelper";
@@ -39,503 +38,486 @@ import {
 } from "@/lib/postUploadStore";
 import { LANG_LABELS } from "@/lib/translate";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Types & constants
+// ─────────────────────────────────────────────────────────────────────────────
 type Audience = "public" | "followers" | "private";
 
+const MAX_CHARS = 500;
+const AVATAR_SZ = 44;
+const MEDIA_THUMB = 96;
+
 const AUDIENCE_OPTIONS: { key: Audience; label: string; icon: string; desc: string }[] = [
-  { key: "public", label: "Everyone", icon: "globe", desc: "Anyone can see this post" },
-  { key: "followers", label: "Followers", icon: "people", desc: "Only your followers" },
-  { key: "private", label: "Only Me", icon: "lock-closed", desc: "Visible only to you" },
+  { key: "public",    label: "Everyone",  icon: "globe",       desc: "Anyone can see this post"  },
+  { key: "followers", label: "Followers", icon: "people",      desc: "Only your followers"       },
+  { key: "private",   label: "Only Me",   icon: "lock-closed", desc: "Visible only to you"       },
 ];
 
 const LANG_LIST = Object.entries(LANG_LABELS).map(([code, label]) => ({ code, label }));
 
+const AI_COLOR = { enhance: "#6366F1", hashtags: "#F59E0B", caption: "#10B981" } as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Circular character progress ring (SVG-based, no deps beyond react-native-svg)
+// ─────────────────────────────────────────────────────────────────────────────
+function CharRing({ count }: { count: number }) {
+  if (count === 0) return null;
+  const pct    = Math.min(count / MAX_CHARS, 1);
+  const isOver = count > MAX_CHARS;
+  const color  = isOver
+    ? "#FF3B30"
+    : count > MAX_CHARS * 0.9
+    ? "#FF9500"
+    : count > MAX_CHARS * 0.7
+    ? "#FFCC00"
+    : "#30D158";
+  const r     = 11;
+  const circ  = 2 * Math.PI * r;
+  const showLabel = count > MAX_CHARS * 0.75 || isOver;
+
+  return (
+    <View style={ss.charRingWrap}>
+      <Svg width={28} height={28}>
+        <Circle cx={14} cy={14} r={r} stroke="rgba(128,128,128,0.18)" strokeWidth={2.5} fill="none" />
+        <Circle
+          cx={14} cy={14} r={r}
+          stroke={color}
+          strokeWidth={2.5}
+          fill="none"
+          strokeDasharray={`${circ}`}
+          strokeDashoffset={`${circ * (1 - pct)}`}
+          strokeLinecap="round"
+          rotation="-90"
+          origin="14,14"
+        />
+      </Svg>
+      {showLabel && (
+        <Text style={[ss.charRingLabel, { color }]}>
+          {isOver ? `-${count - MAX_CHARS}` : `${MAX_CHARS - count}`}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main screen
+// ─────────────────────────────────────────────────────────────────────────────
 export default function CreatePostScreen() {
-  const { colors } = useTheme();
-  const { user, profile } = useAuth();
-  const { preferredLang } = useLanguage();
-  const insets = useSafeAreaInsets();
-  const { width: screenW } = useWindowDimensions();
-  const inputRef = useRef<TextInput>(null);
+  const { colors, isDark } = useTheme();
+  const { user, profile }  = useAuth();
+  const { preferredLang }  = useLanguage();
+  const insets             = useSafeAreaInsets();
+  const params             = useLocalSearchParams<{ prefill?: string }>();
+  const inputRef           = useRef<TextInput>(null);
+  const postBtnScale       = useRef(new Animated.Value(1)).current;
 
-  const [content, setContent] = useState("");
-  const [images, setImages] = useState<string[]>([]);
-  const [aiLoading, setAiLoading] = useState<string | null>(null);
-  const [audience, setAudience] = useState<Audience>("public");
-  const [showAudienceModal, setShowAudienceModal] = useState(false);
-  const [langCode, setLangCode] = useState<string | null>(preferredLang);
-  const [showLangModal, setShowLangModal] = useState(false);
-  const [langSearch, setLangSearch] = useState("");
-  const [locationTag, setLocationTag] = useState("");
-  const [showLocationModal, setShowLocationModal] = useState(false);
-  const [locationInput, setLocationInput] = useState("");
-  const [showMentionModal, setShowMentionModal] = useState(false);
-  const [mentionSearch, setMentionSearch] = useState("");
-  const [mentionResults, setMentionResults] = useState<{ id: string; handle: string; display_name: string; avatar_url: string | null }[]>([]);
-  const [mentionLoading, setMentionLoading] = useState(false);
-  const [showAiPanel, setShowAiPanel] = useState(false);
+  // ── state ──────────────────────────────────────────────────────────────────
+  const [content,          setContent]          = useState(params.prefill ?? "");
+  const [images,           setImages]           = useState<string[]>([]);
+  const [audience,         setAudience]         = useState<Audience>("public");
+  const [langCode,         setLangCode]         = useState<string | null>(preferredLang);
+  const [locationTag,      setLocationTag]      = useState("");
+  const [locationInput,    setLocationInput]    = useState("");
+  const [mentionSearch,    setMentionSearch]    = useState("");
+  const [mentionResults,   setMentionResults]   = useState<{ id: string; handle: string; display_name: string; avatar_url: string | null }[]>([]);
+  const [mentionLoading,   setMentionLoading]   = useState(false);
+  const [langSearch,       setLangSearch]       = useState("");
+  const [aiLoading,        setAiLoading]        = useState<string | null>(null);
 
-  const postBtnScale = useRef(new Animated.Value(1)).current;
+  // ── modal visibility ───────────────────────────────────────────────────────
+  const [showAudience,  setShowAudience]  = useState(false);
+  const [showLang,      setShowLang]      = useState(false);
+  const [showLocation,  setShowLocation]  = useState(false);
+  const [showMention,   setShowMention]   = useState(false);
+  const [showAiPanel,   setShowAiPanel]   = useState(false);
 
+  // ── derived ────────────────────────────────────────────────────────────────
+  const charCount      = content.length;
+  const isOverLimit    = charCount > MAX_CHARS;
+  const canPost        = (content.trim().length > 0 || images.length > 0) && !isOverLimit;
+  const audienceOption = AUDIENCE_OPTIONS.find(a => a.key === audience)!;
+  const filteredLangs  = LANG_LIST.filter(l =>
+    !langSearch ||
+    l.label.toLowerCase().includes(langSearch.toLowerCase()) ||
+    l.code.includes(langSearch.toLowerCase())
+  );
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Helpers
+  // ─────────────────────────────────────────────────────────────────────────
   async function pickImage() {
     const { getImageQuality } = await import("@/lib/networkQuality");
-    const libPerm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (libPerm.status !== "granted") return;
-    const result = await ImagePicker.launchImageLibraryAsync({
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (perm.status !== "granted") return;
+    const res = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images", "videos"],
       quality: getImageQuality(),
       allowsMultipleSelection: true,
       selectionLimit: 9 - images.length,
     });
-    if (!result.canceled) {
-      setImages((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, 9));
-    }
+    if (!res.canceled) setImages(p => [...p, ...res.assets.map(a => a.uri)].slice(0, 9));
   }
 
-  async function searchMentions(query: string) {
-    setMentionSearch(query);
-    if (query.length < 2) { setMentionResults([]); return; }
+  async function searchMentions(q: string) {
+    setMentionSearch(q);
+    if (q.length < 2) { setMentionResults([]); return; }
     setMentionLoading(true);
     try {
-      const { data } = await supabase
-        .from("profiles")
+      const { data } = await supabase.from("profiles")
         .select("id, handle, display_name, avatar_url")
-        .or(`handle.ilike.%${query}%,display_name.ilike.%${query}%`)
+        .or(`handle.ilike.%${q}%,display_name.ilike.%${q}%`)
         .limit(10);
       setMentionResults(data || []);
-    } catch {
-      setMentionResults([]);
-    }
+    } catch { setMentionResults([]); }
     setMentionLoading(false);
   }
 
   function insertMention(handle: string) {
-    setContent((prev) => prev + `@${handle} `);
-    setShowMentionModal(false);
+    setContent(p => p + `@${handle} `);
+    setShowMention(false);
     setMentionSearch("");
     setMentionResults([]);
     setTimeout(() => inputRef.current?.focus(), 100);
   }
 
   function handlePost() {
-    if (!content.trim() && images.length === 0) {
-      showAlert("Empty post", "Write something or add a photo to share.");
-      return;
-    }
-    if (content.trim().length > 500) {
-      showAlert("Too long", "Posts are limited to 500 characters.");
-      return;
-    }
-    if (!user) return;
-
+    if (!canPost || !user) return;
+    Keyboard.dismiss();
     Animated.sequence([
-      Animated.timing(postBtnScale, { toValue: 0.92, duration: 80, useNativeDriver: true }),
-      Animated.spring(postBtnScale, { toValue: 1, tension: 200, friction: 10, useNativeDriver: true }),
+      Animated.timing(postBtnScale, { toValue: 0.88, duration: 65, useNativeDriver: true }),
+      Animated.spring(postBtnScale, { toValue: 1, tension: 240, friction: 8, useNativeDriver: true }),
     ]).start();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    // Capture all state before navigating away
-    const _content = content.trim();
-    const _images = [...images];
-    const _userId = user.id;
-    const _audience = audience;
-    const _langCode = langCode;
+    const _content     = content.trim();
+    const _images      = [...images];
+    const _userId      = user.id;
+    const _audience    = audience;
+    const _langCode    = langCode;
     const _locationTag = locationTag;
 
-    // Navigate immediately — upload runs in the background
     if (router.canGoBack()) router.back(); else router.replace("/(tabs)/discover" as any);
-
     startPostUpload("post", _content.slice(0, 80));
 
     (async () => {
       try {
-        const uploadedUrls: string[] = [];
-        if (_images.length > 0) {
-          for (let idx = 0; idx < _images.length; idx++) {
-            updatePostProgress(0.05 + (idx / _images.length) * 0.6);
-            const uri = _images[idx];
-            let ext: string;
-            let mime: string | undefined;
-            if (uri.startsWith("data:")) {
-              const dataMime = uri.match(/data:([^;]+)/)?.[1] || "";
-              ext = dataMime.includes("png") ? "png" : dataMime.includes("webp") ? "webp" : "jpg";
-              mime = dataMime || "image/jpeg";
-            } else {
-              ext = uri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
-            }
-            const fileName = `${_userId}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
-            const { publicUrl, error: upErr } = await uploadToStorage("post-images", fileName, uri, mime);
-            if (!publicUrl) throw new Error(upErr || `Could not upload image ${idx + 1}`);
-            uploadedUrls.push(publicUrl);
-          }
+        const urls: string[] = [];
+        for (let i = 0; i < _images.length; i++) {
+          updatePostProgress(0.05 + (i / Math.max(_images.length, 1)) * 0.6);
+          const uri  = _images[i];
+          let ext    = uri.startsWith("data:") ? (uri.match(/data:image\/([^;]+)/)?.[1] ?? "jpg") : (uri.split(".").pop()?.split("?")[0]?.toLowerCase() ?? "jpg");
+          let mime   = uri.startsWith("data:") ? (uri.match(/data:([^;]+)/)?.[1] ?? "image/jpeg") : undefined;
+          const name = `${_userId}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+          const { publicUrl, error } = await uploadToStorage("post-images", name, uri, mime);
+          if (!publicUrl) throw new Error(error || `Could not upload image ${i + 1}`);
+          urls.push(publicUrl);
         }
-
         updatePostProgress(0.75);
-
-        const firstImage = uploadedUrls.length > 0 ? uploadedUrls[0] : null;
-        let postContent = _content;
-        if (_locationTag) postContent += `\n📍 ${_locationTag}`;
-
-        const insertPayload: any = {
-          author_id: _userId,
-          content: postContent,
-          image_url: firstImage,
-          visibility: _audience,
-        };
-        if (_langCode) insertPayload.language_code = _langCode;
-
-        const { data: post, error } = await supabase
-          .from("posts")
-          .insert(insertPayload)
-          .select()
-          .single();
-
-        if (error || !post) throw new Error("Could not create post. Please try again.");
-
-        if (uploadedUrls.length > 0) {
-          const imageRows = uploadedUrls.map((url, i) => ({
-            post_id: post.id,
-            image_url: url,
-            display_order: i,
-          }));
-          await supabase.from("post_images").insert(imageRows);
-        }
-
-        try {
-          const { rewardXp } = await import("../../lib/rewardXp");
-          await rewardXp("post_created");
-        } catch (_) {}
-
+        let body = _content;
+        if (_locationTag) body += `\n📍 ${_locationTag}`;
+        const payload: any = { author_id: _userId, content: body, image_url: urls[0] ?? null, visibility: _audience };
+        if (_langCode) payload.language_code = _langCode;
+        const { data: post, error: pe } = await supabase.from("posts").insert(payload).select().single();
+        if (pe || !post) throw new Error("Could not create post.");
+        if (urls.length > 0) await supabase.from("post_images").insert(urls.map((u, i) => ({ post_id: post.id, image_url: u, display_order: i })));
+        try { const { rewardXp } = await import("../../lib/rewardXp"); await rewardXp("post_created"); } catch {}
         finishPostUpload();
-      } catch (err: any) {
-        failPostUpload(err?.message || "Failed to create post.");
-      }
+      } catch (err: any) { failPostUpload(err?.message || "Failed to create post."); }
     })();
   }
 
-  const charCount = content.trim().length;
-  const isOverLimit = charCount > 500;
-  const charPercent = Math.min(charCount / 500, 1);
-  const charColor = isOverLimit ? "#FF3B30" : charCount > 450 ? "#FF9500" : colors.textMuted;
+  // ── AI ─────────────────────────────────────────────────────────────────────
+  async function runAi(mode: "enhance" | "hashtags" | "caption") {
+    setShowAiPanel(false);
+    if (mode !== "caption" && !content.trim()) { showAlert("Write first", "Add some text before using AI."); return; }
+    setAiLoading(mode);
+    try {
+      if (mode === "enhance") {
+        const r = await aiEnhancePost(content);
+        setContent(r.slice(0, MAX_CHARS));
+      } else if (mode === "hashtags") {
+        const tags = await aiGenerateHashtags(content);
+        if (tags.length) setContent(p => (p.trim() + "\n" + tags.join(" ")).slice(0, MAX_CHARS));
+      } else {
+        const cap = await aiGenerateCaption();
+        setContent(cap.slice(0, MAX_CHARS));
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch { showAlert("AI Error", "Could not complete. Try again."); }
+    setAiLoading(null);
+  }
 
-  const imgGridSize = images.length <= 1 ? screenW - 64 : (screenW - 64 - 6) / 2;
-  const singleImgHeight = Math.min(imgGridSize * 0.65, 260);
-
-  const filteredLangs = langSearch
-    ? LANG_LIST.filter((l) => l.label.toLowerCase().includes(langSearch.toLowerCase()) || l.code.includes(langSearch.toLowerCase()))
-    : LANG_LIST;
-
-  const audienceOption = AUDIENCE_OPTIONS.find((a) => a.key === audience)!;
-
+  // ─────────────────────────────────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <KeyboardAvoidingView
-      style={[styles.root, { backgroundColor: colors.background }]}
-      behavior="padding"
-      keyboardVerticalOffset={0}
+      style={[ss.root, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <GlassHeader
-        title="New Post"
-        onBack={() => router.back()}
-        right={
-          <Animated.View style={{ transform: [{ scale: postBtnScale }] }}>
-            <TouchableOpacity
-              style={[styles.postBtn, { backgroundColor: colors.accent, opacity: isOverLimit || (!content.trim() && images.length === 0) ? 0.5 : 1 }]}
-              onPress={handlePost}
-              disabled={isOverLimit}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.postBtnText}>Post</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        }
-      />
+      {/* ──────────────────────────── Header ──────────────────────────────── */}
+      <View style={[ss.header, { paddingTop: insets.top + 6, borderBottomColor: colors.separator }]}>
+        <TouchableOpacity
+          style={ss.closeBtn}
+          onPress={() => { Keyboard.dismiss(); if (router.canGoBack()) router.back(); else router.replace("/(tabs)/discover" as any); }}
+          hitSlop={12}
+        >
+          <Ionicons name="close" size={24} color={colors.text} />
+        </TouchableOpacity>
 
+        <Text style={[ss.headerTitle, { color: colors.text }]}>New Post</Text>
+
+        <Animated.View style={{ transform: [{ scale: postBtnScale }] }}>
+          <TouchableOpacity
+            style={[ss.postBtn, { backgroundColor: colors.accent, opacity: canPost ? 1 : 0.4 }]}
+            onPress={handlePost}
+            disabled={!canPost}
+            activeOpacity={0.85}
+          >
+            <Text style={ss.postBtnText}>Post</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+
+      {/* ─────────────────────────── Compose body ─────────────────────────── */}
       <ScrollView
-        contentContainerStyle={styles.body}
+        style={ss.scroll}
+        contentContainerStyle={ss.scrollBody}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        bounces
       >
-        <View style={styles.composeRow}>
-          <Avatar
-            uri={profile?.avatar_url}
-            name={profile?.display_name || "You"}
-            size={40}
-          />
-          <View style={styles.composeRight}>
-            <View style={styles.nameAudienceRow}>
-              <Text style={[styles.composeName, { color: colors.text }]} numberOfLines={1}>
+        {/* Author row + text input (side-by-side with avatar) */}
+        <View style={ss.composeRow}>
+          {/* Left: avatar + thread line */}
+          <View style={ss.avatarCol}>
+            <Avatar uri={profile?.avatar_url} name={profile?.display_name || "You"} size={AVATAR_SZ} />
+            {(images.length > 0 || locationTag !== "" || langCode !== null) && (
+              <View style={[ss.threadLine, { backgroundColor: colors.separator }]} />
+            )}
+          </View>
+
+          {/* Right: name + audience + text input */}
+          <View style={ss.composeRight}>
+            <View style={ss.nameRow}>
+              <Text style={[ss.authorName, { color: colors.text }]} numberOfLines={1}>
                 {profile?.display_name || "You"}
               </Text>
               <TouchableOpacity
-                style={[styles.audiencePill, { backgroundColor: colors.accent + "14", borderColor: colors.accent + "30" }]}
-                onPress={() => setShowAudienceModal(true)}
+                style={[ss.audiencePill, { backgroundColor: colors.accent + "14", borderColor: colors.accent + "28" }]}
+                onPress={() => setShowAudience(true)}
                 activeOpacity={0.7}
               >
-                <Ionicons name={audienceOption.icon as any} size={12} color={colors.accent} />
-                <Text style={[styles.audienceText, { color: colors.accent }]}>{audienceOption.label}</Text>
+                <Ionicons name={audienceOption.icon as any} size={11} color={colors.accent} />
+                <Text style={[ss.audiencePillText, { color: colors.accent }]}>{audienceOption.label}</Text>
                 <Ionicons name="chevron-down" size={10} color={colors.accent} />
               </TouchableOpacity>
             </View>
+
             <TextInput
               ref={inputRef}
-              style={[styles.textInput, { color: colors.text }]}
+              style={[ss.input, { color: colors.text }]}
               placeholder="What's on your mind?"
               placeholderTextColor={colors.textMuted}
               value={content}
               onChangeText={setContent}
               multiline
-              autoFocus
-              maxLength={520}
+              autoFocus={!params.prefill}
+              maxLength={MAX_CHARS + 30}
+              textAlignVertical="top"
+              scrollEnabled={false}
             />
-          </View>
-        </View>
 
-        {(locationTag || langCode) && (
-          <View style={styles.tagsRow}>
-            {locationTag ? (
-              <TouchableOpacity
-                style={[styles.tagChip, { backgroundColor: colors.inputBg }]}
-                onPress={() => { setLocationTag(""); }}
-              >
-                <Ionicons name="location" size={12} color={colors.accent} />
-                <Text style={[styles.tagText, { color: colors.text }]} numberOfLines={1}>{locationTag}</Text>
-                <Ionicons name="close" size={12} color={colors.textMuted} />
-              </TouchableOpacity>
-            ) : null}
-            {langCode ? (
-              <TouchableOpacity
-                style={[styles.tagChip, { backgroundColor: colors.inputBg }]}
-                onPress={() => setLangCode(null)}
-              >
-                <Ionicons name="language" size={12} color={colors.accent} />
-                <Text style={[styles.tagText, { color: colors.text }]} numberOfLines={1}>{LANG_LABELS[langCode] || langCode}</Text>
-                <Ionicons name="close" size={12} color={colors.textMuted} />
-              </TouchableOpacity>
-            ) : null}
-          </View>
-        )}
-
-        {images.length > 0 && (
-          <View style={styles.imageGrid}>
-            {images.map((uri, i) => (
-              <View
-                key={`${uri}-${i}`}
-                style={[
-                  styles.imageWrap,
-                  {
-                    width: images.length === 1 ? screenW - 64 : imgGridSize,
-                    height: images.length === 1 ? singleImgHeight : imgGridSize,
-                  },
-                ]}
-              >
-                <Image source={{ uri }} style={styles.imageFill} resizeMode="cover" />
-                <Pressable
-                  style={styles.removeImg}
-                  onPress={() => setImages((prev) => prev.filter((_, idx) => idx !== i))}
-                  hitSlop={6}
-                >
-                  <Ionicons name="close" size={14} color="#fff" />
-                </Pressable>
-                {images.length > 1 && (
-                  <View style={styles.imgIndex}>
-                    <Text style={styles.imgIndexText}>{i + 1}</Text>
-                  </View>
-                )}
-              </View>
-            ))}
-            {images.length < 9 && (
-              <TouchableOpacity
-                style={[
-                  styles.addImgBtn,
-                  {
-                    backgroundColor: colors.inputBg,
-                    width: images.length === 0 ? screenW - 64 : imgGridSize,
-                    height: images.length === 0 ? 120 : imgGridSize,
-                    borderColor: colors.border,
-                  },
-                ]}
-                onPress={pickImage}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="image" size={28} color={colors.textMuted} />
-                <Text style={[styles.addImgLabel, { color: colors.textMuted }]}>
-                  {images.length === 0 ? "Add Photos" : "Add More"}
+            {/* AI loading bar */}
+            {aiLoading && (
+              <View style={[ss.aiBar, { backgroundColor: colors.accent + "0E" }]}>
+                <ActivityIndicator size="small" color={colors.accent} />
+                <Text style={[ss.aiBarText, { color: colors.accent }]}>
+                  {aiLoading === "enhance" ? "Enhancing…" : aiLoading === "hashtags" ? "Adding hashtags…" : "Writing caption…"}
                 </Text>
-              </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Active tag chips */}
+            {(locationTag || langCode) && (
+              <View style={ss.tagsRow}>
+                {locationTag ? (
+                  <TouchableOpacity
+                    style={[ss.tagChip, { backgroundColor: colors.accent + "10", borderColor: colors.accent + "22" }]}
+                    onPress={() => setLocationTag("")}
+                  >
+                    <Ionicons name="location" size={11} color={colors.accent} />
+                    <Text style={[ss.tagChipText, { color: colors.accent }]} numberOfLines={1}>{locationTag}</Text>
+                    <Ionicons name="close-circle" size={13} color={colors.accent + "99"} />
+                  </TouchableOpacity>
+                ) : null}
+                {langCode ? (
+                  <TouchableOpacity
+                    style={[ss.tagChip, { backgroundColor: colors.accent + "10", borderColor: colors.accent + "22" }]}
+                    onPress={() => setLangCode(null)}
+                  >
+                    <Ionicons name="language" size={11} color={colors.accent} />
+                    <Text style={[ss.tagChipText, { color: colors.accent }]} numberOfLines={1}>{LANG_LABELS[langCode] || langCode}</Text>
+                    <Ionicons name="close-circle" size={13} color={colors.accent + "99"} />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             )}
           </View>
-        )}
-
-        <View style={[styles.charRow, { borderTopColor: colors.separator }]}>
-          <View style={styles.charRingOuter}>
-            <View
-              style={[
-                styles.charRingFill,
-                {
-                  backgroundColor: charColor,
-                  width: `${charPercent * 100}%`,
-                },
-              ]}
-            />
-          </View>
-          <Text style={[styles.charText, { color: charColor }]}>
-            {charCount}/500
-          </Text>
         </View>
 
-        {aiLoading && (
-          <View style={[styles.aiLoadingBar, { backgroundColor: colors.accent + "12" }]}>
-            <ActivityIndicator size="small" color={colors.accent} />
-            <Text style={[styles.aiLoadingText, { color: colors.accent }]}>
-              {aiLoading === "enhance" ? "Enhancing your post..." : aiLoading === "hashtags" ? "Generating hashtags..." : "Writing a caption..."}
-            </Text>
-          </View>
+        {/* Media strip (full-width, below the compose row) */}
+        {images.length > 0 && (
+          <FlatList
+            horizontal
+            data={[...images, "__add__"] as string[]}
+            keyExtractor={(item, i) => `${item}-${i}`}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={[ss.mediaStrip, { paddingLeft: 16 + AVATAR_SZ + 14 }]}
+            renderItem={({ item, index }) => {
+              if (item === "__add__") {
+                return images.length < 9 ? (
+                  <TouchableOpacity
+                    style={[ss.mediaAdd, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
+                    onPress={pickImage}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="add" size={22} color={colors.textMuted} />
+                    {images.length < 8 && (
+                      <Text style={[ss.mediaAddLabel, { color: colors.textMuted }]}>{9 - images.length}</Text>
+                    )}
+                  </TouchableOpacity>
+                ) : null;
+              }
+              return (
+                <View style={ss.mediaThumb}>
+                  <Image source={{ uri: item }} style={ss.mediaImg} resizeMode="cover" />
+                  {images.length > 1 && (
+                    <View style={ss.mediaNumBadge}>
+                      <Text style={ss.mediaNumText}>{index + 1}</Text>
+                    </View>
+                  )}
+                  <Pressable
+                    style={ss.mediaRemove}
+                    onPress={() => setImages(p => p.filter((_, i) => i !== index))}
+                    hitSlop={8}
+                  >
+                    <View style={ss.mediaRemoveCircle}>
+                      <Ionicons name="close" size={11} color="#fff" />
+                    </View>
+                  </Pressable>
+                </View>
+              );
+            }}
+          />
         )}
 
-        <TouchableOpacity
-          style={[styles.aiToggle, { backgroundColor: colors.accent + "0A", borderColor: colors.accent + "20" }]}
-          onPress={() => setShowAiPanel(!showAiPanel)}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="sparkles" size={16} color={colors.accent} />
-          <Text style={[styles.aiToggleText, { color: colors.accent }]}>AI Writing Tools</Text>
-          <Ionicons name={showAiPanel ? "chevron-up" : "chevron-down"} size={14} color={colors.accent} />
-        </TouchableOpacity>
-
-        {showAiPanel && (
-          <View style={styles.aiPanel}>
-            <TouchableOpacity
-              style={[styles.aiOption, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={async () => {
-                if (!content.trim()) { showAlert("Write first", "Write something first, then let AI enhance it."); return; }
-                setAiLoading("enhance");
-                try {
-                  const enhanced = await aiEnhancePost(content);
-                  setContent(enhanced.slice(0, 500));
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                } catch { showAlert("AI Error", "Could not enhance your post. Try again."); }
-                setAiLoading(null);
-              }}
-              disabled={!!aiLoading}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.aiIconCircle, { backgroundColor: "#6366F1" + "18" }]}>
-                <Ionicons name="color-wand" size={18} color="#6366F1" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.aiOptionTitle, { color: colors.text }]}>Enhance</Text>
-                <Text style={[styles.aiOptionDesc, { color: colors.textMuted }]}>Improve grammar and clarity</Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.aiOption, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={async () => {
-                if (!content.trim()) { showAlert("Write first", "Write something first to get hashtag suggestions."); return; }
-                setAiLoading("hashtags");
-                try {
-                  const tags = await aiGenerateHashtags(content);
-                  if (tags.length > 0) {
-                    const newContent = (content.trim() + "\n" + tags.join(" ")).slice(0, 500);
-                    setContent(newContent);
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                  }
-                } catch { showAlert("AI Error", "Could not generate hashtags. Try again."); }
-                setAiLoading(null);
-              }}
-              disabled={!!aiLoading}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.aiIconCircle, { backgroundColor: "#F59E0B" + "18" }]}>
-                <Ionicons name="pricetag" size={18} color="#F59E0B" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.aiOptionTitle, { color: colors.text }]}>Hashtags</Text>
-                <Text style={[styles.aiOptionDesc, { color: colors.textMuted }]}>Generate relevant hashtags</Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.aiOption, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={async () => {
-                setAiLoading("caption");
-                try {
-                  const caption = await aiGenerateCaption();
-                  setContent(caption.slice(0, 500));
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                } catch { showAlert("AI Error", "Could not generate caption. Try again."); }
-                setAiLoading(null);
-              }}
-              disabled={!!aiLoading}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.aiIconCircle, { backgroundColor: "#10B981" + "18" }]}>
-                <Ionicons name="bulb" size={18} color="#10B981" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.aiOptionTitle, { color: colors.text }]}>Auto Caption</Text>
-                <Text style={[styles.aiOptionDesc, { color: colors.textMuted }]}>Generate a catchy caption</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        )}
+        {/* Bottom padding for toolbar clearance */}
+        <View style={{ height: 20 }} />
       </ScrollView>
 
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 6, backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-        <TouchableOpacity style={styles.bottomAction} onPress={pickImage}>
-          <Ionicons name="image" size={21} color={images.length > 0 ? colors.accent : colors.textSecondary} />
-          <Text style={[styles.bottomActionLabel, { color: images.length > 0 ? colors.accent : colors.textSecondary }]}>Photo</Text>
+      {/* ─────────────────────────── Toolbar ──────────────────────────────── */}
+      <View
+        style={[
+          ss.toolbar,
+          {
+            borderTopColor: colors.separator,
+            paddingBottom: insets.bottom + (Platform.OS === "android" ? 6 : 2),
+            backgroundColor: colors.background,
+          },
+        ]}
+      >
+        {/* Action icons */}
+        <TouchableOpacity style={ss.toolBtn} onPress={pickImage} activeOpacity={0.7}>
+          <Ionicons
+            name={images.length > 0 ? "images" : "image-outline"}
+            size={22}
+            color={images.length > 0 ? colors.accent : colors.textSecondary}
+          />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.bottomAction} onPress={() => setShowMentionModal(true)}>
-          <Ionicons name="at" size={21} color={colors.textSecondary} />
-          <Text style={[styles.bottomActionLabel, { color: colors.textSecondary }]}>Mention</Text>
+
+        <TouchableOpacity style={ss.toolBtn} onPress={() => setShowMention(true)} activeOpacity={0.7}>
+          <Ionicons name="at" size={22} color={colors.textSecondary} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.bottomAction} onPress={() => setShowLocationModal(true)}>
-          <Ionicons name="location" size={21} color={locationTag ? colors.accent : colors.textSecondary} />
-          <Text style={[styles.bottomActionLabel, { color: locationTag ? colors.accent : colors.textSecondary }]}>Location</Text>
+
+        <TouchableOpacity style={ss.toolBtn} onPress={() => setShowLocation(true)} activeOpacity={0.7}>
+          <Ionicons
+            name={locationTag ? "location" : "location-outline"}
+            size={22}
+            color={locationTag ? colors.accent : colors.textSecondary}
+          />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.bottomAction} onPress={() => setShowLangModal(true)}>
-          <Ionicons name="globe" size={21} color={langCode ? colors.accent : colors.textSecondary} />
-          <Text style={[styles.bottomActionLabel, { color: langCode ? colors.accent : colors.textSecondary }]}>Language</Text>
+
+        <TouchableOpacity style={ss.toolBtn} onPress={() => setShowLang(true)} activeOpacity={0.7}>
+          <Ionicons
+            name={langCode ? "globe" : "globe-outline"}
+            size={22}
+            color={langCode ? colors.accent : colors.textSecondary}
+          />
         </TouchableOpacity>
+
+        {/* AI pill button */}
+        <TouchableOpacity
+          style={[ss.aiPill, { backgroundColor: colors.accent + "13", borderColor: colors.accent + "28" }]}
+          onPress={() => { setShowAiPanel(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+          activeOpacity={0.75}
+        >
+          <Ionicons name="sparkles" size={13} color={colors.accent} />
+          <Text style={[ss.aiPillText, { color: colors.accent }]}>AI</Text>
+        </TouchableOpacity>
+
         <View style={{ flex: 1 }} />
-        {images.length > 0 && (
-          <Text style={[styles.imgCount, { color: colors.textMuted }]}>{images.length}/9</Text>
+
+        {/* Character ring */}
+        <CharRing count={charCount} />
+
+        {/* Over-limit indicator */}
+        {isOverLimit && (
+          <Text style={ss.overLimit}>{charCount - MAX_CHARS} over</Text>
         )}
       </View>
 
-      <Modal visible={showAudienceModal} transparent animationType="none" onRequestClose={() => setShowAudienceModal(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setShowAudienceModal(false)}>
-          <View style={[styles.modalSheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 12 }]}>
-            <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Who can see this?</Text>
-            {AUDIENCE_OPTIONS.map((opt) => (
+      {/* ════════════════════════════ MODALS ══════════════════════════════════ */}
+
+      {/* Audience */}
+      <Modal visible={showAudience} transparent animationType="slide" onRequestClose={() => setShowAudience(false)}>
+        <Pressable style={ss.overlay} onPress={() => setShowAudience(false)}>
+          <Pressable style={[ss.sheet, { backgroundColor: colors.surface, paddingBottom: Math.max(insets.bottom, 16) + 8 }]} onPress={() => {}}>
+            <View style={[ss.handle, { backgroundColor: colors.border }]} />
+            <Text style={[ss.sheetTitle, { color: colors.text }]}>Who can see this?</Text>
+            {AUDIENCE_OPTIONS.map(opt => (
               <TouchableOpacity
                 key={opt.key}
-                style={[styles.audienceRow, audience === opt.key && { backgroundColor: colors.accent + "10" }]}
-                onPress={() => { setAudience(opt.key); setShowAudienceModal(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                style={[ss.audRow, audience === opt.key && { backgroundColor: colors.accent + "0C" }]}
+                onPress={() => { setAudience(opt.key); setShowAudience(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                activeOpacity={0.75}
               >
-                <View style={[styles.audienceIconCircle, { backgroundColor: audience === opt.key ? colors.accent + "20" : colors.inputBg }]}>
+                <View style={[ss.audIcon, { backgroundColor: audience === opt.key ? colors.accent + "1A" : colors.inputBg }]}>
                   <Ionicons name={opt.icon as any} size={20} color={audience === opt.key ? colors.accent : colors.textMuted} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.audienceLabel, { color: colors.text }]}>{opt.label}</Text>
-                  <Text style={[styles.audienceDesc, { color: colors.textMuted }]}>{opt.desc}</Text>
+                  <Text style={[ss.audTitle, { color: colors.text }]}>{opt.label}</Text>
+                  <Text style={[ss.audDesc, { color: colors.textMuted }]}>{opt.desc}</Text>
                 </View>
                 {audience === opt.key && <Ionicons name="checkmark-circle" size={22} color={colors.accent} />}
               </TouchableOpacity>
             ))}
-          </View>
+          </Pressable>
         </Pressable>
       </Modal>
 
-      <Modal visible={showLangModal} transparent animationType="none" onRequestClose={() => setShowLangModal(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setShowLangModal(false)}>
-          <Pressable style={[styles.modalSheet, styles.langSheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 12 }]} onPress={() => {}}>
-            <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Post Language</Text>
-            <View style={[styles.searchBar, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+      {/* Language */}
+      <Modal visible={showLang} transparent animationType="slide" onRequestClose={() => { setShowLang(false); setLangSearch(""); }}>
+        <Pressable style={ss.overlay} onPress={() => { setShowLang(false); setLangSearch(""); }}>
+          <Pressable style={[ss.sheet, ss.sheetTall, { backgroundColor: colors.surface, paddingBottom: Math.max(insets.bottom, 8) + 8 }]} onPress={() => {}}>
+            <View style={[ss.handle, { backgroundColor: colors.border }]} />
+            <Text style={[ss.sheetTitle, { color: colors.text }]}>Post Language</Text>
+            <View style={[ss.searchPill, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
               <Ionicons name="search" size={16} color={colors.textMuted} />
               <TextInput
-                style={[styles.searchInput, { color: colors.text }]}
-                placeholder="Search languages..."
+                style={[ss.searchInput, { color: colors.text }]}
+                placeholder="Search languages…"
                 placeholderTextColor={colors.textMuted}
                 value={langSearch}
                 onChangeText={setLangSearch}
@@ -543,22 +525,22 @@ export default function CreatePostScreen() {
               />
             </View>
             <TouchableOpacity
-              style={[styles.langRow, !langCode && { backgroundColor: colors.accent + "10" }]}
-              onPress={() => { setLangCode(null); setShowLangModal(false); setLangSearch(""); }}
+              style={[ss.langRow, !langCode && { backgroundColor: colors.accent + "0C" }]}
+              onPress={() => { setLangCode(null); setShowLang(false); setLangSearch(""); }}
             >
-              <Text style={[styles.langLabel, { color: colors.text }]}>Auto-detect</Text>
+              <Text style={[ss.langLabel, { color: colors.text }]}>Auto-detect</Text>
               {!langCode && <Ionicons name="checkmark-circle" size={20} color={colors.accent} />}
             </TouchableOpacity>
             <FlatList
               data={filteredLangs}
-              keyExtractor={(item) => item.code}
+              keyExtractor={item => item.code}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.langRow, langCode === item.code && { backgroundColor: colors.accent + "10" }]}
-                  onPress={() => { setLangCode(item.code); setShowLangModal(false); setLangSearch(""); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                  style={[ss.langRow, langCode === item.code && { backgroundColor: colors.accent + "0C" }]}
+                  onPress={() => { setLangCode(item.code); setShowLang(false); setLangSearch(""); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                 >
-                  <Text style={[styles.langLabel, { color: colors.text }]}>{item.label}</Text>
-                  <Text style={[styles.langCode, { color: colors.textMuted }]}>{item.code}</Text>
+                  <Text style={[ss.langLabel, { color: colors.text }]}>{item.label}</Text>
+                  <Text style={[ss.langCode, { color: colors.textMuted }]}>{item.code}</Text>
                   {langCode === item.code && <Ionicons name="checkmark-circle" size={20} color={colors.accent} />}
                 </TouchableOpacity>
               )}
@@ -569,16 +551,17 @@ export default function CreatePostScreen() {
         </Pressable>
       </Modal>
 
-      <Modal visible={showLocationModal} transparent animationType="none" onRequestClose={() => setShowLocationModal(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setShowLocationModal(false)}>
-          <Pressable style={[styles.modalSheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 12 }]} onPress={() => {}}>
-            <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Add Location</Text>
-            <View style={[styles.searchBar, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+      {/* Location */}
+      <Modal visible={showLocation} transparent animationType="slide" onRequestClose={() => setShowLocation(false)}>
+        <Pressable style={ss.overlay} onPress={() => setShowLocation(false)}>
+          <Pressable style={[ss.sheet, { backgroundColor: colors.surface, paddingBottom: Math.max(insets.bottom, 16) + 8 }]} onPress={() => {}}>
+            <View style={[ss.handle, { backgroundColor: colors.border }]} />
+            <Text style={[ss.sheetTitle, { color: colors.text }]}>Add Location</Text>
+            <View style={[ss.searchPill, { backgroundColor: colors.inputBg, borderColor: colors.accent + "40" }]}>
               <Ionicons name="location" size={16} color={colors.accent} />
               <TextInput
-                style={[styles.searchInput, { color: colors.text }]}
-                placeholder="Type a location..."
+                style={[ss.searchInput, { color: colors.text }]}
+                placeholder="City, venue, neighbourhood…"
                 placeholderTextColor={colors.textMuted}
                 value={locationInput}
                 onChangeText={setLocationInput}
@@ -586,48 +569,42 @@ export default function CreatePostScreen() {
                 returnKeyType="done"
                 onSubmitEditing={() => {
                   if (locationInput.trim()) {
-                    setLocationTag(locationInput.trim());
-                    setShowLocationModal(false);
-                    setLocationInput("");
+                    setLocationTag(locationInput.trim()); setShowLocation(false); setLocationInput("");
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }
                 }}
               />
             </View>
             <TouchableOpacity
-              style={[styles.locationDone, { backgroundColor: colors.accent, opacity: locationInput.trim() ? 1 : 0.5 }]}
+              style={[ss.sheetActionBtn, { backgroundColor: colors.accent, opacity: locationInput.trim() ? 1 : 0.45 }]}
               disabled={!locationInput.trim()}
-              onPress={() => {
-                setLocationTag(locationInput.trim());
-                setShowLocationModal(false);
-                setLocationInput("");
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }}
+              onPress={() => { setLocationTag(locationInput.trim()); setShowLocation(false); setLocationInput(""); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
             >
-              <Text style={styles.locationDoneText}>Add Location</Text>
+              <Text style={ss.sheetActionBtnText}>Add Location</Text>
             </TouchableOpacity>
             {locationTag ? (
               <TouchableOpacity
-                style={styles.removeLocationBtn}
-                onPress={() => { setLocationTag(""); setShowLocationModal(false); setLocationInput(""); }}
+                style={ss.removeBtn}
+                onPress={() => { setLocationTag(""); setShowLocation(false); }}
               >
-                <Text style={[styles.removeLocationText, { color: "#FF3B30" }]}>Remove Location</Text>
+                <Text style={ss.removeBtnText}>Remove Location</Text>
               </TouchableOpacity>
             ) : null}
           </Pressable>
         </Pressable>
       </Modal>
 
-      <Modal visible={showMentionModal} transparent animationType="none" onRequestClose={() => setShowMentionModal(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setShowMentionModal(false)}>
-          <Pressable style={[styles.modalSheet, styles.langSheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 12 }]} onPress={() => {}}>
-            <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Mention Someone</Text>
-            <View style={[styles.searchBar, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+      {/* Mention */}
+      <Modal visible={showMention} transparent animationType="slide" onRequestClose={() => setShowMention(false)}>
+        <Pressable style={ss.overlay} onPress={() => setShowMention(false)}>
+          <Pressable style={[ss.sheet, ss.sheetTall, { backgroundColor: colors.surface, paddingBottom: Math.max(insets.bottom, 8) + 8 }]} onPress={() => {}}>
+            <View style={[ss.handle, { backgroundColor: colors.border }]} />
+            <Text style={[ss.sheetTitle, { color: colors.text }]}>Mention Someone</Text>
+            <View style={[ss.searchPill, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
               <Ionicons name="at" size={16} color={colors.accent} />
               <TextInput
-                style={[styles.searchInput, { color: colors.text }]}
-                placeholder="Search by name or handle..."
+                style={[ss.searchInput, { color: colors.text }]}
+                placeholder="Search by name or handle…"
                 placeholderTextColor={colors.textMuted}
                 value={mentionSearch}
                 onChangeText={searchMentions}
@@ -637,29 +614,64 @@ export default function CreatePostScreen() {
             </View>
             <FlatList
               data={mentionResults}
-              keyExtractor={(item) => item.id}
+              keyExtractor={item => item.id}
               renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.mentionRow}
-                  onPress={() => insertMention(item.handle)}
-                >
-                  <Avatar uri={item.avatar_url} name={item.display_name} size={34} />
+                <TouchableOpacity style={ss.mentionRow} onPress={() => insertMention(item.handle)} activeOpacity={0.75}>
+                  <Avatar uri={item.avatar_url} name={item.display_name} size={38} />
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.mentionName, { color: colors.text }]}>{item.display_name}</Text>
-                    <Text style={[styles.mentionHandle, { color: colors.textMuted }]}>@{item.handle}</Text>
+                    <Text style={[ss.mentionName, { color: colors.text }]}>{item.display_name}</Text>
+                    <Text style={[ss.mentionHandle, { color: colors.textMuted }]}>@{item.handle}</Text>
                   </View>
                 </TouchableOpacity>
               )}
               ListEmptyComponent={
-                mentionSearch.length >= 2 && !mentionLoading ? (
-                  <Text style={[styles.emptyText, { color: colors.textMuted }]}>No users found</Text>
-                ) : mentionSearch.length < 2 ? (
-                  <Text style={[styles.emptyText, { color: colors.textMuted }]}>Type at least 2 characters to search</Text>
-                ) : null
+                <Text style={[ss.emptyText, { color: colors.textMuted }]}>
+                  {mentionSearch.length >= 2 && !mentionLoading ? "No users found" : "Type at least 2 characters"}
+                </Text>
               }
-              style={{ maxHeight: 260 }}
+              style={{ maxHeight: 300 }}
               keyboardShouldPersistTaps="handled"
             />
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* AI Panel */}
+      <Modal visible={showAiPanel} transparent animationType="slide" onRequestClose={() => setShowAiPanel(false)}>
+        <Pressable style={ss.overlay} onPress={() => setShowAiPanel(false)}>
+          <Pressable style={[ss.sheet, { backgroundColor: colors.surface, paddingBottom: Math.max(insets.bottom, 16) + 8 }]} onPress={() => {}}>
+            <View style={[ss.handle, { backgroundColor: colors.border }]} />
+            <View style={ss.aiSheetHeader}>
+              <View style={[ss.aiSheetIconWrap, { backgroundColor: colors.accent + "14" }]}>
+                <Ionicons name="sparkles" size={18} color={colors.accent} />
+              </View>
+              <View>
+                <Text style={[ss.sheetTitle, { color: colors.text, marginBottom: 2 }]}>AI Writing Tools</Text>
+                <Text style={[ss.aiSheetSub, { color: colors.textMuted }]}>Let AI help you craft the perfect post</Text>
+              </View>
+            </View>
+
+            {([
+              { id: "enhance" as const,  icon: "color-wand",  color: AI_COLOR.enhance,  title: "Enhance",      desc: "Improve grammar, clarity, and flow" },
+              { id: "hashtags" as const, icon: "pricetag",    color: AI_COLOR.hashtags, title: "Add Hashtags", desc: "Generate relevant hashtags for reach" },
+              { id: "caption" as const,  icon: "bulb-outline",color: AI_COLOR.caption,  title: "Auto Caption", desc: "Write a fresh catchy caption for you"  },
+            ] as const).map(opt => (
+              <TouchableOpacity
+                key={opt.id}
+                style={[ss.aiRow, { backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)" }]}
+                onPress={() => runAi(opt.id)}
+                activeOpacity={0.75}
+              >
+                <View style={[ss.aiRowIcon, { backgroundColor: opt.color + "16" }]}>
+                  <Ionicons name={opt.icon as any} size={20} color={opt.color} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[ss.aiRowTitle, { color: colors.text }]}>{opt.title}</Text>
+                  <Text style={[ss.aiRowDesc,  { color: colors.textMuted }]}>{opt.desc}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={15} color={colors.textMuted} />
+              </TouchableOpacity>
+            ))}
           </Pressable>
         </Pressable>
       </Modal>
@@ -667,260 +679,277 @@ export default function CreatePostScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+// ─────────────────────────────────────────────────────────────────────────────
+// Styles
+// ─────────────────────────────────────────────────────────────────────────────
+const ss = StyleSheet.create({
   root: { flex: 1 },
+
+  // Header
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 14,
     paddingBottom: 10,
-    
-    gap: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  cancelBtn: { padding: 4 },
+  closeBtn: { width: 42, height: 42, alignItems: "flex-start", justifyContent: "center" },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 16, fontFamily: "Inter_600SemiBold", letterSpacing: 0.15 },
   postBtn: {
-    backgroundColor: Colors.brand,
     paddingHorizontal: 22,
     paddingVertical: 9,
-    borderRadius: 22,
-    minWidth: 68,
+    borderRadius: 999,
+    minWidth: 70,
     alignItems: "center",
+    ...Platform.select({
+      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.18, shadowRadius: 6, elevation: 4 },
+      web: { boxShadow: "0 2px 8px rgba(0,0,0,0.18)" } as any,
+    }),
   },
-  postBtnText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 15, letterSpacing: 0.2 },
-  progressPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: Colors.brand,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+  postBtnText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 15, letterSpacing: 0.1 },
+
+  // Scroll
+  scroll: { flex: 1 },
+  scrollBody: { paddingTop: 18, paddingBottom: 20 },
+
+  // Compose row
+  composeRow: { flexDirection: "row", paddingHorizontal: 16, gap: 14 },
+  avatarCol: { alignItems: "center", width: AVATAR_SZ },
+  threadLine: {
+    width: 2,
+    flex: 1,
+    borderRadius: 1,
+    marginTop: 6,
+    marginBottom: 2,
+    opacity: 0.35,
+    minHeight: 12,
   },
-  progressText: { color: "#fff", fontSize: 12, fontFamily: "Inter_500Medium" },
-  body: { padding: 16, paddingBottom: 32, gap: 14 },
-  composeRow: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
-  composeRight: { flex: 1 },
-  nameAudienceRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
-  composeName: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  composeRight: { flex: 1, paddingBottom: 12 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 7 },
+  authorName: { fontSize: 15, fontFamily: "Inter_700Bold" },
   audiencePill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 999,
     borderWidth: 1,
   },
-  audienceText: { fontSize: 11, fontFamily: "Inter_500Medium" },
-  textInput: {
-    fontSize: 16,
+  audiencePillText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
+  input: {
+    fontSize: 17,
     fontFamily: "Inter_400Regular",
-    lineHeight: 24,
-    minHeight: 100,
+    lineHeight: 26,
+    minHeight: 130,
     textAlignVertical: "top",
     paddingTop: 0,
+    paddingBottom: 4,
     ...Platform.select({ web: { outlineStyle: "none" } as any, default: {} }),
   },
-  tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, paddingLeft: 52 },
+
+  // AI loading bar
+  aiBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 12,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  aiBarText: { fontSize: 13, fontFamily: "Inter_500Medium" },
+
+  // Tags
+  tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 },
   tagChip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+    maxWidth: 200,
+  },
+  tagChipText: { fontSize: 12, fontFamily: "Inter_500Medium" },
+
+  // Media strip
+  mediaStrip: { paddingRight: 16, paddingVertical: 12, gap: 8 },
+  mediaThumb: {
+    width: MEDIA_THUMB,
+    height: MEDIA_THUMB,
     borderRadius: 14,
-    maxWidth: 180,
+    overflow: "hidden",
+    position: "relative",
   },
-  tagText: { fontSize: 12, fontFamily: "Inter_500Medium" },
-  imageGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    paddingLeft: 52,
-  },
-  imageWrap: { position: "relative", borderRadius: 12, overflow: "hidden" },
-  imageFill: { width: "100%", height: "100%", borderRadius: 12 },
-  removeImg: {
+  mediaImg: { width: MEDIA_THUMB, height: MEDIA_THUMB },
+  mediaNumBadge: {
     position: "absolute",
-    top: 6,
-    right: 6,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    bottom: 5,
+    left: 5,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "rgba(0,0,0,0.52)",
     alignItems: "center",
     justifyContent: "center",
   },
-  imgIndex: {
-    position: "absolute",
-    bottom: 6,
-    left: 6,
+  mediaNumText: { color: "#fff", fontSize: 9, fontFamily: "Inter_700Bold" },
+  mediaRemove: { position: "absolute", top: 5, right: 5 },
+  mediaRemoveCircle: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.62)",
     alignItems: "center",
     justifyContent: "center",
   },
-  imgIndexText: { color: "#fff", fontSize: 10, fontFamily: "Inter_700Bold" },
-  addImgBtn: {
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
+  mediaAdd: {
+    width: MEDIA_THUMB,
+    height: MEDIA_THUMB,
+    borderRadius: 14,
     borderWidth: 1.5,
     borderStyle: "dashed",
-  },
-  addImgLabel: { fontSize: 12, fontFamily: "Inter_500Medium" },
-  charRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingLeft: 52,
-  },
-  charRingOuter: {
-    flex: 1,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: "#E0E0E0",
-    overflow: "hidden",
-  },
-  charRingFill: {
-    height: "100%",
-    borderRadius: 1.5,
-  },
-  charText: { fontSize: 12, fontFamily: "Inter_500Medium", minWidth: 44, textAlign: "right" },
-  aiLoadingBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
-    marginLeft: 52,
-  },
-  aiLoadingText: { fontSize: 13, fontFamily: "Inter_500Medium" },
-  aiToggle: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginLeft: 52,
-  },
-  aiToggleText: { fontSize: 13, fontFamily: "Inter_600SemiBold", flex: 1 },
-  aiPanel: { gap: 8, marginLeft: 52 },
-  aiOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  aiIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-  },
-  aiOptionTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
-  aiOptionDesc: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
-  bottomBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    
     gap: 4,
   },
-  bottomAction: {
-    padding: 8,
+  mediaAddLabel: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
+
+  // Toolbar
+  toolbar: {
+    flexDirection: "row",
     alignItems: "center",
-    gap: 2,
+    paddingHorizontal: 10,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 0,
+    minHeight: 52,
   },
-  bottomActionLabel: { fontSize: 10, fontFamily: "Inter_500Medium" },
-  imgCount: { fontSize: 12, fontFamily: "Inter_500Medium" },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "flex-end",
+  toolBtn: { width: 42, height: 42, alignItems: "center", justifyContent: "center" },
+  aiPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: 1,
+    marginLeft: 2,
   },
-  modalSheet: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+  aiPillText: { fontSize: 12, fontFamily: "Inter_800ExtraBold" },
+  charRingWrap: {
+    width: 28,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 6,
+  },
+  charRingLabel: {
+    position: "absolute",
+    fontSize: 7,
+    fontFamily: "Inter_700Bold",
+  },
+  overLimit: {
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+    color: "#FF3B30",
+    marginRight: 6,
+  },
+
+  // Overlay / sheet
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.52)", justifyContent: "flex-end" },
+  sheet: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     paddingTop: 10,
     paddingHorizontal: 16,
   },
-  langSheet: { maxHeight: "60%" },
-  modalHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    alignSelf: "center",
-    marginBottom: 14,
+  sheetTall: { maxHeight: "70%" },
+  handle: { width: 38, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 16 },
+  sheetTitle: { fontSize: 17, fontFamily: "Inter_700Bold", marginBottom: 18 },
+
+  // Audience sheet
+  audRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 14,
+    marginBottom: 4,
   },
-  modalTitle: { fontSize: 17, fontFamily: "Inter_700Bold", marginBottom: 14 },
-  searchBar: {
+  audIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  audTitle: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  audDesc: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
+
+  // Search pill
+  searchPill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
     borderRadius: 999,
     borderWidth: 0.5,
-    marginBottom: 8,
-    shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8,
+    marginBottom: 12,
   },
-  searchInput: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular", paddingVertical: 0, ...Platform.select({ web: { outlineStyle: "none" } as any, default: {} }) },
-  audienceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 12,
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: "Inter_400Regular",
+    paddingVertical: 0,
+    ...Platform.select({ web: { outlineStyle: "none" } as any, default: {} }),
   },
-  audienceIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  audienceLabel: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
-  audienceDesc: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
+
+  // Language sheet
   langRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 12,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     borderRadius: 10,
     gap: 8,
+    marginBottom: 2,
   },
   langLabel: { flex: 1, fontSize: 15, fontFamily: "Inter_500Medium" },
   langCode: { fontSize: 12, fontFamily: "Inter_400Regular" },
-  locationDone: {
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  locationDoneText: { color: "#fff", fontSize: 15, fontFamily: "Inter_600SemiBold" },
-  removeLocationBtn: { paddingVertical: 12, alignItems: "center" },
-  removeLocationText: { fontSize: 14, fontFamily: "Inter_500Medium" },
+
+  // Location sheet
+  sheetActionBtn: { paddingVertical: 15, borderRadius: 14, alignItems: "center", marginTop: 8 },
+  sheetActionBtnText: { color: "#fff", fontSize: 15, fontFamily: "Inter_700Bold" },
+  removeBtn: { paddingVertical: 12, alignItems: "center" },
+  removeBtnText: { fontSize: 14, fontFamily: "Inter_500Medium", color: "#FF3B30" },
+
+  // Mention sheet
   mentionRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 12,
     paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 10,
+    paddingHorizontal: 6,
+    borderRadius: 12,
+    marginBottom: 2,
   },
   mentionName: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
-  mentionHandle: { fontSize: 12, fontFamily: "Inter_400Regular" },
-  emptyText: { textAlign: "center", paddingVertical: 20, fontSize: 13, fontFamily: "Inter_400Regular" },
+  mentionHandle: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
+  emptyText: { textAlign: "center", paddingVertical: 28, fontSize: 13, fontFamily: "Inter_400Regular" },
+
+  // AI sheet
+  aiSheetHeader: { flexDirection: "row", alignItems: "flex-start", gap: 12, marginBottom: 18 },
+  aiSheetIconWrap: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  aiSheetSub: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  aiRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    padding: 14,
+    borderRadius: 16,
+    marginBottom: 8,
+  },
+  aiRowIcon: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
+  aiRowTitle: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  aiRowDesc: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
 });
