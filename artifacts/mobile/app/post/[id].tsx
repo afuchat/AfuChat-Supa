@@ -810,65 +810,56 @@ export default function PostDetailScreen() {
       {/* ── Pinned input bar ── */}
       {post && (
         <Animated.View
-          style={[
-            st.inputBar,
-            {
-              bottom: kbAnim,
-              backgroundColor: colors.background,
-              borderTopColor: borderTopClr,
-            },
-            Platform.select({
-              web: {},
-              default: {
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: -3 },
-                shadowOpacity: isDark ? 0.28 : 0.08,
-                shadowRadius: 12,
-                elevation: 12,
-              },
-            }),
-          ]}
+          style={[st.inputBar, { bottom: kbAnim }]}
         >
-          {/* Reply-to banner */}
-          {replyingTo && (
-            <View style={[st.replyBanner, { borderBottomColor: separatorClr }]}>
-              <Text style={[st.replyBannerText, { color: replyToTxt }]}>
-                Replying to <Text style={{ color: accent }}>@{replyingTo.profile.handle}</Text>
-              </Text>
-              <TouchableOpacity onPress={() => setReplyingTo(null)} hitSlop={8}>
-                <Ionicons name="close-circle" size={16} color={replyToTxt} />
-              </TouchableOpacity>
-            </View>
-          )}
+          {/* Expansion panels — reply, image, voice, emoji */}
+          {(replyingTo || attachedImage || (recordState === "recorded" && recordedUri) || showEmojiPanel) && (
+            <View style={[st.expansionWrap, {
+              backgroundColor: inputBg,
+              borderColor: isDark ? "rgba(255,255,255,0.13)" : "rgba(26,18,8,0.13)",
+            }]}>
+              {/* Reply-to banner */}
+              {replyingTo && (
+                <View style={[st.replyBanner, { borderBottomColor: separatorClr }]}>
+                  <Text style={[st.replyBannerText, { color: replyToTxt }]}>
+                    Replying to <Text style={{ color: accent }}>@{replyingTo.profile.handle}</Text>
+                  </Text>
+                  <TouchableOpacity onPress={() => setReplyingTo(null)} hitSlop={8}>
+                    <Ionicons name="close-circle" size={16} color={replyToTxt} />
+                  </TouchableOpacity>
+                </View>
+              )}
 
-          {/* Attached image preview */}
-          {attachedImage && (
-            <View style={[st.imgPreviewBar, { borderBottomColor: separatorClr }]}>
-              <View style={st.imgThumbWrap}>
-                <Image source={{ uri: attachedImage.uri }} style={st.imgThumb} resizeMode="cover" />
-                <TouchableOpacity onPress={() => setAttachedImage(null)} style={st.imgRemoveBtn}>
-                  <Ionicons name="close-circle" size={18} color={imgRmvClr} />
-                </TouchableOpacity>
-              </View>
-              <Text style={{ color: imgRmvClr, fontSize: 11, fontFamily: "Inter_400Regular" }}>Tap × to remove</Text>
-            </View>
-          )}
+              {/* Attached image preview */}
+              {attachedImage && (
+                <View style={[st.imgPreviewBar, { borderBottomColor: separatorClr }]}>
+                  <View style={st.imgThumbWrap}>
+                    <Image source={{ uri: attachedImage.uri }} style={st.imgThumb} resizeMode="cover" />
+                    <TouchableOpacity onPress={() => setAttachedImage(null)} style={st.imgRemoveBtn}>
+                      <Ionicons name="close-circle" size={18} color={imgRmvClr} />
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={{ color: imgRmvClr, fontSize: 11, fontFamily: "Inter_400Regular" }}>Tap × to remove</Text>
+                </View>
+              )}
 
-          {/* Voice note preview */}
-          {recordState === "recorded" && recordedUri && (
-            <View style={{ borderBottomWidth: 0.5, borderBottomColor: separatorClr }}>
-              <VoicePreviewBar uri={recordedUri} durationSecs={recordedDuration} onDiscard={discardRecording} accent={accent} />
-            </View>
-          )}
+              {/* Voice note preview */}
+              {recordState === "recorded" && recordedUri && (
+                <View style={{ borderBottomWidth: showEmojiPanel ? 0.5 : 0, borderBottomColor: separatorClr }}>
+                  <VoicePreviewBar uri={recordedUri} durationSecs={recordedDuration} onDiscard={discardRecording} accent={accent} />
+                </View>
+              )}
 
-          {/* Emoji quick-bar */}
-          {showEmojiPanel && (
-            <View style={[st.emojiBar, { borderBottomColor: separatorClr }]}>
-              {QUICK_EMOJIS.map((e) => (
-                <TouchableOpacity key={e} onPress={() => setText((t) => t + e)} style={st.emojiBtn} activeOpacity={0.6}>
-                  <Text style={st.emojiText}>{e}</Text>
-                </TouchableOpacity>
-              ))}
+              {/* Emoji quick-bar */}
+              {showEmojiPanel && (
+                <View style={st.emojiBar}>
+                  {QUICK_EMOJIS.map((e) => (
+                    <TouchableOpacity key={e} onPress={() => setText((t) => t + e)} style={st.emojiBtn} activeOpacity={0.6}>
+                      <Text style={st.emojiText}>{e}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
           )}
 
@@ -1039,17 +1030,21 @@ const st = StyleSheet.create({
   emptySub: { fontSize: 13, fontFamily: "Inter_400Regular" },
 
   // Input bar
-  inputBar: { position: "absolute", left: 0, right: 0, borderTopWidth: 0.5 },
+  inputBar: { position: "absolute", left: 0, right: 0 },
+  expansionWrap: {
+    marginHorizontal: 8, marginBottom: 4,
+    borderRadius: 20, borderWidth: 0.5, overflow: "hidden",
+  },
   replyBanner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 0.5 },
   replyBannerText: { fontSize: 12, fontFamily: "Inter_400Regular" },
   imgPreviewBar: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 0.5 },
   imgThumbWrap: { position: "relative" },
   imgThumb: { width: 52, height: 52, borderRadius: 8 },
   imgRemoveBtn: { position: "absolute", top: -6, right: -6 },
-  emojiBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 6, gap: 2, borderBottomWidth: 0.5 },
+  emojiBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 6, gap: 2 },
   emojiBtn: { flex: 1, alignItems: "center", paddingVertical: 6 },
   emojiText: { fontSize: 20 },
-  inputRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 10 },
+  inputRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 8, paddingVertical: 8 },
   micBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", borderWidth: 0.5 },
   inputPill: {
     flex: 1, borderRadius: 28, borderWidth: 0.5, overflow: "hidden",
