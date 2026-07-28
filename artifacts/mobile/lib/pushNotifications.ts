@@ -38,14 +38,34 @@ try {
   Device = require("expo-device");
 
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-      priority: Notifications.AndroidNotificationPriority.MAX,
-    }),
+    handleNotification: async (notification) => {
+      // Suppress foreground banners for all chat messages (DMs and groups).
+      // The app handles incoming messages in-chat via the real-time subscription;
+      // showing an OS banner on top of an open conversation is redundant and noisy.
+      const data = (notification.request.content.data ?? {}) as Record<string, string>;
+      const isChatMessage =
+        data.type === "message" ||
+        data.notifType === "new_message" ||
+        data.type === "chat";
+      if (isChatMessage) {
+        return {
+          shouldShowAlert: false,
+          shouldPlaySound: false,
+          shouldSetBadge: true,
+          shouldShowBanner: false,
+          shouldShowList: false,
+          priority: Notifications.AndroidNotificationPriority.DEFAULT,
+        };
+      }
+      return {
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+        priority: Notifications.AndroidNotificationPriority.MAX,
+      };
+    },
   });
 } catch {
   Notifications = null;
