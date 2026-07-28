@@ -13,6 +13,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { LinearGradient } from "@/components/ui/SafeGradient";
+import Svg, { Line } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -278,7 +279,6 @@ function CardStrip({ primary, secondary, h = 8 }: { primary: string; secondary: 
 }
 
 function SecurityPattern({ w, h, color }: { w: number; h: number; color: string }) {
-  return null;
   const lines: { x1: number; y1: number; x2: number; y2: number }[] = [];
   const step = 14;
   for (let i = -h; i < w + h; i += step) {
@@ -287,12 +287,12 @@ function SecurityPattern({ w, h, color }: { w: number; h: number; color: string 
   }
   return (
     <View style={[StyleSheet.absoluteFill, { overflow: "hidden", pointerEvents: "none" } as any]}>
-      <svg width={w} height={h} style={{ position: "absolute", top: 0, left: 0 } as any}>
+      <Svg width={w} height={h} style={{ position: "absolute", top: 0, left: 0 } as any}>
         {lines.map((l, i) => (
-          <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
-            stroke={color} strokeWidth="0.5" opacity="0.12" />
+          <Line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
+            stroke={color} strokeWidth={0.5} opacity={0.12} />
         ))}
-      </svg>
+      </Svg>
     </View>
   );
 }
