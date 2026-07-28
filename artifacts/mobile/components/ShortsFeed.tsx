@@ -41,6 +41,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import UserName from "@/components/ui/UserName";
 import { useResolvedVideoSource } from "@/hooks/useResolvedVideoSource";
 import { sharePost } from "@/lib/share";
+import { RichText } from "@/components/ui/RichText";
 import { getPreferredVideoHeight } from "@/lib/networkQuality";
 import { cacheShortsTab, getCachedShortsTab } from "@/lib/offlineStore";
 import { getCachedVideoUri, markVideoWatched, cacheVideo } from "@/lib/videoCache";
@@ -322,7 +323,7 @@ const ShortCard = React.memo(function ShortCard({
         {/* Caption above bottom bar */}
         {item.content ? (
           <View style={[styles.fullCaptionAbove, { bottom: bottomInset + 66, pointerEvents: "none" }]}>
-            <Text style={styles.fullCaption} numberOfLines={2}>{item.content}</Text>
+            <RichText style={styles.fullCaption} numberOfLines={2}>{item.content}</RichText>
           </View>
         ) : null}
 
@@ -456,7 +457,7 @@ const ShortCard = React.memo(function ShortCard({
             ) : null}
           </Pressable>
           {item.content ? (
-            <Text style={styles.caption} numberOfLines={3}>{item.content}</Text>
+            <RichText style={styles.caption} numberOfLines={3}>{item.content}</RichText>
           ) : null}
         </View>
 

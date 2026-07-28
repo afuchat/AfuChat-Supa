@@ -55,6 +55,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Avatar } from "@/components/ui/Avatar";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import UserName from "@/components/ui/UserName";
+import { RichText } from "@/components/ui/RichText";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { useTheme } from "@/hooks/useTheme";
 import { notifyPostLike, notifyNewFollow } from "@/lib/notifyUser";
@@ -634,9 +635,9 @@ const VideoItem = React.memo(
               onPress={() => captionLong && setCaptionExpanded((e) => !e)}
               style={{ flex: 1, minWidth: 0 }}
             >
-              <Text style={styles.infoCaption} numberOfLines={captionExpanded ? undefined : 2}>
+              <RichText style={styles.infoCaption} numberOfLines={captionExpanded ? undefined : 2}>
                 {item.content}
-              </Text>
+              </RichText>
               {captionLong && !captionExpanded && (
                 <Text style={styles.infoCaptionMore}>...more</Text>
               )}

@@ -474,5 +474,6 @@ const styles = StyleSheet.create({
     height: 16,
     borderRadius: 8,
     overflow: "hidden" as const,
+    marginTop: 2,
   },
 });
