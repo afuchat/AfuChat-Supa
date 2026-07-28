@@ -85,6 +85,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   userRef.current    = user;
   profileRef.current = profile;
 
+  // Stable ref to current status — used inside effects/callbacks without
+  // capturing stale state. Must stay in sync with the `status` state.
+  const _status_ref = useRef<CallStatus>("idle");
+  _status_ref.current = status;
+
   // ── Init / tear-down engine when auth changes ─────────────────────────────
   useEffect(() => {
     if (user?.id) {

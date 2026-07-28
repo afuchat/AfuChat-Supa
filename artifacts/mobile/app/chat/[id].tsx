@@ -98,6 +98,7 @@ import { buildNavigationContext, ACTION_ROUTES_GUIDE, detectVoiceNavCommand, pic
 import { playNotificationSound as playMgrSound } from "@/lib/soundManager";
 import { AFUAI_BOT_ID } from "@/lib/afuAiBot";
 import { AFUCHAT_SYSTEM_ID } from "@/lib/afuSystemChat";
+import { useCall } from "@/context/CallContext";
 import { SystemNotificationCard, GroupedSystemNotificationCard, tryParseSysNotif, type GroupedSysNotifData } from "@/components/chat/SystemNotificationCard";
 import WallpaperOverlay from "@/components/chat/WallpaperOverlay";
 import { getDailyUsage, recordDailyUsage } from "@/lib/featureUsage";
@@ -1750,6 +1751,7 @@ function ChatScreen() {
   }>();
   const isDraft = id === "new";
   const { user, profile, isPremium, subscription, refreshProfile, equippedGoods } = useAuth();
+  const { startCall: callStart, status: callStatus, isAvailable: callAvailable } = useCall();
   const { colors, isDark } = useTheme();
   const { appearance: chatAppearance, updateAppearance: updateChatAppearance } = useChatAppearance(id as string | undefined);
   const BRAND = chatAppearance?.bubbleColor ?? colors.accent;
@@ -6163,6 +6165,31 @@ STRICT RULES:
           {chatInfo?.is_group && iAmChatAdmin && (
             <TouchableOpacity style={st.headerAction} hitSlop={8} onPress={handleOpenAddMembers}>
               <Ionicons name="person-add" size={20} color={colors.text} />
+            </TouchableOpacity>
+          )}
+          {/* Voice call button — only for 1-on-1 DMs, not groups/channels/bots/self */}
+          {callAvailable &&
+            chatInfo &&
+            !chatInfo.is_group &&
+            !chatInfo.is_channel &&
+            !isSelfChat &&
+            !isAfuAiDirectChat &&
+            !isAfuChatSystemChat &&
+            chatInfo.other_id &&
+            callStatus === "idle" && (
+            <TouchableOpacity
+              style={st.headerAction}
+              hitSlop={8}
+              onPress={() => {
+                callStart({
+                  calleeId: chatInfo.other_id!,
+                  calleeName: chatInfo.other_name ?? "Unknown",
+                  calleeAvatar: chatInfo.other_avatar ?? null,
+                  chatId: (isDraft ? realChatId : id as string) ?? null,
+                });
+              }}
+            >
+              <Ionicons name="call-outline" size={21} color={colors.text} />
             </TouchableOpacity>
           )}
           {chatInfo && (
