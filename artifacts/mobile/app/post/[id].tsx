@@ -199,6 +199,7 @@ function PostImageCarousel({ images, width, onPress, onDoubleTap }: {
           horizontal pagingEnabled
           showsHorizontalScrollIndicator={false}
           decelerationRate="fast"
+          nestedScrollEnabled
           onMomentumScrollEnd={(e) => {
             const idx = Math.round(e.nativeEvent.contentOffset.x / width);
             setCurrentIdx(Math.max(0, Math.min(idx, images.length - 1)));
@@ -207,7 +208,7 @@ function PostImageCarousel({ images, width, onPress, onDoubleTap }: {
           {images.map((uri, i) => (
             <TouchableOpacity key={i} activeOpacity={0.95} onPress={() => handleTap(i)} style={{ width, height: imgH }}>
               <CachedImage
-                uri={uri} style={{ width, height: imgH }} contentFit="contain"
+                uri={uri} style={{ width, height: imgH }} contentFit="cover"
                 priority={i === 0 ? "high" : "normal"}
                 onLoad={i === 0 ? (e) => {
                   const { width: sw, height: sh } = (e as any).source ?? {};
@@ -297,7 +298,7 @@ export default function PostDetailScreen() {
   // ── Refs ─────────────────────────────────────────────────────────────────────
   const listRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
-  const { images: viewerImages, index: viewerIndex, visible: viewerOpen, openViewer, closeViewer } = useImageViewer();
+  const { images: viewerImages, index: viewerIndex, visible: viewerOpen, meta: viewerMeta, openViewer, closeViewer } = useImageViewer();
 
   // ── Keyboard listener ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -710,7 +711,22 @@ export default function PostDetailScreen() {
         <View style={{ paddingHorizontal: 16 }}>
           <PostImageCarousel
             images={allImages} width={imgWidth}
-            onPress={(idx) => openViewer(allImages, idx)}
+            onPress={(idx) => openViewer(allImages, idx, {
+              postId: post.id,
+              authorId: post.author_id,
+              authorName: post.profile.display_name,
+              authorHandle: post.profile.handle,
+              authorAvatar: post.profile.avatar_url,
+              isVerified: post.is_verified,
+              isOrgVerified: post.is_organization_verified,
+              likeCount,
+              replyCount: replies.length,
+              viewCount: post.view_count,
+              bookmarked,
+              liked,
+              onToggleLike: toggleLike,
+              onToggleBookmark: toggleBookmark,
+            })}
             onDoubleTap={toggleLike}
           />
         </View>
@@ -778,6 +794,7 @@ export default function PostDetailScreen() {
           showsVerticalScrollIndicator={false}
           scrollEventThrottle={16}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           ListHeaderComponent={listHeader}
           ListEmptyComponent={
             commentsLoading ? (
@@ -991,7 +1008,7 @@ export default function PostDetailScreen() {
       )}
 
       {/* Image viewer */}
-      <ImageViewer images={viewerImages} initialIndex={viewerIndex} visible={viewerOpen} onClose={closeViewer} />
+      <ImageViewer images={viewerImages} initialIndex={viewerIndex} visible={viewerOpen} onClose={closeViewer} meta={viewerMeta} />
     </View>
   );
 }

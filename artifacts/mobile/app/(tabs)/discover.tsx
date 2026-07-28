@@ -31,7 +31,7 @@ import { router, useNavigation, useFocusEffect } from "expo-router";
 import { safeRouter } from "@/lib/navUtils";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "@/lib/haptics";
-import { ImageViewer, useImageViewer } from "@/components/ImageViewer";
+import { ImageViewer, useImageViewer, type PostViewerMeta } from "@/components/ImageViewer";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
@@ -467,7 +467,7 @@ function PostImages({
               <CachedImage
                 uri={uri}
                 style={{ width: imgW, height: imgH }}
-                contentFit="contain"
+                contentFit="cover"
                 priority={i === 0 ? "high" : "normal"}
                 onLoad={i === 0 ? (e) => {
                   const { width: sw, height: sh } = (e as any).source ?? {};
@@ -501,7 +501,7 @@ function PostImages({
 
 }
 
-const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBookmark, onToggleFollow, onImagePress, onRequireAuth, colWidth, onOpenComments, onDismiss, onMuteAuthor }: { item: PostItem; onToggleLike: (postId: string) => void; onToggleBookmark: (postId: string) => void; onToggleFollow: (authorId: string) => void; onImagePress?: (images: string[], index: number) => void; onRequireAuth?: () => void; colWidth?: number; onOpenComments: (postId: string, authorId: string) => void; onDismiss?: (postId: string) => void; onMuteAuthor?: (authorId: string, handle: string) => void }) {
+const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBookmark, onToggleFollow, onImagePress, onRequireAuth, colWidth, onOpenComments, onDismiss, onMuteAuthor }: { item: PostItem; onToggleLike: (postId: string) => void; onToggleBookmark: (postId: string) => void; onToggleFollow: (authorId: string) => void; onImagePress?: (images: string[], index: number, meta?: PostViewerMeta) => void; onRequireAuth?: () => void; colWidth?: number; onOpenComments: (postId: string, authorId: string) => void; onDismiss?: (postId: string) => void; onMuteAuthor?: (authorId: string, handle: string) => void }) {
   const { colors, isDark } = useTheme();
   const { preferredLang } = useLanguage();
   const { width: screenW } = useWindowDimensions();
@@ -824,7 +824,26 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
           {allImages.length > 0 && item.post_type !== "video" && item.post_type !== "article" && (
             <PostImages
               images={allImages}
-              onPress={(i) => { onImagePress?.(allImages, i); }}
+              onPress={(i) => {
+                onImagePress?.(allImages, i, {
+                  postId: item.id,
+                  authorId: item.author_id,
+                  authorName: item.profile.display_name,
+                  authorHandle: item.profile.handle,
+                  authorAvatar: item.profile.avatar_url,
+                  isVerified: item.is_verified,
+                  isOrgVerified: item.is_organization_verified,
+                  likeCount: item.likeCount,
+                  replyCount: item.replyCount,
+                  viewCount: item.view_count,
+                  bookmarked: item.bookmarked,
+                  liked: item.liked,
+                  isFollowing: item.isFollowing,
+                  onToggleLike: () => { if (!currentUser) { onRequireAuth?.(); return; } animateHeart(); onToggleLike(item.id); },
+                  onToggleBookmark: () => { if (!currentUser) { onRequireAuth?.(); return; } onToggleBookmark(item.id); },
+                  onToggleFollow: () => { if (!currentUser) { onRequireAuth?.(); return; } onToggleFollow(item.author_id); },
+                });
+              }}
               onDoubleTap={() => {
                 if (!currentUser) { onRequireAuth?.(); return; }
                 if (!item.liked) { animateHeart(); onToggleLike(item.id); }
@@ -2831,6 +2850,7 @@ export default function DiscoverScreen() {
         initialIndex={imgViewer.index}
         visible={imgViewer.visible}
         onClose={imgViewer.closeViewer}
+        meta={imgViewer.meta}
       />
 
       <SignInPromptModal visible={showSignInPrompt} onDismiss={() => setShowSignInPrompt(false)} />

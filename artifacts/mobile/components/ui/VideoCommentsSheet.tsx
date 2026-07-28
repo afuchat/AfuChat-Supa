@@ -46,6 +46,7 @@ import { useAppAccent } from "@/context/AppAccentContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
 import UserName from "@/components/ui/UserName";
+import { RichText } from "@/components/ui/RichText";
 import { notifyPostReply } from "@/lib/notifyUser";
 import * as Haptics from "@/lib/haptics";
 import { uploadToStorage } from "@/lib/mediaUpload";
@@ -380,9 +381,9 @@ export function VideoReplyItem({
           </View>
 
           {r.content.length > 0 && (
-            <Text style={{ color: ri_textBody, fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 21 }}>
-              {parseCommentText(r.content, accent)}
-            </Text>
+            <RichText style={{ color: ri_textBody, fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 21 }} linkColor={accent}>
+              {r.content}
+            </RichText>
           )}
 
           {r.voice_url && (
@@ -604,8 +605,15 @@ export function VideoCommentsSheet({
     onMoveShouldSetPanResponder: (_, g) => {
       const isV = Math.abs(g.dy) > Math.abs(g.dx) && Math.abs(g.dy) > 5;
       if (!isV) return false;
-      if (!isFullSheetRef.current) return true; // peek mode: capture all vertical
-      return g.dy > 8 && listScrollYRef.current <= 1; // full mode: down-at-top only
+      if (!isFullSheetRef.current) {
+        // peek mode: capture downward swipes (dismiss/collapse) always,
+        // but only capture upward swipes when list is at the top (to expand).
+        // This lets the FlatList scroll normally when already scrolled down.
+        if (g.dy > 5) return true;                          // downward → dismiss
+        return g.dy < -5 && listScrollYRef.current <= 1;   // upward at top → expand
+      }
+      // full mode: only intercept downward drag when list is scrolled to top
+      return g.dy > 8 && listScrollYRef.current <= 1;
     },
     onPanResponderMove: (_, g) => {
       const base = isFullSheetRef.current ? fullSHRef.current : peekSHRef.current;
@@ -1222,9 +1230,11 @@ export function VideoCommentsSheet({
             data={sortedTree}
             keyExtractor={(r) => r.id}
             style={{ flex: 1 }}
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 72 + kbHeight }}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 80 + Math.max(kbHeight, insets.bottom) }}
             showsVerticalScrollIndicator={false}
             scrollEventThrottle={16}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             onScroll={(e) => { listScrollYRef.current = e.nativeEvent.contentOffset.y; }}
             renderItem={({ item: r }) => (
               <VideoReplyItem
