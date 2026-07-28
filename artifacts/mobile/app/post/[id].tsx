@@ -42,7 +42,6 @@ import { RichText } from "@/components/ui/RichText";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import UserName from "@/components/ui/UserName";
 import { ImageViewer, useImageViewer } from "@/components/ImageViewer";
-import { sharePost } from "@/lib/share";
 import { notifyPostLike, notifyPostReply } from "@/lib/notifyUser";
 import { uploadToStorage } from "@/lib/mediaUpload";
 import { showAlert } from "@/lib/alert";
@@ -808,13 +807,6 @@ export default function PostDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} hitSlop={10} style={st.headerBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => post && sharePost({ postId: post.id, authorName: post.profile.display_name, content: post.content })}
-          hitSlop={10}
-          style={st.headerBtn}
-        >
-          <Ionicons name="share-outline" size={22} color={colors.text} />
-        </TouchableOpacity>
       </View>
 
       {/* Body */}
@@ -1089,7 +1081,7 @@ const st = StyleSheet.create({
   // Header — absolute overlay, edge-to-edge, no bottom border
   header: {
     position: "absolute", top: 0, left: 0, right: 0, zIndex: 10,
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    flexDirection: "row", alignItems: "center",
     paddingHorizontal: 4, paddingBottom: 8,
   },
   headerBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },

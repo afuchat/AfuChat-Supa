@@ -5,8 +5,8 @@ import {
   Image,
   Keyboard,
   Modal,
+  PanResponder,
   Platform,
-  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -14,6 +14,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -238,23 +239,110 @@ function AnimatedZoomSlide({
   );
 }
 
-// ─── Simple slide fallback ────────────────────────────────────────────────────
+// ─── Simple slide fallback (pinch + double-tap zoom via PanResponder) ─────────
 
-function SimpleZoomSlide({ uri, width, height, onClose, onSwipeLeft, onSwipeRight }: ZoomSlideProps) {
-  const startX = useRef(0);
+function SimpleZoomSlide({ uri, width, height, onClose, onSwipeLeft, onSwipeRight, onScaleChange }: ZoomSlideProps) {
+  const scale       = useRef(new Animated.Value(1)).current;
+  const scaleVal    = useRef(1);
+  const transX      = useRef(new Animated.Value(0)).current;
+  const transY      = useRef(new Animated.Value(0)).current;
+  const transXVal   = useRef(0);
+  const transYVal   = useRef(0);
+  const lastTap     = useRef(0);
+  const tapTimer    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pinchDist0  = useRef(0);
+  const pinchScale0 = useRef(1);
+
+  function clamp(val: number, s: number, dim: number) {
+    const max = Math.max(0, (dim * s - dim) / 2);
+    return Math.max(-max, Math.min(max, val));
+  }
+
+  function springReset() {
+    scaleVal.current = 1; transXVal.current = 0; transYVal.current = 0;
+    Animated.spring(scale,  { toValue: 1, useNativeDriver: true, speed: 32, bounciness: 2 }).start();
+    Animated.spring(transX, { toValue: 0, useNativeDriver: true, speed: 32, bounciness: 2 }).start();
+    Animated.spring(transY, { toValue: 0, useNativeDriver: true, speed: 32, bounciness: 2 }).start();
+    onScaleChange(1);
+  }
+
+  function zoomTo(target: number) {
+    scaleVal.current = target; transXVal.current = 0; transYVal.current = 0;
+    Animated.spring(scale,  { toValue: target, useNativeDriver: true, speed: 32, bounciness: 2 }).start();
+    Animated.spring(transX, { toValue: 0,      useNativeDriver: true, speed: 32, bounciness: 2 }).start();
+    Animated.spring(transY, { toValue: 0,      useNativeDriver: true, speed: 32, bounciness: 2 }).start();
+    onScaleChange(target);
+  }
+
+  const pr = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (e, g) =>
+      e.nativeEvent.touches.length === 2 || Math.abs(g.dx) > 3 || Math.abs(g.dy) > 3,
+    onPanResponderGrant: (e) => {
+      const t = e.nativeEvent.touches;
+      if (t.length === 2) {
+        const dx = t[0].pageX - t[1].pageX, dy = t[0].pageY - t[1].pageY;
+        pinchDist0.current  = Math.sqrt(dx * dx + dy * dy) || 1;
+        pinchScale0.current = scaleVal.current;
+      }
+    },
+    onPanResponderMove: (e, g) => {
+      const t = e.nativeEvent.touches;
+      if (t.length === 2) {
+        const dx = t[0].pageX - t[1].pageX, dy = t[0].pageY - t[1].pageY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const s = Math.max(1, Math.min(MAX_SCALE, pinchScale0.current * dist / pinchDist0.current));
+        scaleVal.current = s;
+        scale.setValue(s);
+        onScaleChange(s);
+      } else if (t.length === 1 && scaleVal.current > 1.02) {
+        transX.setValue(clamp(transXVal.current + g.dx, scaleVal.current, width));
+        transY.setValue(clamp(transYVal.current + g.dy, scaleVal.current, height));
+      }
+    },
+    onPanResponderRelease: (e, g) => {
+      // Remaining touches still active — wait for full release
+      if (e.nativeEvent.touches.length > 0) return;
+
+      if (scaleVal.current > 1.02) {
+        transXVal.current = clamp(transXVal.current + g.dx, scaleVal.current, width);
+        transYVal.current = clamp(transYVal.current + g.dy, scaleVal.current, height);
+        transX.setValue(transXVal.current);
+        transY.setValue(transYVal.current);
+        return;
+      }
+
+      // Single-touch, not zoomed
+      if (g.dx < -SWIPE_THRESHOLD || g.vx < -0.4) { onSwipeLeft();  return; }
+      if (g.dx >  SWIPE_THRESHOLD || g.vx >  0.4) { onSwipeRight(); return; }
+
+      // Tap (no significant movement)
+      if (Math.abs(g.dx) < 12 && Math.abs(g.dy) < 12) {
+        const now = Date.now();
+        if (now - lastTap.current < 300 && lastTap.current > 0) {
+          // Double tap → zoom in
+          lastTap.current = 0;
+          if (tapTimer.current) { clearTimeout(tapTimer.current); tapTimer.current = null; }
+          zoomTo(2.5);
+        } else {
+          lastTap.current = now;
+          tapTimer.current = setTimeout(() => {
+            tapTimer.current = null;
+            if (scaleVal.current <= 1.02) onClose();
+          }, 300);
+        }
+      }
+    },
+  })).current;
+
   return (
-    <TouchableOpacity
-      activeOpacity={1}
-      onPress={onClose}
-      onPressIn={(e) => { startX.current = e.nativeEvent.locationX; }}
-      onPressOut={(e) => {
-        const dx = e.nativeEvent.locationX - startX.current;
-        if      (dx < -SWIPE_THRESHOLD) onSwipeLeft();
-        else if (dx >  SWIPE_THRESHOLD) onSwipeRight();
-      }}
-    >
-      <Image source={{ uri }} style={{ width, height }} resizeMode="contain" />
-    </TouchableOpacity>
+    <View style={{ width, height }} {...pr.panHandlers}>
+      <Animated.Image
+        source={{ uri }}
+        style={[{ width, height }, { transform: [{ scale }, { translateX: transX }, { translateY: transY }] }]}
+        resizeMode="contain"
+      />
+    </View>
   );
 }
 
@@ -301,6 +389,29 @@ function PostChrome({
   const [sending, setSending]       = useState(false);
   const inputRef = useRef<TextInput>(null);
   const heartScale = useRef(new Animated.Value(1)).current;
+  const kbOffset   = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => {
+        const dur = Platform.OS === "ios" ? (e.duration ?? 250) : 220;
+        Animated.timing(kbOffset, {
+          toValue: e.endCoordinates.height,
+          duration: dur,
+          useNativeDriver: false,
+        }).start();
+      },
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      (e) => {
+        const dur = Platform.OS === "ios" ? (e.duration ?? 200) : 180;
+        Animated.timing(kbOffset, { toValue: 0, duration: dur, useNativeDriver: false }).start();
+      },
+    );
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   // Keep in sync if meta changes
   useEffect(() => { setLiked(meta.liked); setLikeCount(meta.likeCount); }, [meta.liked, meta.likeCount]);
@@ -396,8 +507,8 @@ function PostChrome({
         )}
       </View>
 
-      {/* ── Bottom chrome: action bar + reply input ── */}
-      <View style={[styles.bottomChrome, { paddingBottom: insets.bottom }]}>
+      {/* ── Bottom chrome: action bar + reply input (lifts above keyboard) ── */}
+      <Animated.View style={[styles.bottomChrome, { paddingBottom: insets.bottom, bottom: kbOffset }]}>
         {/* Action bar */}
         <View style={styles.actionBar}>
           <TouchableOpacity style={styles.actionStat} onPress={onNavigateToPost} activeOpacity={0.7}>
@@ -430,17 +541,9 @@ function PostChrome({
               color={bookmarked ? "#FFD60A" : "rgba(255,255,255,0.75)"}
             />
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionIcon}
-            onPress={() => { try { Share.share({ message: `https://afuchat.com/post/${meta.postId}` }); } catch {} }}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="share-outline" size={20} color="rgba(255,255,255,0.75)" />
-          </TouchableOpacity>
         </View>
 
-        {/* Reply input row */}
+        {/* Reply input pill */}
         <View style={styles.replyRow}>
           <Avatar uri={myProfile?.avatar_url ?? null} name={myProfile?.display_name ?? "You"} size={30} />
           <View style={styles.replyPill}>
@@ -470,7 +573,7 @@ function PostChrome({
             <Ionicons name="expand-outline" size={19} color="rgba(255,255,255,0.65)" />
           </TouchableOpacity>
         </View>
-      </View>
+      </Animated.View>
     </>
   );
 }
@@ -481,18 +584,14 @@ function TopBar({
   images,
   index,
   hasMultiple,
-  zoomed,
   insets,
   onClose,
-  onShare,
 }: {
   images: string[];
   index: number;
   hasMultiple: boolean;
-  zoomed: boolean;
   insets: ReturnType<typeof useSafeAreaInsets>;
   onClose: () => void;
-  onShare: () => void;
 }) {
   return (
     <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
@@ -500,20 +599,13 @@ function TopBar({
         <Ionicons name="arrow-back" size={20} color="#fff" />
       </TouchableOpacity>
 
-      {hasMultiple && (
+      {hasMultiple ? (
         <View style={styles.counterPill}>
           <Text style={styles.counterText}>{index + 1} / {images.length}</Text>
         </View>
+      ) : (
+        <View style={{ flex: 1 }} />
       )}
-
-      {!hasMultiple && <View style={{ width: 38 }} />}
-
-      {!zoomed && (
-        <TouchableOpacity onPress={onShare} hitSlop={12} style={styles.glassBtn}>
-          <Ionicons name="ellipsis-vertical" size={20} color="#fff" />
-        </TouchableOpacity>
-      )}
-      {zoomed && <View style={{ width: 38 }} />}
     </View>
   );
 }
@@ -570,10 +662,6 @@ function AnimatedImageViewer({ images, initialIndex = 0, visible, onClose, meta 
     opacity: slideOpacity.value,
   }));
 
-  const handleShare = () => {
-    try { Share.share({ url: images[index], message: images[index] }); } catch {}
-  };
-
   const navigateToPost = useCallback(() => {
     if (!meta?.postId) return;
     onClose();
@@ -585,6 +673,7 @@ function AnimatedImageViewer({ images, initialIndex = 0, visible, onClose, meta 
 
   return (
     <Modal transparent visible={visible} animationType="fade" statusBarTranslucent onRequestClose={onClose} hardwareAccelerated>
+      <StatusBar style="light" translucent />
       <View style={styles.root}>
         {/* Ambient blurred background */}
         <Image
@@ -607,7 +696,7 @@ function AnimatedImageViewer({ images, initialIndex = 0, visible, onClose, meta 
         {/* Top bar */}
         <TopBar
           images={images} index={index} hasMultiple={hasMultiple}
-          zoomed={zoomed} insets={insets} onClose={onClose} onShare={handleShare}
+          insets={insets} onClose={onClose}
         />
 
         {/* Side nav arrows */}
@@ -649,14 +738,11 @@ function SimpleImageViewer({ images, initialIndex = 0, visible, onClose, meta }:
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [index, setIndex] = useState(initialIndex);
+  const [zoomed, setZoomed] = useState(false);
 
   useEffect(() => {
-    if (visible) setIndex(Math.min(initialIndex, Math.max(0, images.length - 1)));
+    if (visible) { setIndex(Math.min(initialIndex, Math.max(0, images.length - 1))); setZoomed(false); }
   }, [visible, initialIndex]);
-
-  const handleShare = () => {
-    try { Share.share({ url: images[index], message: images[index] }); } catch {}
-  };
 
   const navigateToPost = useCallback(() => {
     if (!meta?.postId) return;
@@ -669,6 +755,7 @@ function SimpleImageViewer({ images, initialIndex = 0, visible, onClose, meta }:
 
   return (
     <Modal transparent visible={visible} animationType="fade" statusBarTranslucent onRequestClose={onClose}>
+      <StatusBar style="light" translucent />
       <View style={styles.root}>
         <Image
           source={{ uri: images[index] }}
@@ -684,13 +771,13 @@ function SimpleImageViewer({ images, initialIndex = 0, visible, onClose, meta }:
             isActive onClose={onClose}
             onSwipeLeft={() => { if (index < images.length - 1) setIndex(index + 1); }}
             onSwipeRight={() => { if (index > 0) setIndex(index - 1); }}
-            onScaleChange={() => {}}
+            onScaleChange={(s) => setZoomed(s > 1.05)}
           />
         </View>
 
         <TopBar
           images={images} index={index} hasMultiple={hasMultiple}
-          zoomed={false} insets={insets} onClose={onClose} onShare={handleShare}
+          insets={insets} onClose={onClose}
         />
 
         {hasMultiple && (
