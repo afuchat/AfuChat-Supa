@@ -260,8 +260,8 @@ const styles = StyleSheet.create({
   },
   codeInput: {
     width: "100%",
-    borderRadius: 14,
-    borderWidth: 1.5,
+    borderRadius: 999,
+    borderWidth: 0.5,
     paddingVertical: 18,
     fontSize: 28,
     fontFamily: "Inter_700Bold",

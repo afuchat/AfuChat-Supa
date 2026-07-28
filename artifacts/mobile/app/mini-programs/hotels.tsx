@@ -129,7 +129,7 @@ export default function HotelsScreen() {
             <View style={styles.detailsRow}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.label, { color: colors.text }]}>Nights</Text>
-                <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={[styles.inputWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                   <TextInput
                     style={[styles.input, { color: colors.text, textAlign: "center" }]}
                     value={nights}
@@ -141,7 +141,7 @@ export default function HotelsScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.label, { color: colors.text }]}>Guests</Text>
-                <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={[styles.inputWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                   <TextInput
                     style={[styles.input, { color: colors.text, textAlign: "center" }]}
                     value={guests}
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   roomText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   roomMult: { fontSize: 11, fontFamily: "Inter_400Regular" },
   detailsRow: { flexDirection: "row", gap: 12 },
-  inputWrap: { borderRadius: 12, overflow: "hidden" },
+  inputWrap: { borderRadius: 999, overflow: "hidden", borderWidth: 0.5, shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 },
   input: { fontSize: 18, fontFamily: "Inter_600SemiBold", paddingVertical: 12, paddingHorizontal: 14 },
   feeCard: { borderRadius: 14, padding: 16, gap: 10 },
   feeRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },

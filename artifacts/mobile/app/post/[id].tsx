@@ -1033,7 +1033,7 @@ const st = StyleSheet.create({
   inputBar: { position: "absolute", left: 0, right: 0 },
   expansionWrap: {
     marginHorizontal: 8, marginBottom: 4,
-    borderRadius: 20, borderWidth: 0.5, overflow: "hidden",
+    borderRadius: 999, borderWidth: 0.5, overflow: "hidden",
   },
   replyBanner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 0.5 },
   replyBannerText: { fontSize: 12, fontFamily: "Inter_400Regular" },
@@ -1047,7 +1047,7 @@ const st = StyleSheet.create({
   inputRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 8, paddingVertical: 8 },
   micBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", borderWidth: 0.5 },
   inputPill: {
-    flex: 1, borderRadius: 28, borderWidth: 0.5, overflow: "hidden",
+    flex: 1, borderRadius: 999, borderWidth: 0.5, overflow: "hidden",
     ...Platform.select({
       web: { boxShadow: "0 4px 20px rgba(0,0,0,0.14)" } as any,
       default: { shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.14, shadowRadius: 12, elevation: 10 },

@@ -65,7 +65,7 @@ export default function TransferScreen() {
         </View>
 
         <Text style={[styles.label, { color: colors.text }]}>Recipient Username or Phone</Text>
-        <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.inputWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
           <Ionicons name="person" size={18} color={colors.textMuted} />
           <TextInput
             style={[styles.input, { color: colors.text }]}
@@ -78,7 +78,7 @@ export default function TransferScreen() {
         </View>
 
         <Text style={[styles.label, { color: colors.text }]}>Amount (ACoins)</Text>
-        <View style={[styles.amountWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.amountWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
           <Text style={styles.amountPrefix}>🪙</Text>
           <TextInput
             style={[styles.amountInput, { color: colors.text }]}
@@ -91,7 +91,7 @@ export default function TransferScreen() {
         </View>
 
         <Text style={[styles.label, { color: colors.text }]}>Note (Optional)</Text>
-        <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.inputWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
           <Ionicons name="chatbubble" size={18} color={colors.textMuted} />
           <TextInput
             style={[styles.input, { color: colors.text }]}
@@ -158,9 +158,9 @@ const styles = StyleSheet.create({
   iconCircle: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
   iconEmoji: { fontSize: 36 },
   label: { fontSize: 14, fontFamily: "Inter_600SemiBold", marginTop: 4 },
-  inputWrap: { flexDirection: "row", alignItems: "center", borderRadius: 12, paddingHorizontal: 14, gap: 8,},
+  inputWrap: { flexDirection: "row", alignItems: "center", borderRadius: 999, paddingHorizontal: 14, gap: 8, borderWidth: 0.5, shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 },
   input: { flex: 1, fontSize: 16, fontFamily: "Inter_500Medium", paddingVertical: 14 },
-  amountWrap: { flexDirection: "row", alignItems: "center", borderRadius: 16, paddingHorizontal: 20, borderWidth: 1, justifyContent: "center" },
+  amountWrap: { flexDirection: "row", alignItems: "center", borderRadius: 999, paddingHorizontal: 20, borderWidth: 0.5, justifyContent: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 },
   amountPrefix: { fontSize: 28 },
   amountInput: { fontSize: 40, fontFamily: "Inter_700Bold", paddingVertical: 16, textAlign: "center", minWidth: 100 },
   feeCard: { borderRadius: 14, padding: 16, gap: 10 },

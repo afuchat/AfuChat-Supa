@@ -1078,7 +1078,7 @@ const styles = StyleSheet.create({
   modalRoot: { flex: 1 },
   modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16 },
   modalTitle: { fontSize: 17, fontFamily: "Inter_600SemiBold" },
-  modalSearch: { flexDirection: "row", alignItems: "center", gap: 10, margin: 12, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12 },
+  modalSearch: { flexDirection: "row", alignItems: "center", gap: 10, margin: 12, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999, borderWidth: 0.5, ...Platform.select({ web: { boxShadow: "0 4px 20px rgba(0,0,0,0.13)" } as any, default: { shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 } }) },
   modalSearchInput: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular" },
   countryRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
   countryFlag: { fontSize: 24 },

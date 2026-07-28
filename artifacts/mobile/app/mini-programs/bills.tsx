@@ -87,7 +87,7 @@ export default function BillsScreen() {
         </View>
 
         <Text style={[styles.label, { color: colors.text }]}>Account / Meter Number</Text>
-        <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.inputWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
           <Ionicons name="document-text" size={18} color={colors.textMuted} />
           <TextInput
             style={[styles.input, { color: colors.text }]}
@@ -99,7 +99,7 @@ export default function BillsScreen() {
         </View>
 
         <Text style={[styles.label, { color: colors.text }]}>Amount (ACoins)</Text>
-        <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.inputWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
           <Text style={styles.inputPrefix}>🪙</Text>
           <TextInput
             style={[styles.input, { color: colors.text }]}
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   billCard: { width: "31%", alignItems: "center", padding: 14, borderRadius: 14, borderWidth: 1.5, gap: 6 },
   billIcon: { fontSize: 28 },
   billName: { fontSize: 11, fontFamily: "Inter_600SemiBold", textAlign: "center" },
-  inputWrap: { flexDirection: "row", alignItems: "center", borderRadius: 12, paddingHorizontal: 14, gap: 8,},
+  inputWrap: { flexDirection: "row", alignItems: "center", borderRadius: 999, paddingHorizontal: 14, gap: 8, borderWidth: 0.5, shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 },
   input: { flex: 1, fontSize: 16, fontFamily: "Inter_500Medium", paddingVertical: 14 },
   inputPrefix: { fontSize: 18 },
   feeCard: { borderRadius: 14, padding: 16, gap: 10 },

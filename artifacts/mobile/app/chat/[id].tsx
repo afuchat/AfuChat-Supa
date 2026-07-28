@@ -8678,7 +8678,7 @@ const st = StyleSheet.create({
     ...Platform.select({ web: { paddingHorizontal: 8 } }),
   },
   inputGlassPill: {
-    borderRadius: 28,
+    borderRadius: 999,
     borderWidth: 0.5,
     borderColor: "rgba(120,120,128,0.22)",
     overflow: "hidden",

@@ -157,7 +157,7 @@ export default function SchoolPickerInput({ value, onChange, country, placeholde
           </View>
 
           {/* Search bar */}
-          <View style={[styles.searchRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[styles.searchRow, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
             <Ionicons name="search" size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
             <TextInput
               ref={searchRef}
@@ -245,9 +245,11 @@ const styles = StyleSheet.create({
   trigger: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 12,
+    borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 13,
+    borderWidth: 0.5,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8,
   },
   triggerText: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular" },
   hint: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 5, marginLeft: 2 },
@@ -269,8 +271,9 @@ const styles = StyleSheet.create({
     margin: 16,
     paddingHorizontal: 14,
     paddingVertical: 11,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 999,
+    borderWidth: 0.5,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8,
   },
   searchInput: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular", padding: 0 },
   countText: {

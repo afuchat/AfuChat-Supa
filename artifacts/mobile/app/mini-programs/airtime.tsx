@@ -89,7 +89,7 @@ export default function AirtimeScreen() {
         </View>
 
         <Text style={[styles.label, { color: colors.text }]}>Phone Number</Text>
-        <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.inputWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
           <Ionicons name="call" size={18} color={colors.textMuted} />
           <TextInput
             style={[styles.input, { color: colors.text }]}
@@ -116,7 +116,7 @@ export default function AirtimeScreen() {
             </TouchableOpacity>
           ))}
         </View>
-        <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.inputWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
           <Text style={[styles.inputPrefix, { color: colors.textMuted }]}>🪙</Text>
           <TextInput
             style={[styles.input, { color: colors.text }]}
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   providerCard: { flex: 1, alignItems: "center", padding: 12, borderRadius: 12, borderWidth: 1.5, gap: 4 },
   providerIcon: { fontSize: 20 },
   providerName: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
-  inputWrap: { flexDirection: "row", alignItems: "center", borderRadius: 12, paddingHorizontal: 14, gap: 8,},
+  inputWrap: { flexDirection: "row", alignItems: "center", borderRadius: 999, paddingHorizontal: 14, gap: 8, borderWidth: 0.5, shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 },
   input: { flex: 1, fontSize: 16, fontFamily: "Inter_500Medium", paddingVertical: 14 },
   inputPrefix: { fontSize: 18 },
   quickRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },

@@ -1005,7 +1005,7 @@ const ss = StyleSheet.create({
   },
   inputWrap: {
     flex: 1, flexDirection: "row", alignItems: "center", gap: 8,
-    borderRadius: 26, paddingHorizontal: 12, height: 40, borderWidth: 0.5,
+    borderRadius: 999, paddingHorizontal: 12, height: 40, borderWidth: 0.5,
     ...Platform.select({
       web: { boxShadow: "0 2px 14px rgba(0,0,0,0.13)" } as any,
       default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.13, shadowRadius: 8, elevation: 4 },

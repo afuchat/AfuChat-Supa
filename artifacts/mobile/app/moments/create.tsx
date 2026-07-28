@@ -531,7 +531,7 @@ export default function CreatePostScreen() {
           <Pressable style={[styles.modalSheet, styles.langSheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 12 }]} onPress={() => {}}>
             <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
             <Text style={[styles.modalTitle, { color: colors.text }]}>Post Language</Text>
-            <View style={[styles.searchBar, { backgroundColor: colors.inputBg }]}>
+            <View style={[styles.searchBar, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
               <Ionicons name="search" size={16} color={colors.textMuted} />
               <TextInput
                 style={[styles.searchInput, { color: colors.text }]}
@@ -574,7 +574,7 @@ export default function CreatePostScreen() {
           <Pressable style={[styles.modalSheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 12 }]} onPress={() => {}}>
             <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
             <Text style={[styles.modalTitle, { color: colors.text }]}>Add Location</Text>
-            <View style={[styles.searchBar, { backgroundColor: colors.inputBg }]}>
+            <View style={[styles.searchBar, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
               <Ionicons name="location" size={16} color={colors.accent} />
               <TextInput
                 style={[styles.searchInput, { color: colors.text }]}
@@ -623,7 +623,7 @@ export default function CreatePostScreen() {
           <Pressable style={[styles.modalSheet, styles.langSheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 12 }]} onPress={() => {}}>
             <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
             <Text style={[styles.modalTitle, { color: colors.text }]}>Mention Someone</Text>
-            <View style={[styles.searchBar, { backgroundColor: colors.inputBg }]}>
+            <View style={[styles.searchBar, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
               <Ionicons name="at" size={16} color={colors.accent} />
               <TextInput
                 style={[styles.searchInput, { color: colors.text }]}
@@ -870,8 +870,10 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: 999,
+    borderWidth: 0.5,
     marginBottom: 8,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8,
   },
   searchInput: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular", paddingVertical: 0, ...Platform.select({ web: { outlineStyle: "none" } as any, default: {} }) },
   audienceRow: {

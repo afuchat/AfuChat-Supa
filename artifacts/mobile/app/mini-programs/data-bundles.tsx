@@ -93,7 +93,7 @@ export default function DataBundlesScreen() {
         </View>
 
         <Text style={[styles.label, { color: colors.text }]}>Phone Number</Text>
-        <View style={[styles.inputWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={[styles.inputWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
           <Ionicons name="call" size={18} color={colors.textMuted} />
           <TextInput
             style={[styles.input, { color: colors.text }]}
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   providerRow: { flexDirection: "row", gap: 8 },
   providerCard: { flex: 1, alignItems: "center", padding: 12, borderRadius: 12, borderWidth: 1.5 },
   providerName: { fontSize: 12, fontFamily: "Inter_700Bold" },
-  inputWrap: { flexDirection: "row", alignItems: "center", borderRadius: 12, paddingHorizontal: 14, gap: 8,},
+  inputWrap: { flexDirection: "row", alignItems: "center", borderRadius: 999, paddingHorizontal: 14, gap: 8, borderWidth: 0.5, shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 },
   input: { flex: 1, fontSize: 16, fontFamily: "Inter_500Medium", paddingVertical: 14 },
   bundleGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   bundleCard: { width: "48%", borderRadius: 14, padding: 14, borderWidth: 1.5, alignItems: "center", gap: 4 },

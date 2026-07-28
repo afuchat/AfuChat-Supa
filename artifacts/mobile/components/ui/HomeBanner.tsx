@@ -313,7 +313,7 @@ function ContactPickerSheet({ visible, gradient, eventName, onClose, onSelect }:
         </LinearGradient>
 
         {/* Search */}
-        <View style={[sh.searchRow, { backgroundColor: colors.inputBg }]}>
+        <View style={[sh.searchRow, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
           <Ionicons name="search" size={16} color={colors.textMuted} />
           <TextInput
             style={[sh.searchInput, { color: colors.text }]}
@@ -736,10 +736,15 @@ const sh = StyleSheet.create({
     alignItems: "center",
     marginHorizontal: 14,
     marginVertical: 10,
-    borderRadius: 12,
+    borderRadius: 999,
     paddingHorizontal: 12,
     height: 42,
     gap: 8,
+    borderWidth: 0.5,
+    ...Platform.select({
+      web: { boxShadow: "0 4px 20px rgba(0,0,0,0.13)" } as any,
+      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 },
+    }),
   },
   searchInput: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular", height: 42 },
   loadingBox: { alignItems: "center", paddingVertical: 40, gap: 12 },

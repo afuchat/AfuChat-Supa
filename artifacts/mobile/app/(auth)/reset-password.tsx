@@ -222,7 +222,7 @@ const s = StyleSheet.create({
   sub: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 22, marginBottom: 24 },
   errBox: { backgroundColor: "rgba(192,57,43,.12)", borderColor: "rgba(192,57,43,.3)", borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 14 },
   errTxt: { color: "#FF6B6B", fontSize: 13, fontFamily: "Inter_400Regular" },
-  inputWrap: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12 },
+  inputWrap: { flexDirection: "row", alignItems: "center", borderWidth: 0.5, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 },
   input: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular" },
   btn: { borderRadius: 999, paddingVertical: 14, alignItems: "center", marginTop: 4 },
   btnTxt: { color: "#000", fontSize: 15, fontFamily: "Inter_700Bold" },

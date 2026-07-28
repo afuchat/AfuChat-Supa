@@ -1329,7 +1329,7 @@ const cStyles = StyleSheet.create({
   inputRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 8 },
   inputGlassPill: {
     flex: 1,
-    borderRadius: 28,
+    borderRadius: 999,
     borderWidth: 0.5,
     overflow: "hidden",
     ...Platform.select({

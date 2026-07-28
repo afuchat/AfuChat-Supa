@@ -257,11 +257,15 @@ const st = StyleSheet.create({
     alignItems: "center",
     marginHorizontal: 16,
     marginBottom: 22,
-    borderRadius: 14,
-    borderWidth: 1,
+    borderRadius: 999,
+    borderWidth: 0.5,
     paddingHorizontal: 14,
     height: 50,
     gap: 10,
+    ...Platform.select({
+      web: { boxShadow: "0 4px 20px rgba(0,0,0,0.13)" } as any,
+      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 },
+    }),
   },
   inputIcon: { fontSize: 22 },
   input: {

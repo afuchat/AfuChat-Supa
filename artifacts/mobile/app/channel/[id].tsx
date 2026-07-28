@@ -723,7 +723,7 @@ const st = StyleSheet.create({
     flex: 1,
     minHeight: 38,
     maxHeight: 120,
-    borderRadius: 26,
+    borderRadius: 999,
     borderWidth: 0.5,
     overflow: "hidden",
     justifyContent: "center",

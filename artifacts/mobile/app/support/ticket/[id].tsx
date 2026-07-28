@@ -540,10 +540,14 @@ const st = StyleSheet.create({
   },
   replyPill: {
     flex: 1,
-    borderRadius: 26,
+    borderRadius: 999,
     borderWidth: 0.5,
     overflow: "hidden",
     justifyContent: "center",
+    ...Platform.select({
+      web: { boxShadow: "0 4px 20px rgba(0,0,0,0.13)" } as any,
+      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 },
+    }),
   },
   replyInput: {
     flex: 1,

@@ -933,7 +933,7 @@ const s = StyleSheet.create({
   stepTitle:       { fontSize: 20, fontFamily: "Inter_700Bold", marginBottom: 4 },
   stepDesc:        { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 20 },
   textInput:       { borderRadius: 14, borderWidth: 1, padding: 14, fontSize: 15, fontFamily: "Inter_400Regular" },
-  codeInput:       { borderRadius: 14, borderWidth: 1, padding: 16, fontSize: 28, fontFamily: "Inter_700Bold", textAlign: "center", letterSpacing: 12, marginVertical: 8 },
+  codeInput:       { borderRadius: 999, borderWidth: 0.5, padding: 16, fontSize: 28, fontFamily: "Inter_700Bold", textAlign: "center", letterSpacing: 12, marginVertical: 8 },
   linkText:        { fontSize: 14, fontFamily: "Inter_500Medium", textAlign: "center", paddingVertical: 8 },
   recoveryIconWrap:{ width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", alignSelf: "center" },
 });
