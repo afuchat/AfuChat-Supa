@@ -1,8 +1,7 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
+  Keyboard,
   StyleSheet,
   Text,
   TextInput,
@@ -11,6 +10,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "@/lib/haptics";
@@ -31,6 +31,13 @@ export default function CreateChannelScreen() {
   const { colors } = useTheme();
   const { user, subscription } = useAuth();
 
+  const insets = useSafeAreaInsets();
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  useEffect(() => {
+    const show = Keyboard.addListener("keyboardDidShow", (e) => setKeyboardHeight(e.endCoordinates.height));
+    const hide = Keyboard.addListener("keyboardDidHide", () => setKeyboardHeight(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
   const [channelName, setChannelName] = useState("");
   const [description, setDescription] = useState("");
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
@@ -140,10 +147,7 @@ export default function CreateChannelScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.root, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
+    <View style={[styles.root, { backgroundColor: colors.background, paddingBottom: keyboardHeight }]}>
       <GlassHeader
         title="New Channel"
         onBack={() => router.back()}
@@ -251,7 +255,7 @@ export default function CreateChannelScreen() {
           As the channel owner, only you can post broadcasts. Subscribers can like and comment on your posts.
         </Text>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

@@ -1056,86 +1056,95 @@ export function VideoCommentsSheet({
       )}
 
       {user ? (
-        <View style={[cStyles.inputRow, { borderTopColor: borderTopClr, paddingBottom: kbHeight > 0 ? Math.max(insets.bottom, 8) : Math.max(insets.bottom, 16) }]}>
-          <Avatar uri={profile?.avatar_url} name={profile?.display_name || "You"} size={32} />
+        <View style={[cStyles.inputRow, { paddingBottom: kbHeight > 0 ? Math.max(insets.bottom, 8) : Math.max(insets.bottom, 16) }]}>
+          {/* ── Glass pill — everything lives inside ── */}
+          <View style={[cStyles.inputGlassPill, { backgroundColor: inputBg, borderColor: isDark ? "rgba(255,255,255,0.13)" : "rgba(26,18,8,0.13)" }]}>
+            <View style={cStyles.inputBarRow}>
+              {recordState === "recording" ? (
+                /* Active recording fills the whole pill */
+                <RecordingBar elapsed={recordElapsed} onStop={() => stopRecording()} accent={accent} />
+              ) : (
+                <>
+                  {/* Left: emoji / quick-emoji toggle */}
+                  <TouchableOpacity
+                    onPress={() => setShowEmojiPanel((p) => !p)}
+                    hitSlop={6}
+                    activeOpacity={0.7}
+                    style={[cStyles.pillIconBtn, showEmojiPanel && { backgroundColor: accent + "25" }]}
+                  >
+                    <Ionicons name="happy-outline" size={20} color={showEmojiPanel ? accent : attachIconCl} />
+                  </TouchableOpacity>
 
-          <View style={[cStyles.inputPill, { backgroundColor: inputBg }]}>
-            {recordState === "recording" ? (
-              <RecordingBar elapsed={recordElapsed} onStop={() => stopRecording()} accent={accent} />
-            ) : (
-              <>
-                <TextInput
-                  ref={inputRef}
-                  style={[cStyles.input, { color: inputTxt }]}
-                  placeholder={recordState === "recorded" ? "Add a caption… (optional)" : "Add a comment…"}
-                  placeholderTextColor={inputPH}
-                  value={text}
-                  onChangeText={setText}
-                  multiline
-                  maxLength={500}
-                />
-                {text.length > 400 && (
-                  <Text style={[cStyles.charCounter, { color: charLeft < 20 ? "#FF453A" : inputPH }]}>
-                    {charLeft}
-                  </Text>
-                )}
-              </>
-            )}
-          </View>
+                  {/* Centre: text input */}
+                  <TextInput
+                    ref={inputRef}
+                    style={[cStyles.input, { color: inputTxt }]}
+                    placeholder={recordState === "recorded" ? "Add a caption… (optional)" : "Add a comment…"}
+                    placeholderTextColor={inputPH}
+                    value={text}
+                    onChangeText={setText}
+                    multiline
+                    maxLength={500}
+                  />
 
-          {canSend ? (
-            <Animated.View style={{ transform: [{ scale: sendScale }] }}>
-              <TouchableOpacity
-                onPress={sendReply}
-                disabled={!canSend}
-                style={[cStyles.sendBtn, { backgroundColor: accent }]}
-              >
-                {sending
-                  ? <ActivityIndicator size={14} color="#fff" />
-                  : <Ionicons name="arrow-up" size={16} color="#fff" />
-                }
-              </TouchableOpacity>
-            </Animated.View>
-          ) : recordState === "recording" ? null : (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
-              <TouchableOpacity
-                onPress={pickImage}
-                hitSlop={6}
-                activeOpacity={0.7}
-                style={[cStyles.actionIconBtn, attachedImage && { backgroundColor: accent + "30" }]}
-              >
-                <Ionicons name="image" size={22} color={attachedImage ? accent : attachIconCl} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setShowEmojiPanel((p) => !p)}
-                hitSlop={6}
-                activeOpacity={0.7}
-                style={[cStyles.actionIconBtn, showEmojiPanel && { backgroundColor: accent + "25" }]}
-              >
-                <Ionicons name={showEmojiPanel ? "happy" : "happy"} size={22} color={showEmojiPanel ? accent : attachIconCl} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => { setText((t) => t + "@"); setTimeout(() => inputRef.current?.focus(), 50); }}
-                hitSlop={6}
-                activeOpacity={0.7}
-                style={cStyles.actionIconBtn}
-              >
-                <Text style={{ color: attachIconCl, fontSize: 18, fontFamily: "Inter_700Bold", lineHeight: 22 }}>@</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={recordState === "recorded" ? discardRecording : startRecording}
-                hitSlop={6}
-                activeOpacity={0.7}
-                style={[cStyles.actionIconBtn, recordState === "recorded" && { backgroundColor: accent + "30" }]}
-              >
-                <Ionicons
-                  name={recordState === "recorded" ? "mic" : "mic"}
-                  size={22}
-                  color={recordState === "recorded" ? accent : attachIconCl}
-                />
-              </TouchableOpacity>
+                  {/* Char counter (overlaid inside pill) */}
+                  {text.length > 400 && (
+                    <Text style={[cStyles.charCounter, { color: charLeft < 20 ? "#FF453A" : inputPH }]}>
+                      {charLeft}
+                    </Text>
+                  )}
+
+                  {/* Right: action icons — only when nothing to send yet */}
+                  {!canSend && (
+                    <>
+                      <TouchableOpacity
+                        onPress={pickImage}
+                        hitSlop={6}
+                        activeOpacity={0.7}
+                        style={[cStyles.pillIconBtn, attachedImage && { backgroundColor: accent + "30" }]}
+                      >
+                        <Ionicons name="image-outline" size={20} color={attachedImage ? accent : attachIconCl} />
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={() => { setText((t) => t + "@"); setTimeout(() => inputRef.current?.focus(), 50); }}
+                        hitSlop={6}
+                        activeOpacity={0.7}
+                        style={cStyles.pillIconBtn}
+                      >
+                        <Text style={{ color: attachIconCl, fontSize: 15, fontFamily: "Inter_700Bold", lineHeight: 20 }}>@</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={recordState === "recorded" ? discardRecording : startRecording}
+                        hitSlop={6}
+                        activeOpacity={0.7}
+                        style={[cStyles.pillIconBtn, recordState === "recorded" && { backgroundColor: accent + "30" }]}
+                      >
+                        <Ionicons name="mic-outline" size={20} color={recordState === "recorded" ? accent : attachIconCl} />
+                      </TouchableOpacity>
+                    </>
+                  )}
+
+                  {/* Right: send button (appears when there's content) */}
+                  {canSend && (
+                    <Animated.View style={{ transform: [{ scale: sendScale }] }}>
+                      <TouchableOpacity
+                        onPress={sendReply}
+                        disabled={!canSend}
+                        style={[cStyles.sendBtn, { backgroundColor: accent }]}
+                      >
+                        {sending
+                          ? <ActivityIndicator size={14} color="#fff" />
+                          : <Ionicons name="arrow-up" size={16} color="#fff" />
+                        }
+                      </TouchableOpacity>
+                    </Animated.View>
+                  )}
+                </>
+              )}
             </View>
-          )}
+          </View>
         </View>
       ) : (
         <TouchableOpacity
@@ -1308,12 +1317,21 @@ const cStyles = StyleSheet.create({
   emojiBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 6, gap: 2 },
   emojiBtn: { flex: 1, alignItems: "center", paddingVertical: 6 },
   emojiText: { fontSize: 20 },
-  inputRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
-  inputPill: { flex: 1, flexDirection: "row", alignItems: "center", borderRadius: 22, paddingHorizontal: 14, paddingVertical: 6, gap: 4 },
-  input: { flex: 1, fontFamily: "Inter_400Regular", fontSize: 14, maxHeight: 100, paddingVertical: 4 },
-  sendBtn: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
-  charCounter: { position: "absolute", right: 4, bottom: 6, fontSize: 10, fontFamily: "Inter_500Medium" },
-  actionIconBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  inputRow: { paddingHorizontal: 12, paddingVertical: 8 },
+  inputGlassPill: {
+    borderRadius: 28,
+    borderWidth: 0.5,
+    overflow: "hidden",
+    ...Platform.select({
+      web: { boxShadow: "0 4px 20px rgba(0,0,0,0.14)" } as any,
+      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.14, shadowRadius: 12, elevation: 10 },
+    }),
+  },
+  inputBarRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 6, paddingVertical: 4, gap: 2 },
+  pillIconBtn: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  input: { flex: 1, fontFamily: "Inter_400Regular", fontSize: 14, maxHeight: 100, paddingVertical: 4, paddingHorizontal: 4 },
+  sendBtn: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", marginRight: 2 },
+  charCounter: { fontSize: 10, fontFamily: "Inter_500Medium" },
   attachBtn: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
   imagePreviewBar: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 8 },
   imageThumbWrap: { position: "relative" },

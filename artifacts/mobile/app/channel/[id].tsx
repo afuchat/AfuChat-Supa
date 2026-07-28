@@ -2,8 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  KeyboardAvoidingView,
-  Platform,
+  Keyboard,
   RefreshControl,
   Share,
   StyleSheet,
@@ -86,6 +85,12 @@ export default function ChannelDetailScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  useEffect(() => {
+    const show = Keyboard.addListener("keyboardDidShow", (e) => setKeyboardHeight(e.endCoordinates.height));
+    const hide = Keyboard.addListener("keyboardDidHide", () => setKeyboardHeight(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
   const flatListRef = useRef<FlatList>(null);
 
   const [channel, setChannel] = useState<Channel | null>(null);
@@ -457,11 +462,7 @@ export default function ChannelDetailScreen() {
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
-    <KeyboardAvoidingView
-      style={[st.root, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={0}
-    >
+    <View style={[st.root, { backgroundColor: colors.background, paddingBottom: keyboardHeight }]}>
       {/* Header */}
       <View style={[st.header, { backgroundColor: colors.surface, borderBottomColor: colors.border, paddingTop: insets.top }]}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={12} style={st.topBarBtn}>
@@ -599,7 +600,7 @@ export default function ChannelDetailScreen() {
           )}
         </View>
       )}
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

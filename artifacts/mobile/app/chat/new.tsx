@@ -8,9 +8,8 @@ import React, {
 import {
   ActivityIndicator,
   FlatList,
-  KeyboardAvoidingView,
+  Keyboard,
   Linking,
-  Platform,
   Pressable,
   RefreshControl,
   SectionList,
@@ -126,6 +125,12 @@ export default function NewChatScreen() {
   const { colors, accent } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  useEffect(() => {
+    const show = Keyboard.addListener("keyboardDidShow", (e) => setKeyboardHeight(e.endCoordinates.height));
+    const hide = Keyboard.addListener("keyboardDidHide", () => setKeyboardHeight(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
@@ -416,11 +421,7 @@ export default function NewChatScreen() {
   const isSearchMode = query.trim().length > 0;
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.root, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={0}
-    >
+    <View style={[styles.root, { backgroundColor: colors.background, paddingBottom: keyboardHeight }]}>
       <OfflineBanner />
 
       {/* ── Header ── */}
@@ -747,7 +748,7 @@ export default function NewChatScreen() {
           </View>
         )}
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
