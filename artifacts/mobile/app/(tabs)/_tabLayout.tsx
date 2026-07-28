@@ -349,14 +349,14 @@ const sheet = StyleSheet.create({
   optionDesc:  { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
 });
 
-function ClassicTabLayout({ isLoggedIn }: { isLoggedIn: boolean }) {
+function ClassicTabLayout({ isLoggedIn, bottomPadding }: { isLoggedIn: boolean; bottomPadding: number }) {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         freezeOnBlur: true,
         animation: "none",
-        sceneStyle: { backgroundColor: "transparent" },
+        sceneStyle: { backgroundColor: "transparent", paddingBottom: bottomPadding },
         tabBarStyle: {
           display: "none",
           backgroundColor: "transparent",
@@ -384,6 +384,10 @@ export default function TabLayout() {
   const { session, profile, loading, user } = useAuth();
   const isLoggedIn     = !!session || !!user;
   const prevSessionRef = useRef<Session | null>(null);
+  const insets         = useSafeAreaInsets();
+  const PILL_H         = 72;
+  const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 10;
+  const bottomPadding  = isLoggedIn ? PILL_BOTTOM + PILL_H : 0;
 
   useEffect(() => {
     if (loading) return;
@@ -406,7 +410,7 @@ export default function TabLayout() {
   return (
     <TabSwipeProvider>
       <View style={{ flex: 1 }}>
-        <ClassicTabLayout isLoggedIn={isLoggedIn} />
+        <ClassicTabLayout isLoggedIn={isLoggedIn} bottomPadding={bottomPadding} />
 
         {isLoggedIn && (
           <CompactTabBar
