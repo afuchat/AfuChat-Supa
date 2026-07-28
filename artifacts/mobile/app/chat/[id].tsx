@@ -1631,30 +1631,56 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
       )}
     </View>
     {msg._isAi && ((msg._aiActions?.length ?? 0) > 0 || (msg._aiSuggestions?.length ?? 0) > 0) && (
-      <View style={{ paddingLeft: 10, paddingRight: 10, marginTop: 2 }}>
+      <View style={{ paddingLeft: 10, marginTop: 4 }}>
         {msg._aiActions && msg._aiActions.length > 0 && (
-          <View style={{ gap: 6, marginTop: 4 }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 6, paddingRight: 10, paddingBottom: 2 }}
+            style={{ marginBottom: 4 }}
+          >
             {msg._aiActions.map((action, i) => (
-              <TouchableOpacity key={i} onPress={() => { if (action.action === "navigate" && action.params?.route) router.push(action.params.route as any); }} activeOpacity={0.7}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, paddingVertical: 11, borderRadius: 12, backgroundColor: BRAND + "10", borderWidth: 1, borderColor: BRAND + "30" }}>
-                  <Ionicons name={action.icon as any} size={16} color={BRAND} />
-                  <Text style={{ flex: 1, fontSize: 14, fontFamily: "Inter_600SemiBold", color: BRAND }}>{action.label}</Text>
-                  <Ionicons name="chevron-forward" size={14} color={BRAND} />
+              <TouchableOpacity
+                key={i}
+                onPress={() => { if (action.action === "navigate" && action.params?.route) router.push(action.params.route as any); }}
+                activeOpacity={0.75}
+              >
+                <View style={{
+                  flexDirection: "row", alignItems: "center", gap: 5,
+                  paddingHorizontal: 10, paddingVertical: 6,
+                  borderRadius: 20,
+                  backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)",
+                  borderWidth: 1,
+                  borderColor: BRAND + "35",
+                  overflow: "hidden",
+                }}>
+                  <Ionicons name={action.icon as any} size={12} color={BRAND} />
+                  <Text style={{ fontSize: 12, fontFamily: "Inter_500Medium", color: BRAND }} numberOfLines={1}>{action.label}</Text>
                 </View>
               </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
         )}
         {msg._aiSuggestions && msg._aiSuggestions.length > 0 && (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6, marginBottom: 4 }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 6, paddingRight: 10, paddingBottom: 4 }}
+          >
             {msg._aiSuggestions.map((s, i) => (
-              <TouchableOpacity key={i} onPress={() => onSuggestionTap?.(s)} activeOpacity={0.7}>
-                <View style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16, borderWidth: 1, borderColor: BRAND + "50", backgroundColor: BRAND + "08" }}>
-                  <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: BRAND }}>{s}</Text>
+              <TouchableOpacity key={i} onPress={() => onSuggestionTap?.(s)} activeOpacity={0.75}>
+                <View style={{
+                  paddingHorizontal: 10, paddingVertical: 5,
+                  borderRadius: 20,
+                  backgroundColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.04)",
+                  borderWidth: 1,
+                  borderColor: BRAND + "30",
+                }}>
+                  <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: BRAND }} numberOfLines={1}>{s}</Text>
                 </View>
               </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
         )}
       </View>
     )}
@@ -4143,9 +4169,6 @@ STRICT RULES:
 
       const engagera = getEngagera();
 
-      // Detect web-search intent to enable AfuBot live crawling
-      const isWebQuery = /\b(search for|look up|latest news|current|today['']s|weather|price of|stock price|who is|what happened|wikipedia)\b/i.test(userText);
-
       // Token accumulator — flush to state every 40 ms for smooth per-token display
       let accumulated = "";
       let lastFlushed = "";
@@ -4164,7 +4187,6 @@ STRICT RULES:
         for await (const event of engagera.chat.stream({
           messages: [{ role: "system" as const, content: systemPrompt + lensAddition }, ...conversationMessages],
           model: "engagera-2.1",
-          useAfuBot: isWebQuery,
         })) {
           if (event.type === "text") {
             accumulated += event.text;
