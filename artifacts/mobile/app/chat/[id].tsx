@@ -491,15 +491,41 @@ function TypingBubble({ names, colors }: { names: string[]; colors: any }) {
 function BottomSheet({ visible, onClose, children }: { visible: boolean; onClose: () => void; children: React.ReactNode }) {
   const { colors } = useTheme();
   const { height: screenHeight } = useWindowDimensions();
-  const translateY = useRef(new Animated.Value(screenHeight)).current;
+  const translateY     = useRef(new Animated.Value(screenHeight)).current;
+  // Tracks keyboard height so the sheet lifts above the keyboard.
+  // Uses JS-side animation (useNativeDriver:false) because `bottom` is a
+  // layout property and cannot be driven by the native thread.
+  const keyboardBottom = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (visible) {
       Animated.spring(translateY, { toValue: 0, useNativeDriver: true, damping: 22, stiffness: 260 }).start();
     } else {
       Animated.timing(translateY, { toValue: screenHeight, duration: 220, useNativeDriver: true }).start();
+      // Reset keyboard offset when sheet closes so it's ready for next open.
+      keyboardBottom.setValue(0);
     }
   }, [visible, screenHeight]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const onShow = Keyboard.addListener(showEvent, (e) => {
+      Animated.timing(keyboardBottom, {
+        toValue: e.endCoordinates.height,
+        duration: Platform.OS === "ios" ? (e.duration ?? 250) : 200,
+        useNativeDriver: false,
+      }).start();
+    });
+    const onHide = Keyboard.addListener(hideEvent, (e) => {
+      Animated.timing(keyboardBottom, {
+        toValue: 0,
+        duration: Platform.OS === "ios" ? (e.duration ?? 200) : 150,
+        useNativeDriver: false,
+      }).start();
+    });
+    return () => { onShow.remove(); onHide.remove(); };
+  }, []);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -507,6 +533,7 @@ function BottomSheet({ visible, onClose, children }: { visible: boolean; onClose
       onPanResponderMove: (_, g) => { if (g.dy > 0) translateY.setValue(g.dy); },
       onPanResponderRelease: (_, g) => {
         if (g.dy > 80 || g.vy > 0.4) {
+          Keyboard.dismiss();
           Animated.timing(translateY, { toValue: screenHeight, duration: 200, useNativeDriver: true }).start(() => onClose());
         } else {
           Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start();
@@ -519,9 +546,9 @@ function BottomSheet({ visible, onClose, children }: { visible: boolean; onClose
 
   return (
     <View style={[StyleSheet.absoluteFill, { pointerEvents: "box-none" }]}>
-      <Pressable style={[st.sheetOverlay, { backgroundColor: "rgba(0,0,0,0.5)" }]} onPress={onClose} />
+      <Pressable style={[st.sheetOverlay, { backgroundColor: "rgba(0,0,0,0.5)" }]} onPress={() => { Keyboard.dismiss(); onClose(); }} />
       <Animated.View
-        style={[st.sheetContent, { backgroundColor: colors.surface, transform: [{ translateY }], maxHeight: screenHeight * 0.75 }]}
+        style={[st.sheetContent, { backgroundColor: colors.surface, transform: [{ translateY }], maxHeight: screenHeight * 0.75, bottom: keyboardBottom }]}
         {...panResponder.panHandlers}
       >
         {children}
@@ -8960,7 +8987,7 @@ const st = StyleSheet.create({
   swipeReplyIcon: { position: "absolute", top: "50%", marginTop: -12, width: 28, height: 28, borderRadius: 14, backgroundColor: "rgba(128,128,128,0.12)", alignItems: "center", justifyContent: "center" },
   specialMsgTap: { padding: 4 },
   specialMsgEmoji: { fontSize: 56 },
-  redEnvBtn: { backgroundColor: "#FF3B30", borderRadius: 14, paddingVertical: 14, alignItems: "center" },
+  redEnvBtn: { backgroundColor: "#FF3B30", borderRadius: 999, paddingVertical: 14, alignItems: "center" },
   redEnvBtnText: { color: "#fff", fontSize: 16, fontFamily: "Inter_600SemiBold" },
 
   envRevealOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", alignItems: "center", padding: 24 },
