@@ -22,6 +22,7 @@ import {
   PanResponder,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -661,6 +662,12 @@ export function VideoCommentsSheet({
   const [attachedImage, setAttachedImage] = useState<{ uri: string; width: number; height: number } | null>(null);
   const [showEmojiPanel, setShowEmojiPanel] = useState(false);
 
+  // ── Mention suggestions ──────────────────────────────────────────────────────
+  const [mentionSuggestions, setMentionSuggestions] = useState<Array<{
+    id: string; handle: string; display_name: string; avatar_url: string | null;
+  }>>([]);
+  const mentionQueryRef = useRef<string | null>(null);
+
   const listRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
   const sendScale = useRef(new Animated.Value(1)).current;
@@ -752,6 +759,41 @@ export function VideoCommentsSheet({
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [visible, postId, loadReplies]);
+
+  async function fetchMentionSuggestions(query: string) {
+    try {
+      const q = supabase
+        .from("profiles")
+        .select("id, handle, display_name, avatar_url")
+        .limit(8);
+      if (query.length > 0) q.ilike("handle", `${query}%`);
+      const { data } = await q;
+      if (data && mentionQueryRef.current !== null) {
+        setMentionSuggestions(data as any);
+      }
+    } catch {}
+  }
+
+  function handleTextChange(val: string) {
+    setText(val);
+    const match = val.match(/@(\w*)$/);
+    if (match) {
+      const query = match[1];
+      mentionQueryRef.current = query;
+      fetchMentionSuggestions(query);
+    } else {
+      mentionQueryRef.current = null;
+      if (mentionSuggestions.length > 0) setMentionSuggestions([]);
+    }
+  }
+
+  function insertMention(handle: string) {
+    const q = mentionQueryRef.current ?? "";
+    setText((prev) => prev.replace(new RegExp(`@${q}$`), `@${handle} `));
+    mentionQueryRef.current = null;
+    setMentionSuggestions([]);
+    inputRef.current?.focus();
+  }
 
   function handleReplyTo(reply: Reply) {
     setReplyingTo(reply);
@@ -1018,8 +1060,18 @@ export function VideoCommentsSheet({
     animSheetH.setValue(peekSH);
   }
 
+  // Dynamic input bar height — mirrors the same calculation as post/[id].tsx so
+  // the FlatList paddingBottom always clears the absolutely-positioned input bar.
+  const inputBaseH = 56; // inputRow: avatar(32) + padding(8+8) + pill
+  const inputDynH =
+    inputBaseH +
+    (replyingTo ? 36 : 0) +
+    (showEmojiPanel ? 52 : 0) +
+    (attachedImage ? 72 : 0) +
+    (recordState === "recorded" && recordedUri ? 88 : 0) +
+    (mentionSuggestions.length > 0 ? 56 : 0);
+
   const mediaBarH = (recordState === "recorded" && recordedUri) ? 88 : (attachedImage ? 72 : 0);
-  const listMaxH = Math.max(sheetMaxH - 230 - mediaBarH - Math.max(insets.bottom, 16), 80);
 
   const canSend = !sending && (text.trim().length > 0 || (recordState === "recorded" && !!recordedUri) || !!attachedImage);
   // ─── Native bottom sheet content ───────────────────────────────────────────
@@ -1070,6 +1122,31 @@ export function VideoCommentsSheet({
         </View>
       )}
 
+      {/* Mention suggestion row — appears when user types @handle */}
+      {mentionSuggestions.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="always"
+          style={[cStyles.mentionRow, { borderTopColor: borderTopClr }]}
+          contentContainerStyle={{ paddingHorizontal: 8, gap: 6 }}
+        >
+          {mentionSuggestions.map((u) => (
+            <TouchableOpacity
+              key={u.id}
+              onPress={() => insertMention(u.handle)}
+              style={cStyles.mentionChip}
+              activeOpacity={0.7}
+            >
+              <Avatar uri={u.avatar_url} name={u.display_name} size={28} userId={u.id} />
+              <Text style={{ color: accent, fontSize: 12, fontFamily: "Inter_600SemiBold" }}>
+                @{u.handle}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
       {user ? (
         <View style={[cStyles.inputRow, { paddingBottom: kbHeight > 0 ? 8 : 12 }]}>
           {/* Avatar — sits to the left of the pill, never inside it */}
@@ -1090,7 +1167,7 @@ export function VideoCommentsSheet({
                     placeholder={recordState === "recorded" ? "Add a caption… (optional)" : "Add a comment…"}
                     placeholderTextColor={inputPH}
                     value={text}
-                    onChangeText={setText}
+                    onChangeText={handleTextChange}
                     multiline
                     maxLength={500}
                   />
@@ -1230,7 +1307,7 @@ export function VideoCommentsSheet({
             data={sortedTree}
             keyExtractor={(r) => r.id}
             style={{ flex: 1 }}
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 80 + Math.max(kbHeight, insets.bottom) }}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: inputDynH + Math.max(kbHeight, insets.bottom) }}
             showsVerticalScrollIndicator={false}
             scrollEventThrottle={16}
             keyboardShouldPersistTaps="handled"
@@ -1357,4 +1434,15 @@ const cStyles = StyleSheet.create({
   imageThumbWrap: { position: "relative" },
   imageThumb: { width: 52, height: 52, borderRadius: 8 },
   imageRemoveBtn: { position: "absolute", top: -6, right: -6 },
+  mentionRow: {
+    flexDirection: "row", flexWrap: "nowrap",
+    paddingHorizontal: 10, paddingVertical: 6, gap: 6,
+    borderTopWidth: 0.5,
+  },
+  mentionChip: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
 });

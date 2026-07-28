@@ -283,6 +283,12 @@ export default function PostDetailScreen() {
   const [showEmojiPanel, setShowEmojiPanel] = useState(false);
   const [kbHeight, setKbHeight] = useState(0);
 
+  // ── Mention suggestions ──────────────────────────────────────────────────────
+  const [mentionSuggestions, setMentionSuggestions] = useState<Array<{
+    id: string; handle: string; display_name: string; avatar_url: string | null;
+  }>>([]);
+  const mentionQueryRef = useRef<string | null>(null);
+
   // ── Recording state ──────────────────────────────────────────────────────────
   const [recordState, setRecordState] = useState<RecordState>("idle");
   const [recordingObj, setRecordingObj] = useState<AudioRecording | null>(null);
@@ -470,6 +476,42 @@ export default function PostDetailScreen() {
     }
   }, [user, post, bookmarked]);
 
+  // ── Mention suggestions ──────────────────────────────────────────────────────
+  async function fetchMentionSuggestions(query: string) {
+    try {
+      const q = supabase
+        .from("profiles")
+        .select("id, handle, display_name, avatar_url")
+        .limit(8);
+      if (query.length > 0) q.ilike("handle", `${query}%`);
+      const { data } = await q;
+      if (data && mentionQueryRef.current !== null) {
+        setMentionSuggestions(data as any);
+      }
+    } catch {}
+  }
+
+  function handleTextChange(val: string) {
+    setText(val);
+    const match = val.match(/@(\w*)$/);
+    if (match) {
+      const query = match[1];
+      mentionQueryRef.current = query;
+      fetchMentionSuggestions(query);
+    } else {
+      mentionQueryRef.current = null;
+      if (mentionSuggestions.length > 0) setMentionSuggestions([]);
+    }
+  }
+
+  function insertMention(handle: string) {
+    const q = mentionQueryRef.current ?? "";
+    setText((prev) => prev.replace(new RegExp(`@${q}$`), `@${handle} `));
+    mentionQueryRef.current = null;
+    setMentionSuggestions([]);
+    inputRef.current?.focus();
+  }
+
   // ── Comment interactions ─────────────────────────────────────────────────────
   function handleReplyTo(reply: Reply) {
     setReplyingTo(reply);
@@ -653,8 +695,9 @@ export default function PostDetailScreen() {
   const imagePreviewH = attachedImage ? 72 : 0;
   const voicePreviewH = recordState === "recorded" && recordedUri ? 88 : 0;
   const emojiPanelH = showEmojiPanel ? 52 : 0;
+  const mentionRowH = mentionSuggestions.length > 0 ? 56 : 0;
   const inputRowH = 72;
-  const inputBarH = replyBannerH + imagePreviewH + voicePreviewH + emojiPanelH + inputRowH;
+  const inputBarH = replyBannerH + imagePreviewH + voicePreviewH + emojiPanelH + mentionRowH + inputRowH;
 
   // ── Theme colours for input bar ───────────────────────────────────────────────
   const inputBg = isDark ? "rgba(255,255,255,0.08)" : "#EDE8DC";
@@ -880,6 +923,31 @@ export default function PostDetailScreen() {
             </View>
           )}
 
+          {/* Mention suggestion row — appears when user types @handle */}
+          {mentionSuggestions.length > 0 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyboardShouldPersistTaps="always"
+              style={[st.mentionRow, { borderColor: separatorClr }]}
+              contentContainerStyle={{ paddingHorizontal: 8, gap: 6 }}
+            >
+              {mentionSuggestions.map((u) => (
+                <TouchableOpacity
+                  key={u.id}
+                  onPress={() => insertMention(u.handle)}
+                  style={[st.mentionChip, { backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }]}
+                  activeOpacity={0.7}
+                >
+                  <Avatar uri={u.avatar_url} name={u.display_name} size={28} userId={u.id} />
+                  <Text style={{ color: accent, fontSize: 12, fontFamily: "Inter_600SemiBold" }}>
+                    @{u.handle}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+
           {/* Main input row */}
           {user ? (
             <View style={st.inputRow}>
@@ -901,7 +969,7 @@ export default function PostDetailScreen() {
                         placeholder={recordState === "recorded" ? "Add a caption… (optional)" : "Add a comment…"}
                         placeholderTextColor={inputPH}
                         value={text}
-                        onChangeText={setText}
+                        onChangeText={handleTextChange}
                         multiline
                         maxLength={500}
                       />
@@ -1063,6 +1131,11 @@ const st = StyleSheet.create({
   emojiText: { fontSize: 20 },
   inputRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 8, paddingVertical: 8 },
   micBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", borderWidth: 0.5 },
+  mentionRow: { borderTopWidth: 0.5, maxHeight: 56 },
+  mentionChip: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
+  },
   inputPill: {
     flex: 1, borderRadius: 999, borderWidth: 0.5, overflow: "hidden",
     ...Platform.select({
