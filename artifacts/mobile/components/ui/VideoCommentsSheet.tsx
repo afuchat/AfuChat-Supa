@@ -54,8 +54,8 @@ import { uploadToStorage } from "@/lib/mediaUpload";
 
 const USE_NATIVE = true;
 const VID_THREAD_COLORS = ["#1f95ff", "#5C6BC0", "#26A69A", "#EF6C00", "#8E24AA"];
-const QUICK_EMOJIS = ["🔥", "❤️", "😂", "😮", "👏", "💯", "🙌", "😍"];
-const MAX_VOICE_SECS = 60;
+export const QUICK_EMOJIS = ["🔥", "❤️", "😂", "😮", "👏", "💯", "🙌", "😍"];
+export const MAX_VOICE_SECS = 60;
 const WAVEFORM_BARS = 30;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -93,7 +93,7 @@ export function buildReplyTree(flat: Reply[]): Reply[] {
   return roots;
 }
 
-function formatCount(n: number): string {
+export function formatCount(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return String(n);
@@ -132,7 +132,7 @@ function genWaveHeights(seed: string): number[] {
 
 // ─── CommentSkeleton ──────────────────────────────────────────────────────────
 
-function CommentSkeleton({ isDark }: { isDark: boolean }) {
+export function CommentSkeleton({ isDark }: { isDark: boolean }) {
   return (
     <View style={{ paddingHorizontal: 16, paddingTop: 16, gap: 12 }}>
       {[0.85, 0.65, 0.75, 0.55, 0.70].map((w, i) => (
@@ -313,7 +313,7 @@ const vpStyles = StyleSheet.create({
 
 // ─── VideoReplyItem ───────────────────────────────────────────────────────────
 
-function VideoReplyItem({
+export function VideoReplyItem({
   reply: r, depth, onReplyTo, isCreator, isNew, accent, likedSet, onLike, isDark = true,
 }: {
   reply: Reply; depth: number; onReplyTo: (r: Reply) => void;
@@ -452,7 +452,7 @@ function VideoReplyItem({
 
 // ─── RecordingBar ─────────────────────────────────────────────────────────────
 
-function RecordingBar({
+export function RecordingBar({
   elapsed, onStop, accent,
 }: {
   elapsed: number; onStop: () => void; accent: string;
@@ -499,7 +499,7 @@ const rbStyles = StyleSheet.create({
 
 // ─── VoicePreviewBar ──────────────────────────────────────────────────────────
 
-function VoicePreviewBar({
+export function VoicePreviewBar({
   uri, durationSecs, onDiscard, accent,
 }: {
   uri: string; durationSecs: number; onDiscard: () => void; accent: string;
