@@ -58,10 +58,17 @@ const RA_AVAILABLE = _RA !== null && _GH !== null;
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const SPRING = { damping: 20, stiffness: 200, mass: 0.8 };
-const MAX_SCALE = 5;
-const MIN_SCALE = 1;
+// Snappy spring for zoom transforms — fast, almost no wobble
+const ZOOM_SPRING  = { damping: 16, stiffness: 320, mass: 0.55 };
+// Softer spring for pan settle and overlay slide
+const PAN_SPRING   = { damping: 22, stiffness: 230, mass: 0.75 };
+// Rubber-band resistance factor when exceeding MAX_SCALE
+const RUBBER_BAND  = 0.18;
+const MAX_SCALE    = 7;
+const MIN_SCALE    = 1;
 const SWIPE_THRESHOLD = 60;
+// Overlay fade duration (ms)
+const OVERLAY_FADE = 170;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -74,6 +81,8 @@ type ZoomSlideProps = {
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
   onScaleChange: (s: number) => void;
+  /** Called on a single tap when not zoomed — used to toggle overlay. */
+  onSingleTap: () => void;
 };
 
 /** Post metadata passed to the viewer from the feed or detail page. */
@@ -100,10 +109,10 @@ export type PostViewerMeta = {
 // ─── Animated slide (uses Reanimated + GestureHandler) ───────────────────────
 
 function AnimatedZoomSlide({
-  uri, width, height, isActive, onClose, onSwipeLeft, onSwipeRight, onScaleChange,
+  uri, width, height, isActive, onClose, onSwipeLeft, onSwipeRight, onScaleChange, onSingleTap,
 }: ZoomSlideProps) {
   const {
-    useSharedValue, useAnimatedStyle, withSpring, withTiming, runOnJS,
+    useSharedValue, useAnimatedStyle, withSpring, withTiming, withDecay, runOnJS,
     default: AnimatedRN,
   } = _RA!;
   const { Gesture, GestureDetector } = _GH!;
@@ -121,11 +130,17 @@ function AnimatedZoomSlide({
   const pinchFocalX     = useSharedValue(0);
   const pinchFocalY     = useSharedValue(0);
 
+  // Snapshot of offsetX/Y at the START of each pan gesture — always reflects the
+  // actual animated position, not the pre-decay savedOffset (which goes stale
+  // when withDecay animation is still running when the next drag begins).
+  const panStartOffX = useSharedValue(0);
+  const panStartOffY = useSharedValue(0);
+
   useEffect(() => {
     if (!isActive) {
-      scale.value      = withSpring(1, SPRING);
-      offsetX.value    = withSpring(0, SPRING);
-      offsetY.value    = withSpring(0, SPRING);
+      scale.value      = withSpring(1, ZOOM_SPRING);
+      offsetX.value    = withSpring(0, ZOOM_SPRING);
+      offsetY.value    = withSpring(0, ZOOM_SPRING);
       savedScale.value = 1;
       savedOffsetX.value = 0;
       savedOffsetY.value = 0;
@@ -138,8 +153,21 @@ function AnimatedZoomSlide({
     return Math.max(-maxPan, Math.min(maxPan, val));
   }
 
+  // Rubber-band scale when approaching limits — feels physical
+  function rubberScale(raw: number): number {
+    "worklet";
+    if (raw > MAX_SCALE) {
+      return MAX_SCALE + (raw - MAX_SCALE) * RUBBER_BAND;
+    }
+    if (raw < MIN_SCALE) {
+      return MIN_SCALE - (MIN_SCALE - raw) * RUBBER_BAND;
+    }
+    return raw;
+  }
+
   const pinch = Gesture.Pinch()
     .onBegin((e: any) => {
+      "worklet";
       pinchStartScale.value = savedScale.value;
       pinchStartOffX.value  = savedOffsetX.value;
       pinchStartOffY.value  = savedOffsetY.value;
@@ -147,50 +175,98 @@ function AnimatedZoomSlide({
       pinchFocalY.value     = e.focalY - height / 2;
     })
     .onUpdate((e: any) => {
-      const s = Math.max(MIN_SCALE, Math.min(MAX_SCALE, pinchStartScale.value * e.scale));
+      "worklet";
+      const raw = pinchStartScale.value * e.scale;
+      const s   = rubberScale(raw);
       scale.value = s;
-      const scaleRatio = s / (pinchStartScale.value || 1);
+
+      // Keep focal point anchored — the point under your fingers stays still
+      const clampedS   = Math.max(MIN_SCALE, Math.min(MAX_SCALE, s));
+      const scaleRatio = clampedS / (pinchStartScale.value || 1);
       const fx = pinchFocalX.value;
       const fy = pinchFocalY.value;
-      offsetX.value = clampOffset(fx + (pinchStartOffX.value - fx) * scaleRatio, s, width);
-      offsetY.value = clampOffset(fy + (pinchStartOffY.value - fy) * scaleRatio, s, height);
+      offsetX.value = clampOffset(fx + (pinchStartOffX.value - fx) * scaleRatio, clampedS, width);
+      offsetY.value = clampOffset(fy + (pinchStartOffY.value - fy) * scaleRatio, clampedS, height);
     })
     .onEnd(() => {
+      "worklet";
       if (scale.value < 1) {
-        scale.value = withSpring(1, SPRING);
-        offsetX.value = withSpring(0, SPRING);
-        offsetY.value = withSpring(0, SPRING);
-        savedScale.value = 1;
+        // Snap back to 1× with a bouncy spring
+        scale.value   = withSpring(1, ZOOM_SPRING);
+        offsetX.value = withSpring(0, ZOOM_SPRING);
+        offsetY.value = withSpring(0, ZOOM_SPRING);
+        savedScale.value   = 1;
         savedOffsetX.value = 0;
         savedOffsetY.value = 0;
         runOnJS(onScaleChange)(1);
+      } else if (scale.value > MAX_SCALE) {
+        // Snap back to hard ceiling
+        const clamped = MAX_SCALE;
+        const cx = clampOffset(offsetX.value, clamped, width);
+        const cy = clampOffset(offsetY.value, clamped, height);
+        scale.value   = withSpring(clamped, ZOOM_SPRING);
+        offsetX.value = withSpring(cx, ZOOM_SPRING);
+        offsetY.value = withSpring(cy, ZOOM_SPRING);
+        savedScale.value   = clamped;
+        savedOffsetX.value = cx;
+        savedOffsetY.value = cy;
+        runOnJS(onScaleChange)(clamped);
       } else {
         savedScale.value   = scale.value;
-        savedOffsetX.value = offsetX.value;
-        savedOffsetY.value = offsetY.value;
+        savedOffsetX.value = clampOffset(offsetX.value, scale.value, width);
+        savedOffsetY.value = clampOffset(offsetY.value, scale.value, height);
+        offsetX.value = savedOffsetX.value;
+        offsetY.value = savedOffsetY.value;
         runOnJS(onScaleChange)(scale.value);
       }
     });
 
   const pan = Gesture.Pan()
-    .minDistance(4)
+    .minDistance(3)
     .maxPointers(1)
+    .onBegin(() => {
+      "worklet";
+      // Always snapshot the current animated position at gesture start.
+      // This is the correct baseline even when a previous decay/spring is
+      // still in flight — offsetX/Y always hold the real current position.
+      panStartOffX.value = offsetX.value;
+      panStartOffY.value = offsetY.value;
+    })
     .onUpdate((e: any) => {
+      "worklet";
       if (scale.value > 1.01) {
-        offsetX.value = clampOffset(savedOffsetX.value + e.translationX, scale.value, width);
-        offsetY.value = clampOffset(savedOffsetY.value + e.translationY, scale.value, height);
+        offsetX.value = clampOffset(panStartOffX.value + e.translationX, scale.value, width);
+        offsetY.value = clampOffset(panStartOffY.value + e.translationY, scale.value, height);
       }
     })
     .onEnd((e: any) => {
+      "worklet";
       if (scale.value <= 1.01) {
         const vx = e.velocityX, tx = e.translationX;
         if      (tx < -SWIPE_THRESHOLD || vx < -400) runOnJS(onSwipeLeft)();
         else if (tx >  SWIPE_THRESHOLD || vx >  400) runOnJS(onSwipeRight)();
-        offsetX.value = withSpring(0, SPRING);
-        offsetY.value = withSpring(0, SPRING);
+        offsetX.value = withSpring(0, PAN_SPRING);
+        offsetY.value = withSpring(0, PAN_SPRING);
       } else {
-        savedOffsetX.value = offsetX.value;
-        savedOffsetY.value = offsetY.value;
+        const maxPanX = Math.max(0, (width  * scale.value - width)  / 2);
+        const maxPanY = Math.max(0, (height * scale.value - height) / 2);
+        const releaseX = Math.max(-maxPanX, Math.min(maxPanX, panStartOffX.value + e.translationX));
+        const releaseY = Math.max(-maxPanY, Math.min(maxPanY, panStartOffY.value + e.translationY));
+
+        if (withDecay && (Math.abs(e.velocityX) > 200 || Math.abs(e.velocityY) > 200)) {
+          // Decay animation: clamp handles the boundary.
+          // savedOffset* are intentionally NOT updated here — panStartOff* will
+          // snapshot the live offsetX/Y value at the next gesture begin, so
+          // no stale baseline is ever used regardless of where decay settles.
+          offsetX.value = withDecay({ velocity: e.velocityX, clamp: [-maxPanX, maxPanX] });
+          offsetY.value = withDecay({ velocity: e.velocityY, clamp: [-maxPanY, maxPanY] });
+        } else {
+          offsetX.value = withSpring(releaseX, { ...PAN_SPRING, velocity: e.velocityX });
+          offsetY.value = withSpring(releaseY, { ...PAN_SPRING, velocity: e.velocityY });
+        }
+        // Keep savedOffset* in sync for pinch start (which still reads them)
+        savedOffsetX.value = releaseX;
+        savedOffsetY.value = releaseY;
       }
     });
 
@@ -198,30 +274,39 @@ function AnimatedZoomSlide({
     .numberOfTaps(2)
     .maxDuration(300)
     .onEnd((e: any) => {
+      "worklet";
       if (scale.value > 1.5) {
-        scale.value = withSpring(1, SPRING);
-        offsetX.value = withSpring(0, SPRING);
-        offsetY.value = withSpring(0, SPRING);
+        // Double-tap when zoomed → snap back to 1×
+        scale.value   = withSpring(1, ZOOM_SPRING);
+        offsetX.value = withSpring(0, ZOOM_SPRING);
+        offsetY.value = withSpring(0, ZOOM_SPRING);
         savedScale.value = 1; savedOffsetX.value = 0; savedOffsetY.value = 0;
         runOnJS(onScaleChange)(1);
       } else {
-        const targetScale = 2.5;
-        const fx = e.x - width / 2, fy = e.y - height / 2;
+        // Double-tap at 1× → zoom into the tapped spot at 3×
+        const targetScale = 3;
+        const fx = e.x - width  / 2;
+        const fy = e.y - height / 2;
+        // The focal point should remain fixed: offset = -focal * (scale - 1)
         const newOffX = clampOffset(-fx * (targetScale - 1), targetScale, width);
         const newOffY = clampOffset(-fy * (targetScale - 1), targetScale, height);
-        scale.value   = withSpring(targetScale, SPRING);
-        offsetX.value = withSpring(newOffX, SPRING);
-        offsetY.value = withSpring(newOffY, SPRING);
-        savedScale.value = targetScale;
+        scale.value   = withSpring(targetScale, ZOOM_SPRING);
+        offsetX.value = withSpring(newOffX, ZOOM_SPRING);
+        offsetY.value = withSpring(newOffY, ZOOM_SPRING);
+        savedScale.value   = targetScale;
         savedOffsetX.value = newOffX;
         savedOffsetY.value = newOffY;
         runOnJS(onScaleChange)(targetScale);
       }
     });
 
+  // Single tap: toggle overlay visibility (not close)
   const singleTap = Gesture.Tap()
     .maxDuration(200)
-    .onEnd(() => { if (scale.value <= 1.01) runOnJS(onClose)(); });
+    .onEnd(() => {
+      "worklet";
+      if (scale.value <= 1.01) runOnJS(onSingleTap)();
+    });
 
   const composed = Gesture.Simultaneous(
     Gesture.Simultaneous(pinch, pan),
@@ -229,7 +314,11 @@ function AnimatedZoomSlide({
   );
 
   const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }, { translateX: offsetX.value }, { translateY: offsetY.value }],
+    transform: [
+      { scale: scale.value },
+      { translateX: offsetX.value },
+      { translateY: offsetY.value },
+    ],
   }));
 
   return (
@@ -241,7 +330,7 @@ function AnimatedZoomSlide({
 
 // ─── Simple slide fallback (pinch + double-tap zoom via PanResponder) ─────────
 
-function SimpleZoomSlide({ uri, width, height, onClose, onSwipeLeft, onSwipeRight, onScaleChange }: ZoomSlideProps) {
+function SimpleZoomSlide({ uri, width, height, onSwipeLeft, onSwipeRight, onScaleChange, onSingleTap }: ZoomSlideProps) {
   const scale       = useRef(new Animated.Value(1)).current;
   const scaleVal    = useRef(1);
   const transX      = useRef(new Animated.Value(0)).current;
@@ -260,17 +349,21 @@ function SimpleZoomSlide({ uri, width, height, onClose, onSwipeLeft, onSwipeRigh
 
   function springReset() {
     scaleVal.current = 1; transXVal.current = 0; transYVal.current = 0;
-    Animated.spring(scale,  { toValue: 1, useNativeDriver: true, speed: 32, bounciness: 2 }).start();
-    Animated.spring(transX, { toValue: 0, useNativeDriver: true, speed: 32, bounciness: 2 }).start();
-    Animated.spring(transY, { toValue: 0, useNativeDriver: true, speed: 32, bounciness: 2 }).start();
+    Animated.spring(scale,  { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 3 }).start();
+    Animated.spring(transX, { toValue: 0, useNativeDriver: true, speed: 40, bounciness: 3 }).start();
+    Animated.spring(transY, { toValue: 0, useNativeDriver: true, speed: 40, bounciness: 3 }).start();
     onScaleChange(1);
   }
 
-  function zoomTo(target: number) {
-    scaleVal.current = target; transXVal.current = 0; transYVal.current = 0;
-    Animated.spring(scale,  { toValue: target, useNativeDriver: true, speed: 32, bounciness: 2 }).start();
-    Animated.spring(transX, { toValue: 0,      useNativeDriver: true, speed: 32, bounciness: 2 }).start();
-    Animated.spring(transY, { toValue: 0,      useNativeDriver: true, speed: 32, bounciness: 2 }).start();
+  function zoomTo(target: number, fx = 0, fy = 0) {
+    const newOffX = clamp(-fx * (target - 1), target, width);
+    const newOffY = clamp(-fy * (target - 1), target, height);
+    scaleVal.current   = target;
+    transXVal.current  = newOffX;
+    transYVal.current  = newOffY;
+    Animated.spring(scale,  { toValue: target,  useNativeDriver: true, speed: 40, bounciness: 3 }).start();
+    Animated.spring(transX, { toValue: newOffX, useNativeDriver: true, speed: 40, bounciness: 3 }).start();
+    Animated.spring(transY, { toValue: newOffY, useNativeDriver: true, speed: 40, bounciness: 3 }).start();
     onScaleChange(target);
   }
 
@@ -301,7 +394,6 @@ function SimpleZoomSlide({ uri, width, height, onClose, onSwipeLeft, onSwipeRigh
       }
     },
     onPanResponderRelease: (e, g) => {
-      // Remaining touches still active — wait for full release
       if (e.nativeEvent.touches.length > 0) return;
 
       if (scaleVal.current > 1.02) {
@@ -312,23 +404,20 @@ function SimpleZoomSlide({ uri, width, height, onClose, onSwipeLeft, onSwipeRigh
         return;
       }
 
-      // Single-touch, not zoomed
       if (g.dx < -SWIPE_THRESHOLD || g.vx < -0.4) { onSwipeLeft();  return; }
       if (g.dx >  SWIPE_THRESHOLD || g.vx >  0.4) { onSwipeRight(); return; }
 
-      // Tap (no significant movement)
       if (Math.abs(g.dx) < 12 && Math.abs(g.dy) < 12) {
         const now = Date.now();
         if (now - lastTap.current < 300 && lastTap.current > 0) {
-          // Double tap → zoom in
           lastTap.current = 0;
           if (tapTimer.current) { clearTimeout(tapTimer.current); tapTimer.current = null; }
-          zoomTo(2.5);
+          zoomTo(3, 0, 0);
         } else {
           lastTap.current = now;
           tapTimer.current = setTimeout(() => {
             tapTimer.current = null;
-            if (scaleVal.current <= 1.02) onClose();
+            if (scaleVal.current <= 1.02) onSingleTap();
           }, 300);
         }
       }
@@ -413,7 +502,6 @@ function PostChrome({
     return () => { show.remove(); hide.remove(); };
   }, []);
 
-  // Keep in sync if meta changes
   useEffect(() => { setLiked(meta.liked); setLikeCount(meta.likeCount); }, [meta.liked, meta.likeCount]);
   useEffect(() => { setBookmarked(meta.bookmarked); }, [meta.bookmarked]);
   useEffect(() => { setFollowing(!!meta.isFollowing); }, [meta.isFollowing]);
@@ -537,7 +625,7 @@ function PostChrome({
           <TouchableOpacity style={styles.actionIcon} onPress={handleBookmark} activeOpacity={0.7}>
             <Ionicons
               name={bookmarked ? "bookmark" : "bookmark-outline"}
-              size={20}
+              size={bookmarked ? 20 : 20}
               color={bookmarked ? "#FFD60A" : "rgba(255,255,255,0.75)"}
             />
           </TouchableOpacity>
@@ -630,6 +718,28 @@ function AnimatedImageViewer({ images, initialIndex = 0, visible, onClose, meta 
   const [index, setIndex]   = useState(initialIndex);
   const [zoomed, setZoomed] = useState(false);
 
+  // Overlay visibility — animated opacity for smooth show/hide
+  const [overlayVisible, setOverlayVisible] = useState(true);
+  const overlayAnim = useRef(new Animated.Value(1)).current;
+
+  function toggleOverlay() {
+    const next = !overlayVisible;
+    setOverlayVisible(next);
+    Animated.timing(overlayAnim, {
+      toValue: next ? 1 : 0,
+      duration: OVERLAY_FADE,
+      useNativeDriver: true,
+    }).start();
+  }
+
+  // Reset overlay when viewer opens
+  useEffect(() => {
+    if (visible) {
+      setOverlayVisible(true);
+      overlayAnim.setValue(1);
+    }
+  }, [visible]);
+
   const slideX       = useSharedValue(0);
   const slideOpacity = useSharedValue(1);
 
@@ -645,12 +755,12 @@ function AnimatedImageViewer({ images, initialIndex = 0, visible, onClose, meta 
 
   const animateSlide = useCallback((dir: "left" | "right", nextIdx: number) => {
     const targetX = dir === "left" ? -width : width;
-    slideX.value = withTiming(targetX, { duration: 220 }, () => {
+    slideX.value = withTiming(targetX, { duration: 200 }, () => {
       slideX.value       = -targetX;
       runOnJS(setIndex)(nextIdx);
       slideOpacity.value = 0;
-      slideX.value       = withSpring(0, SPRING);
-      slideOpacity.value = withTiming(1, { duration: 200 });
+      slideX.value       = withSpring(0, ZOOM_SPRING);
+      slideOpacity.value = withTiming(1, { duration: 180 });
     });
   }, [width]);
 
@@ -687,48 +797,61 @@ function AnimatedImageViewer({ images, initialIndex = 0, visible, onClose, meta 
         {/* Main image — full screen */}
         <AnimatedRN.View style={[styles.slideWrap, { width, height }, slideStyle]}>
           <AnimatedZoomSlideWithRoot
-            key={index} uri={images[index]} width={width} height={height}
-            isActive onClose={onClose} onSwipeLeft={goLeft} onSwipeRight={goRight}
+            key={index}
+            uri={images[index]}
+            width={width}
+            height={height}
+            isActive
+            onClose={onClose}
+            onSwipeLeft={goLeft}
+            onSwipeRight={goRight}
             onScaleChange={(s) => setZoomed(s > 1.05)}
+            onSingleTap={toggleOverlay}
           />
         </AnimatedRN.View>
 
-        {/* Top bar */}
-        <TopBar
-          images={images} index={index} hasMultiple={hasMultiple}
-          insets={insets} onClose={onClose}
-        />
-
-        {/* Side nav arrows */}
-        {hasMultiple && !zoomed && (
-          <>
-            <TouchableOpacity
-              style={[styles.navBtn, styles.navLeft, { top: height / 2 - 24 }]}
-              onPress={goRight} disabled={index === 0} activeOpacity={0.65}
-            >
-              <Ionicons name="chevron-back" size={30} color="#fff"
-                style={{ opacity: index === 0 ? 0.18 : 1 } as any} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.navBtn, styles.navRight, { top: height / 2 - 24 }]}
-              onPress={goLeft} disabled={index === images.length - 1} activeOpacity={0.65}
-            >
-              <Ionicons name="chevron-forward" size={30} color="#fff"
-                style={{ opacity: index === images.length - 1 ? 0.18 : 1 } as any} />
-            </TouchableOpacity>
-          </>
-        )}
-
-        {/* Post chrome — author row + action bar + reply input */}
-        {meta && (
-          <PostChrome
-            meta={meta}
-            zoomed={zoomed}
-            insets={insets}
-            onClose={onClose}
-            onNavigateToPost={navigateToPost}
+        {/* ── All overlay chrome animated together ── */}
+        <Animated.View
+          style={[StyleSheet.absoluteFill, { opacity: overlayAnim }]}
+          pointerEvents={overlayVisible ? "box-none" : "none"}
+        >
+          {/* Top bar */}
+          <TopBar
+            images={images} index={index} hasMultiple={hasMultiple}
+            insets={insets} onClose={onClose}
           />
-        )}
+
+          {/* Side nav arrows */}
+          {hasMultiple && !zoomed && (
+            <>
+              <TouchableOpacity
+                style={[styles.navBtn, styles.navLeft, { top: height / 2 - 24 }]}
+                onPress={goRight} disabled={index === 0} activeOpacity={0.65}
+              >
+                <Ionicons name="chevron-back" size={30} color="#fff"
+                  style={{ opacity: index === 0 ? 0.18 : 1 } as any} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.navBtn, styles.navRight, { top: height / 2 - 24 }]}
+                onPress={goLeft} disabled={index === images.length - 1} activeOpacity={0.65}
+              >
+                <Ionicons name="chevron-forward" size={30} color="#fff"
+                  style={{ opacity: index === images.length - 1 ? 0.18 : 1 } as any} />
+              </TouchableOpacity>
+            </>
+          )}
+
+          {/* Post chrome — author row + action bar + reply input */}
+          {meta && (
+            <PostChrome
+              meta={meta}
+              zoomed={zoomed}
+              insets={insets}
+              onClose={onClose}
+              onNavigateToPost={navigateToPost}
+            />
+          )}
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -737,11 +860,30 @@ function AnimatedImageViewer({ images, initialIndex = 0, visible, onClose, meta 
 function SimpleImageViewer({ images, initialIndex = 0, visible, onClose, meta }: ViewerProps) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const [index, setIndex] = useState(initialIndex);
+  const [index, setIndex]   = useState(initialIndex);
   const [zoomed, setZoomed] = useState(false);
 
+  // Overlay visibility
+  const [overlayVisible, setOverlayVisible] = useState(true);
+  const overlayAnim = useRef(new Animated.Value(1)).current;
+
+  function toggleOverlay() {
+    const next = !overlayVisible;
+    setOverlayVisible(next);
+    Animated.timing(overlayAnim, {
+      toValue: next ? 1 : 0,
+      duration: OVERLAY_FADE,
+      useNativeDriver: true,
+    }).start();
+  }
+
   useEffect(() => {
-    if (visible) { setIndex(Math.min(initialIndex, Math.max(0, images.length - 1))); setZoomed(false); }
+    if (visible) {
+      setIndex(Math.min(initialIndex, Math.max(0, images.length - 1)));
+      setZoomed(false);
+      setOverlayVisible(true);
+      overlayAnim.setValue(1);
+    }
   }, [visible, initialIndex]);
 
   const navigateToPost = useCallback(() => {
@@ -767,49 +909,60 @@ function SimpleImageViewer({ images, initialIndex = 0, visible, onClose, meta }:
 
         <View style={[styles.slideWrap, { width, height }]}>
           <SimpleZoomSlide
-            key={index} uri={images[index]} width={width} height={height}
-            isActive onClose={onClose}
+            key={index}
+            uri={images[index]}
+            width={width}
+            height={height}
+            isActive
+            onClose={onClose}
             onSwipeLeft={() => { if (index < images.length - 1) setIndex(index + 1); }}
             onSwipeRight={() => { if (index > 0) setIndex(index - 1); }}
             onScaleChange={(s) => setZoomed(s > 1.05)}
+            onSingleTap={toggleOverlay}
           />
         </View>
 
-        <TopBar
-          images={images} index={index} hasMultiple={hasMultiple}
-          insets={insets} onClose={onClose}
-        />
-
-        {hasMultiple && (
-          <>
-            <TouchableOpacity
-              style={[styles.navBtn, styles.navLeft, { top: height / 2 - 24 }]}
-              onPress={() => { if (index > 0) setIndex(index - 1); }}
-              disabled={index === 0} activeOpacity={0.65}
-            >
-              <Ionicons name="chevron-back" size={30} color="#fff"
-                style={{ opacity: index === 0 ? 0.18 : 1 } as any} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.navBtn, styles.navRight, { top: height / 2 - 24 }]}
-              onPress={() => { if (index < images.length - 1) setIndex(index + 1); }}
-              disabled={index === images.length - 1} activeOpacity={0.65}
-            >
-              <Ionicons name="chevron-forward" size={30} color="#fff"
-                style={{ opacity: index === images.length - 1 ? 0.18 : 1 } as any} />
-            </TouchableOpacity>
-          </>
-        )}
-
-        {meta && (
-          <PostChrome
-            meta={meta}
-            zoomed={false}
-            insets={insets}
-            onClose={onClose}
-            onNavigateToPost={navigateToPost}
+        {/* ── All overlay chrome animated together ── */}
+        <Animated.View
+          style={[StyleSheet.absoluteFill, { opacity: overlayAnim }]}
+          pointerEvents={overlayVisible ? "box-none" : "none"}
+        >
+          <TopBar
+            images={images} index={index} hasMultiple={hasMultiple}
+            insets={insets} onClose={onClose}
           />
-        )}
+
+          {hasMultiple && (
+            <>
+              <TouchableOpacity
+                style={[styles.navBtn, styles.navLeft, { top: height / 2 - 24 }]}
+                onPress={() => { if (index > 0) setIndex(index - 1); }}
+                disabled={index === 0} activeOpacity={0.65}
+              >
+                <Ionicons name="chevron-back" size={30} color="#fff"
+                  style={{ opacity: index === 0 ? 0.18 : 1 } as any} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.navBtn, styles.navRight, { top: height / 2 - 24 }]}
+                onPress={() => { if (index < images.length - 1) setIndex(index + 1); }}
+                disabled={index === images.length - 1} activeOpacity={0.65}
+              >
+                <Ionicons name="chevron-forward" size={30} color="#fff"
+                  style={{ opacity: index === images.length - 1 ? 0.18 : 1 } as any} />
+              </TouchableOpacity>
+            </>
+          )}
+
+          {meta && (
+            <PostChrome
+              meta={meta}
+              zoomed={false}
+              insets={insets}
+              onClose={onClose}
+              onNavigateToPost={navigateToPost}
+            />
+          )}
+        </Animated.View>
       </View>
     </Modal>
   );
