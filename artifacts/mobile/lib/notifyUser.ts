@@ -558,6 +558,43 @@ export async function notifyVerificationStatus(params: {
   });
 }
 
+// ─── Incoming Call Notification (push fallback for background callee) ────────
+// Sent to the callee's FCM token so that when their app is in the background
+// the OS shows a high-priority call notification.  The notification data carries
+// all info needed to reconstruct the IncomingCallNotice when the user taps it.
+// The Android channel "calls" (bypassDnd=true, MAX importance) is already set up
+// in pushNotifications.ts — this is why the call rings through DND mode.
+
+export async function notifyIncomingCall(params: {
+  calleeId: string;
+  callerId: string;
+  callId: string;
+  callerName: string;
+  callerAvatar: string | null;
+  chatId: string | null;
+}) {
+  callNotify({
+    userId: params.calleeId,
+    title: params.callerName,
+    body: "Incoming voice call…",
+    data: {
+      type: "incoming_call",
+      callId: params.callId,
+      callerId: params.callerId,
+      callerName: params.callerName,
+      callerAvatar: params.callerAvatar ?? "",
+      chatId: params.chatId ?? "",
+      notifType: "incoming_call",
+      url: `/call/${params.callId}`,
+    },
+    notificationType: "incoming_call",
+    actorId: params.callerId,
+    actorName: params.callerName,
+    referenceId: params.callId,
+    referenceType: "call",
+  });
+}
+
 // ─── Missed Call Notification ─────────────────────────────────────────────────
 // Sent by the CALLER's device when the callee doesn't answer within the ring
 // timeout (30 s). The notification appears in the callee's system tray so

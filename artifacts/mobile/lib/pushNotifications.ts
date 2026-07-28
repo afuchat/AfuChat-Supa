@@ -419,6 +419,24 @@ async function routeNotificationResponse(response: any) {
     case "gift":
       router.push("/(tabs)/me" as any);
       break;
+    case "incoming_call":
+      // App was in background — user tapped the incoming call notification.
+      // Navigate to the call screen in incoming mode; CallContext will handle
+      // showing the accept/decline UI via IncomingCallModal.
+      if (data.callId) {
+        // Emit to CallContext via a global event so it can show IncomingCallModal
+        try {
+          const { emitPushIncomingCall } = require("@/lib/callPushBridge");
+          emitPushIncomingCall({
+            callId: data.callId,
+            callerId: data.callerId ?? "",
+            callerName: data.callerName ?? "Unknown",
+            callerAvatar: data.callerAvatar || null,
+            chatId: data.chatId || null,
+          });
+        } catch {}
+      }
+      break;
     case "missed_call":
       router.push("/call-history" as any);
       break;
