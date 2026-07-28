@@ -119,7 +119,7 @@ function CompactTabBar({
     <>
       {/* Bottom content fade — scrolling content fades before it hits the pill */}
       <LinearGradient
-        colors={["transparent", isDark ? "#06080F" : "#F5F0E8"]}
+        colors={["transparent", isDark ? "#000000" : "#F5F0E8"]}
         style={{
           position: "absolute",
           left: 0,

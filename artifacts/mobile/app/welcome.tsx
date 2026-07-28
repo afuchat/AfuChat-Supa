@@ -82,7 +82,7 @@ const SLIDES = [
 
 const TOTAL = SLIDES.length;
 const SWIPE_THRESHOLD = 52;
-const BG = "#06080F";
+const BG = "#000000";
 
 function finish() {
   try { storage.setBoolean(KEYS.ONBOARDING_DONE, true); } catch {}

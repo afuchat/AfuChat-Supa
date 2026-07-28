@@ -94,11 +94,11 @@ const dark = {
   textMuted:         "#717171",
 
   // ── Backgrounds — flat UI: one universal BG, no card elevation ──────────────
-  background:        "#06080F",
-  backgroundSecondary: "#06080F", // same — no layering
-  backgroundTertiary:  "#06080F", // same — no layering
-  surface:           "#06080F",
-  card:              "#06080F",
+  background:        "#000000",
+  backgroundSecondary: "#000000", // same — no layering
+  backgroundTertiary:  "#000000", // same — no layering
+  surface:           "#000000",
+  card:              "#000000",
 
   // ── Lines ───────────────────────────────────────────────────────────────────
   border:            "rgba(255,255,255,0.10)",
@@ -117,7 +117,7 @@ const dark = {
   // ── Chat bubbles ────────────────────────────────────────────────────────────
   bubble:            BRAND,
   bubbleText:        "#FFFFFF",
-  bubbleIncoming:    "#0F1422",
+  bubbleIncoming:    "#111111",
   bubbleIncomingText:"#F1F1F1",
 
   // ── Form inputs — glass style matching auth screens ──────────────────────────
@@ -128,7 +128,7 @@ const dark = {
   glassBgSubtle:     "rgba(255,255,255,0.05)",
 
   // ── Navigation ──────────────────────────────────────────────────────────────
-  header:            "#06080F",
+  header:            "#000000",
 
   // ── Badges ──────────────────────────────────────────────────────────────────
   badgeBg:           STATUS.error,
@@ -137,7 +137,7 @@ const dark = {
   // ── Presence ────────────────────────────────────────────────────────────────
   online:            BRAND,
   unread:            BRAND,
-  avatar:            "#131620",
+  avatar:            "#111111",
 
   // ── Semantic status (reflected from STATUS for component convenience) ────────
   success:           STATUS.success,

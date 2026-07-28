@@ -32,7 +32,7 @@ import { googleSignIn } from "@/lib/googleAuth";
 import AfuLogo from "@/components/ui/AfuLogo";
 import { GoogleLogo } from "@/components/ui/OAuthLogos";
 
-const BG = "#06080F";
+const BG = "#000000";
 
 // ─── Soft orb ─────────────────────────────────────────────────────────────────
 function SoftOrb({ cx, cy, size, color }: { cx: number; cy: number; size: number; color: string }) {

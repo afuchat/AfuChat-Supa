@@ -17,7 +17,7 @@ const THEME_KEY = "@afuchat_theme";
 // theme is available synchronously on every subsequent render without
 // waiting for AsyncStorage again → no flash on re-mount.
 // Default is "dark" because the entire app is designed as a dark-first product
-// (welcome, login, and all auth screens hardcode the #06080F dark background).
+// (welcome, login, and all auth screens hardcode the #000000 dark background).
 let _moduleCache: ThemeMode | null = null;
 
 const ThemeContext = createContext<ThemeContextType>({

@@ -35,7 +35,7 @@ import { googleSignIn } from "@/lib/googleAuth";
 import AfuLogo from "@/components/ui/AfuLogo";
 import { GoogleLogo } from "@/components/ui/OAuthLogos";
 
-const BG = "#06080F";
+const BG = "#000000";
 const BIO_REFRESH_KEY = "afu_bio_refresh_token";
 const BIO_EMAIL_KEY = "afu_bio_display_email";
 
