@@ -1599,8 +1599,8 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         </View>
       );
     }
-    // Mobile / non-desktop only — safe to redirect away to discover.
-    return <Redirect href="/discover" />;
+    // Mobile / non-desktop only — redirect to login.
+    return <Redirect href="/(auth)/login" />;
   }
 
   return (

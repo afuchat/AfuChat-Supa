@@ -27,15 +27,15 @@ import { getTotalUnread, subscribeUnread } from "@/lib/chatUnreadEvents";
 
 // Visible bottom bar tabs — Chat · Discover · Shorts · Apps · Account
 const BOTTOM_TABS = [
-  { route: "/(tabs)/chats",    icon: "chatbubble",  label: "Chat"     },
-  { route: "/(tabs)/discover", icon: "home",        label: "Discover" },
-  { route: "/(tabs)/shorts",   icon: "play-circle", label: "Shorts"   },
-  { route: "/(tabs)/apps",     icon: "grid",        label: "Apps"     },
-  { route: "/(tabs)/me",       icon: "person",      label: "Account"  },
+  { route: "/(tabs)/chats",    icon: "chatbubbles",  label: "Chat"     },
+  { route: "/(tabs)/discover", icon: "compass",      label: "Discover" },
+  { route: "/(tabs)/shorts",   icon: "film",         label: "Shorts"   },
+  { route: "/(tabs)/apps",     icon: "grid",         label: "Apps"     },
+  { route: "/(tabs)/me",       icon: "person-circle",label: "Account"  },
 ] as const;
 
 function normalizeTabPath(p: string): string {
-  if (p === "/" || p === "/(tabs)" || p === "/(tabs)/index") return "/(tabs)/discover";
+  if (p === "/" || p === "/(tabs)" || p === "/(tabs)/index") return "/(tabs)/chats";
   if (p === "/chats"    || p === "/(tabs)/chats")    return "/(tabs)/chats";
   if (p === "/discover" || p === "/(tabs)/discover") return "/(tabs)/discover";
   if (p === "/shorts"   || p === "/(tabs)/shorts")   return "/(tabs)/shorts";
