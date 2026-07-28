@@ -93,6 +93,7 @@ import { getProfileCache, setProfileCache } from "@/lib/profileCache";
 import { subscribeToChat, broadcastToUserInbox } from "@/lib/globalMessageEvents";
 import { askAi, aiSuggestReply, transcribeAudio, getEdgeFnBase, edgeHeaders, aiTransformTone, aiFixText, aiEmojifyText } from "@/lib/aiHelper";
 import { getEngagera } from "@/lib/engagera";
+import { streamAiChat } from "@/lib/sseStream";
 import { buildNavigationContext, ACTION_ROUTES_GUIDE, detectVoiceNavCommand, pickNavConfirmation } from "@/lib/platformKnowledge";
 import { playNotificationSound as playMgrSound } from "@/lib/soundManager";
 import { AFUAI_BOT_ID } from "@/lib/afuAiBot";
@@ -3356,8 +3357,6 @@ function ChatScreen() {
     ].filter(Boolean).join("\n");
 
     try {
-      const engagera = getEngagera();
-
       let accumulated = "";
       let lastFlushed = "";
       const flushTimer = setInterval(() => {
@@ -3370,7 +3369,7 @@ function ChatScreen() {
 
       let doneContent = "";
       try {
-        for await (const event of engagera.chat.stream({
+        for await (const event of streamAiChat({
           messages: [
             {
               role: "system" as const,
@@ -4167,8 +4166,6 @@ STRICT RULES:
         .map(m => ({ role: m.sender_id === user?.id ? "user" as const : "assistant" as const, content: m.encrypted_content }));
       conversationMessages.push({ role: "user", content: userText.replace(/@afuai/gi, "").trim() || userText });
 
-      const engagera = getEngagera();
-
       // Token accumulator — flush to state every 40 ms for smooth per-token display
       let accumulated = "";
       let lastFlushed = "";
@@ -4184,7 +4181,7 @@ STRICT RULES:
 
       let doneContent = "";
       try {
-        for await (const event of engagera.chat.stream({
+        for await (const event of streamAiChat({
           messages: [{ role: "system" as const, content: systemPrompt + lensAddition }, ...conversationMessages],
           model: "engagera-2.1",
         })) {
