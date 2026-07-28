@@ -924,15 +924,16 @@ export default function ContactScreen() {
                 : isVid
                   ? item.image_url          // video poster frame if available
                   : item.image_url;
-              // Only video posts have a detail page; articles and plain posts are view-only.
               const dest = isVid
-                ? { pathname: "/video/[id]", params: { id: item.id } }
-                : null;
+                ? { pathname: "/video/[id]",   params: { id: item.id } }
+                : isArticle
+                  ? { pathname: "/article/[id]", params: { id: item.id } }
+                  : { pathname: "/post/[id]",    params: { id: item.id } };
               return (
                 <TouchableOpacity key={item.id}
                   style={[s.gridCell, { width: CELL, height: CELL }]}
-                  activeOpacity={dest ? 0.88 : 1}
-                  onPress={dest ? () => router.push(dest as any) : undefined}>
+                  activeOpacity={0.88}
+                  onPress={() => router.push(dest as any)}>
 
                   {/* Thumbnail / fallback */}
                   {thumb

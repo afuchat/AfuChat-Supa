@@ -52,8 +52,12 @@ function MyPostCard({ item, profile, onDelete }: { item: PostItem; profile: any;
   return (
     <TouchableOpacity
       style={[styles.card, { backgroundColor: colors.surface }]}
-      onPress={() => item.post_type === "video" ? router.push({ pathname: "/video/[id]", params: { id: item.id } }) : undefined}
-      activeOpacity={item.post_type === "video" ? 0.85 : 1}
+      onPress={() => {
+        if (item.post_type === "video")   return router.push({ pathname: "/video/[id]",   params: { id: item.id } } as any);
+        if (item.post_type === "article") return router.push({ pathname: "/article/[id]", params: { id: item.id } } as any);
+        router.push({ pathname: "/post/[id]", params: { id: item.id } } as any);
+      }}
+      activeOpacity={0.85}
     >
       <View style={styles.cardHeader}>
         <Avatar uri={profile?.avatar_url} name={profile?.display_name} size={40} userId={profile?.id} />

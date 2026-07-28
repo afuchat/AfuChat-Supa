@@ -564,7 +564,12 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
       safeRouter.push({ pathname: "/video/[id]", params: { id: item.id } });
       return;
     }
-    // Non-video posts no longer have a detail page — tap does nothing.
+    if (item.post_type === "article") {
+      safeRouter.push({ pathname: "/article/[id]", params: { id: item.id } } as any);
+      return;
+    }
+    // All other post types (text, image, etc.) → dedicated post detail page.
+    safeRouter.push({ pathname: "/post/[id]", params: { id: item.id } } as any);
   }
 
   function capturePostImage() {
