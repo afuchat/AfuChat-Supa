@@ -26,6 +26,7 @@
 import { Platform, NativeModules } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { saveLocalCall } from "@/lib/storage/localCallHistory";
+import { notifyMissedCall } from "@/lib/notifyUser";
 
 // ─── Lazy-load WebRTC (not available in Expo Go) ──────────────────────────────
 // Same pattern as RNTP: check NativeModules first so the try-require never
@@ -63,7 +64,8 @@ const ICE_SERVERS = [
 ];
 
 // ─── Ring timeout: auto-hangup if callee doesn't answer ──────────────────────
-const RING_TIMEOUT_MS   = 30_000; // 30 s ringing before declaring missed
+// Exposed as a named constant so it can be tuned per-network condition.
+export const RING_TIMEOUT_MS = 30_000; // 30 s ringing before declaring missed
 const CONNECT_TIMEOUT_MS = 20_000; // 20 s for ICE after SDP exchange
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -74,7 +76,8 @@ export type CallStatus =
   | "incoming_ringing"   // callee side — waiting for us to accept
   | "connecting"         // SDP exchanged, establishing ICE
   | "active"             // audio flowing
-  | "ended";             // brief terminal state before reset
+  | "ended"              // brief terminal state before reset
+  | "unreachable";       // ring timeout fired — callee was offline/unreachable
 
 export interface CallInfo {
   callId: string;
@@ -102,7 +105,8 @@ export type CallEngineEvent =
   | { type: "status"; status: CallStatus; info: CallInfo | null }
   | { type: "incoming"; notice: IncomingCallNotice }
   | { type: "ice_state"; state: string }
-  | { type: "error"; message: string };
+  | { type: "error"; message: string }
+  | { type: "busy" };   // remote end sent busy signal (callee was already in a call)
 
 type Listener = (event: CallEngineEvent) => void;
 
@@ -246,12 +250,23 @@ export async function startCall(params: {
   });
   supabase.removeChannel(calleeInbox).catch(() => {});
 
-  // Ring timeout
+  // Ring timeout — callee didn't answer (offline, FCM unreachable, or ignored)
   _ringTimer = setTimeout(() => {
     if (_status === "outgoing_ringing") {
-      // Callee didn't answer — save as missed on caller's side, tear down
+      const info = _info;
       _saveCallRecord("missed");
-      _doHangup("ended");
+      // Always attempt a missed-call push so the callee sees it even if
+      // Realtime never delivered the incoming_call broadcast to them.
+      if (info) {
+        notifyMissedCall({
+          calleeId: info.calleeId,
+          callerId: info.callerId,
+          callId: info.callId,
+          callType: "voice",
+          callerName: info.callerName,
+        }).catch(() => {});
+      }
+      _doHangup("unreachable");
     }
   }, RING_TIMEOUT_MS);
 }
@@ -402,6 +417,7 @@ async function _subscribeSignaling(callId: string, isCaller: boolean): Promise<v
       })
       .on("broadcast", { event: "busy" }, () => {
         _saveCallRecord("missed");
+        emit({ type: "busy" });
         _doHangup("ended");
       })
       .subscribe((status: string) => {
@@ -672,10 +688,10 @@ function _doHangup(finalStatus: CallStatus) {
 
   setStatus(finalStatus);
 
-  // After "ended" briefly shown, reset to idle
-  if (finalStatus === "ended") {
+  // After "ended"/"unreachable" briefly shown, reset to idle
+  if (finalStatus === "ended" || finalStatus === "unreachable") {
     setTimeout(() => {
-      if (_status === "ended") {
+      if (_status === "ended" || _status === "unreachable") {
         _info = null;
         setStatus("idle");
       }

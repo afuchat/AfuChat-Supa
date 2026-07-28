@@ -132,6 +132,7 @@ export default function CallScreen() {
     : status === "connecting"       ? "Connecting…"
     : status === "active"           ? formatDuration(seconds)
     : status === "ended"            ? "Call ended"
+    : status === "unreachable"      ? `Couldn't reach ${remoteName}`
     : "";
 
   const isLive = status === "active";

@@ -37,7 +37,7 @@ const RING_BASE   = AVATAR_SIZE + 28;
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function IncomingCallModal() {
-  const { incomingNotice, acceptCall, declineCall } = useCall();
+  const { incomingNotice, acceptCall, declineCall, status } = useCall();
   const insets = useSafeAreaInsets();
 
   // ── Animated values ────────────────────────────────────────────────────────
@@ -57,7 +57,10 @@ export function IncomingCallModal() {
   const ringLoopRef      = useRef<Animated.CompositeAnimation | null>(null);
   const labelLoopRef     = useRef<Animated.CompositeAnimation | null>(null);
 
-  const visible = !!incomingNotice;
+  // Suppress the modal immediately if we are already in a call — the engine
+  // sends a busy signal, but this is a final UI-level guard that prevents
+  // any flash of the incoming call screen during the race window.
+  const visible = !!incomingNotice && status === "idle";
 
   // ── Animations ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -155,7 +158,7 @@ export function IncomingCallModal() {
     acceptCall();
   }, [acceptCall]);
 
-  if (!incomingNotice) return null;
+  if (!incomingNotice || status !== "idle") return null;
 
   return (
     <Modal

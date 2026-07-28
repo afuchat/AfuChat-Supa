@@ -159,6 +159,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           break;
 
         case "incoming":
+          // Engine already guards this with _status !== "idle", but apply a
+          // second check here as a final race-condition safety net.
+          if (_status_ref.current !== "idle") break;
           setIncomingNotice(event.notice);
           break;
 
@@ -167,6 +170,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
         case "error":
           showToast(event.message, { type: "error", duration: 4000 });
+          break;
+
+        case "busy":
+          showToast("User is busy", { type: "warning", duration: 3000 });
           break;
       }
     });
@@ -267,6 +274,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   const handlePushIncoming = useCallback((notice: IncomingCallNotice) => {
     // Only show if not already in a call
+    if (_status_ref.current !== "idle") return;
     setIncomingNotice((prev) => prev ?? notice);
   }, []);
 
