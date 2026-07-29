@@ -117,7 +117,7 @@ const ReAnimated       = (_raVF?.default ?? require("react-native").Animated)   
 const PAGE_SIZE      = 20;
 const FOR_YOU_POOL   = 200;
 const BOTTOM_BAR_H   = 72;  // fixed action bar height between video and tab nav
-const CAPTION_H      = 56;  // caption strip between video and action bar
+const CAPTION_H      = 40;  // caption strip — 1 line only
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -282,7 +282,10 @@ const VideoItem = React.memo(
 
     useAnimationGuard(heartScale, dtOpacity, dtScale, progressFill, progressVisible);
 
-    const progressHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const progressHideTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const progressTrackWidth  = useRef(0);   // measured onLayout for seek math
+    const durationRef         = useRef(0);   // mirrors `duration` for PanResponder closure
+
     function showProgressBar() {
       progressVisible.value = withTiming(1, { duration: 150 });
       if (progressHideTimer.current) clearTimeout(progressHideTimer.current);
@@ -291,6 +294,35 @@ const VideoItem = React.memo(
         progressHideTimer.current = null;
       }, 2500);
     }
+
+    // Seek to a 0-1 fraction — shared by tap and pan
+    function seekToFrac(frac: number) {
+      const clamped = Math.max(0, Math.min(1, frac));
+      progressFill.value = clamped;
+      try {
+        if (durationRef.current > 0) player.currentTime = clamped * durationRef.current;
+      } catch {}
+    }
+
+    const seekPanResponder = useRef(
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: (e) => {
+          showProgressBar();
+          const frac = e.nativeEvent.locationX / Math.max(1, progressTrackWidth.current);
+          seekToFrac(frac);
+        },
+        onPanResponderMove: (e) => {
+          showProgressBar();
+          const frac = e.nativeEvent.locationX / Math.max(1, progressTrackWidth.current);
+          seekToFrac(frac);
+        },
+        onPanResponderRelease: () => {
+          showProgressBar(); // reset auto-hide timer after lift
+        },
+      })
+    ).current;
 
     const bufferingRef     = useRef(false);
     const bufferingTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -349,11 +381,16 @@ const VideoItem = React.memo(
         lastProgressTs.current = 0;
         watchSaved.current = false;
         endFired.current = false;
+        // Always restart from the beginning — never resume mid-video
+        try { player.currentTime = 0; } catch {}
         if (bufferingTimer.current) {
           clearTimeout(bufferingTimer.current);
           bufferingTimer.current = null;
         }
       } else {
+        // Seek to start whenever this item becomes active (handles return scroll)
+        try { player.currentTime = 0; } catch {}
+        endFired.current = false;
         if (!viewRecorded.current) {
           viewRecorded.current = true;
           onView(item.id);
@@ -469,7 +506,7 @@ const VideoItem = React.memo(
             if (dur > 0) {
               const frac = currentTime / dur;
               progressFill.value = frac;
-              if (duration !== dur) setDuration(dur);
+              if (duration !== dur) { setDuration(dur); durationRef.current = dur; }
               // Fallback advance in case playToEnd fires late (network stall)
               if (!endFired.current && frac >= 0.97) {
                 endFired.current = true;
@@ -493,6 +530,9 @@ const VideoItem = React.memo(
     }));
     const progressBarStyle = useAnimatedStyle(() => ({
       width: `${progressFill.value * 100}%` as any,
+    }));
+    const progressThumbStyle = useAnimatedStyle(() => ({
+      left: `${progressFill.value * 100}%` as any,
     }));
     const progressTrackOpacityStyle = useAnimatedStyle(() => ({
       opacity: progressVisible.value,
@@ -607,19 +647,18 @@ const VideoItem = React.memo(
             />
           </TouchableOpacity>
 
-          {/* Progress bar — hidden by default, revealed on touch / hover */}
-          <ReAnimated.View style={[styles.progressTrack, progressTrackOpacityStyle]}>
-            <TouchableOpacity
-              activeOpacity={1}
-              hitSlop={{ top: 20, bottom: 0, left: 0, right: 0 }}
-              onPressIn={showProgressBar}
-              style={{ flex: 1 }}
-              // @ts-ignore web hover
-              onMouseEnter={showProgressBar}
-            >
+          {/* Progress bar — hidden by default, tap anywhere on it to reveal,
+              drag/swipe left-right to seek */}
+          <View
+            style={styles.progressTouchArea}
+            onLayout={(e) => { progressTrackWidth.current = e.nativeEvent.layout.width; }}
+            {...seekPanResponder.panHandlers}
+          >
+            <ReAnimated.View style={[styles.progressTrack, progressTrackOpacityStyle]}>
               <ReAnimated.View style={[styles.progressFill, progressBarStyle]} />
-            </TouchableOpacity>
-          </ReAnimated.View>
+              <ReAnimated.View style={[styles.progressThumb, progressThumbStyle]} />
+            </ReAnimated.View>
+          </View>
           {duration > 0 && (
             <ReAnimated.Text style={[styles.durationLabel, progressTrackOpacityStyle]}>
               {fmtDur(duration)}
@@ -627,19 +666,19 @@ const VideoItem = React.memo(
           )}
         </View>
 
-        {/* ── CAPTION STRIP (between video and action bar) ──────────────────── */}
+        {/* ── CAPTION STRIP — 1 line, tap to expand ────────────────────────── */}
         <View style={styles.captionStrip}>
           {item.content ? (
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => captionLong && setCaptionExpanded((e) => !e)}
-              style={{ flex: 1, minWidth: 0 }}
+              style={{ flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center" }}
             >
-              <RichText style={styles.infoCaption} numberOfLines={captionExpanded ? undefined : 2}>
+              <RichText style={styles.infoCaption} numberOfLines={captionExpanded ? undefined : 1}>
                 {item.content}
               </RichText>
               {captionLong && !captionExpanded && (
-                <Text style={styles.infoCaptionMore}>...more</Text>
+                <Text style={styles.infoCaptionMore}> more</Text>
               )}
             </TouchableOpacity>
           ) : (
@@ -1849,26 +1888,52 @@ const styles = StyleSheet.create({
   },
 
   // ── Progress bar ──
-  progressTrack: {
+  // Transparent touch area — full width, tall enough to be easily tapped/dragged
+  progressTouchArea: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    height: 2.5,
-    backgroundColor: "rgba(255,255,255,0.18)",
+    height: 28,            // tall touch target; visual bar sits at the bottom
+    justifyContent: "flex-end",
+  },
+  progressTrack: {
+    height: 4,
+    backgroundColor: "rgba(255,255,255,0.22)",
+    overflow: "visible",
   },
   progressFill: {
-    height: "100%",
-    backgroundColor: "rgba(255,255,255,0.85)",
-    borderRadius: 1.5,
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: "#fff",
+    borderRadius: 2,
+  },
+  progressThumb: {
+    position: "absolute",
+    top: -5,           // centre the 14px thumb on the 4px track
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#fff",
+    marginLeft: -7,    // centre on the fill edge
+    ...Platform.select({
+      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.3, shadowRadius: 3, elevation: 4 },
+      web: { boxShadow: "0 1px 4px rgba(0,0,0,0.4)" } as any,
+    }),
   },
   durationLabel: {
     position: "absolute",
-    bottom: 6,
+    bottom: 32,        // just above the progress track
     right: 10,
-    color: "rgba(255,255,255,0.45)",
-    fontSize: 10,
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 11,
     fontFamily: "Inter_400Regular",
+    ...Platform.select({
+      web: { textShadow: "0 1px 3px rgba(0,0,0,0.8)" } as any,
+      default: { textShadowColor: "rgba(0,0,0,0.8)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
+    }),
   },
 
   // ── Pause circle ──
