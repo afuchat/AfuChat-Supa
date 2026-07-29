@@ -28,11 +28,11 @@ import { getTotalUnread, subscribeUnread } from "@/lib/chatUnreadEvents";
 
 // Visible bottom bar tabs — Chat · Discover · Shorts · Apps · Account
 const BOTTOM_TABS = [
-  { route: "/(tabs)/chats",    icon: "chatbubbles",  label: "Chat"     },
-  { route: "/(tabs)/discover", icon: "compass",      label: "Discover" },
-  { route: "/(tabs)/shorts",   icon: "play-circle",  label: "Shorts"   },
-  { route: "/(tabs)/apps",     icon: "grid",         label: "Apps"     },
-  { route: "/(tabs)/me",       icon: "person-circle",label: "Account"  },
+  { route: "/(tabs)/chats",    icon: "chatbubbles",        label: "Chat"     },
+  { route: "/(tabs)/discover", icon: "compass",            label: "Discover" },
+  { route: "/(tabs)/shorts",   icon: "play-circle",        label: "Shorts"   },
+  { route: "/(tabs)/apps",     icon: "grid",               label: "Apps"     },
+  { route: "/(tabs)/me",       icon: "person-circle",      label: "Account"  },
 ] as const;
 
 function normalizeTabPath(p: string): string {
@@ -96,10 +96,10 @@ function CompactTabBar({
     { icon: "document-text", label: "Article", desc: "Write a long-form article",        route: "/moments/create-article", color: "#007AFF"     },
   ];
 
-  const PILL_BORDER  = isDark ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.55)";
+  const PILL_BORDER  = isDark ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.65)";
   const ACCENT       = colors.accent;
   const PILL_BOTTOM  = Math.max(insets.bottom, 8) + 8;
-  const PILL_H       = 54;
+  const PILL_H       = 64;
 
   function handleTabPress(route: string) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -146,9 +146,7 @@ function CompactTabBar({
         >
           {BOTTOM_TABS.map((tab) => {
             const focused   = active === tab.route;
-            const iconColor = focused
-              ? ACCENT
-              : isDark ? "rgba(255,255,255,0.42)" : "rgba(0,0,0,0.35)";
+            const iconColor = focused ? ACCENT : "#FFFFFF";
 
             return (
               <TouchableOpacity
@@ -164,12 +162,12 @@ function CompactTabBar({
                   style={[
                     pill.iconWrap,
                     focused && {
-                      backgroundColor: ACCENT + "28",
-                      borderRadius: 12,
+                      backgroundColor: ACCENT + "30",
+                      borderRadius: 14,
                     },
                   ]}
                 >
-                  <Ionicons name={tab.icon as any} size={20} color={iconColor} />
+                  <Ionicons name={tab.icon as any} size={26} color={iconColor} />
                   {/* Unread badge on Chat */}
                   {tab.route === "/(tabs)/chats" && totalUnread > 0 && (
                     <View style={[pill.badge, { backgroundColor: ACCENT }]}>
@@ -295,11 +293,11 @@ const pill = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 7,
+    paddingVertical: 10,
   },
   iconWrap: {
-    width: 30,
-    height: 30,
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -410,7 +408,7 @@ export default function TabLayout() {
   const isLoggedIn     = !!session || !!user;
   const prevSessionRef = useRef<Session | null>(null);
   const insets         = useSafeAreaInsets();
-  const PILL_H         = 54;
+  const PILL_H         = 64;
   const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 8;
   const bottomPadding  = isLoggedIn ? PILL_BOTTOM + PILL_H : 0;
 
