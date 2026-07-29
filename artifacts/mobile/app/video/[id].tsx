@@ -767,18 +767,27 @@ const VideoItem = React.memo(function VideoItem({
         {/* Gradient — bottom only */}
         <GradientOverlay position="bottom" height={300} />
 
-        {/* Caption overlay — fades when comments open */}
+        {/* Caption overlay — bottom of video, 1 line default with read-more */}
         <Animated.View style={[vStyles.captionOverlay, { opacity: overlayOpacity, pointerEvents: commentsOpen ? "none" : "box-none" } as any]}>
           {!!item.content && (
             <TouchableOpacity
-              activeOpacity={showExpand ? 0.75 : 1}
-              onPress={() => showExpand && setExpanded((e) => !e)}
-              disabled={!showExpand}
+              activeOpacity={0.8}
+              onPress={() => setExpanded((e) => !e)}
               style={vStyles.captionWrap}
             >
-              <RichText style={vStyles.caption} numberOfLines={1} linkColor="#1f95ff">
+              <RichText
+                style={vStyles.caption}
+                numberOfLines={expanded ? undefined : 1}
+                linkColor="#1f95ff"
+              >
                 {item.content}
               </RichText>
+              {!expanded && (
+                <Text style={vStyles.captionMore}> more</Text>
+              )}
+              {expanded && (
+                <Text style={vStyles.captionLess}> less</Text>
+              )}
             </TouchableOpacity>
           )}
         </Animated.View>
@@ -906,9 +915,8 @@ const vStyles = StyleSheet.create({
   captionOverlay: { position: "absolute", left: 16, right: 16, bottom: 58 },
   captionWrap: { marginTop: 2 },
   caption: { color: "rgba(255,255,255,0.93)", fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 21, ...VS_SHADOW },
-  captionMore: { marginTop: 2, fontSize: 14, lineHeight: 20 },
-  captionEllipsis: { color: "rgba(255,255,255,0.55)", fontFamily: "Inter_400Regular" },
-  captionMoreLink: { color: "#fff", fontFamily: "Inter_700Bold" },
+  captionMore: { color: "rgba(255,255,255,0.55)", fontSize: 13, fontFamily: "Inter_600SemiBold", ...VS_SHADOW },
+  captionLess: { color: "rgba(255,255,255,0.55)", fontSize: 13, fontFamily: "Inter_600SemiBold", ...VS_SHADOW },
   // ── WeChat-style horizontal bottom action bar ──────────────────────────────
   bottomBar: {
     height: BOTTOM_BAR_H,
