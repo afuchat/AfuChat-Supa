@@ -2129,7 +2129,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
             styles.fab,
             {
               backgroundColor: colors.accent,
-              bottom: (insets.bottom > 0 ? insets.bottom : 14) + 6 + 64 + 20,
+              bottom: Math.max(insets.bottom, 8) + 62 + 12,
               opacity: fabAnim,
               transform: [
                 {
