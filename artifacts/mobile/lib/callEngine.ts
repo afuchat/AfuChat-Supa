@@ -2,7 +2,7 @@
 // Manages the full lifecycle of a P2P voice call.
 //
 // STACK
-//   • react-native-webrtc  — audio codec (Opus, ~20 kbps), P2P via STUN
+//   • react-native-webrtc (Android/iOS) or browser-native WebRTC (web)
 //   • Supabase Realtime Broadcast — signaling (offer/answer/ICE, no DB needed)
 //   • expo-av AudioMode    — speaker/earpiece routing + silent-mode overrides
 //   • expo-keep-awake      — prevents screen dimming during active call
@@ -18,10 +18,10 @@
 //   8. Both trickle ICE candidates via `ice_candidate` events
 //   9. ICE checks complete → P2P audio established
 //
-// DATA EFFICIENCY
-//   • Opus codec at ~20 kbps (WebRTC default for voice)
-//   • STUN-only (free Google STUN) — audio goes directly P2P, zero relay overhead
-//   • Signaling is a few hundred bytes per call setup total
+// PLATFORM SUPPORT
+//   • Android / iOS: react-native-webrtc (NativeModules.WebRTCModule)
+//   • Web: browser-native RTCPeerConnection — no package required
+//   • Expo Go (no native module): calling disabled gracefully
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { Platform, NativeModules } from "react-native";
@@ -29,16 +29,47 @@ import { supabase } from "@/lib/supabase";
 import { saveLocalCall } from "@/lib/storage/localCallHistory";
 import { notifyMissedCall } from "@/lib/notifyUser";
 
-// ─── Lazy-load WebRTC (not available in Expo Go) ──────────────────────────────
-// Same pattern as RNTP: check NativeModules first so the try-require never
-// throws the uncatchable Java NullPointerException that Expo Go produces.
+// ─── WebRTC bridge: native (react-native-webrtc) vs web (browser APIs) ────────
+// On Android/iOS we use react-native-webrtc. On web, every modern browser
+// exposes RTCPeerConnection, RTCSessionDescription, RTCIceCandidate, and
+// navigator.mediaDevices natively — no package needed, calling works on web too.
 
-type WebRTCType = typeof import("react-native-webrtc");
+interface _RTCBridge {
+  RTCPeerConnection:    any;
+  RTCSessionDescription: any;
+  RTCIceCandidate:      any;
+  mediaDevices: { getUserMedia: (c: any) => Promise<any> };
+}
 
-const _RTC: WebRTCType | null = (() => {
+const _RTC: _RTCBridge | null = (() => {
+  if (Platform.OS === "web") {
+    // Browser WebRTC — available in Chrome, Firefox, Safari, Edge
+    const g = globalThis as any;
+    if (typeof g.RTCPeerConnection === "undefined") return null; // very old browser
+    return {
+      RTCPeerConnection:     g.RTCPeerConnection,
+      RTCSessionDescription: g.RTCSessionDescription,
+      RTCIceCandidate:       g.RTCIceCandidate,
+      // Bind getUserMedia so `this` is always navigator.mediaDevices
+      mediaDevices: {
+        getUserMedia: (c: any) =>
+          navigator.mediaDevices.getUserMedia(c),
+      },
+    } satisfies _RTCBridge;
+  }
+
+  // Native (Android / iOS): use react-native-webrtc.
+  // Check NativeModules first — the try-require pattern alone can cause an
+  // uncatchable Java NullPointerException in Expo Go when the module is absent.
   try {
     if (!NativeModules.WebRTCModule) return null;
-    return require("react-native-webrtc") as WebRTCType;
+    const rn = require("react-native-webrtc") as typeof import("react-native-webrtc");
+    return {
+      RTCPeerConnection:     rn.RTCPeerConnection,
+      RTCSessionDescription: rn.RTCSessionDescription,
+      RTCIceCandidate:       rn.RTCIceCandidate,
+      mediaDevices:          rn.mediaDevices as any,
+    } satisfies _RTCBridge;
   } catch {
     return null;
   }
@@ -505,6 +536,11 @@ async function _subscribeSignaling(callId: string, isCaller: boolean): Promise<v
       });
 
     _signalingCh = ch;
+
+    // Safety timeout — if Supabase never confirms SUBSCRIBED (e.g. slow network
+    // or temporary outage), unblock so the ring timer still starts and the call
+    // can time-out cleanly instead of hanging in "outgoing_ringing" forever.
+    setTimeout(resolve, 8_000);
   });
 }
 
@@ -512,14 +548,29 @@ async function _subscribeSignaling(callId: string, isCaller: boolean): Promise<v
 
 async function _ensureLocalStream(): Promise<any> {
   if (_localStream) return _localStream;
-  const stream = await _RTC!.mediaDevices.getUserMedia({
-    audio: {
-      echoCancellation: true,
-      noiseSuppression: true,
-      autoGainControl: true,
-    },
-    video: false,
-  });
+  let stream: any;
+  try {
+    stream = await _RTC!.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+      video: false,
+    });
+  } catch (err: any) {
+    // Provide a human-readable message for the two most common web errors:
+    // NotAllowedError = user denied mic permission
+    // NotFoundError   = no microphone device found
+    const name = err?.name ?? "";
+    if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+      throw new Error("Microphone permission denied. Please allow microphone access and try again.");
+    }
+    if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+      throw new Error("No microphone found. Please connect a microphone and try again.");
+    }
+    throw err;
+  }
   _localStream = stream;
   return stream;
 }
@@ -531,6 +582,29 @@ function _createPC(): any {
     rtcpMuxPolicy: "require",
     sdpSemantics: "unified-plan",
   });
+
+  // Web: pipe incoming audio tracks to a hidden <audio> element so the browser
+  // actually plays the remote voice. On native, react-native-webrtc handles
+  // audio routing automatically via the OS audio session.
+  if (Platform.OS === "web") {
+    pc.ontrack = (e: any) => {
+      try {
+        const g = globalThis as any;
+        if (typeof g.document === "undefined") return;
+        let el: HTMLAudioElement = g.document.getElementById("__afucall_audio");
+        if (!el) {
+          el = g.document.createElement("audio");
+          el.id = "__afucall_audio";
+          el.autoplay = true;
+          (el as any).playsInline = true;
+          el.style.display = "none";
+          g.document.body.appendChild(el);
+        }
+        const stream = e.streams?.[0];
+        if (stream) el.srcObject = stream;
+      } catch {}
+    };
+  }
 
   pc.onicecandidate = (e: any) => {
     if (!e.candidate || !_signalingCh) return;
@@ -798,6 +872,18 @@ function _doHangup(finalStatus: CallStatus) {
   if (_signalingCh) {
     supabase.removeChannel(_signalingCh).catch(() => {});
     _signalingCh = null;
+  }
+
+  // Web: detach and remove the hidden <audio> element used for remote playback
+  if (Platform.OS === "web") {
+    try {
+      const g = globalThis as any;
+      const el = g.document?.getElementById("__afucall_audio");
+      if (el) {
+        el.srcObject = null;
+        el.remove();
+      }
+    } catch {}
   }
 
   _remoteDescSet = false;
