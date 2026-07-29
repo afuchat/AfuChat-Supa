@@ -4,6 +4,7 @@ import * as Haptics from "expo-haptics";
 import React, { useEffect, useRef, useState } from "react";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { Security2FABanner } from "@/components/ui/Security2FABanner";
+import { BlurView } from "expo-blur";
 import {
   Modal,
   Platform,
@@ -95,15 +96,10 @@ function CompactTabBar({
     { icon: "document-text", label: "Article", desc: "Write a long-form article",        route: "/moments/create-article", color: "#007AFF"     },
   ];
 
-  const PILL_BG      = isDark ? "rgba(10,12,22,0.82)" : "rgba(248,244,238,0.88)";
-  const PILL_BORDER  = isDark ? "rgba(255,255,255,0.13)" : "rgba(0,0,0,0.09)";
+  const PILL_BORDER  = isDark ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.55)";
   const ACCENT       = colors.accent;
-  const PILL_BOTTOM  = Math.max(insets.bottom, 8) + 10;
-  const PILL_H       = 72;
-
-  // Cream label colours — warm & legible on both pill backgrounds
-  const LABEL_ACTIVE   = isDark ? "#F5EDCE" : "#6B4F1E";
-  const LABEL_INACTIVE = isDark ? "rgba(245,237,206,0.38)" : "rgba(107,79,30,0.38)";
+  const PILL_BOTTOM  = Math.max(insets.bottom, 8) + 8;
+  const PILL_H       = 54;
 
   function handleTabPress(route: string) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -120,65 +116,73 @@ function CompactTabBar({
           left: 0,
           right: 0,
           bottom: PILL_BOTTOM + PILL_H,
-          height: 90,
+          height: 72,
           zIndex: 98,
           pointerEvents: "none",
         } as any}
       />
 
-      {/* Floating pill — 5 tabs with icon + label */}
+      {/* Floating glass pill — icon-only */}
       <View
         style={[
-          pill.wrapper,
+          pill.shadow,
           {
             bottom: PILL_BOTTOM,
             height: PILL_H,
-            backgroundColor: PILL_BG,
-            borderWidth: 0.5,
-            borderColor: PILL_BORDER,
-            shadowColor: "#000",
-            shadowOpacity: isDark ? 0.45 : 0.12,
+            shadowOpacity: isDark ? 0.5 : 0.18,
           },
         ]}
         pointerEvents="box-none"
       >
-        {BOTTOM_TABS.map((tab) => {
-          const focused    = active === tab.route;
-          const iconColor  = focused ? ACCENT : (isDark ? "rgba(255,255,255,0.38)" : "rgba(0,0,0,0.32)");
-          const labelColor = focused ? LABEL_ACTIVE : LABEL_INACTIVE;
+        <BlurView
+          intensity={isDark ? 72 : 60}
+          tint={isDark ? "dark" : "light"}
+          style={[
+            pill.blur,
+            {
+              borderColor: PILL_BORDER,
+            },
+          ]}
+        >
+          {BOTTOM_TABS.map((tab) => {
+            const focused   = active === tab.route;
+            const iconColor = focused
+              ? ACCENT
+              : isDark ? "rgba(255,255,255,0.42)" : "rgba(0,0,0,0.35)";
 
-          return (
-            <TouchableOpacity
-              key={tab.route}
-              style={pill.tab}
-              onPress={() => handleTabPress(tab.route)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={tab.label}
-              accessibilityState={{ selected: focused }}
-            >
-              <View
-                style={[
-                  pill.iconWrap,
-                  focused && { backgroundColor: ACCENT + "22", borderRadius: 14 },
-                ]}
+            return (
+              <TouchableOpacity
+                key={tab.route}
+                style={pill.tab}
+                onPress={() => handleTabPress(tab.route)}
+                activeOpacity={0.65}
+                accessibilityRole="button"
+                accessibilityLabel={tab.label}
+                accessibilityState={{ selected: focused }}
               >
-                <Ionicons name={tab.icon as any} size={22} color={iconColor} />
-                {/* Unread badge on Chat */}
-                {tab.route === "/(tabs)/chats" && totalUnread > 0 && (
-                  <View style={[pill.badge, { backgroundColor: ACCENT }]}>
-                    <Text style={pill.badgeText} numberOfLines={1}>
-                      {totalUnread > 99 ? "99+" : String(totalUnread)}
-                    </Text>
-                  </View>
-                )}
-              </View>
-              <Text style={[pill.label, { color: labelColor }]} numberOfLines={1}>
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+                <View
+                  style={[
+                    pill.iconWrap,
+                    focused && {
+                      backgroundColor: ACCENT + "28",
+                      borderRadius: 12,
+                    },
+                  ]}
+                >
+                  <Ionicons name={tab.icon as any} size={20} color={iconColor} />
+                  {/* Unread badge on Chat */}
+                  {tab.route === "/(tabs)/chats" && totalUnread > 0 && (
+                    <View style={[pill.badge, { backgroundColor: ACCENT }]}>
+                      <Text style={pill.badgeText} numberOfLines={1}>
+                        {totalUnread > 99 ? "99+" : String(totalUnread)}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </BlurView>
       </View>
 
       {/* FAB — Create, right side, discover tab only */}
@@ -245,38 +249,38 @@ function CompactTabBar({
 }
 
 const pill = StyleSheet.create({
-  wrapper: {
+  shadow: {
     position: "absolute",
-    left: 20,
-    right: 20,
+    left: 28,
+    right: 28,
+    borderRadius: 100,
+    zIndex: 100,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 20,
+    elevation: 18,
+  },
+  blur: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
     borderRadius: 100,
-    paddingHorizontal: 4,
-    zIndex: 100,
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 24,
-    elevation: 20,
+    borderWidth: 0.8,
+    overflow: "hidden",
+    paddingHorizontal: 6,
   },
   tab: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
-    gap: 3,
+    paddingVertical: 7,
   },
   iconWrap: {
-    width: 34,
-    height: 34,
+    width: 30,
+    height: 30,
     alignItems: "center",
     justifyContent: "center",
-  },
-  label: {
-    fontSize: 10,
-    fontFamily: "Inter_700Bold",
-    letterSpacing: 0.1,
-    textAlign: "center",
   },
   fab: {
     position: "absolute",
@@ -385,8 +389,8 @@ export default function TabLayout() {
   const isLoggedIn     = !!session || !!user;
   const prevSessionRef = useRef<Session | null>(null);
   const insets         = useSafeAreaInsets();
-  const PILL_H         = 72;
-  const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 10;
+  const PILL_H         = 54;
+  const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 8;
   const bottomPadding  = isLoggedIn ? PILL_BOTTOM + PILL_H : 0;
 
   useEffect(() => {
