@@ -389,6 +389,7 @@ export default function ContactScreen() {
 
   const bannerColor1 = prestige.ringColors[0];
   const bannerColor2 = prestige.ringColors[1];
+  const cardBg = colors.card ?? colors.surface;
   const TABS: { id: TabId; icon: string; label: string }[] = [
     { id: "posts",    icon: "grid",           label: "Posts"    },
     { id: "articles", icon: "document-text",  label: "Articles" },
