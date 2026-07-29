@@ -408,10 +408,6 @@ function SmartReplyBar({ messages, myId, input, onSend, colors }: {
             borderRadius: 20,
             paddingHorizontal: 12,
             paddingVertical: 6,
-            ...Platform.select({
-              web: { boxShadow: "0 2px 10px rgba(0,0,0,0.14)" } as any,
-              default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6, elevation: 4 },
-            }),
           }}
         >
           <Text style={{ color: colors.text, fontSize: 12, fontFamily: "Inter_500Medium" }}>{r}</Text>
@@ -8900,10 +8896,6 @@ const st = StyleSheet.create({
     borderColor: "rgba(120,120,128,0.22)",
     overflow: "hidden",
     marginBottom: 6,
-    ...Platform.select({
-      web: { boxShadow: "0 4px 24px rgba(0,0,0,0.18)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.18, shadowRadius: 16, elevation: 14 },
-    }),
   },
   inputBarRow: {
     flexDirection: "row",
@@ -8934,7 +8926,7 @@ const st = StyleSheet.create({
   outerActionBtn: { alignItems: "center", justifyContent: "flex-end", marginBottom: 6 },
   recMicWrap: { alignItems: "center", justifyContent: "flex-end" },
   recLockHint: { alignItems: "center", marginBottom: 4, opacity: 0.55 },
-  recMicBtn: { width: 52, height: 52, borderRadius: 26, backgroundColor: BRAND_FALLBACK, alignItems: "center", justifyContent: "center", elevation: 8, ...Platform.select({ web: { boxShadow: `0 4px 10px rgba(0,0,0,0.55)` } as any, default: { shadowColor: BRAND_FALLBACK, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.55, shadowRadius: 10 } }) },
+  recMicBtn: { width: 52, height: 52, borderRadius: 26, backgroundColor: BRAND_FALLBACK, alignItems: "center", justifyContent: "center" },
   recLockedInner: { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 8, gap: 8, minHeight: 56 },
   recLockedTrash: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,59,48,0.12)", alignItems: "center", justifyContent: "center" },
   recordingText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },

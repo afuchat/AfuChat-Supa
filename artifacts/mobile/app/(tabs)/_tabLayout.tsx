@@ -129,7 +129,6 @@ function CompactTabBar({
           {
             bottom: PILL_BOTTOM,
             height: PILL_H,
-            shadowOpacity: isDark ? 0.5 : 0.18,
           },
         ]}
         pointerEvents="box-none"
@@ -274,10 +273,6 @@ const pill = StyleSheet.create({
     right: 28,
     borderRadius: 100,
     zIndex: 100,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 20,
-    elevation: 18,
   },
   blur: {
     flex: 1,
@@ -308,11 +303,6 @@ const pill = StyleSheet.create({
     borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#1f95ff",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 12,
-    elevation: 12,
   },
   badge: {
     position: "absolute",
