@@ -243,6 +243,7 @@ const ShortCard = React.memo(function ShortCard({
   const { colors } = useTheme();
   const online = useOnlineStatus();
   const [paused, setPaused] = useState(false);
+  const [captionExpanded, setCaptionExpanded] = useState(false);
   const heartScale = useRef(new Animated.Value(1)).current;
   const doubleTapOpacity = useRef(new Animated.Value(0)).current;
   const doubleTapScale = useRef(new Animated.Value(0.3)).current;
@@ -322,9 +323,16 @@ const ShortCard = React.memo(function ShortCard({
 
         {/* Caption above bottom bar */}
         {item.content ? (
-          <View style={[styles.fullCaptionAbove, { bottom: bottomInset + 66, pointerEvents: "none" }]}>
-            <RichText style={styles.fullCaption} numberOfLines={2}>{item.content}</RichText>
-          </View>
+          <Pressable
+            style={[styles.fullCaptionAbove, { bottom: bottomInset + 66 }]}
+            onPress={() => setCaptionExpanded((v) => !v)}
+            hitSlop={8}
+          >
+            <RichText style={styles.fullCaption} numberOfLines={captionExpanded ? undefined : 1}>{item.content}</RichText>
+            {!captionExpanded && item.content.length > 60 ? (
+              <Text style={styles.fullCaptionMore}>more</Text>
+            ) : null}
+          </Pressable>
         ) : null}
 
         {/* Bottom bar: author info (left) + horizontal action buttons (right) */}
@@ -457,7 +465,12 @@ const ShortCard = React.memo(function ShortCard({
             ) : null}
           </Pressable>
           {item.content ? (
-            <RichText style={styles.caption} numberOfLines={3}>{item.content}</RichText>
+            <Pressable onPress={() => setCaptionExpanded((v) => !v)} hitSlop={8}>
+              <RichText style={styles.caption} numberOfLines={captionExpanded ? undefined : 1}>{item.content}</RichText>
+              {!captionExpanded && item.content.length > 60 ? (
+                <Text style={[styles.caption, { opacity: 0.55 }]}>more</Text>
+              ) : null}
+            </Pressable>
           ) : null}
         </View>
 
@@ -1343,6 +1356,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter_400Regular",
     lineHeight: 19,
+    textShadowColor: "rgba(0,0,0,0.6)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  fullCaptionMore: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+    marginTop: 1,
     textShadowColor: "rgba(0,0,0,0.6)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,

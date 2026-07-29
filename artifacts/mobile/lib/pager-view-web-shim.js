@@ -2,14 +2,26 @@
  * Web stub for react-native-pager-view.
  * On web, pager-view imports RN internals (codegenNativeCommands → ReactFabric)
  * which Metro cannot bundle for the web platform. This shim replaces the entire
- * package with a simple ScrollView-based container so the app shell can render.
+ * package with a simple View-based container so the app shell can render.
+ *
+ * Exposes setPage() via useImperativeHandle so callers like discover.tsx can
+ * programmatically switch pages without crashing on web.
  */
 import React from "react";
 import { View } from "react-native";
 
-function PagerView({ children, style, initialPage = 0, onPageSelected, ...rest }) {
+const PagerView = React.forwardRef(function PagerView(
+  { children, style, initialPage = 0, onPageSelected, ...rest },
+  ref
+) {
   const pages = React.Children.toArray(children);
-  const [page, setPage] = React.useState(initialPage);
+  const [page, setPageState] = React.useState(initialPage);
+
+  React.useImperativeHandle(ref, () => ({
+    setPage(index) {
+      setPageState(index);
+    },
+  }));
 
   React.useEffect(() => {
     onPageSelected?.({ nativeEvent: { position: page } });
@@ -20,7 +32,7 @@ function PagerView({ children, style, initialPage = 0, onPageSelected, ...rest }
       {pages[page] ?? null}
     </View>
   );
-}
+});
 
 PagerView.displayName = "PagerView";
 export default PagerView;
