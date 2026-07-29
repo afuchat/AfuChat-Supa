@@ -191,10 +191,10 @@ export default function SignUpScreen() {
   // Only redirect already-logged-in users when this screen first mounts.
   // Do NOT react to `user` becoming set during the sign-up flow itself —
   // the sign-up handlers navigate explicitly. Reacting to [user] caused a
-  // race: SIGNED_IN fires → setUser() → this effect → router.replace("/(tabs)/discover")
+  // race: SIGNED_IN fires → setUser() → this effect → router.replace("/(tabs)/chats")
   // which overwrote the intentional router.replace("/onboarding") and sent
   // the new user back to the start of onboarding with a fresh (empty) state.
-  useEffect(() => { if (user) router.replace("/(tabs)/discover"); }, []);
+  useEffect(() => { if (user) router.replace("/(tabs)/chats"); }, []);
 
   const [step, setStep] = useState<"landing" | "email">("landing");
   const [email, setEmail] = useState("");
@@ -265,7 +265,7 @@ export default function SignUpScreen() {
       if (!prof?.onboarding_completed) { setOauthLoading(false); router.replace({ pathname: "/onboarding", params: { userId: uid } } as any); return; }
     }
     setOauthLoading(false);
-    router.replace("/(tabs)/discover");
+    router.replace("/(tabs)/chats");
   }
 
   async function webGoogleSignIn() {
@@ -292,7 +292,7 @@ export default function SignUpScreen() {
               const { data: prof } = await supabase.from("profiles").select("onboarding_completed").eq("id", uid).maybeSingle();
               if (!prof?.onboarding_completed) { setOauthLoading(false); router.replace({ pathname: "/onboarding", params: { userId: uid } } as any); return; }
             }
-            setOauthLoading(false); router.replace("/(tabs)/discover"); return;
+            setOauthLoading(false); router.replace("/(tabs)/chats"); return;
           }
         }
         let at = url.hash ? new URLSearchParams(url.hash.substring(1)).get("access_token") : null;
@@ -301,7 +301,7 @@ export default function SignUpScreen() {
         if (at && rt) {
           const { error: e } = await supabase.auth.setSession({ access_token: at, refresh_token: rt });
           if (e) showAlert("Error", e.message);
-          else router.replace("/(tabs)/discover");
+          else router.replace("/(tabs)/chats");
         }
       }
       setOauthLoading(false);
@@ -479,7 +479,7 @@ export default function SignUpScreen() {
         onVerified={() => {
           setVerifyVisible(false);
           if (signupUserId) router.replace({ pathname: "/onboarding", params: { userId: signupUserId } } as any);
-          else router.replace("/(tabs)/discover");
+          else router.replace("/(tabs)/chats");
         }}
         isDark={isDark} accent="#AF52DE"
       />
