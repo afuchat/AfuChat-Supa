@@ -925,8 +925,8 @@ const vStyles = StyleSheet.create({
   item: { backgroundColor: "#000", overflow: "hidden" },
   centerOverlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
   pauseCircle: { width: 72, height: 72, borderRadius: 36, backgroundColor: "rgba(0,0,0,0.4)", borderWidth: 1.5, borderColor: "rgba(255,255,255,0.25)", alignItems: "center", justifyContent: "center" },
-  // Caption sits directly above the seek bar (seekContainer height = 52)
-  captionOverlay: { position: "absolute", left: 16, right: 16, bottom: 52 },
+  // Caption sits directly above the seek bar (seekContainer height = 28)
+  captionOverlay: { position: "absolute", left: 16, right: 16, bottom: 28 },
   captionWrap: { marginTop: 2 },
   caption: { color: "rgba(255,255,255,0.93)", fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 21, ...VS_SHADOW },
   captionMeasure: { position: "absolute", opacity: 0, left: 0, right: 0, top: -9999, pointerEvents: "none" } as any,
@@ -956,10 +956,10 @@ const vStyles = StyleSheet.create({
   // ── Seek bar — hidden by default, tap to reveal, drag to scrub ────────────
   seekContainer: {
     position: "absolute", left: 0, right: 0, bottom: 0,
-    height: 52,
+    height: 28,
     paddingHorizontal: 12,
     justifyContent: "flex-end",
-    paddingBottom: 12,
+    paddingBottom: 4,
   },
   seekTrack: {
     height: 4,
@@ -974,7 +974,7 @@ const vStyles = StyleSheet.create({
   },
   seekThumb: {
     position: "absolute",
-    bottom: 12 - 6,   // track is 4px, thumb is 14px — centres on track
+    bottom: 4 - 5,    // track is 4px at paddingBottom:4, thumb 14px — centres on track
     width: 14,
     height: 14,
     borderRadius: 7,
