@@ -1,7 +1,6 @@
 import React from "react";
 import {
   Linking,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -25,28 +24,83 @@ const BUILD   = (Constants.expoConfig?.android as any)?.versionCode
 
 const ACCENT = Colors.brand;
 
+// ─── Feature cards ────────────────────────────────────────────────────────────
+// Reflects the actual screens and capabilities in the app.
+
 const FEATURES = [
-  { icon: "chatbubbles",   label: "Messaging",    desc: "End-to-end encrypted chats, voice & video calls" },
-  { icon: "film",          label: "Video & Reels", desc: "Short videos, Shorts, Duets & live streaming" },
-  { icon: "sparkles",      label: "AfuAI",        desc: "AI chat assistant, image generation & smart replies" },
-  { icon: "wallet",        label: "Wallet",       desc: "ACoins, peer transfers, Red Envelopes & gifts" },
-  { icon: "storefront",    label: "Market",       desc: "Buy & sell goods, services and freelance work" },
-  { icon: "people",        label: "Community",    desc: "Groups, channels, communities & AfuMatch" },
+  {
+    icon: "chatbubbles",
+    label: "Messaging",
+    desc: "DMs, group chats, voice messages, media sharing, chat folders & reactions",
+  },
+  {
+    icon: "call",
+    label: "Voice Calls",
+    desc: "P2P audio calls via WebRTC — crystal-clear Opus audio with zero relay cost",
+  },
+  {
+    icon: "play-circle",
+    label: "Video Feed",
+    desc: "Algorithmic For You & Following feeds, Shorts, watch history & bookmarks",
+  },
+  {
+    icon: "sparkles",
+    label: "AfuAI",
+    desc: "AI chat assistant, smart reply suggestions & auto-responder for your inbox",
+  },
+  {
+    icon: "wallet",
+    label: "ACoins Wallet",
+    desc: "Digital currency, peer transfers, Red Envelopes, tipping & in-app gifts",
+  },
+  {
+    icon: "storefront",
+    label: "Marketplace",
+    desc: "Buy & sell goods, services, freelance work and premium @usernames",
+  },
+  {
+    icon: "trophy",
+    label: "Prestige",
+    desc: "Status goods, avatar rings, achievements, XP levels & Platinum membership",
+  },
+  {
+    icon: "grid",
+    label: "Super App",
+    desc: "Mini apps platform, OAuth provider & developer API for third-party apps",
+  },
 ] as const;
 
+// ─── Stats ────────────────────────────────────────────────────────────────────
+
 const STATS = [
-  { value: "2M+",  label: "Users"      },
-  { value: "190+", label: "Countries"  },
+  { value: "2M+",  label: "Users"       },
+  { value: "190+", label: "Countries"   },
   { value: "50M+", label: "Messages/day" },
 ] as const;
 
+// ─── Links ────────────────────────────────────────────────────────────────────
+
 const LINKS = [
-  { icon: "document-text", label: "Terms of Service",   onPress: () => Linking.openURL("https://afuchat.com/terms").catch(() => {}) },
-  { icon: "shield",        label: "Privacy Policy",     onPress: () => Linking.openURL("https://afuchat.com/privacy").catch(() => {}) },
-  { icon: "help-buoy",     label: "Help & Support",     onPress: () => router.push("/support" as any) },
-  { icon: "globe",         label: "Visit afuchat.com",  onPress: () => Linking.openURL("https://afuchat.com").catch(() => {}) },
-  { icon: "mail",          label: "Contact Us",         onPress: () => Linking.openURL("mailto:hello@afuchat.com").catch(() => {}) },
+  { icon: "document-text", label: "Terms of Service",  onPress: () => Linking.openURL("https://afuchat.com/terms").catch(() => {}) },
+  { icon: "shield-checkmark", label: "Privacy Policy", onPress: () => Linking.openURL("https://afuchat.com/privacy").catch(() => {}) },
+  { icon: "help-buoy",     label: "Help & Support",    onPress: () => router.push("/support" as any) },
+  { icon: "globe",         label: "Visit afuchat.com", onPress: () => Linking.openURL("https://afuchat.com").catch(() => {}) },
+  { icon: "mail",          label: "Contact Us",        onPress: () => Linking.openURL("mailto:hello@afuchat.com").catch(() => {}) },
 ] as const;
+
+// ─── Tech stack ───────────────────────────────────────────────────────────────
+
+const TECH = [
+  ["React Native + Expo SDK 55", "Cross-platform mobile framework"],
+  ["Supabase",                   "Auth, Realtime & PostgreSQL database"],
+  ["Cloudflare R2",              "Media & file storage CDN"],
+  ["WebRTC (Opus)",              "P2P voice calls — no relay overhead"],
+  ["Engagera AI",                "AfuAI assistant & smart replies"],
+  ["Pesapal",                    "Payment gateway (ACoins top-up)"],
+  ["SQLite + MMKV",              "On-device offline cache & storage"],
+] as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function AboutScreen() {
   const { colors, isDark } = useTheme();
@@ -68,8 +122,8 @@ export default function AboutScreen() {
         <View style={[s.heroCard, { backgroundColor: colors.card }]}>
           <LinearGradient
             colors={isDark
-              ? ["rgba(31,149,255,0.10)", "transparent"]
-              : ["rgba(31,149,255,0.06)", "transparent"]}
+              ? ["rgba(31,149,255,0.12)", "transparent"]
+              : ["rgba(31,149,255,0.07)", "transparent"]}
             start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
@@ -92,7 +146,7 @@ export default function AboutScreen() {
           </Text>
 
           <Text style={[s.missionText, { color: colors.textSecondary }]}>
-            A super-app built for Africa and the world — messaging, video, AI, marketplace and digital payments all in one place.
+            AfuChat is a super-app built for Africa and the world — real-time messaging, P2P voice calls, an AI assistant, a digital wallet, short-form video, and a developer platform, all in a single app.
           </Text>
         </View>
 
@@ -124,10 +178,10 @@ export default function AboutScreen() {
         <Text style={[s.sectionTitle, { color: colors.textMuted }]}>COMPANY</Text>
         <View style={[s.companyCard, { backgroundColor: colors.card }]}>
           {[
-            { label: "Legal name",  value: "AfuChat Technologies Limited" },
-            { label: "Founded",     value: "2023" },
+            { label: "Legal name",   value: "AfuChat Technologies Limited" },
+            { label: "Founded",      value: "2023" },
             { label: "Headquarters", value: "Entebbe, Uganda" },
-            { label: "Website",     value: "afuchat.com" },
+            { label: "Website",      value: "afuchat.com" },
           ].map(({ label, value }, i, arr) => (
             <React.Fragment key={label}>
               <View style={s.companyRow}>
@@ -161,17 +215,11 @@ export default function AboutScreen() {
         {/* ── Built with ────────────────────────────────────────────────── */}
         <Text style={[s.sectionTitle, { color: colors.textMuted }]}>BUILT WITH</Text>
         <View style={[s.techCard, { backgroundColor: colors.card }]}>
-          {[
-            ["React Native / Expo", "Mobile framework"],
-            ["Supabase", "Auth, realtime & database"],
-            ["Cloudflare R2", "Media storage"],
-            ["Groq + OpenAI", "AI engine"],
-            ["Pesapal", "Payments gateway"],
-          ].map(([tech, role], i, arr) => (
+          {TECH.map(([tech, role], i, arr) => (
             <React.Fragment key={tech}>
               <View style={s.techRow}>
-                <Text style={[s.techName,  { color: colors.text }]}>{tech}</Text>
-                <Text style={[s.techRole,  { color: colors.textMuted }]}>{role}</Text>
+                <Text style={[s.techName, { color: colors.text }]}>{tech}</Text>
+                <Text style={[s.techRole, { color: colors.textMuted }]}>{role}</Text>
               </View>
               {i < arr.length - 1 && (
                 <View style={[s.companyDivider, { backgroundColor: colors.separator }]} />
@@ -213,7 +261,7 @@ const s = StyleSheet.create({
   wordChat: { fontSize: 30, fontFamily: "Inter_700Bold", letterSpacing: -0.5 },
   versionBadge: { borderRadius: 20, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 4 },
   versionText:  { fontSize: 12, fontFamily: "Inter_600SemiBold", letterSpacing: 0.2 },
-  tagline:    { fontSize: 14, fontFamily: "Inter_400Regular", letterSpacing: 1 },
+  tagline:     { fontSize: 14, fontFamily: "Inter_400Regular", letterSpacing: 1 },
   missionText: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20, textAlign: "center", marginTop: 4, maxWidth: 300 },
 
   statsRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
@@ -235,16 +283,16 @@ const s = StyleSheet.create({
   companyValue:   { fontSize: 13, fontFamily: "Inter_600SemiBold", textAlign: "right", flex: 1, marginLeft: 8 },
   companyDivider: { height: 0.5, marginHorizontal: 16 },
 
-  linksCard:    { borderRadius: 16, overflow: "hidden", marginBottom: 8 },
-  linkRow:      { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 13, gap: 12 },
-  linkDivider:  { height: 0.5, marginHorizontal: 16 },
-  linkIconBox:  { width: 32, height: 32, borderRadius: 9, alignItems: "center", justifyContent: "center" },
-  linkLabel:    { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular" },
+  linksCard:   { borderRadius: 16, overflow: "hidden", marginBottom: 8 },
+  linkRow:     { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 13, gap: 12 },
+  linkDivider: { height: 0.5, marginHorizontal: 16 },
+  linkIconBox: { width: 32, height: 32, borderRadius: 9, alignItems: "center", justifyContent: "center" },
+  linkLabel:   { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular" },
 
   techCard: { borderRadius: 16, overflow: "hidden", marginBottom: 8 },
   techRow:  { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12 },
-  techName: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
-  techRole: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  techName: { fontSize: 13, fontFamily: "Inter_600SemiBold", flex: 1 },
+  techRole: { fontSize: 12, fontFamily: "Inter_400Regular", textAlign: "right", flex: 1.2, marginLeft: 8 },
 
   footer:     { alignItems: "center", paddingVertical: 24, gap: 6 },
   footerLogo: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 4 },
