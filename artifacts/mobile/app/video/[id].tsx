@@ -371,6 +371,27 @@ const VideoItem = React.memo(function VideoItem({
   const [cachedUri, setCachedUri] = useState<string | null>(null);
   const [videoError, setVideoError] = useState(false);
   const [progressBarWidth, setProgressBarWidth] = useState(0);
+  // ── Seek bar visibility ─────────────────────────────────────────────────
+  const barOpacity = useRef(new Animated.Value(0)).current;
+  const barVisibleRef = useRef(false);
+  const barHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isDraggingBarRef = useRef(false);
+
+  function _showBar() {
+    barVisibleRef.current = true;
+    Animated.timing(barOpacity, { toValue: 1, duration: 160, useNativeDriver: true }).start();
+    _resetBarTimer();
+  }
+  function _hideBar() {
+    barVisibleRef.current = false;
+    Animated.timing(barOpacity, { toValue: 0, duration: 280, useNativeDriver: true }).start();
+  }
+  function _resetBarTimer() {
+    if (barHideTimerRef.current) clearTimeout(barHideTimerRef.current);
+    if (!isDraggingBarRef.current) {
+      barHideTimerRef.current = setTimeout(_hideBar, 3000);
+    }
+  }
   const heartScale = useRef(new Animated.Value(1)).current;
   const doubleTapOpacity = useRef(new Animated.Value(0)).current;
   const doubleTapScale = useRef(new Animated.Value(0.3)).current;
@@ -462,6 +483,9 @@ const VideoItem = React.memo(function VideoItem({
       setShowBuffering(false);
       setVideoError(false);
       if (bufferingTimerRef.current) { clearTimeout(bufferingTimerRef.current); bufferingTimerRef.current = null; }
+      // Hide seek bar immediately when scrolling away
+      if (barHideTimerRef.current) { clearTimeout(barHideTimerRef.current); barHideTimerRef.current = null; }
+      _hideBar();
       // Do NOT call unloadAsync() here — it fires on first mount too (isActive=false
       // while preloading) and permanently breaks the underlying AVPlayer before it
       // has a chance to buffer. The Video component is unmounted automatically by
@@ -476,6 +500,9 @@ const VideoItem = React.memo(function VideoItem({
       // Reset offline-save flag so it retries on next view if the save failed
       offlineSaved.current = false;
     } else {
+      // Always restart from the beginning — never resume mid-video
+      try { player.currentTime = 0; } catch {}
+      setProgress(0);
       if (!viewRecorded.current) {
         viewRecorded.current = true;
         onRecordView(item.id);
@@ -604,7 +631,10 @@ const VideoItem = React.memo(function VideoItem({
     return () => clearInterval(timer);
   }, [isActive]);
 
-  function handleTap() { setPaused((p) => !p); }
+  function handleTap() {
+    _showBar();
+    setPaused((p) => !p);
+  }
 
   function triggerDoubleTapLike() {
     if (!item.liked) onLike(item.id, false);
@@ -746,35 +776,53 @@ const VideoItem = React.memo(function VideoItem({
               disabled={!showExpand}
               style={vStyles.captionWrap}
             >
-              <RichText style={vStyles.caption} numberOfLines={expanded ? undefined : 2} linkColor="#1f95ff">
+              <RichText style={vStyles.caption} numberOfLines={1} linkColor="#1f95ff">
                 {item.content}
               </RichText>
-              {showExpand && !expanded && (
-                <Text style={vStyles.captionMore}>
-                  <Text style={vStyles.captionEllipsis}>... </Text>
-                  <Text style={vStyles.captionMoreLink}>more</Text>
-                </Text>
-              )}
             </TouchableOpacity>
           )}
         </Animated.View>
 
-        {/* Progress bar at very bottom of video area */}
-        <Animated.View style={{
-          position: "absolute", left: 0, right: 0, bottom: 0,
-          height: 2.5, backgroundColor: "rgba(255,255,255,0.2)",
-          justifyContent: "center", opacity: overlayOpacity,
-        }}>
-          <TouchableOpacity
-            activeOpacity={1}
-            style={{ flex: 1 }}
-            onLayout={(e) => setProgressBarWidth(e.nativeEvent.layout.width)}
-            onPress={(e) => handleProgressBarPress(e.nativeEvent.locationX)}
-            hitSlop={{ top: 12, bottom: 12 }}
-          >
-            <View style={[vStyles.progressFill, { width: `${progress * 100}%` as any }]} />
-            <View style={[vStyles.progressThumb, { left: `${progress * 100}%` as any }]} />
-          </TouchableOpacity>
+        {/* ── Seek bar — hidden by default, revealed on tap, draggable ─── */}
+        <Animated.View
+          style={[vStyles.seekContainer, { opacity: barOpacity }]}
+          onLayout={(e) => setProgressBarWidth(e.nativeEvent.layout.width - 24)}
+          onStartShouldSetResponder={() => barVisibleRef.current}
+          onMoveShouldSetResponder={() => barVisibleRef.current}
+          onResponderGrant={(e) => {
+            isDraggingBarRef.current = true;
+            if (barHideTimerRef.current) { clearTimeout(barHideTimerRef.current); barHideTimerRef.current = null; }
+            const w = progressBarWidth || 1;
+            const p = Math.max(0, Math.min(1, (e.nativeEvent.locationX - 12) / w));
+            setProgress(p);
+            try { if (durationMs > 0) player.currentTime = p * durationMs / 1000; } catch {}
+          }}
+          onResponderMove={(e) => {
+            const w = progressBarWidth || 1;
+            const p = Math.max(0, Math.min(1, (e.nativeEvent.locationX - 12) / w));
+            setProgress(p);
+            try { if (durationMs > 0) player.currentTime = p * durationMs / 1000; } catch {}
+          }}
+          onResponderRelease={(e) => {
+            const w = progressBarWidth || 1;
+            const p = Math.max(0, Math.min(1, (e.nativeEvent.locationX - 12) / w));
+            setProgress(p);
+            isDraggingBarRef.current = false;
+            try { if (durationMs > 0) player.currentTime = p * durationMs / 1000; } catch {}
+            _resetBarTimer();
+          }}
+          onResponderTerminate={() => {
+            isDraggingBarRef.current = false;
+            _resetBarTimer();
+          }}
+        >
+          {/* Track background */}
+          <View style={vStyles.seekTrack}>
+            {/* Filled portion */}
+            <View style={[vStyles.seekFill, { width: `${(progress * 100).toFixed(2)}%` as any }]} />
+          </View>
+          {/* Thumb */}
+          <View style={[vStyles.seekThumb, { left: `${(progress * 100).toFixed(2)}%` as any }]} />
         </Animated.View>
       </Animated.View>
 
@@ -854,7 +902,8 @@ const vStyles = StyleSheet.create({
   item: { backgroundColor: "#000", overflow: "hidden" },
   centerOverlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
   pauseCircle: { width: 72, height: 72, borderRadius: 36, backgroundColor: "rgba(0,0,0,0.4)", borderWidth: 1.5, borderColor: "rgba(255,255,255,0.25)", alignItems: "center", justifyContent: "center" },
-  captionOverlay: { position: "absolute", left: 16, right: 16, bottom: 14 },
+  // Caption sits above the seek bar (seek bar is 52px tall at the bottom)
+  captionOverlay: { position: "absolute", left: 16, right: 16, bottom: 58 },
   captionWrap: { marginTop: 2 },
   caption: { color: "rgba(255,255,255,0.93)", fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 21, ...VS_SHADOW },
   captionMore: { marginTop: 2, fontSize: 14, lineHeight: 20 },
@@ -881,9 +930,39 @@ const vStyles = StyleSheet.create({
   followBtnTextActive: { color: "rgba(255,255,255,0.45)" },
   barAction: { alignItems: "center", gap: 3 },
   barActionLabel: { color: "#fff", fontSize: 11, fontFamily: "Inter_700Bold", ...VS_SHADOW },
-  // ── Progress bar ──────────────────────────────────────────────────────────
-  progressFill: { position: "absolute", left: 0, top: 0, bottom: 0, backgroundColor: "#fff", borderRadius: 2 },
-  progressThumb: { position: "absolute", width: 12, height: 12, borderRadius: 6, backgroundColor: "#fff", top: -4.75, marginLeft: -6, elevation: 4 },
+  // ── Seek bar — hidden by default, tap to reveal, drag to scrub ────────────
+  seekContainer: {
+    position: "absolute", left: 0, right: 0, bottom: 0,
+    height: 52,
+    paddingHorizontal: 12,
+    justifyContent: "flex-end",
+    paddingBottom: 12,
+  },
+  seekTrack: {
+    height: 4,
+    backgroundColor: "rgba(255,255,255,0.28)",
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  seekFill: {
+    position: "absolute", left: 0, top: 0, bottom: 0,
+    backgroundColor: "#fff",
+    borderRadius: 2,
+  },
+  seekThumb: {
+    position: "absolute",
+    bottom: 12 - 6,   // track is 4px, thumb is 14px — centres on track
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#fff",
+    marginLeft: -7,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.40,
+    shadowRadius: 3,
+    elevation: 4,
+  },
 });
 
 // ─── VideoFeed (embeddable) ───────────────────────────────────────────────────
