@@ -206,6 +206,27 @@ function CompactTabBar({
         </TouchableOpacity>
       )}
 
+      {/* FAB — Compose, right side, chats tab only */}
+      {active === "/(tabs)/chats" && !!userId && (
+        <TouchableOpacity
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+            safeRouter.push("/chat/new" as any);
+          }}
+          style={[
+            pill.fab,
+            {
+              bottom: PILL_BOTTOM + PILL_H + 12,
+              right: 24,
+              backgroundColor: ACCENT,
+            },
+          ]}
+          activeOpacity={0.82}
+        >
+          <Ionicons name="create-outline" size={24} color="#fff" />
+        </TouchableOpacity>
+      )}
+
       {/* Create picker sheet */}
       <Modal
         visible={showCreatePicker}

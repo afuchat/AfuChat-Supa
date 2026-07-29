@@ -2113,44 +2113,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         </View>
       )}
 
-      {user && panelMode && (
-        <TouchableOpacity
-          style={[styles.fab, { backgroundColor: colors.accent, bottom: 24, right: 24 }]}
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/chat/new" as any); }}
-          activeOpacity={0.85}
-        >
-          <Ionicons name="create" size={24} color="#fff" />
-        </TouchableOpacity>
-      )}
-
-      {user && !panelMode && !selectMode && (
-        <Animated.View
-          style={[
-            styles.fab,
-            {
-              backgroundColor: colors.accent,
-              bottom: Math.max(insets.bottom, 8) + 62 + 12,
-              opacity: fabAnim,
-              transform: [
-                {
-                  translateY: fabAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [28, 0],
-                  }),
-                },
-              ],
-            },
-          ]}
-        >
-          <TouchableOpacity
-            style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/chat/new" as any); }}
-            activeOpacity={0.85}
-          >
-            <Ionicons name="create" size={24} color="#fff" />
-          </TouchableOpacity>
-        </Animated.View>
-      )}
     </View>
   );
 }
