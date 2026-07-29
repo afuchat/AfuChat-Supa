@@ -599,9 +599,9 @@ export default function ContactScreen() {
         </Modal>
 
         {/* ══════════════════════════════════════════════════════════════ */}
-        {/* STATS CARD — elevated, no plain border                        */}
+        {/* STATS CARD                                                     */}
         {/* ══════════════════════════════════════════════════════════════ */}
-        <View style={[s.statsCard, { backgroundColor: colors.background, borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)" }]}>
+        <View style={[s.statsCard, { backgroundColor: cardBg, borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)" }]}>
           {[
             { label: "Posts",     value: counts.posts,     expandable: false, onPress: () => router.push({ pathname: "/my-posts", params: { userId: id } } as any) },
             { label: "Followers", value: counts.followers, expandable: true,  onPress: () => handleExpandStat("followers") },
@@ -635,7 +635,7 @@ export default function ContactScreen() {
         {/* INLINE FOLLOWERS / FOLLOWING PANEL                            */}
         {/* ══════════════════════════════════════════════════════════════ */}
         {expandedStat && (
-          <View style={[s.expandPanel, { backgroundColor: colors.surface, borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)" }]}>
+          <View style={[s.expandPanel, { backgroundColor: cardBg, borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)" }]}>
             {/* Header */}
             <View style={s.expandHeader}>
               <Text style={[s.expandTitle, { color: colors.text }]}>
@@ -689,7 +689,7 @@ export default function ContactScreen() {
                   return (
                     <TouchableOpacity
                       key={eu.id}
-                      style={[s.expandCard, { backgroundColor: colors.background, borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }]}
+                      style={[s.expandCard, { backgroundColor: pageBg, borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }]}
                       activeOpacity={0.75}
                       onPress={() => {
                         setExpandedStat(null);
@@ -793,7 +793,7 @@ export default function ContactScreen() {
         {/* ══════════════════════════════════════════════════════════════ */}
         {!isSelf && mutuals.length > 0 && !mutualDismissed && (
           <View style={[s.mutualsCard, {
-            backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
+            backgroundColor: cardBg,
             borderColor: isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.08)",
           }]}>
             {/* ── Header row ── */}
@@ -882,7 +882,7 @@ export default function ContactScreen() {
         {/* ════════════════════════════════════════════════════════════════ */}
         {/* TAB BAR                                                          */}
         {/* ════════════════════════════════════════════════════════════════ */}
-        <View style={[s.tabBar, { borderTopColor: colors.border, borderBottomColor: colors.border }]}>
+        <View style={[s.tabBar, { backgroundColor: cardBg, borderTopColor: colors.border, borderBottomColor: colors.border }]}>
           {TABS.map(tab => {
             const active = activeTab === tab.id;
             return (

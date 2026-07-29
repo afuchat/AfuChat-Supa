@@ -680,7 +680,7 @@ export default function GroupManageScreen() {
         </View>
 
         {/* ── Members ─── */}
-        <View style={{ marginTop: 16 }}>
+        <View style={{ marginTop: 8 }}>
           <View style={[s.sectionHeader, { paddingHorizontal: 16, paddingBottom: 8 }]}>
             <Text style={[s.sectionTitle, { color: colors.textSecondary }]}>
               {isChannel ? "SUBSCRIBERS" : "MEMBERS"} ({memberCount})
@@ -689,7 +689,7 @@ export default function GroupManageScreen() {
 
           {/* Member search */}
           {memberCount > 5 && (
-            <View style={[s.searchWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+            <View style={[s.searchWrap, { backgroundColor: cardBg, borderColor: colors.border }]}>
               <Ionicons name="search" size={16} color={colors.textMuted} style={{ marginRight: 6 }} />
               <TextInput
                 style={[s.searchInput, { color: colors.text }]}
@@ -703,7 +703,7 @@ export default function GroupManageScreen() {
             </View>
           )}
 
-          <View style={[s.membersCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[s.membersCard, { backgroundColor: cardBg, borderColor: colors.border }]}>
             {filteredMembers.length === 0 ? (
               <View style={{ padding: 24, alignItems: "center" }}>
                 <Text style={{ color: colors.textMuted, fontSize: 14, fontFamily: "Inter_400Regular" }}>
@@ -767,7 +767,7 @@ export default function GroupManageScreen() {
         </View>
 
         {/* ── Danger zone ─── */}
-        <View style={{ marginTop: 24, paddingHorizontal: 16, gap: 12 }}>
+        <View style={{ marginTop: 16, paddingHorizontal: 16, gap: 12 }}>
           {iAmMember && !isCreator && (
             <TouchableOpacity
               style={[s.dangerBtn, { borderColor: "#FF3B30" }]}
@@ -1105,10 +1105,12 @@ const s = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     paddingVertical: 16,
-    marginTop: 2,
-    paddingHorizontal: 24,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 16,
+    paddingHorizontal: 12,
   },
-  actionBtn: { alignItems: "center", gap: 6 },
+  actionBtn: { alignItems: "center", gap: 6, minWidth: 60 },
   actionIconWrap: {
     width: 52,
     height: 52,
@@ -1116,7 +1118,7 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  actionLabel: { fontSize: 12, fontFamily: "Inter_500Medium" },
+  actionLabel: { fontSize: 12, fontFamily: "Inter_500Medium", textAlign: "center" },
 
   mutePicker: {
     position: "absolute",
