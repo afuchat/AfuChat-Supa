@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Linking,
   ScrollView,
@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { AfuLogo } from "@/components/ui/AfuLogo";
+import { DonateSheet } from "@/components/DonateSheet";
 import Colors from "@/constants/colors";
 import Constants from "expo-constants";
 
@@ -81,12 +82,14 @@ const STATS = [
 // ─── Links ────────────────────────────────────────────────────────────────────
 
 const LINKS = [
-  { icon: "document-text", label: "Terms of Service",  onPress: () => Linking.openURL("https://afuchat.com/terms").catch(() => {}) },
-  { icon: "shield-checkmark", label: "Privacy Policy", onPress: () => Linking.openURL("https://afuchat.com/privacy").catch(() => {}) },
-  { icon: "help-buoy",     label: "Help & Support",    onPress: () => router.push("/support" as any) },
-  { icon: "globe",         label: "Visit afuchat.com", onPress: () => Linking.openURL("https://afuchat.com").catch(() => {}) },
-  { icon: "mail",          label: "Contact Us",        onPress: () => Linking.openURL("mailto:hello@afuchat.com").catch(() => {}) },
+  { icon: "document-text",   label: "Terms of Service",  onPress: () => Linking.openURL("https://afuchat.com/terms").catch(() => {}) },
+  { icon: "shield-checkmark",label: "Privacy Policy",    onPress: () => Linking.openURL("https://afuchat.com/privacy").catch(() => {}) },
+  { icon: "help-buoy",       label: "Help & Support",    onPress: () => router.push("/support" as any) },
+  { icon: "globe",           label: "Visit afuchat.com", onPress: () => Linking.openURL("https://afuchat.com").catch(() => {}) },
+  { icon: "mail",            label: "Contact Us",        onPress: () => Linking.openURL("mailto:hello@afuchat.com").catch(() => {}) },
 ] as const;
+
+const GITHUB_URL = "https://github.com/afuchat";
 
 // ─── Tech stack ───────────────────────────────────────────────────────────────
 
@@ -105,6 +108,7 @@ const TECH = [
 export default function AboutScreen() {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
+  const [donateOpen, setDonateOpen] = useState(false);
 
   return (
     <View style={[s.root, { backgroundColor: colors.backgroundSecondary }]}>
@@ -195,6 +199,53 @@ export default function AboutScreen() {
           ))}
         </View>
 
+        {/* ── Support & GitHub ──────────────────────────────────────────── */}
+        <Text style={[s.sectionTitle, { color: colors.textMuted }]}>SUPPORT THE PROJECT</Text>
+
+        {/* Donate CTA */}
+        <TouchableOpacity
+          style={[s.donateCard, { backgroundColor: "#FF3B3010", borderColor: "#FF3B3030" }]}
+          onPress={() => setDonateOpen(true)}
+          activeOpacity={0.82}
+        >
+          <LinearGradient
+            colors={["rgba(255,59,48,0.08)", "transparent"]}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={[s.donateIconBox, { backgroundColor: "#FF3B3020" }]}>
+            <Ionicons name="heart" size={22} color="#FF3B30" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[s.donateTitle, { color: colors.text }]}>Donate</Text>
+            <Text style={[s.donateSub, { color: colors.textMuted }]}>
+              Help keep AfuChat free · Powered by Pesapal
+            </Text>
+          </View>
+          <View style={s.donateBadge}>
+            <Text style={s.donateBadgeText}>Give</Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* GitHub */}
+        <TouchableOpacity
+          style={[s.githubCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => Linking.openURL(GITHUB_URL).catch(() => {})}
+          activeOpacity={0.82}
+        >
+          <View style={[s.githubIconBox, { backgroundColor: isDark ? "#ffffff14" : "#00000010" }]}>
+            {/* GitHub mark rendered with Ionicons logo-github */}
+            <Ionicons name="logo-github" size={22} color={colors.text} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[s.githubTitle, { color: colors.text }]}>GitHub</Text>
+            <Text style={[s.githubSub, { color: colors.textMuted }]}>
+              github.com/afuchat · Star us ⭐
+            </Text>
+          </View>
+          <Ionicons name="open-outline" size={16} color={colors.textMuted} />
+        </TouchableOpacity>
+
         {/* ── Links ─────────────────────────────────────────────────────── */}
         <Text style={[s.sectionTitle, { color: colors.textMuted }]}>LEGAL & SUPPORT</Text>
         <View style={[s.linksCard, { backgroundColor: colors.card }]}>
@@ -244,6 +295,8 @@ export default function AboutScreen() {
         </View>
 
       </ScrollView>
+
+      <DonateSheet visible={donateOpen} onClose={() => setDonateOpen(false)} />
     </View>
   );
 }
@@ -293,6 +346,20 @@ const s = StyleSheet.create({
   techRow:  { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12 },
   techName: { fontSize: 13, fontFamily: "Inter_600SemiBold", flex: 1 },
   techRole: { fontSize: 12, fontFamily: "Inter_400Regular", textAlign: "right", flex: 1.2, marginLeft: 8 },
+
+  // Donate card
+  donateCard:    { flexDirection: "row", alignItems: "center", borderRadius: 18, borderWidth: 1.5, padding: 16, gap: 14, overflow: "hidden", marginBottom: 0 },
+  donateIconBox: { width: 44, height: 44, borderRadius: 13, alignItems: "center", justifyContent: "center" },
+  donateTitle:   { fontSize: 15, fontFamily: "Inter_700Bold" },
+  donateSub:     { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
+  donateBadge:   { backgroundColor: "#FF3B30", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
+  donateBadgeText: { color: "#fff", fontSize: 12, fontFamily: "Inter_700Bold" },
+
+  // GitHub card
+  githubCard:    { flexDirection: "row", alignItems: "center", borderRadius: 18, borderWidth: 1, padding: 16, gap: 14, marginBottom: 8 },
+  githubIconBox: { width: 44, height: 44, borderRadius: 13, alignItems: "center", justifyContent: "center" },
+  githubTitle:   { fontSize: 15, fontFamily: "Inter_700Bold" },
+  githubSub:     { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
 
   footer:     { alignItems: "center", paddingVertical: 24, gap: 6 },
   footerLogo: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 4 },
