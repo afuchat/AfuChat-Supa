@@ -89,7 +89,7 @@ const LINKS = [
   { icon: "mail",            label: "Contact Us",        onPress: () => Linking.openURL("mailto:hello@afuchat.com").catch(() => {}) },
 ] as const;
 
-const GITHUB_URL = "https://github.com/afuchat";
+const GITHUB_URL = "https://github.com/afuchat1/AfuChat-Supa";
 
 // ─── Tech stack ───────────────────────────────────────────────────────────────
 
