@@ -269,12 +269,12 @@ export default function RootLayout() {
     // These assets are shipped inside the app and do not require internet.
     Asset.loadAsync([
       require("@/assets/images/icon.png"),
-      require("@/assets/images/logo_white.png"),
-      require("@/assets/images/logo_black.png"),
-      require("@/assets/illustrations/messaging.png"),
-      require("@/assets/illustrations/community.png"),
-      require("@/assets/illustrations/ai.png"),
-      require("@/assets/illustrations/wallet.png"),
+      require("@/assets/images/logo_white.webp"),
+      require("@/assets/images/logo_black.webp"),
+      require("@/assets/illustrations/messaging.webp"),
+      require("@/assets/illustrations/community.webp"),
+      require("@/assets/illustrations/ai.webp"),
+      require("@/assets/illustrations/wallet.webp"),
     ]).catch(() => {});
     Ionicons.loadFont().catch(() => {});
 

@@ -12,11 +12,11 @@ import {
   useWindowDimensions,
 } from "react-native";
 
-const IL_MESSAGING  = require("@/assets/illustrations/messaging.png");
-const IL_COMMUNITY  = require("@/assets/illustrations/community.png");
-const IL_AI         = require("@/assets/illustrations/ai.png");
-const IL_WALLET     = require("@/assets/illustrations/wallet.png");
-const LOGO_WHITE    = require("@/assets/images/logo_white.png");
+const IL_MESSAGING  = require("@/assets/illustrations/messaging.webp");
+const IL_COMMUNITY  = require("@/assets/illustrations/community.webp");
+const IL_AI         = require("@/assets/illustrations/ai.webp");
+const IL_WALLET     = require("@/assets/illustrations/wallet.webp");
+const LOGO_WHITE    = require("@/assets/images/logo_white.webp");
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "@/components/ui/SafeGradient";

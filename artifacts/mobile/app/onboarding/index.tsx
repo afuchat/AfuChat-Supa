@@ -29,7 +29,8 @@ import { useTheme } from "@/hooks/useTheme";
 import Colors from "@/constants/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { showAlert } from "@/lib/alert";
-import { COUNTRIES, type Country } from "@/constants/countries";
+import type { Country } from "@/constants/countries";
+const getCountries = () => (require("@/constants/countries").COUNTRIES as Country[]);
 import {
   parsePhoneNumberFromString,
   AsYouType,
@@ -288,7 +289,7 @@ export default function OnboardingScreen() {
     if (selectedCountry) return;
     const pickByCode = (code?: string | null) => {
       if (!code) return false;
-      const match = COUNTRIES.find((c) => c.code.toUpperCase() === code.toUpperCase());
+      const match = getCountries().find((c) => c.code.toUpperCase() === code.toUpperCase());
       if (match) { setSelectedCountry(match); return true; }
       return false;
     };
@@ -522,8 +523,8 @@ export default function OnboardingScreen() {
 
   // ── Derived display data ─────────────────────────────────────────────────────
   const filteredCountries = countrySearch.trim()
-    ? COUNTRIES.filter((c) => c.name.toLowerCase().includes(countrySearch.toLowerCase()) || c.dial.includes(countrySearch) || c.code.toLowerCase().includes(countrySearch.toLowerCase()))
-    : COUNTRIES;
+    ? getCountries().filter((c) => c.name.toLowerCase().includes(countrySearch.toLowerCase()) || c.dial.includes(countrySearch) || c.code.toLowerCase().includes(countrySearch.toLowerCase()))
+    : getCountries();
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 1920 - 12 }, (_, i) => currentYear - 13 - i);

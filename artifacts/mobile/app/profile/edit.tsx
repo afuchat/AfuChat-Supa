@@ -25,7 +25,8 @@ import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
 import { showAlert } from "@/lib/alert";
 import { aiGenerateBio } from "@/lib/aiHelper";
-import { COUNTRIES, type Country } from "@/constants/countries";
+import type { Country } from "@/constants/countries";
+const getCountries = () => (require("@/constants/countries").COUNTRIES as Country[]);
 import { storage, KEYS } from "@/lib/storage";
 
 // ─── Cooldown helpers ─────────────────────────────────────────────────────────
@@ -341,7 +342,7 @@ export default function EditProfileScreen() {
   const [dobPicker, setDobPicker] = useState<"day" | "month" | "year" | null>(null);
 
   // Country
-  const initCountry = COUNTRIES.find(c => c.name === profile?.country || c.code === profile?.country) || null;
+  const initCountry = getCountries().find(c => c.name === profile?.country || c.code === profile?.country) || null;
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(initCountry);
   const [showCountryModal, setShowCountryModal] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
@@ -504,8 +505,8 @@ export default function EditProfileScreen() {
 
   // ── Filtered countries ─────────────────────────────────────────────────────
   const filteredCountries = countrySearch.trim()
-    ? COUNTRIES.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()))
-    : COUNTRIES;
+    ? getCountries().filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()))
+    : getCountries();
 
   const dobLabel = (dobDay && dobMonth && dobYear)
     ? `${dobDay} ${MONTHS[dobMonth - 1]} ${dobYear}`
