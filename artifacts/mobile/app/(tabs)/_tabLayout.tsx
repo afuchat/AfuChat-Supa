@@ -30,7 +30,7 @@ import { getTotalUnread, subscribeUnread } from "@/lib/chatUnreadEvents";
 const BOTTOM_TABS = [
   { route: "/(tabs)/chats",    icon: "chatbubbles",  label: "Chat"     },
   { route: "/(tabs)/discover", icon: "compass",      label: "Discover" },
-  { route: "/(tabs)/shorts",   icon: "film",         label: "Shorts"   },
+  { route: "/(tabs)/shorts",   icon: "play-circle",  label: "Shorts"   },
   { route: "/(tabs)/apps",     icon: "grid",         label: "Apps"     },
   { route: "/(tabs)/me",       icon: "person-circle",label: "Account"  },
 ] as const;

@@ -39,7 +39,6 @@ import { ChatRowSkeleton } from "@/components/ui/Skeleton";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import OfflineBanner from "@/components/ui/OfflineBanner";
 import { HomeBanner } from "@/components/ui/HomeBanner";
-import { SuggestedUsers } from "@/components/ui/SuggestedUsers";
 import { isOnline, onConnectivityChange } from "@/lib/offlineStore";
 import { getLocalConversations, saveConversations, deleteLocalConversation, pruneConversations, clearUnread } from "@/lib/storage/localConversations";
 import { getPreloadedConversations, hasPreloadedConversations, invalidateConversationsPreload } from "@/lib/conversationsPreload";
@@ -1767,7 +1766,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                           <>
                             <StoryUploadBanner colors={colors} />
                             <PostUploadBanner colors={colors} />
-                            {chats.length < 8 && <SuggestedUsers compact maxCards={10} />}
                           </>
                         ) : null}
                         refreshControl={
@@ -1843,7 +1841,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                           <>
                             <StoryUploadBanner colors={colors} />
                             <PostUploadBanner colors={colors} />
-                            {chats.length < 8 && <SuggestedUsers compact maxCards={10} />}
                           </>
                         ) : null}
                         refreshControl={
@@ -1903,7 +1900,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                   <>
                     <StoryUploadBanner colors={colors} />
                     <PostUploadBanner colors={colors} />
-                    {chats.length < 8 && <SuggestedUsers compact maxCards={10} />}
                   </>
                 ) : null}
                 refreshControl={

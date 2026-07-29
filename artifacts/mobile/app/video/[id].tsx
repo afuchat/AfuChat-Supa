@@ -900,7 +900,7 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
   // Height taken by the floating tab bar when this feed is embedded in the tabs navigator.
   // We add this as paddingBottom on the root View so the FlatList (and each video item)
   // measures the correct available height and never renders behind the tab bar.
-  const tabOffset = isEmbedded ? Math.max(insets.bottom, 4) + 66 : 0;
+  const tabOffset = 0;
 
   const [videoTab, setVideoTab] = useState<"for_you" | "following">("for_you");
   const [videos, setVideos] = useState<VideoPost[]>([]);
