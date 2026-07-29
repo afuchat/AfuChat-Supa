@@ -242,7 +242,7 @@ const s = StyleSheet.create({
   posterScan: { fontSize: 11, color: "rgba(255,255,255,0.5)", letterSpacing: 0.4, marginBottom: 4 },
   posterUrl:  { fontSize: 10, color: BRAND + "88", letterSpacing: 0.3, fontFamily: "monospace" as any },
 
-  sep:        { height: StyleSheet.hairlineWidth, marginVertical: 2 },
+  sep:        { height: 0.5, marginVertical: 2 },
   actionRow:  { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16, minHeight: 56 },
   actionIcon: { marginRight: 18, width: 24, textAlign: "center" },
   actionLabel:{ flex: 1, fontSize: 16, fontFamily: "Inter_700Bold" },

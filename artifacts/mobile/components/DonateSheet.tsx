@@ -512,7 +512,7 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 0.5,
   },
   webviewTitle: {
     fontFamily: "Inter_600SemiBold",

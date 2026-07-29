@@ -10,12 +10,13 @@
 // SIGNALING PROTOCOL (race-free, no DB dependency)
 //   1. Caller subscribes to call:${callId} channel
 //   2. Caller notifies callee via user-call:${calleeId} broadcast + push notification
-//   3. Callee accepts → subscribes to call:${callId} → broadcasts `ringing`
-//   4. Caller receives `ringing` → creates offer SDP → broadcasts `offer`
-//   5. Callee receives `offer` → creates answer SDP → broadcasts `answer`
-//   6. Caller receives `answer` → setRemoteDescription
-//   7. Both trickle ICE candidates via `ice_candidate` events
-//   8. ICE checks complete → P2P audio established
+//   3. Callee receives broadcast → status: incoming_ringing (cancel-watcher subscribed)
+//   4. Callee accepts → cancel-watcher replaced by full signaling → broadcasts `ringing`
+//   5. Caller receives `ringing` → creates offer SDP → broadcasts `offer`
+//   6. Callee receives `offer` → creates answer SDP → broadcasts `answer`
+//   7. Caller receives `answer` → setRemoteDescription
+//   8. Both trickle ICE candidates via `ice_candidate` events
+//   9. ICE checks complete → P2P audio established
 //
 // DATA EFFICIENCY
 //   • Opus codec at ~20 kbps (WebRTC default for voice)
@@ -64,7 +65,6 @@ const ICE_SERVERS = [
 ];
 
 // ─── Ring timeout: auto-hangup if callee doesn't answer ──────────────────────
-// Exposed as a named constant so it can be tuned per-network condition.
 export const RING_TIMEOUT_MS       = 30_000; // 30 s ringing before declaring missed
 const CONNECT_TIMEOUT_MS           = 20_000; // 20 s for ICE after SDP exchange
 const DISCONNECT_WATCHDOG_MS       = 10_000; // escalate ICE "disconnected" → lost after 10 s
@@ -121,6 +121,7 @@ let _info: CallInfo | null = null;
 let _pc: any | null = null;                    // RTCPeerConnection
 let _localStream: any | null = null;           // MediaStream
 let _signalingCh: any | null = null;           // call:${callId} channel
+let _cancelCh: any | null = null;              // cancel-watcher (incoming_ringing only)
 let _inboxCh: any | null = null;               // user-call:${userId} channel
 let _currentUserId: string | null = null;
 let _pendingCandidates: any[] = [];            // queued before remote desc ready
@@ -171,12 +172,13 @@ export function initCallEngine(userId: string) {
     .channel(`user-call:${userId}`, { config: { broadcast: { self: false } } })
     .on("broadcast", { event: "incoming_call" }, ({ payload }: any) => {
       if (!payload?.callId || !payload?.callerId) return;
-      // Ignore if we're already in a call
+
+      // If we're already in a call (or handling another incoming), send busy
       if (_status !== "idle") {
-        // Send busy signal back
         _sendBusy(payload.callId, payload.callerId);
         return;
       }
+
       const notice: IncomingCallNotice = {
         callId: payload.callId,
         callerId: payload.callerId,
@@ -184,6 +186,17 @@ export function initCallEngine(userId: string) {
         callerAvatar: payload.callerAvatar ?? null,
         chatId: payload.chatId ?? null,
       };
+
+      // Transition to incoming_ringing BEFORE emitting the incoming event so
+      // that any secondary incoming_call arriving in the same microtask tick
+      // sees _status !== "idle" and gets a busy reply.
+      setStatus("incoming_ringing");
+
+      // Subscribe a lightweight cancel-watcher so we can detect if the caller
+      // hangs up / cancels before the local user taps Accept.
+      _subscribeCancelWatcher(notice.callId);
+
+      // Tell the UI an incoming call has arrived
       emit({ type: "incoming", notice });
     })
     .subscribe();
@@ -233,19 +246,29 @@ export async function startCall(params: {
   _activateAudioMode(false);
   _activateKeepAwake();
 
-  // Subscribe to signaling channel
+  // Subscribe to signaling channel FIRST so we don't miss the callee's `ringing`
   await _subscribeSignaling(callId, true);
 
-  // Broadcast to callee's inbox (foreground fast-path)
+  // Broadcast to callee's inbox (foreground fast-path).
+  // IMPORTANT: we must AWAIT the send before removing the channel, otherwise
+  // the Realtime WebSocket may be torn down before the broadcast is flushed,
+  // causing the callee to silently never receive the incoming_call notification.
   const calleeInbox = supabase.channel(`user-call:${calleeId}`, {
     config: { broadcast: { self: true } },
   });
+
   await new Promise<void>((resolve) => {
-    calleeInbox.subscribe((status: string) => {
+    const sub = calleeInbox.subscribe((status: string) => {
       if (status === "SUBSCRIBED") resolve();
     });
+    // Safety timeout — if SUBSCRIBED never fires (e.g. no Supabase connection),
+    // unblock startCall so the ring timer and UI still work.
+    setTimeout(resolve, 6_000);
+    void sub;
   });
-  calleeInbox.send({
+
+  // Await the send so the broadcast is flushed before we destroy the channel.
+  await calleeInbox.send({
     type: "broadcast",
     event: "incoming_call",
     payload: {
@@ -255,7 +278,8 @@ export async function startCall(params: {
       callerAvatar: myAvatar,
       chatId,
     },
-  });
+  }).catch(() => {});
+
   supabase.removeChannel(calleeInbox).catch(() => {});
 
   // Ring timeout — callee didn't answer (offline, FCM unreachable, or ignored)
@@ -263,8 +287,6 @@ export async function startCall(params: {
     if (_status === "outgoing_ringing") {
       const info = _info;
       _saveCallRecord("missed");
-      // Always attempt a missed-call push so the callee sees it even if
-      // Realtime never delivered the incoming_call broadcast to them.
       if (info) {
         notifyMissedCall({
           calleeId: info.calleeId,
@@ -287,7 +309,9 @@ export async function acceptCall(notice: IncomingCallNotice, params: {
   myAvatar: string | null;
 }): Promise<void> {
   if (!WEBRTC_AVAILABLE) throw new Error("WEBRTC_UNAVAILABLE");
-  if (_status !== "idle" && _status !== "incoming_ringing") throw new Error("Cannot accept now");
+  // Only accept from incoming_ringing state (the engine always sets this before
+  // emitting the "incoming" event).
+  if (_status !== "incoming_ringing") throw new Error("Cannot accept now");
 
   const { myId, myName, myAvatar } = params;
 
@@ -309,6 +333,11 @@ export async function acceptCall(notice: IncomingCallNotice, params: {
   _activateAudioMode(false);
   _activateKeepAwake();
 
+  // Explicitly clean up the cancel-watcher before _subscribeSignaling, since
+  // both share the same Realtime topic and Supabase only allows one channel per
+  // topic per client.
+  _cleanupCancelCh();
+
   // Subscribe to signaling, then broadcast `ringing` to trigger the caller's offer
   await _subscribeSignaling(notice.callId, false);
   _signalingCh?.send({
@@ -321,6 +350,9 @@ export async function acceptCall(notice: IncomingCallNotice, params: {
 // ─── Decline incoming call ────────────────────────────────────────────────────
 
 export function declineCall(callId: string) {
+  // Clean up the cancel-watcher we subscribed on incoming
+  _cleanupCancelCh();
+
   const ch = supabase.channel(`call:${callId}`, {
     config: { broadcast: { self: true } },
   });
@@ -374,12 +406,49 @@ export function getIsSpeaker() { return _isSpeaker; }
 export function getStatus()    { return _status;     }
 export function getCallInfo()  { return _info;       }
 
+// ─── Internal: cancel-watcher channel ────────────────────────────────────────
+// Subscribed when the callee enters incoming_ringing. Listens for `end` from
+// the caller (caller cancelled before callee answered) so the UI can reset.
+
+function _subscribeCancelWatcher(callId: string) {
+  _cleanupCancelCh(); // shouldn't be set, but defensive
+
+  _cancelCh = supabase
+    .channel(`call:${callId}`, { config: { broadcast: { self: false } } })
+    .on("broadcast", { event: "end" }, () => {
+      // Caller cancelled while we were showing the incoming modal — reset to idle
+      if (_status === "incoming_ringing") {
+        _cleanupCancelCh();
+        setStatus("idle");
+      }
+    })
+    .on("broadcast", { event: "decline" }, () => {
+      // Shouldn't happen (callee sends this, not caller) but reset if it does
+      if (_status === "incoming_ringing") {
+        _cleanupCancelCh();
+        setStatus("idle");
+      }
+    })
+    .subscribe();
+}
+
+function _cleanupCancelCh() {
+  if (_cancelCh) {
+    supabase.removeChannel(_cancelCh).catch(() => {});
+    _cancelCh = null;
+  }
+}
+
 // ─── Internal: subscribe to call:${callId} signaling channel ─────────────────
 
 async function _subscribeSignaling(callId: string, isCaller: boolean): Promise<void> {
-  // Remove stale channel with same name if present
+  // Remove stale channel with same name if present (e.g. the cancel-watcher)
   const stale = supabase.getChannels().find((c: any) => c.topic === `realtime:call:${callId}`);
-  if (stale) await supabase.removeChannel(stale).catch(() => {});
+  if (stale) {
+    await supabase.removeChannel(stale).catch(() => {});
+    // Null out _cancelCh if it was the stale channel
+    if (_cancelCh === stale) _cancelCh = null;
+  }
 
   return new Promise((resolve) => {
     const ch = supabase
@@ -388,21 +457,21 @@ async function _subscribeSignaling(callId: string, isCaller: boolean): Promise<v
         if (!isCaller) return;
         // Callee is ready — create and send the offer
         _createAndSendOffer().catch((e) => {
-          emit({ type: "error", message: "Failed to create offer: " + e.message });
+          emit({ type: "error", message: "Failed to create offer: " + (e?.message ?? e) });
           _doHangup("ended");
         });
       })
       .on("broadcast", { event: "offer" }, ({ payload }: any) => {
         if (isCaller || !payload?.sdp) return;
         _handleOffer(payload.sdp).catch((e) => {
-          emit({ type: "error", message: "Failed to handle offer: " + e.message });
+          emit({ type: "error", message: "Failed to handle offer: " + (e?.message ?? e) });
           _doHangup("ended");
         });
       })
       .on("broadcast", { event: "answer" }, ({ payload }: any) => {
         if (!isCaller || !payload?.sdp) return;
         _handleAnswer(payload.sdp).catch((e) => {
-          emit({ type: "error", message: "Failed to handle answer: " + e.message });
+          emit({ type: "error", message: "Failed to handle answer: " + (e?.message ?? e) });
           _doHangup("ended");
         });
       })
@@ -429,7 +498,6 @@ async function _subscribeSignaling(callId: string, isCaller: boolean): Promise<v
         _doHangup("ended");
       })
       .on("broadcast", { event: "heartbeat" }, () => {
-        // Peer is alive — reset the missed-beat counter
         _lastHeartbeatAt = Date.now();
       })
       .subscribe((status: string) => {
@@ -478,17 +546,14 @@ function _createPC(): any {
     emit({ type: "ice_state", state });
 
     if (state === "connected" || state === "completed") {
-      // ICE (re)connected — cancel any pending disconnect watchdog
       _clearDisconnectWatchdog();
       if (_status === "connecting") {
         if (_info) _info.answeredAt = _info.answeredAt ?? Date.now();
         _clearConnectTimer();
         setStatus("active");
-        // Begin heartbeat exchange so we can detect peer force-quit
         _startHeartbeat();
       }
     } else if (state === "failed") {
-      // Distinguish "never connected" from "was active then lost"
       const wasActive = !!_info?.answeredAt;
       emit({
         type: "error",
@@ -496,8 +561,6 @@ function _createPC(): any {
       });
       _doHangup(wasActive ? "connection_lost" : "ended");
     } else if (state === "disconnected") {
-      // Brief glitch — common on mobile; give 10 s for ICE to self-heal before
-      // declaring the call lost (avoids false positives on short network hiccups).
       _clearDisconnectWatchdog();
       _disconnectWatchdog = setTimeout(() => {
         if (_status === "active" || _status === "connecting") {
@@ -529,7 +592,6 @@ async function _createAndSendOffer(): Promise<void> {
     offerToReceiveVideo: false,
   });
 
-  // Prefer Opus codec
   const sdp = _preferOpus(offer.sdp ?? "");
   const modifiedOffer = { type: offer.type, sdp };
   await pc.setLocalDescription(new _RTC!.RTCSessionDescription(modifiedOffer));
@@ -650,11 +712,9 @@ function _activateKeepAwake() {
 }
 
 function _deactivateKeepAwake() {
-  if (!_keepAwakeActive) return; // never activated — skip to avoid the "not activated yet" warning
+  if (!_keepAwakeActive) return;
   _keepAwakeActive = false;
   try {
-    // deactivateKeepAwake is async on web (Wake Lock API) — swallow both sync
-    // throws and async rejections so no unhandledrejection fires in the browser.
     const p: any = _KA?.deactivateKeepAwake(_keepAwakeTag);
     if (p && typeof p.catch === "function") p.catch(() => {});
   } catch {}
@@ -688,13 +748,11 @@ function _clearDisconnectWatchdog() {
   if (_disconnectWatchdog) { clearTimeout(_disconnectWatchdog); _disconnectWatchdog = null; }
 }
 
-// ─── Internal: heartbeat — detects peer force-quit when ICE stays "connected" ─
-// Both sides send a broadcast every 5 s once the call is active. If we receive
-// nothing for 15 s (3 missed beats) we assume the peer process was killed.
+// ─── Internal: heartbeat ──────────────────────────────────────────────────────
 
 function _startHeartbeat() {
   _stopHeartbeat();
-  _lastHeartbeatAt = Date.now(); // grace period — peer may not support heartbeats
+  _lastHeartbeatAt = Date.now();
 
   _heartbeatSendTimer = setInterval(() => {
     if (_status !== "active") return;
@@ -720,6 +778,9 @@ function _doHangup(finalStatus: CallStatus) {
   _clearConnectTimer();
   _clearDisconnectWatchdog();
   _stopHeartbeat();
+
+  // Clean up cancel-watcher (present during incoming_ringing)
+  _cleanupCancelCh();
 
   // Cleanup peer connection
   if (_pc) {
@@ -770,7 +831,7 @@ function _doHangup(finalStatus: CallStatus) {
     }, 3_000);
   }
 
-  void wasInfo; // suppress unused warning
+  void wasInfo;
 }
 
 // ─── Internal: save call record to SQLite ─────────────────────────────────────
@@ -798,8 +859,6 @@ function _saveCallRecord(
 }
 
 // ─── SDP: prefer Opus codec ───────────────────────────────────────────────────
-// Moves the Opus payload type to the first position in the m=audio line so
-// the peer prefers it. Opus at ~20 kbps is the most data-efficient voice codec.
 
 function _preferOpus(sdp: string): string {
   try {

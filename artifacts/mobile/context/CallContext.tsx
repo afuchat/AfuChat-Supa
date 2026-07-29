@@ -123,7 +123,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   // ── Handle push-notification incoming calls (app was in background) ─────────
   useEffect(() => {
     const unsub = listenPushIncomingCall((notice) => {
-      if (_status_ref.current !== "idle") return; // busy
+      // Accept if idle OR incoming_ringing (duplicate push for the same call)
+      if (_status_ref.current !== "idle" && _status_ref.current !== "incoming_ringing") return;
       setIncomingNotice((prev) => prev ?? notice);
     });
     return unsub;
@@ -159,9 +160,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           break;
 
         case "incoming":
-          // Engine already guards this with _status !== "idle", but apply a
-          // second check here as a final race-condition safety net.
-          if (_status_ref.current !== "idle") break;
+          // Engine already guards this (sets incoming_ringing before emitting),
+          // but apply a final check — accept from idle OR incoming_ringing since
+          // React state may lag one render behind the engine's synchronous update.
+          if (_status_ref.current !== "idle" && _status_ref.current !== "incoming_ringing") break;
           setIncomingNotice(event.notice);
           break;
 
@@ -226,14 +228,16 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     const p = profileRef.current;
     if (!notice || !u) return;
 
-    setIncomingNotice(null);
-
+    // Clear notice AFTER engine accept so we don't lose it if accept throws
     try {
       await engineAccept(notice, {
         myId: u.id,
         myName: p?.display_name ?? "Unknown",
         myAvatar: p?.avatar_url ?? null,
       });
+
+      // Clear incoming notice only once accept has succeeded
+      setIncomingNotice(null);
 
       router.push({
         pathname: "/call/[id]",

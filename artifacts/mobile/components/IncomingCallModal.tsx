@@ -59,10 +59,11 @@ export function IncomingCallModal() {
   const ringLoopRef      = useRef<Animated.CompositeAnimation | null>(null);
   const labelLoopRef     = useRef<Animated.CompositeAnimation | null>(null);
 
-  // Suppress the modal immediately if we are already in a call — the engine
-  // sends a busy signal, but this is a final UI-level guard that prevents
-  // any flash of the incoming call screen during the race window.
-  const visible = !!incomingNotice && status === "idle";
+  // Show the modal while there is an incoming notice AND the engine is either
+  // idle (first render lag) or incoming_ringing (steady state after engine fix).
+  // The "idle" arm handles the one-render gap between the engine emitting
+  // "incoming_ringing" and the React status state updating from the listener.
+  const visible = !!incomingNotice && (status === "idle" || status === "incoming_ringing");
 
   // ── Animations ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -162,7 +163,7 @@ export function IncomingCallModal() {
     acceptCall();
   }, [acceptCall]);
 
-  if (!incomingNotice || status !== "idle") return null;
+  if (!incomingNotice || (status !== "idle" && status !== "incoming_ringing")) return null;
 
   return (
     <Modal

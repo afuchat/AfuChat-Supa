@@ -57,7 +57,7 @@ export function DismissSheet({ visible, authorHandle: _authorHandle, onSelect, o
 }
 
 const styles = StyleSheet.create({
-  sep:     { height: StyleSheet.hairlineWidth, marginVertical: 2 },
+  sep:     { height: 0.5, marginVertical: 2 },
   row:     { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16, minHeight: 56 },
   rowIcon: { marginRight: 18, width: 24, textAlign: "center" },
   rowLabel:{ flex: 1, fontSize: 16, fontFamily: "Inter_700Bold" },

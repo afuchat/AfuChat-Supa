@@ -421,7 +421,7 @@ const s = StyleSheet.create({
   tabRow: {
     flexDirection: "row", alignItems: "center",
     paddingHorizontal: 16, paddingBottom: 10, gap: 8,
-    
+    borderBottomWidth: 0.5,
   },
   tabBtn: {
     flexDirection: "row", alignItems: "center", gap: 6,
