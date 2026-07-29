@@ -368,6 +368,7 @@ const VideoItem = React.memo(function VideoItem({
   const [progress, setProgress] = useState(0);
   const [durationMs, setDurationMs] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  const [hasMoreLines, setHasMoreLines] = useState(false);
   const [cachedUri, setCachedUri] = useState<string | null>(null);
   const [videoError, setVideoError] = useState(false);
   const [progressBarWidth, setProgressBarWidth] = useState(0);
@@ -767,28 +768,41 @@ const VideoItem = React.memo(function VideoItem({
         {/* Gradient — bottom only */}
         <GradientOverlay position="bottom" height={300} />
 
-        {/* Caption overlay — bottom of video, 1 line default with read-more */}
+        {/* Caption overlay — flush above seek bar, 1-line default + read more */}
         <Animated.View style={[vStyles.captionOverlay, { opacity: overlayOpacity, pointerEvents: commentsOpen ? "none" : "box-none" } as any]}>
           {!!item.content && (
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => setExpanded((e) => !e)}
-              style={vStyles.captionWrap}
-            >
-              <RichText
-                style={vStyles.caption}
-                numberOfLines={expanded ? undefined : 1}
-                linkColor="#1f95ff"
+            <>
+              {/* Hidden full-text measurement — determines if truncation occurs */}
+              <Text
+                style={[vStyles.caption, vStyles.captionMeasure]}
+                numberOfLines={undefined}
+                onTextLayout={(e) => setHasMoreLines(e.nativeEvent.lines.length > 1)}
+                aria-hidden
               >
                 {item.content}
-              </RichText>
-              {!expanded && (
-                <Text style={vStyles.captionMore}> more</Text>
-              )}
-              {expanded && (
-                <Text style={vStyles.captionLess}> less</Text>
-              )}
-            </TouchableOpacity>
+              </Text>
+
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => hasMoreLines && setExpanded((e) => !e)}
+                disabled={!hasMoreLines && !expanded}
+                style={vStyles.captionWrap}
+              >
+                <RichText
+                  style={vStyles.caption}
+                  numberOfLines={expanded ? undefined : 1}
+                  linkColor="#1f95ff"
+                >
+                  {item.content}
+                </RichText>
+                {hasMoreLines && !expanded && (
+                  <Text style={vStyles.captionMore}> more</Text>
+                )}
+                {expanded && (
+                  <Text style={vStyles.captionLess}> less</Text>
+                )}
+              </TouchableOpacity>
+            </>
           )}
         </Animated.View>
 
@@ -911,10 +925,11 @@ const vStyles = StyleSheet.create({
   item: { backgroundColor: "#000", overflow: "hidden" },
   centerOverlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
   pauseCircle: { width: 72, height: 72, borderRadius: 36, backgroundColor: "rgba(0,0,0,0.4)", borderWidth: 1.5, borderColor: "rgba(255,255,255,0.25)", alignItems: "center", justifyContent: "center" },
-  // Caption sits above the seek bar (seek bar is 52px tall at the bottom)
-  captionOverlay: { position: "absolute", left: 16, right: 16, bottom: 58 },
+  // Caption sits directly above the seek bar (seekContainer height = 52)
+  captionOverlay: { position: "absolute", left: 16, right: 16, bottom: 52 },
   captionWrap: { marginTop: 2 },
   caption: { color: "rgba(255,255,255,0.93)", fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 21, ...VS_SHADOW },
+  captionMeasure: { position: "absolute", opacity: 0, left: 0, right: 0, top: -9999, pointerEvents: "none" } as any,
   captionMore: { color: "rgba(255,255,255,0.55)", fontSize: 13, fontFamily: "Inter_600SemiBold", ...VS_SHADOW },
   captionLess: { color: "rgba(255,255,255,0.55)", fontSize: 13, fontFamily: "Inter_600SemiBold", ...VS_SHADOW },
   // ── WeChat-style horizontal bottom action bar ──────────────────────────────
