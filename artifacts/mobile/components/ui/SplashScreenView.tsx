@@ -1,34 +1,33 @@
 /**
  * SplashScreenView
  *
- * A JS-side splash overlay that mirrors the native splash screen appearance
- * (white logo on black) and animates out smoothly once the app is ready.
+ * JS-side splash overlay shown while fonts and assets load.
  *
- * Usage:
- *   <SplashScreenView ready={fontsReady && !authLoading} onDone={hideSplash} />
+ * Dark theme  → logo_white.webp  on black  (#000000)
+ * Light theme → logo_black.webp  on cream  (#F5F0E8)
  *
- * The component fades itself out over 350ms once `ready` becomes true, then
- * calls `onDone` so the parent can call SplashScreen.hideAsync().
+ * Fades out and scales up once `ready` becomes true, then calls `onDone`
+ * so the parent can call SplashScreen.hideAsync().
  */
 
 import React, { useEffect, useRef } from "react";
 import {
   Animated,
   Dimensions,
-  Image,
   Platform,
   StyleSheet,
   Text,
   View,
   useColorScheme,
 } from "react-native";
+import { Image } from "expo-image";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { LOGO_WHITE_B64, LOGO_BLACK_B64 } from "@/lib/logoAssets";
-const LOGO_WHITE = { uri: LOGO_WHITE_B64 };
-const LOGO_BLACK = { uri: LOGO_BLACK_B64 };
+const LOGO_WHITE = require("@/assets/images/logo_white.webp");
+const LOGO_BLACK = require("@/assets/images/logo_black.webp");
+
 const { width } = Dimensions.get("window");
-const LOGO_SIZE = Math.min(width * 0.28, 120);
+const LOGO_SIZE = Math.min(width * 0.32, 130);
 
 interface Props {
   ready: boolean;
@@ -36,23 +35,22 @@ interface Props {
 }
 
 export function SplashScreenView({ ready, onDone }: Props) {
-  const opacity = useRef(new Animated.Value(1)).current;
-  const scale = useRef(new Animated.Value(1)).current;
-  const doneFired = useRef(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const onDoneRef = useRef(onDone);
+  const opacity    = useRef(new Animated.Value(1)).current;
+  const scale      = useRef(new Animated.Value(1)).current;
+  const doneFired  = useRef(false);
+  const onDoneRef  = useRef(onDone);
   onDoneRef.current = onDone;
 
-  // Detect theme: check stored preference, fall back to system color scheme
+  // Detect theme: check stored user preference first, fall back to system
   const systemScheme = useColorScheme();
   const [isDark, setIsDark] = React.useState(systemScheme === "dark");
 
   React.useEffect(() => {
     AsyncStorage.getItem("@afuchat_theme")
       .then((val) => {
-        if (val === "dark") setIsDark(true);
+        if (val === "dark")       setIsDark(true);
         else if (val === "light") setIsDark(false);
-        else setIsDark(systemScheme === "dark");
+        else                      setIsDark(systemScheme === "dark");
       })
       .catch(() => setIsDark(systemScheme === "dark"));
   }, [systemScheme]);
@@ -75,37 +73,40 @@ export function SplashScreenView({ ready, onDone }: Props) {
         useNativeDriver: true,
       }),
     ]).start(() => onDoneRef.current());
-
-    return () => {
-      if (timerRef.current !== null) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-    };
   }, [ready, opacity, scale]);
 
-  const bg = isDark ? "#000000" : "#FFFFFF";
-  const wordmarkColor = isDark ? "#FFFFFF" : "#0A0A0A";
-  const taglineColor = isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.38)";
-  const LOGO = isDark ? LOGO_WHITE : LOGO_BLACK;
+  // Dark  → black BG, white logo
+  // Light → cream BG, black logo
+  const bg            = isDark ? "#000000" : "#F5F0E8";
+  const wordmarkColor = isDark ? "#FFFFFF"  : "#0A0A0A";
+  const taglineColor  = isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.38)";
+  const logoSource    = isDark ? LOGO_WHITE : LOGO_BLACK;
 
   return (
-    <Animated.View style={[styles.container, { opacity, backgroundColor: bg, pointerEvents: "none" } as any]}>
+    <Animated.View
+      style={[styles.container, { opacity, backgroundColor: bg }] as any}
+      pointerEvents="none"
+    >
       <Animated.View style={[styles.logoWrap, { transform: [{ scale }] }]}>
         <Image
-          source={LOGO}
+          source={logoSource}
           style={styles.logo}
-          resizeMode="contain"
+          contentFit="contain"
           accessibilityLabel="AfuChat logo"
+          cachePolicy="memory"
         />
       </Animated.View>
+
       <View style={styles.wordmarkRow}>
         <Text style={[styles.wordmark, { color: wordmarkColor }]}>
           Afu<Text style={styles.wordmarkAccent}>Chat</Text>
         </Text>
       </View>
+
       <View style={styles.taglineWrap}>
-        <Text style={[styles.tagline, { color: taglineColor }]}>Connect · Discover · Create</Text>
+        <Text style={[styles.tagline, { color: taglineColor }]}>
+          Connect · Discover · Create
+        </Text>
       </View>
     </Animated.View>
   );
@@ -137,7 +138,11 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "800",
     letterSpacing: -0.5,
-    fontFamily: Platform.select({ ios: "System", android: "sans-serif-medium", default: "System" }),
+    fontFamily: Platform.select({
+      ios: "System",
+      android: "sans-serif-medium",
+      default: "System",
+    }),
   },
   wordmarkAccent: {
     color: "#1f95ff",
@@ -148,6 +153,10 @@ const styles = StyleSheet.create({
   tagline: {
     fontSize: 12,
     letterSpacing: 1.2,
-    fontFamily: Platform.select({ ios: "System", android: "sans-serif", default: "System" }),
+    fontFamily: Platform.select({
+      ios: "System",
+      android: "sans-serif",
+      default: "System",
+    }),
   },
 });

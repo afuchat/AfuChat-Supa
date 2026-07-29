@@ -83,6 +83,18 @@
     },
     "plugins": [
       [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F5F0E8",
+          "image": "./assets/images/logo_black.webp",
+          "imageWidth": 200,
+          "dark": {
+            "backgroundColor": "#000000",
+            "image": "./assets/images/logo_white.webp"
+          }
+        }
+      ],
+      [
         "expo-router",
         {}
       ],

@@ -1,6 +1,10 @@
 import "@/polyfills";
 import "react-native-gesture-handler";
 import "@/lib/callService";
+import * as SplashScreen from "expo-splash-screen";
+
+// Keep the native splash visible until we explicitly hide it
+SplashScreen.preventAutoHideAsync().catch(() => {});
 import { enableScreens } from "react-native-screens";
 import { initCrashReporter, setCrashReporterUserId, setCrashNotificationHandler } from "@/lib/crashReporter";
 initCrashReporter();
@@ -60,6 +64,7 @@ import { startOfflineSync } from "@/lib/offlineSync";
 import { startSyncQueue } from "@/lib/storage/syncQueue";
 import { MiniAppRuntimeProvider } from "@/lib/superapp/MiniAppRuntime";
 import { AnimationGuardInit } from "@/components/AnimationGuardInit";
+import { SplashScreenView } from "@/components/ui/SplashScreenView";
 
 // NOTE: react-native-mmkv has been downgraded to v3 (stable JSI bridge) and
 // react-native-nitro-modules has been removed.  v4/Nitro caused an unrecoverable
@@ -208,15 +213,18 @@ function ThemedRoot({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
-  // Load custom fonts without blocking the first render. The app intentionally
-  // has no launch splash or JS splash overlay; text uses platform fallbacks
-  // until these fonts finish loading.
-  Font.useFonts({
+  const [fontsLoaded] = Font.useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
   });
+  const [splashDone, setSplashDone] = useState(false);
+
+  const handleSplashDone = useCallback(() => {
+    SplashScreen.hideAsync().catch(() => {});
+    setSplashDone(true);
+  }, []);
 
   // Enable react-native-screens optimisation. Called here (inside a component,
   // not at module-eval time) so the Android activity is guaranteed to be fully
@@ -292,6 +300,10 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={styles.root}>
+        {/* JS splash overlay — visible until fonts load, then fades out */}
+        {!splashDone && (
+          <SplashScreenView ready={fontsLoaded} onDone={handleSplashDone} />
+        )}
         <ThemeProvider>
           <ThemedRoot>
             <AppAccentProvider>
