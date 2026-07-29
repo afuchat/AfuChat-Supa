@@ -103,27 +103,53 @@ function NativeShortsPlayer({
     p.muted = false;
     if (active && !paused && !preloadOnly) p.play();
   });
+
   const touchRef = useRef<{ y: number; t: number } | null>(null);
   const lastTapRef = useRef(0);
   const singleTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const endFiredRef = useRef(false);
 
-  // Clean up pending tap timer on unmount so we never call setState after unmount.
+  // ── Progress bar ────────────────────────────────────────────────────
+  const [progress, setProgress] = useState(0);
+  const barOpacity = useRef(new Animated.Value(0)).current;
+  const barVisibleRef = useRef(false);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const barWidthRef = useRef(1); // set by onLayout; avoid /0
+  const isDraggingRef = useRef(false);
+  // track whether active was true on the PREVIOUS render (for restart logic)
+  const prevActiveRef = useRef(active);
+
+  function _showBar() {
+    barVisibleRef.current = true;
+    Animated.timing(barOpacity, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+    _resetHideTimer();
+  }
+  function _hideBar() {
+    barVisibleRef.current = false;
+    Animated.timing(barOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start();
+  }
+  function _resetHideTimer() {
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    if (!isDraggingRef.current) {
+      hideTimerRef.current = setTimeout(_hideBar, 3000);
+    }
+  }
+
+  // Cleanup on unmount
   React.useEffect(() => {
     return () => {
-      if (singleTapTimerRef.current) { clearTimeout(singleTapTimerRef.current); singleTapTimerRef.current = null; }
+      if (singleTapTimerRef.current) clearTimeout(singleTapTimerRef.current);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     };
   }, []);
 
-  // Sync loop setting when it changes
+  // Sync loop setting
   React.useEffect(() => {
     try { player.loop = loop; } catch {}
   }, [loop]);
 
   // Play / pause control
   React.useEffect(() => {
-    // expo-video player methods throw when the underlying AVPlayer has been
-    // deallocated (e.g. rapid list scrolls) or is in an unrecoverable state.
     try {
       if (active && !paused && !preloadOnly) {
         player.muted = false;
@@ -134,7 +160,36 @@ function NativeShortsPlayer({
     } catch {}
   }, [active, paused, preloadOnly]);
 
-  // When loop is off, poll for end-of-video so we can fire onEnded
+  // Restart from beginning when card becomes active (scrolled back to)
+  React.useEffect(() => {
+    const wasActive = prevActiveRef.current;
+    prevActiveRef.current = active;
+    if (active && !wasActive && !preloadOnly) {
+      try { player.currentTime = 0; } catch {}
+      setProgress(0);
+      _hideBar();
+    }
+    if (!active) {
+      // scrolled away — hide bar immediately
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+      _hideBar();
+    }
+  }, [active, preloadOnly]);
+
+  // Progress polling (updates bar fill while playing)
+  React.useEffect(() => {
+    if (!active || preloadOnly) return;
+    const timer = setInterval(() => {
+      if (isDraggingRef.current) return;
+      try {
+        const dur = player.duration;
+        if (dur > 0) setProgress(player.currentTime / dur);
+      } catch {}
+    }, 200);
+    return () => clearInterval(timer);
+  }, [active, preloadOnly]);
+
+  // End-of-video detection (auto-scroll mode)
   React.useEffect(() => {
     if (loop || !active || !onEnded) { endFiredRef.current = false; return; }
     endFiredRef.current = false;
@@ -165,10 +220,8 @@ function NativeShortsPlayer({
         const dy = Math.abs(e.nativeEvent.pageY - start.y);
         const dt = Date.now() - start.t;
         if (dy < 12 && dt < 350) {
-          // Tap detected — check for double-tap
           const now = Date.now();
           if (onDoubleTap && now - lastTapRef.current < 300) {
-            // Double-tap: cancel pending single-tap and fire like
             if (singleTapTimerRef.current) {
               clearTimeout(singleTapTimerRef.current);
               singleTapTimerRef.current = null;
@@ -176,11 +229,11 @@ function NativeShortsPlayer({
             lastTapRef.current = 0;
             onDoubleTap();
           } else {
-            // Potential single-tap: wait 300 ms to rule out second tap
             lastTapRef.current = now;
             singleTapTimerRef.current = setTimeout(() => {
               singleTapTimerRef.current = null;
               lastTapRef.current = 0;
+              _showBar();       // reveal progress bar on tap
               onTogglePause();
             }, 300);
           }
@@ -194,12 +247,62 @@ function NativeShortsPlayer({
         contentFit="cover"
         nativeControls={false}
       />
+
+      {/* Pause overlay */}
       {!preloadOnly && paused && (
         <View style={[styles.centerPlayBtn, { pointerEvents: "none" }]}>
           <View style={styles.centerPlayCircle}>
             <Ionicons name="play" size={36} color="#fff" />
           </View>
         </View>
+      )}
+
+      {/* ── Progress / seek bar ────────────────────────────────────── */}
+      {!preloadOnly && (
+        <Animated.View
+          style={[styles.progressContainer, { opacity: barOpacity }]}
+          onLayout={(e) => { barWidthRef.current = e.nativeEvent.layout.width || 1; }}
+          // child responder — takes over when bar is visible so user can seek
+          onStartShouldSetResponder={() => barVisibleRef.current}
+          onMoveShouldSetResponder={() => barVisibleRef.current}
+          onResponderGrant={(e) => {
+            isDraggingRef.current = true;
+            if (hideTimerRef.current) { clearTimeout(hideTimerRef.current); hideTimerRef.current = null; }
+            const p = Math.max(0, Math.min(1, e.nativeEvent.locationX / barWidthRef.current));
+            setProgress(p);
+          }}
+          onResponderMove={(e) => {
+            const p = Math.max(0, Math.min(1, e.nativeEvent.locationX / barWidthRef.current));
+            setProgress(p);
+          }}
+          onResponderRelease={(e) => {
+            const p = Math.max(0, Math.min(1, e.nativeEvent.locationX / barWidthRef.current));
+            setProgress(p);
+            isDraggingRef.current = false;
+            try {
+              const dur = player.duration;
+              if (dur > 0) player.currentTime = p * dur;
+            } catch {}
+            _resetHideTimer();
+          }}
+          onResponderTerminate={() => {
+            isDraggingRef.current = false;
+            _resetHideTimer();
+          }}
+        >
+          {/* Track */}
+          <View style={styles.progressTrack}>
+            {/* Filled portion */}
+            <View style={[styles.progressFill, { width: `${(progress * 100).toFixed(2)}%` as any }]} />
+          </View>
+          {/* Thumb dot */}
+          <View
+            style={[
+              styles.progressThumb,
+              { left: `${(progress * 100).toFixed(2)}%` as any },
+            ]}
+          />
+        </Animated.View>
       )}
     </View>
   );
@@ -1368,6 +1471,45 @@ const styles = StyleSheet.create({
     textShadowColor: "rgba(0,0,0,0.6)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
+  },
+  /* ── Progress / seek bar ─────────────────────────────────────── */
+  progressContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 44,           // large touch target
+    justifyContent: "flex-end",
+    paddingBottom: 10,
+    paddingHorizontal: 12,
+  },
+  progressTrack: {
+    height: 3,
+    backgroundColor: "rgba(255,255,255,0.30)",
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  progressFill: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: "#fff",
+    borderRadius: 2,
+  },
+  progressThumb: {
+    position: "absolute",
+    bottom: 10 - 5,       // aligns with track centre (paddingBottom 10, track height 3, thumb 12 → offset 4)
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#fff",
+    marginLeft: -6,       // centre on the fill edge
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.35,
+    shadowRadius: 2,
+    elevation: 3,
   },
   /* Bottom bar: row spanning full width */
   fullBottomBar: {
