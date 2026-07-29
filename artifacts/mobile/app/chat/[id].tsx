@@ -543,11 +543,39 @@ function BottomSheet({ visible, onClose, children }: { visible: boolean; onClose
   return (
     <View style={[StyleSheet.absoluteFill, { pointerEvents: "box-none" }]}>
       <Pressable style={[st.sheetOverlay, { backgroundColor: "rgba(0,0,0,0.5)" }]} onPress={() => { Keyboard.dismiss(); onClose(); }} />
+      {/*
+        Two nested Animated.Views — MUST NOT be merged into one.
+        React Native native driver claims the whole node when any animated
+        value in the style uses useNativeDriver:true.  If bottom (a layout
+        prop) is on the same node it crashes with:
+          "Style property 'bottom' is not supported by native animated module"
+        Fix: outer = JS-driver (bottom offset), inner = native-driver (transform).
+      */}
       <Animated.View
-        style={[st.sheetContent, { backgroundColor: colors.surface, transform: [{ translateY }], maxHeight: screenHeight * 0.75, bottom: keyboardBottom }]}
-        {...panResponder.panHandlers}
+        style={{
+          position: "absolute",
+          left: 8,
+          right: 8,
+          bottom: keyboardBottom, // JS driver — layout prop, must NOT be on native node
+        }}
+        pointerEvents="box-none"
       >
-        {children}
+        <Animated.View
+          style={{
+            // All visual styles from st.sheetContent, minus the absolute positioning
+            // which is now owned by the outer wrapper above.
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            padding: 24,
+            gap: 14,
+            backgroundColor: colors.surface,
+            maxHeight: screenHeight * 0.75,
+            transform: [{ translateY }], // native driver — transform prop, safe
+          }}
+          {...panResponder.panHandlers}
+        >
+          {children}
+        </Animated.View>
       </Animated.View>
     </View>
   );
