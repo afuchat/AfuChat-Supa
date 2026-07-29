@@ -1,12 +1,10 @@
 import Constants from "expo-constants";
 import { supabase } from "./supabase";
 
-// ⚠️  This must be the "Web application" OAuth 2.0 client ID from Google Cloud Console
-//     project afuchat-479416. It must EXACTLY match the Client ID you entered in
-//     Supabase Dashboard → Authentication → Providers → Google.
-//     Replace this value after creating/confirming the Web client in GCP.
+// Web/installed OAuth client from GCP project afuchat-479416.
+// Must match the Client ID set in Supabase Dashboard → Authentication → Providers → Google.
 const WEB_CLIENT_ID =
-  "148957999957-i5pgudckm6c9sc8pthqr2cl918nd3153.apps.googleusercontent.com";
+  "830762767270-kigq05c5h8vibid972s5jsm6es8t62gs.apps.googleusercontent.com";
 
 let _GoogleSignin: any = null;
 let _isErrorWithCode: any = null;
