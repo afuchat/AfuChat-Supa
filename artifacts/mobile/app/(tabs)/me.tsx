@@ -349,28 +349,6 @@ export default function MeScreen() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <OfflineBanner />
 
-      {/* ── Settings gear ───────────────────────────────────────────────────── */}
-      {(
-        <TouchableOpacity
-          onPress={() => router.push("/settings" as any)}
-          hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-          activeOpacity={0.7}
-          style={{
-            position: "absolute",
-            top: insets.top + 10,
-            right: 16,
-            zIndex: 10,
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: colors.backgroundSecondary,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Ionicons name="settings" size={19} color={colors.text} />
-        </TouchableOpacity>
-      )}
 
       <ScrollView
         style={{ flex: 1 }}
@@ -626,6 +604,20 @@ export default function MeScreen() {
               iconColor={accent}
               label="Achievements"
               onPress={() => router.push("/achievements" as any)}
+              colors={colors}
+            />
+          </MenuCard>
+        </View>
+
+        {/* ── Settings ────────────────────────────────────────────────────── */}
+        <View>
+          <SectionLabel label="App" colors={colors} />
+          <MenuCard colors={colors}>
+            <MenuItem
+              icon="settings"
+              iconColor={colors.textMuted}
+              label="Settings"
+              onPress={() => router.push("/settings" as any)}
               colors={colors}
             />
           </MenuCard>
