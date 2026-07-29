@@ -1942,7 +1942,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               {
                 backgroundColor: isDark ? "rgba(20,20,26,0.93)" : "rgba(252,252,255,0.93)",
                 borderColor: isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)",
-                ...{ shadowColor: "#000" },
               },
             ]}
           >
@@ -2092,7 +2091,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               bottom: insets.bottom + 90,
               backgroundColor: colors.surface,
               borderColor: colors.border,
-              ...{ shadowColor: "#000" },
               pointerEvents: "box-none",
             },
           ]}

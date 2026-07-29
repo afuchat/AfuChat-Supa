@@ -6591,10 +6591,6 @@ STRICT RULES:
                         : {
                             backgroundColor: colors.inputBg,
                             borderColor: colors.border,
-                            ...Platform.select({
-                              web: { boxShadow: "0 2px 8px rgba(0,0,0,0.10)" } as any,
-                              default: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 5, elevation: 3 },
-                            }),
                           },
                     ]}
                     activeOpacity={0.7}
@@ -7269,10 +7265,6 @@ STRICT RULES:
                   backgroundColor: colors.inputBg,
                   borderWidth: 0.5,
                   borderColor: colors.border,
-                  ...Platform.select({
-                    web: { boxShadow: "0 4px 16px rgba(0,0,0,0.12)" } as any,
-                    default: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 10 },
-                  }),
                 }}>
                   {TABS.map((tab) => {
                     const active = attachTab === tab.key;
@@ -7952,10 +7944,6 @@ STRICT RULES:
                 borderBottomWidth: 0,
                 zIndex: 10,
                 transform: [{ translateY: notifPillAnim }],
-                ...Platform.select({
-                  web: { boxShadow: "0 -4px 16px rgba(0,0,0,0.10)" } as any,
-                  default: { shadowColor: "#000", shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 8 },
-                }),
               },
             ]}>
               {([
@@ -8517,10 +8505,6 @@ const st = StyleSheet.create({
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     paddingTop: 10,
-    ...Platform.select({
-      web: { boxShadow: "0 -2px 10px rgba(0,0,0,0.12)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 16 },
-    }),
   },
   optionsHandle: { width: 38, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 14 },
   optionsIdentity: {

@@ -190,10 +190,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }) => {
     const u = userRef.current;
     const p = profileRef.current;
-    if (!u || !WEBRTC_AVAILABLE) {
-      showToast("Voice calls require a native build of AfuChat", { type: "warning", duration: 4000 });
-      return;
-    }
+    if (!u) return;
 
     const callId = _uuid();
 
@@ -219,11 +216,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         chatId: params.chatId,
       }).catch(() => {});
     } catch (e: any) {
-      if (e?.message === "WEBRTC_UNAVAILABLE") {
-        showToast("Voice calls require a native build of AfuChat", { type: "warning", duration: 4000 });
-      } else {
-        showToast("Could not start call", { type: "error", duration: 3000 });
-      }
+      showToast("Could not start call", { type: "error", duration: 3000 });
     }
   }, []);
 

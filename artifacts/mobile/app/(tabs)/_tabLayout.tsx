@@ -108,20 +108,6 @@ function CompactTabBar({
 
   return (
     <>
-      {/* Bottom content fade */}
-      <LinearGradient
-        colors={["transparent", isDark ? "#000000" : "#F5F0E8"]}
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: PILL_BOTTOM + PILL_H,
-          height: 72,
-          zIndex: 98,
-          pointerEvents: "none",
-        } as any}
-      />
-
       {/* Floating glass pill — icon-only */}
       <View
         style={[
