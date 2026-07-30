@@ -6265,13 +6265,8 @@ STRICT RULES:
             callStatus === "idle" && (
             <TouchableOpacity
               hitSlop={10}
-              activeOpacity={micBlocked ? 0.45 : 0.72}
-              accessibilityHint={micBlocked ? "Microphone blocked. Tap for re-enable instructions." : undefined}
+              activeOpacity={0.72}
               onPress={() => {
-                if (micBlocked) {
-                  showMicPermModal();
-                  return;
-                }
                 callStart({
                   calleeId: chatInfo.other_id!,
                   calleeName: chatInfo.other_name ?? "Unknown",
@@ -6288,22 +6283,17 @@ STRICT RULES:
                   overflow: "hidden",
                   alignItems: "center", justifyContent: "center",
                   borderWidth: 0.5,
-                  borderColor: micBlocked
-                    ? "rgba(255,59,48,0.40)"
-                    : (isDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.07)"),
-                  opacity: micBlocked ? 0.65 : 1,
+                  borderColor: isDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.07)",
                 }}
               >
                 <View style={{
                   ...StyleSheet.absoluteFillObject,
-                  backgroundColor: micBlocked
-                    ? "rgba(255,59,48,0.10)"
-                    : (isDark ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.52)"),
+                  backgroundColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.52)",
                 }} />
                 <Ionicons
-                  name={micBlocked ? "mic-off-outline" : "call-outline"}
+                  name="call-outline"
                   size={17}
-                  color={micBlocked ? "#FF3B30" : (isDark ? "rgba(255,255,255,0.85)" : "#1c1c1e")}
+                  color={isDark ? "rgba(255,255,255,0.85)" : "#1c1c1e"}
                 />
               </BlurView>
             </TouchableOpacity>
