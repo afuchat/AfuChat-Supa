@@ -59,6 +59,34 @@ function channelId(type?: string): string {
   }
 }
 
+// ── Expo Push Notification Service (for Expo Go / dev builds) ────────────────
+async function sendExpoNotification(token: string, opts: FCMSendOptions): Promise<void> {
+  const res = await fetch("https://exp.host/--/api/v2/push/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json", "Accept-Encoding": "gzip, deflate" },
+    body: JSON.stringify({
+      to: token,
+      title: opts.title,
+      body: opts.body,
+      data: opts.data ?? {},
+      sound: "default",
+      priority: opts.highPriority ? "high" : "normal",
+      channelId: opts.channelId ?? "default",
+      ttl: opts.ttl ?? 604800,
+      ...(opts.collapseKey && { collapseId: opts.collapseKey }),
+    }),
+  });
+  if (!res.ok) console.error(`[Expo Push] send failed ${res.status}:`, await res.text());
+}
+
+// ── Dispatch to FCM or Expo depending on token format ────────────────────────
+async function sendToUser(token: string, opts: FCMSendOptions): Promise<void> {
+  if (token.startsWith("ExponentPushToken[")) {
+    return sendExpoNotification(token, opts);
+  }
+  return sendFCMToUser(token, opts);
+}
+
 async function pushToUser(
   supabase: ReturnType<typeof createClient>,
   userId: string,
@@ -67,7 +95,7 @@ async function pushToUser(
   const { data: profile } = await supabase.from("profiles").select("fcm_token").eq("id", userId).single();
   if (!profile?.fcm_token) return;
   const type = push.type ?? (push.data?.type as string | undefined);
-  await sendFCMToUser(profile.fcm_token, {
+  await sendToUser(profile.fcm_token, {
     title: push.title, body: push.body,
     data: { recipientUserId: userId, ...(push.data ?? {}) },
     channelId: channelId(type),

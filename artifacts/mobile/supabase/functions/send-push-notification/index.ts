@@ -41,6 +41,34 @@ type FCMSendOptions = {
   channelId?: string; highPriority?: boolean; collapseKey?: string; ttl?: number;
 };
 
+// ── Expo Push Notification Service (for Expo Go / dev builds) ────────────────
+async function sendExpoNotification(token: string, opts: FCMSendOptions): Promise<void> {
+  const res = await fetch("https://exp.host/--/api/v2/push/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json", "Accept-Encoding": "gzip, deflate" },
+    body: JSON.stringify({
+      to: token,
+      title: opts.title,
+      body: opts.body,
+      data: opts.data ?? {},
+      sound: "default",
+      priority: opts.highPriority ? "high" : "normal",
+      channelId: opts.channelId ?? "default",
+      ttl: opts.ttl ?? 604800,
+      ...(opts.collapseKey && { collapseId: opts.collapseKey }),
+    }),
+  });
+  if (!res.ok) console.error(`[Expo Push] send failed ${res.status}:`, await res.text());
+}
+
+// ── Dispatch to FCM or Expo depending on token format ────────────────────────
+async function sendToUser(token: string, opts: FCMSendOptions): Promise<void> {
+  if (token.startsWith("ExponentPushToken[")) {
+    return sendExpoNotification(token, opts);
+  }
+  return sendFCMToUser(token, opts);
+}
+
 async function sendFCMToUser(fcmToken: string, opts: FCMSendOptions): Promise<void> {
   const projectId = Deno.env.get("FIREBASE_PROJECT_ID");
   const saKey     = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_KEY");

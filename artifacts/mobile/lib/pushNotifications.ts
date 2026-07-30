@@ -39,15 +39,24 @@ try {
 
   Notifications.setNotificationHandler({
     handleNotification: async (notification) => {
-      // Suppress foreground banners for all chat messages (DMs and groups).
-      // The app handles incoming messages in-chat via the real-time subscription;
-      // showing an OS banner on top of an open conversation is redundant and noisy.
       const data = (notification.request.content.data ?? {}) as Record<string, string>;
       const isChatMessage =
         data.type === "message" ||
         data.notifType === "new_message" ||
         data.type === "chat";
-      if (isChatMessage) {
+
+      // Only suppress the banner if the user is already looking at that exact chat.
+      // All other chat notifications (different conversation or different screen)
+      // must show in the status bar so the user is actually alerted.
+      // Use chatVisited's live tracker — already kept in sync by chat/[id].tsx
+      const { getActiveChatId } = require("@/lib/chatVisited");
+      const activeChatId = getActiveChatId() as string | null;
+      const isActiveChat =
+        isChatMessage &&
+        activeChatId !== null &&
+        (data.chatId === activeChatId || data.chat_id === activeChatId);
+
+      if (isActiveChat) {
         return {
           shouldShowAlert: false,
           shouldPlaySound: false,
@@ -57,6 +66,7 @@ try {
           priority: Notifications.AndroidNotificationPriority.DEFAULT,
         };
       }
+
       return {
         shouldShowAlert: true,
         shouldPlaySound: true,
@@ -309,10 +319,19 @@ export async function registerForPushNotifications(userId: string): Promise<stri
 
     if (finalStatus !== "granted") return null;
 
-    // Get the native device push token directly — FCM token on Android,
-    // APNs device token on iOS. No Expo relay involved.
-    const tokenData = await Notifications.getDevicePushTokenAsync();
-    const token = tokenData.data as string;
+    // Try native FCM/APNs token first (standalone builds).
+    // Fall back to Expo push token for Expo Go / development builds
+    // where getDevicePushTokenAsync() is unavailable.
+    let token: string;
+    try {
+      const tokenData = await Notifications.getDevicePushTokenAsync();
+      token = tokenData.data as string;
+    } catch {
+      const expoToken = await Notifications.getExpoPushTokenAsync({
+        projectId: "7efbd70c-e8d4-485d-88a9-d05e3d34f280",
+      });
+      token = expoToken.data;
+    }
 
     // Primary: save via Supabase Edge Function (uses service role key server-side)
     let savedViaEdgeFn = false;
