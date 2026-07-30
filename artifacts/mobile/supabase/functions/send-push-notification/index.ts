@@ -128,7 +128,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "No FCM token found for user" }), { status: 404, headers: { ...CORS, "Content-Type": "application/json" } });
     }
     const type = (data as Record<string,string>)?.type;
-    await sendFCMToUser(profile.fcm_token, {
+    await sendToUser(profile.fcm_token, {
       title, body,
       data: { recipientUserId: userId, ...data },
       channelId: channelId(type),

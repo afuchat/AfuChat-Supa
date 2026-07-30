@@ -116,10 +116,11 @@ async function handleMessage(supabase: ReturnType<typeof createClient>, record: 
   const senderName = (sender?.display_name || sender?.username || "Someone") as string;
   const title = (chat.is_group && chat.name) ? `${senderName} in ${chat.name}` : senderName;
   const body  = content.length > 100 ? content.substring(0, 97) + "..." : content;
+  const messageId = record["id"] as string | undefined;
   const participants = (chat.chat_participants as { user_id: string }[] | null) ?? [];
   await Promise.allSettled(
     participants.filter(p => p.user_id !== senderId).map(p =>
-      pushToUser(supabase, p.user_id, { title, body, type: "message", data: { type: "message", chatId, actorId: senderId, notifType: "new_message" }, collapseKey: `chat_${chatId}` }),
+      pushToUser(supabase, p.user_id, { title, body, type: "message", data: { type: "message", chatId, actorId: senderId, notifType: "new_message", ...(messageId && { message_id: messageId }) }, collapseKey: `chat_${chatId}` }),
     ),
   );
 }
