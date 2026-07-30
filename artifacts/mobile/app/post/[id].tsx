@@ -16,6 +16,7 @@ import {
   FlatList,
   Image,
   Keyboard,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -133,7 +134,7 @@ function LinkPreviewCard({ url, colors }: { url: string; colors: any }) {
     <TouchableOpacity
       activeOpacity={0.85}
       style={[st.linkCard, { backgroundColor: colors.card }]}
-      onPress={() => {}}
+      onPress={() => { Linking.openURL(url).catch(() => {}); }}
     >
       <View style={[st.linkThumb, { backgroundColor: colors.backgroundSecondary }]}>
         {ogImage

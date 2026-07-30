@@ -472,7 +472,7 @@ export default function ChannelDetailScreen() {
 
         <TouchableOpacity
           style={st.headerCenter}
-          onPress={() => {}}
+          onPress={() => { if (channel?.owner?.handle) router.push(`/@${channel.owner.handle}` as any); }}
           activeOpacity={0.7}
         >
           {channel.avatar_url ? (
