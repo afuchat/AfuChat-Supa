@@ -96,8 +96,9 @@ function CompactTabBar({
     { icon: "document-text", label: "Article", desc: "Write a long-form article",        route: "/moments/create-article", color: "#007AFF"     },
   ];
 
-  const PILL_BORDER    = isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.10)";
-  const INACTIVE_ICON  = isDark ? "rgba(255,255,255,0.70)" : "rgba(0,0,0,0.50)";
+  const PILL_BORDER    = isDark ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.12)";
+  const INACTIVE_ICON  = isDark ? "rgba(255,255,255,0.72)" : "rgba(0,0,0,0.52)";
+  const PILL_BG        = isDark ? "rgba(28,28,30,0.80)"    : "rgba(255,255,255,0.78)";
   const ACCENT         = colors.accent;
   const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 8;
   const PILL_H         = 64;
@@ -127,12 +128,13 @@ function CompactTabBar({
             pill.blur,
             {
               borderColor: PILL_BORDER,
+              backgroundColor: PILL_BG,
             },
           ]}
         >
           {BOTTOM_TABS.map((tab) => {
             const focused   = active === tab.route;
-            const iconColor = focused ? ACCENT : "#FFFFFF";
+            const iconColor = focused ? ACCENT : INACTIVE_ICON;
 
             return (
               <TouchableOpacity
@@ -148,7 +150,7 @@ function CompactTabBar({
                   style={[
                     pill.iconWrap,
                     focused && {
-                      backgroundColor: ACCENT + "30",
+                      backgroundColor: ACCENT + "28",
                       borderRadius: 14,
                     },
                   ]}
