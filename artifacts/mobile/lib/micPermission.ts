@@ -39,7 +39,10 @@ export async function getMicPermissionState(): Promise<MicPermState> {
 
   // Native (iOS / Android)
   let Audio: typeof import("expo-av").Audio | null = null;
-  try { Audio = require("expo-av").Audio; } catch {}
+  try {
+    const { NativeModules: _NM } = require("react-native");
+    if (_NM.ExponentAV) Audio = require("expo-av").Audio;
+  } catch {}
   if (!Audio) return "prompt";
 
   try {

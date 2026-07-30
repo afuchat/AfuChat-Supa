@@ -10,9 +10,12 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-// expo-av: lazy-load to avoid "Cannot find native module 'ExponentAV'" on web
+// expo-av: lazy-load; guard NativeModules.ExponentAV — absent in Expo Go SDK 55
 let Audio: typeof import("expo-av").Audio | null = null;
-try { Audio = require("expo-av").Audio; } catch {}
+try {
+  const { NativeModules: _NM } = require("react-native");
+  if (_NM.ExponentAV) Audio = require("expo-av").Audio;
+} catch {}
 type AVPlaybackStatus = import("expo-av").AVPlaybackStatus;
 type AudioSound = import("expo-av/build/Audio/Sound").Sound;
 

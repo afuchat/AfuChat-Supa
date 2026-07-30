@@ -33,11 +33,14 @@ import {
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-// expo-av: lazy-load to avoid "Cannot find native module 'ExponentAV'" on web
+// expo-av: lazy-load; guard NativeModules.ExponentAV — absent in Expo Go SDK 55
 let Audio: typeof import("expo-av").Audio | null = null;
 type AudioSound = import("expo-av/build/Audio/Sound").Sound;
 type AudioRecording = import("expo-av/build/Audio/Recording").Recording;
-try { Audio = require("expo-av").Audio; } catch {}
+try {
+  const { NativeModules: _NM } = require("react-native");
+  if (_NM.ExponentAV) Audio = require("expo-av").Audio;
+} catch {}
 import * as ImagePicker from "expo-image-picker";
 
 import { supabase } from "@/lib/supabase";

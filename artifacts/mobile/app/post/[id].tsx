@@ -57,10 +57,13 @@ import {
   type Reply,
 } from "@/components/ui/VideoCommentsSheet";
 
-// ─── Audio lazy import (safe on web) ──────────────────────────────────────────
+// ─── Audio lazy import (safe on web + Expo Go SDK 55) ─────────────────────────
 let Audio: typeof import("expo-av").Audio | null = null;
 type AudioRecording = import("expo-av/build/Audio/Recording").Recording;
-try { Audio = require("expo-av").Audio; } catch {}
+try {
+  const { NativeModules: _NM } = require("react-native");
+  if (_NM.ExponentAV) Audio = require("expo-av").Audio;
+} catch {}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

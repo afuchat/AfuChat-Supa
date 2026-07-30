@@ -81,7 +81,10 @@ export const WEBRTC_AVAILABLE = _RTC !== null;
 // ─── Lazy-load expo-av + expo-keep-awake ─────────────────────────────────────
 
 const _AV: typeof import("expo-av") | null = (() => {
-  try { return require("expo-av"); } catch { return null; }
+  try {
+    if (!NativeModules.ExponentAV) return null;
+    return require("expo-av");
+  } catch { return null; }
 })();
 
 const _KA: typeof import("expo-keep-awake") | null = (() => {

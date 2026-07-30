@@ -40,10 +40,13 @@ import { Image as ExpoImage } from "expo-image";
 import * as DocumentPicker from "expo-document-picker";
 import * as Contacts from "expo-contacts";
 import * as FileSystem from "expo-file-system";
-// expo-av: lazy-load to avoid "Cannot find native module 'ExponentAV'" on web
+// expo-av: lazy-load; also guard NativeModules.ExponentAV — absent in Expo Go SDK 55
 let Audio: typeof import("expo-av").Audio | null = null;
 type AudioRecording = import("expo-av/build/Audio/Recording").Recording;
-try { Audio = require("expo-av").Audio; } catch {}
+try {
+  const { NativeModules: _NM } = require("react-native");
+  if (_NM.ExponentAV) Audio = require("expo-av").Audio;
+} catch {}
 import VideoPreview from "@/components/ui/VideoPreview";
 import VideoTrimmerModal from "@/components/chat/VideoTrimmerModal";
 import * as Speech from "expo-speech";

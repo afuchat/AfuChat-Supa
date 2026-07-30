@@ -12,8 +12,18 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Video, ResizeMode, AVPlaybackStatus } from "expo-av";
-import * as VideoThumbnails from "expo-video-thumbnails";
+// Type-only — stripped at compile time, never triggers native module load
+import type { AVPlaybackStatus } from "expo-av";
+
+// Lazy requires; guard NativeModules.ExponentAV — absent in Expo Go SDK 55
+import { NativeModules as _NM } from "react-native";
+const _AV = (() => {
+  try { return _NM.ExponentAV ? require("expo-av") : null; } catch { return null; }
+})();
+const _VT = (() => { try { return require("expo-video-thumbnails"); } catch { return null; } })();
+
+const VideoComp   = _AV?.Video    ?? null;
+const ResizeModeContain = _AV?.ResizeMode?.CONTAIN ?? "contain";
 
 const { width: SW } = Dimensions.get("window");
 const THUMB_COUNT = 10;
@@ -45,7 +55,7 @@ interface Props {
 export default function VideoTrimmerModal({
   visible, uri, mimeType, onConfirm, onCancel, colors, accent,
 }: Props) {
-  const videoRef = useRef<Video>(null);
+  const videoRef = useRef<any>(null);
   const [duration, setDuration] = useState(0);
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(0);
@@ -80,10 +90,10 @@ export default function VideoTrimmerModal({
     for (let i = 0; i < THUMB_COUNT; i++) {
       const timeSec = (i / THUMB_COUNT) * dur;
       try {
-        const { uri: tUri } = await VideoThumbnails.getThumbnailAsync(uri, {
+        const { uri: tUri } = await _VT?.getThumbnailAsync(uri, {
           time: Math.floor(timeSec * 1000),
           quality: 0.4,
-        });
+        }) ?? { uri: "" };
         results.push(tUri);
       } catch {
         results.push("");
@@ -184,15 +194,21 @@ export default function VideoTrimmerModal({
 
         {/* Video preview */}
         <View style={s.videoWrap}>
-          <Video
-            ref={videoRef}
-            source={{ uri }}
-            style={s.video}
-            resizeMode={ResizeMode.CONTAIN}
-            onPlaybackStatusUpdate={onPlaybackStatusUpdate}
-            onLoad={onLoad}
-            progressUpdateIntervalMillis={100}
-          />
+          {VideoComp ? (
+            <VideoComp
+              ref={videoRef}
+              source={{ uri }}
+              style={s.video}
+              resizeMode={ResizeModeContain}
+              onPlaybackStatusUpdate={onPlaybackStatusUpdate}
+              onLoad={onLoad}
+              progressUpdateIntervalMillis={100}
+            />
+          ) : (
+            <View style={[s.video, { alignItems: "center", justifyContent: "center" }]}>
+              <ActivityIndicator color="#fff" />
+            </View>
+          )}
           {!videoLoaded && (
             <View style={s.videoLoadOverlay}>
               <ActivityIndicator color={accent} size="large" />
