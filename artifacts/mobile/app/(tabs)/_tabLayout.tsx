@@ -96,10 +96,11 @@ function CompactTabBar({
     { icon: "document-text", label: "Article", desc: "Write a long-form article",        route: "/moments/create-article", color: "#007AFF"     },
   ];
 
-  const PILL_BORDER  = isDark ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.65)";
-  const ACCENT       = colors.accent;
-  const PILL_BOTTOM  = Math.max(insets.bottom, 8) + 8;
-  const PILL_H       = 64;
+  const PILL_BORDER    = isDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.10)";
+  const INACTIVE_ICON  = isDark ? "rgba(255,255,255,0.70)" : "rgba(0,0,0,0.50)";
+  const ACCENT         = colors.accent;
+  const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 8;
+  const PILL_H         = 64;
 
   function handleTabPress(route: string) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});

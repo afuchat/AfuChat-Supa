@@ -80,6 +80,7 @@ import {
 } from "@/lib/feedAlgorithm";
 import { showActionToast } from "@/lib/toast";
 import { useAnimationGuard } from "@/hooks/useAnimationGuard";
+import { subscribeCallAudio } from "@/lib/callAudioBus";
 
 // ── Lazy-load Reanimated ──────────────────────────────────────────────────────
 const _raVF = (() => {
@@ -1058,6 +1059,17 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
   useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
   useEffect(() => { postsLenRef.current = posts.length; }, [posts.length]);
   useEffect(() => { tabRef.current = tab; }, [tab]);
+
+  // Pause all active video players when a call takes over audio.
+  useEffect(() => {
+    return subscribeCallAudio((event) => {
+      if (event === "takeover") {
+        playerMapRef.current.forEach((player) => {
+          try { player.pause(); } catch {}
+        });
+      }
+    });
+  }, []);
 
   // ── Data fetch + algorithm ────────────────────────────────────────────────
 

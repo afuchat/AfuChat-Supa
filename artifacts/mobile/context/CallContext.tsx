@@ -15,6 +15,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { Platform } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -35,6 +36,8 @@ import {
 import { listenPushIncomingCall } from "@/lib/callPushBridge";
 import { notifyIncomingCall } from "@/lib/notifyUser";
 import { showToast } from "@/lib/toast";
+import { getMicPermissionState, requestMicPermission } from "@/lib/micPermission";
+import { MicPermissionModal } from "@/components/MicPermissionModal";
 
 // ─── Context shape ────────────────────────────────────────────────────────────
 
@@ -45,6 +48,10 @@ interface CallContextValue {
   isMuted: boolean;
   isSpeaker: boolean;
   isAvailable: boolean;
+  /** True when the device mic permission is permanently blocked. */
+  micBlocked: boolean;
+  /** Opens the mic-permission guidance modal programmatically. */
+  showMicPermModal: () => void;
   startCall: (params: {
     calleeId: string;
     calleeName: string;
@@ -73,6 +80,8 @@ const _NOOP_CTX: CallContextValue = {
   isMuted: false,
   isSpeaker: false,
   isAvailable: false,
+  micBlocked: false,
+  showMicPermModal: () => {},
   startCall: async () => {},
   acceptCall: async () => {},
   declineCall: () => {},
@@ -96,6 +105,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [incomingNotice, setIncomingNotice] = useState<IncomingCallNotice | null>(null);
   const [isMuted, setIsMuted]             = useState(false);
   const [isSpeaker, setIsSpeaker]         = useState(false);
+  const [micBlocked, setMicBlocked]       = useState(false);
+  const [_micModalVisible, _setMicModalVisible] = useState(false);
 
   // Keep stable refs so callbacks never close over stale state
   const userRef    = useRef(user);
@@ -119,6 +130,30 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       setIncomingNotice(null);
     }
   }, [user?.id]);
+
+  // ── Mic permission — check once on mount; re-check when app foregrounds ────
+  useEffect(() => {
+    let cancelled = false;
+    const check = () =>
+      getMicPermissionState().then((s) => {
+        if (!cancelled) setMicBlocked(s === "denied");
+      });
+    check();
+    // On native, re-check whenever the app comes back to foreground (user may
+    // have changed settings). AppState is a RN API — import lazily to avoid
+    // pulling it into web bundles unnecessarily.
+    let sub: any;
+    if (Platform.OS !== "web") {
+      const { AppState } = require("react-native");
+      sub = AppState.addEventListener("change", (state: string) => {
+        if (state === "active") check();
+      });
+    }
+    return () => {
+      cancelled = true;
+      sub?.remove?.();
+    };
+  }, []);
 
   // ── Handle push-notification incoming calls (app was in background) ─────────
   useEffect(() => {
@@ -194,6 +229,22 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     const p = profileRef.current;
     if (!u) return;
 
+    // ── Mic permission pre-check ──────────────────────────────────────────────
+    // On native: ask the OS if we haven't already, then bail if still denied.
+    // On web: only bail if the browser reports an explicit "denied" state;
+    // "prompt" is handled by getUserMedia inside the call engine.
+    let permState = await getMicPermissionState();
+    if (permState === "prompt" && Platform.OS !== "web") {
+      const result = await requestMicPermission();
+      permState = result;
+    }
+    if (permState === "denied") {
+      setMicBlocked(true);
+      _setMicModalVisible(true);
+      return;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     const callId = _uuid();
 
     try {
@@ -227,6 +278,19 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     const u = userRef.current;
     const p = profileRef.current;
     if (!notice || !u) return;
+
+    // ── Mic permission pre-check (same logic as startCall) ────────────────────
+    let permState = await getMicPermissionState();
+    if (permState === "prompt" && Platform.OS !== "web") {
+      const result = await requestMicPermission();
+      permState = result;
+    }
+    if (permState === "denied") {
+      setMicBlocked(true);
+      _setMicModalVisible(true);
+      return;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     // Clear notice AFTER engine accept so we don't lose it if accept throws
     try {
@@ -283,6 +347,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       isMuted,
       isSpeaker,
       isAvailable: WEBRTC_AVAILABLE,
+      micBlocked,
+      showMicPermModal: () => _setMicModalVisible(true),
       startCall,
       acceptCall,
       declineCall,
@@ -292,6 +358,14 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       handlePushIncoming,
     }}>
       {children}
+      <MicPermissionModal
+        visible={_micModalVisible}
+        onClose={() => {
+          _setMicModalVisible(false);
+          // Re-check in case user dismissed after granting from OS settings
+          getMicPermissionState().then((s) => setMicBlocked(s === "denied"));
+        }}
+      />
     </CallContext.Provider>
   );
 }

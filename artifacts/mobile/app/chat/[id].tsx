@@ -1803,7 +1803,7 @@ function ChatScreen() {
   }>();
   const isDraft = id === "new";
   const { user, profile, isPremium, subscription, refreshProfile, equippedGoods } = useAuth();
-  const { startCall: callStart, status: callStatus, isAvailable: callAvailable } = useCall();
+  const { startCall: callStart, status: callStatus, isAvailable: callAvailable, micBlocked, showMicPermModal } = useCall();
   const { colors, isDark } = useTheme();
   const { appearance: chatAppearance, updateAppearance: updateChatAppearance } = useChatAppearance(id as string | undefined);
   const BRAND = chatAppearance?.bubbleColor ?? colors.accent;
@@ -2094,6 +2094,38 @@ function ChatScreen() {
   const recordingActiveRef = useRef(false);
   const recordingTimer = useRef<any>(null);
   const meterInterval = useRef<any>(null);
+
+  // ── Cancel voice recording when a call takes over the mic ─────────────────
+  // Runs when callStatus transitions to outgoing_ringing / incoming_ringing so
+  // the mic is free before the call engine calls getUserMedia. All refs are
+  // stable (created at component-mount time) so the effect deps array is safe.
+  useEffect(() => {
+    if (callStatus !== "outgoing_ringing" && callStatus !== "incoming_ringing") return;
+    // Stop timers
+    recordingActiveRef.current = false;
+    clearInterval(recordingTimer.current);
+    clearInterval(meterInterval.current);
+    // Native recorder
+    if (recorderRef.current) {
+      recorderRef.current.stopAndUnloadAsync().catch(() => {});
+      recorderRef.current = null;
+    }
+    // Web MediaRecorder / stream
+    if (webMediaRecorderRef.current) {
+      try { webMediaRecorderRef.current.stop(); } catch {}
+      webMediaRecorderRef.current = null;
+    }
+    if (webStreamRef.current) {
+      webStreamRef.current.getTracks().forEach((t) => t.stop());
+      webStreamRef.current = null;
+    }
+    // Reset UI state
+    setIsRecording(false);
+    setRecLocked(false);
+    setRecordingDuration(0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [callStatus]);
+
   const recordingDurationRef = useRef(0);
   const recAmpHistoryRef = useRef<number[]>([]);
   const webAnalyserRef = useRef<any>(null);
@@ -6230,8 +6262,13 @@ STRICT RULES:
             callStatus === "idle" && (
             <TouchableOpacity
               hitSlop={10}
-              activeOpacity={0.72}
+              activeOpacity={micBlocked ? 0.45 : 0.72}
+              accessibilityHint={micBlocked ? "Microphone blocked. Tap for re-enable instructions." : undefined}
               onPress={() => {
+                if (micBlocked) {
+                  showMicPermModal();
+                  return;
+                }
                 callStart({
                   calleeId: chatInfo.other_id!,
                   calleeName: chatInfo.other_name ?? "Unknown",
@@ -6248,19 +6285,22 @@ STRICT RULES:
                   overflow: "hidden",
                   alignItems: "center", justifyContent: "center",
                   borderWidth: 0.5,
-                  borderColor: isDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.07)",
+                  borderColor: micBlocked
+                    ? "rgba(255,59,48,0.40)"
+                    : (isDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.07)"),
+                  opacity: micBlocked ? 0.65 : 1,
                 }}
               >
                 <View style={{
                   ...StyleSheet.absoluteFillObject,
-                  backgroundColor: isDark
-                    ? "rgba(255,255,255,0.07)"
-                    : "rgba(255,255,255,0.52)",
+                  backgroundColor: micBlocked
+                    ? "rgba(255,59,48,0.10)"
+                    : (isDark ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.52)"),
                 }} />
                 <Ionicons
-                  name="call-outline"
+                  name={micBlocked ? "mic-off-outline" : "call-outline"}
                   size={17}
-                  color={isDark ? "rgba(255,255,255,0.85)" : "#1c1c1e"}
+                  color={micBlocked ? "#FF3B30" : (isDark ? "rgba(255,255,255,0.85)" : "#1c1c1e")}
                 />
               </BlurView>
             </TouchableOpacity>

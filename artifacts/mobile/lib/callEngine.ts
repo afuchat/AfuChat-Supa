@@ -28,6 +28,7 @@ import { Platform, NativeModules } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { saveLocalCall } from "@/lib/storage/localCallHistory";
 import { notifyMissedCall } from "@/lib/notifyUser";
+import { emitCallAudio } from "@/lib/callAudioBus";
 
 // ─── WebRTC bridge: native (react-native-webrtc) vs web (browser APIs) ────────
 // On Android/iOS we use react-native-webrtc. On web, every modern browser
@@ -185,6 +186,13 @@ function emit(event: CallEngineEvent) {
 function setStatus(s: CallStatus) {
   _status = s;
   emit({ type: "status", status: s, info: _info });
+  // Notify audio consumers: pause everything when a call occupies the mic/speaker,
+  // release when the call ends so other audio can resume.
+  if (s === "outgoing_ringing" || s === "incoming_ringing") {
+    emitCallAudio("takeover");
+  } else if (s === "idle") {
+    emitCallAudio("release");
+  }
 }
 
 // ─── Init: subscribe to user-call inbox for foreground incoming calls ─────────
@@ -753,29 +761,41 @@ async function _drainPendingCandidates() {
 }
 
 // ─── Internal: audio mode (speaker/earpiece) ──────────────────────────────────
+// IMPORTANT: wrap every setAudioModeAsync call in try/catch. On web, the
+// function may not exist or may throw synchronously (before returning a Promise),
+// in which case the trailing .catch() would never run. A synchronous throw
+// propagating out of _activateAudioMode crashes engineAccept / engineStart and
+// prevents the call from connecting while leaving the engine in a half-started
+// "connecting" state (modal gone, call screen never pushed).
 
 function _activateAudioMode(speakerOn: boolean) {
   if (!_AV) return;
-  _AV.Audio.setAudioModeAsync({
-    allowsRecordingIOS: false,
-    playsInSilentModeIOS: true,
-    staysActiveInBackground: true,
-    shouldDuckAndroid: false,
-    playThroughEarpieceAndroid: !speakerOn,
-    interruptionModeIOS: 1, // DO_NOT_MIX
-    interruptionModeAndroid: 1,
-  } as any).catch(() => {});
+  try {
+    const p = _AV.Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: true,
+      shouldDuckAndroid: false,
+      playThroughEarpieceAndroid: !speakerOn,
+      interruptionModeIOS: 1, // DO_NOT_MIX
+      interruptionModeAndroid: 1,
+    } as any);
+    if (p && typeof (p as any).catch === "function") (p as any).catch(() => {});
+  } catch {}
 }
 
 function _deactivateAudioMode() {
   if (!_AV) return;
-  _AV.Audio.setAudioModeAsync({
-    allowsRecordingIOS: false,
-    playsInSilentModeIOS: false,
-    staysActiveInBackground: false,
-    shouldDuckAndroid: true,
-    playThroughEarpieceAndroid: false,
-  } as any).catch(() => {});
+  try {
+    const p = _AV.Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: false,
+      staysActiveInBackground: false,
+      shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: false,
+    } as any);
+    if (p && typeof (p as any).catch === "function") (p as any).catch(() => {});
+  } catch {}
 }
 
 // ─── Internal: keep-awake ─────────────────────────────────────────────────────

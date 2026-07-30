@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { subscribeCallAudio } from "@/lib/callAudioBus";
 import {
   View,
   TouchableOpacity,
@@ -133,6 +134,18 @@ function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor }: AudioPlaye
       setDidJustFinish(false);
     }
   }, [didJustFinish]);
+
+  // Pause playback the moment a call takes over the mic / speaker.
+  // The OS audio session (set via setAudioModeAsync in callEngine) already
+  // interrupts on iOS/Android, but pausing here ensures the play-button UI
+  // reflects the correct state and prevents a race on Android.
+  useEffect(() => {
+    return subscribeCallAudio((event) => {
+      if (event === "takeover" && soundRef.current) {
+        soundRef.current.pauseAsync().catch(() => {});
+      }
+    });
+  }, []);
 
   const togglePlay = useCallback(async () => {
     if (!isLoaded || !soundRef.current) return;
