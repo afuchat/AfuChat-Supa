@@ -93,6 +93,7 @@ function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor }: AudioPlaye
       try {
         if (!Audio) return;
         await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,   // ensure session is in playback mode, not recording
           playsInSilentModeIOS: true,
           shouldDuckAndroid: false,
           staysActiveInBackground: false,

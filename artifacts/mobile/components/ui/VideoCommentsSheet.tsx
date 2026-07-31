@@ -905,7 +905,7 @@ export function VideoCommentsSheet({
       setRecordState("idle");
       setRecordElapsed(0);
     }
-    Audio?.setAudioModeAsync({ allowsRecordingIOS: false }).catch(() => {});
+    Audio?.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: false }).catch(() => {});
   }
 
   async function pickImage() {

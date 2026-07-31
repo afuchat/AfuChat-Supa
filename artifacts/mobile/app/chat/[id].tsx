@@ -5587,6 +5587,9 @@ STRICT RULES:
       } catch (_) {}
       recorderRef.current = null;
       recordingActiveRef.current = false;
+      // Reset audio session even for short/discarded recordings so the next
+      // playback attempt doesn't find the session stuck in recording mode.
+      Audio?.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: false }).catch(() => {});
       return;
     }
 
