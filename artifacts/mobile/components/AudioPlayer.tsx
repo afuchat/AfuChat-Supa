@@ -143,13 +143,23 @@ function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor }: AudioPlaye
   // The OS audio session (set via setAudioModeAsync in callEngine) already
   // interrupts on iOS/Android, but pausing here ensures the play-button UI
   // reflects the correct state and prevents a race on Android.
+  // Track whether we auto-paused so we can auto-resume on release.
+  const pausedByCallRef = useRef(false);
   useEffect(() => {
     return subscribeCallAudio((event) => {
-      if (event === "takeover" && soundRef.current) {
-        soundRef.current.pauseAsync().catch(() => {});
+      if (event === "takeover") {
+        if (soundRef.current && isPlaying) {
+          pausedByCallRef.current = true;
+          soundRef.current.pauseAsync().catch(() => {});
+        }
+      } else if (event === "release") {
+        if (soundRef.current && pausedByCallRef.current) {
+          pausedByCallRef.current = false;
+          soundRef.current.playAsync().catch(() => {});
+        }
       }
     });
-  }, []);
+  }, [isPlaying]);
 
   const togglePlay = useCallback(async () => {
     if (!isLoaded || !soundRef.current) return;
