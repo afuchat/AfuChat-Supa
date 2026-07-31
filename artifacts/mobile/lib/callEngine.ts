@@ -537,6 +537,9 @@ async function _subscribeSignaling(callId: string, isCaller: boolean): Promise<v
       })
       .on("broadcast", { event: "decline" }, () => {
         _saveCallRecord("declined");
+        // Emit busy so the caller sees a "User is busy" toast instead of
+        // silently ending — matches the experience when callee is already in a call.
+        emit({ type: "busy" });
         _doHangup("ended");
       })
       .on("broadcast", { event: "end" }, () => {

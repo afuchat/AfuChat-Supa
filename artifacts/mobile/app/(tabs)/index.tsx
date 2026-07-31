@@ -1354,8 +1354,12 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
 
     const chatIds = chatIdsKey.split(",");
 
-    // Subscribe to new messages in each known chat
-    const msgChannel = supabase.channel(`chatlist-messages:${user.id}`);
+    // Subscribe to new messages in each known chat.
+    // Use Date.now() suffix so each effect run gets a fresh channel name — if
+    // chatIdsKey changes while the old channel is still subscribed, Supabase
+    // would return the same cached instance and throw "cannot add postgres_changes
+    // callbacks after subscribe()".
+    const msgChannel = supabase.channel(`chatlist-messages:${user.id}:${Date.now()}`);
     chatIds.forEach((chatId) => {
       msgChannel.on(
         "postgres_changes",
@@ -1433,7 +1437,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     // Also subscribe to chat-level updates (pinning, archiving, name changes)
     // We filter client-side since Supabase realtime doesn't support IN filters
     const chatChannel = supabase
-      .channel(`chatlist-chats:${user.id}`)
+      .channel(`chatlist-chats:${user.id}:${Date.now()}`)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "chats" },
