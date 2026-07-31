@@ -91,12 +91,26 @@ const _KA: typeof import("expo-keep-awake") | null = (() => {
   try { return require("expo-keep-awake"); } catch { return null; }
 })();
 
-// ─── ICE servers — free Google STUN, zero cost, no relay overhead ────────────
+// ─── ICE servers ──────────────────────────────────────────────────────────────
+// STUN-only connections fail on symmetric NAT (most mobile networks). TURN
+// servers relay traffic when a direct P2P path can't be established. The open
+// Metered relay is used here as a reliable free baseline; replace with your own
+// Cloudflare / Coturn / Metered credentials for higher-volume production use.
+
+const _TURN_URL   = process.env.EXPO_PUBLIC_TURN_URL   ?? "openrelay.metered.ca";
+const _TURN_USER  = process.env.EXPO_PUBLIC_TURN_USER  ?? "openrelayproject";
+const _TURN_CRED  = process.env.EXPO_PUBLIC_TURN_CRED  ?? "openrelayproject";
 
 const ICE_SERVERS = [
+  // STUN — fast path when both peers have open NAT
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
   { urls: "stun:stun.cloudflare.com:3478" },
+  // TURN — relay fallback for symmetric NAT / restrictive corporate / cellular
+  { urls: `turn:${_TURN_URL}:80`,                  username: _TURN_USER, credential: _TURN_CRED },
+  { urls: `turn:${_TURN_URL}:443`,                 username: _TURN_USER, credential: _TURN_CRED },
+  { urls: `turn:${_TURN_URL}:443?transport=tcp`,   username: _TURN_USER, credential: _TURN_CRED },
+  { urls: `turn:${_TURN_URL}:80?transport=tcp`,    username: _TURN_USER, credential: _TURN_CRED },
 ];
 
 // ─── Ring timeout: auto-hangup if callee doesn't answer ──────────────────────
@@ -775,7 +789,7 @@ function _activateAudioMode(speakerOn: boolean) {
   if (!_AV) return;
   try {
     const p = _AV.Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
+      allowsRecordingIOS: true,   // MUST be true on iOS so WebRTC can capture the mic
       playsInSilentModeIOS: true,
       staysActiveInBackground: true,
       shouldDuckAndroid: false,
