@@ -510,7 +510,7 @@ export default function SignInScreen() {
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       {/* ── Background orbs ── */}
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <View style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}>
         <SoftOrb cx={SW * 0.85} cy={SH * 0.08} size={280} color={accent} />
         <SoftOrb cx={SW * 0.10} cy={SH * 0.55} size={220} color="#7B5EA7" />
         <SoftOrb cx={SW * 0.55} cy={SH * 0.85} size={180} color={accent} />

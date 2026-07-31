@@ -117,9 +117,9 @@ function CompactTabBar({
           {
             bottom: PILL_BOTTOM,
             height: PILL_H,
+            pointerEvents: "box-none",
           },
         ]}
-        pointerEvents="box-none"
       >
         <BlurView
           intensity={isDark ? 72 : 60}

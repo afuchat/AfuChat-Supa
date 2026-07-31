@@ -17,6 +17,7 @@ import {
   Modal,
   PanResponder,
   Pressable,
+  Platform,
   ScrollView,
   StyleSheet,
   View,
@@ -251,11 +252,10 @@ const ms = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.22,
-    shadowRadius: 18,
-    elevation: 20,
+    ...Platform.select({
+      web: { boxShadow: "0 -6px 18px rgba(0,0,0,0.22)" } as any,
+      default: { shadowColor: "#000", shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.22, shadowRadius: 18, elevation: 20 },
+    }),
   },
   sheetBorder: {
     position: "absolute",

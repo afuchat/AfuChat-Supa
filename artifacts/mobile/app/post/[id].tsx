@@ -814,7 +814,7 @@ export default function PostDetailScreen() {
   return (
     <View style={[st.root, { backgroundColor: colors.background }]}>
       {/* Floating header — overlays the scroll content, true edge-to-edge */}
-      <View style={[st.header, { paddingTop: insets.top + 2 }]} pointerEvents="box-none">
+      <View style={[st.header, { paddingTop: insets.top + 2, pointerEvents: "box-none" }]}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={10} style={st.headerBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>

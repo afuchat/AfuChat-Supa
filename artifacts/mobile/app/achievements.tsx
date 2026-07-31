@@ -278,7 +278,7 @@ function HeroCard({ achievements }: { achievements: Achievement[] }) {
 }
 
 const hero = StyleSheet.create({
-  wrap:       { marginHorizontal: 16, marginTop: 16, borderRadius: 20, overflow: "hidden", elevation: 6, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12 },
+  wrap:       { marginHorizontal: 16, marginTop: 16, borderRadius: 20, overflow: "hidden", ...Platform.select({ web: { boxShadow: "0 4px 12px rgba(0,0,0,0.30)" } as any, default: { elevation: 6, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12 } }) },
   gradient:   { padding: 20 },
   topRow:     { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   rankLabel:  { color: "rgba(255,255,255,0.5)", fontSize: 10, fontFamily: "Inter_600SemiBold", letterSpacing: 1.5 },
@@ -369,7 +369,7 @@ function AchievementBadge({ achievement, onPress }: { achievement: Achievement; 
           badge.iconBox,
           { width: SIZE - 10, height: SIZE - 10 },
           achievement.unlocked
-            ? { borderColor: glowColor + "55", borderWidth: 1.5, shadowColor: glowColor, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 8, elevation: 4 }
+            ? { borderColor: glowColor + "55", borderWidth: 1.5, ...Platform.select({ web: { boxShadow: `0 2px 8px ${glowColor}80` } as any, default: { shadowColor: glowColor, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 8, elevation: 4 } }) }
             : { borderColor: colors.border, borderWidth: 1 },
         ]}>
           {achievement.unlocked ? (
@@ -453,7 +453,7 @@ function DetailModal({ achievement, onClose }: { achievement: Achievement | null
                 <LinearGradient
                   colors={RARITY_GRADIENT[achievement.rarity]}
                   start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }}
-                  style={[dm.iconBg, { shadowColor: glowColor, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 16, elevation: 8 }]}
+                  style={[dm.iconBg, Platform.select({ web: { boxShadow: `0 4px 16px ${glowColor}99` } as any, default: { shadowColor: glowColor, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 16, elevation: 8 } })]}
                 >
                   <Ionicons name={achievement.icon as any} size={40} color="#fff" />
                 </LinearGradient>

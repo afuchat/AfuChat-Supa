@@ -26,6 +26,7 @@ import {
   Keyboard,
   Linking,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   Share,
@@ -916,11 +917,10 @@ const VideoItem = React.memo(function VideoItem({
   );
 }); // React.memo
 
-const VS_SHADOW = {
-  textShadowColor: "rgba(0,0,0,0.8)",
-  textShadowOffset: { width: 0, height: 1 },
-  textShadowRadius: 5,
-};
+const VS_SHADOW = Platform.select({
+  web: { textShadow: "0 1px 5px rgba(0,0,0,0.8)" } as any,
+  default: { textShadowColor: "rgba(0,0,0,0.8)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 5 },
+});
 const vStyles = StyleSheet.create({
   item: { backgroundColor: "#000", overflow: "hidden" },
   centerOverlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
@@ -980,11 +980,10 @@ const vStyles = StyleSheet.create({
     borderRadius: 7,
     backgroundColor: "#fff",
     marginLeft: -7,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.40,
-    shadowRadius: 3,
-    elevation: 4,
+    ...Platform.select({
+      web: { boxShadow: "0 1px 3px rgba(0,0,0,0.40)" } as any,
+      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.40, shadowRadius: 3, elevation: 4 },
+    }),
   },
 });
 

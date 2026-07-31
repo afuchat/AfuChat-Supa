@@ -2797,8 +2797,7 @@ export default function DiscoverScreen() {
       {/* Sticky "loading more" pill — always visible regardless of scroll position */}
       {loadingMore && (
         <View
-          pointerEvents="none"
-          style={[styles.loadMorePill, { bottom: insets.bottom + 90 }]}
+          style={[styles.loadMorePill, { bottom: insets.bottom + 90, pointerEvents: "none" }]}
         >
           <View style={styles.loadMorePillInner}>
             <ActivityIndicator size="small" color="#fff" />

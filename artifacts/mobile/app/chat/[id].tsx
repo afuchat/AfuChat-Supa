@@ -555,13 +555,7 @@ function BottomSheet({ visible, onClose, children }: { visible: boolean; onClose
         Fix: outer = JS-driver (bottom offset), inner = native-driver (transform).
       */}
       <Animated.View
-        style={{
-          position: "absolute",
-          left: 8,
-          right: 8,
-          bottom: keyboardBottom, // JS driver — layout prop, must NOT be on native node
-        }}
-        pointerEvents="box-none"
+        style={[{ position: "absolute", left: 8, right: 8, bottom: keyboardBottom }, { pointerEvents: "box-none" }]}
       >
         <Animated.View
           style={{
@@ -848,7 +842,7 @@ function LensContextCard({ msg, onSuggestionTap }: {
       <View style={{
         backgroundColor: colors.surface, borderRadius: 20, overflow: "hidden",
         borderWidth: 1, borderColor: BRAND_C + "30",
-        shadowColor: BRAND_C, shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 4,
+        ...Platform.select({ web: { boxShadow: `0 3px 10px ${BRAND_C}1A` } as any, default: { shadowColor: BRAND_C, shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 4 } }),
       }}>
         {/* Header */}
         <View style={{
@@ -6860,7 +6854,7 @@ STRICT RULES:
                     <View style={isRecording && !recLocked ? st.recMicWrap : undefined}>
                       {_reanimatedEnabled ? (
                         <GestureDetector gesture={micGesture}>
-                          <View style={isRecording && !recLocked ? [st.recMicBtn, { backgroundColor: BRAND, ...{ shadowColor: BRAND } }] : [st.sendBtn, { backgroundColor: BRAND }]}>
+                          <View style={isRecording && !recLocked ? [st.recMicBtn, { backgroundColor: BRAND, ...Platform.select({ default: { shadowColor: BRAND } }) }] : [st.sendBtn, { backgroundColor: BRAND }]}>
                             <Ionicons name="mic" size={isRecording ? 24 : 20} color="#fff" />
                           </View>
                         </GestureDetector>

@@ -19,7 +19,7 @@ export default function FaceFilterOverlay({ filter }: Props) {
   const isSunglasses = filter === "sunglasses";
 
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+    <View style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}>
       {def?.overlayColor && (
         <View style={[StyleSheet.absoluteFill, { backgroundColor: def.overlayColor }]} />
       )}

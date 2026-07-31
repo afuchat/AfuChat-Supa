@@ -813,7 +813,7 @@ export default function UserDiscoveryScreen() {
             {
               backgroundColor: colors.surface,
               borderColor: colors.border,
-              ...{ shadowColor: "#000" },
+              ...Platform.select({ default: { shadowColor: "#000" } }),
             },
           ]}
         >

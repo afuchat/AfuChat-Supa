@@ -136,7 +136,7 @@ function LivePreview({
     <View style={[lp.wrap, { backgroundColor: bg }]}>
       {/* Wallpaper overlay (inline mini render) */}
       {wallpaper && wallpaper !== "none" && (
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <View style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}>
           {wallpaper === "dots" && Array.from({ length: 35 }).map((_, i) => (
             <View key={i} style={{ position: "absolute", width: 3, height: 3, borderRadius: 1.5, backgroundColor: ink, top: Math.floor(i / 7) * 22 + 6, left: (i % 7) * 42 + 6 + (Math.floor(i / 7) % 2 === 0 ? 0 : 21) }} />
           ))}

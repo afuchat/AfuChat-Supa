@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { showAlert } from "@/lib/alert";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { router } from "expo-router";
@@ -158,9 +158,9 @@ const styles = StyleSheet.create({
   iconCircle: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
   iconEmoji: { fontSize: 36 },
   label: { fontSize: 14, fontFamily: "Inter_600SemiBold", marginTop: 4 },
-  inputWrap: { flexDirection: "row", alignItems: "center", borderRadius: 999, paddingHorizontal: 14, gap: 8, borderWidth: 0.5, shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 },
+  inputWrap: { flexDirection: "row", alignItems: "center", borderRadius: 999, paddingHorizontal: 14, gap: 8, borderWidth: 0.5, ...Platform.select({ web: { boxShadow: "0 3px 12px rgba(0,0,0,0.13)" } as any, default: { shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 } }) },
   input: { flex: 1, fontSize: 16, fontFamily: "Inter_500Medium", paddingVertical: 14 },
-  amountWrap: { flexDirection: "row", alignItems: "center", borderRadius: 999, paddingHorizontal: 20, borderWidth: 0.5, justifyContent: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 },
+  amountWrap: { flexDirection: "row", alignItems: "center", borderRadius: 999, paddingHorizontal: 20, borderWidth: 0.5, justifyContent: "center", ...Platform.select({ web: { boxShadow: "0 3px 12px rgba(0,0,0,0.13)" } as any, default: { shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 } }) },
   amountPrefix: { fontSize: 28 },
   amountInput: { fontSize: 40, fontFamily: "Inter_700Bold", paddingVertical: 16, textAlign: "center", minWidth: 100 },
   feeCard: { borderRadius: 14, padding: 16, gap: 10 },

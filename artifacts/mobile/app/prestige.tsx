@@ -259,8 +259,7 @@ export default function PrestigeScreen() {
                 s.tierRing,
                 {
                   borderColor: tier.color,
-                  shadowColor: tier.glowColor,
-                  shadowOpacity: 0.6,
+                  ...Platform.select({ web: { boxShadow: `0 0 16px ${tier.glowColor}99` } as any, default: { shadowColor: tier.glowColor, shadowOpacity: 0.6 } }),
                 },
               ]}
             />
@@ -341,9 +340,7 @@ export default function PrestigeScreen() {
                 <View style={[s.roadmapChip, {
                   borderColor: isActive ? t.color : isUnlocked ? t.color + "55" : colors.border,
                   backgroundColor: isActive ? t.color + "18" : colors.surface,
-                  shadowColor: isActive ? t.glowColor : "transparent",
-                  shadowOpacity: isActive ? 0.5 : 0,
-                  shadowRadius: 8, elevation: isActive ? 4 : 0,
+                  ...Platform.select({ web: { boxShadow: isActive ? `0 0 8px ${t.glowColor}80` : "none" } as any, default: { shadowColor: isActive ? t.glowColor : "transparent", shadowOpacity: isActive ? 0.5 : 0, shadowRadius: 8, elevation: isActive ? 4 : 0 } }),
                 }]}>
                   <Text style={[s.roadmapEmoji, { opacity: isUnlocked ? 1 : 0.35 }]}>{t.emoji}</Text>
                   <Text style={[s.roadmapLabel, { color: isActive ? t.color : isUnlocked ? colors.textSecondary : colors.textMuted }]}>{t.label}</Text>
@@ -809,7 +806,7 @@ const s = StyleSheet.create({
   tierRing: {
     position: "absolute",
     width: 100, height: 100, borderRadius: 50, borderWidth: 3,
-    shadowOffset: { width: 0, height: 0 }, shadowRadius: 16,
+    ...Platform.select({ default: { shadowOffset: { width: 0, height: 0 }, shadowRadius: 16 } }),
   },
   tierBadge: { position: "absolute", bottom: -4, right: -4, width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#000" },
   tierBadgeEmoji: { fontSize: 14 },

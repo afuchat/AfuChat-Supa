@@ -297,7 +297,7 @@ export default function EmojiStickerPicker({
               container: {
                 flex: 1,
                 borderRadius: 0,
-                ...{ shadowOpacity: 0 },
+                ...Platform.select({ default: { shadowOpacity: 0 } }),
                 elevation: 0,
               },
             }}

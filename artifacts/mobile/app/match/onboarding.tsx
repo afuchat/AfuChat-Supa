@@ -663,7 +663,7 @@ const styles = StyleSheet.create({
   fieldGroup: { marginBottom: 24 },
   fieldLabel: { fontSize: 11, fontFamily: "Inter_600SemiBold", letterSpacing: 0.8, marginBottom: 8 },
   fieldHint: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 6, lineHeight: 16 },
-  input: { borderRadius: 999, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, fontFamily: "Inter_400Regular", shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 },
+  input: { borderRadius: 999, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, fontFamily: "Inter_400Regular", ...Platform.select({ web: { boxShadow: "0 3px 12px rgba(0,0,0,0.13)" } as any, default: { shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 } }) },
   textarea: { borderRadius: 28, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, fontFamily: "Inter_400Regular", minHeight: 110 },
   charCount: { textAlign: "right", fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 4 },
   dobRow: { flexDirection: "row", gap: DOB_GAP, alignItems: "flex-end" },

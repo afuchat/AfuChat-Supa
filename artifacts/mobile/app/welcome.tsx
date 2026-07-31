@@ -244,8 +244,8 @@ export default function WelcomeScreen() {
               orbOpacities[si].o1, // reuse orb opacity as slide visibility
             ),
             transform: [{ scale: illustrationScale }],
+            pointerEvents: "none",
           }]}
-          pointerEvents="none"
         >
           <Image
             source={src}

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { showAlert } from "@/lib/alert";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { router } from "expo-router";
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   roomText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   roomMult: { fontSize: 11, fontFamily: "Inter_400Regular" },
   detailsRow: { flexDirection: "row", gap: 12 },
-  inputWrap: { borderRadius: 999, overflow: "hidden", borderWidth: 0.5, shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 },
+  inputWrap: { borderRadius: 999, overflow: "hidden", borderWidth: 0.5, ...Platform.select({ web: { boxShadow: "0 3px 12px rgba(0,0,0,0.13)" } as any, default: { shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 } }) },
   input: { fontSize: 18, fontFamily: "Inter_600SemiBold", paddingVertical: 12, paddingHorizontal: 14 },
   feeCard: { borderRadius: 14, padding: 16, gap: 10 },
   feeRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },

@@ -682,7 +682,7 @@ export default function ViewStoryScreen() {
             </TouchableOpacity>
           ) : (
             /* Non-owner: viewer count display (read-only) */
-            <View pointerEvents="none" style={styles.viewerPill}>
+            <View style={[styles.viewerPill, { pointerEvents: "none" }]}>
               <Ionicons name="eye" size={15} color="rgba(255,255,255,0.65)" />
               <Text style={styles.viewerPillCount}>{story.view_count || 0}</Text>
             </View>

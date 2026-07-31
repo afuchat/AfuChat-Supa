@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { showAlert } from "@/lib/alert";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { router } from "expo-router";
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   providerCard: { flex: 1, alignItems: "center", padding: 12, borderRadius: 12, borderWidth: 1.5, gap: 4 },
   providerIcon: { fontSize: 20 },
   providerName: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
-  inputWrap: { flexDirection: "row", alignItems: "center", borderRadius: 999, paddingHorizontal: 14, gap: 8, borderWidth: 0.5, shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 },
+  inputWrap: { flexDirection: "row", alignItems: "center", borderRadius: 999, paddingHorizontal: 14, gap: 8, borderWidth: 0.5, ...Platform.select({ web: { boxShadow: "0 3px 12px rgba(0,0,0,0.13)" } as any, default: { shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 } }) },
   input: { flex: 1, fontSize: 16, fontFamily: "Inter_500Medium", paddingVertical: 14 },
   inputPrefix: { fontSize: 18 },
   quickRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },

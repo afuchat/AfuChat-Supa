@@ -315,7 +315,7 @@ export default function SignUpScreen() {
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       {/* ── Background orbs ── */}
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <View style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}>
         <SoftOrb cx={SW * 0.15} cy={SH * 0.10} size={260} color="#AF52DE" />
         <SoftOrb cx={SW * 0.88} cy={SH * 0.50} size={220} color="#1f95ff" />
         <SoftOrb cx={SW * 0.40} cy={SH * 0.88} size={180} color="#AF52DE" />

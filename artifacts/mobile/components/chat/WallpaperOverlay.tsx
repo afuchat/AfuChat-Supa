@@ -86,7 +86,7 @@ export default function WallpaperOverlay({ wallpaper, dark }: Props) {
   if (!elements.length) return null;
 
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+    <View style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}>
       {elements}
     </View>
   );

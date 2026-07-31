@@ -1388,9 +1388,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: "Inter_400Regular",
     lineHeight: 18,
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    ...Platform.select({ web: { textShadow: "0 1px 2px rgba(0,0,0,0.5)" } as any, default: { textShadowColor: "rgba(0,0,0,0.5)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 } }),
   },
   followInline: {
     paddingHorizontal: 12,
@@ -1459,18 +1457,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Inter_400Regular",
     lineHeight: 19,
-    textShadowColor: "rgba(0,0,0,0.6)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    ...Platform.select({ web: { textShadow: "0 1px 3px rgba(0,0,0,0.6)" } as any, default: { textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 } }),
   },
   fullCaptionMore: {
     color: "rgba(255,255,255,0.55)",
     fontSize: 13,
     fontFamily: "Inter_600SemiBold",
     marginTop: 1,
-    textShadowColor: "rgba(0,0,0,0.6)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    ...Platform.select({ web: { textShadow: "0 1px 3px rgba(0,0,0,0.6)" } as any, default: { textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 } }),
   },
   /* ── Progress / seek bar ─────────────────────────────────────── */
   progressContainer: {
@@ -1537,9 +1531,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 14,
     fontFamily: "Inter_700Bold",
-    textShadowColor: "rgba(0,0,0,0.6)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    ...Platform.select({ web: { textShadow: "0 1px 3px rgba(0,0,0,0.6)" } as any, default: { textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 } }),
   },
   /* Slim Follow button replaces display name */
   fullFollowSlim: {
@@ -1572,8 +1564,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 11,
     fontFamily: "Inter_600SemiBold",
-    textShadowColor: "rgba(0,0,0,0.6)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    ...Platform.select({ web: { textShadow: "0 1px 2px rgba(0,0,0,0.6)" } as any, default: { textShadowColor: "rgba(0,0,0,0.6)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 } }),
   },
 });
