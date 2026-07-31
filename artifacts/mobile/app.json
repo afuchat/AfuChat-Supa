@@ -20,7 +20,6 @@
         "backgroundColor": "#1f95ff"
       },
       "googleServicesFile": "./google-services.json",
-      "edgeToEdgeEnabled": false,
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
@@ -86,11 +85,11 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#F5F0E8",
-          "image": "./assets/images/logo_black.webp",
+          "image": "./assets/images/logo_black.png",
           "imageWidth": 200,
           "dark": {
             "backgroundColor": "#000000",
-            "image": "./assets/images/logo_white.webp"
+            "image": "./assets/images/logo_white.png"
           }
         }
       ],
