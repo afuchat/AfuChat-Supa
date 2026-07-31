@@ -631,10 +631,14 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       // read — the user already sees the cached list. Otherwise (first install or
       // cache miss) fall back to reading SQLite so we still show something fast.
       if (!hasPreloadedConversations()) {
-        const cached = await getLocalConversations();
-        if (cached.length > 0) {
-          setChats(cached as any);
-          setLoading(false);
+        try {
+          const cached = await getLocalConversations();
+          if (cached.length > 0) {
+            setChats(cached as any);
+            setLoading(false);
+          }
+        } catch {
+          // cache read failed — continue to fetch from network
         }
       }
     }
@@ -1112,7 +1116,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               setChats((prev) =>
                 prev.map((c) => (c.id === item.id ? { ...c, is_pinned: !next } : c)),
               );
-              await supabase.from("chats").update({ is_pinned: !next }).eq("id", item.id);
+              try { await supabase.from("chats").update({ is_pinned: !next }).eq("id", item.id); } catch {}
             },
             { type: "info", icon: next ? "pin" : "pin" },
           );
@@ -1139,7 +1143,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               setChats((prev) =>
                 prev.map((c) => (c.id === item.id ? { ...c, is_archived: !next } : c)),
               );
-              await supabase.from("chats").update({ is_archived: !next }).eq("id", item.id);
+              try { await supabase.from("chats").update({ is_archived: !next }).eq("id", item.id); } catch {}
             },
             { type: "info", icon: next ? "archive" : "archive" },
           );
@@ -1197,7 +1201,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
           );
           showActionToast("Muted for 8 hours", "Undo", async () => {
             setChats((prev) => prev.map((c) => c.id === item.id ? { ...c, muted_until: undefined } : c));
-            await supabase.from("chat_mutes").delete().eq("user_id", user.id).eq("chat_id", item.id);
+            try { await supabase.from("chat_mutes").delete().eq("user_id", user.id).eq("chat_id", item.id); } catch {}
           }, { type: "info", icon: "notifications-off" });
         }
         return;
@@ -1510,7 +1514,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
 
   // ── Folder system ─────────────────────────────────────────────────────────
   useEffect(() => {
-    loadFolders().then(setFolders);
+    loadFolders().then(setFolders).catch(() => {});
   }, [user?.id]);
 
   // ── Folder pill animation + tab-bar auto-scroll ───────────────────────────

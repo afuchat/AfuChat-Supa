@@ -160,7 +160,7 @@ export function IncomingCallModal() {
 
   const handleAccept = useCallback(() => {
     if (autoDeclineTimer.current) clearTimeout(autoDeclineTimer.current);
-    acceptCall();
+    Promise.resolve(acceptCall()).catch(() => {});
   }, [acceptCall]);
 
   if (!incomingNotice || (status !== "idle" && status !== "incoming_ringing")) return null;

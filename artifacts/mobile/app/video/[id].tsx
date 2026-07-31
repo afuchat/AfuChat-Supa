@@ -425,8 +425,8 @@ const VideoItem = React.memo(function VideoItem({
     cacheDelayRef.current = setTimeout(() => {
       getCachedVideoUri(item.video_url).then((ex) => {
         if (ex) setCachedUri(ex);
-        else cacheVideo(item.video_url).then((l) => { if (l) setCachedUri(l); });
-      });
+        else cacheVideo(item.video_url).then((l) => { if (l) setCachedUri(l); }).catch(() => {});
+      }).catch(() => {});
     }, 500);
     return () => { if (cacheDelayRef.current) { clearTimeout(cacheDelayRef.current); cacheDelayRef.current = null; } };
   }, [isNearActive]);

@@ -330,55 +330,63 @@ export default function PostDetailScreen() {
   // ── Fetch post ───────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!id) return;
+    let cancelled = false;
     (async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from("posts")
-        .select(`
-          id, author_id, content, image_url, created_at, view_count, like_count, post_type,
-          profiles!posts_author_id_fkey(display_name, handle, avatar_url, is_verified, is_organization_verified),
-          post_images(image_url, display_order)
-        `)
-        .eq("id", id)
-        .single();
+      try {
+        const { data } = await supabase
+          .from("posts")
+          .select(`
+            id, author_id, content, image_url, created_at, view_count, like_count, post_type,
+            profiles!posts_author_id_fkey(display_name, handle, avatar_url, is_verified, is_organization_verified),
+            post_images(image_url, display_order)
+          `)
+          .eq("id", id)
+          .single();
 
-      if (!data) { setLoading(false); return; }
+        if (!data || cancelled) { setLoading(false); return; }
 
-      const imgs: string[] = ((data.post_images as any[]) ?? [])
-        .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
-        .map((r) => r.image_url);
-      const prof = (data.profiles as any) ?? {};
+        const imgs: string[] = ((data.post_images as any[]) ?? [])
+          .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+          .map((r) => r.image_url);
+        const prof = (data.profiles as any) ?? {};
 
-      setPost({
-        id: data.id,
-        author_id: data.author_id,
-        content: data.content ?? "",
-        image_url: (data as any).image_url ?? null,
-        images: imgs,
-        created_at: data.created_at,
-        view_count: (data as any).view_count ?? 0,
-        like_count: data.like_count ?? 0,
-        post_type: data.post_type ?? "text",
-        is_verified: prof.is_verified ?? false,
-        is_organization_verified: prof.is_organization_verified ?? false,
-        profile: {
-          display_name: prof.display_name ?? "",
-          handle: prof.handle ?? "",
-          avatar_url: prof.avatar_url ?? null,
-        },
-      });
-      setLikeCount(data.like_count ?? 0);
+        if (!cancelled) {
+          setPost({
+            id: data.id,
+            author_id: data.author_id,
+            content: data.content ?? "",
+            image_url: (data as any).image_url ?? null,
+            images: imgs,
+            created_at: data.created_at,
+            view_count: (data as any).view_count ?? 0,
+            like_count: data.like_count ?? 0,
+            post_type: data.post_type ?? "text",
+            is_verified: prof.is_verified ?? false,
+            is_organization_verified: prof.is_organization_verified ?? false,
+            profile: {
+              display_name: prof.display_name ?? "",
+              handle: prof.handle ?? "",
+              avatar_url: prof.avatar_url ?? null,
+            },
+          });
+          setLikeCount(data.like_count ?? 0);
+        }
 
-      if (user) {
-        const [likeRes, bmRes] = await Promise.all([
-          supabase.from("post_acknowledgments").select("post_id").eq("post_id", id).eq("user_id", user.id).maybeSingle(),
-          supabase.from("bookmarks").select("id").eq("post_id", id).eq("user_id", user.id).maybeSingle(),
-        ]);
-        setLiked(!!likeRes.data);
-        setBookmarked(!!bmRes.data);
+        if (user && !cancelled) {
+          const [likeRes, bmRes] = await Promise.all([
+            supabase.from("post_acknowledgments").select("post_id").eq("post_id", id).eq("user_id", user.id).maybeSingle(),
+            supabase.from("bookmarks").select("id").eq("post_id", id).eq("user_id", user.id).maybeSingle(),
+          ]);
+          if (!cancelled) { setLiked(!!likeRes.data); setBookmarked(!!bmRes.data); }
+        }
+      } catch {
+        // fetch failed — show empty state
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setLoading(false);
     })();
+    return () => { cancelled = true; };
   }, [id, user]);
 
   // ── Fetch comments ───────────────────────────────────────────────────────────
@@ -425,7 +433,8 @@ export default function PostDetailScreen() {
           })));
         }
         setCommentsLoading(false);
-      });
+      })
+      .catch(() => { setCommentsLoading(false); });
   }, [id, user?.id]);
 
   useEffect(() => {
@@ -456,13 +465,17 @@ export default function PostDetailScreen() {
     ]).start();
     if (liked) {
       setLiked(false); setLikeCount((n) => Math.max(0, n - 1));
-      await supabase.from("post_acknowledgments").delete().eq("post_id", post.id).eq("user_id", user.id);
+      try {
+        await supabase.from("post_acknowledgments").delete().eq("post_id", post.id).eq("user_id", user.id);
+      } catch { setLiked(true); setLikeCount((n) => n + 1); }
     } else {
       setLiked(true); setLikeCount((n) => n + 1);
-      await supabase.from("post_acknowledgments").upsert({ post_id: post.id, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
-      if (post.author_id !== user.id) {
-        notifyPostLike({ postAuthorId: post.author_id, likerName: "", likerUserId: user.id, postId: post.id });
-      }
+      try {
+        await supabase.from("post_acknowledgments").upsert({ post_id: post.id, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
+        if (post.author_id !== user.id) {
+          notifyPostLike({ postAuthorId: post.author_id, likerName: "", likerUserId: user.id, postId: post.id });
+        }
+      } catch { setLiked(false); setLikeCount((n) => Math.max(0, n - 1)); }
     }
   }, [user, post, liked, heartScale]);
 
@@ -472,10 +485,14 @@ export default function PostDetailScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (bookmarked) {
       setBookmarked(false);
-      await supabase.from("bookmarks").delete().eq("post_id", post.id).eq("user_id", user.id);
+      try {
+        await supabase.from("bookmarks").delete().eq("post_id", post.id).eq("user_id", user.id);
+      } catch { setBookmarked(true); }
     } else {
       setBookmarked(true);
-      await supabase.from("bookmarks").insert({ post_id: post.id, user_id: user.id });
+      try {
+        await supabase.from("bookmarks").insert({ post_id: post.id, user_id: user.id });
+      } catch { setBookmarked(false); }
     }
   }, [user, post, bookmarked]);
 
@@ -527,11 +544,11 @@ export default function PostDetailScreen() {
     if (wasLiked) {
       setLikedIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
       setReplies((prev) => prev.map((r) => r.id === id ? { ...r, like_count: Math.max(0, r.like_count - 1) } : r));
-      supabase.from("post_reply_likes").delete().eq("reply_id", id).eq("user_id", user.id).then(() => {});
+      supabase.from("post_reply_likes").delete().eq("reply_id", id).eq("user_id", user.id).then(() => {}).catch(() => {});
     } else {
       setLikedIds((prev) => new Set([...prev, id]));
       setReplies((prev) => prev.map((r) => r.id === id ? { ...r, like_count: r.like_count + 1 } : r));
-      supabase.from("post_reply_likes").insert({ reply_id: id, user_id: user.id }).then(() => {});
+      supabase.from("post_reply_likes").insert({ reply_id: id, user_id: user.id }).then(() => {}).catch(() => {});
     }
   }
 
@@ -567,7 +584,14 @@ export default function PostDetailScreen() {
 
   async function startRecording() {
     if (!Audio) { showAlert("Not supported", "Audio recording is not available here."); return; }
-    const { granted } = await Audio.requestPermissionsAsync();
+    let granted = false;
+    try {
+      const result = await Audio.requestPermissionsAsync();
+      granted = result.granted;
+    } catch {
+      showAlert("Microphone access needed", "Please enable microphone access in Settings.");
+      return;
+    }
     if (!granted) { showAlert("Microphone access needed", "Please enable microphone access in Settings."); return; }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
@@ -611,12 +635,16 @@ export default function PostDetailScreen() {
   }
 
   async function pickImage() {
-    const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!granted) { showAlert("Photos access needed", "Please enable photo library access in Settings."); return; }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.82, allowsEditing: false });
-    if (!result.canceled && result.assets.length > 0) {
-      const a = result.assets[0];
-      setAttachedImage({ uri: a.uri, width: a.width, height: a.height });
+    try {
+      const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!granted) { showAlert("Photos access needed", "Please enable photo library access in Settings."); return; }
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.82, allowsEditing: false });
+      if (!result.canceled && result.assets.length > 0) {
+        const a = result.assets[0];
+        setAttachedImage({ uri: a.uri, width: a.width, height: a.height });
+      }
+    } catch {
+      showAlert("Could not open photos", "Please try again.");
     }
   }
 
@@ -629,6 +657,7 @@ export default function PostDetailScreen() {
     if (!user || (!hasText && !hasVoice && !hasImage)) return;
 
     setSending(true);
+    try {
     Animated.sequence([
       Animated.spring(sendScale, { toValue: 0.78, tension: 400, friction: 8, useNativeDriver: true }),
       Animated.spring(sendScale, { toValue: 1, tension: 400, friction: 8, useNativeDriver: true }),
@@ -690,7 +719,11 @@ export default function PostDetailScreen() {
     } else if (error) {
       showAlert("Comment failed", "Your comment could not be posted. Please try again.");
     }
-    setSending(false);
+    } catch {
+      showAlert("Comment failed", "Your comment could not be posted. Please try again.");
+    } finally {
+      setSending(false);
+    }
   }
 
   // ── Derived ───────────────────────────────────────────────────────────────────

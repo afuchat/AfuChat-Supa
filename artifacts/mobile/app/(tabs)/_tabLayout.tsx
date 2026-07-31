@@ -55,8 +55,10 @@ function useTotalUnread(userId: string | undefined): number {
     const unsubStore = subscribeUnread(setTotal);
 
     const fallbackRefresh = async () => {
-      const convs = await getLocalConversations();
-      setTotal(convs.reduce((s, c) => s + (c.unread_count ?? 0), 0));
+      try {
+        const convs = await getLocalConversations();
+        setTotal(convs.reduce((s, c) => s + (c.unread_count ?? 0), 0));
+      } catch {}
     };
     const chName = `tab-bar-unread-${userId}-${Date.now()}`;
     const ch = supabase

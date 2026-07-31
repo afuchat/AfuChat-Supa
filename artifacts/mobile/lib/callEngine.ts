@@ -822,7 +822,11 @@ function _deactivateAudioMode() {
 
 function _activateKeepAwake() {
   if (_keepAwakeActive) return;
-  try { _KA?.activateKeepAwakeAsync(_keepAwakeTag); _keepAwakeActive = true; } catch {}
+  try {
+    const p: any = _KA?.activateKeepAwakeAsync(_keepAwakeTag);
+    if (p && typeof p.catch === "function") p.catch(() => {});
+    _keepAwakeActive = true;
+  } catch {}
 }
 
 function _deactivateKeepAwake() {
@@ -842,7 +846,8 @@ function _sendBusy(callId: string, _callerId: string) {
   });
   ch.subscribe((status: string) => {
     if (status === "SUBSCRIBED") {
-      ch.send({ type: "broadcast", event: "busy", payload: {} });
+      const sp: any = ch.send({ type: "broadcast", event: "busy", payload: {} });
+      if (sp && typeof sp.catch === "function") sp.catch(() => {});
       setTimeout(() => supabase.removeChannel(ch).catch(() => {}), 1000);
     }
   });
@@ -870,7 +875,8 @@ function _startHeartbeat() {
 
   _heartbeatSendTimer = setInterval(() => {
     if (_status !== "active") return;
-    _signalingCh?.send({ type: "broadcast", event: "heartbeat", payload: {} });
+    const hp: any = _signalingCh?.send({ type: "broadcast", event: "heartbeat", payload: {} });
+    if (hp && typeof hp.catch === "function") hp.catch(() => {});
   }, HEARTBEAT_INTERVAL_MS);
 
   _heartbeatWatchdogTimer = setInterval(() => {

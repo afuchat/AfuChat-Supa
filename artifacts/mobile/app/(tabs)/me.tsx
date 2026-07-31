@@ -239,7 +239,7 @@ export default function MeScreen() {
     const STATS_KEY = `me_stats_${user.id}`;
     AsyncStorage.getItem(STATS_KEY).then((raw) => {
       if (raw) { try { const { fc, fgc, pc } = JSON.parse(raw); setFollowerCount(fc ?? 0); setFollowingCount(fgc ?? 0); setPostCount(pc ?? 0); } catch {} }
-    });
+    }).catch(() => {});
     if (!isOnline()) return;
     Promise.all([
       supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", user.id),

@@ -186,7 +186,7 @@ function LinkPreviewCard({ url, colors }: { url: string; colors: any }) {
   const faviconUri = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
 
   useEffect(() => {
-    fetchOgData(url).then((d) => { setOgImage(d.image); setOgTitle(d.title); });
+    fetchOgData(url).then((d) => { setOgImage(d.image); setOgTitle(d.title); }).catch(() => {});
   }, [url]);
 
   return (
@@ -552,7 +552,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
           setDisplayContent(result);
           setIsTranslated(true);
         }
-      });
+      }).catch(() => {});
     });
     return () => { cancelled = true; task.cancel(); };
   }, [preferredLang, item.content, item.language_code]);
@@ -1364,7 +1364,7 @@ export default function DiscoverScreen() {
   }, []);
 
   useEffect(() => {
-    getMergedLearnedWeights().then((w) => { learnedWeightsRef.current = w; });
+    getMergedLearnedWeights().then((w) => { learnedWeightsRef.current = w; }).catch(() => {});
   }, []);
 
   const fetchPosts = useCallback(async (offset: number, isRefresh: boolean, tab?: "for_you" | "following", background?: boolean) => {
