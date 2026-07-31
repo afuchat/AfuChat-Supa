@@ -554,7 +554,14 @@ export default function PostDetailScreen() {
 
   function discardRecording() {
     stopTimer();
-    if (recordingObj) { recordingObj.stopAndUnloadAsync().catch(() => {}); setRecordingObj(null); }
+    if (recordingObj) {
+      recordingObj.stopAndUnloadAsync().catch(() => {});
+      setRecordingObj(null);
+      // Restore audio session so playback (voice messages, video) works normally.
+      // Without this reset, iOS stays in .playAndRecord category and routes
+      // subsequent audio through the earpiece at near-zero volume.
+      Audio?.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: false }).catch(() => {});
+    }
     setRecordState("idle"); setRecordedUri(null); setRecordedDuration(0); setRecordElapsed(0);
   }
 
@@ -600,7 +607,7 @@ export default function PostDetailScreen() {
         setRecordState("idle"); setRecordElapsed(0);
       }
     } catch { setRecordState("idle"); setRecordElapsed(0); }
-    Audio?.setAudioModeAsync({ allowsRecordingIOS: false }).catch(() => {});
+    Audio?.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: false }).catch(() => {});
   }
 
   async function pickImage() {
