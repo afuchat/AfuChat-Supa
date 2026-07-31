@@ -1096,7 +1096,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
           setTranslated(result);
           setShowTranslated(true);
         }
-      });
+      }).catch(() => {});
     }, Math.random() * 600);
     return () => { cancelled = true; clearTimeout(timer); };
   }, [canTranslate, preferredLang, msg.encrypted_content]);
@@ -1105,12 +1105,17 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
     if (showTranslated) { setShowTranslated(false); return; }
     if (translated) { setShowTranslated(true); return; }
     setTranslating(true);
-    const result = await translateText(msg.encrypted_content, preferredLang || "en");
-    if (result && result !== msg.encrypted_content) {
-      setTranslated(result);
-      setShowTranslated(true);
+    try {
+      const result = await translateText(msg.encrypted_content, preferredLang || "en");
+      if (result && result !== msg.encrypted_content) {
+        setTranslated(result);
+        setShowTranslated(true);
+      }
+    } catch {
+      // translation failed silently — user can retry
+    } finally {
+      setTranslating(false);
     }
-    setTranslating(false);
   }
 
   async function handleTranscribe() {
@@ -1182,7 +1187,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   }
 
   if (isGiftMsg) {
-    const giftParts = msg.encrypted_content.replace("🎁 ", "").split("|");
+    const giftParts = (msg.encrypted_content ?? "").replace("🎁 ", "").split("|");
     const giftDisplay = giftParts[0];
     const giftEmoji = giftDisplay.split(" ")[0] || "🎁";
 
@@ -2542,57 +2547,62 @@ function ChatScreen() {
     const chatId = isDraft ? realChatId : id;
     if (!chatId || !user || loadingMore || !hasMore || !oldestCursorRef.current) return;
     setLoadingMore(true);
-    const cursor = oldestCursorRef.current;
-    const { data } = await supabase
-      .from("messages")
-      .select(`id, chat_id, sender_id, encrypted_content, sent_at, reply_to_message_id, attachment_url, attachment_type, edited_at, profiles!messages_sender_id_fkey(display_name, avatar_url, handle)`)
-      .eq("chat_id", chatId)
-      .lt("sent_at", cursor)
-      .order("sent_at", { ascending: false })
-      .limit(50);
-    if (data && data.length > 0) {
-      const msgIds = data.map((m: any) => m.id);
-      const [{ data: reactions }, { data: statuses }] = await Promise.all([
-        supabase.from("message_reactions").select("message_id, reaction, user_id").in("message_id", msgIds),
-        supabase.from("message_status").select("message_id, read_at, delivered_at").in("message_id", msgIds),
-      ]);
-      const reactionMap: Record<string, { emoji: string; count: number; myReaction: boolean }[]> = {};
-      for (const r of (reactions || []) as any[]) {
-        if (!reactionMap[r.message_id]) reactionMap[r.message_id] = [];
-        const existing = reactionMap[r.message_id].find((x: any) => x.emoji === r.reaction);
-        if (existing) { existing.count++; if (r.user_id === user.id) existing.myReaction = true; }
-        else reactionMap[r.message_id].push({ emoji: r.reaction, count: 1, myReaction: r.user_id === user.id });
+    try {
+      const cursor = oldestCursorRef.current;
+      const { data } = await supabase
+        .from("messages")
+        .select(`id, chat_id, sender_id, encrypted_content, sent_at, reply_to_message_id, attachment_url, attachment_type, edited_at, profiles!messages_sender_id_fkey(display_name, avatar_url, handle)`)
+        .eq("chat_id", chatId)
+        .lt("sent_at", cursor)
+        .order("sent_at", { ascending: false })
+        .limit(50);
+      if (data && data.length > 0) {
+        const msgIds = data.map((m: any) => m.id);
+        const [{ data: reactions }, { data: statuses }] = await Promise.all([
+          supabase.from("message_reactions").select("message_id, reaction, user_id").in("message_id", msgIds),
+          supabase.from("message_status").select("message_id, read_at, delivered_at").in("message_id", msgIds),
+        ]);
+        const reactionMap: Record<string, { emoji: string; count: number; myReaction: boolean }[]> = {};
+        for (const r of (reactions || []) as any[]) {
+          if (!reactionMap[r.message_id]) reactionMap[r.message_id] = [];
+          const existing = reactionMap[r.message_id].find((x: any) => x.emoji === r.reaction);
+          if (existing) { existing.count++; if (r.user_id === user.id) existing.myReaction = true; }
+          else reactionMap[r.message_id].push({ emoji: r.reaction, count: 1, myReaction: r.user_id === user.id });
+        }
+        const statusMap2 = new Map<string, { read_at: string | null; delivered_at: string | null }>();
+        for (const s of (statuses || []) as any[]) {
+          statusMap2.set(s.message_id, { read_at: s.read_at || null, delivered_at: s.delivered_at || null });
+        }
+        const mapped = data.map((m: any) => {
+          const isBot = m.sender_id === AFUAI_BOT_ID;
+          const aiParsed = isBot ? parseAfuAiTags(m.encrypted_content || "") : null;
+          return {
+            id: m.id, chat_id: m.chat_id, sender_id: m.sender_id,
+            encrypted_content: aiParsed ? (aiParsed.text || m.encrypted_content) : m.encrypted_content,
+            sent_at: m.sent_at, reply_to_message_id: m.reply_to_message_id,
+            attachment_url: m.attachment_url, attachment_type: m.attachment_type, edited_at: m.edited_at,
+            sender: m.profiles, reactions: reactionMap[m.id] || [],
+            status: m.sender_id === user.id
+              ? (statusMap2.get(m.id)?.read_at ? "read" : statusMap2.get(m.id)?.delivered_at ? "delivered" : "sent")
+              : undefined,
+            read_at: m.sender_id === user.id ? (statusMap2.get(m.id)?.read_at || null) : undefined,
+            delivered_at: m.sender_id === user.id ? (statusMap2.get(m.id)?.delivered_at || null) : undefined,
+            _isAi: isBot || undefined,
+            _aiActions: aiParsed && aiParsed.actions.length > 0 ? aiParsed.actions : undefined,
+            _aiInvoices: aiParsed && aiParsed.invoices.length > 0 ? aiParsed.invoices : undefined,
+          };
+        });
+        oldestCursorRef.current = data[data.length - 1].sent_at;
+        setHasMore(data.length >= 50);
+        setMessages((prev) => [...prev, ...mapped]);
+      } else {
+        setHasMore(false);
       }
-      const statusMap2 = new Map<string, { read_at: string | null; delivered_at: string | null }>();
-      for (const s of (statuses || []) as any[]) {
-        statusMap2.set(s.message_id, { read_at: s.read_at || null, delivered_at: s.delivered_at || null });
-      }
-      const mapped = data.map((m: any) => {
-        const isBot = m.sender_id === AFUAI_BOT_ID;
-        const aiParsed = isBot ? parseAfuAiTags(m.encrypted_content || "") : null;
-        return {
-          id: m.id, chat_id: m.chat_id, sender_id: m.sender_id,
-          encrypted_content: aiParsed ? (aiParsed.text || m.encrypted_content) : m.encrypted_content,
-          sent_at: m.sent_at, reply_to_message_id: m.reply_to_message_id,
-          attachment_url: m.attachment_url, attachment_type: m.attachment_type, edited_at: m.edited_at,
-          sender: m.profiles, reactions: reactionMap[m.id] || [],
-          status: m.sender_id === user.id
-            ? (statusMap2.get(m.id)?.read_at ? "read" : statusMap2.get(m.id)?.delivered_at ? "delivered" : "sent")
-            : undefined,
-          read_at: m.sender_id === user.id ? (statusMap2.get(m.id)?.read_at || null) : undefined,
-          delivered_at: m.sender_id === user.id ? (statusMap2.get(m.id)?.delivered_at || null) : undefined,
-          _isAi: isBot || undefined,
-          _aiActions: aiParsed && aiParsed.actions.length > 0 ? aiParsed.actions : undefined,
-          _aiInvoices: aiParsed && aiParsed.invoices.length > 0 ? aiParsed.invoices : undefined,
-        };
-      });
-      oldestCursorRef.current = data[data.length - 1].sent_at;
-      setHasMore(data.length >= 50);
-      setMessages((prev) => [...prev, ...mapped]);
-    } else {
-      setHasMore(false);
+    } catch {
+      // load-more failed silently; user can scroll up again to retry
+    } finally {
+      setLoadingMore(false);
     }
-    setLoadingMore(false);
   }, [id, user, isDraft, realChatId, loadingMore, hasMore]);
 
   useEffect(() => {
@@ -2600,7 +2610,7 @@ function ChatScreen() {
     const unsub = onConnectivityChange(async (online) => {
       setNetworkOnline(online);
       if (online) {
-        await syncPendingMessages();
+        await syncPendingMessages().catch(() => {});
         setMessages((prev) => prev.filter((m) => !m._pending));
         loadMessages();
       }

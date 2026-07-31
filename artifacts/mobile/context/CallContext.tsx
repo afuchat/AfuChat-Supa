@@ -233,10 +233,15 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     // On native: ask the OS if we haven't already, then bail if still denied.
     // On web: only bail if the browser reports an explicit "denied" state;
     // "prompt" is handled by getUserMedia inside the call engine.
-    let permState = await getMicPermissionState();
-    if (permState === "prompt" && Platform.OS !== "web") {
-      const result = await requestMicPermission();
-      permState = result;
+    let permState: string;
+    try {
+      permState = await getMicPermissionState();
+      if (permState === "prompt" && Platform.OS !== "web") {
+        permState = await requestMicPermission();
+      }
+    } catch {
+      showToast("Could not check microphone permission", { type: "error", duration: 3000 });
+      return;
     }
     if (permState === "denied") {
       setMicBlocked(true);
@@ -280,10 +285,15 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     if (!notice || !u) return;
 
     // ── Mic permission pre-check (same logic as startCall) ────────────────────
-    let permState = await getMicPermissionState();
-    if (permState === "prompt" && Platform.OS !== "web") {
-      const result = await requestMicPermission();
-      permState = result;
+    let permState: string;
+    try {
+      permState = await getMicPermissionState();
+      if (permState === "prompt" && Platform.OS !== "web") {
+        permState = await requestMicPermission();
+      }
+    } catch {
+      showToast("Could not check microphone permission", { type: "error", duration: 3000 });
+      return;
     }
     if (permState === "denied") {
       setMicBlocked(true);
@@ -363,7 +373,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         onClose={() => {
           _setMicModalVisible(false);
           // Re-check in case user dismissed after granting from OS settings
-          getMicPermissionState().then((s) => setMicBlocked(s === "denied"));
+          getMicPermissionState().then((s) => setMicBlocked(s === "denied")).catch(() => {});
         }}
       />
     </CallContext.Provider>

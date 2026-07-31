@@ -281,7 +281,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Validate account limit
     if (!profile?.is_admin) {
-      const current = await getStoredAccounts();
+      let current: any[];
+      try {
+        current = await getStoredAccounts();
+      } catch {
+        isAddingAccountRef.current = false;
+        return { success: false, error: "Failed to read accounts." };
+      }
       if (current.length >= 2) {
         isAddingAccountRef.current = false;
         return { success: false, error: "You've reached the maximum of 2 linked accounts." };
