@@ -47,14 +47,19 @@ const _RTC: _RTCBridge | null = (() => {
     // Browser WebRTC — available in Chrome, Firefox, Safari, Edge
     const g = globalThis as any;
     if (typeof g.RTCPeerConnection === "undefined") return null; // very old browser
+    if (typeof g.navigator?.mediaDevices?.getUserMedia !== "function") return null; // no mic API
     return {
       RTCPeerConnection:     g.RTCPeerConnection,
       RTCSessionDescription: g.RTCSessionDescription,
       RTCIceCandidate:       g.RTCIceCandidate,
       // Bind getUserMedia so `this` is always navigator.mediaDevices
       mediaDevices: {
-        getUserMedia: (c: any) =>
-          navigator.mediaDevices.getUserMedia(c),
+        getUserMedia: (c: any) => {
+          if (!navigator.mediaDevices?.getUserMedia) {
+            return Promise.reject(new Error("getUserMedia not supported in this browser"));
+          }
+          return navigator.mediaDevices.getUserMedia(c);
+        },
       },
     } satisfies _RTCBridge;
   }
@@ -216,6 +221,11 @@ function setStatus(s: CallStatus) {
 
 export function initCallEngine(userId: string) {
   if (_currentUserId === userId) return; // already initialised for this user
+  // If there is an active call for a previous user, tear it down before
+  // reinitialising — a stale call must never survive an account switch.
+  if (_currentUserId !== null && _status !== "idle") {
+    _doHangup("idle");
+  }
   _currentUserId = userId;
 
   // Tear down any previous inbox channel

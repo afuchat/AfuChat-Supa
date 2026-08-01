@@ -23,6 +23,7 @@ interface AudioPlayerProps {
   uri: string;
   tintColor?: string;
   waveColor?: string;
+  onError?: () => void;
 }
 
 const SPEEDS = [1, 1.5, 2] as const;
@@ -75,9 +76,11 @@ function AudioPlayerIdle({
   );
 }
 
-function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor }: AudioPlayerProps) {
+function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor, onError }: AudioPlayerProps) {
   const soundRef = useRef<AudioSound | null>(null);
+  const mountedRef = useRef(true);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [positionMs, setPositionMs] = useState(0);
   const [durationMs, setDurationMs] = useState(0);
@@ -87,13 +90,18 @@ function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor }: AudioPlaye
   const barColor = waveColor || tintColor;
 
   useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  useEffect(() => {
     let mounted = true;
 
     async function loadAudio() {
       try {
-        if (!Audio) return;
+        if (!Audio) { if (mounted) { setHasError(true); onError?.(); } return; }
         await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,   // ensure session is in playback mode, not recording
+          allowsRecordingIOS: false,
           playsInSilentModeIOS: true,
           shouldDuckAndroid: false,
           staysActiveInBackground: false,
@@ -119,8 +127,8 @@ function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor }: AudioPlaye
         if (mounted) soundRef.current = sound;
         else sound.unloadAsync().catch(() => {});
       } catch {
-        // Audio module unavailable (e.g. Expo Go restriction) — fail silently
-        // so the UI degrades gracefully rather than crashing
+        // Audio load failed — notify parent so it can reset to idle (tap-to-retry).
+        if (mounted) { setHasError(true); onError?.(); }
       }
     }
 
@@ -140,10 +148,9 @@ function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor }: AudioPlaye
   }, [didJustFinish]);
 
   // Pause playback the moment a call takes over the mic / speaker.
-  // The OS audio session (set via setAudioModeAsync in callEngine) already
-  // interrupts on iOS/Android, but pausing here ensures the play-button UI
-  // reflects the correct state and prevents a race on Android.
   // Track whether we auto-paused so we can auto-resume on release.
+  // Guard release with mountedRef so a component unmounted during a call
+  // never tries to resume after teardown.
   const pausedByCallRef = useRef(false);
   useEffect(() => {
     return subscribeCallAudio((event) => {
@@ -153,9 +160,12 @@ function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor }: AudioPlaye
           soundRef.current.pauseAsync().catch(() => {});
         }
       } else if (event === "release") {
-        if (soundRef.current && pausedByCallRef.current) {
+        if (soundRef.current && pausedByCallRef.current && mountedRef.current) {
           pausedByCallRef.current = false;
           soundRef.current.playAsync().catch(() => {});
+        } else {
+          // Component gone or user already stopped — just clear the flag
+          pausedByCallRef.current = false;
         }
       }
     });
@@ -208,8 +218,10 @@ function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor }: AudioPlaye
 
   return (
     <View style={s.row}>
-      <TouchableOpacity onPress={togglePlay} hitSlop={8} disabled={!isLoaded}>
-        {!isLoaded ? (
+      <TouchableOpacity onPress={hasError ? () => setHasError(false) : togglePlay} hitSlop={8} disabled={isLoaded ? false : !hasError}>
+        {hasError ? (
+          <Ionicons name="refresh" size={24} color={tintColor} />
+        ) : !isLoaded ? (
           <Ionicons name="ellipsis-horizontal" size={24} color={tintColor} style={{ opacity: 0.5 }} />
         ) : (
           <Ionicons name={isPlaying ? "pause" : "play"} size={24} color={tintColor} />
@@ -260,7 +272,15 @@ export default function AudioPlayer({ uri, tintColor = "#FFFFFF", waveColor }: A
     );
   }
 
-  return <AudioPlayerActive uri={uri} tintColor={tintColor} waveColor={waveColor} />;
+  // onError resets to idle so the user can tap play again to retry.
+  return (
+    <AudioPlayerActive
+      uri={uri}
+      tintColor={tintColor}
+      waveColor={waveColor}
+      onError={() => setActive(false)}
+    />
+  );
 }
 
 const s = StyleSheet.create({

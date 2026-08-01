@@ -46,6 +46,7 @@ import { getPreferredVideoHeight } from "@/lib/networkQuality";
 import { cacheShortsTab, getCachedShortsTab } from "@/lib/offlineStore";
 import { getCachedVideoUri, markVideoWatched, cacheVideo } from "@/lib/videoCache";
 import { showToast } from "@/lib/toast";
+import { subscribeCallAudio } from "@/lib/callAudioBus";
 
 type ShortPost = {
   id: string;
@@ -142,6 +143,25 @@ function NativeShortsPlayer({
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     };
   }, []);
+
+  // Pause / resume when a call takes over the mic/speaker.
+  const pausedByCallRef = useRef(false);
+  React.useEffect(() => {
+    return subscribeCallAudio((event) => {
+      if (event === "takeover") {
+        if (active && !paused && !preloadOnly) {
+          pausedByCallRef.current = true;
+          try { player.pause(); } catch {}
+        }
+      } else if (event === "release") {
+        if (pausedByCallRef.current) {
+          pausedByCallRef.current = false;
+          if (active && !preloadOnly) { try { player.play(); } catch {} }
+        }
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, paused, preloadOnly]);
 
   // Sync loop setting
   React.useEffect(() => {

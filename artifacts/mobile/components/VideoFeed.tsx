@@ -415,7 +415,13 @@ const VideoItem = React.memo(
     const mountedRef = useRef(true);
     useEffect(() => {
       mountedRef.current = true;
-      return () => { mountedRef.current = false; };
+      return () => {
+        mountedRef.current = false;
+        // Clear all per-item timers on unmount so they never fire after teardown.
+        if (progressHideTimer.current) { clearTimeout(progressHideTimer.current); progressHideTimer.current = null; }
+        if (bufferingTimer.current)    { clearTimeout(bufferingTimer.current);    bufferingTimer.current    = null; }
+        if (cacheDelayTimer.current)   { clearTimeout(cacheDelayTimer.current);   cacheDelayTimer.current   = null; }
+      };
     }, []);
 
     // Register player instance with VideoFeed so it can pause/play us immediately
@@ -1060,13 +1066,22 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
   useEffect(() => { postsLenRef.current = posts.length; }, [posts.length]);
   useEffect(() => { tabRef.current = tab; }, [tab]);
 
-  // Pause all active video players when a call takes over audio.
+  // Pause all active video players when a call takes over audio;
+  // resume the currently active one when the call ends.
+  const videosPausedByCallRef = useRef(false);
   useEffect(() => {
     return subscribeCallAudio((event) => {
       if (event === "takeover") {
+        videosPausedByCallRef.current = true;
         playerMapRef.current.forEach((player) => {
           try { player.pause(); } catch {}
         });
+      } else if (event === "release") {
+        if (!videosPausedByCallRef.current) return;
+        videosPausedByCallRef.current = false;
+        // Resume only the currently-active video (not every preloaded one).
+        const activePlayer = playerMapRef.current.get(activeIndexRef.current);
+        if (activePlayer) { try { activePlayer.play(); } catch {} }
       }
     });
   }, []);

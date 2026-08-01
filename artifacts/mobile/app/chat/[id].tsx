@@ -2622,10 +2622,26 @@ function ChatScreen() {
     return () => {
       clearInterval(recordingTimer.current);
       clearInterval(meterInterval.current);
+      // Web cleanup
+      try { webAudioCtxRef.current?.close(); } catch {}
+      webAnalyserRef.current = null;
+      webAudioCtxRef.current = null;
+      if (webMediaRecorderRef.current) {
+        try { webMediaRecorderRef.current.stop(); } catch {}
+        webMediaRecorderRef.current = null;
+        webChunksRef.current = [];
+      }
+      if (webStreamRef.current) {
+        webStreamRef.current.getTracks().forEach((t) => { try { t.stop(); } catch {} });
+        webStreamRef.current = null;
+      }
+      // Native cleanup
       if (recordingActiveRef.current) {
         recordingActiveRef.current = false;
         recorderRef.current?.stopAndUnloadAsync().catch(() => {});
         recorderRef.current = null;
+        // Restore audio session so the next playback attempt doesn't find it stuck.
+        Audio?.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: false }).catch(() => {});
       }
     };
   }, []);
@@ -5395,8 +5411,8 @@ STRICT RULES:
 
   async function startVoiceRecordingHold() {
     if (recordingActiveRef.current) return;
-    // Guard: Audio is null on web (lazy import) — use the web recorder path instead.
-    if (!Audio) return;
+    // Guard: Audio is null on web (lazy import) — delegate to web recorder path.
+    if (!Audio) { startVoiceRecordingWeb(); return; }
     const safetyTimer = setTimeout(() => {
       if (!recStartedSV.value && recPressActiveSV.value) {
         recPressActiveSV.value = false;
@@ -5585,18 +5601,112 @@ STRICT RULES:
     slideY.value = 0;
     directionLock.value = "none";
 
+    // ── Discard short recordings (< 1 s) ────────────────────────────────────
     if (capturedDuration < 1) {
-      try {
-        await recorderRef.current?.stopAndUnloadAsync();
-      } catch (_) {}
+      if (webMediaRecorderRef.current) {
+        try { webMediaRecorderRef.current.stop(); } catch {}
+        webMediaRecorderRef.current = null;
+        webChunksRef.current = [];
+      }
+      if (webStreamRef.current) {
+        webStreamRef.current.getTracks().forEach((t) => t.stop());
+        webStreamRef.current = null;
+      }
+      try { await recorderRef.current?.stopAndUnloadAsync(); } catch (_) {}
       recorderRef.current = null;
       recordingActiveRef.current = false;
-      // Reset audio session even for short/discarded recordings so the next
-      // playback attempt doesn't find the session stuck in recording mode.
       Audio?.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: false }).catch(() => {});
       return;
     }
 
+    // ── Web path (MediaRecorder → Blob → upload) ─────────────────────────────
+    if (webMediaRecorderRef.current) {
+      try {
+        const recorder = webMediaRecorderRef.current;
+        const mimeType = recorder.mimeType || "audio/webm";
+        // Wait for onstop so all ondataavailable chunks are flushed before we build the blob.
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          recorder.onstop = () => resolve(new Blob(webChunksRef.current, { type: mimeType }));
+          recorder.onerror = (e: any) => reject(e?.error || new Error("recorder error"));
+          try { recorder.stop(); } catch (e) { reject(e); }
+        });
+        webMediaRecorderRef.current = null;
+        webChunksRef.current = [];
+        webStreamRef.current?.getTracks().forEach((t) => t.stop());
+        webStreamRef.current = null;
+        recordingActiveRef.current = false;
+
+        if (!blob.size || !user) return;
+
+        const activeChatId = await getOrCreateChatId();
+        if (!activeChatId) return;
+
+        const tempId = `pending-audio-${Date.now()}`;
+        const optimisticMsg: Message = {
+          id: tempId,
+          chat_id: activeChatId,
+          sender_id: user.id,
+          encrypted_content: "🎤 Voice message",
+          sent_at: new Date().toISOString(),
+          sender: {
+            display_name: profile?.display_name || "",
+            avatar_url: profile?.avatar_url || null,
+            handle: profile?.handle || "",
+          },
+          reactions: [],
+          attachment_url: URL.createObjectURL(blob),
+          attachment_type: "audio",
+          _pending: true,
+        };
+        setMessages((prev) => [optimisticMsg, ...prev]);
+        setSending(true);
+
+        const ext = mimeType.includes("ogg") ? "ogg" : "webm";
+        const blobUrl = URL.createObjectURL(blob);
+        const { publicUrl, error: uploadErr } = await uploadChatMedia(
+          "voice-messages", activeChatId, user.id,
+          blobUrl, `voice_${Date.now()}.${ext}`, mimeType,
+        );
+        URL.revokeObjectURL(blobUrl);
+
+        if (uploadErr || !publicUrl) {
+          setMessages((prev) => prev.filter((m) => m.id !== tempId));
+          showAlert("Upload failed", uploadErr || "Could not upload voice message. Please try again.");
+          setSending(false);
+          return;
+        }
+
+        const { error: insertErr } = await supabase.from("messages").insert({
+          chat_id: activeChatId,
+          sender_id: user.id,
+          encrypted_content: "🎤 Voice message",
+          attachment_url: publicUrl,
+          attachment_type: "audio",
+        });
+        if (insertErr) {
+          setMessages((prev) => prev.filter((m) => m.id !== tempId));
+          showAlert("Error", "Failed to send voice message.");
+          setSending(false);
+          return;
+        }
+        setMessages((prev) => prev.map((m) => m.id === tempId ? { ...m, _pending: false } : m));
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        loadMessages();
+        setSending(false);
+      } catch (err: any) {
+        console.warn("[Voice/web] Error:", err?.message || err);
+        webMediaRecorderRef.current = null;
+        webChunksRef.current = [];
+        webStreamRef.current?.getTracks().forEach((t) => { try { t.stop(); } catch {} });
+        webStreamRef.current = null;
+        recordingActiveRef.current = false;
+        setSending(false);
+        showAlert("Error", "Failed to send voice message.");
+      }
+      return; // never fall through to native path
+    }
+
+    // ── Native path (expo-av → m4a → upload) ────────────────────────────────
     try {
       let uri: string | null = null;
       await recorderRef.current?.stopAndUnloadAsync();
@@ -5651,13 +5761,20 @@ STRICT RULES:
         return;
       }
 
-      await supabase.from("messages").insert({
+      const { error: insertErr } = await supabase.from("messages").insert({
         chat_id: activeChatId,
         sender_id: user.id,
         encrypted_content: "🎤 Voice message",
         attachment_url: publicUrl,
         attachment_type: "audio",
       });
+      if (insertErr) {
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        showAlert("Error", "Failed to send voice message.");
+        setSending(false);
+        return;
+      }
+      setMessages((prev) => prev.map((m) => m.id === tempId ? { ...m, _pending: false } : m));
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       loadMessages();
       setSending(false);
@@ -5667,7 +5784,9 @@ STRICT RULES:
       }
     } catch (err: any) {
       console.warn("[Voice] Error:", err?.message || err);
+      recorderRef.current = null;
       recordingActiveRef.current = false;
+      Audio?.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: false }).catch(() => {});
       setSending(false);
       showAlert("Error", "Failed to send voice message.");
     }
@@ -5694,13 +5813,21 @@ STRICT RULES:
     slideY.value = 0;
     directionLock.value = "none";
     if (recordingActiveRef.current) {
+      // Web cleanup
+      if (webMediaRecorderRef.current) {
+        try { webMediaRecorderRef.current.stop(); } catch {}
+        webMediaRecorderRef.current = null;
+        webChunksRef.current = [];
+      }
+      if (webStreamRef.current) {
+        webStreamRef.current.getTracks().forEach((t) => t.stop());
+        webStreamRef.current = null;
+      }
+      // Native cleanup
       try {
         const cancelUri = recorderRef.current?.getURI();
         await recorderRef.current?.stopAndUnloadAsync();
-        // Delete the discarded recording file from cacheDirectory immediately
-        if (cancelUri) {
-          FileSystem.deleteAsync(cancelUri, { idempotent: true }).catch(() => {});
-        }
+        if (cancelUri) FileSystem.deleteAsync(cancelUri, { idempotent: true }).catch(() => {});
       } catch (_) {}
       recorderRef.current = null;
       // Restore audio session to playback mode after cancellation.
