@@ -689,7 +689,7 @@ export default function GroupManageScreen() {
 
           {/* Member search */}
           {memberCount > 5 && (
-            <View style={[s.searchWrap, { backgroundColor: cardBg, borderColor: colors.border }]}>
+            <View style={[s.searchWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Ionicons name="search" size={16} color={colors.textMuted} style={{ marginRight: 6 }} />
               <TextInput
                 style={[s.searchInput, { color: colors.text }]}
@@ -703,7 +703,7 @@ export default function GroupManageScreen() {
             </View>
           )}
 
-          <View style={[s.membersCard, { backgroundColor: cardBg, borderColor: colors.border }]}>
+          <View style={[s.membersCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {filteredMembers.length === 0 ? (
               <View style={{ padding: 24, alignItems: "center" }}>
                 <Text style={{ color: colors.textMuted, fontSize: 14, fontFamily: "Inter_400Regular" }}>

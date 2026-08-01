@@ -172,21 +172,6 @@ export default function BlockedUsersScreen() {
                 </View>
               );
             }}
-            ListEmptyComponent={
-              <View style={s.empty}>
-                <View style={[s.emptyIcon, { backgroundColor: "#34C75918" }]}>
-                  <Ionicons name="shield-checkmark" size={40} color="#34C759" />
-                </View>
-                <Text style={[s.emptyTitle, { color: colors.text }]}>
-                  {search.trim() ? "No results" : "No blocked accounts"}
-                </Text>
-                <Text style={[s.emptyDesc, { color: colors.textMuted }]}>
-                  {search.trim()
-                    ? "Try a different name or handle."
-                    : "People you block won't be able to see your profile or contact you."}
-                </Text>
-              </View>
-            }
           />
         </>
       )}

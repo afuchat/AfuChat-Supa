@@ -160,20 +160,21 @@ function MentionAvatar({
   useEffect(() => {
     if (_avatarCache.has(raw)) return;   // already resolved
     let cancelled = false;
-    supabase
-      .from("profiles")
-      .select("avatar_url")
-      .eq("handle", raw)
-      .maybeSingle()
-      .then(({ data }) => {
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("avatar_url")
+          .eq("handle", raw)
+          .maybeSingle();
         if (cancelled) return;
         const url = (data as any)?.avatar_url ?? null;
         _avatarCache.set(raw, url);
         setAvatarUrl(url);
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) { _avatarCache.set(raw, null); setAvatarUrl(null); }
-      });
+      }
+    })();
     return () => { cancelled = true; };
   }, [raw]);
 

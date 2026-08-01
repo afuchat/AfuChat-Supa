@@ -642,7 +642,7 @@ function PostChrome({
           await notifyPostReply({
             postId: meta.postId,
             postAuthorId: meta.authorId,
-            replierId: user.id,
+            replierUserId: user.id,
             replierName: myProfile?.display_name ?? "Someone",
           });
         } catch {}

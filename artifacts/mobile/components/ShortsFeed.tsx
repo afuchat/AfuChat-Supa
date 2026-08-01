@@ -19,6 +19,7 @@ import {
   Animated,
   FlatList,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,

@@ -97,7 +97,7 @@ export default function CallScreen() {
       }, 1000);
     } else {
       if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-      if (status !== "active") setSeconds(0);
+      setSeconds(0);
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [status, callInfo?.answeredAt]);

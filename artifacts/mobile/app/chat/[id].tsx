@@ -40,13 +40,16 @@ import { Image as ExpoImage } from "expo-image";
 import * as DocumentPicker from "expo-document-picker";
 import * as Contacts from "expo-contacts";
 import * as FileSystem from "expo-file-system";
-// expo-av: lazy-load; also guard NativeModules.ExponentAV — absent in Expo Go SDK 55
+// expo-av: lazy-load on native only.
+// Do NOT gate on NativeModules.ExponentAV — in Expo SDK 55 + New Architecture
+// production builds expo-av uses TurboModules/JSI and is absent from NativeModules,
+// so that check always returns null and silently disables all audio.
 let Audio: typeof import("expo-av").Audio | null = null;
 type AudioRecording = import("expo-av/build/Audio/Recording").Recording;
-try {
-  const { NativeModules: _NM } = require("react-native");
-  if (_NM.ExponentAV) Audio = require("expo-av").Audio;
-} catch {}
+import { Platform as _Platform } from "react-native";
+if (_Platform.OS !== "web") {
+  try { Audio = require("expo-av").Audio; } catch {}
+}
 import VideoPreview from "@/components/ui/VideoPreview";
 import VideoTrimmerModal from "@/components/chat/VideoTrimmerModal";
 import * as Speech from "expo-speech";

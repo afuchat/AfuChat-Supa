@@ -59,12 +59,16 @@ import {
 } from "@/components/ui/VideoCommentsSheet";
 
 // ─── Audio lazy import (safe on web + Expo Go SDK 55) ─────────────────────────
+// expo-av: lazy-load on native only.
+// Do NOT gate on NativeModules.ExponentAV — in Expo SDK 55 + New Architecture
+// production builds expo-av uses TurboModules/JSI and is absent from NativeModules,
+// so that check always returns null and silently disables all audio.
 let Audio: typeof import("expo-av").Audio | null = null;
 type AudioRecording = import("expo-av/build/Audio/Recording").Recording;
-try {
-  const { NativeModules: _NM } = require("react-native");
-  if (_NM.ExponentAV) Audio = require("expo-av").Audio;
-} catch {}
+import { Platform as _AvPlatform } from "react-native";
+if (_AvPlatform.OS !== "web") {
+  try { Audio = require("expo-av").Audio; } catch {}
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -392,12 +396,12 @@ export default function PostDetailScreen() {
   // ── Fetch comments ───────────────────────────────────────────────────────────
   const loadReplies = useCallback(() => {
     if (!id) return;
-    supabase
+    Promise.resolve(supabase
       .from("post_replies")
       .select("id, author_id, content, created_at, parent_reply_id, voice_url, voice_duration, image_url, profiles!post_replies_author_id_fkey(display_name, handle, avatar_url)")
       .eq("post_id", id)
       .order("created_at", { ascending: true })
-      .limit(100)
+      .limit(100))
       .then(async ({ data, error }) => {
         if (error) console.error("[PostDetail] loadReplies:", error.message);
         if (data) {
@@ -544,11 +548,11 @@ export default function PostDetailScreen() {
     if (wasLiked) {
       setLikedIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
       setReplies((prev) => prev.map((r) => r.id === id ? { ...r, like_count: Math.max(0, r.like_count - 1) } : r));
-      supabase.from("post_reply_likes").delete().eq("reply_id", id).eq("user_id", user.id).then(() => {}).catch(() => {});
+      (supabase.from("post_reply_likes").delete().eq("reply_id", id).eq("user_id", user.id) as unknown as Promise<any>).then(() => {}).catch(() => {});
     } else {
       setLikedIds((prev) => new Set([...prev, id]));
       setReplies((prev) => prev.map((r) => r.id === id ? { ...r, like_count: r.like_count + 1 } : r));
-      supabase.from("post_reply_likes").insert({ reply_id: id, user_id: user.id }).then(() => {}).catch(() => {});
+      (supabase.from("post_reply_likes").insert({ reply_id: id, user_id: user.id }) as unknown as Promise<any>).then(() => {}).catch(() => {});
     }
   }
 

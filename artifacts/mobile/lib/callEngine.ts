@@ -86,10 +86,12 @@ export const WEBRTC_AVAILABLE = _RTC !== null;
 // ─── Lazy-load expo-av + expo-keep-awake ─────────────────────────────────────
 
 const _AV: typeof import("expo-av") | null = (() => {
-  try {
-    if (!NativeModules.ExponentAV) return null;
-    return require("expo-av");
-  } catch { return null; }
+  // expo-av is a native module — only available on Android/iOS.
+  // Do NOT gate on NativeModules.ExponentAV: in Expo SDK 55 + New Architecture
+  // production builds, expo-av uses TurboModules/JSI and does NOT register under
+  // NativeModules, so that check always returns null and silently disables all audio.
+  if (Platform.OS === "web") return null;
+  try { return require("expo-av"); } catch { return null; }
 })();
 
 const _KA: typeof import("expo-keep-awake") | null = (() => {

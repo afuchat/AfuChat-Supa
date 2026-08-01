@@ -37,12 +37,10 @@ export async function getMicPermissionState(): Promise<MicPermState> {
     }
   }
 
-  // Native (iOS / Android)
+  // Native (iOS / Android) — expo-av uses TurboModules/JSI in SDK 55 New Arch
+  // production builds, so NativeModules.ExponentAV is absent. Load directly.
   let Audio: typeof import("expo-av").Audio | null = null;
-  try {
-    const { NativeModules: _NM } = require("react-native");
-    if (_NM.ExponentAV) Audio = require("expo-av").Audio;
-  } catch {}
+  try { Audio = require("expo-av").Audio; } catch {}
   if (!Audio) return "prompt";
 
   try {
