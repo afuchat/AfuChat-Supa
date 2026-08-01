@@ -6508,7 +6508,7 @@ STRICT RULES:
               }
             />
             <Animated.View
-              style={[st.scrollFab, { opacity: scrollBtnOpacity, backgroundColor: colors.surface, bottom: effectiveBottom + 16, pointerEvents: showScrollBtn ? "auto" : "none" }]}
+              style={[st.scrollFab, { opacity: scrollBtnOpacity, backgroundColor: colors.surface, bottom: effectiveBottom + floatingInputHeight + 8, pointerEvents: showScrollBtn ? "auto" : "none" }]}
             >
               <TouchableOpacity onPress={scrollToBottom} style={st.scrollFabBtn} activeOpacity={0.7}>
                 <Ionicons name="chevron-down" size={22} color={colors.text} />
