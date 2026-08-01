@@ -119,6 +119,65 @@ export async function shareStory(params: {
   }
 }
 
+export function getChannelUrl(channelId: string): string {
+  return `${APP_BASE_URL}/channel/${channelId}`;
+}
+
+export function getGroupUrl(groupId: string): string {
+  return `${APP_BASE_URL}/join/${groupId}`;
+}
+
+export function getCompanyUrl(slug: string): string {
+  return `${APP_BASE_URL}/company/${slug}`;
+}
+
+export function getFreelanceUrl(listingId: string): string {
+  return `${APP_BASE_URL}/freelance/${listingId}`;
+}
+
+export async function shareChannel(params: {
+  channelId: string;
+  name: string;
+}) {
+  const url = getChannelUrl(params.channelId);
+  const message = `Follow ${params.name} on AfuChat\n\n${WATERMARK}\n${url}`;
+  try {
+    await Share.share({ message, title: params.name }, { dialogTitle: "Share Channel" });
+  } catch (e: any) {
+    if (e?.message !== "User did not share") showAlert("Share failed", "Could not open share menu. Please try again.");
+  }
+}
+
+export async function shareGroup(params: {
+  groupId: string;
+  name: string;
+}) {
+  const url = getGroupUrl(params.groupId);
+  const message = `Join ${params.name} on AfuChat\n\n${WATERMARK}\n${url}`;
+  try {
+    await Share.share({ message, title: params.name }, { dialogTitle: "Share Group" });
+  } catch (e: any) {
+    if (e?.message !== "User did not share") showAlert("Share failed", "Could not open share menu. Please try again.");
+  }
+}
+
+export async function shareCompany(params: {
+  slug: string;
+  name: string;
+  bio?: string | null;
+}) {
+  const url = getCompanyUrl(params.slug);
+  const intro = params.bio
+    ? `${params.name} on AfuChat:\n"${params.bio.slice(0, 100)}"`
+    : `Check out ${params.name} on AfuChat`;
+  const message = `${intro}\n\n${WATERMARK}\n${url}`;
+  try {
+    await Share.share({ message, title: params.name }, { dialogTitle: "Share Company" });
+  } catch (e: any) {
+    if (e?.message !== "User did not share") showAlert("Share failed", "Could not open share menu. Please try again.");
+  }
+}
+
 export async function shareRedEnvelope(params: {
   envelopeId: string;
   senderName: string;

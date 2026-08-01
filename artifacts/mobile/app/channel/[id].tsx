@@ -299,12 +299,10 @@ export default function ChannelDetailScreen() {
     setSending(false);
   }
 
-  async function shareChannel() {
+  async function handleShareChannel() {
     if (!channel) return;
-    await Share.share({
-      message: `Follow ${channel.name} on AfuChat! https://afuchat.com/channel/${channel.id}`,
-      title: channel.name,
-    });
+    const { shareChannel } = await import("@/lib/share");
+    await shareChannel({ channelId: channel.id, name: channel.name });
   }
 
   // ─── Loading / not found ───────────────────────────────────────────────────
@@ -499,7 +497,7 @@ export default function ChannelDetailScreen() {
         </TouchableOpacity>
 
         <View style={{ flexDirection: "row", gap: 2, alignItems: "center" }}>
-          <TouchableOpacity onPress={shareChannel} hitSlop={12} style={st.topBarBtn}>
+          <TouchableOpacity onPress={handleShareChannel} hitSlop={12} style={st.topBarBtn}>
             <Ionicons name="share" size={22} color={colors.text} />
           </TouchableOpacity>
         </View>

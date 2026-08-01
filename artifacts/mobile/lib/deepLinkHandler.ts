@@ -14,7 +14,18 @@
  *   afuchat://premium               -> open Premium screen
  *   afuchat://join/:code            -> join a group/channel (UUID or shortId)
  *   https://afuchat.com/join/:code  -> join a group/channel (UUID or shortId)
- *   https://afuchat.com/john        -> referral code "JOHN"
+ *   https://afuchat.com/p/:shortId  -> post detail
+ *   https://afuchat.com/video/:id   -> video detail
+ *   https://afuchat.com/article/:id -> article detail
+ *   https://afuchat.com/channel/:id -> channel page
+ *   https://afuchat.com/company/:slug -> company page
+ *   https://afuchat.com/freelance/:id -> freelance listing
+ *   https://afuchat.com/shop/:userId  -> user shop
+ *   https://afuchat.com/stories/:userId -> story viewer
+ *   https://afuchat.com/red-envelope/:id -> red envelope
+ *   https://afuchat.com/id/:afuId   -> profile by AfuID
+ *   https://afuchat.com/@handle     -> user profile (with @ prefix)
+ *   https://afuchat.com/john        -> referral code "JOHN" / user profile
  *   https://afuchat.com/john?ref=JOHN -> referral code "JOHN" (explicit param)
  *   afuchat://john                  -> referral code "JOHN"
  *   afuchat://ref/JOHN              -> referral code "JOHN" (dedicated path)
@@ -173,6 +184,105 @@ export async function handleIncomingUrl(url: string | null | undefined): Promise
     // 2. /chat/:id -- open a specific conversation
     if (segments.length === 2 && segments[0] === "chat" && isUUID(segments[1])) {
       return { type: "navigate", path: "/chat/[id]", params: { id: segments[1] } };
+    }
+
+    // 2b. /p/:shortId -- post detail (base-62 encoded UUID)
+    if (segments.length === 2 && segments[0] === "p") {
+      const code = segments[1];
+      let postId: string | null = null;
+      if (isUUID(code)) {
+        postId = code;
+      } else if (isShortCode(code)) {
+        try { const d = decodeId(code); if (isUUID(d)) postId = d; } catch {}
+      }
+      if (postId) return { type: "navigate", path: "/post/[id]", params: { id: postId } };
+    }
+
+    // 2c. /video/:id -- video detail (UUID or base-62 shortId)
+    if (segments.length === 2 && segments[0] === "video") {
+      const code = segments[1];
+      let videoId: string | null = null;
+      if (isUUID(code)) {
+        videoId = code;
+      } else if (isShortCode(code)) {
+        try { const d = decodeId(code); if (isUUID(d)) videoId = d; } catch {}
+      }
+      if (videoId) return { type: "navigate", path: "/video/[id]", params: { id: videoId } };
+    }
+
+    // 2d. /article/:id -- article detail
+    if (segments.length === 2 && segments[0] === "article") {
+      const articleId = segments[1];
+      let resolvedId: string | null = null;
+      if (isUUID(articleId)) {
+        resolvedId = articleId;
+      } else if (isShortCode(articleId)) {
+        try { const d = decodeId(articleId); if (isUUID(d)) resolvedId = d; } catch {}
+      }
+      if (resolvedId) return { type: "navigate", path: "/article/[id]", params: { id: resolvedId } };
+    }
+
+    // 2e. /channel/:id -- channel page
+    if (segments.length === 2 && segments[0] === "channel" && isUUID(segments[1])) {
+      return { type: "navigate", path: "/channel/[id]", params: { id: segments[1] } };
+    }
+
+    // 2f. /group/:id -- group page
+    if (segments.length === 2 && segments[0] === "group" && isUUID(segments[1])) {
+      return { type: "navigate", path: "/group/[id]", params: { id: segments[1] } };
+    }
+
+    // 2g. /company/:slug -- company page
+    if (segments.length === 2 && segments[0] === "company" && segments[1]) {
+      return { type: "navigate", path: "/company/[slug]", params: { slug: segments[1] } };
+    }
+
+    // 2h. /freelance/:id -- freelance listing
+    if (segments.length === 2 && segments[0] === "freelance" && isUUID(segments[1])) {
+      return { type: "navigate", path: "/freelance/[id]", params: { id: segments[1] } };
+    }
+
+    // 2i. /shop/:userId -- user shop
+    if (segments.length === 2 && segments[0] === "shop" && isUUID(segments[1])) {
+      return { type: "navigate", path: "/shop/[userId]", params: { userId: segments[1] } };
+    }
+
+    // 2j. /stories/:userId -- story viewer
+    if (segments.length === 2 && segments[0] === "stories") {
+      const code = segments[1];
+      let userId: string | null = null;
+      if (isUUID(code)) {
+        userId = code;
+      } else if (isShortCode(code)) {
+        try { const d = decodeId(code); if (isUUID(d)) userId = d; } catch {}
+      }
+      if (userId) return { type: "navigate", path: "/stories/view", params: { userId } };
+    }
+
+    // 2k. /red-envelope/:id -- red envelope claim
+    if (segments.length === 2 && segments[0] === "red-envelope") {
+      const code = segments[1];
+      let envelopeId: string | null = null;
+      if (isUUID(code)) {
+        envelopeId = code;
+      } else if (isShortCode(code)) {
+        try { const d = decodeId(code); if (isUUID(d)) envelopeId = d; } catch {}
+      }
+      if (envelopeId) return { type: "navigate", path: "/red-envelope/[id]", params: { id: envelopeId } };
+    }
+
+    // 2l. /id/:afuId -- profile by AfuID number
+    if (segments.length === 2 && segments[0] === "id" && segments[1]) {
+      return { type: "navigate", path: "/id/[afuId]", params: { afuId: segments[1] } };
+    }
+
+    // 2m. /@handle -- profile URL with @ prefix (e.g. afuchat.com/@johndoe)
+    if (segments.length === 1 && segments[0].startsWith("@")) {
+      const handle = segments[0].slice(1).toLowerCase();
+      if (isValidHandle(handle)) {
+        // Treat as a profile navigation, not just a referral
+        return { type: "navigate", path: "/[handle]", params: { handle } };
+      }
     }
 
     // 3. Single-segment navigation routes (afuchat://settings, afuchat://wallet, etc.)

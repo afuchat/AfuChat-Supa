@@ -380,9 +380,8 @@ export default function CompanyPageScreen() {
 
   async function sharePage() {
     if (!page) return;
-    try {
-      await Share.share({ message: `Check out ${page.name} on AfuChat!\nafuchat.com/company/${page.slug}`, title: page.name });
-    } catch (_) {}
+    const { shareCompany } = await import("@/lib/share");
+    await shareCompany({ slug: page.slug, name: page.name, bio: page.tagline ?? page.description ?? null });
   }
 
   if (loading) {
