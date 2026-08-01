@@ -1,0 +1,29 @@
+════════════════════════════════════════════
+AfuChat Crash Report
+Time        : 2026-08-01T10:17:23.047Z
+
+App         : AfuChat 2.2.8 (build ?)
+Platform    : web 0.0.0
+OS          : Windows 10
+Dev mode    : true
+
+────────────────  Error  ───────────────────
+Cannot access 'cancelBtn' before initialization
+
+────────────  JS Stack Trace  ──────────────
+at RootLayout (https://9b345a31-775c-41a3-a551-0deb7c157f3b-00-m7vczg3dy8eq.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:323219:78)
+    at WrappedScreenComponent (https://9b345a31-775c-41a3-a551-0deb7c157f3b-00-m7vczg3dy8eq.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:71587:47)
+    at BaseRoute (https://9b345a31-775c-41a3-a551-0deb7c157f3b-00-m7vczg3dy8eq.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:71659:56)
+    at SceneView (https://9b345a31-775c-41a3-a551-0deb7c157f3b-00-m7vczg3dy8eq.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:64118:88)
+    at render (https://9b345a31-775c-41a3-a551-0deb7c157f3b-00-m7vczg3dy8eq.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:63762:54)
+    at https://9b345a31-775c-41a3-a551-0deb7c157f3b-00-m7vczg3dy8eq.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:63794:23
+    at Array.reduce (<anonymous>)
+    at useDescriptors (https://9b345a31-775c-41a3-a551-0deb7c157f3b-00-m7vczg3dy8eq.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:63791:32)
+    at useNavigationBuilder (https://9b345a31-775c-41a3-a551-0deb7c157f3b-00-m7vczg3dy8eq.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:62935:79)
+    at Content (https://9b345a31-775c-41a3-a551-0deb7c157f3b-00-m7vczg3dy8eq.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:66207:90)
+    at ContextNavigator (https://9b345a31-775c-41a3-a551-0deb7c157f3b-00-m7vczg3dy8eq.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:66148:56)
+    at ExpoRoot (https://9b345a31-775c-41a3-a551-0deb7c157f3b-00-m7vczg3dy8eq.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:66066:45)
+    at App (https://9b345a31-775c-41a3-a551-0deb7c157f3b-00-m7vczg3dy8eq.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:54778:50)
+    at WithDevTools (https://9b345a31-775c-41a3-a551-0deb7c157f3b-00-m7vczg3dy8eq.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33197:59)
+
+════════════════════════════════════════════
