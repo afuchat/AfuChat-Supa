@@ -375,9 +375,15 @@ export async function acceptCall(notice: IncomingCallNotice, params: {
   myAvatar: string | null;
 }): Promise<void> {
   if (!WEBRTC_AVAILABLE) throw new Error("WEBRTC_UNAVAILABLE");
-  // Only accept from incoming_ringing state (the engine always sets this before
-  // emitting the "incoming" event).
-  if (_status !== "incoming_ringing") throw new Error("Cannot accept now");
+  // Accept from incoming_ringing (normal path) OR idle (push-notification path
+  // where the app was backgrounded and the realtime inbox broadcast was never
+  // received, so the engine never transitioned out of idle).
+  if (_status !== "incoming_ringing" && _status !== "idle") throw new Error("Cannot accept now");
+  // If arriving via push (engine is still idle), transition to incoming_ringing
+  // now so all downstream status checks inside the engine see a consistent state.
+  if (_status === "idle") {
+    setStatus("incoming_ringing");
+  }
 
   const { myId, myName, myAvatar } = params;
 
@@ -924,10 +930,15 @@ function _doHangup(finalStatus: CallStatus) {
     _localStream = null;
   }
 
-  // Remove signaling channel
+  // Remove signaling channel — intentionally delayed 600 ms so any in-flight
+  // broadcasts (e.g. the "end" event sent synchronously in endCall()) have time
+  // to flush through the Supabase Realtime WebSocket before the channel is torn
+  // down. Without the delay, the remote peer may never receive the "end" event
+  // and the call screen on their side stays stuck open.
   if (_signalingCh) {
-    supabase.removeChannel(_signalingCh).catch(() => {});
+    const _ch = _signalingCh;
     _signalingCh = null;
+    setTimeout(() => supabase.removeChannel(_ch).catch(() => {}), 600);
   }
 
   // Web: detach and remove the hidden <audio> element used for remote playback

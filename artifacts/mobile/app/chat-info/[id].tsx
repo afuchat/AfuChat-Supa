@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { supabase } from "@/lib/supabase";
+import { useCall } from "@/context/CallContext";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
@@ -219,6 +220,7 @@ export default function ChatInfoScreen() {
 
   const { colors, accent, isDark } = useTheme();
   const { user } = useAuth();
+  const { startCall } = useCall();
   const insets = useSafeAreaInsets();
   const BRAND = accent ?? Colors.brand;
 
@@ -389,11 +391,24 @@ export default function ChatInfoScreen() {
   }
 
   function openCall() {
-    if (otherId) router.push({ pathname: "/call/[id]", params: { id: otherId, type: "audio" } } as any);
+    if (!otherId) return;
+    startCall({
+      calleeId: otherId,
+      calleeName: meta?.other_name ?? displayName,
+      calleeAvatar: meta?.other_avatar ?? null,
+      chatId: id,
+    });
   }
 
   function openVideoCall() {
-    if (otherId) router.push({ pathname: "/call/[id]", params: { id: otherId, type: "video" } } as any);
+    // Video calls use the same voice engine for now
+    if (!otherId) return;
+    startCall({
+      calleeId: otherId,
+      calleeName: meta?.other_name ?? displayName,
+      calleeAvatar: meta?.other_avatar ?? null,
+      chatId: id,
+    });
   }
 
   // ── Subtitle ─────────────────────────────────────────────────────────────────
