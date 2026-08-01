@@ -386,21 +386,85 @@ export async function clearAccountCache(): Promise<void> {
   } catch {}
 }
 
+// ─── Device-level preference keys ────────────────────────────────────────────
+// These belong to the device / install, not to any logged-in account.
+// They survive sign-out and account wipes so users never have to reconfigure
+// theme, language, sound preferences, or Trustpilot status after signing out.
+// (Same behaviour as WhatsApp, Telegram, YouTube.)
+
+/** MMKV keys that must survive wipeAllLocalData. */
+const DEVICE_MMKV_KEYS: string[] = [
+  KEYS.THEME_MODE,        // "theme_mode"    — dark/light/system toggle
+  KEYS.ACCENT_COLOR,      // "accent_color"  — brand accent
+  KEYS.LANGUAGE,          // "app_language"  — UI language
+  KEYS.ONBOARDING_DONE,   // "onboarding_done" — never show welcome slides again
+  KEYS.APP_LOCK_ENABLED,  // "app_lock_enabled" — biometric/PIN lock preference
+  KEYS.DATA_MODE_OVERRIDE, // "data_mode_override" — data-saver toggle
+  "tp_review_dismissed_until", // Trustpilot dismissal timestamp (TrustpilotReviewPrompt)
+];
+
+/** AsyncStorage keys that must survive wipeAllLocalData. */
+const DEVICE_ASYNC_KEYS: string[] = [
+  "@afuchat_theme",    // ThemeContext — persisted theme choice
+  "@afuchat:sound_mode", // soundManager — in-app notification sound
+];
+
 /**
  * Nuclear wipe — clears every byte of local user data.
  *
  * Used on explicit sign-out so the device looks exactly like a fresh install.
  * Covers ALL stores: MMKV, AsyncStorage, and every SQLite table.
  *
+ * Device-level preferences (theme, language, sound, Trustpilot status) are
+ * preserved across the wipe — they belong to the install, not the account.
+ *
  * Safe to call even if individual stores fail — each store is wrapped
  * in its own try/catch so one failure never blocks the others.
  */
 export async function wipeAllLocalData(): Promise<void> {
-  // ── 1. MMKV: instant synchronous clear ─────────────────────────────────────
-  try { storage.clearAll(); } catch {}
+  // ── 1. MMKV: snapshot device prefs → clearAll → restore ───────────────────
+  try {
+    // Save device preferences before the nuclear clear
+    const mmkvSnapshot: Array<{ key: string; type: "string" | "number" | "boolean"; value: string | number | boolean }> = [];
+    for (const key of DEVICE_MMKV_KEYS) {
+      const str = storage.getString(key);
+      if (str !== undefined) { mmkvSnapshot.push({ key, type: "string", value: str }); continue; }
+      const num = storage.getNumber(key);
+      if (num !== undefined) { mmkvSnapshot.push({ key, type: "number", value: num }); continue; }
+      const bool = storage.getBoolean(key);
+      if (bool !== undefined) { mmkvSnapshot.push({ key, type: "boolean", value: bool }); }
+    }
 
-  // ── 2. AsyncStorage: full wipe (no selective removal) ──────────────────────
-  try { await AsyncStorage.clear(); } catch {}
+    storage.clearAll();
+
+    // Restore device preferences immediately after the clear
+    for (const { key, type, value } of mmkvSnapshot) {
+      try {
+        if (type === "string")  storage.setString(key, value as string);
+        else if (type === "number")  storage.setNumber(key, value as number);
+        else if (type === "boolean") storage.setBoolean(key, value as boolean);
+      } catch {}
+    }
+  } catch {}
+
+  // ── 2. AsyncStorage: snapshot device prefs → clear → restore ──────────────
+  try {
+    // Save device preferences before the full AsyncStorage clear
+    const asyncPairs: Array<[string, string]> = [];
+    for (const key of DEVICE_ASYNC_KEYS) {
+      try {
+        const val = await AsyncStorage.getItem(key);
+        if (val !== null) asyncPairs.push([key, val]);
+      } catch {}
+    }
+
+    await AsyncStorage.clear();
+
+    // Restore device preferences
+    if (asyncPairs.length > 0) {
+      await AsyncStorage.multiSet(asyncPairs).catch(() => {});
+    }
+  } catch {}
 
   // ── 3. SQLite: wipe every user-data table ──────────────────────────────────
   try {
