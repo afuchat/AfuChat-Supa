@@ -363,7 +363,7 @@ export default function ChatInfoScreen() {
     await supabase.from("chat_mutes").delete().eq("user_id", user.id).eq("chat_id", id);
   }
 
-  async function handleLeaveGroup() {
+  const handleLeaveGroup = useCallback(async () => {
     if (!user) return;
     showAlert(
       `Leave ${isChannel ? "Channel" : "Group"}`,
@@ -379,7 +379,7 @@ export default function ChatInfoScreen() {
         },
       ]
     );
-  }
+  }, [user, isChannel, isGroup, displayName, id]);
 
   async function handleShareInvite() {
     const link = generateGroupInviteLink(id);
@@ -390,7 +390,10 @@ export default function ChatInfoScreen() {
     router.back();
   }
 
-  function openCall() {
+  // Use useCallback so the action buttons memo always captures the latest meta
+  // values (other_name, other_avatar) even when otherId doesn't change between
+  // the initial render (from URL param) and the async load completing.
+  const openCall = useCallback(() => {
     if (!otherId) return;
     startCall({
       calleeId: otherId,
@@ -398,9 +401,9 @@ export default function ChatInfoScreen() {
       calleeAvatar: meta?.other_avatar ?? null,
       chatId: id,
     });
-  }
+  }, [otherId, meta, displayName, id, startCall]);
 
-  function openVideoCall() {
+  const openVideoCall = useCallback(() => {
     // Video calls use the same voice engine for now
     if (!otherId) return;
     startCall({
@@ -409,7 +412,7 @@ export default function ChatInfoScreen() {
       calleeAvatar: meta?.other_avatar ?? null,
       chatId: id,
     });
-  }
+  }, [otherId, meta, displayName, id, startCall]);
 
   // ── Subtitle ─────────────────────────────────────────────────────────────────
 
@@ -455,8 +458,7 @@ export default function ChatInfoScreen() {
       { icon: "call",             label: "Call",     action: openCall },
       { icon: "videocam",         label: "Video",    action: openVideoCall },
     ];
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isChannel, isGroup, isMuted, otherId]);
+  }, [isChannel, isGroup, isMuted, openCall, openVideoCall, handleLeaveGroup]);
 
   // ── List data (members or posts for FlatList) ────────────────────────────────
 

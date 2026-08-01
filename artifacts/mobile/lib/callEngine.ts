@@ -65,11 +65,22 @@ const _RTC: _RTCBridge | null = (() => {
   }
 
   // Native (Android / iOS): use react-native-webrtc.
-  // Check NativeModules first — the try-require pattern alone can cause an
-  // uncatchable Java NullPointerException in Expo Go when the module is absent.
+  //
+  // DO NOT gate on NativeModules.WebRTCModule — in Expo SDK 55 + New Architecture
+  // production builds the module uses TurboModules/JSI and does NOT register under
+  // NativeModules, so that check returns null and silently disables all calling.
+  // (Expo Go is the exception: the module truly is absent there, but a failed
+  //  require() returns null safely via the catch below.)
+  //
+  // We still want to avoid the uncatchable NullPointerException that Expo Go throws
+  // when react-native-webrtc is required without a native module.  The safest guard
+  // that works on both Expo Go AND New Arch production is: check whether the package
+  // successfully exports a usable RTCPeerConnection constructor rather than checking
+  // the (unreliable in New Arch) NativeModules registry.
   try {
-    if (!NativeModules.WebRTCModule) return null;
     const rn = require("react-native-webrtc") as typeof import("react-native-webrtc");
+    // Verify the constructor is present — absent in Expo Go, available in prod builds
+    if (!rn?.RTCPeerConnection) return null;
     return {
       RTCPeerConnection:     rn.RTCPeerConnection,
       RTCSessionDescription: rn.RTCSessionDescription,
@@ -440,13 +451,26 @@ export function declineCall(callId: string) {
 }
 
 // ─── End active call ──────────────────────────────────────────────────────────
+//
+// IMPORTANT: await the `end` broadcast before tearing down the signaling
+// channel.  send() returns a Promise that resolves once the frame has been
+// queued to the Supabase WebSocket.  If we call _doHangup() first, the channel
+// is removed immediately and the WebSocket frame is never flushed, so the
+// remote peer never receives the "end" event and stays stuck on-screen.
+// We race the send against a 1.5 s safety timeout so a broken connection
+// never blocks the local hang-up UI.
 
-export function endCall() {
+export async function endCall(): Promise<void> {
   const duration = _info?.answeredAt
     ? Math.round((Date.now() - _info.answeredAt) / 1000)
     : null;
 
-  _signalingCh?.send({ type: "broadcast", event: "end", payload: {} });
+  if (_signalingCh) {
+    await Promise.race([
+      _signalingCh.send({ type: "broadcast", event: "end", payload: {} }),
+      new Promise<void>((r) => setTimeout(r, 1_500)),
+    ]).catch(() => {});
+  }
 
   if (_status === "active" || _status === "connecting") {
     _saveCallRecord("ended", duration);

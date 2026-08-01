@@ -330,7 +330,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }, [incomingNotice]);
 
   const endCall = useCallback(() => {
-    engineEnd();
+    // engineEnd is now async (awaits the "end" broadcast before channel teardown)
+    // but we intentionally don't await here — the UI should respond instantly and
+    // the engine handles the async flush internally with a safety timeout.
+    engineEnd().catch(() => {});
   }, []);
 
   const toggleMute = useCallback(() => {
