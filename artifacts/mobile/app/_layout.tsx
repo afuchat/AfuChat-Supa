@@ -105,43 +105,44 @@ function CrashSupportHandler() {
 
   useEffect(() => {
     setCrashNotificationHandler((errorMessage: string) => {
-      // Truncate long messages so they fit in the alert
-      const shortMsg = errorMessage.length > 120
-        ? errorMessage.slice(0, 117) + "…"
+      // Display label is capped so it fits in the alert body.
+      // The full message is still sent to the support ticket.
+      const displayMsg = errorMessage.length > 140
+        ? errorMessage.slice(0, 137) + "…"
         : errorMessage;
 
-      const encodedSubject = encodeURIComponent(`[AfuChat Bug] ${shortMsg}`);
+      const encodedSubject = encodeURIComponent(`[AfuChat Bug] ${displayMsg}`);
       const encodedBody = encodeURIComponent(
-        `Error: ${errorMessage}\n\nSteps to reproduce:\n\nDevice info:\n`,
+        `Error details:\n${errorMessage}\n\nSteps to reproduce:\n\nDevice info:\n`,
       );
 
       showAlert(
-        "Something went wrong",
-        "An error was detected. Would you like to send a report so our team can fix it?",
+        "Unexpected Error",
+        `Something went wrong in the app.\n\n"${displayMsg}"\n\nWould you like to send a report so we can fix it?`,
         [
+          {
+            text: "Open Support Ticket",
+            onPress: () => {
+              // Small delay so the alert dismisses cleanly before navigation.
+              setTimeout(() => {
+                router.push({
+                  pathname: "/support" as any,
+                  params: {
+                    // Pass the full (untruncated) error as the ticket subject.
+                    errorSubject: errorMessage,
+                    errorCategory: "technical",
+                    errorPriority: "high",
+                  },
+                });
+              }, 300);
+            },
+          },
           {
             text: "Send Email",
             onPress: () => {
               Linking.openURL(
                 `mailto:support@afuchat.com?subject=${encodedSubject}&body=${encodedBody}`,
               ).catch(() => {});
-            },
-          },
-          {
-            text: "In-App Support",
-            onPress: () => {
-              // Navigate to the support page with error pre-filled.
-              // Small delay so the alert dismisses before navigation.
-              setTimeout(() => {
-                router.push({
-                  pathname: "/support" as any,
-                  params: {
-                    errorSubject: shortMsg,
-                    errorCategory: "technical",
-                    errorPriority: "high",
-                  },
-                });
-              }, 300);
             },
           },
           { text: "Dismiss", style: "cancel" },

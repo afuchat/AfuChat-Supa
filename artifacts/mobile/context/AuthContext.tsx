@@ -548,8 +548,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ── Bootstrap ────────────────────────────────────────────────────────────────
 
   useEffect(() => {
+    // ── FAST PATH: synchronous MMKV identity check ──────────────────────────
+    // MMKV is synchronous and survives all app restarts (online or offline).
+    // If the user has ever logged in on this device, their ID is in MMKV.
+    // We release the splash IMMEDIATELY with a synthetic user so index.tsx
+    // routes straight to chats — the user NEVER sees the welcome/onboarding
+    // screen even when the network is down or getSession() is slow.
+    // getSession() still runs below and silently upgrades to a real session.
+    const fastCachedId = getCachedUserId();
+    if (fastCachedId) {
+      const fastProfile = getCachedProfileSync();
+      if (fastProfile) setProfile(fastProfile as Profile);
+      setUser({
+        id: fastCachedId,
+        email: (fastProfile as any)?.email ?? "",
+        app_metadata: {},
+        user_metadata: {},
+        aud: "authenticated",
+        created_at: "",
+      } as User);
+      setLoading(false); // ← index.tsx sees this synchronously, routes to chats
+      startOfflineSync();
+    }
+
     // Safety-net: if getSession() ever hangs indefinitely on native (no reject,
-    // just silence), release the splash after 6 s so the user is never locked out.
+    // just silence), release the splash after 3.5 s so the user is never locked out.
     let safetyFired = false;
     const safetyTimer = setTimeout(() => {
       safetyFired = true;
