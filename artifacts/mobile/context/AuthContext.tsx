@@ -117,7 +117,6 @@ const AuthContext = createContext<AuthContextType>({
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
   const _syncProfile = getCachedProfileSync();
   const _syncUserId = getCachedUserId();
   const [profile, setProfile] = useState<Profile | null>(_syncProfile as Profile | null);
@@ -125,6 +124,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Don't block on loading if we already know who the user is (MMKV sync read).
   // This lets index.tsx route to tabs immediately for previously-logged-in users.
   const [loading, setLoading] = useState(!_syncProfile && !_syncUserId);
+  // ── CRITICAL: initialize `user` synchronously from MMKV on first render. ──
+  // `loading` is already false on the first render when _syncUserId exists,
+  // so any screen with `if (!user && !loading)` would fire a login redirect
+  // before the fast-path useEffect runs. Initialising synchronously here
+  // closes that window and prevents the "1-minute lock-out" on Android app
+  // resurrection (OS killed → reopen from recents → user briefly sees login).
+  const [user, setUser] = useState<User | null>(
+    _syncUserId
+      ? ({
+          id: _syncUserId,
+          email: (_syncProfile as any)?.email ?? "",
+          app_metadata: {},
+          user_metadata: {},
+          aud: "authenticated",
+          created_at: "",
+        } as User)
+      : null
+  );
   const [linkedAccounts, setLinkedAccounts] = useState<StoredAccount[]>([]);
   const [equippedGoods, setEquippedGoods] = useState<Set<string>>(new Set());
 

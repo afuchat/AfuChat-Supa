@@ -39,7 +39,7 @@ import { ChatRowSkeleton } from "@/components/ui/Skeleton";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import OfflineBanner from "@/components/ui/OfflineBanner";
 import { HomeBanner } from "@/components/ui/HomeBanner";
-import { isOnline, onConnectivityChange } from "@/lib/offlineStore";
+import { isOnline, onConnectivityChange, getCachedUserId } from "@/lib/offlineStore";
 import { getLocalConversations, saveConversations, deleteLocalConversation, pruneConversations, clearUnread } from "@/lib/storage/localConversations";
 import { getPreloadedConversations, hasPreloadedConversations, invalidateConversationsPreload } from "@/lib/conversationsPreload";
 import { AFUAI_CONV_ID, AFUAI_BOT_ID, getAIChatSnapshot } from "@/lib/aiChatStore";
@@ -1602,6 +1602,12 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     // Auth is still resolving — don't redirect yet. Avoids a race on desktop
     // where ChatsScreen mounts before the auth context has set the user.
     if (authLoading) return null;
+
+    // Belt-and-suspenders: MMKV still has a userId → session is still being
+    // restored in the background (token refresh in flight). Redirecting here
+    // would kick a logged-in user to the login screen. Hold until the synthetic
+    // user is set by AuthContext or the restore completes.
+    if (getCachedUserId()) return null;
 
     if (panelMode) {
       // Inside the desktop master-detail panel (or any desktop context) — keep
