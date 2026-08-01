@@ -3898,9 +3898,9 @@ function ChatScreen() {
   async function handleReportUser() {
     if (!user || !chatInfo?.other_id) return;
     showAlert("Report User", `Why are you reporting ${headerTitle}?`, [
-      { text: "Spam", onPress: async () => { await supabase.from("user_reports").insert({ reporter_id: user.id, reported_id: chatInfo.other_id, reason: "spam" }); setShowChatOptions(false); showAlert("Reported", "Thank you. We'll review this report."); } },
-      { text: "Harassment", onPress: async () => { await supabase.from("user_reports").insert({ reporter_id: user.id, reported_id: chatInfo.other_id, reason: "harassment" }); setShowChatOptions(false); showAlert("Reported", "Thank you. We'll review this report."); } },
-      { text: "Inappropriate Content", onPress: async () => { await supabase.from("user_reports").insert({ reporter_id: user.id, reported_id: chatInfo.other_id, reason: "inappropriate" }); setShowChatOptions(false); showAlert("Reported", "Thank you. We'll review this report."); } },
+      { text: "Spam", onPress: async () => { try { await supabase.from("user_reports").insert({ reporter_id: user.id, reported_id: chatInfo.other_id, reason: "spam" }); setShowChatOptions(false); showAlert("Reported", "Thank you. We'll review this report."); } catch (_) {} } },
+      { text: "Harassment", onPress: async () => { try { await supabase.from("user_reports").insert({ reporter_id: user.id, reported_id: chatInfo.other_id, reason: "harassment" }); setShowChatOptions(false); showAlert("Reported", "Thank you. We'll review this report."); } catch (_) {} } },
+      { text: "Inappropriate Content", onPress: async () => { try { await supabase.from("user_reports").insert({ reporter_id: user.id, reported_id: chatInfo.other_id, reason: "inappropriate" }); setShowChatOptions(false); showAlert("Reported", "Thank you. We'll review this report."); } catch (_) {} } },
       { text: "Cancel", style: "cancel" },
     ]);
   }
@@ -7440,7 +7440,7 @@ STRICT RULES:
           const isGift = !txt || txt.startsWith("🎁 ") || txt.startsWith("🧧") || txt.includes("|giftId:");
           if (isGift) return null;
           return (
-            <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={async () => { await Clipboard.setStringAsync(txt); setShowReactions(null); showAlert("Copied", "Message text copied to clipboard."); }}>
+            <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={async () => { try { await Clipboard.setStringAsync(txt); } catch (_) {} setShowReactions(null); showAlert("Copied", "Message text copied to clipboard."); }}>
               <Ionicons name="copy" size={24} color={colors.text} style={st.reactRowIcon} />
               <Text style={[st.reactRowLabel, { color: colors.text }]}>Copy Text</Text>
             </TouchableOpacity>

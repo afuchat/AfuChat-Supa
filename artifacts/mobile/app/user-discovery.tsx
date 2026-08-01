@@ -560,9 +560,12 @@ export default function UserDiscoveryScreen() {
 
   async function onRefresh() {
     setRefreshing(true);
-    if (tab === "discover") await loadDiscoverUsers();
-    else await loadNearbyUsers();
-    setRefreshing(false);
+    try {
+      if (tab === "discover") await loadDiscoverUsers();
+      else await loadNearbyUsers();
+    } finally {
+      setRefreshing(false);
+    }
   }
 
   const renderItem = useCallback(

@@ -341,6 +341,11 @@ export default function EmojiStickerPicker({
               keyExtractor={(item, i) => `${activeCat}-${i}-${item}`}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={s.grid}
+              ListEmptyComponent={
+                <View style={{ alignItems: "center", paddingTop: 32, opacity: 0.5 }}>
+                  <Text style={{ fontSize: 32 }}>🙈</Text>
+                </View>
+              }
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => onSendSticker(item)}

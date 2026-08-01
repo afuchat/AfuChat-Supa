@@ -86,12 +86,11 @@ export default function CompanyIndexScreen() {
     setPages((allPages ?? []) as PageRow[]);
     setMyPages((owned ?? []) as PageRow[]);
     setLoading(false);
-    setRefreshing(false);
   }, [user?.id]);
 
   useEffect(() => { load(); }, [load]);
 
-  const onRefresh = () => { setRefreshing(true); load(); };
+  const onRefresh = () => { setRefreshing(true); load().finally(() => setRefreshing(false)); };
 
   const displayedPages = useMemo(() => {
     let list = tab === "mine" ? myPages : pages;

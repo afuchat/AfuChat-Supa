@@ -54,9 +54,14 @@ export default function PrivacyRestrictedScreen() {
         text: "Unrestrict",
         onPress: async () => {
           setRemoving(item.id);
-          await supabase.from("blocked_users").delete().eq("id", item.id);
-          setItems((prev) => prev.filter((r) => r.id !== item.id));
-          setRemoving(null);
+          try {
+            await supabase.from("blocked_users").delete().eq("id", item.id);
+            setItems((prev) => prev.filter((r) => r.id !== item.id));
+          } catch (_) {
+            showAlert("Error", "Could not unrestrict. Please try again.");
+          } finally {
+            setRemoving(null);
+          }
         },
       },
     ]);

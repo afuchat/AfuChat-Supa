@@ -96,10 +96,15 @@ export default function OAuthProvidersScreen() {
         text: "Disconnect", style: "destructive",
         onPress: async () => {
           setActionLoading(identity.provider);
-          const { error } = await supabase.auth.unlinkIdentity(identity);
-          if (error) showAlert("Error", error.message);
-          else { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); await fetchIdentities(); }
-          setActionLoading(null);
+          try {
+            const { error } = await supabase.auth.unlinkIdentity(identity);
+            if (error) showAlert("Error", error.message);
+            else { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); await fetchIdentities(); }
+          } catch (_) {
+            showAlert("Error", "Could not disconnect. Please try again.");
+          } finally {
+            setActionLoading(null);
+          }
         },
       },
     ]);
@@ -112,6 +117,7 @@ export default function OAuthProvidersScreen() {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 48 }]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>SOCIAL SIGN-IN</Text>
 

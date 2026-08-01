@@ -181,8 +181,11 @@ export default function ChannelDetailScreen() {
   }, [user, id]);
 
   const loadAll = useCallback(async () => {
-    await Promise.all([loadChannel(), loadPosts(), checkSubscription()]);
-    setRefreshing(false);
+    try {
+      await Promise.all([loadChannel(), loadPosts(), checkSubscription()]);
+    } finally {
+      setRefreshing(false);
+    }
   }, [loadChannel, loadPosts, checkSubscription]);
 
   useEffect(() => { loadAll(); }, [loadAll]);

@@ -150,10 +150,9 @@ export default function GiftsScreen() {
       })));
     }
     setLoading(false);
-    setRefreshing(false);
   }, [viewUserId, isOwnProfile]);
 
-  useEffect(() => { loadOwned(); }, [loadOwned]);
+  useEffect(() => { loadOwned().finally(() => setRefreshing(false)); }, [loadOwned]);
 
   function getConvertValue(gift: Gift): number {
     const baseValue = getDynamicPrice(gift.id, gift.base_xp_cost);

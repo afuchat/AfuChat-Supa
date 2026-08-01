@@ -67,9 +67,14 @@ export default function BlockedUsersScreen() {
         style: "destructive",
         onPress: async () => {
           setUnblocking(item.id);
-          await supabase.from("blocked_users").delete().eq("id", item.id);
-          setItems((prev) => prev.filter((b) => b.id !== item.id));
-          setUnblocking(null);
+          try {
+            await supabase.from("blocked_users").delete().eq("id", item.id);
+            setItems((prev) => prev.filter((b) => b.id !== item.id));
+          } catch (_) {
+            showAlert("Error", "Could not unblock. Please try again.");
+          } finally {
+            setUnblocking(null);
+          }
         },
       },
     ]);
@@ -119,6 +124,18 @@ export default function BlockedUsersScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ paddingBottom: insets.bottom + 32, paddingTop: 12 }}
             showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              !loading && items.length === 0 ? (
+                <View style={{ alignItems: "center", paddingTop: 64, gap: 12 }}>
+                  <Ionicons name="shield-checkmark-outline" size={48} color={colors.textMuted} />
+                  <Text style={{ color: colors.textMuted, fontSize: 15 }}>No blocked accounts</Text>
+                </View>
+              ) : search.trim() && filtered.length === 0 ? (
+                <View style={{ alignItems: "center", paddingTop: 32 }}>
+                  <Text style={{ color: colors.textMuted, fontSize: 14 }}>No results for "{search}"</Text>
+                </View>
+              ) : null
+            }
             ListHeaderComponent={
               filtered.length > 0 ? (
                 <Text style={[s.listHeader, { color: colors.textMuted }]}>BLOCKED ACCOUNTS</Text>

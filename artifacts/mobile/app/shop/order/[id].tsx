@@ -192,19 +192,24 @@ export default function OrderDetailScreen() {
           onPress: async () => {
             setConfirming(true);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            const result = await confirmDelivery({ orderId: order.id, buyerId: user.id });
-            if (result.success) {
-              await load();
-              await refreshProfile();
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              showAlert("Payment Released", "Thank you! The seller has been paid. Would you like to leave a review?", [
-                { text: "Later", style: "cancel" },
-                { text: "Leave Review", onPress: () => setShowReviewModal(true) },
-              ]);
-            } else {
-              showAlert("Error", result.error || "Failed to confirm delivery. Please contact support.");
+            try {
+              const result = await confirmDelivery({ orderId: order.id, buyerId: user.id });
+              if (result.success) {
+                await load();
+                await refreshProfile();
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                showAlert("Payment Released", "Thank you! The seller has been paid. Would you like to leave a review?", [
+                  { text: "Later", style: "cancel" },
+                  { text: "Leave Review", onPress: () => setShowReviewModal(true) },
+                ]);
+              } else {
+                showAlert("Error", result.error || "Failed to confirm delivery. Please contact support.");
+              }
+            } catch (_) {
+              showAlert("Error", "Something went wrong. Please try again.");
+            } finally {
+              setConfirming(false);
             }
-            setConfirming(false);
           },
         },
       ]
@@ -214,39 +219,49 @@ export default function OrderDetailScreen() {
   async function handleSubmitDispute() {
     if (!disputeReason.trim() || !user || !order) return;
     setSubmittingDispute(true);
-    const result = await raiseDispute({ orderId: order.id, buyerId: user.id, reason: disputeReason.trim() });
-    if (result.success) {
-      setShowDisputeModal(false);
-      setDisputeReason("");
-      await load();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      showAlert("Dispute Opened", "Our support team will review your case within 24 hours. Your payment remains held in escrow.");
-    } else {
-      showAlert("Error", result.error || "Failed to raise dispute.");
+    try {
+      const result = await raiseDispute({ orderId: order.id, buyerId: user.id, reason: disputeReason.trim() });
+      if (result.success) {
+        setShowDisputeModal(false);
+        setDisputeReason("");
+        await load();
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        showAlert("Dispute Opened", "Our support team will review your case within 24 hours. Your payment remains held in escrow.");
+      } else {
+        showAlert("Error", result.error || "Failed to raise dispute.");
+      }
+    } catch (_) {
+      showAlert("Error", "Something went wrong. Please try again.");
+    } finally {
+      setSubmittingDispute(false);
     }
-    setSubmittingDispute(false);
   }
 
   async function handleSubmitReview() {
     if (!user || !order) return;
     setSubmittingReview(true);
-    const result = await submitReview({
-      orderId: order.id,
-      reviewerId: user.id,
-      shopId: order.shop_id,
-      productId: order.items?.[0]?.product_id,
-      rating: reviewRating,
-      reviewText: reviewText.trim() || undefined,
-    });
-    if (result.success) {
-      setShowReviewModal(false);
-      setHasReviewed(true);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      showAlert("Review Submitted", "Thank you for your feedback!");
-    } else {
-      showAlert("Error", result.error || "Failed to submit review.");
+    try {
+      const result = await submitReview({
+        orderId: order.id,
+        reviewerId: user.id,
+        shopId: order.shop_id,
+        productId: order.items?.[0]?.product_id,
+        rating: reviewRating,
+        reviewText: reviewText.trim() || undefined,
+      });
+      if (result.success) {
+        setShowReviewModal(false);
+        setHasReviewed(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        showAlert("Review Submitted", "Thank you for your feedback!");
+      } else {
+        showAlert("Error", result.error || "Failed to submit review.");
+      }
+    } catch (_) {
+      showAlert("Error", "Something went wrong. Please try again.");
+    } finally {
+      setSubmittingReview(false);
     }
-    setSubmittingReview(false);
   }
 
   if (loading) {

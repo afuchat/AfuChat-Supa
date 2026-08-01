@@ -97,9 +97,9 @@ export default function StoreStorefront() {
     ]);
     setShop(shopRes.data as any);
     setProducts(productsRes.data || []);
-    setLoading(false); setRefreshing(false);
+    setLoading(false);
     if (shopRes.data?.id) {
-      const revs = await getShopReviews(shopRes.data.id, 10);
+      const revs = await getShopReviews(shopRes.data.id, 10).catch(() => []);
       setReviews(revs);
     }
   }, [userId]);
@@ -110,7 +110,7 @@ export default function StoreStorefront() {
     setCartCount(items.reduce((s, i) => s + i.quantity, 0));
   }, [user]);
 
-  useEffect(() => { load(); loadCart(); }, [load, loadCart]);
+  useEffect(() => { load().finally(() => setRefreshing(false)); loadCart(); }, [load, loadCart]);
 
   const filteredProducts = activeCategory === "All" ? products : products.filter(p => {
     const catMap: Record<string, string[]> = {

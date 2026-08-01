@@ -111,9 +111,11 @@ export default function OfflineVideosScreen() {
           text: "Clear All",
           style: "destructive",
           onPress: async () => {
-            await clearAllOfflineVideos();
-            setSections([]);
-            setStats({ count: 0, bytes: 0 });
+            try {
+              await clearAllOfflineVideos();
+              setSections([]);
+              setStats({ count: 0, bytes: 0 });
+            } catch (_) {}
           },
         },
       ],
@@ -121,7 +123,7 @@ export default function OfflineVideosScreen() {
   }
 
   async function handleRemove(postId: string) {
-    await removeOfflineVideo(postId);
+    try { await removeOfflineVideo(postId); } catch (_) { return; }
     const updated = sections.map((s) => ({
       ...s,
       data: s.data.filter((v) => v.postId !== postId),

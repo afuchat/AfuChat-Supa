@@ -63,6 +63,10 @@ task = "shell.exec"
 args = "cd artifacts/mobile && EAS_NO_VCS=1 EXPO_TOKEN=$EXPO_TOKEN npx --yes eas-cli@latest build --platform android --profile production --non-interactive --no-wait"
 
 [[ports]]
+localPort = 3000
+externalPort = 3002
+
+[[ports]]
 localPort = 5000
 externalPort = 80
 

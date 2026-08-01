@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Dimensions,
   Modal,
   Platform,
   Pressable,
@@ -57,9 +58,11 @@ export default function AlertModal() {
 
   const dismiss = useCallback((btn?: AlertButton) => {
     setState((s) => ({ ...s, visible: false }));
+    // Always call onPress so confirmAlert promises resolve even on backdrop dismiss.
     setTimeout(() => btn?.onPress?.(), T.motion.base);
   }, []);
 
+  // Declare buttons/cancelBtn BEFORE dismissBackdrop so it doesn't capture a TDZ binding.
   const buttons: AlertButton[] =
     state.buttons && state.buttons.length > 0
       ? state.buttons
@@ -67,6 +70,12 @@ export default function AlertModal() {
 
   const cancelBtn = buttons.find((b) => b.style === "cancel");
   const useVertical = buttons.length > 2;
+
+  const dismissBackdrop = useCallback(() => {
+    // On backdrop tap: prefer cancel button's callback (resolves confirmAlert false),
+    // otherwise dismiss silently so no promise leaks.
+    dismiss(cancelBtn);
+  }, [dismiss, cancelBtn]);
 
   // Use theme surface colors — no hardcoded hex
   const cardBg = isDark ? colors.backgroundTertiary : colors.surface;
@@ -78,12 +87,12 @@ export default function AlertModal() {
       transparent
       animationType="none"
       statusBarTranslucent
-      onRequestClose={() => dismiss(cancelBtn)}
+      onRequestClose={dismissBackdrop}
     >
       <View style={styles.overlay}>
         <Pressable
           style={StyleSheet.absoluteFill}
-          onPress={() => dismiss(cancelBtn)}
+          onPress={dismissBackdrop}
         />
         <Animated.View
           style={[
@@ -164,7 +173,7 @@ const styles = StyleSheet.create({
     padding: T.space.huge - 8,
   },
   card: {
-    width: 288,
+    width: Math.min(288, Dimensions.get("window").width - 48),
     borderRadius: T.radius.lg,
     overflow: "hidden",
     ...Platform.select({

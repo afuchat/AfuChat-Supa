@@ -129,24 +129,28 @@ export default function ShopManage() {
     if (!shopForm.name.trim()) { showAlert("Required", "Shop name is required."); return; }
     if (!user) return;
     setSavingShop(true);
+    try {
+      let bannerUrl = shopBanner;
+      let logoUrl = shopLogo;
 
-    let bannerUrl = shopBanner;
-    let logoUrl = shopLogo;
+      if (shopBanner && !shopBanner.startsWith("http")) {
+        bannerUrl = await uploadImage(shopBanner, `shops/${user.id}/banner`);
+      }
+      if (shopLogo && !shopLogo.startsWith("http")) {
+        logoUrl = await uploadImage(shopLogo, `shops/${user.id}/logo`);
+      }
 
-    if (shopBanner && !shopBanner.startsWith("http")) {
-      bannerUrl = await uploadImage(shopBanner, `shops/${user.id}/banner`);
+      const payload = { seller_id: user.id, name: shopForm.name.trim(), description: shopForm.description.trim() || null, category: shopForm.category || null, address: shopForm.address.trim() || null, banner_url: bannerUrl, logo_url: logoUrl, updated_at: new Date().toISOString() };
+      const { data, error } = await supabase.from("shops").upsert(payload, { onConflict: "seller_id" }).select().single();
+      if (error) { showAlert("Error", error.message); return; }
+      setShop(data as Shop);
+      setEditShopModal(false);
+      showAlert("Saved!", "Your shop has been updated.");
+    } catch (_) {
+      showAlert("Error", "Could not save shop. Please try again.");
+    } finally {
+      setSavingShop(false);
     }
-    if (shopLogo && !shopLogo.startsWith("http")) {
-      logoUrl = await uploadImage(shopLogo, `shops/${user.id}/logo`);
-    }
-
-    const payload = { seller_id: user.id, name: shopForm.name.trim(), description: shopForm.description.trim() || null, category: shopForm.category || null, address: shopForm.address.trim() || null, banner_url: bannerUrl, logo_url: logoUrl, updated_at: new Date().toISOString() };
-    const { data, error } = await supabase.from("shops").upsert(payload, { onConflict: "seller_id" }).select().single();
-    setSavingShop(false);
-    if (error) { showAlert("Error", error.message); return; }
-    setShop(data as Shop);
-    setEditShopModal(false);
-    showAlert("Saved!", "Your shop has been updated.");
   }
 
   async function saveProduct() {
@@ -154,46 +158,50 @@ export default function ShopManage() {
     if (!editingProduct?.price_acoin || editingProduct.price_acoin < 1) { showAlert("Required", "Price must be at least 1 ACoin."); return; }
     if (!user || !shop) return;
     setSavingProduct(true);
-
-    let images = editingProduct.images || [];
-    const newImages: string[] = [];
-    for (const img of images) {
-      if (!img.startsWith("http")) {
-        const url = await uploadImage(img, `shops/${user.id}/products`);
-        if (url) newImages.push(url);
-      } else {
-        newImages.push(img);
+    try {
+      let images = editingProduct.images || [];
+      const newImages: string[] = [];
+      for (const img of images) {
+        if (!img.startsWith("http")) {
+          const url = await uploadImage(img, `shops/${user.id}/products`);
+          if (url) newImages.push(url);
+        } else {
+          newImages.push(img);
+        }
       }
+
+      const payload = {
+        shop_id: shop.id,
+        seller_id: user.id,
+        name: editingProduct.name.trim(),
+        description: editingProduct.description?.trim() || null,
+        price_acoin: editingProduct.price_acoin,
+        images: newImages,
+        category: editingProduct.category || "General",
+        stock: editingProduct.is_unlimited_stock ? 0 : (editingProduct.stock || 0),
+        is_unlimited_stock: editingProduct.is_unlimited_stock ?? false,
+        is_available: editingProduct.is_available ?? true,
+        updated_at: new Date().toISOString(),
+      };
+
+      let error;
+      if (editingProduct.id) {
+        ({ error } = await supabase.from("shop_products").update(payload).eq("id", editingProduct.id));
+      } else {
+        const { data, error: e } = await supabase.from("shop_products").insert({ ...payload, sales_count: 0 }).select().single();
+        if (!e && data) setProducts((prev) => [data as ShopProduct, ...prev]);
+        error = e;
+      }
+
+      if (error) { showAlert("Error", error.message); return; }
+      setProductModal(false);
+      setEditingProduct(null);
+      await load();
+    } catch (_) {
+      showAlert("Error", "Could not save product. Please try again.");
+    } finally {
+      setSavingProduct(false);
     }
-
-    const payload = {
-      shop_id: shop.id,
-      seller_id: user.id,
-      name: editingProduct.name.trim(),
-      description: editingProduct.description?.trim() || null,
-      price_acoin: editingProduct.price_acoin,
-      images: newImages,
-      category: editingProduct.category || "General",
-      stock: editingProduct.is_unlimited_stock ? 0 : (editingProduct.stock || 0),
-      is_unlimited_stock: editingProduct.is_unlimited_stock ?? false,
-      is_available: editingProduct.is_available ?? true,
-      updated_at: new Date().toISOString(),
-    };
-
-    let error;
-    if (editingProduct.id) {
-      ({ error } = await supabase.from("shop_products").update(payload).eq("id", editingProduct.id));
-    } else {
-      const { data, error: e } = await supabase.from("shop_products").insert({ ...payload, sales_count: 0 }).select().single();
-      if (!e && data) setProducts((prev) => [data as ShopProduct, ...prev]);
-      error = e;
-    }
-
-    setSavingProduct(false);
-    if (error) { showAlert("Error", error.message); return; }
-    setProductModal(false);
-    setEditingProduct(null);
-    await load();
   }
 
   async function deleteProduct(id: string) {
@@ -202,9 +210,14 @@ export default function ShopManage() {
       {
         text: "Delete", style: "destructive", onPress: async () => {
           setDeletingId(id);
-          await supabase.from("shop_products").delete().eq("id", id);
-          setProducts((prev) => prev.filter((p) => p.id !== id));
-          setDeletingId(null);
+          try {
+            await supabase.from("shop_products").delete().eq("id", id);
+            setProducts((prev) => prev.filter((p) => p.id !== id));
+          } catch (_) {
+            showAlert("Error", "Could not delete product. Please try again.");
+          } finally {
+            setDeletingId(null);
+          }
         },
       },
     ]);
@@ -218,28 +231,36 @@ export default function ShopManage() {
 
   async function togglePinToProfile(value: boolean) {
     if (!shop) return;
-    await supabase.from("shops").update({ pin_to_profile: value, updated_at: new Date().toISOString() }).eq("id", shop.id);
-    setShop((prev) => prev ? { ...prev, pin_to_profile: value } : prev);
+    try {
+      await supabase.from("shops").update({ pin_to_profile: value, updated_at: new Date().toISOString() }).eq("id", shop.id);
+      setShop((prev) => prev ? { ...prev, pin_to_profile: value } : prev);
+    } catch (_) {
+      showAlert("Error", "Could not update. Please try again.");
+    }
   }
 
   async function updateOrderStatus(orderId: string, status: string) {
     const now = new Date().toISOString();
     const updates: any = { status, updated_at: now };
     if (status === "shipped") updates.seller_confirmed_at = now;
-    await supabase.from("shop_orders").update(updates).eq("id", orderId);
-    setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, status: status as any, ...(status === "shipped" ? { seller_confirmed_at: now } : {}) } : o));
-    if (status === "shipped") {
-      await supabase.from("shop_order_messages").insert({ order_id: orderId, sender_id: user?.id, message: "📦 Your order has been shipped! Please confirm delivery once you receive it to release payment to me." });
-      // Notify buyer that their order has shipped
-      const ord = orders.find(o => o.id === orderId);
-      if (ord && user && profile) {
-        notifyOrderShipped({
-          buyerId: ord.buyer_id,
-          sellerName: profile.display_name || shop?.name || "The seller",
-          sellerUserId: user.id,
-          orderId,
-        });
+    try {
+      await supabase.from("shop_orders").update(updates).eq("id", orderId);
+      setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, status: status as any, ...(status === "shipped" ? { seller_confirmed_at: now } : {}) } : o));
+      if (status === "shipped") {
+        await supabase.from("shop_order_messages").insert({ order_id: orderId, sender_id: user?.id, message: "📦 Your order has been shipped! Please confirm delivery once you receive it to release payment to me." });
+        // Notify buyer that their order has shipped
+        const ord = orders.find(o => o.id === orderId);
+        if (ord && user && profile) {
+          notifyOrderShipped({
+            buyerId: ord.buyer_id,
+            sellerName: profile.display_name || shop?.name || "The seller",
+            sellerUserId: user.id,
+            orderId,
+          });
+        }
       }
+    } catch (_) {
+      showAlert("Error", "Could not update order status. Please try again.");
     }
   }
 
@@ -252,7 +273,7 @@ export default function ShopManage() {
 
   function renderOverview() {
     return (
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} tintColor={colors.accent} />}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); try { await load(); } finally { setRefreshing(false); } }} tintColor={colors.accent} />}>
         {!shop ? (
           <View style={[styles.setupCard, { backgroundColor: colors.surface }]}>
             <Text style={{ fontSize: 48 }}>🏪</Text>
@@ -359,7 +380,7 @@ export default function ShopManage() {
         keyExtractor={(p) => p.id}
         contentContainerStyle={{ padding: 14, gap: 10, paddingBottom: 80 }}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} tintColor={colors.accent} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); try { await load(); } finally { setRefreshing(false); } }} tintColor={colors.accent} />}
         ListHeaderComponent={
           <TouchableOpacity
             style={[styles.addProductBtn, { backgroundColor: colors.accent }]}
@@ -421,7 +442,7 @@ export default function ShopManage() {
         keyExtractor={(o) => o.id}
         contentContainerStyle={{ paddingBottom: 60 }}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} tintColor={colors.accent} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); try { await load(); } finally { setRefreshing(false); } }} tintColor={colors.accent} />}
         ListHeaderComponent={
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ padding: 14, gap: 8 }}>
             {(["all", "pending", "paid", "processing", "shipped", "delivered"] as const).map((s) => (

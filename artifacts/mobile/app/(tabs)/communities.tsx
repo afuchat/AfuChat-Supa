@@ -154,22 +154,26 @@ export default function CommunitiesScreen() {
     };
 
     // Run both fetches in parallel
-    const [freshGroups, freshChannels] = await Promise.all([
-      queryCacheFetch<Group[]>(GROUPS_KEY, fetchGroups, { ttlMs: CACHE_TTL_MS }),
-      queryCacheFetch<Channel[]>(CHANNELS_KEY, fetchChannels, { ttlMs: CACHE_TTL_MS }),
-    ]);
+    try {
+      const [freshGroups, freshChannels] = await Promise.all([
+        queryCacheFetch<Group[]>(GROUPS_KEY, fetchGroups, { ttlMs: CACHE_TTL_MS }),
+        queryCacheFetch<Channel[]>(CHANNELS_KEY, fetchChannels, { ttlMs: CACHE_TTL_MS }),
+      ]);
 
-    if (freshGroups.data) {
-      setGroups(freshGroups.data);
-      prefetchAvatars(freshGroups.data.map((g) => g.avatar_url));
+      if (freshGroups.data) {
+        setGroups(freshGroups.data);
+        prefetchAvatars(freshGroups.data.map((g) => g.avatar_url));
+      }
+      if (freshChannels.data) {
+        setChannels(freshChannels.data);
+        prefetchAvatars(freshChannels.data.map((c) => c.avatar_url));
+      }
+    } catch (_) {
+      // Network error — keep showing cached data
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-    if (freshChannels.data) {
-      setChannels(freshChannels.data);
-      prefetchAvatars(freshChannels.data.map((c) => c.avatar_url));
-    }
-
-    setLoading(false);
-    setRefreshing(false);
   }, [user]);
 
   // ── Initial load on mount ────────────────────────────────────────────────────

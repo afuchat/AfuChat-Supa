@@ -401,6 +401,7 @@ export default function ContactScreen() {
   return (
     <View style={[s.root, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <ScrollView showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
 
         {/* ══════════════════════════════════════════════════════════════ */}

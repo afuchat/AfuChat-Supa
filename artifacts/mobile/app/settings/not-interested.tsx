@@ -113,8 +113,10 @@ export default function NotInterestedScreen() {
         {
           text: "Remove",
           onPress: async () => {
-            await removeNotInterestedAuthor(author.id);
-            setAuthors((prev) => prev.filter((a) => a.id !== author.id));
+            try {
+              await removeNotInterestedAuthor(author.id);
+              setAuthors((prev) => prev.filter((a) => a.id !== author.id));
+            } catch (_) {}
           },
         },
       ],
@@ -131,8 +133,10 @@ export default function NotInterestedScreen() {
         {
           text: "Remove",
           onPress: async () => {
-            await removeNotInterestedTopic(topic);
-            setTopics((prev) => prev.filter((t) => t !== topic));
+            try {
+              await removeNotInterestedTopic(topic);
+              setTopics((prev) => prev.filter((t) => t !== topic));
+            } catch (_) {}
           },
         },
       ],
@@ -149,9 +153,11 @@ export default function NotInterestedScreen() {
           text: "Reset",
           style: "destructive",
           onPress: async () => {
-            await resetNotInterestedSignals();
-            setAuthors([]);
-            setTopics([]);
+            try {
+              await resetNotInterestedSignals();
+              setAuthors([]);
+              setTopics([]);
+            } catch (_) {}
           },
         },
       ],
@@ -183,6 +189,7 @@ export default function NotInterestedScreen() {
         <ScrollView
           contentContainerStyle={{ paddingBottom: insets.bottom + 48, paddingTop: 12 }}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           {/* ── MUTED AUTHORS ─────────────────────────────────────────── */}
           {authors.length > 0 && (

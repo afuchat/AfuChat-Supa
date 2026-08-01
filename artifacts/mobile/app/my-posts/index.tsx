@@ -152,10 +152,9 @@ export default function MyPostsScreen() {
       })));
     }
     setLoading(false);
-    setRefreshing(false);
   }, [user]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load().finally(() => setRefreshing(false)); }, [load]);
 
   async function deletePost(postId: string) {
     showAlert("Delete Post", "Are you sure you want to delete this post?", [

@@ -128,7 +128,7 @@ function LinkPreviewCard({ url, colors }: { url: string; colors: any }) {
   try { domain = new URL(url).hostname.replace(/^www\./, ""); } catch {}
   const faviconUri = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
   useEffect(() => {
-    fetchOgData(url).then((d) => { setOgImage(d.image); setOgTitle(d.title); });
+    fetchOgData(url).then((d) => { setOgImage(d.image); setOgTitle(d.title); }).catch(() => {});
   }, [url]);
   return (
     <TouchableOpacity

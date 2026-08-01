@@ -7,6 +7,7 @@ import * as SplashScreen from "expo-splash-screen";
 SplashScreen.preventAutoHideAsync().catch(() => {});
 import { enableScreens } from "react-native-screens";
 import { initCrashReporter, setCrashReporterUserId, setCrashNotificationHandler } from "@/lib/crashReporter";
+import { showAlert } from "@/lib/alert";
 initCrashReporter();
 
 // enableScreens() is intentionally moved out of module-evaluation scope.
@@ -19,7 +20,7 @@ initCrashReporter();
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { Alert, Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
+import { Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
 import { Stack, usePathname, router } from "expo-router";
 import { setCurrentPage, resolvePageInfo } from "@/lib/pageTracker";
 import { StatusBar } from "expo-status-bar";
@@ -114,7 +115,7 @@ function CrashSupportHandler() {
         `Error: ${errorMessage}\n\nSteps to reproduce:\n\nDevice info:\n`,
       );
 
-      Alert.alert(
+      showAlert(
         "Something went wrong",
         "An error was detected. Would you like to send a report so our team can fix it?",
         [
@@ -145,7 +146,6 @@ function CrashSupportHandler() {
           },
           { text: "Dismiss", style: "cancel" },
         ],
-        { cancelable: true },
       );
     });
 

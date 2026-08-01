@@ -106,6 +106,7 @@ export default function ManageAccountScreen() {
       <ScrollView
         contentContainerStyle={[s.body, { paddingBottom: insets.bottom + 48 }]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Banner */}
         <View style={[s.banner, { backgroundColor: colors.card }]}>

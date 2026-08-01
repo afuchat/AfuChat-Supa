@@ -134,22 +134,27 @@ export default function ContactsScreen() {
       return;
     }
 
-    const { data: followRows } = await supabase
-      .from("follows")
-      .select("following_id, profiles!follows_following_id_fkey(id, display_name, handle, avatar_url, bio, is_verified, is_organization_verified)")
-      .eq("follower_id", user.id);
+    try {
+      const { data: followRows } = await supabase
+        .from("follows")
+        .select("following_id, profiles!follows_following_id_fkey(id, display_name, handle, avatar_url, bio, is_verified, is_organization_verified)")
+        .eq("follower_id", user.id);
 
-    if (followRows) {
-      const list = followRows
-        .map((f: any) => f.profiles)
-        .filter(Boolean)
-        .sort((a: Contact, b: Contact) => a.display_name.localeCompare(b.display_name));
-      setContacts(list);
-      // Persist permanently to SQLite so contacts are available offline.
-      saveLocalContacts(list).catch(() => {});
+      if (followRows) {
+        const list = followRows
+          .map((f: any) => f.profiles)
+          .filter(Boolean)
+          .sort((a: Contact, b: Contact) => a.display_name.localeCompare(b.display_name));
+        setContacts(list);
+        // Persist permanently to SQLite so contacts are available offline.
+        saveLocalContacts(list).catch(() => {});
+      }
+    } catch (_) {
+      // Network error — keep showing cached contacts
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-    setLoading(false);
-    setRefreshing(false);
   }, [user]);
 
   useEffect(() => { loadContacts(); }, [loadContacts]);

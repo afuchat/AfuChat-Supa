@@ -212,7 +212,7 @@ function SocialShareSheet({ visible, onClose, url, title }: { visible: boolean; 
   if (!visible) return null;
   async function handlePlatform(p: typeof SOCIAL_PLATFORMS[number]) {
     if (p.id === "copy") { Clipboard.setStringAsync(url); onClose(); return; }
-    if (p.id === "more") { onClose(); setTimeout(async () => { await Share.share({ message: `${title} ${url}`, url, title }); }, 300); return; }
+    if (p.id === "more") { onClose(); setTimeout(async () => { try { await Share.share({ message: `${title} ${url}`, url, title }); } catch (_) {} }, 300); return; }
     onClose();
     const deepUrl = p.scheme!(url);
     const canOpen = await Linking.canOpenURL(deepUrl).catch(() => false);

@@ -691,7 +691,9 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       (id) => id !== activeChatId && !wasChatRecentlyVisited(id),
     );
 
-    const [chatResult, lastMsgsResult, unreadMsgsResult, mutesResult] = await Promise.all([
+    let chatResult: any, lastMsgsResult: any, unreadMsgsResult: any, mutesResult: any;
+    try {
+      [chatResult, lastMsgsResult, unreadMsgsResult, mutesResult] = await Promise.all([
       supabase
         .from("chats")
         .select(`
@@ -725,7 +727,13 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         .select("chat_id, muted_until")
         .eq("user_id", user.id)
         .in("chat_id", chatIds),
-    ]);
+      ]);
+    } catch (_) {
+      // Network error during main data fetch — keep showing cached data
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
 
     // Build a map of chatId → muted_until (null = forever; string = ISO expiry; missing = not muted)
     const now = new Date().toISOString();

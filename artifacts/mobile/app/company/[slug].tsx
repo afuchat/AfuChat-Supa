@@ -228,12 +228,11 @@ export default function CompanyPageScreen() {
     }
 
     setLoading(false);
-    setRefreshing(false);
   }, [slug, user?.id]);
 
   useEffect(() => { load(); }, [load]);
 
-  const onRefresh = () => { setRefreshing(true); load(); };
+  const onRefresh = () => { setRefreshing(true); load().finally(() => setRefreshing(false)); };
 
   async function toggleFollow() {
     if (!user) { router.push("/(auth)/login"); return; }

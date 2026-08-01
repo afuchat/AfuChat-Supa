@@ -302,8 +302,9 @@ export default function IncomingRequestsScreen() {
         </View>
       ) : (
         <ScrollView
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} tintColor={Colors.brand} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); try { await load(); } finally { setRefreshing(false); } }} tintColor={Colors.brand} />}
           contentContainerStyle={[s.list, { paddingBottom: insets.bottom + 24 }]}
+          keyboardShouldPersistTaps="handled"
         >
           {tab === "incoming" && (
             incoming.length === 0 ? (

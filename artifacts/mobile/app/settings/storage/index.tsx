@@ -116,9 +116,12 @@ export default function StorageSettingsScreen() {
           style: "destructive",
           onPress: async () => {
             setClearing("videos");
-            await clearAllOfflineVideos();
-            await refreshDevice();
-            setClearing(null);
+            try {
+              await clearAllOfflineVideos();
+              await refreshDevice();
+            } catch (_) {} finally {
+              setClearing(null);
+            }
           },
         },
       ],
@@ -137,9 +140,12 @@ export default function StorageSettingsScreen() {
           style: "destructive",
           onPress: async () => {
             setClearing("media");
-            await clearMediaCache();
-            await refreshDevice();
-            setClearing(null);
+            try {
+              await clearMediaCache();
+              await refreshDevice();
+            } catch (_) {} finally {
+              setClearing(null);
+            }
           },
         },
       ],
@@ -181,9 +187,12 @@ export default function StorageSettingsScreen() {
           style: "destructive",
           onPress: async () => {
             setClearing("tempcache");
-            await clearTempCache();
-            await refreshDevice();
-            setClearing(null);
+            try {
+              await clearTempCache();
+              await refreshDevice();
+            } catch (_) {} finally {
+              setClearing(null);
+            }
           },
         },
       ],
@@ -211,6 +220,7 @@ export default function StorageSettingsScreen() {
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 40 }]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

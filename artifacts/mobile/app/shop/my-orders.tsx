@@ -166,8 +166,7 @@ export default function MyOrdersScreen() {
 
   async function onRefresh() {
     setRefreshing(true);
-    await load();
-    setRefreshing(false);
+    try { await load(); } finally { setRefreshing(false); }
   }
 
   const FILTERS: { id: OrderFilter; label: string }[] = [

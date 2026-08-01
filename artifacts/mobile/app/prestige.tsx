@@ -163,10 +163,9 @@ export default function PrestigeScreen() {
     });
 
     setLoadingList(false);
-    setRefreshing(false);
   }, [user, acoin]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { loadData().finally(() => setRefreshing(false)); }, [loadData]);
 
   async function purchaseGood(item: typeof ALL_GOODS[0]) {
     if (!user || !profile) return;

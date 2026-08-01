@@ -141,10 +141,15 @@ export default function SettingsScreen() {
           onPress: async () => {
             setSwitchingId(userId);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            const result = await switchAccount(userId);
-            setSwitchingId(null);
-            if (!result.success) {
-              showAlert("Switch Failed", result.error || "Could not switch account.");
+            try {
+              const result = await switchAccount(userId);
+              if (!result.success) {
+                showAlert("Switch Failed", result.error || "Could not switch account.");
+              }
+            } catch (_) {
+              showAlert("Switch Failed", "Could not switch account. Please try again.");
+            } finally {
+              setSwitchingId(null);
             }
           },
         },
@@ -172,6 +177,7 @@ export default function SettingsScreen() {
       <ScrollView
         contentContainerStyle={[s.body, { paddingBottom: insets.bottom + 56 }]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         style={{ pointerEvents: switchingId ? "none" : "auto" }}
       >
 

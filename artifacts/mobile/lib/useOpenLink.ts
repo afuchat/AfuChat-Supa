@@ -1,7 +1,8 @@
 import { useCallback } from "react";
-import { Alert, Linking } from "react-native";
+import { Linking } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import * as Clipboard from "expo-clipboard";
+import { showAlert } from "@/lib/alert";
 
 const WEB_SCHEMES = ["http://", "https://"];
 
@@ -39,7 +40,7 @@ export function useOpenLinkActions() {
   const showLinkSheet = useCallback(
     (url: string) => {
       const display = url.length > 52 ? url.slice(0, 52) + "\u2026" : url;
-      Alert.alert("Open Link", display, [
+      showAlert("Open Link", display, [
         { text: "Open in Google Chrome", onPress: () => openInChrome(url) },
         { text: "Copy Link",             onPress: () => Clipboard.setStringAsync(url).catch(() => {}) },
         { text: "Cancel", style: "cancel" },
