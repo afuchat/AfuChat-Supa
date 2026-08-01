@@ -1,6 +1,7 @@
 import * as FileSystem from "expo-file-system/legacy";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getDB } from "./storage/db";
+import { storage } from "./storage/mmkv";
 import { isCellular } from "./networkQuality";
 
 // ─── Permanent Video Store ──────────────────────────────────────────────────────
@@ -416,11 +417,52 @@ export async function removeOfflineVideo(postId: string): Promise<void> {
   }
 }
 
-// ─── Legacy compat / migration helpers ─────────────────────────────────────────
+// ─── TTL-based auto-expiry ─────────────────────────────────────────────────────
 
-/** No-op — kept so callers don't break. TTL is gone; nothing expires. */
+const VIDEO_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const PURGE_LAST_RAN_KEY = "video_purge_last_ran_at";
+
+/**
+ * Deletes every cached video whose `stored_at` timestamp is older than 24 hours.
+ * Removes the file from disk, clears the memory map, and removes the SQLite row.
+ * Returns the number of entries removed.
+ */
 export async function clearExpiredOfflineVideos(): Promise<number> {
-  return 0;
+  try {
+    const db = await getDB();
+    const cutoff = Date.now() - VIDEO_TTL_MS;
+    const expired = await db.getAllAsync<{ post_id: string; file_uri: string; url: string }>(
+      "SELECT post_id, file_uri, url FROM video_registry WHERE stored_at < ?",
+      [cutoff],
+    );
+    if (expired.length === 0) return 0;
+
+    for (const row of expired) {
+      // Remove file from disk
+      await FileSystem.deleteAsync(row.file_uri, { idempotent: true }).catch(() => {});
+      // Clear in-memory map entry
+      memoryMap.delete(row.url);
+      // Remove SQLite row
+      await db.runAsync("DELETE FROM video_registry WHERE post_id = ?", [row.post_id]);
+    }
+    return expired.length;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Called once at app startup. Runs `clearExpiredOfflineVideos` at most once
+ * per 24-hour window, gated by a MMKV timestamp so it is a no-op on every
+ * subsequent cold start within the same window.
+ */
+export async function runScheduledVideoPurge(): Promise<void> {
+  try {
+    const lastRan = storage.getNumber(PURGE_LAST_RAN_KEY) ?? 0;
+    if (Date.now() - lastRan < VIDEO_TTL_MS) return; // already ran within 24 h
+    storage.setNumber(PURGE_LAST_RAN_KEY, Date.now());
+    await clearExpiredOfflineVideos();
+  } catch {}
 }
 
 /** Migrate old AsyncStorage registry entries into SQLite. Safe to call repeatedly. */

@@ -63,6 +63,7 @@ import UpdatePrompt from "@/components/UpdatePrompt";
 import { initActivityTracker } from "@/lib/activityTracker";
 import { startOfflineSync } from "@/lib/offlineSync";
 import { startSyncQueue } from "@/lib/storage/syncQueue";
+import { runScheduledVideoPurge } from "@/lib/videoCache";
 import { MiniAppRuntimeProvider } from "@/lib/superapp/MiniAppRuntime";
 import { AnimationGuardInit } from "@/components/AnimationGuardInit";
 import { SplashScreenView } from "@/components/ui/SplashScreenView";
@@ -295,6 +296,10 @@ export default function RootLayout() {
     //   reactions, read receipts) the moment connectivity is restored.
     startOfflineSync();
     startSyncQueue();
+
+    // Auto-purge offline videos older than 24 hours. Throttled internally so it
+    // runs at most once per 24-hour window regardless of how often the app opens.
+    runScheduledVideoPurge().catch(() => {});
   }, []);
 
 
