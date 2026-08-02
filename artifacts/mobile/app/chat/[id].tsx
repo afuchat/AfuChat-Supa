@@ -7008,10 +7008,11 @@ STRICT RULES:
           const TAB_PILL_MARGIN_BOTTOM = 10;
           const contentH = SHEET_H - TAB_PILL_H - TAB_PILL_MARGIN_BOTTOM - 28; // 28 = handle area
 
+          const isDM = !!chatInfo && !chatInfo.is_group && !chatInfo.is_channel;
           const TABS: { key: typeof attachTab; icon: string; label: string }[] = [
             { key: "Gallery",  icon: "images",        label: "Gallery"  },
             { key: "Wallet",   icon: "wallet",         label: "Wallet"   },
-            { key: "Poll",     icon: "bar-chart",      label: "Poll"     },
+            ...(!isDM ? [{ key: "Poll" as const, icon: "bar-chart", label: "Poll" }] : []),
             { key: "Contact",  icon: "person-circle",  label: "Contact"  },
           ];
 
@@ -7084,20 +7085,19 @@ STRICT RULES:
                   },
                 },
               ];
-              const CARD_W = (SW2 - 56) / 2;
               return (
-                <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 16, paddingTop: 8 }}>
+                <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 8, paddingTop: 12 }}>
                   {NATIVE_PICKS.map((pick) => (
                     <TouchableOpacity
                       key={pick.label}
                       activeOpacity={0.6}
                       onPress={pick.onPress}
                       style={{
-                        width: CARD_W,
-                        flex: 0,
-                        paddingVertical: 20,
+                        width: "50%",
+                        paddingVertical: 22,
+                        paddingHorizontal: 8,
                         alignItems: "center",
-                        gap: 8,
+                        gap: 10,
                       }}
                     >
                       <Ionicons name={pick.icon} size={36} color={pick.color} />
