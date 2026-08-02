@@ -7024,6 +7024,7 @@ STRICT RULES:
                   label: "Photos & Videos",
                   icon: "images" as const,
                   color: "#007AFF",
+                  bg: ["#0A52FF", "#007AFF"],
                   onPress: async () => {
                     setShowAttachPanel(false);
                     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -7047,13 +7048,15 @@ STRICT RULES:
                 {
                   label: "Camera",
                   icon: "camera" as const,
-                  color: "#EF4444",
+                  color: "#FF3B30",
+                  bg: ["#FF3B30", "#C0392B"],
                   onPress: () => { setShowAttachPanel(false); pickFromCamera(); },
                 },
                 {
                   label: "Audio File",
                   icon: "musical-notes" as const,
-                  color: "#10B981",
+                  color: "#30D158",
+                  bg: ["#30D158", "#25A245"],
                   onPress: async () => {
                     setShowAttachPanel(false);
                     try {
@@ -7068,7 +7071,8 @@ STRICT RULES:
                 {
                   label: "Document",
                   icon: "document-text" as const,
-                  color: "#3B82F6",
+                  color: "#5E5CE6",
+                  bg: ["#5E5CE6", "#3634A3"],
                   onPress: async () => {
                     setShowAttachPanel(false);
                     try {
@@ -7081,19 +7085,49 @@ STRICT RULES:
                   },
                 },
               ];
+              const CARD_W = (SW2 - 56) / 2;
               return (
-                <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 20, paddingTop: 20, gap: 14, justifyContent: "center" }}>
+                <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 16, paddingTop: 16, gap: 12, alignContent: "flex-start" }}>
                   {NATIVE_PICKS.map((pick) => (
                     <TouchableOpacity
                       key={pick.label}
-                      activeOpacity={0.75}
+                      activeOpacity={0.8}
                       onPress={pick.onPress}
-                      style={{ width: (SW2 - 74) / 2, alignItems: "center", paddingVertical: 20, borderRadius: 18, backgroundColor: colors.inputBg, gap: 10 }}
+                      style={{
+                        width: CARD_W,
+                        paddingVertical: 22,
+                        borderRadius: 22,
+                        backgroundColor: colors.inputBg,
+                        alignItems: "center",
+                        gap: 12,
+                        borderWidth: 0.5,
+                        borderColor: colors.border,
+                        overflow: "hidden",
+                      }}
                     >
-                      <View style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: pick.color + "20", alignItems: "center", justifyContent: "center" }}>
-                        <Ionicons name={pick.icon} size={28} color={pick.color} />
+                      {/* Coloured glow spot behind icon */}
+                      <View style={{
+                        position: "absolute", top: -20, left: CARD_W / 2 - 40,
+                        width: 80, height: 80,
+                        borderRadius: 40,
+                        backgroundColor: pick.color + "28",
+                      }} />
+                      {/* Icon container — solid coloured pill */}
+                      <View style={{
+                        width: 64, height: 64,
+                        borderRadius: 20,
+                        backgroundColor: pick.color,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        shadowColor: pick.color,
+                        shadowOffset: { width: 0, height: 6 },
+                        shadowOpacity: 0.45,
+                        shadowRadius: 10,
+                        elevation: 8,
+                      }}>
+                        <Ionicons name={pick.icon} size={30} color="#fff" />
                       </View>
-                      <Text style={{ fontSize: 13, fontFamily: "Inter_600SemiBold", color: colors.text, textAlign: "center" }}>{pick.label}</Text>
+                      <Text style={{ fontSize: 13, fontFamily: "Inter_600SemiBold", color: colors.text, textAlign: "center", letterSpacing: -0.1 }}>{pick.label}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -7387,50 +7421,61 @@ STRICT RULES:
                   {renderContent()}
                 </View>
 
-                {/* Floating pill tab bar */}
+                {/* Floating glass pill tab bar */}
                 <View style={{
-                  marginHorizontal: 16,
+                  marginHorizontal: 20,
                   marginTop: 8,
                   marginBottom: TAB_PILL_MARGIN_BOTTOM,
                   height: TAB_PILL_H,
-                  flexDirection: "row",
-                  borderRadius: 20,
-                  backgroundColor: colors.inputBg,
-                  borderWidth: 0.5,
-                  borderColor: colors.border,
+                  borderRadius: TAB_PILL_H / 2,
+                  overflow: "hidden",
+                  borderWidth: 0.8,
+                  borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
                 }}>
-                  {TABS.map((tab) => {
-                    const active = attachTab === tab.key;
-                    return (
-                      <TouchableOpacity
-                        key={tab.key}
-                        activeOpacity={0.7}
-                        onPress={() => setAttachTab(tab.key)}
-                        style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 3, borderRadius: 20 }}
-                      >
-                        {active && (
-                          <View style={{
-                            position: "absolute",
-                            top: 6, bottom: 6, left: 6, right: 6,
-                            borderRadius: 14,
-                            backgroundColor: colors.accent + "18",
-                          }} />
-                        )}
-                        <Ionicons
-                          name={active ? tab.icon.replace("-outline", "") as any : tab.icon as any}
-                          size={20}
-                          color={active ? colors.accent : colors.textMuted}
-                        />
-                        <Text style={{
-                          fontSize: 9,
-                          fontFamily: active ? "Inter_600SemiBold" : "Inter_400Regular",
-                          color: active ? colors.accent : colors.textMuted,
-                        }}>
-                          {tab.label}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+                  <BlurView
+                    intensity={60}
+                    tint={isDark ? "dark" : "light"}
+                    style={{
+                      flex: 1,
+                      flexDirection: "row",
+                      backgroundColor: isDark ? "rgba(30,30,35,0.55)" : "rgba(245,245,250,0.65)",
+                    }}
+                  >
+                    {TABS.map((tab) => {
+                      const active = attachTab === tab.key;
+                      return (
+                        <TouchableOpacity
+                          key={tab.key}
+                          activeOpacity={0.7}
+                          onPress={() => setAttachTab(tab.key)}
+                          style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 3 }}
+                        >
+                          {active && (
+                            <View style={{
+                              position: "absolute",
+                              top: 7, bottom: 7, left: 5, right: 5,
+                              borderRadius: (TAB_PILL_H - 14) / 2,
+                              backgroundColor: colors.accent,
+                              opacity: 0.18,
+                            }} />
+                          )}
+                          <Ionicons
+                            name={active ? tab.icon.replace("-outline", "") as any : (tab.icon + "-outline").replace("outline-outline", "outline") as any}
+                            size={21}
+                            color={active ? colors.accent : colors.textMuted}
+                          />
+                          <Text style={{
+                            fontSize: 9.5,
+                            fontFamily: active ? "Inter_700Bold" : "Inter_400Regular",
+                            color: active ? colors.accent : colors.textMuted,
+                            letterSpacing: 0.1,
+                          }}>
+                            {tab.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </BlurView>
                 </View>
               </View>
             </View>
