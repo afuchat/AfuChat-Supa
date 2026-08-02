@@ -597,8 +597,8 @@ export default function EmojiStickerPicker({
   return (
     <View style={[s.root, { height, backgroundColor: colors.surface as string }]}>
 
-      {/* ── Content area — padded so list never scrolls behind the pill ── */}
-      <View style={{ flex: 1, paddingBottom: CONTENT_PAD }}>
+      {/* ── Content area — full height, pill floats above ── */}
+      <View style={{ flex: 1 }}>
         {tab === "emoji" && (
           <EmojiScrollPanel onEmojiSelected={onEmojiSelected} />
         )}
