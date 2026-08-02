@@ -100,8 +100,8 @@ function CompactTabBar({
   const INACTIVE_ICON  = isDark ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.45)";
   const ACTIVE_ICON    = isDark ? "#ffffff"                : "#000000";
   const ACCENT         = colors.accent;
-  const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 6;
-  const PILL_H         = 50;
+  const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 4;
+  const PILL_H         = 38;
 
   function handleTabPress(route: string) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -263,7 +263,7 @@ const pill = StyleSheet.create({
   },
   iconWrap: {
     width: 42,
-    height: 36,
+    height: 30,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -369,7 +369,7 @@ export default function TabLayout() {
   const isLoggedIn     = !!session || !!user;
   const prevSessionRef = useRef<Session | null>(null);
   const insets         = useSafeAreaInsets();
-  const PILL_H         = 64;
+  const PILL_H         = 38;
   const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 8;
   const bottomPadding  = isLoggedIn ? PILL_BOTTOM + PILL_H : 0;
 
