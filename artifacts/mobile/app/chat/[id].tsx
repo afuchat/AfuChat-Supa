@@ -2223,7 +2223,7 @@ function ChatScreen() {
     }), [onRecStart, onRecCancel, onRecLock, onRecSend]);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showAttachPanel, setShowAttachPanel] = useState(false);
-  const [attachTab, setAttachTab] = useState<"Gallery" | "Wallet" | "File" | "Poll" | "Contact">("Gallery");
+  const [attachTab, setAttachTab] = useState<"Gallery" | "Wallet" | "Poll" | "Contact">("Gallery");
   const [contactList, setContactList] = useState<{ id: string; name: string; phone: string; initials: string }[]>([]);
   const [contactSearch, setContactSearch] = useState("");
   const [contactsLoading, setContactsLoading] = useState(false);
@@ -7011,7 +7011,6 @@ STRICT RULES:
           const TABS: { key: typeof attachTab; icon: string; label: string }[] = [
             { key: "Gallery",  icon: "images",        label: "Gallery"  },
             { key: "Wallet",   icon: "wallet",         label: "Wallet"   },
-            { key: "File",     icon: "document-text",  label: "File"     },
             { key: "Poll",     icon: "bar-chart",      label: "Poll"     },
             { key: "Contact",  icon: "person-circle",  label: "Contact"  },
           ];
@@ -7109,40 +7108,6 @@ STRICT RULES:
               );
             }
 
-            if (attachTab === "File") {
-              const FILE_TYPES = [
-                { icon: "document-text", label: "Document", color: "#3B82F6", mime: "*/*" },
-                { icon: "musical-notes", label: "Audio",    color: "#10B981", mime: "audio/*" },
-                { icon: "videocam",      label: "Video",    color: "#F59E0B", mime: "video/*" },
-                { icon: "archive",       label: "Archive",  color: "#8B5CF6", mime: "application/zip" },
-              ];
-              return (
-                <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 20, paddingTop: 16, gap: 12 }}>
-                  {FILE_TYPES.map((ft) => (
-                    <TouchableOpacity
-                      key={ft.label}
-                      activeOpacity={0.75}
-                      onPress={async () => {
-                        setShowAttachPanel(false);
-                        try {
-                          const result = await DocumentPicker.getDocumentAsync({ type: ft.mime, copyToCacheDirectory: true });
-                          if (!result.canceled && result.assets?.[0]) {
-                            const doc = result.assets[0];
-                            setAttachmentPreview({ uri: doc.uri, type: "file", name: doc.name });
-                          }
-                        } catch { /* ignore */ }
-                      }}
-                      style={{ width: (SW2 - 64) / 2, alignItems: "center", paddingVertical: 16, borderRadius: 16, backgroundColor: colors.inputBg, gap: 8 }}
-                    >
-                      <View style={{ width: 60, height: 60, borderRadius: 18, backgroundColor: ft.color + "22", alignItems: "center", justifyContent: "center" }}>
-                        <Ionicons name={ft.icon as any} size={32} color={ft.color} />
-                      </View>
-                      <Text style={{ fontSize: 13, fontFamily: "Inter_600SemiBold", color: colors.text }}>{ft.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              );
-            }
 
             if (attachTab === "Contact") {
               if (contactsLoading) {
