@@ -5358,9 +5358,13 @@ STRICT RULES:
     }
   }
 
-  // ── Tenor GIF search / trending ─────────────────────────────────────────────
+  // ── Giphy GIF search / trending ──────────────────────────────────────────────
+  // Tenor was shut down by Google (2024). We now use the Giphy v1 API.
+  // Key is injected at build time via EXPO_PUBLIC_GIPHY_API_KEY.
+  const GIPHY_KEY = process.env.EXPO_PUBLIC_GIPHY_API_KEY ?? "";
   useEffect(() => {
     if (!showGifPicker) return;
+    if (!GIPHY_KEY) { setGifResults([]); setGifLoading(false); return; }
     let cancelled = false;
     const delay = gifSearch.trim() ? 350 : 0; // debounce search; trending fires immediately
     const timer = setTimeout(async () => {
@@ -5368,15 +5372,16 @@ STRICT RULES:
       try {
         const q = gifSearch.trim();
         const endpoint = q
-          ? `https://g.tenor.com/v1/search?q=${encodeURIComponent(q)}&key=LIVEGIF&limit=24&media_filter=minimal`
-          : `https://g.tenor.com/v1/trending?key=LIVEGIF&limit=24&media_filter=minimal`;
+          ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_KEY}&q=${encodeURIComponent(q)}&limit=24&rating=g`
+          : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_KEY}&limit=24&rating=g`;
         const res  = await fetch(endpoint);
         const json = await res.json();
         if (cancelled) return;
-        const items = (json.results ?? []).map((r: any) => ({
-          id:      r.id,
-          preview: r.media?.[0]?.tinygif?.url ?? r.media?.[0]?.gif?.url ?? "",
-          url:     r.media?.[0]?.gif?.url     ?? r.media?.[0]?.tinygif?.url ?? "",
+        // Giphy response: json.data[] with images.fixed_height_small (preview) and images.downsized (full)
+        const items = (json.data ?? []).map((r: any) => ({
+          id:      r.id as string,
+          preview: (r.images?.fixed_height_small?.url ?? r.images?.downsized_small?.url ?? "") as string,
+          url:     (r.images?.downsized?.url ?? r.images?.fixed_height?.url ?? "") as string,
         })).filter((g: any) => g.url);
         setGifResults(items);
       } catch {
@@ -5386,7 +5391,7 @@ STRICT RULES:
       }
     }, delay);
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [showGifPicker, gifSearch]);
+  }, [showGifPicker, gifSearch, GIPHY_KEY]);
 
   async function sendGifMessage(gifUrl: string) {
     if (!user) return;
