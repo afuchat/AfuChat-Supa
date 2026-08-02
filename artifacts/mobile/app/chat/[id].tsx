@@ -5361,8 +5361,8 @@ STRICT RULES:
 
   // ── Giphy GIF search / trending ──────────────────────────────────────────────
   // Tenor was shut down by Google (2024). We now use the Giphy v1 API.
-  // Key is injected at build time via EXPO_PUBLIC_GIPHY_API_KEY.
-  const GIPHY_KEY = process.env.EXPO_PUBLIC_GIPHY_API_KEY ?? "";
+  // Key comes from lib/env.ts (hardcoded production fallback + EXPO_PUBLIC_ override).
+  const GIPHY_KEY = GIPHY_API_KEY;
   useEffect(() => {
     if (!showGifPicker) return;
     if (!GIPHY_KEY) { setGifResults([]); setGifLoading(false); return; }
