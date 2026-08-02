@@ -94,7 +94,8 @@ for (const row of FLAT_ROWS) {
 }
 
 function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (emoji: string) => void }) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const glass = glassTokens(isDark);
   const { accent } = useAppAccent();
   const listRef = useRef<FlatList>(null);
   const catBarRef = useRef<ScrollView>(null);
@@ -174,36 +175,42 @@ function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (emoji: string
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Category icon bar */}
-      <ScrollView
-        ref={catBarRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ borderBottomWidth: 0.5, borderBottomColor: ((colors.border as string) ?? "#ccc") + "80", maxHeight: 44 }}
-        contentContainerStyle={{ paddingHorizontal: 4, alignItems: "center" }}
+      {/* Category icon bar — glass */}
+      <BlurView
+        intensity={GLASS.blur.medium}
+        tint={isDark ? "dark" : "light"}
+        style={{ height: 44, borderBottomWidth: 0.5, borderBottomColor: glass.border }}
       >
-        {SECTION_TITLES.map((title, i) => {
-          const isActive = i === activeCat;
-          return (
-            <TouchableOpacity
-              key={title}
-              onPress={() => scrollToCategory(i)}
-              style={{
-                width: 44, height: 44, alignItems: "center", justifyContent: "center",
-                borderBottomWidth: isActive ? 2 : 0,
-                borderBottomColor: accent,
-              }}
-              activeOpacity={0.7}
-            >
-              <Image
-                source={CAT_ICON_SOURCES[title]}
-                style={{ width: 20, height: 20 }}
-                tintColor={isActive ? accent : (colors.textMuted as string)}
-              />
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+        <ScrollView
+          ref={catBarRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingHorizontal: 4, alignItems: "center", height: 44 }}
+        >
+          {SECTION_TITLES.map((title, i) => {
+            const isActive = i === activeCat;
+            return (
+              <TouchableOpacity
+                key={title}
+                onPress={() => scrollToCategory(i)}
+                style={{
+                  width: 44, height: 44, alignItems: "center", justifyContent: "center",
+                  borderBottomWidth: isActive ? 2 : 0,
+                  borderBottomColor: accent,
+                }}
+                activeOpacity={0.7}
+              >
+                <Image
+                  source={CAT_ICON_SOURCES[title]}
+                  style={{ width: 20, height: 20 }}
+                  tintColor={isActive ? accent : (colors.textMuted as string)}
+                />
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </BlurView>
 
       {/* Single FlatList — simpler and more reliable than SectionList for custom
           getItemLayout. flex:1 gives it the remaining height in the panel. */}
@@ -337,7 +344,8 @@ for (const row of STICKER_FLAT) {
 
 // ── StickerScrollPanel ────────────────────────────────────────────────────────
 function StickerScrollPanel({ onSendSticker }: { onSendSticker: (s: string) => void }) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const glass = glassTokens(isDark);
   const { accent } = useAppAccent();
   const listRef  = useRef<FlatList>(null);
   const catBarRef = useRef<ScrollView>(null);
