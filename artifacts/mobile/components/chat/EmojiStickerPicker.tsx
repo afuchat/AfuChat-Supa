@@ -60,9 +60,34 @@ function chunkEmojis(data: { emoji: string; name: string }[], cols: number): Emo
 }
 
 // Stable sections computed once at module level (data never changes)
+// Each row gets a unique `key` built from its section + row index so keyExtractor
+// never produces colliding keys across sections.
 const EMOJI_SECTIONS = emojisByCategory
   .filter((c) => c.title !== "search" && c.data.length > 0)
-  .map((c) => ({ title: c.title, data: chunkEmojis(c.data, EMOJI_COLS) }));
+  .map((c) => {
+    const rows = chunkEmojis(c.data, EMOJI_COLS);
+    return {
+      title: c.title,
+      data: rows.map((row, ri) => ({ row, key: `${c.title}:${ri}` })),
+    };
+  });
+
+// Pre-compute a flat layout array so getItemLayout can return exact offsets.
+// SectionList flattens items as: [header₀, item₀₀, item₀₁, …, header₁, item₁₀, …]
+// Wrong offsets (e.g. ignoring HEADER_H) cause blank gaps during fast scroll or
+// when scrollToLocation jumps to a section.
+const EMOJI_LAYOUT: { length: number; offset: number }[] = [];
+(() => {
+  let off = 0;
+  for (const sec of EMOJI_SECTIONS) {
+    EMOJI_LAYOUT.push({ length: HEADER_H, offset: off });
+    off += HEADER_H;
+    for (let i = 0; i < sec.data.length; i++) {
+      EMOJI_LAYOUT.push({ length: ROW_H, offset: off });
+      off += ROW_H;
+    }
+  }
+})();
 
 function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (emoji: string) => void }) {
   const { colors } = useTheme();
@@ -98,14 +123,17 @@ function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (emoji: string
     setTimeout(() => { isScrollingTo.current = false; }, 700);
   }, []);
 
-  // getItemLayout lets SectionList skip measurement → smooth scrollToLocation
-  const getItemLayout = useCallback((_: any, index: number) => ({
-    length: ROW_H, offset: ROW_H * index, index,
-  }), []);
+  // getItemLayout: use pre-computed flat layout table that accounts for both
+  // ROW_H (emoji rows) and HEADER_H (section headers). Without this, offsets
+  // are wrong and SectionList leaves blank gaps when scrolling fast or jumping.
+  const getItemLayout = useCallback((_: any, index: number) => {
+    const entry = EMOJI_LAYOUT[index] ?? { length: ROW_H, offset: 0 };
+    return { length: entry.length, offset: entry.offset, index };
+  }, []);
 
-  const renderItem = useCallback(({ item }: { item: EmojiRow }) => (
+  const renderItem = useCallback(({ item }: { item: { row: EmojiRow; key: string } }) => (
     <View style={{ flexDirection: "row", paddingHorizontal: 4, height: ROW_H }}>
-      {item.map((e) => (
+      {item.row.map((e) => (
         <TouchableOpacity
           key={e.name}
           onPress={() => onEmojiSelected(e.emoji)}
@@ -127,7 +155,7 @@ function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (emoji: string
     </View>
   ), [colors]);
 
-  const keyExtractor = useCallback((_: EmojiRow, i: number) => String(i), []);
+  const keyExtractor = useCallback((item: { row: EmojiRow; key: string }) => item.key, []);
 
   return (
     <View style={{ flex: 1 }}>
