@@ -33,7 +33,7 @@ import { useAppAccent } from "@/context/AppAccentContext";
 import { showAlert } from "@/lib/alert";
 import { googleSignIn } from "@/lib/googleAuth";
 import AfuLogo from "@/components/ui/AfuLogo";
-import { GoogleLogo } from "@/components/ui/OAuthLogos";
+import { GoogleLogo, GitHubLogo } from "@/components/ui/OAuthLogos";
 
 const BG = "#000000";
 const BIO_REFRESH_KEY = "afu_bio_refresh_token";
@@ -501,6 +501,45 @@ export default function SignInScreen() {
 
   function handleGoogle() { nativeGoogleSignIn(); }
 
+  async function handleGitHub() {
+    try {
+      setOauthLoading(true);
+      const redirectUrl = makeRedirectUri({ native: "afuchat://(auth)/login" });
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "github",
+        options: { redirectTo: redirectUrl, skipBrowserRedirect: true },
+      });
+      if (error) { showAlert("Error", error.message); setOauthLoading(false); return; }
+      if (!data?.url) { setOauthLoading(false); return; }
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl, { showInRecents: false });
+      if (result.type === "success" && result.url) {
+        const url = new URL(result.url);
+        const code = url.searchParams.get("code");
+        if (code) {
+          const { data: sd, error: e } = await supabase.auth.exchangeCodeForSession(code);
+          if (e) { showAlert("Error", e.message); }
+          else {
+            const uid = sd.user?.id;
+            if (uid) {
+              const { data: prof } = await supabase.from("profiles").select("onboarding_completed").eq("id", uid).maybeSingle();
+              if (!prof?.onboarding_completed) { setOauthLoading(false); router.replace({ pathname: "/onboarding", params: { userId: uid } } as any); return; }
+            }
+            setOauthLoading(false); router.replace("/(tabs)/chats"); return;
+          }
+        }
+        let at = url.hash ? new URLSearchParams(url.hash.substring(1)).get("access_token") : null;
+        let rt = url.hash ? new URLSearchParams(url.hash.substring(1)).get("refresh_token") : null;
+        if (!at) { at = url.searchParams.get("access_token"); rt = url.searchParams.get("refresh_token"); }
+        if (at && rt) {
+          const { error: e } = await supabase.auth.setSession({ access_token: at, refresh_token: rt });
+          if (e) showAlert("Error", e.message);
+          else router.replace("/(tabs)/chats");
+        }
+      }
+      setOauthLoading(false);
+    } catch { setOauthLoading(false); showAlert("Error", "Could not complete GitHub sign-in."); }
+  }
+
   const idType = detectType(identifier);
   const idIcon = idType === "email" ? "mail" : idType === "phone" ? "call" : "at";
   const showBioBtn = bioAvailable && bioStored;
@@ -564,6 +603,12 @@ export default function SignInScreen() {
                     <Text style={sc.glassBtnText}>Continue with Google</Text>
                   </>)
               }
+            </TouchableOpacity>
+
+            {/* GitHub */}
+            <TouchableOpacity style={sc.glassBtn} onPress={handleGitHub} disabled={oauthLoading} activeOpacity={0.78}>
+              <GitHubLogo size={20} color="rgba(255,255,255,0.85)" />
+              <Text style={sc.glassBtnText}>Continue with GitHub</Text>
             </TouchableOpacity>
 
             {/* Email */}
