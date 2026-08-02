@@ -7013,7 +7013,7 @@ STRICT RULES:
             { key: "Gallery",  icon: "images",        label: "Gallery"  },
             { key: "Wallet",   icon: "wallet",         label: "Wallet"   },
             ...(!isDM ? [{ key: "Poll" as const, icon: "bar-chart", label: "Poll" }] : []),
-            { key: "Contact",  icon: "person-circle",  label: "Contact"  },
+            ...(Platform.OS !== "web" ? [{ key: "Contact" as const, icon: "person-circle", label: "Contact" }] : []),
           ];
 
           const renderContent = () => {
@@ -7224,108 +7224,104 @@ STRICT RULES:
               if (isGroup) {
                 return (
                   <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 10, paddingHorizontal: 32 }}>
-                    <Ionicons name="wallet" size={40} color={colors.textMuted} />
-                    <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: colors.textMuted, textAlign: "center" }}>Payments are only available in direct messages.</Text>
+                    <Ionicons name="wallet-outline" size={44} color={colors.textMuted} />
+                    <Text style={{ fontSize: 14, fontFamily: "Inter_500Medium", color: colors.textMuted, textAlign: "center", lineHeight: 20 }}>Payments are only available{"\n"}in direct messages.</Text>
                   </View>
                 );
               }
               const acoinBal = profile?.acoin ?? 0;
               const nexaBal = profile?.xp ?? 0;
               const currentBal = walletCurrency === "acoin" ? acoinBal : nexaBal;
-              const recipientName = chatInfo?.other_name || "this person";
+              const acoinColor = "#10B981";
+              const nexaColor = "#FF9500";
+              const activeColor = walletCurrency === "acoin" ? acoinColor : nexaColor;
+              const amtNum = parseInt(walletAmount || "0", 10);
+              const overLimit = walletAmount !== "" && amtNum > currentBal;
+              const canSend = !walletSending && walletAmount !== "" && amtNum > 0 && !overLimit;
               return (
-                <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 8 }}>
-                  {/* Header */}
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 18 }}>
-                    <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "#10B98120", alignItems: "center", justifyContent: "center" }}>
-                      <Ionicons name="wallet" size={22} color="#10B981" />
-                    </View>
-                    <View>
-                      <Text style={{ fontSize: 15, fontFamily: "Inter_700Bold", color: colors.text }}>Send to {recipientName}</Text>
-                      <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: colors.textMuted }}>Payment will appear in chat</Text>
-                    </View>
-                  </View>
+                <View style={{ flex: 1, paddingHorizontal: 18, paddingTop: 6 }}>
 
-                  {/* Currency selector */}
-                  <View style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}>
+                  {/* ── Currency pill toggle ── */}
+                  <View style={{ flexDirection: "row", backgroundColor: colors.inputBg, borderRadius: 14, padding: 3, marginBottom: 16 }}>
                     {(["acoin", "nexa"] as const).map((cur) => {
                       const active = walletCurrency === cur;
-                      const color = cur === "acoin" ? "#10B981" : "#FF9500";
+                      const c = cur === "acoin" ? acoinColor : nexaColor;
                       const bal = cur === "acoin" ? acoinBal : nexaBal;
                       return (
                         <TouchableOpacity
                           key={cur}
                           activeOpacity={0.75}
-                          onPress={() => setWalletCurrency(cur)}
-                          style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 10, borderRadius: 14, borderWidth: 1.5, borderColor: active ? color : colors.border, backgroundColor: active ? color + "12" : colors.inputBg, gap: 4 }}
+                          onPress={() => { setWalletCurrency(cur); setWalletAmount(""); }}
+                          style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 9, borderRadius: 11, backgroundColor: active ? c : "transparent" }}
                         >
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                            <Ionicons name={cur === "acoin" ? "cash" : "flash"} size={16} color={color} />
-                            <Text style={{ fontSize: 13, fontFamily: "Inter_700Bold", color: active ? color : colors.text }}>{cur === "acoin" ? "ACoin" : "Nexa"}</Text>
-                            {active && <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: color, marginLeft: "auto" }} />}
-                          </View>
-                          <Text style={{ fontSize: 11, fontFamily: "Inter_400Regular", color: colors.textMuted }}>Balance: {bal.toLocaleString()}</Text>
+                          <Ionicons name={cur === "acoin" ? "cash" : "flash"} size={15} color={active ? "#fff" : colors.textMuted} />
+                          <Text style={{ fontSize: 13, fontFamily: "Inter_700Bold", color: active ? "#fff" : colors.textMuted }}>
+                            {cur === "acoin" ? "ACoin" : "Nexa"}
+                          </Text>
+                          <Text style={{ fontSize: 11, fontFamily: "Inter_400Regular", color: active ? "rgba(255,255,255,0.72)" : colors.textMuted }}>
+                            {bal.toLocaleString()}
+                          </Text>
                         </TouchableOpacity>
                       );
                     })}
                   </View>
 
-                  {/* Amount input */}
-                  <View style={{ marginBottom: 12 }}>
-                    <Text style={{ fontSize: 12, fontFamily: "Inter_600SemiBold", color: colors.textMuted, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Amount</Text>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, height: 48, borderRadius: 14, backgroundColor: colors.inputBg, borderWidth: 1, borderColor: walletAmount && parseInt(walletAmount) > currentBal ? "#FF3B30" : colors.border }}>
-                      <Ionicons name={walletCurrency === "acoin" ? "cash" : "flash"} size={18} color={colors.textMuted} />
+                  {/* ── Big amount display ── */}
+                  <View style={{ alignItems: "center", marginBottom: 16 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                      <Ionicons name={walletCurrency === "acoin" ? "cash" : "flash"} size={22} color={overLimit ? "#FF3B30" : activeColor} />
                       <TextInput
                         value={walletAmount}
                         onChangeText={(v) => setWalletAmount(v.replace(/[^0-9]/g, ""))}
                         placeholder="0"
                         placeholderTextColor={colors.textMuted}
                         keyboardType="number-pad"
-                        style={{ flex: 1, fontSize: 17, fontFamily: "Inter_600SemiBold", color: colors.text, outlineStyle: "none" as any }}
-                      />
-                      {walletAmount !== "" && (
-                        <TouchableOpacity onPress={() => setWalletAmount("")} hitSlop={8}>
-                          <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                    {walletAmount !== "" && parseInt(walletAmount) > currentBal ? (
-                      <Text style={{ fontSize: 11, color: "#FF3B30", fontFamily: "Inter_400Regular", marginTop: 4 }}>Exceeds your balance of {currentBal.toLocaleString()}</Text>
-                    ) : null}
-                  </View>
-
-                  {/* Note input */}
-                  <View style={{ marginBottom: 18 }}>
-                    <Text style={{ fontSize: 12, fontFamily: "Inter_600SemiBold", color: colors.textMuted, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Note (optional)</Text>
-                    <View style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14, backgroundColor: colors.inputBg, borderWidth: 1, borderColor: colors.border }}>
-                      <TextInput
-                        value={walletNote}
-                        onChangeText={setWalletNote}
-                        placeholder="Add a note…"
-                        placeholderTextColor={colors.textMuted}
-                        maxLength={120}
-                        style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: colors.text, outlineStyle: "none" as any }}
+                        style={{ fontSize: 40, fontFamily: "Inter_700Bold", color: overLimit ? "#FF3B30" : colors.text, minWidth: 60, outlineStyle: "none" as any, textAlign: "center" }}
                       />
                     </View>
+                    <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: overLimit ? "#FF3B30" : colors.textMuted, marginTop: 2 }}>
+                      {overLimit
+                        ? `Max ${currentBal.toLocaleString()} available`
+                        : `Balance: ${currentBal.toLocaleString()} ${walletCurrency === "acoin" ? "ACoin" : "Nexa"}`}
+                    </Text>
                   </View>
 
-                  {/* Send button */}
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    onPress={handleInlineSendMoney}
-                    disabled={walletSending || !walletAmount || parseInt(walletAmount) <= 0 || parseInt(walletAmount) > currentBal}
-                    style={{ backgroundColor: (walletSending || !walletAmount || parseInt(walletAmount) <= 0 || parseInt(walletAmount) > currentBal) ? colors.border : "#10B981", height: 50, borderRadius: 25, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8 }}
-                  >
-                    {walletSending ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <>
-                        <Ionicons name="send" size={16} color="#fff" />
-                        <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 15 }}>
-                          Send {walletAmount ? `${parseInt(walletAmount).toLocaleString()} ${walletCurrency === "acoin" ? "ACoin" : "Nexa"}` : ""}
-                        </Text>
-                      </>
+                  {/* ── Note input ── */}
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, height: 44, borderRadius: 22, backgroundColor: colors.inputBg, marginBottom: 14 }}>
+                    <Ionicons name="chatbubble-ellipses-outline" size={16} color={colors.textMuted} />
+                    <TextInput
+                      value={walletNote}
+                      onChangeText={setWalletNote}
+                      placeholder="Add a note…"
+                      placeholderTextColor={colors.textMuted}
+                      maxLength={120}
+                      style={{ flex: 1, fontSize: 14, fontFamily: "Inter_400Regular", color: colors.text, outlineStyle: "none" as any }}
+                    />
+                    {walletNote !== "" && (
+                      <TouchableOpacity onPress={() => setWalletNote("")} hitSlop={8}>
+                        <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+                      </TouchableOpacity>
                     )}
+                  </View>
+
+                  {/* ── Send button ── */}
+                  <TouchableOpacity
+                    activeOpacity={0.82}
+                    onPress={handleInlineSendMoney}
+                    disabled={!canSend}
+                    style={{ height: 50, borderRadius: 25, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, backgroundColor: canSend ? activeColor : colors.inputBg }}
+                  >
+                    {walletSending
+                      ? <ActivityIndicator size="small" color="#fff" />
+                      : <>
+                          <Ionicons name="paper-plane" size={17} color={canSend ? "#fff" : colors.textMuted} />
+                          <Text style={{ fontFamily: "Inter_700Bold", fontSize: 15, color: canSend ? "#fff" : colors.textMuted }}>
+                            {walletAmount && amtNum > 0
+                              ? `Send ${amtNum.toLocaleString()} ${walletCurrency === "acoin" ? "ACoin" : "Nexa"}`
+                              : "Send"}
+                          </Text>
+                        </>
+                    }
                   </TouchableOpacity>
                 </View>
               );
