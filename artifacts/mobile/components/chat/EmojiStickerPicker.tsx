@@ -14,7 +14,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
+
   TouchableOpacity,
   View,
   ActivityIndicator,
@@ -106,20 +106,16 @@ type GifItem = { id: string; preview: string; url: string };
 
 function GifPanel({ onSendGif }: { onSendGif: (url: string) => void }) {
   const { colors } = useTheme();
-  const [q, setQ] = useState("");
   const [results, setResults] = useState<GifItem[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    const delay = q.trim() ? 350 : 0;
-    const timer = setTimeout(async () => {
-      setLoading(true);
+    setLoading(true);
+    (async () => {
       try {
         const { GIPHY_API_KEY } = await import("@/lib/env");
-        const endpoint = q.trim()
-          ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(q.trim())}&limit=24&rating=g`
-          : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=24&rating=g`;
+        const endpoint = `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=24&rating=g`;
         const res = await fetch(endpoint);
         const json = await res.json();
         if (cancelled) return;
@@ -136,44 +132,24 @@ function GifPanel({ onSendGif }: { onSendGif: (url: string) => void }) {
       } finally {
         if (!cancelled) setLoading(false);
       }
-    }, delay);
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [q]);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const left  = results.filter((_, i) => i % 2 === 0);
   const right = results.filter((_, i) => i % 2 !== 0);
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Search bar */}
-      <View style={[gs.searchRow, { backgroundColor: colors.inputBg, borderColor: (colors.border as string) ?? "#ccc" }]}>
-        <Ionicons name="search" size={16} color={colors.textMuted as string} style={{ marginRight: 6 }} />
-        <TextInput
-          value={q}
-          onChangeText={setQ}
-          placeholder="Search GIFs…"
-          placeholderTextColor={colors.textMuted as string}
-          style={[gs.searchInput, { color: colors.text as string }]}
-          returnKeyType="search"
-          autoCorrect={false}
-        />
-        {q.length > 0 && (
-          <TouchableOpacity hitSlop={8} onPress={() => setQ("")}>
-            <Ionicons name="close-circle" size={16} color={colors.textMuted as string} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Grid */}
       {loading ? (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
           <ActivityIndicator color={colors.accent as string} />
         </View>
       ) : results.length === 0 ? (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 8 }}>
-          <Text style={{ fontSize: 32 }}>🔍</Text>
+          <Text style={{ fontSize: 32 }}>🎞️</Text>
           <Text style={[gs.gifNotice, { color: colors.textSecondary as string }]}>
-            {q.trim() ? "No GIFs found" : "Loading trending GIFs…"}
+            Loading trending GIFs…
           </Text>
         </View>
       ) : (
@@ -208,16 +184,6 @@ function GifPanel({ onSendGif }: { onSendGif: (url: string) => void }) {
 }
 
 const gs = StyleSheet.create({
-  searchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    margin: 10,
-    borderRadius: 10,
-    borderWidth: 0.5,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  searchInput: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular" },
   gifNotice: { fontSize: 16, fontFamily: "Inter_600SemiBold" },
 });
 
@@ -368,38 +334,38 @@ export default function EmojiStickerPicker({
           },
         ]}
       >
-        {(["emoji", "gifs", "stickers"] as Tab[]).map((t) => {
-          const active = tab === t;
-          const label = t === "emoji" ? "Emoji" : t === "gifs" ? "GIFs" : "Stickers";
-          return (
-            <TouchableOpacity
-              key={t}
-              style={s.bottomTab}
-              onPress={() => setTab(t)}
-              activeOpacity={0.7}
-            >
-              {active && (
-                <View style={[s.activeIndicator, { backgroundColor: BRAND }]} />
-              )}
-              <Text
-                style={[
-                  s.bottomTabLabel,
-                  {
-                    color: active ? BRAND : (colors.textMuted as string),
-                    fontFamily: active ? "Inter_600SemiBold" : "Inter_400Regular",
-                  },
-                ]}
+        {/* Centered tabs */}
+        <View style={s.tabsCenter}>
+          {(["emoji", "gifs", "stickers"] as Tab[]).map((t) => {
+            const active = tab === t;
+            const label = t === "emoji" ? "Emoji" : t === "gifs" ? "GIFs" : "Stickers";
+            return (
+              <TouchableOpacity
+                key={t}
+                style={s.bottomTab}
+                onPress={() => setTab(t)}
+                activeOpacity={0.7}
               >
-                {label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+                {active && (
+                  <View style={[s.activeIndicator, { backgroundColor: BRAND }]} />
+                )}
+                <Text
+                  style={[
+                    s.bottomTabLabel,
+                    {
+                      color: active ? BRAND : (colors.textMuted as string),
+                      fontFamily: active ? "Inter_600SemiBold" : "Inter_400Regular",
+                    },
+                  ]}
+                >
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-        {/* Spacer pushes ⌫ to the right */}
-        <View style={{ flex: 1 }} />
-
-        {/* Delete / backspace key */}
+        {/* Delete / backspace key — pinned to right */}
         <TouchableOpacity
           style={s.deleteBtn}
           onPress={onDelete}
@@ -453,13 +419,19 @@ const s = StyleSheet.create({
   bottomBar: {
     flexDirection: "row",
     alignItems: "center",
-    
-    paddingHorizontal: 4,
+    borderTopWidth: 0.5,
+  },
+  tabsCenter: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100%",
   },
   bottomTab: {
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 14,
+    paddingHorizontal: 18,
     height: "100%",
     position: "relative",
   },
