@@ -194,7 +194,6 @@ export default function MeScreen() {
   const { profile, isPremium, subscription, loading, user, equippedGoods } = useAuth();
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [qrPosterOpen, setQrPosterOpen] = useState(false);
-  const [notesLoading, setNotesLoading] = useState(false);
 
   const afuId = useMemo(() => {
     if (!profile?.id) return "00000000";
@@ -293,46 +292,7 @@ export default function MeScreen() {
     return () => { supabase.removeChannel(ch); };
   }, [user?.id]);
 
-  // ── My Notes ────────────────────────────────────────────────────────────────
-  const openMyNotes = useCallback(async () => {
-    if (!user || notesLoading) return;
-    void Haptics.selectionAsync();
-    setNotesLoading(true);
-    try {
-      const CACHE_KEY = `notes_chat_id_${user.id}`;
-      const NOTES_NAME = `notes:${user.id}`;
-      let notesId = await AsyncStorage.getItem(CACHE_KEY).catch(() => null);
-
-      if (isOnline()) {
-        if (notesId) {
-          const { data: existing } = await supabase.from("chats").select("id, name").eq("id", notesId).eq("name", NOTES_NAME).maybeSingle();
-          if (!existing) notesId = null;
-        }
-        if (!notesId) {
-          const { data: found } = await supabase.from("chats").select("id").eq("name", NOTES_NAME).maybeSingle();
-          if (found) {
-            notesId = found.id;
-          } else {
-            const { data: newChat, error: createErr } = await supabase
-              .from("chats").insert({ is_group: false, is_channel: false, name: NOTES_NAME, created_by: user.id, user_id: user.id }).select("id").single();
-            if (createErr || !newChat) throw new Error(createErr?.message || "Failed to create notes chat");
-            await supabase.from("chat_members").insert({ chat_id: newChat.id, user_id: user.id });
-            notesId = newChat.id;
-          }
-          await AsyncStorage.setItem(CACHE_KEY, notesId!).catch(() => {});
-        }
-      } else if (!notesId) {
-        showToast("My Notes will be available once you connect to the internet", { type: "info" });
-        return;
-      }
-
-      router.push({ pathname: "/chat/[id]", params: { id: notesId, otherId: user.id, otherName: "My Notes" } } as any);
-    } catch (err: any) {
-      showAlert("Error", err.message || "Could not open notes");
-    } finally {
-      setNotesLoading(false);
-    }
-  }, [user, notesLoading]);
+  // My Notes lives in the Chats tab (pinned at top) — no longer exposed here.
 
   if (!loading && !profile) return <Redirect href="/discover" />;
   if (loading || !profile) {
@@ -548,14 +508,6 @@ export default function MeScreen() {
               label="Watch History"
               onPress={() => router.push("/watch-history" as any)}
               showSeparator
-              colors={colors}
-            />
-            <MenuItem
-              icon="document-text"
-              iconColor={accent}
-              label="My Notes"
-              badge={notesLoading ? "…" : undefined}
-              onPress={openMyNotes}
               colors={colors}
             />
           </MenuCard>

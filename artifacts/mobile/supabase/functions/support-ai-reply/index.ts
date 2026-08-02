@@ -26,6 +26,9 @@ const CORS_HEADERS = {
 const ENGAGERA_API_KEY  = Deno.env.get("ENGAGERA_API_KEY") ?? "";
 const SUPABASE_URL      = Deno.env.get("SUPABASE_URL")     ?? "";
 const SERVICE_ROLE_KEY  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+// SUPABASE_ANON_KEY is auto-injected by the Supabase runtime — used as the
+// Bearer token when calling another edge function on the same project.
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const ENGAGERA_BASE     = `${SUPABASE_URL}/functions/v1`;
 
 // ─── Category-aware hints for the system prompt ──────────────────────────────
@@ -133,10 +136,13 @@ Category: ${ticket.category ?? "general"}`;
     ];
 
     // ── 4. Call Engagera ─────────────────────────────────────────────────────
+    // When one edge function calls another on the same Supabase project it must
+    // supply Authorization: Bearer <anon-key>, otherwise the target returns 401.
     const engRes = await fetch(`${ENGAGERA_BASE}/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
         "x-engagera-api-key": ENGAGERA_API_KEY,
       },
       body: JSON.stringify({

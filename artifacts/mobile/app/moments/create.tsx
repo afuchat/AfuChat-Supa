@@ -108,13 +108,16 @@ export default function CreatePostScreen() {
   const { user, profile }  = useAuth();
   const { preferredLang }  = useLanguage();
   const insets             = useSafeAreaInsets();
-  const params             = useLocalSearchParams<{ prefill?: string }>();
+  const params             = useLocalSearchParams<{ prefill?: string; imageUrl?: string }>();
   const inputRef           = useRef<TextInput>(null);
   const postBtnScale       = useRef(new Animated.Value(1)).current;
 
   // ── state ──────────────────────────────────────────────────────────────────
   const [content,          setContent]          = useState(params.prefill ?? "");
-  const [images,           setImages]           = useState<string[]>([]);
+  // Pre-populate with a shared image URL when coming from "Share to Feed" in chat
+  const [images,           setImages]           = useState<string[]>(
+    params.imageUrl ? [params.imageUrl] : []
+  );
   const [audience,         setAudience]         = useState<Audience>("public");
   const [langCode,         setLangCode]         = useState<string | null>(preferredLang);
   const [locationTag,      setLocationTag]      = useState("");

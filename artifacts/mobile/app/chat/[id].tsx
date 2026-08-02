@@ -7648,8 +7648,38 @@ STRICT RULES:
           const txt = showReactions.encrypted_content?.trim();
           const isGift = !txt || txt.startsWith("🎁 ") || txt.startsWith("🧧") || txt.includes("|giftId:");
           if (isGift) return null;
+
+          // Detect image/gif attachments so the real URL is imported into the
+          // post composer instead of the "📷 Photo" placeholder text.
+          const hasImage =
+            !!showReactions.attachment_url &&
+            (showReactions.attachment_type === "image" ||
+              showReactions.attachment_type === "gif");
+
+          // "📷 Photo" / "🎥 Video" / "GIF" are UI-only placeholders — strip them
+          // from the text prefill so they don't appear as post content.
+          const isMediaPlaceholder = ["📷 Photo", "🎥 Video", "GIF"].includes(txt ?? "");
+          const shareText = isMediaPlaceholder ? "" : (txt ?? "");
+          const shareImageUrl = hasImage ? showReactions.attachment_url : undefined;
+
+          // Nothing meaningful to share (video-only has no importable URL yet)
+          if (!shareText && !shareImageUrl) return null;
+
           return (
-            <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); router.push({ pathname: "/create-post", params: { prefill: txt } } as any); }}>
+            <TouchableOpacity
+              style={st.reactRow}
+              activeOpacity={0.65}
+              onPress={() => {
+                setShowReactions(null);
+                setAiResult(null);
+                setAiResultType(null);
+                setAiReplies([]);
+                const params: Record<string, string> = {};
+                if (shareText) params.prefill = shareText;
+                if (shareImageUrl) params.imageUrl = shareImageUrl;
+                router.push({ pathname: "/create-post", params } as any);
+              }}
+            >
               <Ionicons name="share-social" size={24} color={colors.text} style={st.reactRowIcon} />
               <Text style={[st.reactRowLabel, { color: colors.text }]}>Share to Feed</Text>
             </TouchableOpacity>

@@ -46,21 +46,20 @@ export async function recordWatchHistory(
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    // Use the anon client directly -- RLS ensures user_id = auth.uid()
-    await supabase.from("video_watch_history").upsert(
-      {
-        user_id:    session.user.id,
-        post_id:    postId,
-        watched_at: new Date().toISOString(),
-        progress:   typeof meta.progress === "number"
-          ? Math.min(1, Math.max(0, meta.progress))
-          : 0,
-        title:      meta.title     ?? null,
-        thumbnail:  meta.thumbnail ?? null,
-        video_url:  meta.videoUrl  ?? null,
-      },
-      { onConflict: "user_id,post_id" },
-    );
+    // Use the upsert_watch_history RPC so watch_count is incremented atomically
+    // on repeat views (plain .upsert() would just overwrite, keeping count = 1).
+    // The function is defined in supabase/migrations/20260801_video_watch_history.sql.
+    await supabase.rpc("upsert_watch_history", {
+      p_user_id:    session.user.id,
+      p_post_id:    postId,
+      p_watched_at: new Date().toISOString(),
+      p_progress:   typeof meta.progress === "number"
+        ? Math.min(1, Math.max(0, meta.progress))
+        : 0,
+      p_title:      meta.title     ?? null,
+      p_thumbnail:  meta.thumbnail ?? null,
+      p_video_url:  meta.videoUrl  ?? null,
+    });
   } catch {
     // Silent -- never crash the video player over analytics
   }
