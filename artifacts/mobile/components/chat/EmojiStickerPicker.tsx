@@ -6,23 +6,156 @@
  * The tab bar sits at the BOTTOM exactly like a native keyboard (as per design).
  * The ⌫ delete button on the right deletes the last character from the input.
  */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   FlatList,
   Image,
-  Platform,
   ScrollView,
+  SectionList,
   StyleSheet,
   Text,
-
   TouchableOpacity,
   View,
   ActivityIndicator,
 } from "react-native";
-import { EmojiKeyboard } from "rn-emoji-keyboard";
+import { emojisByCategory } from "rn-emoji-keyboard";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { useAppAccent } from "@/context/AppAccentContext";
+
+// ─── Continuous emoji scroll panel ────────────────────────────────────────────
+
+const EMOJI_COLS = 8;
+
+const CAT_ICONS: Record<string, string> = {
+  recently_used: "🕐", smileys_emotion: "😀", people_body: "👋",
+  animals_nature: "🐶", food_drink: "🍕", travel_places: "✈️",
+  activities: "⚽", objects: "💡", symbols: "🔣", flags: "🏳️",
+};
+
+const CAT_LABELS: Record<string, string> = {
+  recently_used: "Recently Used", smileys_emotion: "Smileys & Emotion",
+  people_body: "People & Body", animals_nature: "Animals & Nature",
+  food_drink: "Food & Drink", travel_places: "Travel & Places",
+  activities: "Activities", objects: "Objects",
+  symbols: "Symbols", flags: "Flags",
+};
+
+type EmojiRow = { emoji: string; name: string }[];
+
+function chunkEmojis(data: { emoji: string; name: string }[], cols: number): EmojiRow[] {
+  const rows: EmojiRow[] = [];
+  for (let i = 0; i < data.length; i += cols) rows.push(data.slice(i, i + cols));
+  return rows;
+}
+
+function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (emoji: string) => void }) {
+  const { colors } = useTheme();
+  const { accent } = useAppAccent();
+  const listRef = useRef<SectionList>(null);
+  const catBarRef = useRef<ScrollView>(null);
+  const [activeCat, setActiveCat] = useState(0);
+  const isScrollingTo = useRef(false);
+
+  const sections = useMemo(() =>
+    emojisByCategory
+      .filter((c) => c.title !== "search" && c.data.length > 0)
+      .map((c) => ({ title: c.title, data: chunkEmojis(c.data, EMOJI_COLS) })),
+    [],
+  );
+
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 30 });
+
+  const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
+    if (isScrollingTo.current || !viewableItems.length) return;
+    const first = viewableItems[0];
+    const idx = sections.findIndex((s) => s.title === first.section?.title);
+    if (idx >= 0 && idx !== activeCat) setActiveCat(idx);
+  }, [sections, activeCat]);
+
+  const scrollToCategory = useCallback((idx: number) => {
+    isScrollingTo.current = true;
+    setActiveCat(idx);
+    listRef.current?.scrollToLocation({ sectionIndex: idx, itemIndex: 0, animated: true, viewOffset: 0 });
+    catBarRef.current?.scrollTo({ x: idx * 44, animated: true });
+    setTimeout(() => { isScrollingTo.current = false; }, 700);
+  }, []);
+
+  const renderItem = useCallback(({ item }: { item: EmojiRow }) => (
+    <View style={{ flexDirection: "row", paddingHorizontal: 4 }}>
+      {item.map((e) => (
+        <TouchableOpacity
+          key={e.name}
+          onPress={() => onEmojiSelected(e.emoji)}
+          style={{ flex: 1, alignItems: "center", paddingVertical: 3 }}
+          activeOpacity={0.6}
+          hitSlop={2}
+        >
+          <Text style={{ fontSize: 28 }}>{e.emoji}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  ), [onEmojiSelected]);
+
+  const renderSectionHeader = useCallback(({ section }: any) => (
+    <Text style={{
+      fontSize: 11, fontFamily: "Inter_600SemiBold",
+      color: colors.textMuted as string, textTransform: "uppercase", letterSpacing: 0.5,
+      paddingHorizontal: 12, paddingTop: 10, paddingBottom: 3,
+      backgroundColor: colors.surface as string,
+    }}>
+      {CAT_LABELS[section.title] ?? section.title}
+    </Text>
+  ), [colors]);
+
+  const keyExtractor = useCallback((_: EmojiRow, i: number) => String(i), []);
+
+  return (
+    <View style={{ flex: 1 }}>
+      {/* Category icon bar */}
+      <ScrollView
+        ref={catBarRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ borderBottomWidth: 0.5, borderBottomColor: ((colors.border as string) ?? "#ccc") + "80", maxHeight: 44 }}
+        contentContainerStyle={{ paddingHorizontal: 4, alignItems: "center" }}
+      >
+        {sections.map((s, i) => (
+          <TouchableOpacity
+            key={s.title}
+            onPress={() => scrollToCategory(i)}
+            style={{
+              width: 44, height: 44, alignItems: "center", justifyContent: "center",
+              borderBottomWidth: i === activeCat ? 2 : 0,
+              borderBottomColor: accent,
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={{ fontSize: 20 }}>{CAT_ICONS[s.title] ?? "🔡"}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* Continuous emoji list */}
+      <SectionList
+        ref={listRef}
+        sections={sections}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        renderSectionHeader={renderSectionHeader}
+        showsVerticalScrollIndicator={false}
+        stickySectionHeadersEnabled={false}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig.current}
+        keyboardShouldPersistTaps="handled"
+        initialNumToRender={12}
+        maxToRenderPerBatch={6}
+        windowSize={10}
+        contentContainerStyle={{ paddingBottom: 8 }}
+      />
+    </View>
+  );
+}
 
 // ─── Sticker data ─────────────────────────────────────────────────────────────
 
@@ -217,26 +350,6 @@ export default function EmojiStickerPicker({
   const [tab, setTab] = useState<Tab>("emoji");
   const [activeCat, setActiveCat] = useState(0);
 
-  const emojiTheme = {
-    knob: colors.textMuted,
-    container: colors.surface,
-    header: colors.text,
-    skinTonesContainer: colors.surface,
-    category: {
-      icon: colors.textMuted,
-      iconActive: BRAND,
-      container: colors.surface,
-      containerActive: colors.inputBg,
-    },
-    search: {
-      text: colors.text,
-      placeholder: colors.textMuted,
-      icon: colors.textMuted,
-      background: colors.inputBg,
-    },
-    emoji: { selected: colors.inputBg },
-  };
-
   const TAB_BAR_H = 46;
 
   return (
@@ -245,27 +358,7 @@ export default function EmojiStickerPicker({
       {/* ── Content area (fills space above tab bar) ── */}
       <View style={{ flex: 1 }}>
         {tab === "emoji" && (
-          <EmojiKeyboard
-            onEmojiSelected={(emojiObject: { emoji: string }) =>
-              onEmojiSelected(emojiObject.emoji)
-            }
-            enableRecentlyUsed
-            enableSearchBar={false}
-            hideHeader
-            enableCategoryChangeGesture={false}
-            categoryPosition="top"
-            disableSafeArea
-            expandable={false}
-            theme={emojiTheme}
-            styles={{
-              container: {
-                flex: 1,
-                borderRadius: 0,
-                ...Platform.select({ default: { shadowOpacity: 0 } }),
-                elevation: 0,
-              },
-            }}
-          />
+          <EmojiScrollPanel onEmojiSelected={onEmojiSelected} />
         )}
 
         {tab === "gifs" && (
