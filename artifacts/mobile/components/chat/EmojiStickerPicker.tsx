@@ -10,6 +10,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import {
   FlatList,
   Image,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,10 +18,12 @@ import {
   View,
   ActivityIndicator,
 } from "react-native";
+import { BlurView } from "expo-blur";
 import { emojisByCategory } from "rn-emoji-keyboard";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { useAppAccent } from "@/context/AppAccentContext";
+import { GLASS, glassTokens } from "@/constants/glass";
 
 // ─── Continuous emoji scroll panel ────────────────────────────────────────────
 
@@ -582,83 +585,82 @@ export default function EmojiStickerPicker({
   const BRAND = accent;
 
   const [tab, setTab] = useState<Tab>("emoji");
-  const [activeCat, setActiveCat] = useState(0);
+  const { isDark } = useTheme();
+  const glass = glassTokens(isDark);
 
-  const TAB_BAR_H = 46;
+  // Pill floats 10 px above the bottom edge; content scrolls behind it so we
+  // pad the bottom of the content area by pillH + bottomGap.
+  const PILL_H      = 40;
+  const BOTTOM_GAP  = 10;
+  const CONTENT_PAD = PILL_H + BOTTOM_GAP + 4;
 
   return (
     <View style={[s.root, { height, backgroundColor: colors.surface as string }]}>
 
-      {/* ── Content area (fills space above tab bar) ── */}
-      <View style={{ flex: 1 }}>
+      {/* ── Content area — padded so list never scrolls behind the pill ── */}
+      <View style={{ flex: 1, paddingBottom: CONTENT_PAD }}>
         {tab === "emoji" && (
           <EmojiScrollPanel onEmojiSelected={onEmojiSelected} />
         )}
-
         {tab === "gifs" && (
           <GifPanel onSendGif={onSendGif ?? (() => {})} />
         )}
-
         {tab === "stickers" && (
           <StickerScrollPanel onSendSticker={onSendSticker} />
         )}
       </View>
 
-      {/* ── Bottom tab bar — Emoji | GIFs | Stickers  [⌫] ── */}
-      <View
-        style={[
-          s.bottomBar,
-          {
-            height: TAB_BAR_H,
-            backgroundColor: colors.surface as string,
-            borderTopColor: ((colors.border as string) ?? "#ccc") + "80",
-          },
-        ]}
-      >
-        {/* Centered tabs */}
-        <View style={s.tabsCenter}>
+      {/* ── Floating pill row — absolute at bottom center ── */}
+      <View style={[s.pillRow, { bottom: BOTTOM_GAP, pointerEvents: "box-none" }]}>
+
+        {/* Main glass pill: Emoji | GIFs | Stickers */}
+        <BlurView
+          intensity={GLASS.blur.heavy}
+          tint={isDark ? "dark" : "light"}
+          style={[s.pill, { borderColor: glass.border }, GLASS.shadow.darkSoft as any]}
+        >
           {(["emoji", "gifs", "stickers"] as Tab[]).map((t) => {
             const active = tab === t;
-            const label = t === "emoji" ? "Emoji" : t === "gifs" ? "GIFs" : "Stickers";
+            const label  = t === "emoji" ? "Emoji" : t === "gifs" ? "GIFs" : "Stickers";
             return (
               <TouchableOpacity
                 key={t}
-                style={s.bottomTab}
                 onPress={() => setTab(t)}
                 activeOpacity={0.7}
+                style={s.pillTab}
               >
+                {/* Active chip highlight */}
                 {active && (
-                  <View style={[s.activeIndicator, { backgroundColor: BRAND }]} />
+                  <View style={[s.activeChip, { backgroundColor: BRAND + "28" }]} />
                 )}
-                <Text
-                  style={[
-                    s.bottomTabLabel,
-                    {
-                      color: active ? BRAND : (colors.textMuted as string),
-                      fontFamily: active ? "Inter_600SemiBold" : "Inter_400Regular",
-                    },
-                  ]}
-                >
+                <Text style={[
+                  s.pillTabLabel,
+                  { color: active ? BRAND : (colors.textMuted as string),
+                    fontFamily: active ? "Inter_600SemiBold" : "Inter_400Regular" },
+                ]}>
                   {label}
                 </Text>
               </TouchableOpacity>
             );
           })}
-        </View>
+        </BlurView>
 
-        {/* Delete / backspace key — pinned to right */}
-        <TouchableOpacity
-          style={s.deleteBtn}
-          onPress={onDelete}
-          activeOpacity={0.6}
-          hitSlop={8}
+        {/* ⌫ glass circle — separate from the pill */}
+        <BlurView
+          intensity={GLASS.blur.heavy}
+          tint={isDark ? "dark" : "light"}
+          style={[s.deleteCircle, { borderColor: glass.border }, GLASS.shadow.darkSoft as any]}
         >
-          <Ionicons
-            name="backspace"
-            size={22}
-            color={colors.textMuted as string}
-          />
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={onDelete}
+            activeOpacity={0.6}
+            hitSlop={8}
+            style={s.deleteInner}
+          >
+            <Ionicons name="backspace-outline" size={20} color={colors.textMuted as string} />
+          </TouchableOpacity>
+        </BlurView>
+
       </View>
     </View>
   );
@@ -669,40 +671,58 @@ export default function EmojiStickerPicker({
 const s = StyleSheet.create({
   root: { overflow: "hidden", flexDirection: "column" },
 
-  /* Bottom navigation bar */
-  bottomBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderTopWidth: 0.5,
-  },
-  tabsCenter: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    height: "100%",
-  },
-  bottomTab: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 18,
-    height: "100%",
-    position: "relative",
-  },
-  activeIndicator: {
+  /* Floating pill row ─────────────────────────────────────────────────────── */
+  pillRow: {
     position: "absolute",
-    top: 0,
-    left: 10,
-    right: 10,
-    height: 2.5,
-    borderRadius: 2,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 16,
   },
-  bottomTabLabel: {
+
+  /* Main pill (Emoji | GIFs | Stickers) */
+  pill: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 40,
+    borderRadius: GLASS.radius.pill,
+    borderWidth: 0.5,
+    overflow: "hidden",
+    paddingHorizontal: 4,
+  },
+
+  pillTab: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    height: 40,
+  },
+
+  activeChip: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: GLASS.radius.pill,
+    marginHorizontal: 4,
+    marginVertical: 6,
+  },
+
+  pillTabLabel: {
     fontSize: 13,
   },
-  deleteBtn: {
-    paddingHorizontal: 16,
-    height: "100%",
+
+  /* ⌫ circle */
+  deleteCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 0.5,
+    overflow: "hidden",
+  },
+
+  deleteInner: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
