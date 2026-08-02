@@ -190,7 +190,9 @@ function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (emoji: string
         })}
       </ScrollView>
 
-      {/* Continuous emoji list — all categories in one vertical scroll */}
+      {/* Continuous emoji list — all categories in one vertical scroll.
+          flex:1 is mandatory: without it the VirtualizedList gets 0 height
+          in a flex-column parent and renders nothing (blank black screen). */}
       <SectionList
         ref={listRef}
         sections={EMOJI_SECTIONS}
@@ -207,6 +209,7 @@ function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (emoji: string
         maxToRenderPerBatch={8}
         windowSize={12}
         contentContainerStyle={{ paddingBottom: 8 }}
+        style={{ flex: 1 }}
       />
     </View>
   );
