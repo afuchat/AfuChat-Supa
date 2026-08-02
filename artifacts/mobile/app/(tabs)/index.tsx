@@ -1753,7 +1753,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                 const pageKey   = isAll ? "all" : (page as any).id;
                 const pageChats = getPageChats(page);
                 return (
-                  <View key={pageKey} style={{ flex: 1, paddingTop: showFolderUI ? 54 : 0 }}>
+                  <View key={pageKey} style={{ flex: 1, paddingTop: showFolderUI ? 42 : 0 }}>
                     {loading ? (
                       <View style={{ padding: 8 }}>{[1,2,3,4,5,6].map(i => <ChatRowSkeleton key={i} />)}</View>
                     ) : pageChats.length === 0 ? (
@@ -1828,7 +1828,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                 const isAll     = !("filter" in page);
                 const pageChats = getPageChats(page);
                 return (
-                  <View style={{ width: windowWidth, flex: 1, paddingTop: showFolderUI ? 54 : 0 }}>
+                  <View style={{ width: windowWidth, flex: 1, paddingTop: showFolderUI ? 42 : 0 }}>
                     {loading ? (
                       <View style={{ padding: 8 }}>{[1,2,3,4,5,6].map(i => <ChatRowSkeleton key={i} />)}</View>
                     ) : pageChats.length === 0 ? (
@@ -1886,7 +1886,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
           )
         ) : (
           /* ── Single-page list (no folders, or desktop/panel mode) ──── */
-          <View style={{ flex: 1, paddingTop: showFolderUI ? 54 : 0 }}>
+          <View style={{ flex: 1, paddingTop: showFolderUI ? 42 : 0 }}>
             {loading ? (
               <View style={{ padding: 8 }}>{[1,2,3,4,5,6].map(i => <ChatRowSkeleton key={i} />)}</View>
             ) : filtered.length === 0 ? (
@@ -1947,7 +1947,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
             colors={[colors.background + "FF", "transparent"] as any}
             style={{
               position: "absolute",
-              top: 52,
+              top: 40,
               left: 0,
               right: 0,
               height: 48,
@@ -2230,17 +2230,17 @@ const styles = StyleSheet.create({
   // ── Floating folder tab bar ──────────────────────────────────────────────
   folderBarFloat: {
     position: "absolute",
-    top: 8,
-    left: 10,
-    right: 10,
+    top: 0,
+    left: 0,
+    right: 0,
     zIndex: 20,
     backgroundColor: "transparent",
   },
   folderTabBarContent: {
-    paddingHorizontal: 2,
+    paddingHorizontal: 8,
     alignItems: "center",
-    gap: 6,
-    paddingVertical: 0,
+    gap: 4,
+    paddingVertical: 4,
   },
   folderPillWrap: {
     alignSelf: "center",
