@@ -9,7 +9,6 @@ import {
   Modal,
   PanResponder,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,6 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { BlurView } from "expo-blur";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -47,28 +47,12 @@ export type GiftPickerSheetProps = {
 
 const RARITY_ORDER = ["common", "uncommon", "rare", "epic", "legendary"];
 
-const RARITY_GRADIENTS: Record<string, readonly [string, string]> = {
-  common:    ["#4E4E5A", "#2C2C34"] as const,
-  uncommon:  ["#0B8080", "#064E4E"] as const,
-  rare:      ["#1B46D6", "#0A1F90"] as const,
-  epic:      ["#8C3FBF", "#4A0E88"] as const,
-  legendary: ["#C85A00", "#7C2800"] as const,
-};
-
 const RARITY_COLORS: Record<string, string> = {
   common:    "#9E9E9E",
   uncommon:  "#1f95ff",
   rare:      "#2979FF",
   epic:      "#CE93D8",
   legendary: "#FFB74D",
-};
-
-const RARITY_LABEL_BG: Record<string, string> = {
-  common:    "rgba(158,158,158,0.15)",
-  uncommon:  "rgba(0,188,212,0.15)",
-  rare:      "rgba(41,121,255,0.15)",
-  epic:      "rgba(206,147,216,0.15)",
-  legendary: "rgba(255,183,77,0.15)",
 };
 
 const STATIC_GIFTS = [
@@ -130,84 +114,68 @@ const STATIC_GIFTS = [
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const CARD_COLS = 4;
-const CARD_GAP = 8;
+const CARD_GAP = 4;
 const CARD_W = Math.floor((SCREEN_WIDTH - 32 - CARD_GAP * (CARD_COLS - 1)) / CARD_COLS);
-const CARD_H = Math.floor(CARD_W * 1.2);
-// Fixed height for the gift grid — same for skeleton and loaded state so the sheet never resizes
-const GRID_H = CARD_H * 3 + CARD_GAP * 2 + 16; // 3 rows visible + gaps + padding
+const CARD_H = Math.floor(CARD_W * 1.25);
+const GRID_H = CARD_H * 3 + CARD_GAP * 2 + 16;
 
-function Gift3DCard({
+// ── Bare gift cell — no card background, just emoji + price ──────────────────
+function GiftCell({
   gift,
   price,
-  basePrice,
   selected,
   canAfford,
   onPress,
+  isDark,
 }: {
   gift: DbGift;
   price: number;
-  basePrice: number;
   selected: boolean;
   canAfford: boolean;
   onPress: () => void;
+  isDark: boolean;
 }) {
   const scale = useRef(new Animated.Value(1)).current;
   const rarity = (gift.rarity || "common").toLowerCase();
-  const gradient = RARITY_GRADIENTS[rarity] ?? RARITY_GRADIENTS.common;
   const rColor = RARITY_COLORS[rarity] ?? "#9E9E9E";
 
-  const priceChange = basePrice > 0 ? Math.round(((price - basePrice) / basePrice) * 100) : 0;
-  const showTrend = (rarity === "rare" || rarity === "epic" || rarity === "legendary") && priceChange !== 0;
-
   function handlePressIn() {
-    Animated.spring(scale, { toValue: 0.93, useNativeDriver: true, tension: 180, friction: 8 }).start();
+    Animated.spring(scale, { toValue: 0.88, useNativeDriver: true, tension: 200, friction: 8 }).start();
   }
   function handlePressOut() {
-    Animated.spring(scale, { toValue: selected ? 1.06 : 1, useNativeDriver: true, tension: 180, friction: 8 }).start();
+    Animated.spring(scale, { toValue: selected ? 1.1 : 1, useNativeDriver: true, tension: 200, friction: 8 }).start();
   }
-
   useEffect(() => {
-    Animated.spring(scale, {
-      toValue: selected ? 1.06 : 1,
-      useNativeDriver: true,
-      tension: 180,
-      friction: 8,
-    }).start();
+    Animated.spring(scale, { toValue: selected ? 1.1 : 1, useNativeDriver: true, tension: 200, friction: 8 }).start();
   }, [selected]);
 
   return (
-    <Animated.View
-      style={[
-        styles.cardShadow,
-        {
-          ...{ shadowColor: selected ? rColor : "transparent" },
-          transform: [{ scale }],
-          opacity: canAfford ? 1 : 0.38,
-        },
-      ]}
+    <TouchableOpacity
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      activeOpacity={1}
+      disabled={!canAfford}
+      style={{ width: CARD_W, alignItems: "center", opacity: canAfford ? 1 : 0.3 }}
     >
-      <TouchableOpacity
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        activeOpacity={1}
-        disabled={!canAfford}
-        style={styles.cardTouchable}
-      >
-        <View
-          style={[
-            styles.card,
-            selected && { borderColor: rColor, borderWidth: 2 },
-          ]}
-        >
-          <Text style={styles.cardEmoji}>{gift.emoji}</Text>
-          <View style={styles.cardPriceRow}>
-            <Ionicons name="diamond" size={8} color={Colors.gold} />
-            <Text style={styles.cardPrice}>{price}</Text>
-          </View>
+      <Animated.View style={{ alignItems: "center", transform: [{ scale }] }}>
+        {/* Selection ring */}
+        {selected && (
+          <View style={{
+            position: "absolute",
+            top: -6, left: -6, right: -6, bottom: -6,
+            borderRadius: 20,
+            borderWidth: 2,
+            borderColor: rColor,
+          }} />
+        )}
+        <Text style={{ fontSize: 36, lineHeight: 44 }}>{gift.emoji}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 2, marginTop: 2 }}>
+          <Ionicons name="diamond" size={8} color={Colors.gold} />
+          <Text style={{ fontSize: 9, fontFamily: "Inter_600SemiBold", color: Colors.gold }}>{price}</Text>
         </View>
-      </TouchableOpacity>
-    </Animated.View>
+      </Animated.View>
+    </TouchableOpacity>
   );
 }
 
@@ -219,7 +187,7 @@ export default function GiftPickerSheet({
   acoinBalance,
   recipientName,
 }: GiftPickerSheetProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { getDynamicPrice, statsMap } = useGiftPrices();
 
@@ -260,7 +228,7 @@ export default function GiftPickerSheet({
     setLoading(true);
     try {
       const giftCols = "id, name, emoji, base_xp_cost, rarity, description, image_url";
-      const { data, error } = await supabase.from("gifts").select(giftCols).order("base_xp_cost", { ascending: true });
+      const { data } = await supabase.from("gifts").select(giftCols).order("base_xp_cost", { ascending: true });
       if (data && data.length > 0) {
         if (data.length < 40) {
           await supabase.from("gifts").upsert(
@@ -322,158 +290,181 @@ export default function GiftPickerSheet({
       <View style={styles.overlay}>
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissSheet} />
         <Animated.View style={{ transform: [{ translateY: sheetTranslateY }], width: "100%" }}>
-        <KeyboardAvoidingView
-          behavior="padding"
-          style={styles.kavWrapper}
-        >
-          <View style={[styles.sheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 12 }]}>
-            <View {...sheetPan.panHandlers} style={[styles.dragHandle, { backgroundColor: colors.border }]} />
+          <KeyboardAvoidingView behavior="padding" style={styles.kavWrapper}>
+            <View style={[styles.sheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 12 }]}>
 
-            <View style={styles.header}>
-              <View>
-                <Text style={[styles.headerTitle, { color: colors.text }]}>Send a Gift</Text>
-                {recipientName && (
-                  <Text style={[styles.headerSub, { color: colors.textMuted }]}>to {recipientName}</Text>
-                )}
+              {/* Drag handle */}
+              <View {...sheetPan.panHandlers} style={{ alignItems: "center", paddingTop: 8, paddingBottom: 10 }}>
+                <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border }} />
               </View>
-              <View style={styles.balancePill}>
-                <Ionicons name="diamond" size={13} color={Colors.gold} />
-                <Text style={[styles.balanceText, { color: Colors.gold }]}>{acoinBalance} AC</Text>
-              </View>
-              <TouchableOpacity onPress={onClose} hitSlop={12} style={styles.closeBtn}>
-                <Ionicons name="close-circle" size={26} color={colors.textMuted} />
-              </TouchableOpacity>
-            </View>
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.tabScroll}
-              contentContainerStyle={styles.tabScrollContent}
-            >
-              {rarities.map((r) => {
-                const active = filter === r;
-                const rColor = r === "all" ? colors.accent : (RARITY_COLORS[r] ?? colors.accent);
-                return (
-                  <TouchableOpacity
-                    key={r}
-                    style={[
-                      styles.tab,
-                      active
-                        ? { backgroundColor: rColor + "28", borderColor: rColor }
-                        : { backgroundColor: colors.backgroundSecondary, borderColor: "transparent" },
-                    ]}
-                    onPress={() => setFilter(r)}
-                    activeOpacity={0.7}
+              {/* Header */}
+              <View style={styles.header}>
+                <View>
+                  <Text style={[styles.headerTitle, { color: colors.text }]}>Send a Gift</Text>
+                  {recipientName && (
+                    <Text style={[styles.headerSub, { color: colors.textMuted }]}>to {recipientName}</Text>
+                  )}
+                </View>
+                <View style={styles.balancePill}>
+                  <Ionicons name="diamond" size={13} color={Colors.gold} />
+                  <Text style={[styles.balanceText, { color: Colors.gold }]}>{acoinBalance} AC</Text>
+                </View>
+                <TouchableOpacity onPress={onClose} hitSlop={12} style={{ marginLeft: 8 }}>
+                  <Ionicons name="close-circle" size={26} color={colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+
+              {/* ── Floating glass pill category strip ── */}
+              <View style={{ marginBottom: 12, paddingHorizontal: 16 }}>
+                <View style={{
+                  borderRadius: 30,
+                  overflow: "hidden",
+                  borderWidth: 0.8,
+                  borderColor: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.07)",
+                }}>
+                  <BlurView
+                    intensity={55}
+                    tint={isDark ? "dark" : "light"}
+                    style={{
+                      backgroundColor: isDark ? "rgba(28,28,32,0.5)" : "rgba(240,240,245,0.6)",
+                    }}
                   >
-                    <Text style={[styles.tabText, { color: active ? rColor : colors.textMuted }]}>
-                      {r === "all" ? "All" : r.charAt(0).toUpperCase() + r.slice(1)}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-
-            {loading ? (
-              <View style={{ height: GRID_H, flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 16, gap: CARD_GAP, alignContent: "flex-start", overflow: "hidden" }}>
-                {Array.from({ length: CARD_COLS * 3 }).map((_, i) => (
-                  <Skeleton key={i} width={CARD_W} height={CARD_H} borderRadius={16} />
-                ))}
-              </View>
-            ) : filtered.length === 0 ? (
-              <View style={styles.loadingWrap}>
-                <Text style={{ fontSize: 40 }}>🎁</Text>
-                <Text style={[styles.loadingText, { color: colors.textMuted }]}>No gifts in this category</Text>
-              </View>
-            ) : (
-              <FlatList
-                data={filtered}
-                keyExtractor={(item) => item.id}
-                key={`gifts-${CARD_COLS}`}
-                numColumns={CARD_COLS}
-                columnWrapperStyle={styles.gridRow}
-                contentContainerStyle={styles.gridContent}
-                style={styles.grid}
-                showsVerticalScrollIndicator={false}
-                renderItem={({ item }) => {
-                  const price = getDynamicPrice(item.id, item.base_xp_cost);
-                  return (
-                    <Gift3DCard
-                      gift={item}
-                      price={price}
-                      basePrice={item.base_xp_cost}
-                      selected={selected?.id === item.id}
-                      canAfford={acoinBalance >= price}
-                      onPress={() => setSelected(selected?.id === item.id ? null : item)}
-                    />
-                  );
-                }}
-                extraData={[selected?.id, statsMap]}
-              />
-            )}
-
-            {selected && (
-              <View style={[styles.confirmBar, { backgroundColor: colors.backgroundSecondary, borderTopColor: colors.border }]}>
-                <TextInput
-                  style={[styles.msgInput, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
-                  placeholder="Add a message (optional)"
-                  placeholderTextColor={colors.textMuted}
-                  value={message}
-                  onChangeText={setMessage}
-                  maxLength={120}
-                  returnKeyType="done"
-                />
-                <View style={styles.confirmRow}>
-                  <View style={styles.confirmGiftInfo}>
-                    <Text style={styles.confirmEmoji}>{selected.emoji}</Text>
-                    <View>
-                      <Text style={[styles.confirmName, { color: colors.text }]} numberOfLines={1}>{selected.name}</Text>
-                      <View style={styles.confirmPriceRow}>
-                        <Ionicons name="diamond" size={11} color={Colors.gold} />
-                        <Text style={[styles.confirmPrice, { color: Colors.gold }]}>{selectedPrice} AC</Text>
-                        {priceChange !== 0 && (
-                          <View style={[styles.confirmTrend, { backgroundColor: priceChange > 0 ? "#10B98120" : "#EF444420" }]}>
-                            <Ionicons
-                              name={priceChange > 0 ? "trending-up" : "trending-down"}
-                              size={10}
-                              color={priceChange > 0 ? "#10B981" : "#EF4444"}
-                            />
-                            <Text style={[styles.confirmTrendText, { color: priceChange > 0 ? "#10B981" : "#EF4444" }]}>
-                              {priceChange > 0 ? "+" : ""}{priceChange}%
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 6, paddingVertical: 6, gap: 4 }}
+                    >
+                      {rarities.map((r) => {
+                        const active = filter === r;
+                        const rColor = r === "all" ? colors.accent : (RARITY_COLORS[r] ?? colors.accent);
+                        return (
+                          <TouchableOpacity
+                            key={r}
+                            onPress={() => setFilter(r)}
+                            activeOpacity={0.7}
+                            style={{
+                              paddingHorizontal: 14,
+                              paddingVertical: 6,
+                              borderRadius: 20,
+                              backgroundColor: active ? rColor : "transparent",
+                            }}
+                          >
+                            <Text style={{
+                              fontSize: 12,
+                              fontFamily: active ? "Inter_700Bold" : "Inter_500Medium",
+                              color: active ? "#fff" : colors.textMuted,
+                              letterSpacing: 0.1,
+                            }}>
+                              {r === "all" ? "All" : r.charAt(0).toUpperCase() + r.slice(1)}
                             </Text>
-                          </View>
-                        )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </BlurView>
+                </View>
+              </View>
+
+              {/* ── Gift grid ── */}
+              {loading ? (
+                <View style={{ height: GRID_H, flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 16, gap: CARD_GAP, alignContent: "flex-start", overflow: "hidden" }}>
+                  {Array.from({ length: CARD_COLS * 3 }).map((_, i) => (
+                    <Skeleton key={i} width={CARD_W} height={CARD_H} borderRadius={16} />
+                  ))}
+                </View>
+              ) : filtered.length === 0 ? (
+                <View style={styles.emptyWrap}>
+                  <Text style={{ fontSize: 40 }}>🎁</Text>
+                  <Text style={[styles.emptyText, { color: colors.textMuted }]}>No gifts in this category</Text>
+                </View>
+              ) : (
+                <FlatList
+                  data={filtered}
+                  keyExtractor={(item) => item.id}
+                  key={`gifts-${CARD_COLS}`}
+                  numColumns={CARD_COLS}
+                  columnWrapperStyle={{ gap: CARD_GAP, paddingHorizontal: 16 }}
+                  contentContainerStyle={{ gap: CARD_GAP, paddingBottom: 8, paddingTop: 4 }}
+                  style={{ height: GRID_H }}
+                  showsVerticalScrollIndicator={false}
+                  renderItem={({ item }) => {
+                    const price = getDynamicPrice(item.id, item.base_xp_cost);
+                    return (
+                      <GiftCell
+                        gift={item}
+                        price={price}
+                        selected={selected?.id === item.id}
+                        canAfford={acoinBalance >= price}
+                        onPress={() => setSelected(selected?.id === item.id ? null : item)}
+                        isDark={isDark}
+                      />
+                    );
+                  }}
+                  extraData={[selected?.id, statsMap]}
+                />
+              )}
+
+              {/* ── Confirm bar ── */}
+              {selected && (
+                <View style={[styles.confirmBar, { borderTopColor: colors.border }]}>
+                  <TextInput
+                    style={[styles.msgInput, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
+                    placeholder="Add a message (optional)"
+                    placeholderTextColor={colors.textMuted}
+                    value={message}
+                    onChangeText={setMessage}
+                    maxLength={120}
+                    returnKeyType="done"
+                  />
+                  <View style={styles.confirmRow}>
+                    <View style={styles.confirmGiftInfo}>
+                      <Text style={{ fontSize: 34 }}>{selected.emoji}</Text>
+                      <View>
+                        <Text style={[styles.confirmName, { color: colors.text }]} numberOfLines={1}>{selected.name}</Text>
+                        <View style={styles.confirmPriceRow}>
+                          <Ionicons name="diamond" size={11} color={Colors.gold} />
+                          <Text style={[styles.confirmPrice, { color: Colors.gold }]}>{selectedPrice} AC</Text>
+                          {priceChange !== 0 && (
+                            <View style={[styles.confirmTrend, { backgroundColor: priceChange > 0 ? "#10B98120" : "#EF444420" }]}>
+                              <Ionicons name={priceChange > 0 ? "trending-up" : "trending-down"} size={10} color={priceChange > 0 ? "#10B981" : "#EF4444"} />
+                              <Text style={[styles.confirmTrendText, { color: priceChange > 0 ? "#10B981" : "#EF4444" }]}>
+                                {priceChange > 0 ? "+" : ""}{priceChange}%
+                              </Text>
+                            </View>
+                          )}
+                        </View>
                       </View>
                     </View>
-                  </View>
-                  <TouchableOpacity
-                    style={[styles.sendBtn, sending && styles.sendBtnDisabled]}
-                    onPress={handleSend}
-                    disabled={sending || acoinBalance < selectedPrice}
-                    activeOpacity={0.8}
-                  >
-                    <LinearGradient
-                      colors={acoinBalance >= selectedPrice ? ["#FF2D55", "#FF375F"] : ["#888", "#666"]}
-                      style={styles.sendBtnGrad}
+                    <TouchableOpacity
+                      style={[styles.sendBtn, (sending || acoinBalance < selectedPrice) && { opacity: 0.5 }]}
+                      onPress={handleSend}
+                      disabled={sending || acoinBalance < selectedPrice}
+                      activeOpacity={0.8}
                     >
-                      {sending ? (
-                        <ActivityIndicator color="#fff" size="small" />
-                      ) : (
-                        <>
-                          <Ionicons name="send" size={14} color="#fff" />
-                          <Text style={styles.sendBtnText}>Send</Text>
-                        </>
-                      )}
-                    </LinearGradient>
-                  </TouchableOpacity>
+                      <LinearGradient
+                        colors={acoinBalance >= selectedPrice ? ["#FF2D55", "#FF375F"] : ["#888", "#666"]}
+                        style={styles.sendBtnGrad}
+                      >
+                        {sending ? (
+                          <ActivityIndicator color="#fff" size="small" />
+                        ) : (
+                          <>
+                            <Ionicons name="send" size={14} color="#fff" />
+                            <Text style={styles.sendBtnText}>Send</Text>
+                          </>
+                        )}
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </View>
+                  {acoinBalance < selectedPrice && (
+                    <Text style={styles.insufficientText}>Insufficient ACoins (need {selectedPrice}, have {acoinBalance})</Text>
+                  )}
                 </View>
-                {acoinBalance < selectedPrice && (
-                  <Text style={styles.insufficientText}>Insufficient ACoins (need {selectedPrice}, have {acoinBalance})</Text>
-                )}
-              </View>
-            )}
-          </View>
-        </KeyboardAvoidingView>
+              )}
+
+            </View>
+          </KeyboardAvoidingView>
         </Animated.View>
       </View>
     </Modal>
@@ -490,23 +481,16 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   sheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 8,
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    paddingTop: 0,
     maxHeight: Dimensions.get("window").height * 0.82,
-  },
-  dragHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    alignSelf: "center",
-    marginBottom: 12,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    marginBottom: 12,
+    marginBottom: 14,
     gap: 8,
   },
   headerTitle: {
@@ -532,112 +516,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: "Inter_600SemiBold",
   },
-  closeBtn: {
-    marginLeft: 8,
-  },
-  tabScroll: {
-    marginBottom: 8,
-  },
-  tabScrollContent: {
-    paddingHorizontal: 16,
-    gap: 6,
-    paddingBottom: 4,
-  },
-  tab: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  tabText: {
-    fontSize: 12,
-    fontFamily: "Inter_600SemiBold",
-  },
-  loadingWrap: {
+  emptyWrap: {
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 40,
     gap: 12,
     minHeight: 180,
   },
-  loadingText: {
+  emptyText: {
     fontSize: 13,
     fontFamily: "Inter_500Medium",
   },
-  grid: {
-    height: GRID_H,
-  },
-  gridContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    gap: CARD_GAP,
-  },
-  gridRow: {
-    gap: CARD_GAP,
-  },
-  cardShadow: {
-    width: CARD_W,
-    ...Platform.select({
-      web: { boxShadow: "0 6px 10px rgba(0,0,0,0.55)" } as any,
-      default: { shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.55, shadowRadius: 10, elevation: 10 },
-    }),
-    borderRadius: 16,
-  },
-  cardTouchable: {
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  card: {
-    width: CARD_W,
-    height: CARD_H,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    gap: 4,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    backgroundColor: "rgba(255,255,255,0.06)",
-    overflow: "hidden",
-  },
-  cardEmoji: {
-    fontSize: 32,
-    lineHeight: 38,
-  },
-  cardPriceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-  },
-  cardPrice: {
-    fontSize: 9,
-    fontFamily: "Inter_700Bold",
-    color: Colors.gold,
-  },
-  trendBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 6,
-  },
-  trendText: {
-    fontSize: 8,
-    fontFamily: "Inter_600SemiBold",
-  },
   confirmBar: {
-    
     paddingHorizontal: 16,
     paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
     gap: 10,
   },
   msgInput: {
-    borderRadius: 12,
+    borderRadius: 22,
     borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
     fontSize: 14,
     fontFamily: "Inter_400Regular",
   },
@@ -651,9 +551,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-  },
-  confirmEmoji: {
-    fontSize: 32,
   },
   confirmName: {
     fontSize: 14,
@@ -685,9 +582,6 @@ const styles = StyleSheet.create({
   sendBtn: {
     borderRadius: 14,
     overflow: "hidden",
-  },
-  sendBtnDisabled: {
-    opacity: 0.5,
   },
   sendBtnGrad: {
     flexDirection: "row",
