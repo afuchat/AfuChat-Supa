@@ -4,7 +4,6 @@ import * as Haptics from "expo-haptics";
 import React, { useEffect, useRef, useState } from "react";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { Security2FABanner } from "@/components/ui/Security2FABanner";
-import { BlurView } from "expo-blur";
 import {
   Modal,
   Platform,
@@ -98,79 +97,68 @@ function CompactTabBar({
     { icon: "document-text", label: "Article", desc: "Write a long-form article",        route: "/moments/create-article", color: "#007AFF"     },
   ];
 
-  const PILL_BORDER    = isDark ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.12)";
-  const INACTIVE_ICON  = isDark ? "rgba(255,255,255,0.72)" : "rgba(0,0,0,0.52)";
-  const PILL_BG        = isDark ? "rgba(28,28,30,0.80)"    : "rgba(255,255,255,0.78)";
+  const INACTIVE_ICON  = isDark ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.45)";
+  const ACTIVE_ICON    = isDark ? "#ffffff"                : "#000000";
   const ACCENT         = colors.accent;
-  const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 8;
-  const PILL_H         = 64;
+  const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 6;
+  const PILL_H         = 50;
 
   function handleTabPress(route: string) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     safeRouter.navigate(route as any);
   }
 
+  const HIGHLIGHT_BG = isDark ? "rgba(120,120,128,0.22)" : "rgba(60,60,67,0.10)";
+
   return (
     <>
-      {/* Floating glass pill — icon-only */}
+      {/* Floating transparent pill — icon-only, no BG */}
       <View
         style={[
-          pill.shadow,
+          pill.row,
           {
             bottom: PILL_BOTTOM,
             height: PILL_H,
-            pointerEvents: "box-none",
           },
         ]}
+        pointerEvents="box-none"
       >
-        <BlurView
-          intensity={isDark ? 72 : 60}
-          tint={isDark ? "dark" : "light"}
-          style={[
-            pill.blur,
-            {
-              borderColor: PILL_BORDER,
-              backgroundColor: PILL_BG,
-            },
-          ]}
-        >
-          {BOTTOM_TABS.map((tab) => {
-            const focused   = active === tab.route;
-            const iconColor = focused ? ACCENT : INACTIVE_ICON;
+        {BOTTOM_TABS.map((tab) => {
+          const focused   = active === tab.route;
+          const iconColor = focused ? ACTIVE_ICON : INACTIVE_ICON;
 
-            return (
-              <TouchableOpacity
-                key={tab.route}
-                style={pill.tab}
-                onPress={() => handleTabPress(tab.route)}
-                activeOpacity={0.65}
-                accessibilityRole="button"
-                accessibilityLabel={tab.label}
-                accessibilityState={{ selected: focused }}
+          return (
+            <TouchableOpacity
+              key={tab.route}
+              style={pill.tab}
+              onPress={() => handleTabPress(tab.route)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={tab.label}
+              accessibilityState={{ selected: focused }}
+            >
+              <View
+                style={[
+                  pill.iconWrap,
+                  focused && {
+                    backgroundColor: HIGHLIGHT_BG,
+                    borderRadius: 10,
+                  },
+                ]}
               >
-                <View
-                  style={[
-                    pill.iconWrap,
-                    focused && {
-                      backgroundColor: ACCENT + "28",
-                      borderRadius: 14,
-                    },
-                  ]}
-                >
-                  <Ionicons name={tab.icon as any} size={26} color={iconColor} />
-                  {/* Unread badge on Chat */}
-                  {tab.route === "/(tabs)/chats" && totalUnread > 0 && (
-                    <View style={[pill.badge, { backgroundColor: ACCENT }]}>
-                      <Text style={pill.badgeText} numberOfLines={1}>
-                        {totalUnread > 99 ? "99+" : String(totalUnread)}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </BlurView>
+                <Ionicons name={tab.icon as any} size={24} color={iconColor} />
+                {/* Unread badge on Chat */}
+                {tab.route === "/(tabs)/chats" && totalUnread > 0 && (
+                  <View style={[pill.badge, { backgroundColor: ACCENT }]}>
+                    <Text style={pill.badgeText} numberOfLines={1}>
+                      {totalUnread > 99 ? "99+" : String(totalUnread)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {/* FAB — Create, right side, discover tab only */}
@@ -258,32 +246,24 @@ function CompactTabBar({
 }
 
 const pill = StyleSheet.create({
-  shadow: {
+  row: {
     position: "absolute",
-    left: 28,
-    right: 28,
-    borderRadius: 100,
+    left: 16,
+    right: 16,
     zIndex: 100,
-  },
-  blur: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    borderRadius: 100,
-    borderWidth: 0.8,
-    overflow: "hidden",
-    paddingHorizontal: 6,
   },
   tab: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 10,
+    paddingVertical: 0,
   },
   iconWrap: {
-    width: 44,
-    height: 44,
+    width: 42,
+    height: 36,
     alignItems: "center",
     justifyContent: "center",
   },
