@@ -116,17 +116,18 @@ function GifPanel({ onSendGif }: { onSendGif: (url: string) => void }) {
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
+        const { GIPHY_API_KEY } = await import("@/lib/env");
         const endpoint = q.trim()
-          ? `https://g.tenor.com/v1/search?q=${encodeURIComponent(q.trim())}&key=LIVEGIF&limit=24&media_filter=minimal`
-          : `https://g.tenor.com/v1/trending?key=LIVEGIF&limit=24&media_filter=minimal`;
+          ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(q.trim())}&limit=24&rating=g`
+          : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=24&rating=g`;
         const res = await fetch(endpoint);
         const json = await res.json();
         if (cancelled) return;
-        const items: GifItem[] = (json.results ?? [])
+        const items: GifItem[] = (json.data ?? [])
           .map((r: any) => ({
-            id:      r.id,
-            preview: r.media?.[0]?.tinygif?.url ?? r.media?.[0]?.gif?.url ?? "",
-            url:     r.media?.[0]?.gif?.url     ?? r.media?.[0]?.tinygif?.url ?? "",
+            id:      r.id as string,
+            preview: (r.images?.fixed_height_small?.url ?? r.images?.downsized_small?.url ?? "") as string,
+            url:     (r.images?.downsized?.url ?? r.images?.fixed_height?.url ?? "") as string,
           }))
           .filter((g: GifItem) => g.url);
         setResults(items);
@@ -162,9 +163,6 @@ function GifPanel({ onSendGif }: { onSendGif: (url: string) => void }) {
           </TouchableOpacity>
         )}
       </View>
-
-      {/* Attribution */}
-      <Text style={[gs.poweredBy, { color: colors.textMuted as string }]}>Powered by Tenor</Text>
 
       {/* Grid */}
       {loading ? (
@@ -221,7 +219,6 @@ const gs = StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular" },
   gifNotice: { fontSize: 16, fontFamily: "Inter_600SemiBold" },
-  poweredBy: { fontSize: 11, fontFamily: "Inter_400Regular", textAlign: "right", paddingHorizontal: 12, paddingBottom: 2 },
 });
 
 // ─── Types ────────────────────────────────────────────────────────────────────

@@ -7953,7 +7953,6 @@ STRICT RULES:
         {/* Header */}
         <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingBottom: 10, gap: 8 }}>
           <Text style={[st.sheetTitle, { color: colors.text, marginBottom: 0, flex: 1 }]}>GIF</Text>
-          <Text style={{ fontSize: 11, color: colors.textMuted, fontFamily: "Inter_400Regular" }}>Powered by Tenor</Text>
         </View>
 
         {/* Search bar */}
