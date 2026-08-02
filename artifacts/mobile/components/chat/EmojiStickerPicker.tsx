@@ -11,7 +11,6 @@ import {
   FlatList,
   Image,
   ScrollView,
-  SectionList,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -59,56 +58,69 @@ function chunkEmojis(data: { emoji: string; name: string }[], cols: number): Emo
   return rows;
 }
 
-// Stable sections computed once at module level (data never changes)
-// Each row gets a unique `key` built from its section + row index so keyExtractor
-// never produces colliding keys across sections.
-const EMOJI_SECTIONS = emojisByCategory
-  .filter((c) => c.title !== "search" && c.data.length > 0)
-  .map((c) => {
-    const rows = chunkEmojis(c.data, EMOJI_COLS);
-    return {
-      title: c.title,
-      data: rows.map((row, ri) => ({ row, key: `${c.title}:${ri}` })),
-    };
-  });
+// ── Flat data model (avoids SectionList getItemLayout complexity) ─────────────
+// We flatten every category into a single array of typed rows so a plain
+// FlatList can render everything. Each row is either a section header or an
+// emoji grid row. getItemLayout on FlatList is straightforward and reliable.
 
-// Pre-compute a flat layout array so getItemLayout can return exact offsets.
-// SectionList flattens items as: [header₀, item₀₀, item₀₁, …, header₁, item₁₀, …]
-// Wrong offsets (e.g. ignoring HEADER_H) cause blank gaps during fast scroll or
-// when scrollToLocation jumps to a section.
-const EMOJI_LAYOUT: { length: number; offset: number }[] = [];
-(() => {
-  let off = 0;
-  for (const sec of EMOJI_SECTIONS) {
-    EMOJI_LAYOUT.push({ length: HEADER_H, offset: off });
-    off += HEADER_H;
-    for (let i = 0; i < sec.data.length; i++) {
-      EMOJI_LAYOUT.push({ length: ROW_H, offset: off });
-      off += ROW_H;
-    }
-  }
-})();
+type FlatHeader = { kind: "header"; title: string; key: string };
+type FlatRow    = { kind: "row";    emojis: { emoji: string; name: string }[]; key: string };
+type FlatItem   = FlatHeader | FlatRow;
+
+const FLAT_ROWS: FlatItem[] = [];
+const SECTION_INDICES: number[] = []; // flat index where each category's header starts
+
+for (const cat of emojisByCategory) {
+  if (cat.title === "search" || cat.data.length === 0) continue;
+  SECTION_INDICES.push(FLAT_ROWS.length);
+  FLAT_ROWS.push({ kind: "header", title: cat.title, key: `h:${cat.title}` });
+  const rows = chunkEmojis(cat.data as { emoji: string; name: string }[], EMOJI_COLS);
+  rows.forEach((row, ri) =>
+    FLAT_ROWS.push({ kind: "row", emojis: row, key: `${cat.title}:${ri}` })
+  );
+}
+
+const SECTION_TITLES = SECTION_INDICES.map((idx) => (FLAT_ROWS[idx] as FlatHeader).title);
+
+// Pre-compute offsets for getItemLayout — every row is either HEADER_H or ROW_H
+const FLAT_OFFSETS: number[] = [];
+let _off = 0;
+for (const row of FLAT_ROWS) {
+  FLAT_OFFSETS.push(_off);
+  _off += row.kind === "header" ? HEADER_H : ROW_H;
+}
 
 function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (emoji: string) => void }) {
   const { colors } = useTheme();
   const { accent } = useAppAccent();
-  const listRef = useRef<SectionList>(null);
+  const listRef = useRef<FlatList>(null);
   const catBarRef = useRef<ScrollView>(null);
   const activeCatRef = useRef(0);
   const [activeCat, setActiveCat] = useState(0);
   const isScrollingTo = useRef(false);
 
-  // Stable viewability config — never changes
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 20 });
 
-  // Stable callback — reads activeCat from ref to avoid recreating on every state change
+  // Track which category is visible while scrolling
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (isScrollingTo.current || !viewableItems.length) return;
-    const first = viewableItems[0];
-    const idx = EMOJI_SECTIONS.findIndex((s) => s.title === first.section?.title);
-    if (idx >= 0 && idx !== activeCatRef.current) {
-      activeCatRef.current = idx;
-      setActiveCat(idx);
+    // Find the first header that's viewable, or the section owning the first row
+    for (const vi of viewableItems) {
+      const item: FlatItem = vi.item;
+      const title = item.kind === "header" ? item.title : (() => {
+        // Walk backwards from vi.index to find the nearest header
+        for (let i = vi.index - 1; i >= 0; i--) {
+          if (FLAT_ROWS[i].kind === "header") return (FLAT_ROWS[i] as FlatHeader).title;
+        }
+        return SECTION_TITLES[0];
+      })();
+      const idx = SECTION_TITLES.indexOf(title);
+      if (idx >= 0 && idx !== activeCatRef.current) {
+        activeCatRef.current = idx;
+        setActiveCat(idx);
+        catBarRef.current?.scrollTo({ x: Math.max(0, idx * 44 - 44), animated: true });
+      }
+      break;
     }
   }).current;
 
@@ -116,50 +128,50 @@ function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (emoji: string
     isScrollingTo.current = true;
     activeCatRef.current = idx;
     setActiveCat(idx);
-    listRef.current?.scrollToLocation({
-      sectionIndex: idx, itemIndex: 0, animated: true, viewOffset: 0,
-    });
+    listRef.current?.scrollToIndex({ index: SECTION_INDICES[idx], animated: true, viewOffset: 0 });
     catBarRef.current?.scrollTo({ x: Math.max(0, idx * 44 - 44), animated: true });
     setTimeout(() => { isScrollingTo.current = false; }, 700);
   }, []);
 
-  // getItemLayout: use pre-computed flat layout table that accounts for both
-  // ROW_H (emoji rows) and HEADER_H (section headers). Without this, offsets
-  // are wrong and SectionList leaves blank gaps when scrolling fast or jumping.
-  const getItemLayout = useCallback((_: any, index: number) => {
-    const entry = EMOJI_LAYOUT[index] ?? { length: ROW_H, offset: 0 };
-    return { length: entry.length, offset: entry.offset, index };
-  }, []);
+  // getItemLayout is simple and exact for a FlatList: every item is either
+  // HEADER_H or ROW_H with pre-computed offsets — no section-counting tricks needed.
+  const getItemLayout = useCallback((_: any, index: number) => ({
+    length: FLAT_ROWS[index]?.kind === "header" ? HEADER_H : ROW_H,
+    offset: FLAT_OFFSETS[index] ?? 0,
+    index,
+  }), []);
 
-  const renderItem = useCallback(({ item }: { item: { row: EmojiRow; key: string } }) => (
-    <View style={{ flexDirection: "row", paddingHorizontal: 4, height: ROW_H }}>
-      {item.row.map((e) => (
-        <TouchableOpacity
-          key={e.name}
-          onPress={() => onEmojiSelected(e.emoji)}
-          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
-          activeOpacity={0.6}
-          hitSlop={2}
-        >
-          <Text style={{ fontSize: 26 }}>{e.emoji}</Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  ), [onEmojiSelected]);
+  const keyExtractor = useCallback((item: FlatItem) => item.key, []);
 
-  const renderSectionHeader = useCallback(({ section }: any) => (
-    <View style={{ height: HEADER_H, justifyContent: "flex-end", paddingHorizontal: 12, paddingBottom: 3, backgroundColor: colors.surface as string }}>
-      <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: colors.textMuted as string, textTransform: "uppercase", letterSpacing: 0.5 }}>
-        {CAT_LABELS[section.title] ?? section.title}
-      </Text>
-    </View>
-  ), [colors]);
-
-  const keyExtractor = useCallback((item: { row: EmojiRow; key: string }) => item.key, []);
+  const renderItem = useCallback(({ item }: { item: FlatItem }) => {
+    if (item.kind === "header") {
+      return (
+        <View style={{ height: HEADER_H, justifyContent: "flex-end", paddingHorizontal: 12, paddingBottom: 3, backgroundColor: colors.surface as string }}>
+          <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: colors.textMuted as string, textTransform: "uppercase", letterSpacing: 0.5 }}>
+            {CAT_LABELS[item.title] ?? item.title}
+          </Text>
+        </View>
+      );
+    }
+    return (
+      <View style={{ flexDirection: "row", paddingHorizontal: 4, height: ROW_H }}>
+        {item.emojis.map((e) => (
+          <TouchableOpacity
+            key={e.name}
+            onPress={() => onEmojiSelected(e.emoji)}
+            style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+            activeOpacity={0.6}
+          >
+            <Text style={{ fontSize: 26 }}>{e.emoji}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  }, [onEmojiSelected, colors]);
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Category icon bar — library PNG icons with tintColor */}
+      {/* Category icon bar */}
       <ScrollView
         ref={catBarRef}
         horizontal
@@ -167,11 +179,11 @@ function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (emoji: string
         style={{ borderBottomWidth: 0.5, borderBottomColor: ((colors.border as string) ?? "#ccc") + "80", maxHeight: 44 }}
         contentContainerStyle={{ paddingHorizontal: 4, alignItems: "center" }}
       >
-        {EMOJI_SECTIONS.map((s, i) => {
+        {SECTION_TITLES.map((title, i) => {
           const isActive = i === activeCat;
           return (
             <TouchableOpacity
-              key={s.title}
+              key={title}
               onPress={() => scrollToCategory(i)}
               style={{
                 width: 44, height: 44, alignItems: "center", justifyContent: "center",
@@ -181,7 +193,7 @@ function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (emoji: string
               activeOpacity={0.7}
             >
               <Image
-                source={CAT_ICON_SOURCES[s.title]}
+                source={CAT_ICON_SOURCES[title]}
                 style={{ width: 20, height: 20 }}
                 tintColor={isActive ? accent : (colors.textMuted as string)}
               />
@@ -190,24 +202,22 @@ function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (emoji: string
         })}
       </ScrollView>
 
-      {/* Continuous emoji list — all categories in one vertical scroll.
-          flex:1 is mandatory: without it the VirtualizedList gets 0 height
-          in a flex-column parent and renders nothing (blank black screen). */}
-      <SectionList
+      {/* Single FlatList — simpler and more reliable than SectionList for custom
+          getItemLayout. flex:1 gives it the remaining height in the panel. */}
+      <FlatList
         ref={listRef}
-        sections={EMOJI_SECTIONS}
+        data={FLAT_ROWS}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
-        renderSectionHeader={renderSectionHeader}
-        showsVerticalScrollIndicator={false}
-        stickySectionHeadersEnabled={false}
+        getItemLayout={getItemLayout}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig.current}
-        getItemLayout={getItemLayout}
+        showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        initialNumToRender={14}
-        maxToRenderPerBatch={8}
-        windowSize={12}
+        initialNumToRender={16}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        removeClippedSubviews
         contentContainerStyle={{ paddingBottom: 8 }}
         style={{ flex: 1 }}
       />
