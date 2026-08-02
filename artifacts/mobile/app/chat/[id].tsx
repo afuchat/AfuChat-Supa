@@ -6971,7 +6971,20 @@ STRICT RULES:
               await supabase.from("messages").insert({ chat_id: activeChatId, sender_id: user.id, encrypted_content: "GIF", attachment_url: url, attachment_type: "gif" });
               loadMessages();
             }}
-            onDelete={() => setInput((prev) => prev.slice(0, -1))}
+            onDelete={() => setInput((prev) => {
+              if (!prev) return prev;
+              // slice(0, -1) only removes 1 UTF-16 code unit — emojis are
+              // multi-codepoint grapheme clusters (e.g. 👨‍👩‍👧 = 12 units).
+              // Intl.Segmenter (supported in Hermes RN 0.73+) segments by
+              // grapheme cluster so we always delete exactly one visible character.
+              try {
+                const segs = [...new Intl.Segmenter().segment(prev)];
+                return segs.length ? prev.slice(0, segs[segs.length - 1].index) : "";
+              } catch {
+                // Fallback: strip the last Unicode code point (handles basic emoji)
+                return prev.replace(/[\s\S]$/u, "");
+              }
+            })}
             onClose={() => setShowEmojiStickerPicker(false)}
           />
           {insets.bottom > 0 && (
