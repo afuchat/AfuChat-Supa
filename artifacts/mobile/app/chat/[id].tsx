@@ -7091,43 +7091,19 @@ STRICT RULES:
                   {NATIVE_PICKS.map((pick) => (
                     <TouchableOpacity
                       key={pick.label}
-                      activeOpacity={0.8}
+                      activeOpacity={0.7}
                       onPress={pick.onPress}
                       style={{
                         width: CARD_W,
-                        paddingVertical: 22,
+                        paddingVertical: 26,
                         borderRadius: 22,
                         backgroundColor: colors.inputBg,
                         alignItems: "center",
-                        gap: 12,
-                        borderWidth: 0.5,
-                        borderColor: colors.border,
-                        overflow: "hidden",
+                        gap: 10,
                       }}
                     >
-                      {/* Coloured glow spot behind icon */}
-                      <View style={{
-                        position: "absolute", top: -20, left: CARD_W / 2 - 40,
-                        width: 80, height: 80,
-                        borderRadius: 40,
-                        backgroundColor: pick.color + "28",
-                      }} />
-                      {/* Icon container — solid coloured pill */}
-                      <View style={{
-                        width: 64, height: 64,
-                        borderRadius: 20,
-                        backgroundColor: pick.color,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        shadowColor: pick.color,
-                        shadowOffset: { width: 0, height: 6 },
-                        shadowOpacity: 0.45,
-                        shadowRadius: 10,
-                        elevation: 8,
-                      }}>
-                        <Ionicons name={pick.icon} size={30} color="#fff" />
-                      </View>
-                      <Text style={{ fontSize: 13, fontFamily: "Inter_600SemiBold", color: colors.text, textAlign: "center", letterSpacing: -0.1 }}>{pick.label}</Text>
+                      <Ionicons name={pick.icon} size={34} color={pick.color} />
+                      <Text style={{ fontSize: 13, fontFamily: "Inter_500Medium", color: colors.text, textAlign: "center" }}>{pick.label}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
