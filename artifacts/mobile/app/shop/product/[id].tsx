@@ -462,7 +462,7 @@ export default function ProductDetailScreen() {
             </ScrollView>
 
             {/* Action buttons */}
-            <View style={[st.checkoutActions, { borderTopColor: colors.border }]}>
+            <View style={[st.checkoutActions, { borderTopColor: colors.border, paddingBottom: insets.bottom + 8 }]}>
               <TouchableOpacity style={[st.cancelBtn, { borderColor: colors.border }]} onPress={() => setShowCheckout(false)}>
                 <Text style={[st.cancelBtnText, { color: colors.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
@@ -599,7 +599,7 @@ const st = StyleSheet.create({
   successBtn: { paddingHorizontal: 32, paddingVertical: 14, borderRadius: 14, marginTop: 4 },
   successBtnText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: "#fff" },
   checkoutOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.5)" },
-  checkoutCard: { borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "90%", paddingHorizontal: 20, paddingTop: 12, paddingBottom: 0 },
+  checkoutCard: { borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "90%", paddingHorizontal: 20, paddingTop: 12, paddingBottom: 0 }, /* actions row has paddingBottom inline */
   sheetHandle: { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 16 },
   checkoutTitle: { fontSize: 20, fontFamily: "Inter_700Bold", marginBottom: 16 },
   checkoutProduct: { flexDirection: "row", gap: 12, borderRadius: 14, padding: 12, marginBottom: 12 },

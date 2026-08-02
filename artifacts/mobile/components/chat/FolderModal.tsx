@@ -86,7 +86,7 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
           style={st.kav}
         >
           <Animated.View
-            style={[st.sheetWrap, { paddingBottom: Math.max(insets.bottom, 8), transform: [{ translateY: slideAnim }] }]}
+            style={[st.sheetWrap, { transform: [{ translateY: slideAnim }] }]}
           >
             <View style={[st.sheetBlur, { backgroundColor: colors.surface }]}>
             <Pressable onPress={() => {}}>
@@ -211,7 +211,7 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
               </View>
 
               {/* Action buttons */}
-              <View style={st.actions}>
+              <View style={[st.actions, { paddingBottom: Math.max(insets.bottom, 8) }]}>
                 {isEditing && onDelete && (
                   <TouchableOpacity
                     style={[
@@ -361,6 +361,7 @@ const st = StyleSheet.create({
     marginHorizontal: 16,
     gap: 10,
     marginBottom: 4,
+    paddingBottom: 0, /* insets applied inline */
   },
   deleteBtn: {
     flexDirection: "row",

@@ -603,7 +603,7 @@ export default function ManageCompanyPageScreen() {
           <TouchableOpacity activeOpacity={1} onPress={() => {}}>
             <ScrollView
               style={[verSt.sheet, { backgroundColor: colors.surface }]}
-              contentContainerStyle={{ gap: 12, paddingBottom: 24 }}
+              contentContainerStyle={{ gap: 12, paddingBottom: insets.bottom + 20 }}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
@@ -753,7 +753,7 @@ export default function ManageCompanyPageScreen() {
       <Modal visible={verPickerVisible} transparent animationType="none" onRequestClose={() => setVerPickerVisible(false)}>
         <TouchableOpacity style={verSt.overlay} activeOpacity={1} onPress={() => setVerPickerVisible(false)}>
           <TouchableOpacity activeOpacity={1} onPress={() => {}}>
-            <View style={[verSt.pickerSheet, { backgroundColor: colors.surface }]}>
+            <View style={[verSt.pickerSheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 16 }]}>
               <View style={[verSt.handle, { backgroundColor: colors.border }]} />
               <Text style={[verSt.pickerTitle, { color: colors.text }]}>Select Industry</Text>
               <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 360 }}>

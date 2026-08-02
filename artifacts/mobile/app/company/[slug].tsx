@@ -980,7 +980,7 @@ export default function CompanyPageScreen() {
                 style={[styles.modalSheet, { backgroundColor: colors.surface }]}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ gap: 12 }}
+                contentContainerStyle={{ gap: 12, paddingBottom: insets.bottom + 20 }}
               >
                 <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
                 <View style={styles.postModalHeader}>
@@ -1171,7 +1171,7 @@ export default function CompanyPageScreen() {
         <Pressable style={styles.modalOverlay} onPress={() => setShowJobModal(false)}>
           <KeyboardAvoidingView behavior="padding" style={{ width: "100%" }}>
             <Pressable>
-              <ScrollView style={[styles.modalSheet, { backgroundColor: colors.surface }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+              <ScrollView style={[styles.modalSheet, { backgroundColor: colors.surface }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: insets.bottom + 20 }}>
                 <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
 
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 2 }}>
@@ -1284,7 +1284,7 @@ export default function CompanyPageScreen() {
       {/* ─── Page-to-page follow modal ─── */}
       <Modal visible={showPageFollowModal} transparent animationType="none" onRequestClose={() => setShowPageFollowModal(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowPageFollowModal(false)}>
-          <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
+          <View style={[styles.modalSheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 20 }]}>
             <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
             <Text style={[styles.modalTitle, { color: colors.text }]}>Follow as a Page</Text>
             <Text style={{ color: colors.textMuted, fontSize: 13, fontFamily: "Inter_400Regular", marginBottom: 8 }}>

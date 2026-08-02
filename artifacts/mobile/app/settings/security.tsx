@@ -343,7 +343,7 @@ export default function SecuritySettingsScreen() {
       <Modal visible={showChangePwd} animationType="none" transparent>
         <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <View style={styles.modalOverlay}>
-          <GlassCard style={styles.modalSheet} variant="strong">
+          <GlassCard style={[styles.modalSheet, { paddingBottom: insets.bottom + 16 }]} variant="strong">
             <View style={styles.dragHandle} />
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Change Password</Text>
@@ -368,7 +368,7 @@ export default function SecuritySettingsScreen() {
       {/* ── Sign Out Step 1: Warning ────────────────────────────────────── */}
       <Modal visible={showLogoutStep1} animationType="none" transparent>
         <View style={styles.modalOverlay}>
-          <GlassCard style={styles.modalSheet} variant="strong">
+          <GlassCard style={[styles.modalSheet, { paddingBottom: insets.bottom + 16 }]} variant="strong">
             <View style={styles.dragHandle} />
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Sign Out?</Text>
@@ -414,7 +414,7 @@ export default function SecuritySettingsScreen() {
       <Modal visible={showLogoutStep2} animationType="none" transparent>
         <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <View style={styles.modalOverlay}>
-          <GlassCard style={styles.modalSheet} variant="strong">
+          <GlassCard style={[styles.modalSheet, { paddingBottom: insets.bottom + 16 }]} variant="strong">
             <View style={styles.dragHandle} />
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Final Confirmation</Text>
@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
   footerNote: { fontSize: 12, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 18, paddingHorizontal: 8 },
 
   modalOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.50)" },
-  modalSheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 44, gap: 14 },
+  modalSheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, gap: 14 },
   dragHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: "rgba(120,120,128,0.4)", alignSelf: "center", marginBottom: 4 },
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   modalTitle: { fontSize: 18, fontFamily: "Inter_600SemiBold" },

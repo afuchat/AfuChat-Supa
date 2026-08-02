@@ -644,7 +644,7 @@ export default function ShopManage() {
 
       <Modal visible={editShopModal} transparent animationType="none" onRequestClose={() => setEditShopModal(false)}>
         <View style={styles.modalOverlay}>
-          <ScrollView style={[styles.modalSheet, { backgroundColor: colors.surface }]} contentContainerStyle={{ padding: 24, gap: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+          <ScrollView style={[styles.modalSheet, { backgroundColor: colors.surface }]} contentContainerStyle={{ padding: 24, gap: 16, paddingBottom: insets.bottom + 20 }} showsVerticalScrollIndicator={false}>
             <View style={styles.dragHandle} />
             <Text style={[styles.modalTitle, { color: colors.text }]}>{shop ? "Edit Shop" : "Create Shop"}</Text>
 
@@ -699,7 +699,7 @@ export default function ShopManage() {
 
       <Modal visible={productModal} transparent animationType="none" onRequestClose={() => { setProductModal(false); setEditingProduct(null); }}>
         <View style={styles.modalOverlay}>
-          <ScrollView style={[styles.modalSheet, { backgroundColor: colors.surface }]} contentContainerStyle={{ padding: 24, gap: 16, paddingBottom: 60 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <ScrollView style={[styles.modalSheet, { backgroundColor: colors.surface }]} contentContainerStyle={{ padding: 24, gap: 16, paddingBottom: insets.bottom + 24 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <View style={styles.dragHandle} />
             <Text style={[styles.modalTitle, { color: colors.text }]}>{editingProduct?.id ? "Edit Product" : "Add Product"}</Text>
 
