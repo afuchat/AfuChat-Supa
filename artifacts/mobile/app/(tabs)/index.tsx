@@ -58,6 +58,7 @@ import {
   type ChatFolder,
 } from "@/lib/storage/chatFolders";
 import { FolderModal } from "@/components/chat/FolderModal";
+import { BlurView } from "expo-blur";
 import {
   getStoryUploadState,
   subscribeStoryUpload,
@@ -1958,15 +1959,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
 
         {/* ── Floating folder tab bar ──────────────────────────────────────── */}
         {showFolderUI && (
-          <View
-            style={[
-              styles.folderBarFloat,
-              {
-                backgroundColor: isDark ? "rgba(20,20,26,0.93)" : "rgba(252,252,255,0.93)",
-                borderColor: isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)",
-              },
-            ]}
-          >
+          <View style={styles.folderBarFloat} pointerEvents="box-none">
             <ScrollView
               ref={folderScrollRef}
               horizontal
@@ -1974,21 +1967,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               contentContainerStyle={styles.folderTabBarContent}
               keyboardShouldPersistTaps="handled"
             >
-              {/* Sliding pill highlight — follows active tab */}
-              <Animated.View
-                style={{
-                  position: "absolute",
-                  top: 5,
-                  bottom: 5,
-                  borderRadius: 20,
-                  backgroundColor: colors.accent + "38",
-                  left: folderPillX,
-                  width: folderPillW,
-                  zIndex: 0,
-                  pointerEvents: "none",
-                }}
-              />
-
               {pages.map((page, idx) => {
                 const isAll  = !("filter" in page);
                 const label  = isAll ? "All" : page.name;
@@ -1998,15 +1976,14 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                 return (
                   <TouchableOpacity
                     key={isAll ? "all" : page.id}
-                    style={[styles.folderTab, { zIndex: 1 }]}
                     onLayout={(e) => {
                       tabLayoutsRef.current[idx] = {
                         x: e.nativeEvent.layout.x,
                         width: e.nativeEvent.layout.width,
                       };
                       if (idx === pageIdx) {
-                        folderPillX.setValue(e.nativeEvent.layout.x - 4);
-                        folderPillW.setValue(e.nativeEvent.layout.width + 8);
+                        folderPillX.setValue(e.nativeEvent.layout.x);
+                        folderPillW.setValue(e.nativeEvent.layout.width);
                       }
                     }}
                     onPress={() => {
@@ -2024,46 +2001,81 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                         setShowFolderModal(true);
                       }
                     }}
-                    activeOpacity={0.7}
+                    activeOpacity={0.75}
+                    style={styles.folderPillWrap}
                   >
-                    <View style={styles.folderTabInner}>
-                      {icon && <Text style={styles.folderTabIcon}>{icon}</Text>}
-                      <Text
-                        style={[
-                          styles.folderTabLabel,
-                          { color: active ? colors.accent : colors.textMuted,
-                            fontFamily: active ? "Inter_700Bold" : "Inter_500Medium" },
-                        ]}
-                      >
-                        {label}
-                      </Text>
-                      {count > 0 && (
-                        <View
+                    <BlurView
+                      intensity={active ? 60 : 40}
+                      tint={isDark ? "dark" : "light"}
+                      style={[
+                        styles.folderGlassPill,
+                        {
+                          borderColor: active
+                            ? colors.accent + "55"
+                            : isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)",
+                          backgroundColor: active
+                            ? colors.accent + "28"
+                            : isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.55)",
+                        },
+                      ]}
+                    >
+                      <View style={styles.folderTabInner}>
+                        {icon && <Text style={styles.folderTabIcon}>{icon}</Text>}
+                        <Text
                           style={[
-                            styles.folderTabBadge,
-                            { backgroundColor: active ? colors.accent + "22" : colors.backgroundSecondary },
+                            styles.folderTabLabel,
+                            {
+                              color: active ? colors.accent : colors.textMuted,
+                              fontFamily: active ? "Inter_700Bold" : "Inter_500Medium",
+                            },
                           ]}
                         >
-                          <Text style={[styles.folderTabBadgeText, { color: active ? colors.accent : colors.textMuted }]}>
-                            {count > 99 ? "99+" : count}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
+                          {label}
+                        </Text>
+                        {count > 0 && (
+                          <View
+                            style={[
+                              styles.folderTabBadge,
+                              {
+                                backgroundColor: active
+                                  ? colors.accent + "30"
+                                  : isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.07)",
+                              },
+                            ]}
+                          >
+                            <Text style={[styles.folderTabBadgeText, { color: active ? colors.accent : colors.textMuted }]}>
+                              {count > 99 ? "99+" : count}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </BlurView>
                   </TouchableOpacity>
                 );
               })}
 
               {advancedFeatures.chat_folders && (
                 <TouchableOpacity
-                  style={[styles.folderAddBtn, { backgroundColor: colors.backgroundSecondary, zIndex: 1 }]}
+                  style={styles.folderPillWrap}
                   onPress={() => {
                     setEditingFolder(null);
                     setShowFolderModal(true);
                   }}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="add" size={18} color={colors.textMuted} />
+                  <BlurView
+                    intensity={40}
+                    tint={isDark ? "dark" : "light"}
+                    style={[
+                      styles.folderAddBtn,
+                      {
+                        borderColor: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)",
+                        backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.55)",
+                      },
+                    ]}
+                  >
+                    <Ionicons name="add" size={18} color={colors.textMuted} />
+                  </BlurView>
                 </TouchableOpacity>
               )}
             </ScrollView>
@@ -2219,16 +2231,36 @@ const styles = StyleSheet.create({
   folderBarFloat: {
     position: "absolute",
     top: 8,
-    left: 12,
-    right: 12,
+    left: 10,
+    right: 10,
     zIndex: 20,
-    borderRadius: 16,
-    borderWidth: 0.5,
+    backgroundColor: "transparent",
   },
   folderTabBarContent: {
-    paddingHorizontal: 6,
+    paddingHorizontal: 2,
     alignItems: "center",
-    gap: 2,
+    gap: 6,
+    paddingVertical: 0,
+  },
+  folderPillWrap: {
+    alignSelf: "center",
+    borderRadius: 999,
+    overflow: "hidden",
+    ...Platform.select({
+      web: { boxShadow: "0 2px 12px rgba(0,0,0,0.18)" } as any,
+      default: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.16,
+        shadowRadius: 8,
+        elevation: 5,
+      },
+    }),
+  },
+  folderGlassPill: {
+    borderRadius: 999,
+    borderWidth: 1,
+    overflow: "hidden",
   },
   folderTab: {
     paddingHorizontal: 10,
@@ -2239,14 +2271,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    paddingVertical: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
   },
   folderTabIcon: {
     fontSize: 14,
     lineHeight: 18,
   },
   folderTabLabel: {
-    fontSize: 14,
+    fontSize: 13,
     letterSpacing: 0.1,
   },
   folderTabBadge: {
@@ -2273,11 +2306,11 @@ const styles = StyleSheet.create({
   folderAddBtn: {
     width: 34,
     height: 34,
-    borderRadius: 17,
+    borderRadius: 999,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    alignSelf: "center",
-    marginHorizontal: 6,
+    overflow: "hidden",
   },
   rail: {
     width: 88,

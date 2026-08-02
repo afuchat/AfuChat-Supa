@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
 import type { ChatFolder, FolderFilter } from "@/lib/storage/chatFolders";
@@ -43,7 +44,7 @@ type Props = {
 };
 
 export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Props) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const [name, setName]     = useState("");
   const [icon, setIcon]     = useState("📁");
@@ -78,6 +79,8 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
     onSave({ name: name.trim(), icon, filter });
   }, [canSave, name, icon, filter, onSave]);
 
+  const tint = isDark ? "dark" : "light";
+
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <Pressable style={st.backdrop} onPress={onClose}>
@@ -86,13 +89,20 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
           style={st.kav}
         >
           <Animated.View
-            style={[
-              st.sheet,
-              { backgroundColor: colors.surface, paddingBottom: Math.max(insets.bottom, 8), transform: [{ translateY: slideAnim }] },
-            ]}
+            style={[st.sheetWrap, { paddingBottom: Math.max(insets.bottom, 8), transform: [{ translateY: slideAnim }] }]}
           >
+            <BlurView intensity={80} tint={tint} style={st.sheetBlur}>
+              {/* Glass border overlay */}
+              <View
+                style={[
+                  st.sheetBorder,
+                  {
+                    borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.9)",
+                  },
+                ]}
+              />
             <Pressable onPress={() => {}}>
-              <View style={[st.handle, { backgroundColor: colors.border }]} />
+              <View style={[st.handle, { backgroundColor: isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.12)" }]} />
 
               <Text style={[st.title, { color: colors.text }]}>
                 {isEditing ? "Edit Folder" : "New Folder"}
@@ -111,8 +121,12 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
                     onPress={() => setIcon(em)}
                     style={[
                       st.iconBubble,
-                      { borderColor: icon === em ? colors.accent : colors.border },
-                      icon === em && { backgroundColor: colors.accent + "18" },
+                      {
+                        borderColor: icon === em ? colors.accent : (isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)"),
+                        backgroundColor: icon === em
+                          ? colors.accent + "22"
+                          : (isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.7)"),
+                      },
                     ]}
                     activeOpacity={0.7}
                   >
@@ -125,7 +139,10 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
               <View
                 style={[
                   st.inputRow,
-                  { backgroundColor: colors.backgroundSecondary, borderColor: colors.border },
+                  {
+                    backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.72)",
+                    borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
+                  },
                 ]}
               >
                 <Text style={st.inputIcon}>{icon}</Text>
@@ -153,33 +170,53 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
                     <TouchableOpacity
                       key={f.key}
                       onPress={() => setFilter(f.key)}
+                      activeOpacity={0.7}
                       style={[
-                        st.filterChip,
+                        st.filterPillWrap,
                         {
-                          borderColor: active ? colors.accent : colors.border,
-                          backgroundColor: active
-                            ? colors.accent + "18"
-                            : colors.backgroundSecondary,
+                          ...Platform.select({
+                            web: { boxShadow: "0 2px 8px rgba(0,0,0,0.12)" } as any,
+                            default: {
+                              shadowColor: "#000",
+                              shadowOffset: { width: 0, height: 2 },
+                              shadowOpacity: 0.12,
+                              shadowRadius: 6,
+                              elevation: 3,
+                            },
+                          }),
                         },
                       ]}
-                      activeOpacity={0.7}
                     >
-                      <Ionicons
-                        name={f.icon}
-                        size={15}
-                        color={active ? colors.accent : colors.textMuted}
-                      />
-                      <Text
+                      <View
                         style={[
-                          st.filterLabel,
+                          st.filterChip,
                           {
-                            color: active ? colors.accent : colors.textMuted,
-                            fontFamily: active ? "Inter_600SemiBold" : "Inter_400Regular",
+                            borderColor: active
+                              ? colors.accent + "66"
+                              : (isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)"),
+                            backgroundColor: active
+                              ? colors.accent + "28"
+                              : (isDark ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.72)"),
                           },
                         ]}
                       >
-                        {f.label}
-                      </Text>
+                        <Ionicons
+                          name={f.icon}
+                          size={15}
+                          color={active ? colors.accent : colors.textMuted}
+                        />
+                        <Text
+                          style={[
+                            st.filterLabel,
+                            {
+                              color: active ? colors.accent : colors.textMuted,
+                              fontFamily: active ? "Inter_600SemiBold" : "Inter_400Regular",
+                            },
+                          ]}
+                        >
+                          {f.label}
+                        </Text>
+                      </View>
                     </TouchableOpacity>
                   );
                 })}
@@ -189,7 +226,13 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
               <View style={st.actions}>
                 {isEditing && onDelete && (
                   <TouchableOpacity
-                    style={[st.deleteBtn, { borderColor: "#FF3B3066" }]}
+                    style={[
+                      st.deleteBtn,
+                      {
+                        borderColor: "rgba(255,59,48,0.35)",
+                        backgroundColor: "rgba(255,59,48,0.08)",
+                      },
+                    ]}
                     onPress={onDelete}
                     activeOpacity={0.7}
                   >
@@ -200,7 +243,10 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
                 <TouchableOpacity
                   style={[
                     st.saveBtn,
-                    { flex: 1, backgroundColor: canSave ? colors.accent : colors.backgroundSecondary },
+                    {
+                      flex: 1,
+                      backgroundColor: canSave ? colors.accent : (isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)"),
+                    },
                   ]}
                   onPress={handleSave}
                   disabled={!canSave}
@@ -212,6 +258,7 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
                 </TouchableOpacity>
               </View>
             </Pressable>
+            </BlurView>
           </Animated.View>
         </KeyboardAvoidingView>
       </Pressable>
@@ -220,13 +267,28 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
 }
 
 const st = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "#00000060", justifyContent: "flex-end" },
+  backdrop: { flex: 1, backgroundColor: "#00000055", justifyContent: "flex-end" },
   kav:      { justifyContent: "flex-end" },
-  sheet: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 10,
+  sheetWrap: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: "hidden",
   },
+  sheetBlur: {
+    paddingTop: 12,
+  },
+  sheetBorder: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    pointerEvents: "none",
+  } as any,
   handle: {
     width: 38,
     height: 4,
@@ -242,14 +304,18 @@ const st = StyleSheet.create({
     paddingHorizontal: 16,
   },
   iconScroll: { marginBottom: 18 },
-  iconScrollContent: { paddingHorizontal: 16, gap: 10 },
+  iconScrollContent: { paddingHorizontal: 16, gap: 8 },
   iconBubble: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
+    borderRadius: 999,
+    borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
+    ...Platform.select({
+      web: { boxShadow: "0 2px 8px rgba(0,0,0,0.10)" } as any,
+      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.10, shadowRadius: 4, elevation: 2 },
+    }),
   },
   iconEmoji: { fontSize: 22 },
   inputRow: {
@@ -258,13 +324,13 @@ const st = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 22,
     borderRadius: 999,
-    borderWidth: 0.5,
+    borderWidth: 1,
     paddingHorizontal: 14,
-    height: 50,
+    height: 52,
     gap: 10,
     ...Platform.select({
-      web: { boxShadow: "0 4px 20px rgba(0,0,0,0.13)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.13, shadowRadius: 12, elevation: 8 },
+      web: { boxShadow: "0 4px 20px rgba(0,0,0,0.12)" } as any,
+      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 6 },
     }),
   },
   inputIcon: { fontSize: 22 },
@@ -272,7 +338,7 @@ const st = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontFamily: "Inter_400Regular",
-    height: 50,
+    height: 52,
   },
   sectionLabel: {
     fontSize: 11,
@@ -288,36 +354,41 @@ const st = StyleSheet.create({
     gap: 8,
     marginBottom: 24,
   },
+  filterPillWrap: {
+    borderRadius: 999,
+    overflow: Platform.OS === "ios" ? "hidden" : "visible",
+  },
   filterChip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 20,
-    borderWidth: 1.5,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    borderWidth: 1,
   },
   filterLabel: { fontSize: 14 },
   actions: {
     flexDirection: "row",
     marginHorizontal: 16,
     gap: 10,
+    marginBottom: 4,
   },
   deleteBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1.5,
+    borderRadius: 999,
+    borderWidth: 1,
   },
   deleteBtnText: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
   saveBtn: {
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: 999,
   },
   saveBtnText: { fontSize: 15, fontFamily: "Inter_700Bold" },
 });
