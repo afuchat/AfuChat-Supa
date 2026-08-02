@@ -7087,22 +7087,21 @@ STRICT RULES:
               ];
               const CARD_W = (SW2 - 56) / 2;
               return (
-                <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 16, paddingTop: 16, gap: 12, alignContent: "flex-start" }}>
+                <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 16, paddingTop: 8 }}>
                   {NATIVE_PICKS.map((pick) => (
                     <TouchableOpacity
                       key={pick.label}
-                      activeOpacity={0.7}
+                      activeOpacity={0.6}
                       onPress={pick.onPress}
                       style={{
                         width: CARD_W,
-                        paddingVertical: 26,
-                        borderRadius: 22,
-                        backgroundColor: colors.inputBg,
+                        flex: 0,
+                        paddingVertical: 20,
                         alignItems: "center",
-                        gap: 10,
+                        gap: 8,
                       }}
                     >
-                      <Ionicons name={pick.icon} size={34} color={pick.color} />
+                      <Ionicons name={pick.icon} size={36} color={pick.color} />
                       <Text style={{ fontSize: 13, fontFamily: "Inter_500Medium", color: colors.text, textAlign: "center" }}>{pick.label}</Text>
                     </TouchableOpacity>
                   ))}
