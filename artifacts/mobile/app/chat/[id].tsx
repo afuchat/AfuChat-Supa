@@ -2258,10 +2258,6 @@ function ChatScreen() {
     })();
   }, [showAttachPanel, attachTab]);
 
-  const [showGifPicker, setShowGifPicker] = useState(false);
-  const [gifSearch, setGifSearch] = useState("");
-  const [gifResults, setGifResults] = useState<{ id: string; preview: string; url: string }[]>([]);
-  const [gifLoading, setGifLoading] = useState(false);
   const [attachmentPreview, setAttachmentPreview] = useState<{ uri: string; type: string; name?: string; mimeType?: string; trimStart?: number; trimEnd?: number } | null>(null);
   const [showVideoTrimmer, setShowVideoTrimmer] = useState(false);
   const [pendingVideoUri, setPendingVideoUri] = useState<{ uri: string; mimeType: string } | null>(null);
@@ -5359,65 +5355,6 @@ STRICT RULES:
     }
   }
 
-  // ── Giphy GIF search / trending ──────────────────────────────────────────────
-  // Tenor was shut down by Google (2024). We now use the Giphy v1 API.
-  // Key comes from lib/env.ts (hardcoded production fallback + EXPO_PUBLIC_ override).
-  const GIPHY_KEY = GIPHY_API_KEY;
-  useEffect(() => {
-    if (!showGifPicker) return;
-    if (!GIPHY_KEY) { setGifResults([]); setGifLoading(false); return; }
-    let cancelled = false;
-    const delay = gifSearch.trim() ? 350 : 0; // debounce search; trending fires immediately
-    const timer = setTimeout(async () => {
-      setGifLoading(true);
-      try {
-        const q = gifSearch.trim();
-        const endpoint = q
-          ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_KEY}&q=${encodeURIComponent(q)}&limit=24&rating=g`
-          : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_KEY}&limit=24&rating=g`;
-        const res  = await fetch(endpoint);
-        const json = await res.json();
-        if (cancelled) return;
-        // Giphy response: json.data[] with images.fixed_height_small (preview) and images.downsized (full)
-        const items = (json.data ?? []).map((r: any) => ({
-          id:      r.id as string,
-          preview: (r.images?.fixed_height_small?.url ?? r.images?.downsized_small?.url ?? "") as string,
-          url:     (r.images?.downsized?.url ?? r.images?.fixed_height?.url ?? "") as string,
-        })).filter((g: any) => g.url);
-        setGifResults(items);
-      } catch {
-        if (!cancelled) setGifResults([]);
-      } finally {
-        if (!cancelled) setGifLoading(false);
-      }
-    }, delay);
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [showGifPicker, gifSearch, GIPHY_KEY]);
-
-  async function sendGifMessage(gifUrl: string) {
-    if (!user) return;
-    if (messageLimited) {
-      showAlert("Message limit", `You can only send one message until ${chatInfo?.other_name || "this user"} replies or follows you.`);
-      setShowGifPicker(false);
-      return;
-    }
-    setShowGifPicker(false);
-    setGifSearch("");
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    const activeChatId = await getOrCreateChatId();
-    if (!activeChatId) return;
-
-    await supabase.from("messages").insert({
-      chat_id: activeChatId,
-      sender_id: user.id,
-      encrypted_content: "GIF",
-      attachment_url: gifUrl,
-      attachment_type: "gif",
-    });
-    loadMessages();
-  }
-
   async function startVoiceRecordingHold() {
     if (recordingActiveRef.current) return;
     // Guard: Audio is null on web (lazy import) — delegate to web recorder path.
@@ -6921,22 +6858,6 @@ STRICT RULES:
                         />
                         {!input.trim() && (
                           <>
-                            {/* GIF button — always visible when idle */}
-                            {!isAfuAiDirectChat && (
-                              <TouchableOpacity
-                                hitSlop={8}
-                                style={[st.pillIcon, showGifPicker && { backgroundColor: colors.accent + "18", borderRadius: 8 }]}
-                                onPress={() => {
-                                  Keyboard.dismiss();
-                                  setShowEmojiStickerPicker(false);
-                                  setShowAttachPanel(false);
-                                  setGifSearch("");
-                                  setShowGifPicker((v) => !v);
-                                }}
-                              >
-                                <Text style={{ fontSize: 11, fontFamily: "Inter_700Bold", color: showGifPicker ? colors.accent : colors.textMuted, letterSpacing: -0.3 }}>GIF</Text>
-                              </TouchableOpacity>
-                            )}
                             {!chatInfo?.is_group && !chatInfo?.is_channel && !isAfuAiDirectChat && (
                               <TouchableOpacity onPress={() => setShowGiftPicker(true)} hitSlop={8} style={st.pillIcon}>
                                 <Ionicons name="gift" size={22} color={colors.textMuted} />
@@ -7040,7 +6961,16 @@ STRICT RULES:
             height={emojiKeyboardHeight}
             onEmojiSelected={(emoji) => setInput((prev) => prev + emoji)}
             onSendSticker={sendStickerMessage}
-            onSendGif={(url) => { setShowEmojiStickerPicker(false); sendGifMessage(url); }}
+            onSendGif={async (url) => {
+              setShowEmojiStickerPicker(false);
+              if (!user) return;
+              if (messageLimited) { showAlert("Message limit", `You can only send one message until ${chatInfo?.other_name || "this user"} replies or follows you.`); return; }
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              const activeChatId = await getOrCreateChatId();
+              if (!activeChatId) return;
+              await supabase.from("messages").insert({ chat_id: activeChatId, sender_id: user.id, encrypted_content: "GIF", attachment_url: url, attachment_type: "gif" });
+              loadMessages();
+            }}
             onDelete={() => setInput((prev) => prev.slice(0, -1))}
             onClose={() => setShowEmojiStickerPicker(false)}
           />
@@ -7948,78 +7878,6 @@ STRICT RULES:
         onApplyAndSend={(t) => { setInput(t); setShowAiEditor(false); saveDraft(t); sendMessage(t); }}
       />
 
-
-      <BottomSheet visible={showGifPicker} onClose={() => { setShowGifPicker(false); setGifSearch(""); setGifResults([]); }}>
-        {/* Header */}
-        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingBottom: 10, gap: 8 }}>
-          <Text style={[st.sheetTitle, { color: colors.text, marginBottom: 0, flex: 1 }]}>GIF</Text>
-        </View>
-
-        {/* Search bar */}
-        <View style={{ flexDirection: "row", alignItems: "center", marginHorizontal: 16, marginBottom: 12, backgroundColor: colors.inputBg, borderRadius: 12, paddingHorizontal: 12, gap: 8 }}>
-          <Ionicons name="search" size={16} color={colors.textMuted} />
-          <TextInput
-            style={[{ flex: 1, paddingVertical: 10, fontSize: 15, fontFamily: "Inter_400Regular", color: colors.text }]}
-            placeholder="Search GIFs…"
-            placeholderTextColor={colors.textMuted}
-            value={gifSearch}
-            onChangeText={setGifSearch}
-            returnKeyType="search"
-            autoCorrect={false}
-          />
-          {gifSearch.length > 0 && (
-            <TouchableOpacity hitSlop={8} onPress={() => setGifSearch("")}>
-              <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Grid */}
-        <ScrollView style={{ maxHeight: 340 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 12 }}>
-          {gifLoading ? (
-            <View style={{ height: 180, alignItems: "center", justifyContent: "center" }}>
-              <ActivityIndicator color={colors.accent} />
-            </View>
-          ) : gifResults.length === 0 ? (
-            <View style={{ height: 180, alignItems: "center", justifyContent: "center", gap: 8 }}>
-              <Text style={{ fontSize: 32 }}>🔍</Text>
-              <Text style={{ fontSize: 14, color: colors.textMuted, fontFamily: "Inter_400Regular" }}>
-                {gifSearch.trim() ? "No GIFs found" : "Loading trending GIFs…"}
-              </Text>
-            </View>
-          ) : (
-            // Masonry-style 2-column grid
-            (() => {
-              const left  = gifResults.filter((_, i) => i % 2 === 0);
-              const right = gifResults.filter((_, i) => i % 2 !== 0);
-              const GifCol = ({ items }: { items: typeof gifResults }) => (
-                <View style={{ flex: 1, gap: 4 }}>
-                  {items.map((gif) => (
-                    <TouchableOpacity
-                      key={gif.id}
-                      activeOpacity={0.75}
-                      onPress={() => sendGifMessage(gif.url)}
-                      style={{ borderRadius: 10, overflow: "hidden", backgroundColor: colors.inputBg }}
-                    >
-                      <Image
-                        source={{ uri: gif.preview }}
-                        style={{ width: "100%", aspectRatio: 1.4 }}
-                        resizeMode="cover"
-                      />
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              );
-              return (
-                <View style={{ flexDirection: "row", gap: 4 }}>
-                  <GifCol items={left} />
-                  <GifCol items={right} />
-                </View>
-              );
-            })()
-          )}
-        </ScrollView>
-      </BottomSheet>
 
       <BottomSheet visible={!!msgInfoTarget} onClose={() => setMsgInfoTarget(null)}>
         <View style={{ paddingHorizontal: 20, paddingBottom: 24 }}>
