@@ -250,7 +250,7 @@ export default function EmojiStickerPicker({
               onEmojiSelected(emojiObject.emoji)
             }
             enableRecentlyUsed
-            enableSearchBar
+            enableSearchBar={false}
             enableCategoryChangeGesture={false}
             categoryPosition="top"
             disableSafeArea
