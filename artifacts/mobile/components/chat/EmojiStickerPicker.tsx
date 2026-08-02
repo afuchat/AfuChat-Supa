@@ -227,10 +227,14 @@ function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (emoji: string
 
 // ─── Sticker data ─────────────────────────────────────────────────────────────
 
-const STICKER_CATEGORIES: { label: string; icon: string; stickers: string[] }[] = [
+const STICKER_COLS = 6;
+const STICKER_ROW_H = 56;   // fixed row height for getItemLayout
+const STICKER_HDR_H = 28;   // section header height
+
+const STICKER_CATEGORIES: { label: string; ionicon: string; stickers: string[] }[] = [
   {
     label: "Hot",
-    icon: "🔥",
+    ionicon: "flame-outline",
     stickers: [
       "😂","🥰","😍","😎","🤩","🥺","😭","🤣","😅","😇",
       "🫶","👏","🙌","🤝","💪","✌️","🤙","👋","🙏","💯",
@@ -238,7 +242,7 @@ const STICKER_CATEGORIES: { label: string; icon: string; stickers: string[] }[] 
   },
   {
     label: "Smiles",
-    icon: "😊",
+    ionicon: "happy-outline",
     stickers: [
       "😀","😁","😂","🤣","😃","😄","😅","😆","😉","😊",
       "😋","😎","😍","🥰","😘","😗","😙","😚","🙂","🤗",
@@ -247,7 +251,7 @@ const STICKER_CATEGORIES: { label: string; icon: string; stickers: string[] }[] 
   },
   {
     label: "Gestures",
-    icon: "👍",
+    ionicon: "hand-left-outline",
     stickers: [
       "👍","👎","✌️","🤞","🤟","🤘","🤙","🖕","☝️","👆",
       "👇","👈","👉","🫵","✋","🖐️","👋","🤚","🙌","👐",
@@ -256,7 +260,7 @@ const STICKER_CATEGORIES: { label: string; icon: string; stickers: string[] }[] 
   },
   {
     label: "Hearts",
-    icon: "❤️",
+    ionicon: "heart-outline",
     stickers: [
       "❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔",
       "❤️‍🔥","❤️‍🩹","💕","💞","💓","💗","💖","💘","💝","💟",
@@ -265,7 +269,7 @@ const STICKER_CATEGORIES: { label: string; icon: string; stickers: string[] }[] 
   },
   {
     label: "Animals",
-    icon: "🐶",
+    ionicon: "paw-outline",
     stickers: [
       "🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯",
       "🦁","🐮","🐷","🐸","🐵","🐔","🐧","🐦","🦄","🐴",
@@ -274,7 +278,7 @@ const STICKER_CATEGORIES: { label: string; icon: string; stickers: string[] }[] 
   },
   {
     label: "Food",
-    icon: "🍕",
+    ionicon: "fast-food-outline",
     stickers: [
       "🍕","🍔","🌮","🍟","🍿","🧁","🎂","🍰","🍩","🍪",
       "🍦","🍧","🍨","🍫","🍬","🍭","☕","🧋","🍺","🥂",
@@ -283,7 +287,7 @@ const STICKER_CATEGORIES: { label: string; icon: string; stickers: string[] }[] 
   },
   {
     label: "Fun",
-    icon: "🎉",
+    ionicon: "game-controller-outline",
     stickers: [
       "🎉","🎊","🎈","🎁","🎀","🎮","🕹️","🎯","🎲","🃏",
       "🏆","🥇","🥈","🥉","🏅","🎖️","🎗️","🎟️","🎫","🎪",
@@ -292,7 +296,7 @@ const STICKER_CATEGORIES: { label: string; icon: string; stickers: string[] }[] 
   },
   {
     label: "Nature",
-    icon: "🌸",
+    ionicon: "leaf-outline",
     stickers: [
       "🌸","🌺","🌻","🌹","🌷","🌼","💐","🌱","🌿","🍀",
       "🍁","🍂","🍃","🌳","🌴","🌵","🎋","🎍","🌾","🌊",
@@ -300,6 +304,168 @@ const STICKER_CATEGORIES: { label: string; icon: string; stickers: string[] }[] 
     ],
   },
 ];
+
+// ── Flat sticker data (mirrors emoji flat model) ──────────────────────────────
+type StickerHeader = { kind: "header"; label: string; key: string };
+type StickerRow    = { kind: "row";    stickers: string[]; key: string };
+type StickerItem   = StickerHeader | StickerRow;
+
+const STICKER_FLAT: StickerItem[] = [];
+const STICKER_SEC_INDICES: number[] = [];
+
+for (const cat of STICKER_CATEGORIES) {
+  STICKER_SEC_INDICES.push(STICKER_FLAT.length);
+  STICKER_FLAT.push({ kind: "header", label: cat.label, key: `sh:${cat.label}` });
+  for (let i = 0; i < cat.stickers.length; i += STICKER_COLS) {
+    STICKER_FLAT.push({
+      kind: "row",
+      stickers: cat.stickers.slice(i, i + STICKER_COLS),
+      key: `${cat.label}:${Math.floor(i / STICKER_COLS)}`,
+    });
+  }
+}
+
+const STICKER_OFFSETS: number[] = [];
+let _soff = 0;
+for (const row of STICKER_FLAT) {
+  STICKER_OFFSETS.push(_soff);
+  _soff += row.kind === "header" ? STICKER_HDR_H : STICKER_ROW_H;
+}
+
+// ── StickerScrollPanel ────────────────────────────────────────────────────────
+function StickerScrollPanel({ onSendSticker }: { onSendSticker: (s: string) => void }) {
+  const { colors } = useTheme();
+  const { accent } = useAppAccent();
+  const listRef  = useRef<FlatList>(null);
+  const catBarRef = useRef<ScrollView>(null);
+  const activeCatRef = useRef(0);
+  const [activeCat, setActiveCat] = useState(0);
+  const isScrollingTo = useRef(false);
+
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 20 });
+
+  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
+    if (isScrollingTo.current || !viewableItems.length) return;
+    for (const vi of viewableItems) {
+      const item: StickerItem = vi.item;
+      const label = item.kind === "header" ? item.label : (() => {
+        for (let i = vi.index - 1; i >= 0; i--) {
+          if (STICKER_FLAT[i].kind === "header") return (STICKER_FLAT[i] as StickerHeader).label;
+        }
+        return STICKER_CATEGORIES[0].label;
+      })();
+      const idx = STICKER_CATEGORIES.findIndex((c) => c.label === label);
+      if (idx >= 0 && idx !== activeCatRef.current) {
+        activeCatRef.current = idx;
+        setActiveCat(idx);
+        catBarRef.current?.scrollTo({ x: Math.max(0, idx * 44 - 44), animated: true });
+      }
+      break;
+    }
+  }).current;
+
+  const scrollToCategory = useCallback((idx: number) => {
+    isScrollingTo.current = true;
+    activeCatRef.current = idx;
+    setActiveCat(idx);
+    listRef.current?.scrollToIndex({ index: STICKER_SEC_INDICES[idx], animated: true, viewOffset: 0 });
+    catBarRef.current?.scrollTo({ x: Math.max(0, idx * 44 - 44), animated: true });
+    setTimeout(() => { isScrollingTo.current = false; }, 700);
+  }, []);
+
+  const getItemLayout = useCallback((_: any, index: number) => ({
+    length: STICKER_FLAT[index]?.kind === "header" ? STICKER_HDR_H : STICKER_ROW_H,
+    offset: STICKER_OFFSETS[index] ?? 0,
+    index,
+  }), []);
+
+  const keyExtractor = useCallback((item: StickerItem) => item.key, []);
+
+  const renderItem = useCallback(({ item }: { item: StickerItem }) => {
+    if (item.kind === "header") {
+      return (
+        <View style={{ height: STICKER_HDR_H, justifyContent: "flex-end", paddingHorizontal: 12, paddingBottom: 3, backgroundColor: colors.surface as string }}>
+          <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: colors.textMuted as string, textTransform: "uppercase", letterSpacing: 0.5 }}>
+            {item.label}
+          </Text>
+        </View>
+      );
+    }
+    return (
+      <View style={{ flexDirection: "row", height: STICKER_ROW_H }}>
+        {item.stickers.map((emoji, i) => (
+          <TouchableOpacity
+            key={i}
+            onPress={() => onSendSticker(emoji)}
+            style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+            activeOpacity={0.6}
+          >
+            <Text style={{ fontSize: 32 }}>{emoji}</Text>
+          </TouchableOpacity>
+        ))}
+        {/* pad empty cells so last row aligns left */}
+        {item.stickers.length < STICKER_COLS &&
+          Array.from({ length: STICKER_COLS - item.stickers.length }).map((_, i) => (
+            <View key={`pad-${i}`} style={{ flex: 1 }} />
+          ))
+        }
+      </View>
+    );
+  }, [onSendSticker, colors]);
+
+  return (
+    <View style={{ flex: 1 }}>
+      {/* Category icon bar — Ionicons, same layout as emoji bar */}
+      <ScrollView
+        ref={catBarRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ borderBottomWidth: 0.5, borderBottomColor: ((colors.border as string) ?? "#ccc") + "80", maxHeight: 44 }}
+        contentContainerStyle={{ paddingHorizontal: 4, alignItems: "center" }}
+      >
+        {STICKER_CATEGORIES.map((cat, i) => {
+          const isActive = i === activeCat;
+          return (
+            <TouchableOpacity
+              key={cat.label}
+              onPress={() => scrollToCategory(i)}
+              style={{
+                width: 44, height: 44, alignItems: "center", justifyContent: "center",
+                borderBottomWidth: isActive ? 2 : 0,
+                borderBottomColor: accent,
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={cat.ionicon as any}
+                size={20}
+                color={isActive ? accent : (colors.textMuted as string)}
+              />
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
+      <FlatList
+        ref={listRef}
+        data={STICKER_FLAT}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        getItemLayout={getItemLayout}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig.current}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        initialNumToRender={16}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        removeClippedSubviews
+        contentContainerStyle={{ paddingBottom: 8 }}
+        style={{ flex: 1 }}
+      />
+    </View>
+  );
+}
 
 // ─── GIF panel ────────────────────────────────────────────────────────────────
 
@@ -434,54 +600,7 @@ export default function EmojiStickerPicker({
         )}
 
         {tab === "stickers" && (
-          <View style={{ flex: 1 }}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={[s.catBar, { borderBottomColor: colors.border as string }]}
-              contentContainerStyle={s.catBarContent}
-            >
-              {STICKER_CATEGORIES.map((cat, i) => (
-                <TouchableOpacity
-                  key={cat.label}
-                  onPress={() => setActiveCat(i)}
-                  style={[
-                    s.catBtn,
-                    i === activeCat && {
-                      borderBottomColor: BRAND,
-                      borderBottomWidth: 2,
-                    },
-                  ]}
-                  activeOpacity={0.7}
-                >
-                  <Text style={s.catIcon}>{cat.icon}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            <FlatList
-              key={activeCat}
-              data={STICKER_CATEGORIES[activeCat].stickers}
-              numColumns={6}
-              keyExtractor={(item, i) => `${activeCat}-${i}-${item}`}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={s.grid}
-              ListEmptyComponent={
-                <View style={{ alignItems: "center", paddingTop: 32, opacity: 0.5 }}>
-                  <Text style={{ fontSize: 32 }}>🙈</Text>
-                </View>
-              }
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => onSendSticker(item)}
-                  style={s.stickerBtn}
-                  activeOpacity={0.6}
-                >
-                  <Text style={s.stickerEmoji}>{item}</Text>
-                </TouchableOpacity>
-              )}
-            />
-          </View>
+          <StickerScrollPanel onSendSticker={onSendSticker} />
         )}
       </View>
 
@@ -549,33 +668,6 @@ export default function EmojiStickerPicker({
 
 const s = StyleSheet.create({
   root: { overflow: "hidden", flexDirection: "column" },
-
-  /* Sticker category bar */
-  catBar: {
-    
-    maxHeight: 44,
-  },
-  catBarContent: {
-    paddingHorizontal: 8,
-    alignItems: "center",
-  },
-  catBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginHorizontal: 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  catIcon: { fontSize: 22 },
-  grid: { padding: 8 },
-  stickerBtn: {
-    flex: 1,
-    aspectRatio: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 4,
-  },
-  stickerEmoji: { fontSize: 34 },
 
   /* Bottom navigation bar */
   bottomBar: {
