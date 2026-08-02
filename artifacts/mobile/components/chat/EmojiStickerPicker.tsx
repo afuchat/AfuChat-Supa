@@ -251,6 +251,7 @@ export default function EmojiStickerPicker({
             }
             enableRecentlyUsed
             enableSearchBar={false}
+            hideHeader
             enableCategoryChangeGesture={false}
             categoryPosition="top"
             disableSafeArea
