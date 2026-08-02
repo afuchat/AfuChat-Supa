@@ -35,3 +35,12 @@ export const SUPABASE_EDGE_URL: string = `${SUPABASE_URL}/functions/v1`;
 export const ENGAGERA_API_KEY: string =
   (process.env.EXPO_PUBLIC_ENGAGERA_API_KEY ?? "").trim() ||
   "eng_2ed3f056425528efe6685e1d5f833a2b25910ae83c32f090a2320e8b298a2ca7";
+
+/**
+ * Giphy public API key — used client-side for GIF search and trending.
+ * Intentionally public: Giphy keys are designed to be embedded in client apps
+ * (same security model as the Supabase anon key — rate-limiting is API-side).
+ */
+export const GIPHY_API_KEY: string =
+  (process.env.EXPO_PUBLIC_GIPHY_API_KEY ?? "").trim() ||
+  "QvN5KSUyP2roHGoHhEkwAoByB3NemSqL";

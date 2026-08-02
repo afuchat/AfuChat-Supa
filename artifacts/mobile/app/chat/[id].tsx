@@ -104,6 +104,7 @@ import { buildNavigationContext, ACTION_ROUTES_GUIDE, detectVoiceNavCommand, pic
 import { playNotificationSound as playMgrSound } from "@/lib/soundManager";
 import { AFUAI_BOT_ID } from "@/lib/afuAiBot";
 import { AFUCHAT_SYSTEM_ID } from "@/lib/afuSystemChat";
+import { GIPHY_API_KEY } from "@/lib/env";
 import { useCall } from "@/context/CallContext";
 import { BlurView } from "expo-blur";
 import { SystemNotificationCard, GroupedSystemNotificationCard, tryParseSysNotif, type GroupedSysNotifData } from "@/components/chat/SystemNotificationCard";
