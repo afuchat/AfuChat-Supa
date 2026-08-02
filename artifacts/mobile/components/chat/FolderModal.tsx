@@ -13,7 +13,6 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
 import type { ChatFolder, FolderFilter } from "@/lib/storage/chatFolders";
@@ -79,8 +78,6 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
     onSave({ name: name.trim(), icon, filter });
   }, [canSave, name, icon, filter, onSave]);
 
-  const tint = isDark ? "dark" : "light";
-
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <Pressable style={st.backdrop} onPress={onClose}>
@@ -91,16 +88,7 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
           <Animated.View
             style={[st.sheetWrap, { paddingBottom: Math.max(insets.bottom, 8), transform: [{ translateY: slideAnim }] }]}
           >
-            <BlurView intensity={80} tint={tint} style={st.sheetBlur}>
-              {/* Glass border overlay */}
-              <View
-                style={[
-                  st.sheetBorder,
-                  {
-                    borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.9)",
-                  },
-                ]}
-              />
+            <View style={[st.sheetBlur, { backgroundColor: colors.surface }]}>
             <Pressable onPress={() => {}}>
               <View style={[st.handle, { backgroundColor: isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.12)" }]} />
 
@@ -258,7 +246,7 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
                 </TouchableOpacity>
               </View>
             </Pressable>
-            </BlurView>
+            </View>
           </Animated.View>
         </KeyboardAvoidingView>
       </Pressable>
