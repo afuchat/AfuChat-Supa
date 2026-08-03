@@ -1968,6 +1968,17 @@ function ChatScreen() {
   // Reset the guard ref whenever the picker is dismissed so the next real tap on the
   // chat input works normally.
   useEffect(() => { if (!showEmojiStickerPicker) emojiSearchFocusedRef.current = false; }, [showEmojiStickerPicker]);
+  // If the system keyboard opens for any reason OTHER than the emoji/sticker search
+  // bar (e.g. user taps the chat input while the picker is open), close the picker.
+  // We use the ref — not emojiSearchActive state — to avoid a race: emojiSearchActive
+  // is async state that may not have settled yet when keyboardDidShow fires.
+  useEffect(() => {
+    if (showEmojiStickerPicker && keyboardHeight > 0 && !emojiSearchFocusedRef.current) {
+      setShowEmojiStickerPicker(false);
+      setEmojiSearchActive(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keyboardHeight]);
   const [miniProfileUserId, setMiniProfileUserId] = useState<string | null>(null);
   const [emojiKeyboardHeight, setEmojiKeyboardHeight] = useState(280);
   const [reminderMsg, setReminderMsg] = useState<Message | null>(null);
@@ -6969,15 +6980,18 @@ STRICT RULES:
       </View>
 
       {/* ── Emoji / sticker keyboard — anchored to screen bottom, same position as system keyboard ── */}
-      {showEmojiStickerPicker && (!keyboardHeight || emojiSearchActive) && (
+      {/* NOTE: always keep this mounted while showEmojiStickerPicker=true so the
+          inner tab/search state is never reset by an unmount/remount cycle.
+          Closing on unexpected keyboard events is handled by the useEffect above. */}
+      {showEmojiStickerPicker && (
         <View
           style={{
             position: "absolute",
             left: 0,
             right: 0,
-            // When search opens the system keyboard, float the picker above it
-            bottom: emojiSearchActive && keyboardHeight ? keyboardHeight : 0,
-            height: emojiKeyboardHeight + (emojiSearchActive && keyboardHeight ? 0 : insets.bottom),
+            // Float above system keyboard when search is open; sit at bottom otherwise.
+            bottom: keyboardHeight,
+            height: emojiKeyboardHeight + (keyboardHeight ? 0 : insets.bottom),
             backgroundColor: colors.surface,
             zIndex: 50,
           }}
