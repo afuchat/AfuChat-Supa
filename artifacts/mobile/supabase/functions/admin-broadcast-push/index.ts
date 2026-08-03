@@ -1,30 +1,63 @@
-// admin-broadcast-push — FCM HTTP v1 rewrite
-// Sends a push notification to all (or premium) users via Firebase Cloud Messaging.
-// Requires: FIREBASE_PROJECT_ID, FIREBASE_SERVICE_ACCOUNT_KEY secrets.
+/**
+ * admin-broadcast-push
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Sends a push notification to all users (or a filtered subset).
+ *
+ * POST body:
+ *   {
+ *     title: string,
+ *     body: string,
+ *     data?: Record<string, string>,
+ *     filter?: "all" | "premium",   // default: "all"
+ *     adminSecret: string           // must match ADMIN_BROADCAST_SECRET env var
+ *   }
+ *
+ * Required Supabase secrets:
+ *   FIREBASE_PROJECT_ID
+ *   FIREBASE_SERVICE_ACCOUNT_KEY
+ *   ADMIN_BROADCAST_SECRET   (set any strong random string)
+ *
+ * Sends in batches of 50 with a 100ms delay between batches to avoid
+ * FCM rate limits.
+ */
 
-function base64url(data: Uint8Array | string): string {
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+// ── FCM HTTP v1 (inlined) ─────────────────────────────────────────────────────
+
+function b64url(data: Uint8Array | string): string {
   const str = typeof data === "string" ? data : String.fromCharCode(...(data as Uint8Array));
   return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
 }
 
-async function getFCMAccessToken(serviceAccountJson: string): Promise<string> {
-  const sa = JSON.parse(serviceAccountJson);
+async function getFCMToken(saJson: string): Promise<string> {
+  const sa = JSON.parse(saJson);
   const now = Math.floor(Date.now() / 1000);
-  const header  = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-  const payload = base64url(JSON.stringify({
+  const header  = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const payload = b64url(JSON.stringify({
     iss: sa.client_email,
     scope: "https://www.googleapis.com/auth/firebase.messaging",
     aud: "https://oauth2.googleapis.com/token",
-    iat: now, exp: now + 3600,
+    iat: now,
+    exp: now + 3600,
   }));
   const si = `${header}.${payload}`;
   const pem = (sa.private_key as string).replace(/-----[^-]+-----/g, "").replace(/\s/g, "");
   const key = await crypto.subtle.importKey(
-    "pkcs8", Uint8Array.from(atob(pem), c => c.charCodeAt(0)).buffer,
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"],
+    "pkcs8",
+    Uint8Array.from(atob(pem), (c) => c.charCodeAt(0)).buffer,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
   );
   const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(si));
-  const jwt = `${si}.${base64url(new Uint8Array(sig))}`;
+  const jwt = `${si}.${b64url(new Uint8Array(sig))}`;
   const r = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -35,121 +68,175 @@ async function getFCMAccessToken(serviceAccountJson: string): Promise<string> {
   return d.access_token as string;
 }
 
-async function sendFCM(
-  projectId: string, accessToken: string, fcmToken: string,
-  title: string, body: string,
+async function sendOneFCM(
+  token: string,
+  title: string,
+  body: string,
+  data: Record<string, string>,
+  projectId: string,
+  accessToken: string,
 ): Promise<"ok" | "stale" | "error"> {
   const message = {
-    token: fcmToken,
+    token,
     notification: { title, body },
-    android: { priority: "high", ttl: "604800s", notification: { channel_id: "default", sound: "default", notification_priority: "PRIORITY_HIGH", default_sound: true, default_vibrate_timings: true, default_light_settings: true } },
-    apns: { headers: { "apns-priority": "10" }, payload: { aps: { alert: { title, body }, sound: "default", badge: 1 } } },
-    data: { type: "broadcast" },
+    android: {
+      priority: "high",
+      ttl: "604800s",
+      notification: {
+        channel_id: "default",
+        sound: "default",
+        notification_priority: "PRIORITY_HIGH",
+        default_sound: true,
+        color: "#1f95ff",
+      },
+    },
+    apns: {
+      headers: { "apns-priority": "10" },
+      payload: { aps: { alert: { title, body }, sound: "default", badge: 1 } },
+    },
+    data,
   };
-  const res = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify({ message }),
-  });
+
+  const res = await fetch(
+    `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ message }),
+    },
+  );
+
   if (res.status === 404) return "stale";
-  if (!res.ok) { console.error(`[FCM broadcast] ${res.status}`, await res.text()); return "error"; }
+  if (!res.ok) {
+    console.error(`[FCM broadcast] ${res.status}`, await res.text());
+    return "error";
+  }
   return "ok";
 }
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+// ── Expo push fallback ────────────────────────────────────────────────────────
 
-function json(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data), { status, headers: { ...CORS, "Content-Type": "application/json" } });
+async function sendOneExpo(
+  token: string,
+  title: string,
+  body: string,
+  data: Record<string, string>,
+): Promise<void> {
+  await fetch("https://exp.host/--/api/v2/push/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ to: token, title, body, data, sound: "default", priority: "high" }),
+  });
 }
 
-async function authedUserId(req: Request, supabaseUrl: string, serviceKey: string): Promise<string | null> {
-  const auth = req.headers.get("authorization") || "";
-  const jwt = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
-  if (!jwt) return null;
-  const resp = await fetch(`${supabaseUrl}/auth/v1/user`, { headers: { Authorization: `Bearer ${jwt}`, apikey: serviceKey } });
-  if (!resp.ok) return null;
-  const data = await resp.json();
-  return data?.id ?? null;
-}
+// ── Main ──────────────────────────────────────────────────────────────────────
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
-  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
-
-  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-  const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  const projectId   = Deno.env.get("FIREBASE_PROJECT_ID") || "";
-  const saKey       = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_KEY") || "";
-  if (!supabaseUrl || !serviceKey) return json({ error: "Service not configured" }, 503);
-  if (!projectId || !saKey) return json({ error: "Firebase not configured" }, 503);
-
-  const userId = await authedUserId(req, supabaseUrl, serviceKey);
-  if (!userId) return json({ error: "Unauthorized" }, 401);
-
-  const dbHeaders = { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey, "Content-Type": "application/json" };
-
-  const profileResp = await fetch(`${supabaseUrl}/rest/v1/profiles?select=is_admin&id=eq.${userId}&limit=1`, { headers: dbHeaders });
-  if (!profileResp.ok) return json({ error: "Unauthorized" }, 401);
-  const profiles = await profileResp.json();
-  if (!profiles?.[0]?.is_admin) return json({ error: "Admin access required" }, 403);
-
-  let body: { title?: string; body?: string; target?: string };
-  try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
-
-  const { title, body: msgBody, target = "all" } = body || {};
-  if (!title?.trim() || !msgBody?.trim()) return json({ error: "title and body are required" }, 400);
-
-  // Fetch eligible profiles (those with FCM token)
-  let profilesUrl = `${supabaseUrl}/rest/v1/profiles?select=id,fcm_token&fcm_token=not.is.null&account_deleted=eq.false`;
-  if (target === "premium") {
-    profilesUrl = `${supabaseUrl}/rest/v1/profiles?select=id,fcm_token,user_subscriptions!inner(id)&fcm_token=not.is.null&account_deleted=eq.false&user_subscriptions.is_active=eq.true`;
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: CORS });
   }
 
-  const allProfilesResp = await fetch(profilesUrl, { headers: dbHeaders });
-  if (!allProfilesResp.ok) return json({ error: "Failed to fetch profiles" }, 500);
-  const allProfiles: { id: string; fcm_token: string }[] = await allProfilesResp.json();
-  if (!allProfiles.length) return json({ sent: 0, total: 0, message: "No eligible users with push tokens" });
+  try {
+    const body = await req.json();
+    const { title, body: msgBody, data = {}, filter = "all", adminSecret } = body as {
+      title: string;
+      body: string;
+      data?: Record<string, string>;
+      filter?: string;
+      adminSecret?: string;
+    };
 
-  // Check notification preferences
-  const allIds = allProfiles.map(p => p.id);
-  const prefsResp = await fetch(
-    `${supabaseUrl}/rest/v1/notification_preferences?select=user_id,push_enabled&user_id=in.(${allIds.join(",")})`,
-    { headers: dbHeaders },
-  );
-  const prefs: { user_id: string; push_enabled: boolean }[] = prefsResp.ok ? await prefsResp.json() : [];
-  const disabledSet = new Set(prefs.filter(p => p.push_enabled === false).map(p => p.user_id));
-  const eligible = allProfiles.filter(p => !disabledSet.has(p.id));
-  if (!eligible.length) return json({ sent: 0, total: allProfiles.length, message: "All users have push disabled" });
+    // Verify admin secret
+    const expectedSecret = Deno.env.get("ADMIN_BROADCAST_SECRET");
+    if (!expectedSecret || adminSecret !== expectedSecret) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...CORS, "Content-Type": "application/json" },
+      });
+    }
 
-  // Get FCM access token once for all sends
-  const accessToken = await getFCMAccessToken(saKey);
+    if (!title || !msgBody) {
+      return new Response(JSON.stringify({ error: "title and body are required" }), {
+        status: 400,
+        headers: { ...CORS, "Content-Type": "application/json" },
+      });
+    }
 
-  // Send in concurrent batches of 50
-  let sent = 0;
-  const staleIds: string[] = [];
+    const projectId = Deno.env.get("FIREBASE_PROJECT_ID");
+    const saKey     = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_KEY");
+    if (!projectId || !saKey) {
+      return new Response(JSON.stringify({ error: "Firebase credentials not configured" }), {
+        status: 500,
+        headers: { ...CORS, "Content-Type": "application/json" },
+      });
+    }
 
-  for (let i = 0; i < eligible.length; i += 50) {
-    const batch = eligible.slice(i, i + 50);
-    const results = await Promise.allSettled(
-      batch.map(p => sendFCM(projectId, accessToken, p.fcm_token, title.trim().substring(0, 100), msgBody.trim().substring(0, 200))),
+    const db = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
-    results.forEach((r, idx) => {
-      if (r.status === "fulfilled" && r.value === "ok") sent++;
-      else if (r.status === "fulfilled" && r.value === "stale") staleIds.push(batch[idx].id);
+
+    // Fetch all FCM tokens
+    let query = db.from("profiles").select("fcm_token").not("fcm_token", "is", null);
+    if (filter === "premium") {
+      query = query.not("platinum_until", "is", null).gt("platinum_until", new Date().toISOString());
+    }
+    const { data: profiles, error: dbErr } = await query;
+    if (dbErr) throw new Error(dbErr.message);
+
+    const tokens = (profiles ?? []).map((p: any) => p.fcm_token as string).filter(Boolean);
+    if (!tokens.length) {
+      return new Response(JSON.stringify({ ok: true, sent: 0, skipped: 0 }), {
+        status: 200,
+        headers: { ...CORS, "Content-Type": "application/json" },
+      });
+    }
+
+    const accessToken = await getFCMToken(saKey);
+    const broadcastData = { ...data, type: "broadcast" };
+
+    let sent = 0;
+    let stale = 0;
+    let errors = 0;
+    const BATCH = 50;
+
+    for (let i = 0; i < tokens.length; i += BATCH) {
+      const batch = tokens.slice(i, i + BATCH);
+
+      await Promise.all(
+        batch.map(async (token) => {
+          if (token.startsWith("ExponentPushToken[")) {
+            await sendOneExpo(token, title, msgBody, broadcastData);
+            sent++;
+          } else {
+            const result = await sendOneFCM(token, title, msgBody, broadcastData, projectId, accessToken);
+            if (result === "ok") sent++;
+            else if (result === "stale") stale++;
+            else errors++;
+          }
+        }),
+      );
+
+      // Throttle between batches
+      if (i + BATCH < tokens.length) {
+        await new Promise((r) => setTimeout(r, 100));
+      }
+    }
+
+    console.log(`[broadcast] total=${tokens.length} sent=${sent} stale=${stale} errors=${errors}`);
+
+    return new Response(JSON.stringify({ ok: true, total: tokens.length, sent, stale, errors }), {
+      status: 200,
+      headers: { ...CORS, "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    console.error("[admin-broadcast-push] error:", err);
+    return new Response(JSON.stringify({ error: String(err) }), {
+      status: 500,
+      headers: { ...CORS, "Content-Type": "application/json" },
     });
   }
-
-  // Clear stale FCM tokens
-  if (staleIds.length) {
-    await fetch(`${supabaseUrl}/rest/v1/profiles?id=in.(${staleIds.join(",")})`, {
-      method: "PATCH", headers: dbHeaders,
-      body: JSON.stringify({ fcm_token: null }),
-    });
-  }
-
-  return json({ sent, total: eligible.length, stale_cleared: staleIds.length, message: `Broadcast sent to ${sent} of ${eligible.length} eligible devices` });
 });

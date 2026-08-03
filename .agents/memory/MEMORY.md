@@ -1,4 +1,5 @@
 - [pnpm install missing on Replit](pnpm-install-missing.md) — node_modules not persisted between sessions; run `CI=true pnpm install` from workspace root when app fails with PluginError/missing module.
+- [Push Notifications v2](push-notifications-v2.md) — server-side only (DB triggers→edge fn→FCM HTTP v1); notifyUser.ts is no-op stubs; run 20260803_push_notifications_v2.sql migration.
 - [WebRTC New Arch TurboModule injection](webrtc-new-arch-turbomodule.md) — react-native-webrtc v124 throws at module-eval when NativeModules.WebRTCModule is null (New Arch). Fix: inject from TurboModuleRegistry into NativeModules BEFORE require("react-native-webrtc").
 - [Supabase DB connection on Replit](supabase-db-replit.md) — Direct pg + Supavisor both fail from Replit IPv4; use Supabase JS admin client (HTTPS) for all DB ops. claim_video_job via .rpc(), auth.users via supabase.auth.admin.getUserById().
 - [Support tickets schema + AI reply](support-tickets-ai.md) — has_ai_draft column added via Management API; support-ai-reply edge fn calls Engagera; client invokes it fire-and-forget after inserting first message.

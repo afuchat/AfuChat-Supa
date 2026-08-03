@@ -39,7 +39,7 @@ import {
 import { Avatar } from "@/components/ui/Avatar";
 import { ensureAfuAiChat } from "@/lib/afuAiBot";
 import { ReferralRewardModal } from "@/components/referral/ReferralRewardModal";
-import { sendPushNotification } from "@/lib/pushNotifications";
+// Push notifications for referrals are handled server-side via DB triggers
 import { useAppAccent } from "@/context/AppAccentContext";
 import { CHAT_THEME_COLORS, type ChatTheme } from "@/context/ChatPreferencesContext";
 
@@ -486,13 +486,7 @@ export default function OnboardingScreen() {
             }
           } catch {}
 
-          // Notify the referrer via push notification
-          sendPushNotification({
-            userId: rpcResult.referrer_id,
-            title: "🎉 Someone joined using your referral!",
-            body: `You earned +2,000 Nexa! Keep sharing to earn more.`,
-            data: { type: "referral", screen: "referral" },
-          }).catch(() => {});
+          // Referrer push notification is sent server-side via DB trigger on notifications INSERT
 
           // Queue the success modal — navigation happens on dismiss
           setReferralModal({ referrerName, referrerHandle, referrerAvatar });

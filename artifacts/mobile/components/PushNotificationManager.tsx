@@ -1,53 +1,79 @@
+/**
+ * PushNotificationManager
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Mounts once at the root layout. Handles:
+ *   - One-time foreground handler + category setup
+ *   - Token registration when user signs in
+ *   - Response listeners (tap / action buttons)
+ *   - Badge clear on app foreground
+ *   - Token refresh every 10 minutes while app is open
+ */
+
 import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
 import { useAuth } from "@/context/AuthContext";
 import {
+  setupNotificationHandler,
+  setupNotificationCategories,
   registerForPushNotifications,
-  setupNotificationChannels,
   setupNotificationListeners,
   clearBadge,
 } from "@/lib/pushNotifications";
-const RE_REGISTER_COOLDOWN_MS = 10 * 60 * 1000;
+
+const RE_REGISTER_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
 
 export function PushNotificationManager() {
   const { user } = useAuth();
-  const registered = useRef(false);
+  const listenersCleanup = useRef<(() => void) | null>(null);
   const lastRegisteredAt = useRef(0);
 
+  // ── One-time: set foreground handler + action categories ───────────────────
   useEffect(() => {
-    setupNotificationChannels();
+    setupNotificationHandler();
+    setupNotificationCategories();
   }, []);
 
+  // ── Register token + start listeners when user signs in ───────────────────
   useEffect(() => {
-    if (!user || registered.current) return;
+    if (!user) {
+      // Clean up listeners on sign-out
+      listenersCleanup.current?.();
+      listenersCleanup.current = null;
+      return;
+    }
 
-    registered.current = true;
+    // Register token
     lastRegisteredAt.current = Date.now();
-    registerForPushNotifications(user.id).catch(() => {});
-    const cleanup = setupNotificationListeners();
+    registerForPushNotifications().catch(() => {});
+
+    // Set up notification response listeners
+    if (!listenersCleanup.current) {
+      listenersCleanup.current = setupNotificationListeners();
+    }
 
     return () => {
-      cleanup();
-      registered.current = false;
+      listenersCleanup.current?.();
+      listenersCleanup.current = null;
     };
   }, [user?.id]);
 
-  // ── App foreground — clear badge and refresh token ─────────────────
+  // ── App comes to foreground — clear badge + periodic token refresh ─────────
   useEffect(() => {
     if (!user) return;
 
-    const subscription = AppState.addEventListener("change", (state) => {
-      if (state === "active") {
-        clearBadge();
-        const now = Date.now();
-        if (now - lastRegisteredAt.current > RE_REGISTER_COOLDOWN_MS) {
-          lastRegisteredAt.current = now;
-          registerForPushNotifications(user.id).catch(() => {});
-        }
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state !== "active") return;
+
+      clearBadge();
+
+      const now = Date.now();
+      if (now - lastRegisteredAt.current > RE_REGISTER_COOLDOWN_MS) {
+        lastRegisteredAt.current = now;
+        registerForPushNotifications().catch(() => {});
       }
     });
 
-    return () => subscription.remove();
+    return () => sub.remove();
   }, [user?.id]);
 
   return null;

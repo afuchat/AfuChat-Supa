@@ -1,70 +1,96 @@
-// @ts-nocheck
+/**
+ * pushNotifications.ts
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Client-side push notification setup.
+ *
+ * Responsibilities:
+ *   1. Request OS permission + obtain FCM/device token
+ *   2. Register token with the backend (register-push-token edge fn)
+ *   3. Set up foreground notification handler
+ *   4. Register notification action categories (Reply, Mark Read)
+ *   5. Listen for notification responses (taps + action buttons)
+ *   6. Badge management
+ *
+ * Push DISPATCH is server-side only: DB triggers → push-notification-trigger
+ * edge function. This file never calls any "send" endpoint directly.
+ */
+
 import { Platform } from "react-native";
 import { router } from "expo-router";
 import { supabase } from "@/lib/supabase";
-import { getPushSoundToken } from "@/lib/soundManager";
-import { handleNotificationAction } from "@/lib/notificationActions";
 
-// ── Notification Category IDs ─────────────────────────────────────────
+// ── Lazy-loaded modules (safe on web / Expo Go without native modules) ────────
+
+let Notifications: typeof import("expo-notifications") | null = null;
+let Device: typeof import("expo-device") | null = null;
+
+function getNotifications(): typeof import("expo-notifications") | null {
+  if (Notifications) return Notifications;
+  try {
+    Notifications = require("expo-notifications");
+    Device = require("expo-device");
+    return Notifications;
+  } catch {
+    return null;
+  }
+}
+
+// ── Notification Category IDs ─────────────────────────────────────────────────
+
 export const NOTIF_CATEGORY = {
-  MESSAGE_REPLY:   "afuchat_message_reply",
-  POST_INTERACT:   "afuchat_post_interact",
-  NEW_FOLLOWER:    "afuchat_new_follower",
-  ORDER_UPDATE:    "afuchat_order_update",
-  ORDER_SHIPPED:   "afuchat_order_shipped",
-  GIFT_RECEIVED:   "afuchat_gift_received",
-  MENTION:         "afuchat_mention",
+  MESSAGE_REPLY: "afuchat_message_reply",
+  POST_INTERACT: "afuchat_post_interact",
+  ORDER_UPDATE:  "afuchat_order_update",
 } as const;
 
-let _lastRegistrationError: string | null = null;
-export function getLastPushRegistrationError(): string | null { return _lastRegistrationError; }
+// ── Dedup: prevent double-handling the same notification response ─────────────
 
 const _handledIds = new Set<string>();
 function alreadyHandled(id: string): boolean {
   if (_handledIds.has(id)) return true;
   _handledIds.add(id);
-  if (_handledIds.size > 50) {
+  if (_handledIds.size > 100) {
     const first = _handledIds.values().next().value as string;
     _handledIds.delete(first);
   }
   return false;
 }
 
-let Notifications: typeof import("expo-notifications") | null = null;
-let Device: typeof import("expo-device") | null = null;
+// ═════════════════════════════════════════════════════════════════════════════
+// 1. FOREGROUND HANDLER
+// ═════════════════════════════════════════════════════════════════════════════
 
-try {
-  Notifications = require("expo-notifications");
-  Device = require("expo-device");
+export function setupNotificationHandler(): void {
+  const N = getNotifications();
+  if (!N) return;
 
-  Notifications.setNotificationHandler({
+  N.setNotificationHandler({
     handleNotification: async (notification) => {
       const data = (notification.request.content.data ?? {}) as Record<string, string>;
-      const isChatMessage =
-        data.type === "message" ||
-        data.notifType === "new_message" ||
-        data.type === "chat";
 
-      // Only suppress the banner if the user is already looking at that exact chat.
-      // All other chat notifications (different conversation or different screen)
-      // must show in the status bar so the user is actually alerted.
-      // Use chatVisited's live tracker — already kept in sync by chat/[id].tsx
-      const { getActiveChatId } = require("@/lib/chatVisited");
-      const activeChatId = getActiveChatId() as string | null;
-      const isActiveChat =
-        isChatMessage &&
-        activeChatId !== null &&
-        (data.chatId === activeChatId || data.chat_id === activeChatId);
+      // Suppress banner when user is already viewing that exact chat
+      const isChatMsg =
+        data.type === "message" || data.notifType === "new_message";
 
-      if (isActiveChat) {
-        return {
-          shouldShowAlert: false,
-          shouldPlaySound: false,
-          shouldSetBadge: true,
-          shouldShowBanner: false,
-          shouldShowList: false,
-          priority: Notifications.AndroidNotificationPriority.DEFAULT,
-        };
+      if (isChatMsg) {
+        try {
+          const { getActiveChatId } = require("@/lib/chatVisited");
+          const activeChatId = getActiveChatId() as string | null;
+          const isActive =
+            activeChatId != null &&
+            (data.chatId === activeChatId || data.chat_id === activeChatId);
+
+          if (isActive) {
+            return {
+              shouldShowAlert: false,
+              shouldPlaySound: false,
+              shouldSetBadge: true,
+              shouldShowBanner: false,
+              shouldShowList: false,
+              priority: N.AndroidNotificationPriority.DEFAULT,
+            };
+          }
+        } catch {}
       }
 
       return {
@@ -73,23 +99,141 @@ try {
         shouldSetBadge: true,
         shouldShowBanner: true,
         shouldShowList: true,
-        priority: Notifications.AndroidNotificationPriority.MAX,
+        priority: N.AndroidNotificationPriority.MAX,
       };
     },
   });
-} catch {
-  Notifications = null;
-  Device = null;
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Notification Categories (action buttons in status bar)
-// ─────────────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// 2. PERMISSION + TOKEN REGISTRATION
+// ═════════════════════════════════════════════════════════════════════════════
+
+let _lastRegistrationError: string | null = null;
+export function getLastPushRegistrationError(): string | null {
+  return _lastRegistrationError;
+}
+
+export async function registerForPushNotifications(): Promise<void> {
+  _lastRegistrationError = null;
+
+  if (Platform.OS === "web") return;
+
+  const N = getNotifications();
+  if (!N || !Device) return;
+
+  if (!Device.isDevice) {
+    // Simulators cannot receive push notifications
+    _lastRegistrationError = "Push notifications not supported on simulator";
+    return;
+  }
+
+  try {
+    // Request permission
+    const { status: existingStatus } = await N.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== "granted") {
+      const { status } = await N.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    if (finalStatus !== "granted") {
+      _lastRegistrationError = "Push notification permission denied";
+      return;
+    }
+
+    // Create Android notification channels
+    if (Platform.OS === "android") {
+      await _createAndroidChannels(N);
+    }
+
+    // Get the device push token (FCM on Android, APNs gateway on iOS)
+    const tokenData = await N.getDevicePushTokenAsync();
+    const token = tokenData.data as string;
+    if (!token) {
+      _lastRegistrationError = "Failed to obtain push token";
+      return;
+    }
+
+    // Register with backend
+    const { error } = await supabase.functions.invoke("register-push-token", {
+      body: { token, platform: Platform.OS },
+    });
+
+    if (error) {
+      _lastRegistrationError = `Token registration failed: ${error.message}`;
+      console.warn("[Push] register-push-token error:", error.message);
+    }
+  } catch (err: any) {
+    _lastRegistrationError = err?.message ?? "Unknown error during push setup";
+    console.warn("[Push] registerForPushNotifications error:", err);
+  }
+}
+
+async function _createAndroidChannels(
+  N: typeof import("expo-notifications"),
+): Promise<void> {
+  const channels = [
+    {
+      id: "messages",
+      name: "Messages",
+      importance: N.AndroidImportance.MAX,
+      sound: "default",
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: "#1f95ff",
+      showBadge: true,
+    },
+    {
+      id: "calls",
+      name: "Calls",
+      importance: N.AndroidImportance.MAX,
+      sound: "default",
+      vibrationPattern: [0, 500, 500, 500],
+      lightColor: "#34C759",
+      showBadge: true,
+    },
+    {
+      id: "social",
+      name: "Social",
+      importance: N.AndroidImportance.HIGH,
+      sound: "default",
+      showBadge: true,
+    },
+    {
+      id: "marketplace",
+      name: "Orders & Payments",
+      importance: N.AndroidImportance.HIGH,
+      sound: "default",
+      showBadge: true,
+    },
+    {
+      id: "default",
+      name: "General",
+      importance: N.AndroidImportance.DEFAULT,
+      sound: "default",
+      showBadge: true,
+    },
+  ];
+
+  for (const ch of channels) {
+    try {
+      await N.setNotificationChannelAsync(ch.id, ch as any);
+    } catch {}
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 3. NOTIFICATION CATEGORIES (action buttons)
+// ═════════════════════════════════════════════════════════════════════════════
 
 export async function setupNotificationCategories(): Promise<void> {
-  if (!Notifications) return;
+  const N = getNotifications();
+  if (!N) return;
+
   try {
-    await Notifications.setNotificationCategoryAsync(NOTIF_CATEGORY.MESSAGE_REPLY, [
+    // Message: Reply (inline text) + Mark Read
+    await N.setNotificationCategoryAsync(NOTIF_CATEGORY.MESSAGE_REPLY, [
       {
         identifier: "chat_reply",
         buttonTitle: "Reply",
@@ -104,491 +248,149 @@ export async function setupNotificationCategories(): Promise<void> {
         buttonTitle: "Mark Read",
         options: { opensAppToForeground: false, isDestructive: false },
       },
-      {
-        identifier: "snooze_1h",
-        buttonTitle: "Snooze 1h",
-        options: { opensAppToForeground: false, isDestructive: false },
-      },
     ]);
 
-    await Notifications.setNotificationCategoryAsync(NOTIF_CATEGORY.POST_INTERACT, [
-      {
-        identifier: "post_reply",
-        buttonTitle: "Reply",
-        options: { opensAppToForeground: false },
-        textInput: {
-          submitButtonTitle: "Send",
-          placeholder: "Write your reply…",
-        },
-      },
-      {
-        identifier: "like",
-        buttonTitle: "❤️ Like",
-        options: { opensAppToForeground: false, isDestructive: false },
-      },
+    // Post: Like + Comment
+    await N.setNotificationCategoryAsync(NOTIF_CATEGORY.POST_INTERACT, [
       {
         identifier: "view_post",
-        buttonTitle: "View Post",
+        buttonTitle: "View",
         options: { opensAppToForeground: true },
       },
     ]);
 
-    await Notifications.setNotificationCategoryAsync(NOTIF_CATEGORY.NEW_FOLLOWER, [
-      {
-        identifier: "follow_back",
-        buttonTitle: "Follow Back",
-        options: { opensAppToForeground: false, isDestructive: false },
-      },
-      {
-        identifier: "view_profile",
-        buttonTitle: "View Profile",
-        options: { opensAppToForeground: true },
-      },
-      {
-        identifier: "mark_read",
-        buttonTitle: "Dismiss",
-        options: { opensAppToForeground: false, isDestructive: false },
-      },
-    ]);
-
-    await Notifications.setNotificationCategoryAsync(NOTIF_CATEGORY.ORDER_UPDATE, [
+    // Order: View Order + Confirm Delivery
+    await N.setNotificationCategoryAsync(NOTIF_CATEGORY.ORDER_UPDATE, [
       {
         identifier: "view_order",
         buttonTitle: "View Order",
         options: { opensAppToForeground: true },
       },
-      {
-        identifier: "mark_read",
-        buttonTitle: "Dismiss",
-        options: { opensAppToForeground: false, isDestructive: false },
-      },
-    ]);
-
-    await Notifications.setNotificationCategoryAsync(NOTIF_CATEGORY.ORDER_SHIPPED, [
       {
         identifier: "confirm_delivery",
-        buttonTitle: "✓ Confirm Delivery",
-        options: { opensAppToForeground: false, isDestructive: false },
-      },
-      {
-        identifier: "view_order",
-        buttonTitle: "View Order",
-        options: { opensAppToForeground: true },
-      },
-    ]);
-
-    await Notifications.setNotificationCategoryAsync(NOTIF_CATEGORY.GIFT_RECEIVED, [
-      {
-        identifier: "view_profile",
-        buttonTitle: "👤 View Sender",
-        options: { opensAppToForeground: true },
-      },
-      {
-        identifier: "mark_read",
-        buttonTitle: "Dismiss",
+        buttonTitle: "Confirm Delivery",
         options: { opensAppToForeground: false, isDestructive: false },
       },
     ]);
-
-    await Notifications.setNotificationCategoryAsync(NOTIF_CATEGORY.MENTION, [
-      {
-        identifier: "post_reply",
-        buttonTitle: "Reply",
-        options: { opensAppToForeground: false },
-        textInput: {
-          submitButtonTitle: "Send",
-          placeholder: "Write your reply…",
-        },
-      },
-      {
-        identifier: "like",
-        buttonTitle: "❤️ Like",
-        options: { opensAppToForeground: false, isDestructive: false },
-      },
-      {
-        identifier: "view_post",
-        buttonTitle: "View Post",
-        options: { opensAppToForeground: true },
-      },
-    ]);
-  } catch (e) {
-    console.warn("[PushNotif] Category setup failed:", e);
+  } catch (err) {
+    console.warn("[Push] setupNotificationCategories error:", err);
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Notification Channels (Android)
-// ─────────────────────────────────────────────────────────────────────
-
-export async function setupNotificationChannels(): Promise<void> {
-  if (Platform.OS !== "android" || !Notifications) return;
-  try {
-    const base = {
-      sound: "default",
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-      showBadge: true,
-      enableVibrate: true,
-      enableLights: true,
-      bypassDnd: false,
-    };
-
-    await Notifications.setNotificationChannelAsync("default", {
-      name: "AfuChat",
-      description: "General AfuChat notifications",
-      importance: Notifications.AndroidImportance.MAX,
-      lightColor: "#1f95ff",
-      ...base,
-    });
-
-    await Notifications.setNotificationChannelAsync("messages", {
-      name: "Messages",
-      description: "Chat messages from your contacts",
-      importance: Notifications.AndroidImportance.MAX,
-      lightColor: "#1f95ff",
-      ...base,
-    });
-
-    await Notifications.setNotificationChannelAsync("social", {
-      name: "Social",
-      description: "Likes, follows, replies and mentions",
-      importance: Notifications.AndroidImportance.HIGH,
-      lightColor: "#007AFF",
-      ...base,
-    });
-
-    await Notifications.setNotificationChannelAsync("marketplace", {
-      name: "Marketplace & Payments",
-      description: "Orders, escrow releases, disputes and payments",
-      importance: Notifications.AndroidImportance.MAX,
-      lightColor: "#34C759",
-      ...base,
-    });
-
-    await Notifications.setNotificationChannelAsync("system", {
-      name: "System & Account",
-      description: "Account updates, verifications and admin messages",
-      importance: Notifications.AndroidImportance.HIGH,
-      enableVibrate: false,
-      ...base,
-    });
-
-    await Notifications.setNotificationChannelAsync("calls", {
-      name: "Incoming Calls",
-      description: "Voice and video call alerts",
-      importance: Notifications.AndroidImportance.MAX,
-      lightColor: "#34C759",
-      bypassDnd: true,
-      showBadge: true,
-      enableVibrate: true,
-      enableLights: true,
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-      sound: "default",
-    });
-  } catch (e) {
-    console.warn("[PushNotif] Channel setup failed:", e);
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────
-// Registration — gets native FCM token (Android) / APNs token (iOS)
-// and saves it to the profiles.fcm_token column via the edge function.
-// ─────────────────────────────────────────────────────────────────────
-
-export async function registerForPushNotifications(userId: string): Promise<string | null> {
-  if (!Notifications || !Device) return null;
-  try {
-    if (!Device.isDevice) return null;
-
-    await setupNotificationChannels();
-    await setupNotificationCategories();
-
-    try {
-      const { CALL_SERVICE_TASK } = require("./callService");
-      await Notifications.registerTaskAsync(CALL_SERVICE_TASK);
-    } catch {
-      // expo-task-manager unavailable (Expo Go or web) — skip silently.
-    }
-
-    const { status: existing } = await Notifications.getPermissionsAsync();
-    let finalStatus = existing;
-
-    if (existing !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-
-    if (finalStatus !== "granted") return null;
-
-    // Try native FCM/APNs token first (standalone builds).
-    // Fall back to Expo push token for Expo Go / development builds
-    // where getDevicePushTokenAsync() is unavailable.
-    let token: string;
-    try {
-      const tokenData = await Notifications.getDevicePushTokenAsync();
-      token = tokenData.data as string;
-    } catch {
-      const expoToken = await Notifications.getExpoPushTokenAsync({
-        projectId: "7efbd70c-e8d4-485d-88a9-d05e3d34f280",
-      });
-      token = expoToken.data;
-    }
-
-    // Primary: save via Supabase Edge Function (uses service role key server-side)
-    let savedViaEdgeFn = false;
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
-      if (accessToken) {
-        const { error: fnErr } = await supabase.functions.invoke("register-push-token", {
-          body: { token, platform: Platform.OS },
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        if (!fnErr) savedViaEdgeFn = true;
-        else console.warn("[PushNotif] Edge function token save failed:", fnErr.message);
-      }
-    } catch (fnCatchErr: any) {
-      console.warn("[PushNotif] Edge function unreachable:", fnCatchErr?.message);
-    }
-
-    // Fallback: direct Supabase client update
-    if (!savedViaEdgeFn) {
-      const { error: dbError } = await supabase
-        .from("profiles")
-        .update({ fcm_token: token })
-        .eq("id", userId);
-      if (dbError) console.warn("[PushNotif] Fallback DB save failed:", dbError.message);
-    }
-
-    return token;
-  } catch (error: any) {
-    const msg = error?.message || String(error);
-    if (msg?.includes?.("removed from Expo Go")) {
-      _lastRegistrationError = "Not available in Expo Go";
-    } else {
-      console.warn("[PushNotif] Registration failed:", msg);
-      _lastRegistrationError = msg;
-    }
-    return null;
-  }
-}
-
-export async function clearPushToken(userId: string): Promise<void> {
-  try {
-    await supabase.from("profiles").update({ fcm_token: null }).eq("id", userId);
-  } catch {}
-}
-
-// ─────────────────────────────────────────────────────────────────────
-// Linked-account session registry
-// ─────────────────────────────────────────────────────────────────────
-
-let _switchAccount: ((userId: string) => Promise<{ success: boolean; error?: string }>) | null = null;
-let _currentUserId: string | null = null;
-
-export function registerSwitchAccount(
-  fn: (userId: string) => Promise<{ success: boolean; error?: string }>
-) {
-  _switchAccount = fn;
-}
-
-export function setCurrentUserId(id: string | null) {
-  _currentUserId = id;
-}
-
-// ─────────────────────────────────────────────────────────────────────
-// Notification response routing (tap on notification body)
-// ─────────────────────────────────────────────────────────────────────
-
-async function routeNotificationResponse(response: any) {
-  const id = response.notification.request.identifier;
-  if (alreadyHandled(id)) return;
-
-  const data = (response.notification.request.content.data || {}) as Record<string, string>;
-
-  if (
-    data.recipientUserId &&
-    data.recipientUserId !== _currentUserId &&
-    _switchAccount
-  ) {
-    try {
-      await _switchAccount(data.recipientUserId);
-      await new Promise<void>((resolve) => setTimeout(resolve, 350));
-    } catch {}
-  }
-
-  if (response.actionIdentifier === "view_post" && data.postId) {
-    router.push(`/p/${data.postId}` as any);
-    return;
-  }
-  if (response.actionIdentifier === "view_profile" && data.actorId) {
-    router.push(`/contact/${data.actorId}` as any);
-    return;
-  }
-  if (response.actionIdentifier === "view_order") {
-    if (data.orderId) router.push(`/shop/order/${data.orderId}` as any);
-    else router.push("/shop/my-orders" as any);
-    return;
-  }
-  if (data?.url) { router.push(data.url as any); return; }
-
-  switch (data?.type) {
-    case "message":
-      if (data.chatId) router.push(`/chat/${data.chatId}` as any);
-      break;
-    case "order":
-    case "escrow":
-      if (data.orderId) router.push(`/shop/order/${data.orderId}` as any);
-      else router.push("/shop/my-orders" as any);
-      break;
-    case "payment":
-      router.push("/(tabs)/me" as any);
-      break;
-    case "channel":
-    case "live":
-      router.push("/channel/intro" as any);
-      break;
-    case "follow":
-      if (data.actorId) router.push(`/contact/${data.actorId}` as any);
-      break;
-    case "like":
-    case "reply":
-    case "mention":
-      if (data.postId) router.push(`/p/${data.postId}` as any);
-      break;
-    case "gift":
-      router.push("/(tabs)/me" as any);
-      break;
-    case "incoming_call":
-      // App was in background — user tapped the incoming call notification.
-      // Navigate to the call screen in incoming mode; CallContext will handle
-      // showing the accept/decline UI via IncomingCallModal.
-      if (data.callId) {
-        // Emit to CallContext via a global event so it can show IncomingCallModal
-        try {
-          const { emitPushIncomingCall } = require("@/lib/callPushBridge");
-          emitPushIncomingCall({
-            callId: data.callId,
-            callerId: data.callerId ?? "",
-            callerName: data.callerName ?? "Unknown",
-            callerAvatar: data.callerAvatar || null,
-            chatId: data.chatId || null,
-          });
-        } catch {}
-      }
-      break;
-    case "missed_call":
-      router.push("/call-history" as any);
-      break;
-    default:
-      break;
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────
-// Notification listeners
-// ─────────────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// 4. NOTIFICATION LISTENERS (tap + action handlers)
+// ═════════════════════════════════════════════════════════════════════════════
 
 let _listenersActive = false;
 
-export function setupNotificationListeners() {
-  if (!Notifications) return () => {};
-  if (_listenersActive) return () => {};
+export function setupNotificationListeners(): () => void {
+  const N = getNotifications();
+  if (!N || _listenersActive) return () => {};
+
   _listenersActive = true;
 
-  Notifications.getLastNotificationResponseAsync().then((response) => {
-    if (response) {
-      const { actionIdentifier, userText } = response as any;
-      const data = (response.notification.request.content.data || {}) as Record<string, string>;
-      handleNotificationAction(actionIdentifier, userText, data).then(() => {
-        routeNotificationResponse(response);
-      });
-    }
-  }).catch(() => {});
+  // Foreground notification received (informational only — handler above decides display)
+  const receivedSub = N.addNotificationReceivedListener((notification) => {
+    const data = (notification.request.content.data ?? {}) as Record<string, string>;
+    console.log("[Push] notification received:", data.type ?? "unknown");
+  });
 
-  const receivedSubscription = Notifications.addNotificationReceivedListener((notification) => {
-    const data = (notification.request.content.data || {}) as Record<string, string>;
-    if (data.message_id) {
-      supabase.auth.getUser()
-        .then(({ data: { user } }) => {
-          if (!user) return;
-          supabase
-            .from("message_status")
-            .upsert(
-              { message_id: data.message_id, user_id: user.id, delivered_at: new Date().toISOString() },
-              { onConflict: "message_id,user_id", ignoreDuplicates: true }
-            )
-            .then(() => {})
-            .catch(() => {});
-        })
-        .catch(() => {});
+  // User tapped a notification or triggered an action button
+  const responseSub = N.addNotificationResponseReceivedListener(async (response) => {
+    const id = response.notification.request.identifier;
+    if (alreadyHandled(id)) return;
+
+    const data = (response.notification.request.content.data ?? {}) as Record<string, string>;
+    const actionId = response.actionIdentifier;
+
+    // Action buttons (Reply, Mark Read, etc.)
+    if (
+      actionId !== N.DEFAULT_ACTION_IDENTIFIER &&
+      actionId !== N.DISMISS_ACTION_IDENTIFIER
+    ) {
+      try {
+        const { handleNotificationAction } = require("@/lib/notificationActions");
+        await handleNotificationAction(actionId, data, response);
+      } catch (err) {
+        console.warn("[Push] handleNotificationAction error:", err);
+      }
+      return;
+    }
+
+    // Plain tap → navigate
+    if (actionId === N.DEFAULT_ACTION_IDENTIFIER) {
+      _routeNotification(data);
     }
   });
 
-  const responseSubscription = Notifications.addNotificationResponseReceivedListener(
-    async (response) => {
-      const { actionIdentifier, userText } = response as any;
-      const data = (response.notification.request.content.data || {}) as Record<string, string>;
-
-      await handleNotificationAction(actionIdentifier, userText, data);
-
-      const DEFAULT = Notifications?.DEFAULT_ACTION_IDENTIFIER ?? "expo.modules.notifications.actions.DEFAULT";
-      const isNavAction = [
-        DEFAULT,
-        "view_post",
-        "view_profile",
-        "view_order",
-      ].includes(actionIdentifier);
-
-      if (isNavAction) {
-        routeNotificationResponse(response);
-      }
-    }
-  );
-
   return () => {
-    receivedSubscription.remove();
-    responseSubscription.remove();
+    receivedSub.remove();
+    responseSub.remove();
     _listenersActive = false;
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Direct push sender — calls the send-push-notification edge function
-// which sends via FCM HTTP v1 API using server-side credentials.
-// ─────────────────────────────────────────────────────────────────────
+function _routeNotification(data: Record<string, string>): void {
+  const type = data.type ?? data.notifType;
 
-export async function sendPushNotification(params: {
-  userId: string;
-  title: string;
-  body: string;
-  data?: Record<string, string>;
-  categoryIdentifier?: string;
-}): Promise<void> {
   try {
-    const soundToken = await getPushSoundToken();
-    const { error } = await supabase.functions.invoke("send-push-notification", {
-      body: {
-        userId: params.userId,
-        title: params.title,
-        body: params.body,
-        data: params.data,
-        categoryIdentifier: params.categoryIdentifier,
-        sound: soundToken ?? "default",
-      },
-    });
-    if (error) console.warn("[PushNotif] send-push-notification edge fn error:", error.message);
-  } catch (error: any) {
-    console.warn("[PushNotif] sendPushNotification failed:", error?.message);
+    switch (type) {
+      case "message":
+      case "new_message":
+        if (data.chatId || data.chat_id) {
+          router.push(`/chat/${data.chatId ?? data.chat_id}` as any);
+        }
+        break;
+
+      case "call":
+        if (data.callId) {
+          // Call screen handles its own routing via CallContext
+        }
+        break;
+
+      case "follow":
+        if (data.actorHandle || data.actor_handle) {
+          router.push(`/${data.actorHandle ?? data.actor_handle}` as any);
+        }
+        break;
+
+      case "like":
+      case "comment":
+      case "mention":
+      case "reply":
+        if (data.postId || data.post_id) {
+          router.push(`/post/${data.postId ?? data.post_id}` as any);
+        } else if (data.chatId || data.chat_id) {
+          router.push(`/chat/${data.chatId ?? data.chat_id}` as any);
+        }
+        break;
+
+      case "order":
+        if (data.orderId || data.order_id) {
+          router.push(`/shop/order/${data.orderId ?? data.order_id}` as any);
+        }
+        break;
+
+      case "payment":
+        router.push("/settings" as any); // Navigate to wallet/AfuPay
+        break;
+
+      default:
+        break;
+    }
+  } catch (err) {
+    console.warn("[Push] _routeNotification error:", err);
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Badge
-// ─────────────────────────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════════
+// 5. BADGE
+// ═════════════════════════════════════════════════════════════════════════════
 
 export async function clearBadge(): Promise<void> {
-  if (!Notifications) return;
+  const N = getNotifications();
+  if (!N) return;
   try {
-    await Notifications.setBadgeCountAsync(0);
+    await N.setBadgeCountAsync(0);
   } catch {}
 }

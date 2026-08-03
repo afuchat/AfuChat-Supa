@@ -1,198 +1,514 @@
-// push-notification-trigger — FCM HTTP v1 (inlined, no _shared import)
-// Triggered by Supabase Database Webhooks on INSERT into: messages, calls, notifications
-// Required secrets: FIREBASE_PROJECT_ID, FIREBASE_SERVICE_ACCOUNT_KEY
+/**
+ * push-notification-trigger
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Supabase Edge Function called by PostgreSQL triggers (via pg_net) on INSERT
+ * into: messages, calls, notifications, orders
+ *
+ * Required Supabase secrets:
+ *   FIREBASE_PROJECT_ID           — Firebase project ID
+ *   FIREBASE_SERVICE_ACCOUNT_KEY  — Full service-account JSON string
+ *
+ * Notification routing:
+ *   messages      → send to all chat members except sender
+ *   calls         → send to receiver
+ *   notifications → send to user_id (covers likes, follows, comments, mentions, payments)
+ *   orders        → send to buyer_id or seller_id on status change
+ */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// ─── FCM helper ─────────────────────────────────────────────────────────────
-function base64url(data: Uint8Array | string): string {
-  const str = typeof data === "string" ? data : String.fromCharCode(...(data as Uint8Array));
-  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
-}
-async function getFCMAccessToken(serviceAccountJson: string): Promise<string> {
-  const sa = JSON.parse(serviceAccountJson);
-  const now = Math.floor(Date.now() / 1000);
-  const header  = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-  const payload = base64url(JSON.stringify({ iss: sa.client_email, scope: "https://www.googleapis.com/auth/firebase.messaging", aud: "https://oauth2.googleapis.com/token", iat: now, exp: now + 3600 }));
-  const si = `${header}.${payload}`;
-  const pem = (sa.private_key as string).replace(/-----[^-]+-----/g, "").replace(/\s/g, "");
-  const key = await crypto.subtle.importKey("pkcs8", Uint8Array.from(atob(pem), c => c.charCodeAt(0)).buffer, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
-  const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(si));
-  const jwt = `${si}.${base64url(new Uint8Array(sig))}`;
-  const r = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: jwt }).toString() });
-  const d = await r.json();
-  if (!d.access_token) throw new Error("[FCM] OAuth2 failed: " + JSON.stringify(d));
-  return d.access_token as string;
-}
-type FCMSendOptions = { title: string; body: string; data?: Record<string, string>; channelId?: string; highPriority?: boolean; collapseKey?: string; ttl?: number };
-async function sendFCMToUser(fcmToken: string, opts: FCMSendOptions): Promise<void> {
-  const projectId = Deno.env.get("FIREBASE_PROJECT_ID");
-  const saKey     = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_KEY");
-  if (!projectId || !saKey) { console.error("[FCM] missing credentials"); return; }
-  const ttl = opts.ttl ?? 604800;
-  const accessToken = await getFCMAccessToken(saKey);
-  const message: Record<string, unknown> = {
-    token: fcmToken,
-    notification: { title: opts.title, body: opts.body },
-    android: { priority: opts.highPriority ? "high" : "normal", ttl: `${ttl}s`, ...(opts.collapseKey && { collapse_key: opts.collapseKey }), notification: { channel_id: opts.channelId ?? "default", sound: "default", notification_priority: "PRIORITY_HIGH", default_sound: true, default_vibrate_timings: true, default_light_settings: true } },
-    apns: { headers: { "apns-priority": "10", "apns-expiration": String(Math.floor(Date.now() / 1000) + ttl), ...(opts.collapseKey && { "apns-collapse-id": opts.collapseKey }) }, payload: { aps: { alert: { title: opts.title, body: opts.body }, sound: "default", badge: 1, ...(opts.collapseKey && { "thread-id": opts.collapseKey }) } } },
-    data: Object.fromEntries(Object.entries(opts.data ?? {}).map(([k, v]) => [k, String(v)])),
-  };
-  const res = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` }, body: JSON.stringify({ message }) });
-  if (!res.ok && res.status !== 404) console.error(`[FCM] send failed ${res.status}:`, await res.text());
-}
-// ────────────────────────────────────────────────────────────────────────────
+// ── CORS ──────────────────────────────────────────────────────────────────────
 
-const CORS_HEADERS = {
+const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-function channelId(type?: string): string {
-  switch (type) {
-    case "message":  return "messages";
-    case "call":     return "calls";
-    case "follow": case "like": case "reply": case "mention": return "social";
-    case "order": case "escrow": case "payment": return "marketplace";
-    default: return "default";
-  }
+// ── FCM HTTP v1 helper ────────────────────────────────────────────────────────
+
+function b64url(data: Uint8Array | string): string {
+  const str = typeof data === "string" ? data : String.fromCharCode(...(data as Uint8Array));
+  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
 }
 
-// ── Expo Push Notification Service (for Expo Go / dev builds) ────────────────
-async function sendExpoNotification(token: string, opts: FCMSendOptions): Promise<void> {
+async function getFCMToken(serviceAccountJson: string): Promise<string> {
+  const sa = JSON.parse(serviceAccountJson);
+  const now = Math.floor(Date.now() / 1000);
+  const header  = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const payload = b64url(JSON.stringify({
+    iss: sa.client_email,
+    scope: "https://www.googleapis.com/auth/firebase.messaging",
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600,
+  }));
+  const sigInput = `${header}.${payload}`;
+  const pem = (sa.private_key as string).replace(/-----[^-]+-----/g, "").replace(/\s/g, "");
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    Uint8Array.from(atob(pem), (c) => c.charCodeAt(0)).buffer,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(sigInput));
+  const jwt = `${sigInput}.${b64url(new Uint8Array(sig))}`;
+  const r = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion: jwt,
+    }).toString(),
+  });
+  const d = await r.json();
+  if (!d.access_token) throw new Error("[FCM] OAuth2 failed: " + JSON.stringify(d));
+  return d.access_token as string;
+}
+
+type FCMOptions = {
+  title: string;
+  body: string;
+  data?: Record<string, string>;
+  channelId?: string;
+  collapseKey?: string;
+  categoryIdentifier?: string;
+};
+
+async function sendFCM(
+  fcmToken: string,
+  opts: FCMOptions,
+  projectId: string,
+  accessToken: string,
+): Promise<"ok" | "stale" | "error"> {
+  const data = Object.fromEntries(
+    Object.entries(opts.data ?? {}).map(([k, v]) => [k, String(v)])
+  );
+
+  const message: Record<string, unknown> = {
+    token: fcmToken,
+    notification: { title: opts.title, body: opts.body },
+    android: {
+      priority: "high",
+      ttl: "604800s",
+      ...(opts.collapseKey && { collapse_key: opts.collapseKey }),
+      notification: {
+        channel_id: opts.channelId ?? "default",
+        sound: "default",
+        notification_priority: "PRIORITY_HIGH",
+        default_sound: true,
+        default_vibrate_timings: true,
+        default_light_settings: true,
+        color: "#1f95ff",
+        icon: "ic_notification",
+      },
+    },
+    apns: {
+      headers: {
+        "apns-priority": "10",
+        "apns-expiration": String(Math.floor(Date.now() / 1000) + 604800),
+        ...(opts.collapseKey && { "apns-collapse-id": opts.collapseKey }),
+      },
+      payload: {
+        aps: {
+          alert: { title: opts.title, body: opts.body },
+          sound: "default",
+          badge: 1,
+          ...(opts.categoryIdentifier && { category: opts.categoryIdentifier }),
+          ...(opts.collapseKey && { "thread-id": opts.collapseKey }),
+        },
+      },
+    },
+    data,
+  };
+
+  const res = await fetch(
+    `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ message }),
+    },
+  );
+
+  if (res.status === 404) return "stale"; // Token not registered
+  if (!res.ok) {
+    console.error(`[FCM] send failed ${res.status}:`, await res.text());
+    return "error";
+  }
+  return "ok";
+}
+
+// ── Expo Push fallback (for dev/Expo Go tokens) ───────────────────────────────
+
+async function sendExpoPush(token: string, opts: FCMOptions): Promise<void> {
   const res = await fetch("https://exp.host/--/api/v2/push/send", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "Accept": "application/json", "Accept-Encoding": "gzip, deflate" },
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "Accept-Encoding": "gzip, deflate",
+    },
     body: JSON.stringify({
       to: token,
       title: opts.title,
       body: opts.body,
       data: opts.data ?? {},
       sound: "default",
-      priority: opts.highPriority ? "high" : "normal",
+      priority: "high",
       channelId: opts.channelId ?? "default",
-      ttl: opts.ttl ?? 604800,
+      ttl: 604800,
       ...(opts.collapseKey && { collapseId: opts.collapseKey }),
+      ...(opts.categoryIdentifier && { categoryId: opts.categoryIdentifier }),
     }),
   });
-  if (!res.ok) console.error(`[Expo Push] send failed ${res.status}:`, await res.text());
+  if (!res.ok) console.error(`[ExpoPush] send failed ${res.status}:`, await res.text());
 }
 
-// ── Dispatch to FCM or Expo depending on token format ────────────────────────
-async function sendToUser(token: string, opts: FCMSendOptions): Promise<void> {
+async function dispatchToToken(token: string, opts: FCMOptions, projectId: string, accessToken: string): Promise<void> {
   if (token.startsWith("ExponentPushToken[")) {
-    return sendExpoNotification(token, opts);
+    await sendExpoPush(token, opts);
+  } else {
+    const result = await sendFCM(token, opts, projectId, accessToken);
+    if (result === "stale") {
+      console.log(`[FCM] stale token, skipping`);
+    }
   }
-  return sendFCMToUser(token, opts);
 }
 
-async function pushToUser(
-  supabase: ReturnType<typeof createClient>,
-  userId: string,
-  push: { title: string; body: string; data?: Record<string, string>; type?: string; collapseKey?: string },
+// ── Channel ID helper ─────────────────────────────────────────────────────────
+
+function notifChannel(type: string): string {
+  if (type === "message") return "messages";
+  if (type === "call") return "calls";
+  if (["like", "follow", "comment", "reply", "mention"].includes(type)) return "social";
+  if (["order", "payment", "escrow"].includes(type)) return "marketplace";
+  return "default";
+}
+
+// ── Category identifier helper ────────────────────────────────────────────────
+
+function notifCategory(type: string): string | undefined {
+  if (type === "message") return "afuchat_message_reply";
+  if (["order", "escrow"].includes(type)) return "afuchat_order_update";
+  if (["like", "comment", "reply", "mention"].includes(type)) return "afuchat_post_interact";
+  return undefined;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Event handlers
+// ═════════════════════════════════════════════════════════════════════════════
+
+async function handleMessage(
+  record: Record<string, any>,
+  db: ReturnType<typeof createClient>,
+  projectId: string,
+  accessToken: string,
 ): Promise<void> {
-  const { data: profile } = await supabase.from("profiles").select("fcm_token").eq("id", userId).single();
-  if (!profile?.fcm_token) return;
-  const type = push.type ?? (push.data?.type as string | undefined);
-  await sendToUser(profile.fcm_token, {
-    title: push.title, body: push.body,
-    data: { recipientUserId: userId, ...(push.data ?? {}) },
-    channelId: channelId(type),
-    highPriority: type === "call",
-    collapseKey: push.collapseKey,
-    ttl: type === "call" ? 30 : 604800,
-  });
-}
+  const { id: messageId, chat_id, sender_id, content, message_type } = record;
 
-async function handleMessage(supabase: ReturnType<typeof createClient>, record: Record<string, unknown>): Promise<void> {
-  const chatId   = record["chat_id"]   as string | undefined;
-  const senderId = record["sender_id"] as string | undefined;
-  const content  = (record["content"]  as string | undefined) ?? "Sent an attachment";
-  if (!chatId || !senderId) return;
-  const { data: chat } = await supabase.from("chats").select("id, is_group, name, chat_participants(user_id)").eq("id", chatId).single();
-  if (!chat) return;
-  const { data: sender } = await supabase.from("profiles").select("display_name, username").eq("id", senderId).single();
-  const senderName = (sender?.display_name || sender?.username || "Someone") as string;
-  const title = (chat.is_group && chat.name) ? `${senderName} in ${chat.name}` : senderName;
-  const body  = content.length > 100 ? content.substring(0, 97) + "..." : content;
-  const messageId = record["id"] as string | undefined;
-  const participants = (chat.chat_participants as { user_id: string }[] | null) ?? [];
-  await Promise.allSettled(
-    participants.filter(p => p.user_id !== senderId).map(p =>
-      pushToUser(supabase, p.user_id, { title, body, type: "message", data: { type: "message", chatId, actorId: senderId, notifType: "new_message", ...(messageId && { message_id: messageId }) }, collapseKey: `chat_${chatId}` }),
-    ),
+  if (!chat_id || !sender_id) return;
+
+  // Get chat members (excluding sender)
+  const { data: members } = await db
+    .from("chat_members")
+    .select("user_id")
+    .eq("chat_id", chat_id)
+    .neq("user_id", sender_id);
+
+  if (!members?.length) return;
+
+  const recipientIds = members.map((m: any) => m.user_id);
+
+  // Get sender profile
+  const { data: sender } = await db
+    .from("profiles")
+    .select("full_name, handle")
+    .eq("id", sender_id)
+    .single();
+
+  // Get chat info (group name)
+  const { data: chat } = await db
+    .from("chats")
+    .select("name, type")
+    .eq("id", chat_id)
+    .single();
+
+  const isGroup = chat?.type === "group";
+  const senderName = sender?.full_name ?? sender?.handle ?? "Someone";
+  const title = isGroup ? `${senderName} in ${chat?.name ?? "Group"}` : senderName;
+  const body = _messagePreview(content, message_type);
+
+  // Get FCM tokens for all recipients + check notification preferences
+  const { data: profiles } = await db
+    .from("profiles")
+    .select("id, fcm_token")
+    .in("id", recipientIds)
+    .not("fcm_token", "is", null);
+
+  if (!profiles?.length) return;
+
+  const opts: FCMOptions = {
+    title,
+    body,
+    data: {
+      type: "message",
+      chatId: chat_id,
+      messageId: messageId ?? "",
+      senderId: sender_id,
+    },
+    channelId: "messages",
+    collapseKey: `chat_${chat_id}`,
+    categoryIdentifier: "afuchat_message_reply",
+  };
+
+  await Promise.all(
+    profiles
+      .filter((p: any) => p.fcm_token)
+      .map((p: any) => dispatchToToken(p.fcm_token, opts, projectId, accessToken))
   );
 }
 
-async function handleCall(supabase: ReturnType<typeof createClient>, record: Record<string, unknown>): Promise<void> {
-  const calleeId = record["callee_id"] as string | undefined;
-  const callerId = record["caller_id"] as string | undefined;
-  const callId   = record["id"]        as string | undefined;
-  const callType = (record["call_type"] as string | undefined) ?? "voice";
-  if (!calleeId || !callerId || !callId) return;
-  const { data: caller } = await supabase.from("profiles").select("display_name, username").eq("id", callerId).single();
-  const callerName = (caller?.display_name || caller?.username || "Someone") as string;
-  await pushToUser(supabase, calleeId, { title: `Incoming ${callType === "video" ? "Video" : "Voice"} Call`, body: `${callerName} is calling you`, type: "call", data: { type: "call", callId, callType, actorId: callerId, notifType: "call", url: `/call/${callId}` }, collapseKey: `call_${callId}` });
+async function handleCall(
+  record: Record<string, any>,
+  db: ReturnType<typeof createClient>,
+  projectId: string,
+  accessToken: string,
+): Promise<void> {
+  const { id: callId, caller_id, receiver_id, call_type } = record;
+
+  if (!caller_id || !receiver_id) return;
+
+  // Get caller profile
+  const { data: caller } = await db
+    .from("profiles")
+    .select("full_name, handle")
+    .eq("id", caller_id)
+    .single();
+
+  // Get receiver FCM token
+  const { data: receiver } = await db
+    .from("profiles")
+    .select("fcm_token")
+    .eq("id", receiver_id)
+    .single();
+
+  if (!receiver?.fcm_token) return;
+
+  const callerName = caller?.full_name ?? caller?.handle ?? "Someone";
+  const typeLabel = call_type === "video" ? "Video call" : "Voice call";
+
+  await dispatchToToken(receiver.fcm_token, {
+    title: callerName,
+    body: `${typeLabel} incoming`,
+    data: {
+      type: "call",
+      callId: callId ?? "",
+      callerId: caller_id,
+      callerName,
+      callType: call_type ?? "voice",
+    },
+    channelId: "calls",
+    collapseKey: `call_${callId}`,
+  }, projectId, accessToken);
 }
 
-const TYPE_MAP: Record<string, (record: Record<string, unknown>, actorName: string) => { title: string; body: string; pushType: string; url?: string }> = {
-  new_follower:    (_r, n) => ({ title: "New Follower",              body: `${n} started following you`,  pushType: "follow" }),
-  new_like:        (r,  n) => ({ title: "Post Liked",                body: `${n} liked your post`,        pushType: "like",    url: r["post_id"] ? `/p/${r["post_id"]}` : undefined }),
-  new_reply:       (r,  n) => ({ title: n,                           body: "Replied to your post",        pushType: "reply",   url: r["post_id"] ? `/p/${r["post_id"]}` : undefined }),
-  new_mention:     (r,  n) => ({ title: `${n} mentioned you`,        body: "Tap to see the post",         pushType: "mention", url: r["post_id"] ? `/p/${r["post_id"]}` : undefined }),
-  gift:            (_r, n) => ({ title: "Gift Received! 🎁",         body: `${n} sent you a gift`,        pushType: "gift" }),
-  order_placed:    (r,  n) => ({ title: "New Order Received! 🛍️",   body: `${n} placed an order`,        pushType: "order",   url: r["reference_id"] ? `/shop/order/${r["reference_id"]}` : undefined }),
-  order_shipped:   (r,  n) => ({ title: "Your Order Has Shipped! 📦",body: `${n} has shipped your order`,pushType: "order",   url: r["reference_id"] ? `/shop/order/${r["reference_id"]}` : undefined }),
-  escrow_released: (r,  n) => ({ title: "Payment Released! 💰",      body: `${n} confirmed delivery`,    pushType: "escrow",  url: r["reference_id"] ? `/shop/order/${r["reference_id"]}` : undefined }),
-  dispute_raised:  (r,  n) => ({ title: "Order Dispute Opened ⚠️",   body: `${n} raised a dispute`,      pushType: "order",   url: r["reference_id"] ? `/shop/order/${r["reference_id"]}` : undefined }),
-  refund_issued:   (r,  _) => ({ title: "Refund Issued ✅",           body: "Your refund has been returned to your wallet", pushType: "payment", url: r["reference_id"] ? `/shop/order/${r["reference_id"]}` : undefined }),
-  acoin_received:  (_r, _) => ({ title: "AC Received 💰",             body: "You received AfuCoins",       pushType: "payment", url: "/me" }),
-  system:          (_r, _) => ({ title: "AfuChat",                   body: "You have a new notification", pushType: "system",  url: "/" }),
-  channel_post:    (r,  n) => ({ title: n,                           body: "Posted in your channel",      pushType: "channel", url: r["reference_id"] ? `/channel/${r["reference_id"]}` : undefined }),
-  live_started:    (r,  n) => ({ title: `${n} is live! 🔴`,          body: "Tap to join the stream",      pushType: "live",    url: r["reference_id"] ? `/channel/${r["reference_id"]}` : undefined }),
-  new_message:     (r,  n) => ({ title: n,                           body: "Sent you a message",          pushType: "message", url: r["reference_id"] ? `/chat/${r["reference_id"]}` : undefined }),
-  call:            (r,  n) => ({ title: "Incoming Call",             body: `${n} is calling you`,        pushType: "call",    url: r["reference_id"] ? `/call/${r["reference_id"]}` : undefined }),
-};
+async function handleNotification(
+  record: Record<string, any>,
+  db: ReturnType<typeof createClient>,
+  projectId: string,
+  accessToken: string,
+): Promise<void> {
+  const {
+    user_id, type, title, body,
+    actor_id, actor_name, actor_handle,
+    entity_id, entity_type, data: extraData,
+  } = record;
 
-async function handleNotification(supabase: ReturnType<typeof createClient>, record: Record<string, unknown>): Promise<void> {
-  const userId  = record["user_id"]  as string | undefined;
-  const actorId = record["actor_id"] as string | undefined;
-  const type    = record["type"]     as string | undefined;
-  if (!userId || !type) return;
-  const mapper = TYPE_MAP[type];
-  if (!mapper) { console.warn(`[push-trigger] No mapping for type: ${type}`); return; }
-  let actorName = "Someone";
-  if (actorId) {
-    const { data: actor } = await supabase.from("profiles").select("display_name, username").eq("id", actorId).single();
-    actorName = (actor?.display_name || actor?.username || "Someone") as string;
+  if (!user_id || !type) return;
+
+  // Get recipient FCM token
+  const { data: profile } = await db
+    .from("profiles")
+    .select("fcm_token")
+    .eq("id", user_id)
+    .single();
+
+  if (!profile?.fcm_token) return;
+
+  // Check notification preferences
+  const { data: prefs } = await db
+    .from("notification_preferences")
+    .select("push_enabled, push_likes, push_follows, push_comments, push_mentions, push_messages, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, quiet_hours_timezone")
+    .eq("user_id", user_id)
+    .single();
+
+  if (prefs) {
+    if (!prefs.push_enabled) return;
+    if (type === "like" && prefs.push_likes === false) return;
+    if (type === "follow" && prefs.push_follows === false) return;
+    if ((type === "comment" || type === "reply") && prefs.push_comments === false) return;
+    if (type === "mention" && prefs.push_mentions === false) return;
+
+    // Quiet hours check
+    if (prefs.quiet_hours_enabled) {
+      const tz = prefs.quiet_hours_timezone ?? "UTC";
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat("en-US", {
+        hour: "numeric",
+        minute: "numeric",
+        hour12: false,
+        timeZone: tz,
+      });
+      const [hourStr, minStr] = formatter.format(now).split(":");
+      const currentMins = parseInt(hourStr) * 60 + parseInt(minStr);
+      const [sh, sm] = (prefs.quiet_hours_start ?? "22:00").split(":").map(Number);
+      const [eh, em] = (prefs.quiet_hours_end ?? "08:00").split(":").map(Number);
+      const startMins = sh * 60 + sm;
+      const endMins = eh * 60 + em;
+      const inQuiet = startMins <= endMins
+        ? currentMins >= startMins && currentMins < endMins
+        : currentMins >= startMins || currentMins < endMins;
+      if (inQuiet) return;
+    }
   }
-  const mapped = mapper(record, actorName);
-  await pushToUser(supabase, userId, {
-    title: mapped.title, body: mapped.body, type: mapped.pushType,
-    data: { type: mapped.pushType, actorId: actorId ?? "", notifType: type, postId: (record["post_id"] as string | undefined) ?? "", referenceId: (record["reference_id"] as string | undefined) ?? "", url: mapped.url ?? "" },
-  });
+
+  const notifTitle = title ?? _defaultTitle(type, actor_name ?? actor_handle ?? "Someone");
+  const notifBody  = body ?? _defaultBody(type);
+
+  const data: Record<string, string> = {
+    type: type ?? "notification",
+    ...(actor_id && { actorId: actor_id }),
+    ...(actor_handle && { actorHandle: actor_handle }),
+    ...(entity_id && entity_type === "post" && { postId: entity_id }),
+    ...(entity_id && entity_type === "chat" && { chatId: entity_id }),
+    ...(entity_id && entity_type === "order" && { orderId: entity_id }),
+    ...(extraData && typeof extraData === "object" ? extraData : {}),
+  };
+
+  await dispatchToToken(profile.fcm_token, {
+    title: notifTitle,
+    body: notifBody,
+    data,
+    channelId: notifChannel(type),
+    collapseKey: `notif_${type}_${user_id}`,
+    categoryIdentifier: notifCategory(type),
+  }, projectId, accessToken);
 }
 
-type WebhookPayload = { type: "INSERT" | "UPDATE" | "DELETE"; table: string; schema: string; record: Record<string, unknown>; old_record: Record<string, unknown> | null };
+// ── Text helpers ──────────────────────────────────────────────────────────────
+
+function _messagePreview(content: string | null, type: string | null): string {
+  if (!content) {
+    if (type === "image") return "\uD83D\uDCF8 Photo";
+    if (type === "video") return "\uD83C\uDFA5 Video";
+    if (type === "audio") return "\uD83C\uDFA4 Voice message";
+    if (type === "file")  return "\uD83D\uDCCE File";
+    return "Sent an attachment";
+  }
+  return content.length > 120 ? content.slice(0, 117) + "\u2026" : content;
+}
+
+function _defaultTitle(type: string, actorName: string): string {
+  switch (type) {
+    case "follow":  return actorName;
+    case "like":    return actorName;
+    case "comment": return actorName;
+    case "reply":   return actorName;
+    case "mention": return actorName;
+    case "payment": return "Payment received";
+    case "order":   return "Order update";
+    default: return "AfuChat";
+  }
+}
+
+function _defaultBody(type: string): string {
+  switch (type) {
+    case "follow":  return "Started following you";
+    case "like":    return "Liked your post";
+    case "comment": return "Commented on your post";
+    case "reply":   return "Replied to your comment";
+    case "mention": return "Mentioned you";
+    case "payment": return "You received a payment";
+    case "order":   return "Your order has been updated";
+    default: return "";
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Main server
+// ═════════════════════════════════════════════════════════════════════════════
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS_HEADERS });
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: CORS });
+  }
+
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase    = createClient(supabaseUrl, serviceKey);
-    const webhook = (await req.json()) as WebhookPayload;
-    if (webhook.type !== "INSERT") return new Response(JSON.stringify({ ok: true, skipped: "not an INSERT" }), { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } });
-    switch (webhook.table) {
-      case "messages":      await handleMessage(supabase, webhook.record);      break;
-      case "calls":         await handleCall(supabase, webhook.record);         break;
-      case "notifications": await handleNotification(supabase, webhook.record); break;
-      default: console.warn(`[push-trigger] Unhandled table: ${webhook.table}`);
+    const projectId = Deno.env.get("FIREBASE_PROJECT_ID");
+    const saKey     = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_KEY");
+
+    if (!projectId || !saKey) {
+      console.error("[push-trigger] FIREBASE_PROJECT_ID or FIREBASE_SERVICE_ACCOUNT_KEY not set");
+      // Return 200 to prevent pg_net from retrying indefinitely
+      return new Response(JSON.stringify({ ok: false, reason: "missing_credentials" }), {
+        status: 200,
+        headers: { ...CORS, "Content-Type": "application/json" },
+      });
     }
-    return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } });
+
+    const body = await req.json();
+    const { type: eventType, table, record } = body as {
+      type: string;
+      table: string;
+      record: Record<string, any>;
+    };
+
+    if (eventType !== "INSERT" && eventType !== "UPDATE") {
+      return new Response(JSON.stringify({ ok: true, skipped: true }), {
+        status: 200,
+        headers: { ...CORS, "Content-Type": "application/json" },
+      });
+    }
+
+    const db = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    // Obtain FCM access token once (valid for 1h)
+    const accessToken = await getFCMToken(saKey);
+
+    switch (table) {
+      case "messages":
+        await handleMessage(record, db, projectId, accessToken);
+        break;
+      case "calls":
+        if (eventType === "INSERT") {
+          await handleCall(record, db, projectId, accessToken);
+        }
+        break;
+      case "notifications":
+        await handleNotification(record, db, projectId, accessToken);
+        break;
+      default:
+        console.log(`[push-trigger] unhandled table: ${table}`);
+    }
+
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { ...CORS, "Content-Type": "application/json" },
+    });
   } catch (err) {
-    console.error("[push-trigger] error:", err);
-    return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } });
+    console.error("[push-trigger] unhandled error:", err);
+    // Return 200 to prevent pg_net retries on permanent errors
+    return new Response(JSON.stringify({ ok: false, error: String(err) }), {
+      status: 200,
+      headers: { ...CORS, "Content-Type": "application/json" },
+    });
   }
 });
