@@ -2,7 +2,7 @@
  * KAMPALA HUSTLE: Pro Edition
  * Fully native React Native life-sim set in Kampala, Uganda.
  * Saves to `life_earth_saves` · Leaderboard via `life_earth_leaderboard`
- * Awards ACoin on education, milestones, and retirement.
+ * Awards Nexa XP on education, milestones, and retirement.
  */
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -78,6 +78,14 @@ type Crisis = {
 
 // ─── State ─────────────────────────────────────────────────────────────────────
 
+type TxEntry = {
+  id: string;
+  label: string;
+  amount: number;
+  type: "in" | "out";
+  age: number;
+};
+
 type KHState = {
   age: number;
   cashWallet: number;
@@ -95,6 +103,7 @@ type KHState = {
   dietId: string;
   inflation: number;
   logs: string[];
+  txns: TxEntry[];
   awardedMilestones: string[];
 };
 
@@ -116,8 +125,16 @@ function freshState(): KHState {
     dietId: "diet_kikomando",
     inflation: 1.0,
     logs: ["Welcome to Kampala! Find high-yielding gigs, upskill, and dodge taxes to retire rich! 🏙️"],
+    txns: [{ id: "start", label: "Starting capital", amount: 150_000, type: "in", age: 18 }],
     awardedMilestones: [],
   };
+}
+
+function pushTxn(s: KHState, label: string, amount: number, type: "in" | "out"): void {
+  s.txns = [
+    { id: `${Date.now()}_${Math.random().toString(36).slice(2,6)}`, label, amount, type, age: s.age },
+    ...s.txns.slice(0, 49),
+  ];
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -318,9 +335,14 @@ async function loadLeaderboard() {
   return data ?? [];
 }
 
-async function awardACoin(userId: string, amount: number, reason: string) {
+async function giveNexa(userId: string, amount: number, activityType: string) {
   try {
-    await supabase.rpc("credit_acoin", { p_user_id: userId, p_amount: amount, p_reason: reason });
+    await supabase.rpc("reward_activity_xp", {
+      p_activity_type: activityType,
+      p_xp_amount: amount,
+      p_cooldown_seconds: 0,
+      p_metadata: { source: "kampala_hustle" },
+    });
   } catch {}
 }
 
@@ -399,7 +421,7 @@ export default function KampalaHustleGame() {
     });
   }, [scheduleSave]);
 
-  // ── Milestone ACoin rewards ────────────────────────────────────────────────────
+  // ── Milestone Nexa rewards ─────────────────────────────────────────────────────
 
   const checkMilestones = useCallback((s: KHState) => {
     if (!user) return s;
@@ -407,16 +429,16 @@ export default function KampalaHustleGame() {
     const net = getTotalMoney(s);
 
     const milestones: [string, number, string, number][] = [
-      ["net_1m",   1_000_000,  "First million! 🎉",    5],
-      ["net_10m",  10_000_000, "Reached 10M UGX! 💰",  10],
-      ["net_50m",  50_000_000, "Reached 50M UGX! 🚀",  20],
-      ["net_100m", 100_000_000,"Tycoon milestone! 🏰", 30],
+      ["net_1m",   1_000_000,   "First million! 🎉",     50],
+      ["net_10m",  10_000_000,  "Reached 10M UGX! 💰",  100],
+      ["net_50m",  50_000_000,  "Reached 50M UGX! 🚀",  200],
+      ["net_100m", 100_000_000, "Tycoon milestone! 🏰", 500],
     ];
-    for (const [id, threshold, msg, coins] of milestones) {
+    for (const [id, threshold, msg, xp] of milestones) {
       if (net >= threshold && !awarded.includes(id)) {
         awarded.push(id);
-        awardACoin(user.id, coins, `kampala_hustle_${id}`);
-        showToast(`${msg} +${coins} ACoins rewarded!`, true);
+        giveNexa(user.id, xp, `kampala_hustle_${id}`);
+        showToast(`${msg} +${xp} Nexa XP!`, true);
       }
     }
     return { ...s, awardedMilestones: awarded };
@@ -453,14 +475,15 @@ export default function KampalaHustleGame() {
       if (!edu) return;
       if (getTotalMoney(s) < edu.cost) { showToast("Not enough funds! 💸", false); return; }
       if (s.educationLevel !== edu.level - 1) { showToast("Complete previous level first!", false); return; }
-      const next = deductMoney(s, edu.cost);
-      Object.assign(s, next);
+      Object.assign(s, deductMoney(s, edu.cost));
+      pushTxn(s, `Tuition – ${edu.name}`, edu.cost, "out");
       s.educationLevel = edu.level;
       s.skills = Math.min(100, s.skills + edu.skillGain);
       s.connections += 1;
       s.logs = [`🎓 Graduated: ${edu.name}! Skill +${edu.skillGain}% · +1 Connection`, ...s.logs.slice(0, 49)];
-      if (user) awardACoin(user.id, edu.level * 5, `kampala_hustle_edu_${edu.id}`);
-      showToast(`🎓 ${edu.name} earned! +${edu.level * 5} ACoins`, true);
+      const xp = edu.level * 50;
+      if (user) giveNexa(user.id, xp, `kampala_hustle_edu_${edu.id}`);
+      showToast(`🎓 ${edu.name} earned! +${xp} Nexa XP`, true);
       return s;
     });
   }
@@ -471,8 +494,8 @@ export default function KampalaHustleGame() {
       const asset = WEALTH.find(w => w.id === assetId);
       if (!asset) return;
       if (getTotalMoney(s) < asset.cost) { showToast("Not enough funds! 💸", false); return; }
-      const next = deductMoney(s, asset.cost);
-      Object.assign(s, next);
+      Object.assign(s, deductMoney(s, asset.cost));
+      pushTxn(s, `Bought – ${asset.name}`, asset.cost, "out");
       s.ownedAssetIds = [...s.ownedAssetIds, asset.id];
       s.happiness = Math.min(100, s.happiness + asset.mood);
       s.stress = Math.max(0, s.stress + (asset.stress ?? 0));
@@ -490,6 +513,7 @@ export default function KampalaHustleGame() {
       const asset = WEALTH.find(w => w.id === assetId)!;
       const payout = Math.floor(asset.cost * 0.7);
       s.cashWallet += payout;
+      pushTxn(s, `Sold – ${asset.name}`, payout, "in");
       s.ownedAssetIds = [...s.ownedAssetIds];
       s.ownedAssetIds.splice(idx, 1);
       s.happiness = Math.max(0, s.happiness - asset.mood);
@@ -505,8 +529,8 @@ export default function KampalaHustleGame() {
       const hack = HACKS.find(h => h.id === hackId);
       if (!hack) return;
       if (getTotalMoney(s) < hack.cost) { showToast("Not enough funds! 💸", false); return; }
-      const next = deductMoney(s, hack.cost);
-      Object.assign(s, next);
+      Object.assign(s, deductMoney(s, hack.cost));
+      pushTxn(s, hack.name, hack.cost, "out");
       if (hack.id === "bribe") {
         s.connections += 1;
         s.logs = ["🤝 Paid cop bribe: Avoided traffic stress (+1 Connection)", ...s.logs.slice(0, 49)];
@@ -514,6 +538,7 @@ export default function KampalaHustleGame() {
         if (Math.random() < 0.3) {
           const win = hack.cost * 4;
           s.cashWallet += win;
+          pushTxn(s, "Nabugabo betting win", win, "in");
           s.happiness = Math.min(100, s.happiness + 20);
           s.logs = [`⚽ Nabugabo Win! Hit the bet! +UGX ${formatUGX(win)}`, ...s.logs.slice(0, 49)];
         } else {
@@ -549,6 +574,8 @@ export default function KampalaHustleGame() {
       const inc = getYearlyIncome(s);
       const exp = getYearlyExpenses(s);
       const net = inc - exp;
+      if (inc > 0) pushTxn(s, `Year ${s.age} income`, inc, "in");
+      if (exp > 0) pushTxn(s, `Year ${s.age} living costs`, exp, "out");
       if (net >= 0) {
         s = addMoney(s, net);
         s.logs = [`💰 Net year gain: +UGX ${formatUGX(net)}`, ...s.logs.slice(0, 49)];
