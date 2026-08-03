@@ -411,7 +411,7 @@ export default function TabLayout() {
   const insets         = useSafeAreaInsets();
   const PILL_H         = 62;
   const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 8;
-  const bottomPadding  = isLoggedIn ? PILL_BOTTOM + PILL_H : 0;
+  const bottomPadding  = 0;
 
   useEffect(() => {
     if (loading) return;
