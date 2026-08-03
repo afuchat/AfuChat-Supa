@@ -302,6 +302,7 @@ const pill = StyleSheet.create({
   },
   label: {
     fontSize: 9,
+    lineHeight: 11,
     fontFamily: "Inter_700Bold",
     letterSpacing: 0.2,
     marginTop: 1,
