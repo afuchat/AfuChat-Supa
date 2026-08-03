@@ -368,9 +368,18 @@ export default function GiftPickerSheet({
 
               {/* ── Gift grid ── */}
               {loading ? (
-                <View style={{ height: GRID_H, flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 16, gap: CARD_GAP, alignContent: "flex-start", overflow: "hidden" }}>
-                  {Array.from({ length: CARD_COLS * 3 }).map((_, i) => (
-                    <Skeleton key={i} width={CARD_W} height={CARD_H} borderRadius={16} />
+                <View style={{ height: GRID_H, overflow: "hidden", paddingTop: 4 }}>
+                  {Array.from({ length: 3 }).map((_, row) => (
+                    <View key={row} style={{ flexDirection: "row", gap: CARD_GAP, paddingHorizontal: 16, marginBottom: CARD_GAP }}>
+                      {Array.from({ length: CARD_COLS }).map((_, col) => (
+                        <View key={col} style={{ width: CARD_W, alignItems: "center", gap: 5 }}>
+                          {/* emoji placeholder — rounded square matching emoji hit area */}
+                          <Skeleton width={44} height={44} borderRadius={14} />
+                          {/* price pill */}
+                          <Skeleton width={28} height={9} borderRadius={5} />
+                        </View>
+                      ))}
+                    </View>
                   ))}
                 </View>
               ) : filtered.length === 0 ? (
