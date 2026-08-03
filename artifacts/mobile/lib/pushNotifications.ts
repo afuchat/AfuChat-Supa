@@ -148,28 +148,10 @@ export async function registerForPushNotifications(): Promise<void> {
       await _createAndroidChannels(N);
     }
 
-    // In Expo Go, getDevicePushTokenAsync() returns a token tied to Expo's
-    // Firebase sender ID (not ours) — use getExpoPushTokenAsync() instead so
-    // the server can route it through Expo's push proxy.
-    let token: string;
-    try {
-      const Constants = require("expo-constants").default;
-      const isExpoGo = Constants.appOwnership === "expo";
-
-      if (isExpoGo) {
-        const expoPushToken = await N.getExpoPushTokenAsync({
-          projectId: "7efbd70c-e8d4-485d-88a9-d05e3d34f280",
-        });
-        token = expoPushToken.data;
-      } else {
-        const tokenData = await N.getDevicePushTokenAsync();
-        token = tokenData.data as string;
-      }
-    } catch {
-      // Fall back to device token if anything goes wrong
-      const tokenData = await N.getDevicePushTokenAsync();
-      token = tokenData.data as string;
-    }
+    // Always use the raw FCM device token — sent directly to Firebase HTTP v1.
+    // No Expo push proxy, no rate limits.
+    const tokenData = await N.getDevicePushTokenAsync();
+    const token = tokenData.data as string;
 
     if (!token) {
       _lastRegistrationError = "Failed to obtain push token";
