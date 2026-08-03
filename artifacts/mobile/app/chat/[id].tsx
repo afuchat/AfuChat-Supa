@@ -4957,7 +4957,10 @@ STRICT RULES:
       };
       if (userMsg.reply_to_message_id) insertPayload.reply_to_message_id = userMsg.reply_to_message_id;
 
-      const { data: inserted } = await supabase.from("messages").insert(insertPayload).select("id").single();
+      const { data: inserted, error: aiInsertErr } = await supabase.from("messages").insert(insertPayload).select("id").single();
+      if (aiInsertErr) {
+        console.error("[sendMessage/afuai] insert error:", JSON.stringify(aiInsertErr));
+      }
       if (inserted) {
         setMessages((prev) =>
           prev.map((m) => m.id === msgId ? { ...m, id: inserted.id } : m)
@@ -4993,7 +4996,8 @@ STRICT RULES:
       setMessages((prev) =>
         prev.map((m) => m.id === msgId ? { ...m, id: inserted.id, status: "sent" as const, _pending: false } : m)
       );
-    } else if (error) {
+    } else {
+      console.error("[sendMessage] insert failed — code:", error?.code, "message:", error?.message);
       setMessages((prev) =>
         prev.map((m) => m.id === msgId ? { ...m, status: "failed" as const } : m)
       );

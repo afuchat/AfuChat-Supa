@@ -122,8 +122,9 @@ SECURITY DEFINER
 SET search_path = public, extensions
 AS $$
 BEGIN
-  -- Skip system/silent messages
-  IF NEW.message_type IN ('system', 'silent') THEN
+  -- messages table uses encrypted_content (no message_type column).
+  -- Skip if there is no content to notify about.
+  IF NEW.encrypted_content IS NULL AND NEW.attachment_url IS NULL THEN
     RETURN NEW;
   END IF;
 
