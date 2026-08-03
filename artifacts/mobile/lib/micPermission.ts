@@ -75,14 +75,37 @@ export async function requestMicPermission(): Promise<"granted" | "denied"> {
 
   let Audio: typeof import("expo-av").Audio | null = null;
   try { Audio = require("expo-av").Audio; } catch {}
-  if (!Audio) return "denied";
 
-  try {
-    const { status } = await Audio.requestPermissionsAsync();
-    return status === "granted" ? "granted" : "denied";
-  } catch {
-    return "denied";
+  if (Audio) {
+    try {
+      const { status } = await Audio.requestPermissionsAsync();
+      return status === "granted" ? "granted" : "denied";
+    } catch {}
   }
+
+  // expo-av unavailable or threw — fall back to PermissionsAndroid (Android)
+  // or return "prompt" so the call engine handles getUserMedia itself.
+  if (Platform.OS === "android") {
+    try {
+      const { PermissionsAndroid } = require("react-native");
+      const result = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+        {
+          title: "Microphone Permission",
+          message: "AfuChat needs microphone access to make voice calls.",
+          buttonPositive: "Allow",
+          buttonNegative: "Deny",
+        },
+      );
+      return result === PermissionsAndroid.RESULTS.GRANTED ? "granted" : "denied";
+    } catch {
+      // PermissionsAndroid also failed — let the call engine handle it
+      return "prompt";
+    }
+  }
+
+  // iOS without expo-av — let getUserMedia prompt natively
+  return "prompt";
 }
 
 // ── Open OS settings ─────────────────────────────────────────────────────────

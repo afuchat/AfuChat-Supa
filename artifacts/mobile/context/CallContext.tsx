@@ -28,7 +28,7 @@ import {
   toggleMute as engineMute,
   toggleSpeaker as engineSpeaker,
   addCallEngineListener,
-  WEBRTC_AVAILABLE,
+  getWebRTCAvailable,
   type CallStatus,
   type CallInfo,
   type IncomingCallNotice,
@@ -107,6 +107,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [isSpeaker, setIsSpeaker]         = useState(false);
   const [micBlocked, setMicBlocked]       = useState(false);
   const [_micModalVisible, _setMicModalVisible] = useState(false);
+  // webrtcAvailable is detected lazily on mount (after the native bridge is
+  // fully initialized) — NOT at import time, which is too early and can give
+  // a false-negative on the TurboModuleRegistry lookup.
+  const [webrtcAvailable, setWebrtcAvailable] = useState(false);
 
   // Keep stable refs so callbacks never close over stale state
   const userRef    = useRef(user);
@@ -118,6 +122,13 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   // capturing stale state. Must stay in sync with the `status` state.
   const _status_ref = useRef<CallStatus>("idle");
   _status_ref.current = status;
+
+  // ── Detect WebRTC availability once after mount ───────────────────────────
+  // Must run in a useEffect (not at module-eval time) so the native bridge
+  // and TurboModuleRegistry are fully initialized before we probe for the module.
+  useEffect(() => {
+    setWebrtcAvailable(getWebRTCAvailable());
+  }, []);
 
   // ── Init / tear-down engine when auth changes ─────────────────────────────
   useEffect(() => {
@@ -359,7 +370,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       incomingNotice,
       isMuted,
       isSpeaker,
-      isAvailable: WEBRTC_AVAILABLE,
+      isAvailable: webrtcAvailable,
       micBlocked,
       showMicPermModal: () => _setMicModalVisible(true),
       startCall,

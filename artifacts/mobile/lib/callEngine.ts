@@ -42,17 +42,28 @@ interface _RTCBridge {
   mediaDevices: { getUserMedia: (c: any) => Promise<any> };
 }
 
-const _RTC: _RTCBridge | null = (() => {
+// ─── WebRTC bridge: lazy detection ────────────────────────────────────────────
+// IMPORTANT: Detection is intentionally deferred to the first call attempt, NOT
+// run at module-eval time. callEngine.ts is imported early (3rd import in
+// _layout.tsx) when the React Native bridge / TurboModuleRegistry may not yet
+// be fully initialized. Evaluating TurboModuleRegistry.get("WebRTCModule") at
+// module-load time can return null even when the native module IS present,
+// permanently setting WEBRTC_AVAILABLE=false and blocking all voice calls.
+// By detecting lazily (on the first startCall/acceptCall), the bridge is
+// always ready and the lookup succeeds reliably.
+
+let _rtcBridge: _RTCBridge | null | undefined = undefined; // undefined = not yet detected
+
+function _detectRTC(): _RTCBridge | null {
   if (Platform.OS === "web") {
     // Browser WebRTC — available in Chrome, Firefox, Safari, Edge
     const g = globalThis as any;
     if (typeof g.RTCPeerConnection === "undefined") return null; // very old browser
-    if (typeof g.navigator?.mediaDevices?.getUserMedia !== "function") return null; // no mic API
+    if (typeof g.navigator?.mediaDevices?.getUserMedia !== "function") return null;
     return {
       RTCPeerConnection:     g.RTCPeerConnection,
       RTCSessionDescription: g.RTCSessionDescription,
       RTCIceCandidate:       g.RTCIceCandidate,
-      // Bind getUserMedia so `this` is always navigator.mediaDevices
       mediaDevices: {
         getUserMedia: (c: any) => {
           if (!navigator.mediaDevices?.getUserMedia) {
@@ -64,28 +75,23 @@ const _RTC: _RTCBridge | null = (() => {
     } satisfies _RTCBridge;
   }
 
-  // Native (Android / iOS): use react-native-webrtc.
+  // Native (Android / iOS): react-native-webrtc.
   //
-  // react-native-webrtc v124 checks `NativeModules.WebRTCModule === null` at module
-  // evaluation time and throws if null. In New Architecture production builds (RN 0.73+),
-  // native modules live in TurboModuleRegistry; NativeModules.WebRTCModule is null even
-  // when the module IS present. Our outer try/catch swallows that throw and sets
-  // WEBRTC_AVAILABLE=false — silently disabling all voice calls.
+  // react-native-webrtc v124 checks NativeModules.WebRTCModule at module-eval
+  // time and throws if null. In New Architecture, native modules live in
+  // TurboModuleRegistry; NativeModules.WebRTCModule is null even when the
+  // module IS present. We inject the TurboModule entry into NativeModules
+  // BEFORE requiring so the library's null-guard passes.
   //
-  // Fix: if NativeModules.WebRTCModule is null, pull it from TurboModuleRegistry and
-  // inject it back into NativeModules before requiring react-native-webrtc. This makes
-  // the library's null-guard pass AND ensures all internal WebRTCModule.xxx calls use
-  // the live TurboModule object. If TurboModuleRegistry also has nothing, the module is
+  // If both NativeModules and TurboModuleRegistry have no entry, the module is
   // genuinely absent (Expo Go) and we return null cleanly.
   try {
     if (NativeModules.WebRTCModule == null) {
-      // New Architecture path: WebRTCModule is in TurboModuleRegistry, not NativeModules.
-      const turbo: any = TurboModuleRegistry?.get?.("WebRTCModule") ?? null;
-      if (turbo == null) return null; // genuinely unavailable (Expo Go, no native module)
-      // Inject so react-native-webrtc's null-guard and all internal calls work correctly.
+      let turbo: any = null;
+      try { turbo = TurboModuleRegistry?.get?.("WebRTCModule") ?? null; } catch {}
+      if (turbo == null) return null; // genuinely unavailable (Expo Go)
       try { (NativeModules as any).WebRTCModule = turbo; } catch {}
     }
-
     const rn = require("react-native-webrtc") as typeof import("react-native-webrtc");
     if (!rn?.RTCPeerConnection) return null;
     return {
@@ -97,9 +103,24 @@ const _RTC: _RTCBridge | null = (() => {
   } catch {
     return null;
   }
-})();
+}
 
-export const WEBRTC_AVAILABLE = _RTC !== null;
+/** Returns the RTC bridge, detecting on first call (lazy). */
+function _getRTC(): _RTCBridge | null {
+  if (_rtcBridge === undefined) {
+    _rtcBridge = _detectRTC();
+  }
+  return _rtcBridge;
+}
+
+/**
+ * Returns true when WebRTC is available on this device/build.
+ * Exported so CallContext can check after the native bridge is ready.
+ * Always call this after app mount — not at module-eval / import time.
+ */
+export function getWebRTCAvailable(): boolean {
+  return _getRTC() !== null;
+}
 
 // ─── Lazy-load expo-av + expo-keep-awake ─────────────────────────────────────
 
@@ -309,7 +330,7 @@ export async function startCall(params: {
   myAvatar: string | null;
   chatId: string | null;
 }): Promise<void> {
-  if (!WEBRTC_AVAILABLE) throw new Error("WEBRTC_UNAVAILABLE");
+  if (!_getRTC()) throw new Error("WEBRTC_UNAVAILABLE");
   if (_status !== "idle") throw new Error("Already in a call");
 
   const { callId, calleeId, calleeName, calleeAvatar, myId, myName, myAvatar, chatId } = params;
@@ -410,7 +431,7 @@ export async function acceptCall(notice: IncomingCallNotice, params: {
   myName: string;
   myAvatar: string | null;
 }): Promise<void> {
-  if (!WEBRTC_AVAILABLE) throw new Error("WEBRTC_UNAVAILABLE");
+  if (!_getRTC()) throw new Error("WEBRTC_UNAVAILABLE");
   // Accept from incoming_ringing (normal path) OR idle (push-notification path
   // where the app was backgrounded and the realtime inbox broadcast was never
   // received, so the engine never transitioned out of idle).
@@ -643,7 +664,7 @@ async function _ensureLocalStream(): Promise<any> {
   if (_localStream) return _localStream;
   let stream: any;
   try {
-    stream = await _RTC!.mediaDevices.getUserMedia({
+    stream = await _getRTC()!.mediaDevices.getUserMedia({
       audio: {
         echoCancellation: true,
         noiseSuppression: true,
@@ -669,7 +690,7 @@ async function _ensureLocalStream(): Promise<any> {
 }
 
 function _createPC(): any {
-  const pc = new _RTC!.RTCPeerConnection({
+  const pc = new _getRTC()!.RTCPeerConnection({
     iceServers: ICE_SERVERS,
     bundlePolicy: "max-bundle",
     rtcpMuxPolicy: "require",
@@ -761,7 +782,7 @@ async function _createAndSendOffer(): Promise<void> {
 
   const sdp = _preferOpus(offer.sdp ?? "");
   const modifiedOffer = { type: offer.type, sdp };
-  await pc.setLocalDescription(new _RTC!.RTCSessionDescription(modifiedOffer));
+  await pc.setLocalDescription(new _getRTC()!.RTCSessionDescription(modifiedOffer));
 
   _signalingCh?.send({
     type: "broadcast",
@@ -787,7 +808,7 @@ async function _handleOffer(sdp: string): Promise<void> {
   stream.getTracks().forEach((track: any) => pc.addTrack(track, stream));
 
   await pc.setRemoteDescription(
-    new _RTC!.RTCSessionDescription({ type: "offer", sdp })
+    new _getRTC()!.RTCSessionDescription({ type: "offer", sdp })
   );
   _remoteDescSet = true;
   await _drainPendingCandidates();
@@ -795,7 +816,7 @@ async function _handleOffer(sdp: string): Promise<void> {
   const answer = await pc.createAnswer();
   const answerSdp = _preferOpus(answer.sdp ?? "");
   await pc.setLocalDescription(
-    new _RTC!.RTCSessionDescription({ type: "answer", sdp: answerSdp })
+    new _getRTC()!.RTCSessionDescription({ type: "answer", sdp: answerSdp })
   );
 
   _signalingCh?.send({
@@ -818,7 +839,7 @@ async function _handleOffer(sdp: string): Promise<void> {
 async function _handleAnswer(sdp: string): Promise<void> {
   if (!_pc) return;
   await _pc.setRemoteDescription(
-    new _RTC!.RTCSessionDescription({ type: "answer", sdp })
+    new _getRTC()!.RTCSessionDescription({ type: "answer", sdp })
   );
   _remoteDescSet = true;
   if (_info) _info.answeredAt = _info.answeredAt ?? Date.now();
@@ -828,7 +849,7 @@ async function _handleAnswer(sdp: string): Promise<void> {
 function _addRemoteCandidate(candidate: any) {
   if (_remoteDescSet && _pc) {
     try {
-      _pc.addIceCandidate(new _RTC!.RTCIceCandidate(candidate)).catch(() => {});
+      _pc.addIceCandidate(new _getRTC()!.RTCIceCandidate(candidate)).catch(() => {});
     } catch {}
   } else {
     _pendingCandidates.push(candidate);
@@ -839,7 +860,7 @@ async function _drainPendingCandidates() {
   if (!_pc) return;
   for (const c of _pendingCandidates) {
     try {
-      await _pc.addIceCandidate(new _RTC!.RTCIceCandidate(c));
+      await _pc.addIceCandidate(new _getRTC()!.RTCIceCandidate(c));
     } catch {}
   }
   _pendingCandidates = [];
