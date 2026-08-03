@@ -440,6 +440,197 @@ function _defaultBody(type: string): string {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
+// Order handlers
+// ═════════════════════════════════════════════════════════════════════════════
+
+function _shopOrderStatusLabel(status: string): string {
+  const map: Record<string, string> = {
+    pending:    "Order placed — awaiting confirmation",
+    processing: "Your order is being prepared",
+    shipped:    "Your order has been shipped",
+    delivered:  "Order marked as delivered",
+    completed:  "Order completed",
+    cancelled:  "Order cancelled",
+    disputed:   "A dispute has been opened",
+  };
+  return map[status] ?? `Order status: ${status}`;
+}
+
+function _freelanceOrderStatusLabel(status: string): string {
+  const map: Record<string, string> = {
+    pending:   "New order received",
+    active:    "Order is now active",
+    delivered: "Delivery submitted — review it",
+    revision:  "Revision requested",
+    completed: "Order completed",
+    cancelled: "Order cancelled",
+    disputed:  "A dispute has been opened",
+  };
+  return map[status] ?? `Order status: ${status}`;
+}
+
+function _merchantOrderStatusLabel(status: string): string {
+  const map: Record<string, string> = {
+    pending:    "Order placed — awaiting confirmation",
+    confirmed:  "Order confirmed",
+    processing: "Order is being processed",
+    shipped:    "Order shipped",
+    delivered:  "Order delivered",
+    cancelled:  "Order cancelled",
+  };
+  return map[status] ?? `Order status: ${status}`;
+}
+
+async function handleShopOrder(
+  record: Record<string, any>,
+  eventType: string,
+  oldRecord: Record<string, any> | null,
+  db: ReturnType<typeof createClient>,
+  projectId: string,
+  accessToken: string,
+): Promise<void> {
+  const { id, buyer_id, seller_id, status, total_acoin } = record;
+  if (!buyer_id || !seller_id || !status) return;
+
+  // Only fire on INSERT or when status actually changed
+  if (eventType === "UPDATE" && oldRecord?.status === status) return;
+
+  const isNew = eventType === "INSERT";
+  const orderId = id ?? "";
+  const amount = total_acoin ? ` · ${total_acoin} ACoin` : "";
+
+  const targets: Array<{ userId: string; title: string; body: string }> = [];
+
+  if (isNew) {
+    // Notify seller of new order
+    targets.push({ userId: seller_id, title: "New Order 🛍️", body: `You have a new shop order${amount}` });
+  } else {
+    // Status change → notify buyer
+    targets.push({ userId: buyer_id, title: "Order Update", body: _shopOrderStatusLabel(status) });
+    // On completion/delivery — also notify seller
+    if (["completed", "disputed"].includes(status)) {
+      targets.push({ userId: seller_id, title: "Order Update", body: _shopOrderStatusLabel(status) });
+    }
+  }
+
+  const { data: profiles } = await db.from("profiles").select("id, fcm_token").in("id", targets.map(t => t.userId)).not("fcm_token", "is", null);
+  if (!profiles?.length) return;
+
+  const tokenMap = Object.fromEntries((profiles as any[]).map((p: any) => [p.id, p.fcm_token]));
+
+  await Promise.all(
+    targets
+      .filter(t => tokenMap[t.userId])
+      .map(t => dispatchToToken(tokenMap[t.userId], {
+        title: t.title,
+        body: t.body,
+        data: { type: "order", orderId, orderType: "shop" },
+        channelId: "marketplace",
+        collapseKey: `shop_order_${orderId}`,
+        categoryIdentifier: "afuchat_order_update",
+      }, projectId, accessToken))
+  );
+}
+
+async function handleMerchantOrder(
+  record: Record<string, any>,
+  eventType: string,
+  oldRecord: Record<string, any> | null,
+  db: ReturnType<typeof createClient>,
+  projectId: string,
+  accessToken: string,
+): Promise<void> {
+  const { id, buyer_id, merchant_id, status } = record;
+  if (!buyer_id || !merchant_id || !status) return;
+
+  if (eventType === "UPDATE" && oldRecord?.status === status) return;
+
+  const isNew = eventType === "INSERT";
+  const orderId = id ?? "";
+
+  const targets: Array<{ userId: string; title: string; body: string }> = [];
+
+  if (isNew) {
+    targets.push({ userId: merchant_id, title: "New Order 🛍️", body: "You have a new merchant order" });
+  } else {
+    targets.push({ userId: buyer_id, title: "Order Update", body: _merchantOrderStatusLabel(status) });
+    if (["delivered", "cancelled"].includes(status)) {
+      targets.push({ userId: merchant_id, title: "Order Update", body: _merchantOrderStatusLabel(status) });
+    }
+  }
+
+  const { data: profiles } = await db.from("profiles").select("id, fcm_token").in("id", targets.map(t => t.userId)).not("fcm_token", "is", null);
+  if (!profiles?.length) return;
+
+  const tokenMap = Object.fromEntries((profiles as any[]).map((p: any) => [p.id, p.fcm_token]));
+
+  await Promise.all(
+    targets
+      .filter(t => tokenMap[t.userId])
+      .map(t => dispatchToToken(tokenMap[t.userId], {
+        title: t.title,
+        body: t.body,
+        data: { type: "order", orderId, orderType: "merchant" },
+        channelId: "marketplace",
+        collapseKey: `merchant_order_${orderId}`,
+        categoryIdentifier: "afuchat_order_update",
+      }, projectId, accessToken))
+  );
+}
+
+async function handleFreelanceOrder(
+  record: Record<string, any>,
+  eventType: string,
+  oldRecord: Record<string, any> | null,
+  db: ReturnType<typeof createClient>,
+  projectId: string,
+  accessToken: string,
+): Promise<void> {
+  const { id, buyer_id, seller_id, status } = record;
+  if (!buyer_id || !seller_id || !status) return;
+
+  if (eventType === "UPDATE" && oldRecord?.status === status) return;
+
+  const isNew = eventType === "INSERT";
+  const orderId = id ?? "";
+
+  const targets: Array<{ userId: string; title: string; body: string }> = [];
+
+  if (isNew) {
+    // New freelance order → notify seller
+    targets.push({ userId: seller_id, title: "New Order 💼", body: "You have a new freelance order" });
+  } else {
+    const label = _freelanceOrderStatusLabel(status);
+    // Buyer-facing statuses (seller took action)
+    if (["active", "delivered", "completed", "cancelled", "disputed"].includes(status)) {
+      targets.push({ userId: buyer_id, title: "Freelance Order Update", body: label });
+    }
+    // Seller-facing statuses (buyer took action)
+    if (["revision", "completed", "cancelled", "disputed"].includes(status)) {
+      targets.push({ userId: seller_id, title: "Freelance Order Update", body: label });
+    }
+  }
+
+  const { data: profiles } = await db.from("profiles").select("id, fcm_token").in("id", targets.map(t => t.userId)).not("fcm_token", "is", null);
+  if (!profiles?.length) return;
+
+  const tokenMap = Object.fromEntries((profiles as any[]).map((p: any) => [p.id, p.fcm_token]));
+
+  await Promise.all(
+    targets
+      .filter(t => tokenMap[t.userId])
+      .map(t => dispatchToToken(tokenMap[t.userId], {
+        title: t.title,
+        body: t.body,
+        data: { type: "order", orderId, orderType: "freelance" },
+        channelId: "marketplace",
+        collapseKey: `freelance_order_${orderId}`,
+        categoryIdentifier: "afuchat_order_update",
+      }, projectId, accessToken))
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
 // Main server
 // ═════════════════════════════════════════════════════════════════════════════
 
@@ -494,6 +685,15 @@ serve(async (req) => {
         break;
       case "notifications":
         await handleNotification(record, db, projectId, accessToken);
+        break;
+      case "shop_orders":
+        await handleShopOrder(record, eventType, body.old_record ?? null, db, projectId, accessToken);
+        break;
+      case "merchant_orders":
+        await handleMerchantOrder(record, eventType, body.old_record ?? null, db, projectId, accessToken);
+        break;
+      case "freelance_orders":
+        await handleFreelanceOrder(record, eventType, body.old_record ?? null, db, projectId, accessToken);
         break;
       default:
         console.log(`[push-trigger] unhandled table: ${table}`);
