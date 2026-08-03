@@ -368,6 +368,22 @@ export async function startCall(params: {
 
   supabase.removeChannel(calleeInbox).catch(() => {});
 
+  // Insert into `calls` table so the DB trigger fires and sends the FCM
+  // high-priority push to wake up the callee's app if it is backgrounded/killed.
+  // Fire-and-forget — never block the call setup on this.
+  supabase.from("calls").insert({
+    id: callId,
+    room_id: callId,
+    caller_id: myId,
+    callee_id: calleeId,
+    call_type: "voice",
+    status: "ringing",
+    started_at: new Date().toISOString(),
+    chat_id: chatId ?? null,
+  }).then(({ error }) => {
+    if (error) console.warn("[CallEngine] calls insert error:", error.message);
+  }).catch(() => {});
+
   // Ring timeout — callee didn't answer (offline, FCM unreachable, or ignored)
   _ringTimer = setTimeout(() => {
     if (_status === "outgoing_ringing") {
@@ -1027,6 +1043,10 @@ function _saveCallRecord(
   duration?: number | null,
 ) {
   if (!_info) return;
+
+  const now = new Date().toISOString();
+
+  // Save to local SQLite for call history UI
   saveLocalCall({
     id: _info.callId,
     room_id: _info.callId,
@@ -1036,12 +1056,28 @@ function _saveCallRecord(
     status,
     started_at: new Date(_info.startedAt).toISOString(),
     answered_at: _info.answeredAt ? new Date(_info.answeredAt).toISOString() : null,
-    ended_at: new Date().toISOString(),
+    ended_at: now,
     duration_seconds: duration ?? null,
     chat_id: _info.chatId,
     caller: { display_name: _info.callerName, avatar_url: _info.callerAvatar ?? undefined },
     callee: { display_name: _info.calleeName, avatar_url: _info.calleeAvatar ?? undefined },
   }).catch(() => {});
+
+  // Upsert final status to Supabase so the server-side row stays accurate.
+  // Uses upsert so it works whether or not the INSERT in startCall succeeded.
+  supabase.from("calls").upsert({
+    id: _info.callId,
+    room_id: _info.callId,
+    caller_id: _info.callerId,
+    callee_id: _info.calleeId,
+    call_type: "voice",
+    status,
+    started_at: new Date(_info.startedAt).toISOString(),
+    answered_at: _info.answeredAt ? new Date(_info.answeredAt).toISOString() : null,
+    ended_at: now,
+    duration_seconds: duration ?? null,
+    chat_id: _info.chatId,
+  }, { onConflict: "id", ignoreDuplicates: false }).catch(() => {});
 }
 
 // ─── SDP: prefer Opus codec ───────────────────────────────────────────────────

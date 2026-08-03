@@ -396,3 +396,43 @@ export async function clearBadge(): Promise<void> {
     await N.setBadgeCountAsync(0);
   } catch {}
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 6. AUTH HELPERS (called from AuthContext)
+// ═════════════════════════════════════════════════════════════════════════════
+
+let _currentUserId: string | null = null;
+
+/** Called by AuthContext when the signed-in user changes. */
+export function setCurrentUserId(userId: string | null): void {
+  _currentUserId = userId;
+}
+
+export function getCurrentUserId(): string | null {
+  return _currentUserId;
+}
+
+/**
+ * Clears the stored FCM token from the backend when the user signs out,
+ * so they no longer receive push notifications on this device.
+ */
+export async function clearPushToken(): Promise<void> {
+  if (Platform.OS === "web") return;
+  try {
+    await supabase.functions.invoke("register-push-token", {
+      body: { token: "", platform: Platform.OS },
+    });
+  } catch {}
+}
+
+let _switchAccountCallback: (() => void) | null = null;
+
+/** Registers a callback invoked when the active account switches. */
+export function registerSwitchAccount(fn: () => void): void {
+  _switchAccountCallback = fn;
+}
+
+/** Invoke the registered switch-account callback (call from account switcher). */
+export function notifySwitchAccount(): void {
+  _switchAccountCallback?.();
+}
