@@ -159,9 +159,10 @@ for (const row of FLAT_ROWS) {
 
 type EmojiMode = "browse" | "history";
 
-function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange, onScrollDown, onScrollUp, onSelect }: {
+function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange, onSearchFocus, onScrollDown, onScrollUp, onSelect }: {
   onEmojiSelected: (e: string) => void;
   onSearchModeChange?: (active: boolean) => void;
+  onSearchFocus?: () => void;
   onScrollDown?: () => void;
   onScrollUp?: () => void;
   onSelect?: () => void;
@@ -293,6 +294,7 @@ function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange, onScrollDown, o
         <TextInput
           value={searchQuery}
           onChangeText={handleSearchChange}
+          onFocus={onSearchFocus}
           placeholder="Search emojis…"
           placeholderTextColor={colors.textMuted as string}
           style={[sb.input, { color: colors.text as string }]}
@@ -474,9 +476,10 @@ for (const row of STICKER_FLAT) {
 
 type StickerMode = "browse" | "history";
 
-function StickerScrollPanel({ onSendSticker, onSearchModeChange, onScrollDown, onScrollUp, onSelect }: {
+function StickerScrollPanel({ onSendSticker, onSearchModeChange, onSearchFocus, onScrollDown, onScrollUp, onSelect }: {
   onSendSticker: (s: string) => void;
   onSearchModeChange?: (active: boolean) => void;
+  onSearchFocus?: () => void;
   onScrollDown?: () => void;
   onScrollUp?: () => void;
   onSelect?: () => void;
@@ -631,6 +634,7 @@ function StickerScrollPanel({ onSendSticker, onSearchModeChange, onScrollDown, o
         <TextInput
           value={searchQuery}
           onChangeText={handleSearchChange}
+          onFocus={onSearchFocus}
           placeholder="Search stickers…"
           placeholderTextColor={colors.textMuted as string}
           style={[sb.input, { color: colors.text as string }]}
@@ -885,6 +889,8 @@ interface Props {
   onClose?: () => void;
   /** Called with true when any search bar opens inside the picker, false when closed */
   onSearchModeChange?: (active: boolean) => void;
+  /** Called synchronously when any search TextInput receives focus */
+  onSearchFocus?: () => void;
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -896,6 +902,7 @@ export default function EmojiStickerPicker({
   onSendGif,
   onDelete,
   onSearchModeChange,
+  onSearchFocus,
 }: Props) {
   const { colors, isDark } = useTheme();
   const { accent } = useAppAccent();
@@ -945,6 +952,7 @@ export default function EmojiStickerPicker({
           <EmojiScrollPanel
             onEmojiSelected={onEmojiSelected}
             onSearchModeChange={onSearchModeChange}
+            onSearchFocus={onSearchFocus}
             onScrollDown={hideBar}
             onScrollUp={showBar}
             onSelect={showBar}
@@ -962,6 +970,7 @@ export default function EmojiStickerPicker({
           <StickerScrollPanel
             onSendSticker={onSendSticker}
             onSearchModeChange={onSearchModeChange}
+            onSearchFocus={onSearchFocus}
             onScrollDown={hideBar}
             onScrollUp={showBar}
             onSelect={showBar}

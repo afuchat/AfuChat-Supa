@@ -14,6 +14,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { BlurView } from "expo-blur";
@@ -112,12 +113,8 @@ const STATIC_GIFTS = [
   { name: "Trident of Power",  emoji: "🔱", base_xp_cost: 2500, rarity: "legendary", description: "The legendary trident of divine power" },
 ];
 
-const SCREEN_WIDTH = Dimensions.get("window").width;
 const CARD_COLS = 4;
 const CARD_GAP = 4;
-const CARD_W = Math.floor((SCREEN_WIDTH - 32 - CARD_GAP * (CARD_COLS - 1)) / CARD_COLS);
-const CARD_H = Math.floor(CARD_W * 1.25);
-const GRID_H = CARD_H * 3 + CARD_GAP * 2 + 16;
 
 // ── Bare gift cell — no card background, just emoji + price ──────────────────
 function GiftCell({
@@ -127,6 +124,7 @@ function GiftCell({
   canAfford,
   onPress,
   isDark,
+  cardW,
 }: {
   gift: DbGift;
   price: number;
@@ -134,6 +132,7 @@ function GiftCell({
   canAfford: boolean;
   onPress: () => void;
   isDark: boolean;
+  cardW: number;
 }) {
   const scale = useRef(new Animated.Value(1)).current;
   const rarity = (gift.rarity || "common").toLowerCase();
@@ -156,7 +155,7 @@ function GiftCell({
       onPressOut={handlePressOut}
       activeOpacity={1}
       disabled={!canAfford}
-      style={{ width: CARD_W, alignItems: "center", opacity: canAfford ? 1 : 0.3 }}
+      style={{ width: cardW, alignItems: "center", opacity: canAfford ? 1 : 0.3 }}
     >
       <Animated.View style={{ alignItems: "center", transform: [{ scale }] }}>
         {/* Selection ring */}
@@ -190,6 +189,15 @@ export default function GiftPickerSheet({
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { getDynamicPrice, statsMap } = useGiftPrices();
+  const { width: screenWidth } = useWindowDimensions();
+  const cardW = React.useMemo(
+    () => Math.floor((screenWidth - 32 - CARD_GAP * (CARD_COLS - 1)) / CARD_COLS),
+    [screenWidth],
+  );
+  const gridH = React.useMemo(() => {
+    const cardH = Math.floor(cardW * 1.25);
+    return cardH * 4 + CARD_GAP * 3 + 16;
+  }, [cardW]);
 
   const sheetTranslateY = useRef(new Animated.Value(1000)).current;
 
@@ -310,7 +318,7 @@ export default function GiftPickerSheet({
                   <Ionicons name="diamond" size={13} color={Colors.gold} />
                   <Text style={[styles.balanceText, { color: Colors.gold }]}>{acoinBalance} AC</Text>
                 </View>
-                <TouchableOpacity onPress={onClose} hitSlop={12} style={{ marginLeft: 8 }}>
+                <TouchableOpacity onPress={dismissSheet} hitSlop={12} style={{ marginLeft: 8 }}>
                   <Ionicons name="close-circle" size={26} color={colors.textMuted} />
                 </TouchableOpacity>
               </View>
@@ -368,11 +376,11 @@ export default function GiftPickerSheet({
 
               {/* ── Gift grid ── */}
               {loading ? (
-                <View style={{ height: GRID_H, overflow: "hidden", paddingTop: 4 }}>
+                <View style={{ height: gridH, overflow: "hidden", paddingTop: 4 }}>
                   {Array.from({ length: 3 }).map((_, row) => (
                     <View key={row} style={{ flexDirection: "row", gap: CARD_GAP, paddingHorizontal: 16, marginBottom: CARD_GAP }}>
                       {Array.from({ length: CARD_COLS }).map((_, col) => (
-                        <View key={col} style={{ width: CARD_W, alignItems: "center", gap: 5 }}>
+                        <View key={col} style={{ width: cardW, alignItems: "center", gap: 5 }}>
                           {/* emoji placeholder — rounded square matching emoji hit area */}
                           <Skeleton width={44} height={44} borderRadius={14} />
                           {/* price pill */}
@@ -395,7 +403,7 @@ export default function GiftPickerSheet({
                   numColumns={CARD_COLS}
                   columnWrapperStyle={{ gap: CARD_GAP, paddingHorizontal: 16 }}
                   contentContainerStyle={{ gap: CARD_GAP, paddingBottom: 8, paddingTop: 4 }}
-                  style={{ height: GRID_H }}
+                  style={{ height: gridH }}
                   showsVerticalScrollIndicator={false}
                   renderItem={({ item }) => {
                     const price = getDynamicPrice(item.id, item.base_xp_cost);
@@ -407,6 +415,7 @@ export default function GiftPickerSheet({
                         canAfford={acoinBalance >= price}
                         onPress={() => setSelected(selected?.id === item.id ? null : item)}
                         isDark={isDark}
+                        cardW={cardW}
                       />
                     );
                   }}
@@ -493,7 +502,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
     paddingTop: 0,
-    maxHeight: Dimensions.get("window").height * 0.82,
   },
   header: {
     flexDirection: "row",

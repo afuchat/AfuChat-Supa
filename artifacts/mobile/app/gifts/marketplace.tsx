@@ -9,6 +9,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { router } from "expo-router";
@@ -79,6 +80,8 @@ function GiftImage({ uri, emoji, size }: { uri: string | null; emoji: string; si
 
 export default function GiftMarketplaceScreen() {
   const { colors } = useTheme();
+  const { width: screenW } = useWindowDimensions();
+  const cardW = (screenW - 32 - 8) / 2;
   const { user, profile, refreshProfile } = useAuth();
   const insets = useSafeAreaInsets();
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
@@ -282,7 +285,7 @@ export default function GiftMarketplaceScreen() {
 
     return (
       <TouchableOpacity
-        style={[styles.listingCard, { backgroundColor: colors.surface }]}
+        style={[styles.listingCard, { backgroundColor: colors.surface, width: cardW }]}
         onPress={() => setSelectedListing(item)}
         activeOpacity={0.7}
       >
@@ -341,17 +344,21 @@ export default function GiftMarketplaceScreen() {
       </View>
 
       <View style={styles.filterRow}>
-        {["all", "rare", "epic", "legendary"].map((r) => (
-          <TouchableOpacity
-            key={r}
-            style={[styles.filterChip, filterRarity === r && { backgroundColor: rarityColors[r] || colors.accent }]}
-            onPress={() => { setFilterRarity(r); setLoading(true); }}
-          >
-            <Text style={[styles.filterText, filterRarity === r && { color: "#fff" }]}>
-              {r === "all" ? "All" : r.charAt(0).toUpperCase() + r.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {["all", "rare", "epic", "legendary"].map((r) => {
+          const isActive = filterRarity === r;
+          const chipColor = r === "all" ? "#FF9500" : (rarityColors[r] ?? colors.accent);
+          return (
+            <TouchableOpacity
+              key={r}
+              style={[styles.filterChip, isActive && { backgroundColor: chipColor, borderColor: chipColor }]}
+              onPress={() => { setFilterRarity(r); setLoading(true); }}
+            >
+              <Text style={[styles.filterText, isActive && { color: "#fff" }]}>
+                {r === "all" ? "All" : r.charAt(0).toUpperCase() + r.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {loading ? (
@@ -367,7 +374,7 @@ export default function GiftMarketplaceScreen() {
           key="marketplace-2"
           numColumns={2}
           renderItem={renderListing}
-          contentContainerStyle={{ padding: 8, paddingBottom: insets.bottom + 20 }}
+          contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 12, paddingBottom: insets.bottom + 20, gap: 8 }}
           columnWrapperStyle={{ gap: 8 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadListings(); }} tintColor={colors.accent} />}
           ListEmptyComponent={
@@ -500,10 +507,10 @@ const styles = StyleSheet.create({
   infoBanner: { flexDirection: "row", alignItems: "center", gap: 8, margin: 16, marginBottom: 0, padding: 12, borderRadius: 12 },
   infoText: { flex: 1, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
   filterRow: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
-  filterChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: "rgba(128,128,128,0.1)" },
+  filterChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: "rgba(128,128,128,0.1)", borderWidth: 1, borderColor: "transparent" },
   filterText: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#888" },
   loadingWrap: { flex: 1, alignItems: "center", justifyContent: "center" },
-  listingCard: { flex: 1, margin: 4, borderRadius: 16, padding: 14, alignItems: "center", gap: 6, minWidth: "45%", maxWidth: "50%" },
+  listingCard: { borderRadius: 16, padding: 14, alignItems: "center", gap: 6 },
   listingImageWrap: { width: 80, height: 80, borderRadius: 16, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   listingImage: { width: 64, height: 64 },
   listingEmoji: { fontSize: 40 },
@@ -518,7 +525,7 @@ const styles = StyleSheet.create({
   sellerText: { fontSize: 11, fontFamily: "Inter_400Regular" },
   ownBadge: { position: "absolute", top: 8, left: 8, backgroundColor: Colors.brand, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, zIndex: 1 },
   ownBadgeText: { color: "#fff", fontSize: 9, fontFamily: "Inter_700Bold" },
-  emptyWrap: { alignItems: "center", paddingTop: 80, gap: 12, paddingHorizontal: 40 },
+  emptyWrap: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingHorizontal: 40, paddingTop: 40 },
   emptyIconWrap: { width: 88, height: 88, borderRadius: 44, alignItems: "center", justifyContent: "center", marginBottom: 4 },
   emptyTitle: { fontSize: 20, fontFamily: "Inter_600SemiBold" },
   emptySub: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 20 },

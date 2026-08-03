@@ -8,6 +8,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
@@ -82,6 +83,8 @@ const rarityBgColors: Record<string, string> = {
 
 export default function GiftsScreen() {
   const { colors } = useTheme();
+  const { width: screenW } = useWindowDimensions();
+  const cardW = (screenW - 32 - 8) / 2; // 16px side padding × 2, 8px gap
   const { user, profile, refreshProfile } = useAuth();
   const insets = useSafeAreaInsets();
   const { statsMap, getDynamicPrice, refreshStats } = useGiftPrices();
@@ -340,7 +343,7 @@ export default function GiftsScreen() {
 
     return (
       <TouchableOpacity
-        style={[styles.giftCard, { backgroundColor: colors.surface }]}
+        style={[styles.giftCard, { backgroundColor: colors.surface, width: cardW }]}
         onPress={() => setSelectedGift(item)}
         onLongPress={isOwnProfile ? () => togglePin(item) : undefined}
         activeOpacity={0.7}
@@ -429,7 +432,7 @@ export default function GiftsScreen() {
           numColumns={2}
           renderItem={renderGiftCard}
           extraData={statsMap}
-          contentContainerStyle={{ padding: 8, paddingBottom: insets.bottom + 20 }}
+          contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 12, paddingBottom: insets.bottom + 20, gap: 8 }}
           columnWrapperStyle={{ gap: 8 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); refreshStats(); loadOwned(); }} tintColor={colors.accent} />}
           ListEmptyComponent={
@@ -556,7 +559,7 @@ export default function GiftsScreen() {
 
             {isOwnProfile && (
               <TouchableOpacity style={styles.pinRow} onPress={() => { if (selectedGift) togglePin(selectedGift); setSelectedGift(null); }}>
-                <Ionicons name={selectedGift?.is_pinned ? "pin" : "pin"} size={16} color={colors.textSecondary} />
+                <Ionicons name={selectedGift?.is_pinned ? "pin" : "pin-outline"} size={16} color={colors.textSecondary} />
                 <Text style={[styles.pinLink, { color: colors.textSecondary }]}>
                   {selectedGift?.is_pinned ? "Unpin from profile" : "Pin to profile"}
                 </Text>
@@ -706,7 +709,7 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
   statDivider: { width: 1, height: 28 },
   skeletonGrid: { flexDirection: "row", flexWrap: "wrap", padding: 8, justifyContent: "flex-start" },
-  giftCard: { flex: 1, margin: 4, borderRadius: 16, padding: 14, alignItems: "center", gap: 6, minWidth: "45%", maxWidth: "50%" },
+  giftCard: { borderRadius: 16, padding: 14, alignItems: "center", gap: 6 },
   giftImageWrap: { width: 80, height: 80, borderRadius: 16, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   giftImage: { width: 64, height: 64 },
   giftEmojiFallback: { fontSize: 40 },
@@ -717,7 +720,7 @@ const styles = StyleSheet.create({
   giftValueRow: { flexDirection: "row", alignItems: "center", gap: 3 },
   giftValue: { fontSize: 13, fontFamily: "Inter_700Bold", color: Colors.gold },
   pinBadge: { position: "absolute", top: 8, right: 8, backgroundColor: Colors.brand, borderRadius: 10, width: 20, height: 20, alignItems: "center", justifyContent: "center", zIndex: 1 },
-  emptyWrap: { alignItems: "center", paddingTop: 80, gap: 12, paddingHorizontal: 40 },
+  emptyWrap: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingHorizontal: 40, paddingTop: 40 },
   emptyIconWrap: { width: 88, height: 88, borderRadius: 44, alignItems: "center", justifyContent: "center", marginBottom: 4 },
   emptyTitle: { fontSize: 20, fontFamily: "Inter_600SemiBold" },
   emptySub: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 20 },

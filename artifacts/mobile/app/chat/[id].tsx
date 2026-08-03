@@ -1962,6 +1962,12 @@ function ChatScreen() {
   const [envelopeCount, setEnvelopeCount] = useState("1");
   const [showEmojiStickerPicker, setShowEmojiStickerPicker] = useState(false);
   const [emojiSearchActive,      setEmojiSearchActive]      = useState(false);
+  // Ref set synchronously when the emoji/sticker search TextInput gains focus so the
+  // chat input's onFocus handler can distinguish intentional taps from Android focus routing.
+  const emojiSearchFocusedRef = useRef(false);
+  // Reset the guard ref whenever the picker is dismissed so the next real tap on the
+  // chat input works normally.
+  useEffect(() => { if (!showEmojiStickerPicker) emojiSearchFocusedRef.current = false; }, [showEmojiStickerPicker]);
   const [miniProfileUserId, setMiniProfileUserId] = useState<string | null>(null);
   const [emojiKeyboardHeight, setEmojiKeyboardHeight] = useState(280);
   const [reminderMsg, setReminderMsg] = useState<Message | null>(null);
@@ -6840,7 +6846,16 @@ STRICT RULES:
                               }
                             }
                           }}
-                          onFocus={() => { if (showEmojiStickerPicker) setShowEmojiStickerPicker(false); if (showAttachPanel) setShowAttachPanel(false); }}
+                          onFocus={() => {
+                            // If the emoji/sticker search bar just grabbed focus, Android may
+                            // route it here. Reject the focus silently so the picker stays open.
+                            if (emojiSearchFocusedRef.current) {
+                              chatInputRef.current?.blur();
+                              return;
+                            }
+                            if (showEmojiStickerPicker) setShowEmojiStickerPicker(false);
+                            if (showAttachPanel) setShowAttachPanel(false);
+                          }}
                           onSelectionChange={(e) => {
                             const sel = e.nativeEvent.selection;
                             // Always debounce — never fire setInputSelection synchronously.
@@ -6972,6 +6987,10 @@ STRICT RULES:
             onEmojiSelected={(emoji) => setInput((prev) => prev + emoji)}
             onSendSticker={sendStickerMessage}
             onSearchModeChange={(active) => setEmojiSearchActive(active)}
+            onSearchFocus={() => {
+              emojiSearchFocusedRef.current = true;
+              chatInputRef.current?.blur();
+            }}
             onSendGif={async (url) => {
               setShowEmojiStickerPicker(false);
               setEmojiSearchActive(false);
