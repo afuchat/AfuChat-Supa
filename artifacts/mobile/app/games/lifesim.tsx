@@ -32,12 +32,12 @@ import { GlassHeader } from "@/components/ui/GlassHeader";
 // ─── Game Data ─────────────────────────────────────────────────────────────────
 
 const HUSTLES = [
-  { id: "rolex",    name: "Rolex Maker",          baseSalary: 1_200_000,  reqEdu: 0, reqSkill: 0,  burnout: 15, emoji: "🍳", risk: 0.10, desc: "Setup shop near Makerere. High physical hustle, good cash flow. Watch the dust!" },
-  { id: "boda",     name: "Boda Rider",            baseSalary: 2_400_000,  reqEdu: 0, reqSkill: 15, burnout: 25, emoji: "🏍️", risk: 0.35, desc: "Dodge traffic along Jinja Road. Incredible cash but high danger and daily police checks." },
-  { id: "guide",    name: "Jinja Safari Guide",    baseSalary: 4_800_000,  reqEdu: 1, reqSkill: 35, burnout: 10, emoji: "🦁", risk: 0.15, desc: "Lead rafting tours on the Nile. Requires a Vocational Cert. High tourist tips." },
-  { id: "banker",   name: "Junior Banker",         baseSalary: 8_400_000,  reqEdu: 2, reqSkill: 55, burnout: 20, emoji: "🏦", risk: 0.05, desc: "Wear crisp suits in Kololo. Low physical risk but high taxes and massive mental burnout." },
-  { id: "dev",      name: "FinTech App Developer", baseSalary: 18_000_000, reqEdu: 2, reqSkill: 75, burnout: 35, emoji: "💻", risk: 0.00, desc: "Build crypto & payment apps. Remote work with heavy pay, high stress but tax audit targets." },
-  { id: "exporter", name: "Coffee Farm Exporter",  baseSalary: 36_000_000, reqEdu: 3, reqSkill: 90, burnout: 15, emoji: "☕", risk: 0.08, desc: "Dominate central robusta trades. The gold standard. Outstanding yields." },
+  { id: "rolex",    name: "Rolex Maker",          baseSalary: 1_200_000,  reqEdu: 0, reqSkill: 0,  burnout: 15, icon: "fast-food-outline",  risk: 0.10, desc: "Setup shop near Makerere. High physical hustle, good cash flow. Watch the dust!" },
+  { id: "boda",     name: "Boda Rider",            baseSalary: 2_400_000,  reqEdu: 0, reqSkill: 15, burnout: 25, icon: "bicycle-outline",     risk: 0.35, desc: "Dodge traffic along Jinja Road. Incredible cash but high danger and daily police checks." },
+  { id: "guide",    name: "Jinja Safari Guide",    baseSalary: 4_800_000,  reqEdu: 1, reqSkill: 35, burnout: 10, icon: "leaf-outline",        risk: 0.15, desc: "Lead rafting tours on the Nile. Requires a Vocational Cert. High tourist tips." },
+  { id: "banker",   name: "Junior Banker",         baseSalary: 8_400_000,  reqEdu: 2, reqSkill: 55, burnout: 20, icon: "business-outline",    risk: 0.05, desc: "Wear crisp suits in Kololo. Low physical risk but high taxes and massive mental burnout." },
+  { id: "dev",      name: "FinTech App Developer", baseSalary: 18_000_000, reqEdu: 2, reqSkill: 75, burnout: 35, icon: "code-slash-outline",  risk: 0.00, desc: "Build crypto & payment apps. Remote work with heavy pay, high stress but tax audit targets." },
+  { id: "exporter", name: "Coffee Farm Exporter",  baseSalary: 36_000_000, reqEdu: 3, reqSkill: 90, burnout: 15, icon: "cafe-outline",        risk: 0.08, desc: "Dominate central robusta trades. The gold standard. Outstanding yields." },
 ];
 
 const EDUCATION = [
@@ -55,12 +55,12 @@ const WEALTH = [
 ];
 
 const LIFESTYLES = [
-  { id: "res_muzigo",  cat: "res",  name: "Rent a Muzigo (1-Room)", cost: 480_000,   health: -5,  mood: 0,   emoji: "🏠", desc: "Basic single room in Kamwokya. Noisy environment." },
-  { id: "res_flat",    cat: "res",  name: "Rented Modern Flat",     cost: 2_400_000, health: 5,   mood: 15,  emoji: "🏢", desc: "Secure compound in Naalya with running water." },
-  { id: "res_owned",   cat: "res",  name: "Own Property Home",      cost: 0,         health: 15,  mood: 30,  emoji: "🏰", desc: "Free accommodation! (Requires Muyenga Skyline Villa)." },
-  { id: "diet_kikomando", cat: "diet", name: "Beans & Kikomando",   cost: 200_000,   health: -15, mood: -10, emoji: "🫘", desc: "Street food staple. Heavy digestion stress." },
-  { id: "diet_matooke",   cat: "diet", name: "Fresh Matooke & G-Nuts", cost: 900_000, health: 12, mood: 15,  emoji: "🍌", desc: "Fresh local nutritional balance." },
-  { id: "diet_kololo",    cat: "diet", name: "Café Dining in Kololo",  cost: 3_600_000, health: 10, mood: 35, emoji: "☕", desc: "Expensive coffees, pizzas, and premium health eats." },
+  { id: "res_muzigo",  cat: "res",  name: "Rent a Muzigo (1-Room)", cost: 480_000,   health: -5,  mood: 0,   icon: "home-outline",       desc: "Basic single room in Kamwokya. Noisy environment." },
+  { id: "res_flat",    cat: "res",  name: "Rented Modern Flat",     cost: 2_400_000, health: 5,   mood: 15,  icon: "business-outline",   desc: "Secure compound in Naalya with running water." },
+  { id: "res_owned",   cat: "res",  name: "Own Property Home",      cost: 0,         health: 15,  mood: 30,  icon: "key-outline",        desc: "Free accommodation! (Requires Muyenga Skyline Villa)." },
+  { id: "diet_kikomando", cat: "diet", name: "Beans & Kikomando",   cost: 200_000,   health: -15, mood: -10, icon: "restaurant-outline", desc: "Street food staple. Heavy digestion stress." },
+  { id: "diet_matooke",   cat: "diet", name: "Fresh Matooke & G-Nuts", cost: 900_000, health: 12, mood: 15,  icon: "nutrition-outline",  desc: "Fresh local nutritional balance." },
+  { id: "diet_kololo",    cat: "diet", name: "Café Dining in Kololo",  cost: 3_600_000, health: 10, mood: 35, icon: "cafe-outline",       desc: "Expensive coffees, pizzas, and premium health eats." },
 ];
 
 const HACKS = [
@@ -71,7 +71,7 @@ const HACKS = [
 
 type CrisisOption = { text: string; cost?: number; resolve: (s: KHState) => string };
 type Crisis = {
-  id: string; title: string; desc: string; emoji: string;
+  id: string; title: string; desc: string; icon: string;
   trigger: (s: KHState) => boolean;
   options: CrisisOption[];
 };
@@ -124,7 +124,7 @@ function freshState(): KHState {
     residenceId: "res_muzigo",
     dietId: "diet_kikomando",
     inflation: 1.0,
-    logs: ["Welcome to Kampala! Find high-yielding gigs, upskill, and dodge taxes to retire rich! 🏙️"],
+    logs: ["Welcome to Kampala. Find high-yielding gigs, upskill, and dodge taxes to retire rich."],
     txns: [{ id: "start", label: "Starting capital", amount: 150_000, type: "in", age: 18 }],
     awardedMilestones: [],
   };
@@ -203,8 +203,8 @@ function computeScore(s: KHState): number {
 
 function getTitle(s: KHState): string {
   const net = getTotalMoney(s);
-  if (net > 100_000_000) return "Muyenga Tycoon 🏰";
-  if (net > 40_000_000) return "Enterprise Mogul 📈";
+  if (net > 100_000_000) return "Muyenga Tycoon";
+  if (net > 40_000_000) return "Enterprise Mogul";
   const job = getActiveJob(s);
   if (job) return `Experienced ${job.name}`;
   return "Struggling High School Leaver";
@@ -214,56 +214,56 @@ function getTitle(s: KHState): string {
 
 const CRISES: Crisis[] = [
   {
-    id: "ura_audit", title: "URA Tax Audit! 🏛️",
-    desc: "The Uganda Revenue Authority notices your growing assets. They demand back-taxes and compliance audits!",
-    emoji: "🏛️", trigger: (s) => getTotalMoney(s) > 15_000_000,
+    id: "ura_audit", title: "URA Tax Audit",
+    desc: "The Uganda Revenue Authority notices your growing assets. They demand back-taxes and compliance audits.",
+    icon: "document-text-outline", trigger: (s) => getTotalMoney(s) > 15_000_000,
     options: [
       {
         text: "Pay compliance settlement (UGX 2.5M)", cost: 2_500_000,
-        resolve: (s) => { Object.assign(s, deductMoney(s, 2_500_000)); s.stress = Math.max(0, s.stress - 15); return "Paid official taxes. URA flagged you as fully compliant! ✅"; }
+        resolve: (s) => { Object.assign(s, deductMoney(s, 2_500_000)); s.stress = Math.max(0, s.stress - 15); return "Paid official taxes. URA flagged you as fully compliant."; }
       },
       {
         text: "Use Connections (Needs 2)",
         resolve: (s) => {
-          if (s.connections >= 2) { s.connections -= 2; return "Called an influential uncle in the ministry. The tax file vanished! 🤝"; }
+          if (s.connections >= 2) { s.connections -= 2; return "Called an influential uncle in the ministry. The tax file vanished."; }
           Object.assign(s, deductMoney(s, 5_000_000)); s.health -= 25; s.stress = 100;
-          return "Not enough connections! URA froze your Stanbic bank and charged UGX 5M in fines. 💸";
+          return "Not enough connections. URA froze your Stanbic bank and charged UGX 5M in fines.";
         }
       },
     ],
   },
   {
-    id: "boda_robbery", title: "Street Ambush! 🕵️",
+    id: "boda_robbery", title: "Street Ambush",
     desc: "While riding home through Kansanga, street boys try to seize your wallet and phone.",
-    emoji: "🕵️", trigger: () => true,
+    icon: "alert-circle-outline", trigger: () => true,
     options: [
       {
         text: "Run & shout (risk injury)",
         resolve: (s) => {
           if (Math.random() < 0.6) {
             s.health -= 35; s.stress = Math.min(100, s.stress + 30);
-            return "Fought back but took blows. Lost hard cash and ended up in a clinic. 🏥";
+            return "Fought back but took blows. Lost hard cash and ended up in a clinic.";
           }
-          s.connections += 1; return "Outran them smoothly! Local youths praised your speed (+1 Connection). 💨";
+          s.connections += 1; return "Outran them smoothly. Local youths praised your speed (+1 Connection).";
         }
       },
       {
         text: "Pay them off (UGX 300,000)", cost: 300_000,
-        resolve: (s) => { Object.assign(s, deductMoney(s, 300_000)); return "Calmly offered cash. They took 300k and let you pass safely. 🤝"; }
+        resolve: (s) => { Object.assign(s, deductMoney(s, 300_000)); return "Calmly offered cash. They took 300k and let you pass safely."; }
       },
     ],
   },
   {
-    id: "sacco_collapse", title: "SACCO Fund Freeze! 📉",
+    id: "sacco_collapse", title: "SACCO Fund Freeze",
     desc: "Rumors spread that SACCO directors are planning to vanish to Entebbe with the savings.",
-    emoji: "📉", trigger: (s) => s.ownedAssetIds.includes("sacco"),
+    icon: "trending-down-outline", trigger: (s) => s.ownedAssetIds.includes("sacco"),
     options: [
       {
         text: "Withdraw immediately (30% penalty)",
         resolve: (s) => {
           s.ownedAssetIds = s.ownedAssetIds.filter(id => id !== "sacco");
           s.cashWallet += 2_100_000;
-          return "Pulled out early. Took a minor loss but recovered UGX 2.1M before the bubble burst. 💰";
+          return "Pulled out early. Took a minor loss but recovered UGX 2.1M before the bubble burst.";
         }
       },
       {
@@ -272,25 +272,25 @@ const CRISES: Crisis[] = [
           if (Math.random() < 0.7) {
             s.ownedAssetIds = s.ownedAssetIds.filter(id => id !== "sacco");
             s.happiness = Math.max(0, s.happiness - 30);
-            return "Disaster! The SACCO folded overnight. Your savings were totally lost. 😭";
+            return "Disaster. The SACCO folded overnight. Your savings were totally lost.";
           }
-          return "The rumors were fake! The SACCO posted record-high dividends this year. 🎉";
+          return "The rumors were false. The SACCO posted record-high dividends this year.";
         }
       },
     ],
   },
   {
-    id: "malaria", title: "Severe Malaria Attack! 🤒",
+    id: "malaria", title: "Severe Malaria Attack",
     desc: "Burning fever. Doctors confirm a high Malaria parasite load. You cannot work efficiently.",
-    emoji: "🤒", trigger: () => true,
+    icon: "medical-outline", trigger: () => true,
     options: [
       {
         text: "Buy cheap local drugs (UGX 80,000)", cost: 80_000,
-        resolve: (s) => { Object.assign(s, deductMoney(s, 80_000)); s.health -= 20; s.stress = Math.min(100, s.stress + 15); return "Low-cost pills took days to kick in. You survived but remain fatigued. 😓"; }
+        resolve: (s) => { Object.assign(s, deductMoney(s, 80_000)); s.health -= 20; s.stress = Math.min(100, s.stress + 15); return "Low-cost pills took days to kick in. You survived but remain fatigued."; }
       },
       {
         text: "Admit to Kololo Clinic (UGX 500,000)", cost: 500_000,
-        resolve: (s) => { Object.assign(s, deductMoney(s, 500_000)); s.health = Math.min(100, s.health + 30); s.stress = Math.max(0, s.stress - 20); return "Top-tier medical care. Fully cured and back to maximum strength! 💪"; }
+        resolve: (s) => { Object.assign(s, deductMoney(s, 500_000)); s.health = Math.min(100, s.health + 30); s.stress = Math.max(0, s.stress - 20); return "Top-tier medical care. Fully cured and back to maximum strength."; }
       },
     ],
   },
@@ -429,10 +429,10 @@ export default function KampalaHustleGame() {
     const net = getTotalMoney(s);
 
     const milestones: [string, number, string, number][] = [
-      ["net_1m",   1_000_000,   "First million! 🎉",     50],
-      ["net_10m",  10_000_000,  "Reached 10M UGX! 💰",  100],
-      ["net_50m",  50_000_000,  "Reached 50M UGX! 🚀",  200],
-      ["net_100m", 100_000_000, "Tycoon milestone! 🏰", 500],
+      ["net_1m",   1_000_000,   "First million!",    50],
+      ["net_10m",  10_000_000,  "Reached 10M UGX!",  100],
+      ["net_50m",  50_000_000,  "Reached 50M UGX!",  200],
+      ["net_100m", 100_000_000, "Tycoon milestone!", 500],
     ];
     for (const [id, threshold, msg, xp] of milestones) {
       if (net >= threshold && !awarded.includes(id)) {
@@ -453,7 +453,7 @@ export default function KampalaHustleGame() {
       if (!job) return;
       if (s.educationLevel < job.reqEdu || s.skills < job.reqSkill) return;
       s.activeJobId = job.id;
-      s.logs = [`💼 Job Secured: ${job.name}. Earning UGX ${formatUGX(job.baseSalary)}/yr.`, ...s.logs.slice(0, 49)];
+      s.logs = [`Job Secured: ${job.name}. Earning UGX ${formatUGX(job.baseSalary)}/yr.`, ...s.logs.slice(0, 49)];
       return s;
     });
   }
@@ -462,7 +462,7 @@ export default function KampalaHustleGame() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     mutate(s => {
       const job = getActiveJob(s);
-      s.logs = [`💼 Resigned from ${job?.name ?? "job"}.`, ...s.logs.slice(0, 49)];
+      s.logs = [`Resigned from ${job?.name ?? "job"}.`, ...s.logs.slice(0, 49)];
       s.activeJobId = null;
       return s;
     });
@@ -473,17 +473,17 @@ export default function KampalaHustleGame() {
     mutate(s => {
       const edu = EDUCATION.find(e => e.id === eduId);
       if (!edu) return;
-      if (getTotalMoney(s) < edu.cost) { showToast("Not enough funds! 💸", false); return; }
+      if (getTotalMoney(s) < edu.cost) { showToast("Not enough funds!", false); return; }
       if (s.educationLevel !== edu.level - 1) { showToast("Complete previous level first!", false); return; }
       Object.assign(s, deductMoney(s, edu.cost));
       pushTxn(s, `Tuition – ${edu.name}`, edu.cost, "out");
       s.educationLevel = edu.level;
       s.skills = Math.min(100, s.skills + edu.skillGain);
       s.connections += 1;
-      s.logs = [`🎓 Graduated: ${edu.name}! Skill +${edu.skillGain}% · +1 Connection`, ...s.logs.slice(0, 49)];
+      s.logs = [`Graduated: ${edu.name}. Skill +${edu.skillGain}% · +1 Connection`, ...s.logs.slice(0, 49)];
       const xp = edu.level * 50;
       if (user) giveNexa(user.id, xp, `kampala_hustle_edu_${edu.id}`);
-      showToast(`🎓 ${edu.name} earned! +${xp} Nexa XP`, true);
+      showToast(`${edu.name} earned! +${xp} Nexa XP`, true);
       return s;
     });
   }
@@ -493,14 +493,14 @@ export default function KampalaHustleGame() {
     mutate(s => {
       const asset = WEALTH.find(w => w.id === assetId);
       if (!asset) return;
-      if (getTotalMoney(s) < asset.cost) { showToast("Not enough funds! 💸", false); return; }
+      if (getTotalMoney(s) < asset.cost) { showToast("Not enough funds!", false); return; }
       Object.assign(s, deductMoney(s, asset.cost));
       pushTxn(s, `Bought – ${asset.name}`, asset.cost, "out");
       s.ownedAssetIds = [...s.ownedAssetIds, asset.id];
       s.happiness = Math.min(100, s.happiness + asset.mood);
       s.stress = Math.max(0, s.stress + (asset.stress ?? 0));
       if (asset.id === "muyenga_villa") s.residenceId = "res_owned";
-      s.logs = [`🏡 Acquired: ${asset.name}. Lifestyle boosted.`, ...s.logs.slice(0, 49)];
+      s.logs = [`Acquired: ${asset.name}. Lifestyle boosted.`, ...s.logs.slice(0, 49)];
       return s;
     });
   }
@@ -518,7 +518,7 @@ export default function KampalaHustleGame() {
       s.ownedAssetIds.splice(idx, 1);
       s.happiness = Math.max(0, s.happiness - asset.mood);
       if (assetId === "muyenga_villa" && s.residenceId === "res_owned") s.residenceId = "res_muzigo";
-      s.logs = [`💸 Sold: ${asset.name} for UGX ${formatUGX(payout)}.`, ...s.logs.slice(0, 49)];
+      s.logs = [`Sold: ${asset.name} for UGX ${formatUGX(payout)}.`, ...s.logs.slice(0, 49)];
       return s;
     });
   }
@@ -528,39 +528,39 @@ export default function KampalaHustleGame() {
     mutate(s => {
       const hack = HACKS.find(h => h.id === hackId);
       if (!hack) return;
-      if (getTotalMoney(s) < hack.cost) { showToast("Not enough funds! 💸", false); return; }
+      if (getTotalMoney(s) < hack.cost) { showToast("Not enough funds!", false); return; }
       Object.assign(s, deductMoney(s, hack.cost));
       pushTxn(s, hack.name, hack.cost, "out");
       if (hack.id === "bribe") {
         s.connections += 1;
-        s.logs = ["🤝 Paid cop bribe: Avoided traffic stress (+1 Connection)", ...s.logs.slice(0, 49)];
+        s.logs = ["Bribe paid: Avoided traffic stress (+1 Connection)", ...s.logs.slice(0, 49)];
       } else if (hack.id === "betting") {
         if (Math.random() < 0.3) {
           const win = hack.cost * 4;
           s.cashWallet += win;
           pushTxn(s, "Nabugabo betting win", win, "in");
           s.happiness = Math.min(100, s.happiness + 20);
-          s.logs = [`⚽ Nabugabo Win! Hit the bet! +UGX ${formatUGX(win)}`, ...s.logs.slice(0, 49)];
+          s.logs = [`Nabugabo Win! Hit the bet! +UGX ${formatUGX(win)}`, ...s.logs.slice(0, 49)];
         } else {
           s.happiness = Math.max(0, s.happiness - 15);
-          s.logs = ["⚽ Nabugabo Loss: Your slip lost in the 90th minute.", ...s.logs.slice(0, 49)];
+          s.logs = ["Nabugabo Loss: Your slip lost in the 90th minute.", ...s.logs.slice(0, 49)];
         }
       } else if (hack.id === "nightlife") {
         s.happiness = Math.min(100, s.happiness + 25);
         s.stress = Math.max(0, s.stress - 20);
         s.connections += 2;
-        s.logs = ["🍻 Kabalagala: Shared drinks with tech managers. +2 connections, mood lifted.", ...s.logs.slice(0, 49)];
+        s.logs = ["Kabalagala: Shared drinks with tech managers. +2 connections, mood lifted.", ...s.logs.slice(0, 49)];
       }
       return s;
     });
   }
 
   function setResidence(id: string) {
-    mutate(s => { s.residenceId = id; s.logs = ["🏠 Accommodation updated.", ...s.logs.slice(0, 49)]; return s; });
+    mutate(s => { s.residenceId = id; s.logs = ["Accommodation updated.", ...s.logs.slice(0, 49)]; return s; });
   }
 
   function setDiet(id: string) {
-    mutate(s => { s.dietId = id; s.logs = ["🍽️ Nutrition standard updated.", ...s.logs.slice(0, 49)]; return s; });
+    mutate(s => { s.dietId = id; s.logs = ["Nutrition standard updated.", ...s.logs.slice(0, 49)]; return s; });
   }
 
   // ── Advance Year ──────────────────────────────────────────────────────────────
@@ -578,10 +578,10 @@ export default function KampalaHustleGame() {
       if (exp > 0) pushTxn(s, `Year ${s.age} living costs`, exp, "out");
       if (net >= 0) {
         s = addMoney(s, net);
-        s.logs = [`💰 Net year gain: +UGX ${formatUGX(net)}`, ...s.logs.slice(0, 49)];
+        s.logs = [`Net year gain: +UGX ${formatUGX(net)}`, ...s.logs.slice(0, 49)];
       } else {
         s = deductMoney(s, Math.abs(net));
-        s.logs = [`⚠️ Cost of living deficit: -UGX ${formatUGX(Math.abs(net))}`, ...s.logs.slice(0, 49)];
+        s.logs = [`Cost of living deficit: -UGX ${formatUGX(Math.abs(net))}`, ...s.logs.slice(0, 49)];
       }
 
       // Age
@@ -597,7 +597,7 @@ export default function KampalaHustleGame() {
       const job = getActiveJob(s);
       if (job) {
         s.stress = Math.min(100, s.stress + Math.floor(job.burnout * 0.5));
-        if (s.stress > 60) { s.health = Math.max(0, s.health - 12); s.logs = ["🔥 Burnout: extreme stress is damaging vitals.", ...s.logs.slice(0, 49)]; }
+        if (s.stress > 60) { s.health = Math.max(0, s.health - 12); s.logs = ["Burnout: extreme stress is damaging your vitals.", ...s.logs.slice(0, 49)]; }
       } else {
         s.stress = Math.max(0, s.stress - 15);
       }
@@ -686,13 +686,13 @@ export default function KampalaHustleGame() {
   if (phase === "leaderboard") {
     return (
       <View style={[st.root, { backgroundColor: "#0a0f1e" }]}>
-        <GlassHeader title="Kampala Leaderboard 🏆" showBack onBack={() => setPhase("playing")} />
+        <GlassHeader title="Kampala Leaderboard" showBack onBack={() => setPhase("playing")} />
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
           {lbLoading ? (
             <ActivityIndicator color="#f59e0b" style={{ marginTop: 40 }} />
           ) : leaderboard.length === 0 ? (
             <View style={st.emptyLb}>
-              <Text style={{ fontSize: 40 }}>🏙️</Text>
+              <Ionicons name="trophy-outline" size={48} color="rgba(245,158,11,0.4)" />
               <Text style={[st.emptyLbText, { color: "rgba(255,255,255,0.5)" }]}>No rankings yet — be the first!</Text>
             </View>
           ) : leaderboard.map((entry, i) => (
@@ -752,38 +752,44 @@ export default function KampalaHustleGame() {
 
       {/* ── Wallet Row ──────────────────────────────────────────────────────── */}
       <View style={st.walletRow}>
-        <WalletCard emoji="💵" label="Cash" value={`UGX ${formatUGX(gs.cashWallet)}`} color="#f59e0b" />
-        <WalletCard emoji="📱" label="MoMo" value={`UGX ${formatUGX(gs.momoWallet)}`} color="#facc15" />
-        <WalletCard emoji="🏛️" label="Bank" value={`UGX ${formatUGX(gs.bankWallet)}`} color="#34d399" taxFlag={totalMoney > 15_000_000} />
+        <WalletCard icon="cash-outline"         label="Cash" value={`UGX ${formatUGX(gs.cashWallet)}`} color="#f59e0b" />
+        <WalletCard icon="phone-portrait-outline" label="MoMo" value={`UGX ${formatUGX(gs.momoWallet)}`} color="#facc15" />
+        <WalletCard icon="card-outline"          label="Bank" value={`UGX ${formatUGX(gs.bankWallet)}`} color="#34d399" taxFlag={totalMoney > 15_000_000} />
       </View>
 
       {/* ── Vitals ──────────────────────────────────────────────────────────── */}
       <View style={st.vitalsRow}>
-        <VitalBar label="❤️" value={gs.health}   color="#f87171" />
-        <VitalBar label="😊" value={gs.happiness} color="#60a5fa" />
-        <VitalBar label="🔥" value={gs.stress}    color="#fbbf24" invert />
+        <VitalBar icon="heart-outline"  label="Health"   value={gs.health}   color="#f87171" />
+        <VitalBar icon="happy-outline"  label="Mood"     value={gs.happiness} color="#60a5fa" />
+        <VitalBar icon="flame-outline"  label="Stress"   value={gs.stress}    color="#fbbf24" invert />
       </View>
 
       {/* ── Cash flow strip ─────────────────────────────────────────────────── */}
       <View style={st.cashFlowStrip}>
         <View style={st.cashFlowLeft}>
           <Text style={st.cashFlowLabel}>JOB:</Text>
-          <Text style={st.cashFlowJob} numberOfLines={1}>{activeJob?.emoji ?? "😴"} {activeJob?.name ?? "Unemployed"}</Text>
+          <Text style={st.cashFlowJob} numberOfLines={1}>{activeJob?.name ?? "Unemployed"}</Text>
         </View>
         <View style={st.cashFlowRight}>
           <Text style={st.cashIn}>+{formatUGX(income)}</Text>
           <Text style={st.cashOut}>-{formatUGX(expenses)}</Text>
           <View style={st.inflationBadge}>
-            <Text style={st.inflationText}>⚡{gs.inflation.toFixed(1)}x</Text>
+            <Text style={st.inflationText}>{gs.inflation.toFixed(1)}x inflation</Text>
           </View>
         </View>
       </View>
 
       {/* ── Tab nav ─────────────────────────────────────────────────────────── */}
       <View style={st.tabBar}>
-        {([ ["hustle","💼","Hustle"], ["study","🎓","Study"], ["wealth","📈","Wealth"], ["living","🏖️","Living"], ["wallet","💳","Wallet"] ] as [TabId,string,string][]).map(([id,emoji,label]) => (
-          <TouchableOpacity key={id} style={[st.tabBtn, tab === id && st.tabBtnActive]} onPress={() => setTab(id)}>
-            <Text style={st.tabEmoji}>{emoji}</Text>
+        {([
+          ["hustle",  "briefcase-outline",    "Hustle"],
+          ["study",   "school-outline",       "Study"],
+          ["wealth",  "trending-up-outline",  "Wealth"],
+          ["living",  "home-outline",         "Living"],
+          ["wallet",  "wallet-outline",       "Wallet"],
+        ] as [TabId, string, string][]).map(([id, iconName, label]) => (
+          <TouchableOpacity key={id} style={[st.tabBtn, tab === id && st.tabBtnActive]} onPress={() => setTab(id as TabId)}>
+            <Ionicons name={iconName as any} size={16} color={tab === id ? "#f59e0b" : "rgba(255,255,255,0.4)"} />
             <Text style={[st.tabLabel, tab === id && st.tabLabelActive]}>{label}</Text>
           </TouchableOpacity>
         ))}
@@ -797,7 +803,7 @@ export default function KampalaHustleGame() {
       >
         {tab === "hustle" && (
           <>
-            <SectionLabel text="💼 ACTIVE CAREERS" sub="Requres skill + edu to unlock" />
+            <SectionLabel text="ACTIVE CAREERS" sub="Requires skill + edu to unlock" />
             {HUSTLES.map(job => {
               const isCurrent = gs.activeJobId === job.id;
               const meetsEdu = gs.educationLevel >= job.reqEdu;
@@ -806,7 +812,7 @@ export default function KampalaHustleGame() {
               return (
                 <View key={job.id} style={[st.card, isCurrent && { borderColor: "#f59e0b80" }]}>
                   <View style={st.cardTop}>
-                    <Text style={{ fontSize: 30 }}>{job.emoji}</Text>
+                    <CardIcon name={job.icon} />
                     <View style={{ flex: 1, marginLeft: 10 }}>
                       <Text style={st.cardTitle}>{job.name}</Text>
                       <Text style={st.cardGreen}>+UGX {formatUGX(job.baseSalary)} / year</Text>
@@ -829,7 +835,7 @@ export default function KampalaHustleGame() {
                 </View>
               );
             })}
-            <SectionLabel text="🔧 STREET HACKS" sub="Quick one-off plays" />
+            <SectionLabel text="STREET HACKS" sub="Quick one-off plays" />
             {HACKS.map(h => (
               <View key={h.id} style={st.card}>
                 <View style={st.cardTop}>
@@ -856,7 +862,7 @@ export default function KampalaHustleGame() {
 
         {tab === "study" && (
           <>
-            <SectionLabel text="🎓 SELF UPGRADES" sub="Nakawa & Makerere" />
+            <SectionLabel text="SELF UPGRADES" sub="Nakawa & Makerere" />
             {EDUCATION.map(edu => {
               const done = gs.educationLevel >= edu.level;
               const canPay = getTotalMoney(gs) >= edu.cost;
@@ -864,7 +870,7 @@ export default function KampalaHustleGame() {
               return (
                 <View key={edu.id} style={[st.card, done && { borderColor: "#6366f180" }]}>
                   <View style={st.cardTop}>
-                    <Text style={{ fontSize: 28 }}>🎓</Text>
+                    <CardIcon name="school-outline" color="#818cf8" />
                     <View style={{ flex: 1, marginLeft: 10 }}>
                       <Text style={st.cardTitle}>{edu.name}</Text>
                       <Text style={st.cardIndigo}>Tuition: UGX {formatUGX(edu.cost)}</Text>
@@ -875,7 +881,7 @@ export default function KampalaHustleGame() {
                   <View style={st.cardFooter}>
                     <Text style={st.cardGreen}>+{edu.skillGain}% Skill · +{edu.level * 50} Nexa XP</Text>
                     {done
-                      ? <Text style={st.cardMeta}>Completed ✅</Text>
+                      ? <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><Ionicons name="checkmark-circle-outline" size={12} color="#34d399" /><Text style={[st.cardMeta, { color: "#34d399" }]}>Completed</Text></View>
                       : <TouchableOpacity
                           style={[st.btnPrimary, (!canPay || !isNext) && st.btnDisabled]}
                           disabled={!canPay || !isNext}
@@ -890,7 +896,10 @@ export default function KampalaHustleGame() {
             })}
             {/* Skills progress */}
             <View style={[st.card, { gap: 10 }]}>
-              <Text style={st.cardTitle}>📊 Your Progress</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Ionicons name="stats-chart-outline" size={14} color="#818cf8" />
+                <Text style={st.cardTitle}>Your Progress</Text>
+              </View>
               <StatBar label="Skills" value={gs.skills} color="#6366f1" />
               <StatBar label="Connections" value={Math.min(100, gs.connections * 10)} color="#0ea5e9" />
               <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
@@ -903,14 +912,14 @@ export default function KampalaHustleGame() {
 
         {tab === "wealth" && (
           <>
-            <SectionLabel text="📈 ASSETS & INVESTMENTS" sub="Build your portfolio" />
+            <SectionLabel text="ASSETS & INVESTMENTS" sub="Build your portfolio" />
             {WEALTH.map(asset => {
               const count = gs.ownedAssetIds.filter(id => id === asset.id).length;
               const canPay = getTotalMoney(gs) >= asset.cost;
               return (
                 <View key={asset.id} style={[st.card, count > 0 && { borderColor: "#34d39980" }]}>
                   <View style={st.cardTop}>
-                    <Text style={{ fontSize: 28 }}>🏡</Text>
+                    <CardIcon name="home-outline" color="#34d399" />
                     <View style={{ flex: 1, marginLeft: 10 }}>
                       <Text style={st.cardTitle}>{asset.name}</Text>
                       <Text style={st.cardGreen}>Price: UGX {formatUGX(asset.cost)}</Text>
@@ -946,14 +955,14 @@ export default function KampalaHustleGame() {
 
         {tab === "living" && (
           <>
-            <SectionLabel text="🏠 HOUSING" sub="Where you lay your head" />
+            <SectionLabel text="HOUSING" sub="Where you lay your head" />
             {LIFESTYLES.filter(l => l.cat === "res").map(item => {
               if (item.id === "res_owned" && !gs.ownedAssetIds.includes("muyenga_villa")) return null;
               const isCurrent = gs.residenceId === item.id;
               return (
                 <View key={item.id} style={[st.card, isCurrent && { borderColor: "#f59e0b80" }]}>
                   <View style={st.cardTop}>
-                    <Text style={{ fontSize: 26 }}>{item.emoji}</Text>
+                    <CardIcon name={item.icon} />
                     <View style={{ flex: 1, marginLeft: 10 }}>
                       <Text style={st.cardTitle}>{item.name}</Text>
                       <Text style={st.cardMeta}>{item.cost === 0 ? "FREE" : `UGX ${formatUGX(item.cost)}/yr`}</Text>
@@ -972,13 +981,13 @@ export default function KampalaHustleGame() {
               );
             })}
 
-            <SectionLabel text="🍽️ NUTRITION" sub="What fuels your hustle" />
+            <SectionLabel text="NUTRITION" sub="What fuels your hustle" />
             {LIFESTYLES.filter(l => l.cat === "diet").map(item => {
               const isCurrent = gs.dietId === item.id;
               return (
                 <View key={item.id} style={[st.card, isCurrent && { borderColor: "#6366f180" }]}>
                   <View style={st.cardTop}>
-                    <Text style={{ fontSize: 26 }}>{item.emoji}</Text>
+                    <CardIcon name={item.icon} color="#60a5fa" />
                     <View style={{ flex: 1, marginLeft: 10 }}>
                       <Text style={st.cardTitle}>{item.name}</Text>
                       <Text style={st.cardMeta}>UGX {formatUGX(item.cost)}/yr</Text>
@@ -1002,7 +1011,7 @@ export default function KampalaHustleGame() {
             })}
 
             {/* Event log */}
-            <SectionLabel text="📋 KAMPALA ALERT FEED" sub="" />
+            <SectionLabel text="ALERT FEED" sub="" />
             <View style={st.logBox}>
               {gs.logs.slice(0, 8).map((log, i) => (
                 <View key={i} style={[st.logItem, {
@@ -1019,34 +1028,33 @@ export default function KampalaHustleGame() {
 
         {tab === "wallet" && (
           <>
-            <SectionLabel text="💳 WALLET BALANCES" sub="Cash · MoMo · Bank" />
+            <SectionLabel text="WALLET BALANCES" sub="Cash · MoMo · Bank" />
             <View style={st.card}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                <Text style={st.cardTitle}>💵 Cash</Text>
-                <Text style={[st.cardGold, { fontSize: 13 }]}>UGX {formatUGX(gs.cashWallet)}</Text>
-              </View>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                <Text style={st.cardTitle}>📱 MoMo</Text>
-                <Text style={[st.cardGold, { fontSize: 13 }]}>UGX {formatUGX(gs.momoWallet)}</Text>
-              </View>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                <Text style={st.cardTitle}>🏛️ Bank</Text>
-                <Text style={[st.cardGold, { fontSize: 13 }]}>UGX {formatUGX(gs.bankWallet)}</Text>
-              </View>
+              {([
+                { icon: "cash-outline",          label: "Cash", val: gs.cashWallet, color: "#f59e0b" },
+                { icon: "phone-portrait-outline", label: "MoMo", val: gs.momoWallet, color: "#facc15" },
+                { icon: "card-outline",           label: "Bank", val: gs.bankWallet, color: "#34d399" },
+              ] as { icon: string; label: string; val: number; color: string }[]).map(row => (
+                <View key={row.label} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <Ionicons name={row.icon as any} size={14} color={row.color} />
+                  <Text style={[st.cardTitle, { flex: 1 }]}>{row.label}</Text>
+                  <Text style={[st.cardGold, { fontSize: 13, color: row.color }]}>UGX {formatUGX(row.val)}</Text>
+                </View>
+              ))}
               <View style={[st.cardFooter, { marginTop: 4 }]}>
                 <Text style={st.cardMeta}>TOTAL NET WORTH</Text>
                 <Text style={[st.cardGreen, { fontSize: 13 }]}>UGX {formatUGX(getTotalMoney(gs))}</Text>
               </View>
             </View>
 
-            <SectionLabel text="📜 TRANSACTION HISTORY" sub={`${gs.txns.length} entries`} />
+            <SectionLabel text="TRANSACTION HISTORY" sub={`${gs.txns.length} entries`} />
             {gs.txns.map((tx) => (
               <View key={tx.id} style={[st.card, { paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: 10 }]}>
                 <View style={[
                   st.txIcon,
                   { backgroundColor: tx.type === "in" ? "#34d39920" : "#f8717120" },
                 ]}>
-                  <Text style={{ fontSize: 14 }}>{tx.type === "in" ? "⬆️" : "⬇️"}</Text>
+                  <Ionicons name={tx.type === "in" ? "arrow-up-outline" : "arrow-down-outline"} size={16} color={tx.type === "in" ? "#34d399" : "#f87171"} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[st.cardTitle, { fontSize: 11 }]}>{tx.label}</Text>
@@ -1059,8 +1067,8 @@ export default function KampalaHustleGame() {
             ))}
             {gs.txns.length === 0 && (
               <View style={[st.card, { alignItems: "center", paddingVertical: 24 }]}>
-                <Text style={{ fontSize: 32, marginBottom: 8 }}>📭</Text>
-                <Text style={st.cardMeta}>No transactions yet. Advance a year to start!</Text>
+                <Ionicons name="file-tray-outline" size={36} color="rgba(255,255,255,0.2)" style={{ marginBottom: 8 }} />
+                <Text style={st.cardMeta}>No transactions yet. Advance a year to start.</Text>
               </View>
             )}
           </>
@@ -1071,7 +1079,7 @@ export default function KampalaHustleGame() {
       <View style={[st.bottomBar, { paddingBottom: insets.bottom + 6 }]}>
         <TouchableOpacity style={st.advanceBtn} onPress={advanceYear} activeOpacity={0.85}>
           <LinearGradient colors={["#f59e0b", "#eab308"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.advanceBtnGrad}>
-            <Text style={st.advanceBtnText}>⏩  ADVANCE YEAR (HUSTLE!)</Text>
+            <Text style={st.advanceBtnText}>ADVANCE YEAR — HUSTLE!</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -1098,8 +1106,10 @@ export default function KampalaHustleGame() {
             {crisis && (
               <>
                 <View style={st.crisisHeader}>
-                  <View style={st.crisisTagBadge}><Text style={st.crisisTag}>⚠️ KAMPALA CRISIS</Text></View>
-                  <Text style={{ fontSize: 36 }}>{crisis.emoji}</Text>
+                  <View style={st.crisisTagBadge}><Text style={st.crisisTag}>KAMPALA CRISIS</Text></View>
+                  <View style={st.crisisIconWrap}>
+                    <Ionicons name={crisis.icon as any} size={24} color="#f87171" />
+                  </View>
                 </View>
                 <Text style={st.crisisTitle}>{crisis.title}</Text>
                 <Text style={st.crisisDesc}>{crisis.desc}</Text>
@@ -1122,7 +1132,7 @@ export default function KampalaHustleGame() {
         <View style={st.endOverlay}>
           <View style={st.endPanel}>
             <LinearGradient colors={["#f59e0b", "#d97706"]} style={st.endIcon}>
-              <Text style={{ fontSize: 32 }}>{endReason === "health" ? "💀" : "👴🏽"}</Text>
+              <Ionicons name={endReason === "health" ? "heart-dislike-outline" : "ribbon-outline"} size={32} color="#0a0f1e" />
             </LinearGradient>
             <Text style={st.endTitle}>{endReason === "health" ? "VITALS FAILURE" : "HUSTLE COMPLETED"}</Text>
             <Text style={st.endSub}>{endReason === "health" ? "You collapsed under the pressure of Kampala life." : `Congratulations! You hustled to age ${gs.age}.`}</Text>
@@ -1138,13 +1148,13 @@ export default function KampalaHustleGame() {
 
             {endReason === "retirement" && (
               <View style={st.endAcoin}>
-                <Text style={st.endAcoinText}>🎉 Retired! +500 Nexa XP awarded!</Text>
+                <Text style={st.endAcoinText}>Retired! +500 Nexa XP awarded.</Text>
               </View>
             )}
 
             <View style={{ flexDirection: "row", gap: 10 }}>
               <TouchableOpacity style={[st.endBtn, { flex: 1, backgroundColor: "#1e293b" }]} onPress={() => { setEndVisible(false); openLeaderboard(); }}>
-                <Text style={[st.endBtnText, { color: "#f59e0b" }]}>🏆 Rankings</Text>
+                <Text style={[st.endBtnText, { color: "#f59e0b" }]}>Rankings</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[st.endBtn, { flex: 1, backgroundColor: "#f59e0b" }]} onPress={newGame}>
                 <Text style={[st.endBtnText, { color: "#0a0f1e" }]}>Hustle Again</Text>
@@ -1159,25 +1169,27 @@ export default function KampalaHustleGame() {
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
-function WalletCard({ emoji, label, value, color, taxFlag }: { emoji: string; label: string; value: string; color: string; taxFlag?: boolean }) {
+function WalletCard({ icon, label, value, color, taxFlag }: { icon: string; label: string; value: string; color: string; taxFlag?: boolean }) {
   return (
     <View style={st.walletCard}>
       {taxFlag && <View style={st.taxFlag} />}
-      <Text style={st.walletEmoji}>{emoji}</Text>
+      <Ionicons name={icon as any} size={12} color={color} />
       <Text style={st.walletLabel}>{label}</Text>
       <Text style={[st.walletValue, { color }]}>{value}</Text>
     </View>
   );
 }
 
-function VitalBar({ label, value, color, invert }: { label: string; value: number; color: string; invert?: boolean }) {
+function VitalBar({ icon, label, value, color, invert }: { icon: string; label: string; value: number; color: string; invert?: boolean }) {
   const pct = Math.min(100, Math.max(0, value));
-  const displayPct = invert ? pct : pct;
   return (
     <View style={st.vitalItem}>
-      <Text style={st.vitalLabel}>{label} {pct}%</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginBottom: 3 }}>
+        <Ionicons name={icon as any} size={8} color={color} />
+        <Text style={st.vitalLabel}>{label} {pct}%</Text>
+      </View>
       <View style={st.vitalTrack}>
-        <View style={[st.vitalFill, { width: `${displayPct}%` as any, backgroundColor: color }]} />
+        <View style={[st.vitalFill, { width: `${pct}%` as any, backgroundColor: color }]} />
       </View>
     </View>
   );
@@ -1202,6 +1214,14 @@ function SectionLabel({ text, sub }: { text: string; sub?: string }) {
     <View style={st.sectionLabel}>
       <Text style={st.sectionLabelText}>{text}</Text>
       {sub ? <Text style={st.sectionLabelSub}>{sub}</Text> : null}
+    </View>
+  );
+}
+
+function CardIcon({ name, color = "#f59e0b" }: { name: string; color?: string }) {
+  return (
+    <View style={st.cardIconWrap}>
+      <Ionicons name={name as any} size={20} color={color} />
     </View>
   );
 }
@@ -1239,6 +1259,7 @@ const st = StyleSheet.create({
   walletValue: { fontFamily: "Inter_700Bold", fontSize: 10, marginTop: 3 },
   taxFlag: { position: "absolute", top: 4, right: 4, width: 6, height: 6, borderRadius: 3, backgroundColor: "#f87171" },
   txIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  cardIconWrap: { width: 42, height: 42, backgroundColor: "#1e293b", borderRadius: 12, alignItems: "center", justifyContent: "center" },
 
   // Vitals
   vitalsRow: { flexDirection: "row", gap: 8, paddingHorizontal: 10, paddingBottom: 8, backgroundColor: "#060d1a", width: "100%" },
@@ -1262,7 +1283,6 @@ const st = StyleSheet.create({
   tabBar: { flexDirection: "row", backgroundColor: "#0f172a", paddingHorizontal: 8, paddingVertical: 6, gap: 4, borderBottomWidth: 0.5, borderBottomColor: "rgba(255,255,255,0.06)", width: "100%" },
   tabBtn: { flex: 1, alignItems: "center", paddingVertical: 7, borderRadius: 10 },
   tabBtnActive: { backgroundColor: "#1e293b" },
-  tabEmoji: { fontSize: 14 },
   tabLabel: { fontFamily: "Inter_600SemiBold", fontSize: 9, color: "rgba(255,255,255,0.4)", marginTop: 2 },
   tabLabelActive: { color: "#f59e0b" },
 
@@ -1322,6 +1342,7 @@ const st = StyleSheet.create({
   crisisHandle: { width: 40, height: 4, backgroundColor: "#334155", borderRadius: 2, alignSelf: "center", marginBottom: 4 },
   crisisHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   crisisTagBadge: { backgroundColor: "#f8717120", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  crisisIconWrap: { width: 48, height: 48, backgroundColor: "#f8717115", borderRadius: 14, alignItems: "center", justifyContent: "center" },
   crisisTag: { fontFamily: "Inter_700Bold", fontSize: 9, color: "#f87171", textTransform: "uppercase", letterSpacing: 0.5 },
   crisisTitle: { fontFamily: "Inter_700Bold", fontSize: 17, color: "#f8fafc" },
   crisisDesc: { fontFamily: "Inter_400Regular", fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 20 },
