@@ -1,7 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  Animated, Platform, Pressable, StyleSheet, Text, View,
-} from "react-native";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -38,17 +36,17 @@ export default function GamesScreen() {
 
         {/* Hero */}
         <LinearGradient
-          colors={["#0f172a", "#1e1b4b", "#0f172a"]}
+          colors={["#0a0f1e", "#1c1100", "#0a0f1e"]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={s.hero}
         >
           <View style={s.heroOrb1} />
           <View style={s.heroOrb2} />
-          <Text style={s.heroEmoji}>🌍</Text>
-          <Text style={s.heroTitle}>LIFE EARTH</Text>
-          <Text style={s.heroSub}>The Advanced Human Life Simulation</Text>
+          <Text style={s.heroEmoji}>🏙️</Text>
+          <Text style={s.heroTitle}>KAMPALA HUSTLE</Text>
+          <Text style={s.heroSub}>Pro Edition · Life Simulation</Text>
           <Text style={s.heroTagline}>
-            One decision changes everything. Every path is different. No two lives are the same.
+            Born in Kampala with UGX 150k. Grind your way from street hustler to coffee estate tycoon — or collapse trying.
           </Text>
         </LinearGradient>
 
@@ -56,11 +54,11 @@ export default function GamesScreen() {
         <Pressable
           onPressIn={onPressIn}
           onPressOut={onPressOut}
-          onPress={() => router.push({ pathname: "/games/play", params: { id: "lifesim" } } as any)}
+          onPress={() => router.push({ pathname: "/games/play", params: { id: "kampala" } } as any)}
         >
           <Animated.View style={{ transform: [{ scale }] }}>
             <LinearGradient
-              colors={["#0f172a", "#1e293b"]}
+              colors={["#0f1a00", "#1c2400"]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
               style={s.card}
             >
@@ -69,29 +67,28 @@ export default function GamesScreen() {
                 <View style={s.liveDot} />
                 <Text style={s.liveText}>LIVE</Text>
                 {playerCount !== null && (
-                  <Text style={s.liveCount}>{playerCount.toLocaleString()} playing</Text>
+                  <Text style={s.liveCount}>{playerCount.toLocaleString()} hustlers</Text>
                 )}
               </View>
 
               {/* Card top */}
               <View style={s.cardTop}>
-                <LinearGradient colors={["#1e40af", "#7c3aed"]} style={s.cardIcon}>
-                  <Text style={{ fontSize: 30 }}>🌍</Text>
+                <LinearGradient colors={["#d97706", "#f59e0b"]} style={s.cardIcon}>
+                  <Text style={{ fontSize: 30 }}>🏙️</Text>
                 </LinearGradient>
                 <View style={{ flex: 1 }}>
-                  <Text style={s.cardTitle}>LIFE EARTH</Text>
-                  <Text style={s.cardSub}>Mind-Based Life Simulation</Text>
+                  <Text style={s.cardTitle}>KAMPALA HUSTLE</Text>
+                  <Text style={s.cardSub}>Ugandan Life Simulation · Pro Edition</Text>
                 </View>
               </View>
 
-              {/* Description */}
               <Text style={s.cardDesc}>
-                Born anywhere on Earth. Every decision matters. Your choices unlock and lock future paths — the game never ends and never repeats.
+                Start at age 18 with nothing. Get a boda, study at Makerere, invest in coffee estates, dodge the URA, and retire rich — or die trying.
               </Text>
 
               {/* Feature pills */}
               <View style={s.pillRow}>
-                {["🧠 Mind-Based", "♾️ Endless", "🔗 Branching Paths", "🏆 Live Rankings"].map(p => (
+                {["🏍️ Boda Hustle", "🎓 Makerere", "☕ Coffee Trade", "🏆 Live Rankings", "💰 ACoin Rewards"].map(p => (
                   <View key={p} style={s.pill}>
                     <Text style={s.pillText}>{p}</Text>
                   </View>
@@ -100,15 +97,14 @@ export default function GamesScreen() {
 
               <View style={s.divider} />
 
-              {/* CTA */}
               <View style={s.cardFooter}>
                 <View style={s.cardFooterLeft}>
-                  <Text style={s.cardFooterLabel}>Every session is different</Text>
-                  <Text style={s.cardFooterSub}>No two players share the same life</Text>
+                  <Text style={s.cardFooterLabel}>Every hustle is different</Text>
+                  <Text style={s.cardFooterSub}>Your real profile · Saves progress</Text>
                 </View>
                 <View style={s.cardCta}>
                   <Text style={s.cardCtaText}>Play</Text>
-                  <Ionicons name="arrow-forward" size={14} color="#fff" />
+                  <Ionicons name="arrow-forward" size={14} color="#0a0f1e" />
                 </View>
               </View>
             </LinearGradient>
@@ -118,9 +114,9 @@ export default function GamesScreen() {
         {/* Info row */}
         <View style={s.infoRow}>
           {[
-            { icon: "🎯", label: "Consequence", sub: "Every choice locks & unlocks paths" },
-            { icon: "♾️", label: "Endless", sub: "The game never ends" },
-            { icon: "🌍", label: "Real World", sub: "20+ countries, 7 family classes" },
+            { icon: "⚡", label: "Inflation", sub: "Real Kampala economy" },
+            { icon: "🤝", label: "Connections", sub: "Network to survive" },
+            { icon: "🏆", label: "ACoin Rewards", sub: "Earn on milestones" },
           ].map(item => (
             <View key={item.label} style={[s.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Text style={s.infoIcon}>{item.icon}</Text>
@@ -140,14 +136,14 @@ const s = StyleSheet.create({
   inner: { flex: 1, padding: 16, gap: 14 },
 
   hero: { borderRadius: 22, padding: 26, alignItems: "center", overflow: "hidden", position: "relative", gap: 6 },
-  heroOrb1: { position: "absolute", width: 200, height: 200, borderRadius: 100, backgroundColor: "#3730a320", top: -70, right: -50 },
-  heroOrb2: { position: "absolute", width: 150, height: 150, borderRadius: 75, backgroundColor: "#7c3aed20", bottom: -50, left: -30 },
+  heroOrb1: { position: "absolute", width: 200, height: 200, borderRadius: 100, backgroundColor: "#d9770620", top: -70, right: -50 },
+  heroOrb2: { position: "absolute", width: 150, height: 150, borderRadius: 75, backgroundColor: "#f59e0b15", bottom: -50, left: -30 },
   heroEmoji: { fontSize: 44 },
-  heroTitle: { fontSize: 24, fontFamily: "Inter_700Bold", color: "#fff", letterSpacing: 4 },
-  heroSub: { fontSize: 12, fontFamily: "Inter_600SemiBold", color: "rgba(255,255,255,0.55)", letterSpacing: 0.5 },
+  heroTitle: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#f8fafc", letterSpacing: 3 },
+  heroSub: { fontSize: 11, fontFamily: "Inter_600SemiBold", color: "#f59e0b", letterSpacing: 0.5 },
   heroTagline: { fontSize: 12, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.45)", textAlign: "center", lineHeight: 18, maxWidth: 280, marginTop: 4 },
 
-  card: { borderRadius: 22, padding: 18, gap: 12, overflow: "hidden", borderWidth: 0.5, borderColor: "rgba(255,255,255,0.1)" },
+  card: { borderRadius: 22, padding: 18, gap: 12, overflow: "hidden", borderWidth: 0.5, borderColor: "rgba(245,158,11,0.2)" },
   liveBadge: { flexDirection: "row", alignItems: "center", gap: 5, alignSelf: "flex-start", backgroundColor: "rgba(34,197,94,0.15)", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#22c55e" },
   liveText: { fontSize: 9, fontFamily: "Inter_700Bold", color: "#22c55e", letterSpacing: 1 },
@@ -155,19 +151,19 @@ const s = StyleSheet.create({
 
   cardTop: { flexDirection: "row", alignItems: "center", gap: 14 },
   cardIcon: { width: 56, height: 56, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-  cardTitle: { fontSize: 17, fontFamily: "Inter_700Bold", color: "#fff", letterSpacing: 1 },
+  cardTitle: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#f8fafc", letterSpacing: 1 },
   cardSub: { fontSize: 11, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.5)", marginTop: 2 },
   cardDesc: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.65)", lineHeight: 20 },
   pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
-  pill: { backgroundColor: "rgba(255,255,255,0.08)", paddingHorizontal: 9, paddingVertical: 4, borderRadius: 20, borderWidth: 0.5, borderColor: "rgba(255,255,255,0.1)" },
-  pillText: { fontSize: 10, fontFamily: "Inter_500Medium", color: "rgba(255,255,255,0.7)" },
-  divider: { height: 0.5, backgroundColor: "rgba(255,255,255,0.1)" },
+  pill: { backgroundColor: "rgba(245,158,11,0.1)", paddingHorizontal: 9, paddingVertical: 4, borderRadius: 20, borderWidth: 0.5, borderColor: "rgba(245,158,11,0.2)" },
+  pillText: { fontSize: 10, fontFamily: "Inter_500Medium", color: "rgba(245,158,11,0.9)" },
+  divider: { height: 0.5, backgroundColor: "rgba(255,255,255,0.08)" },
   cardFooter: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   cardFooterLeft: { gap: 2 },
   cardFooterLabel: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#fff" },
   cardFooterSub: { fontSize: 11, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.4)" },
-  cardCta: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#2563eb", paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12 },
-  cardCtaText: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#fff" },
+  cardCta: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#f59e0b", paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12 },
+  cardCtaText: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#0a0f1e" },
 
   infoRow: { flexDirection: "row", gap: 10 },
   infoCard: { flex: 1, borderRadius: 14, padding: 12, gap: 4, borderWidth: 0.5, alignItems: "center" },

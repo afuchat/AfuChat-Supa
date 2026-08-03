@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocalSearchParams } from "expo-router";
-import LifeSimGame from "./lifesim";
+import KampalaHustleGame from "./lifesim";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
@@ -10,7 +10,8 @@ export default function PlayRouter() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
 
-  if (id === "lifesim") return <LifeSimGame />;
+  // Both old "lifesim" route and new "kampala" route go to the same game
+  if (id === "kampala" || id === "lifesim") return <KampalaHustleGame />;
 
   return (
     <View style={[s.root, { backgroundColor: colors.background }]}>
