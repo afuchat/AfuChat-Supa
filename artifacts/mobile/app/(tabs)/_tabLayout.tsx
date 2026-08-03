@@ -101,7 +101,7 @@ function CompactTabBar({
   const ACTIVE_ICON    = colors.accent;
   const ACCENT         = colors.accent;
   const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 6;
-  const PILL_H         = 54;
+  const PILL_H         = 62;
 
   const BAR_BG      = isDark ? "#1C1C1E" : "#FFFFFF";
   const BAR_BORDER  = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)";
@@ -162,7 +162,7 @@ function CompactTabBar({
                     focused && { backgroundColor: ACTIVE_WRAP, borderRadius: 18 },
                   ]}
                 >
-                  <Ionicons name={tab.icon as any} size={24} color={iconColor} />
+                  <Ionicons name={tab.icon as any} size={22} color={iconColor} />
                   {/* Unread badge on Chat */}
                   {tab.route === "/(tabs)/chats" && totalUnread > 0 && (
                     <View style={[pill.badge, { backgroundColor: ACCENT }]}>
@@ -172,6 +172,15 @@ function CompactTabBar({
                     </View>
                   )}
                 </View>
+                <Text
+                  style={[
+                    pill.label,
+                    { color: focused ? ACTIVE_ICON : INACTIVE_ICON },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {tab.label}
+                </Text>
               </TouchableOpacity>
             );
           })}
@@ -287,9 +296,16 @@ const pill = StyleSheet.create({
   },
   iconWrap: {
     width: 44,
-    height: 36,
+    height: 30,
     alignItems: "center",
     justifyContent: "center",
+  },
+  label: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.2,
+    marginTop: 1,
+    textTransform: "uppercase",
   },
   fab: {
     position: "absolute",
@@ -393,7 +409,7 @@ export default function TabLayout() {
   const isLoggedIn     = !!session || !!user;
   const prevSessionRef = useRef<Session | null>(null);
   const insets         = useSafeAreaInsets();
-  const PILL_H         = 38;
+  const PILL_H         = 62;
   const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 8;
   const bottomPadding  = isLoggedIn ? PILL_BOTTOM + PILL_H : 0;
 
