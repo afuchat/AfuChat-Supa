@@ -48,7 +48,6 @@ import {
   saveLocalContacts,
   getAllPhonebookNames,
 } from "@/lib/storage/localContacts";
-import { getLocalConversations } from "@/lib/storage/localConversations";
 
 type Contact = {
   id: string;
@@ -86,15 +85,6 @@ async function sendInvite(name: string, phone: string) {
   await Share.share({ message: INVITE_MSG, title: "Join AfuChat" });
 }
 
-type RecentPartner = {
-  id: string;
-  display_name: string;
-  avatar_url: string | null;
-  is_verified: boolean;
-  is_organization_verified: boolean;
-  chatId: string;
-  last_message_at: string;
-};
 
 type SearchResult = Contact & { _searching?: boolean };
 
@@ -138,7 +128,7 @@ export default function NewChatScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState("");
   const [phonebookNames, setPhonebookNames] = useState<Map<string, string>>(new Map());
-  const [recents, setRecents] = useState<RecentPartner[]>([]);
+  const [phoneOnAfu, setPhoneOnAfu] = useState<Contact[]>([]);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [phoneNotAfu, setPhoneNotAfu] = useState<NonAfuContact[]>([]);
@@ -206,30 +196,6 @@ export default function NewChatScreen() {
     [user]
   );
 
-  const loadRecents = useCallback(async () => {
-    if (!user) return;
-    const local = await getLocalConversations();
-    const dms = local
-      .filter((c: any) => !c.is_group && !c.is_channel && c.other_id && c.other_id !== user.id)
-      .sort(
-        (a: any, b: any) =>
-          new Date(b.last_message_at || 0).getTime() -
-          new Date(a.last_message_at || 0).getTime()
-      )
-      .slice(0, 6);
-
-    setRecents(
-      dms.map((c: any) => ({
-        id: c.other_id,
-        display_name: c.other_display_name || c.name || "Unknown",
-        avatar_url: c.other_avatar || null,
-        is_verified: c.is_verified || false,
-        is_organization_verified: c.is_organization_verified || false,
-        chatId: c.id,
-        last_message_at: c.last_message_at,
-      }))
-    );
-  }, [user]);
 
   const loadGroupsAndChannels = useCallback(async () => {
     if (!user) return;
@@ -291,13 +257,32 @@ export default function NewChatScreen() {
       const phones = Array.from(phoneMap.keys());
       if (phones.length === 0) return;
 
+      const foundProfiles: Contact[] = [];
       const foundPhones = new Set<string>();
       for (let i = 0; i < phones.length; i += 100) {
         const { data: profiles } = await supabase
-          .from("profiles").select("phone_number")
-          .in("phone_number", phones.slice(i, i + 100)).neq("id", user?.id || "");
-        if (profiles) profiles.forEach((p: any) => foundPhones.add(p.phone_number));
+          .from("profiles")
+          .select("id, display_name, handle, avatar_url, is_verified, is_organization_verified, bio, phone_number")
+          .in("phone_number", phones.slice(i, i + 100))
+          .neq("id", user?.id || "");
+        if (profiles) {
+          profiles.forEach((p: any) => {
+            foundPhones.add(p.phone_number);
+            foundProfiles.push({
+              id: p.id,
+              display_name: phonebookNames.get(p.id) || phoneMap.get(p.phone_number) || p.display_name,
+              handle: p.handle,
+              avatar_url: p.avatar_url,
+              is_verified: !!p.is_verified,
+              is_organization_verified: !!p.is_organization_verified,
+              bio: p.bio ?? null,
+            });
+          });
+        }
       }
+      foundProfiles.sort((a, b) => a.display_name.localeCompare(b.display_name));
+      setPhoneOnAfu(foundProfiles);
+
       const notFound: NonAfuContact[] = [];
       for (const [phone, name] of phoneMap.entries()) {
         if (!foundPhones.has(phone)) notFound.push({ name, phone });
@@ -308,11 +293,9 @@ export default function NewChatScreen() {
 
   useEffect(() => {
     loadContacts();
-    loadRecents();
     loadGroupsAndChannels();
     loadPhoneContacts();
-
-  }, [loadContacts, loadRecents, loadGroupsAndChannels, loadPhoneContacts]);
+  }, [loadContacts, loadGroupsAndChannels, loadPhoneContacts]);
 
   useEffect(() => {
     if (!query.trim()) {
@@ -582,7 +565,6 @@ export default function NewChatScreen() {
                   onRefresh={() => {
                     setRefreshing(true);
                     loadContacts();
-                    loadRecents();
                   }}
                   tintColor={accent}
                 />
@@ -592,16 +574,13 @@ export default function NewChatScreen() {
                   colors={colors}
                   accent={accent}
                   loading={loading}
-                  recents={recents}
+                  phoneOnAfu={phoneOnAfu}
                   selected={selected}
-                  onRecentPress={(r) => {
+                  onPhoneContactPress={(c) => {
                     if (selected.size > 0) {
-                      toggleSelect(r as any);
+                      toggleSelect(c);
                     } else {
-                      router.replace({
-                        pathname: "/chat/[id]",
-                        params: { id: r.chatId },
-                      });
+                      openChat(c.id);
                     }
                   }}
                   phonebookNames={phonebookNames}
@@ -765,9 +744,9 @@ function ListHeader({
   colors,
   accent,
   loading,
-  recents,
+  phoneOnAfu,
   selected,
-  onRecentPress,
+  onPhoneContactPress,
   phonebookNames,
   contactCount,
   groups,
@@ -778,9 +757,9 @@ function ListHeader({
   colors: any;
   accent: string;
   loading: boolean;
-  recents: RecentPartner[];
+  phoneOnAfu: Contact[];
   selected: Map<string, Contact>;
-  onRecentPress: (r: RecentPartner) => void;
+  onPhoneContactPress: (c: Contact) => void;
   phonebookNames: Map<string, string>;
   contactCount: number;
   groups: GroupItem[];
@@ -813,6 +792,40 @@ function ListHeader({
           colors={colors}
         />
       </View>
+
+      {/* Phone contacts on platform — always at top */}
+      {!loading && phoneOnAfu.length > 0 && (
+        <View>
+          <View style={[styles.sectionHeader, { backgroundColor: colors.backgroundSecondary }]}>
+            <Text style={[styles.sectionTitle, { color: accent }]}>FROM YOUR CONTACTS</Text>
+          </View>
+          {phoneOnAfu.map((c, i) => (
+            <View key={c.id}>
+              <TouchableOpacity
+                style={[styles.contactRow, { backgroundColor: colors.surface }]}
+                onPress={() => onPhoneContactPress(c)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.avatarWrap}>
+                  <Avatar uri={c.avatar_url} name={c.display_name} size={48} />
+                </View>
+                <View style={styles.contactContent}>
+                  <View style={styles.nameRow}>
+                    <Text style={[styles.contactName, { color: colors.text }]} numberOfLines={1}>
+                      {c.display_name}
+                    </Text>
+                    {c.is_verified && <VerifiedBadge isVerified size={13} />}
+                  </View>
+                  <Text style={[styles.contactHandle, { color: colors.textMuted }]} numberOfLines={1}>
+                    @{c.handle}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+              {i < phoneOnAfu.length - 1 && <Separator indent={70} />}
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* Groups */}
       {groups.length > 0 && (
@@ -878,62 +891,6 @@ function ListHeader({
         <View style={{ paddingTop: 8 }}>
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <ContactRowSkeleton key={i} />
-          ))}
-        </View>
-      )}
-
-      {/* Recents */}
-      {!loading && recents.length > 0 && (
-        <View>
-          <View
-            style={[
-              styles.sectionHeader,
-              { backgroundColor: colors.backgroundSecondary },
-            ]}
-          >
-            <Text style={[styles.sectionTitle, { color: accent }]}>
-              RECENT
-            </Text>
-          </View>
-          {recents.map((r, i) => (
-            <View key={`${r.id}-${i}`}>
-              <TouchableOpacity
-                style={[styles.contactRow, { backgroundColor: colors.surface }]}
-                onPress={() => onRecentPress(r)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.avatarWrap}>
-                  <Avatar
-                    uri={r.avatar_url}
-                    name={r.display_name}
-                    size={48}
-                  />
-                </View>
-                <View style={styles.contactContent}>
-                  <View style={styles.nameRow}>
-                    <Text
-                      style={[styles.contactName, { color: colors.text }]}
-                      numberOfLines={1}
-                    >
-                      {phonebookNames.get(r.id) || r.display_name}
-                    </Text>
-                    {r.is_verified && <VerifiedBadge isVerified size={13} />}
-                  </View>
-                  <Text
-                    style={[styles.contactHandle, { color: colors.textMuted }]}
-                    numberOfLines={1}
-                  >
-                    {r.display_name !== (phonebookNames.get(r.id) || r.display_name) ? r.display_name : "Recent chat"}
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chatbubble-ellipses"
-                  size={18}
-                  color={colors.textMuted}
-                />
-              </TouchableOpacity>
-              {i < recents.length - 1 && <Separator indent={70} />}
-            </View>
           ))}
         </View>
       )}
