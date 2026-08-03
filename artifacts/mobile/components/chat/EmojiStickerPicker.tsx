@@ -125,7 +125,7 @@ const CAT_LABELS: Record<string, string> = {
   symbols: "Symbols",             flags: "Flags",
 };
 
-type EmojiEntry = { emoji: string; name: string };
+type EmojiEntry = { emoji: string; name: string; keywords?: string[] };
 type FlatHeader = { kind: "header"; title: string; key: string };
 type FlatRow    = { kind: "row"; emojis: EmojiEntry[]; key: string };
 type FlatItem   = FlatHeader | FlatRow;
@@ -157,12 +157,20 @@ for (const row of FLAT_ROWS) {
 
 type EmojiMode = "browse" | "history" | "search";
 
-function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (e: string) => void }) {
+function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange }: {
+  onEmojiSelected: (e: string) => void;
+  onSearchModeChange?: (active: boolean) => void;
+}) {
   const { colors, isDark } = useTheme();
   const glass = glassTokens(isDark);
   const { accent } = useAppAccent();
 
-  const [mode,           setMode]           = useState<EmojiMode>("browse");
+  const setMode = useCallback((next: EmojiMode) => {
+    _setMode(next);
+    onSearchModeChange?.(next === "search");
+  }, [onSearchModeChange]);
+
+  const [mode,           _setMode]          = useState<EmojiMode>("browse");
   const [searchQuery,    setSearchQuery]    = useState("");
   // Debounced query — filtering only fires after user pauses typing (prevents JS-thread freeze)
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -189,12 +197,14 @@ function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (e: string) =>
     debounceTimer.current = setTimeout(() => setDebouncedQuery(text), 150);
   }, []);
 
-  // Emoji names use underscores — normalize before matching so "smiling face" hits "smiling_face"
+  // Search name + keywords so "happy", "sad", "love" etc. all resolve correctly
   const searchResults: EmojiEntry[] = debouncedQuery.trim()
     ? ALL_EMOJIS.filter((e) => {
-        const normalized = e.name.replace(/_/g, " ").toLowerCase();
         const q = debouncedQuery.trim().toLowerCase();
-        return normalized.includes(q) || e.emoji === q;
+        if (e.emoji === q) return true;
+        if (e.name.toLowerCase().includes(q)) return true;
+        if (e.keywords?.some((k) => k.replace(/_/g, " ").toLowerCase().includes(q))) return true;
+        return false;
       })
     : [];
 
@@ -433,12 +443,20 @@ for (const row of STICKER_FLAT) {
 
 type StickerMode = "browse" | "history" | "search";
 
-function StickerScrollPanel({ onSendSticker }: { onSendSticker: (s: string) => void }) {
+function StickerScrollPanel({ onSendSticker, onSearchModeChange }: {
+  onSendSticker: (s: string) => void;
+  onSearchModeChange?: (active: boolean) => void;
+}) {
   const { colors, isDark } = useTheme();
   const glass = glassTokens(isDark);
   const { accent } = useAppAccent();
 
-  const [mode,         setMode]         = useState<StickerMode>("browse");
+  const setMode = useCallback((next: StickerMode) => {
+    _setMode(next);
+    onSearchModeChange?.(next === "search");
+  }, [onSearchModeChange]);
+
+  const [mode,         _setMode]        = useState<StickerMode>("browse");
   const [searchQuery,  setSearchQuery]  = useState("");
   const [historyItems, setHistoryItems] = useState<string[]>([]);
   const [activeCat,    setActiveCat]    = useState(0);
@@ -780,6 +798,8 @@ interface Props {
   onSendGif?: (url: string) => void;
   onDelete?: () => void;
   onClose?: () => void;
+  /** Called with true when any search bar opens inside the picker, false when closed */
+  onSearchModeChange?: (active: boolean) => void;
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -790,6 +810,7 @@ export default function EmojiStickerPicker({
   onSendSticker,
   onSendGif,
   onDelete,
+  onSearchModeChange,
 }: Props) {
   const { colors, isDark } = useTheme();
   const { accent } = useAppAccent();
@@ -804,9 +825,9 @@ export default function EmojiStickerPicker({
 
       {/* Content area */}
       <View style={{ flex: 1 }}>
-        {tab === "emoji"    && <EmojiScrollPanel onEmojiSelected={onEmojiSelected} />}
+        {tab === "emoji"    && <EmojiScrollPanel onEmojiSelected={onEmojiSelected} onSearchModeChange={onSearchModeChange} />}
         {tab === "gifs"     && <GifPanel onSendGif={onSendGif ?? (() => {})} />}
-        {tab === "stickers" && <StickerScrollPanel onSendSticker={onSendSticker} />}
+        {tab === "stickers" && <StickerScrollPanel onSendSticker={onSendSticker} onSearchModeChange={onSearchModeChange} />}
       </View>
 
       {/* ── Floating pill row ── */}

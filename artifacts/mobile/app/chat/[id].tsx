@@ -1961,6 +1961,7 @@ function ChatScreen() {
   const [envelopeMsg, setEnvelopeMsg] = useState("");
   const [envelopeCount, setEnvelopeCount] = useState("1");
   const [showEmojiStickerPicker, setShowEmojiStickerPicker] = useState(false);
+  const [emojiSearchActive,      setEmojiSearchActive]      = useState(false);
   const [miniProfileUserId, setMiniProfileUserId] = useState<string | null>(null);
   const [emojiKeyboardHeight, setEmojiKeyboardHeight] = useState(280);
   const [reminderMsg, setReminderMsg] = useState<Message | null>(null);
@@ -6945,14 +6946,15 @@ STRICT RULES:
       </View>
 
       {/* ── Emoji / sticker keyboard — anchored to screen bottom, same position as system keyboard ── */}
-      {showEmojiStickerPicker && !keyboardHeight && (
+      {showEmojiStickerPicker && (!keyboardHeight || emojiSearchActive) && (
         <View
           style={{
             position: "absolute",
             left: 0,
             right: 0,
-            bottom: 0,
-            height: emojiKeyboardHeight + insets.bottom,
+            // When search opens the system keyboard, float the picker above it
+            bottom: emojiSearchActive && keyboardHeight ? keyboardHeight : 0,
+            height: emojiKeyboardHeight + (emojiSearchActive && keyboardHeight ? 0 : insets.bottom),
             backgroundColor: colors.surface,
             zIndex: 50,
           }}
@@ -6961,8 +6963,10 @@ STRICT RULES:
             height={emojiKeyboardHeight}
             onEmojiSelected={(emoji) => setInput((prev) => prev + emoji)}
             onSendSticker={sendStickerMessage}
+            onSearchModeChange={(active) => setEmojiSearchActive(active)}
             onSendGif={async (url) => {
               setShowEmojiStickerPicker(false);
+              setEmojiSearchActive(false);
               if (!user) return;
               if (messageLimited) { showAlert("Message limit", `You can only send one message until ${chatInfo?.other_name || "this user"} replies or follows you.`); return; }
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -6985,7 +6989,7 @@ STRICT RULES:
                 return prev.replace(/[\s\S]$/u, "");
               }
             })}
-            onClose={() => setShowEmojiStickerPicker(false)}
+            onClose={() => { setShowEmojiStickerPicker(false); setEmojiSearchActive(false); }}
           />
           {insets.bottom > 0 && (
             <View style={{ height: insets.bottom, backgroundColor: colors.surface }} />
