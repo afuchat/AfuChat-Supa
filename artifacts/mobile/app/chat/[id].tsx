@@ -6362,8 +6362,8 @@ STRICT RULES:
             chatInfo.other_id &&
             callStatus === "idle" && (
             <TouchableOpacity
-              hitSlop={10}
-              activeOpacity={0.72}
+              hitSlop={12}
+              activeOpacity={0.5}
               onPress={() => {
                 callStart({
                   calleeId: chatInfo.other_id!,
@@ -6373,27 +6373,11 @@ STRICT RULES:
                 });
               }}
             >
-              <BlurView
-                intensity={42}
-                tint={isDark ? "dark" : "light"}
-                style={{
-                  width: 36, height: 36, borderRadius: 18,
-                  overflow: "hidden",
-                  alignItems: "center", justifyContent: "center",
-                  borderWidth: 0.5,
-                  borderColor: isDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.07)",
-                }}
-              >
-                <View style={{
-                  ...StyleSheet.absoluteFillObject,
-                  backgroundColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.52)",
-                }} />
-                <Ionicons
-                  name="call-outline"
-                  size={17}
-                  color={isDark ? "rgba(255,255,255,0.85)" : "#1c1c1e"}
-                />
-              </BlurView>
+              <Ionicons
+                name="call-outline"
+                size={22}
+                color={colors.text}
+              />
             </TouchableOpacity>
           )}
           {chatInfo && (
