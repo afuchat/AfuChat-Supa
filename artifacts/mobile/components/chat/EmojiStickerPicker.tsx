@@ -218,7 +218,11 @@ function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange, onSearchFocus, 
 
   const isSearching = searchQuery.trim().length > 0;
 
-  useEffect(() => { onSearchModeChange?.(isSearching); }, [isSearching, onSearchModeChange]);
+  // Only fire the mode-change to *false* reactively (when text is cleared).
+  // The *true* direction is fired synchronously in the TextInput onFocus so the
+  // layout repositions before Android routes the keyboard, preventing focus from
+  // being stolen by the chat input.
+  useEffect(() => { if (!isSearching) onSearchModeChange?.(false); }, [isSearching, onSearchModeChange]);
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 20 });
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
@@ -294,7 +298,13 @@ function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange, onSearchFocus, 
         <TextInput
           value={searchQuery}
           onChangeText={handleSearchChange}
-          onFocus={onSearchFocus}
+          onFocus={() => {
+            // Fire layout-shift synchronously on focus so Android routes the
+            // keyboard to this input before it has a chance to steal focus
+            // back to the chat TextInput.
+            onSearchModeChange?.(true);
+            onSearchFocus?.();
+          }}
           placeholder="Search emojis…"
           placeholderTextColor={colors.textMuted as string}
           style={[sb.input, { color: colors.text as string }]}
@@ -525,7 +535,9 @@ function StickerScrollPanel({ onSendSticker, onSearchModeChange, onSearchFocus, 
 
   const isSearching = searchQuery.trim().length > 0;
 
-  useEffect(() => { onSearchModeChange?.(isSearching); }, [isSearching, onSearchModeChange]);
+  // Only fire the mode-change to *false* reactively (when text is cleared).
+  // The *true* direction is fired synchronously in the TextInput onFocus.
+  useEffect(() => { if (!isSearching) onSearchModeChange?.(false); }, [isSearching, onSearchModeChange]);
 
   const searchResults: string[] = (() => {
     const q = debouncedQ.trim().toLowerCase();
@@ -634,7 +646,10 @@ function StickerScrollPanel({ onSendSticker, onSearchModeChange, onSearchFocus, 
         <TextInput
           value={searchQuery}
           onChangeText={handleSearchChange}
-          onFocus={onSearchFocus}
+          onFocus={() => {
+            onSearchModeChange?.(true);
+            onSearchFocus?.();
+          }}
           placeholder="Search stickers…"
           placeholderTextColor={colors.textMuted as string}
           style={[sb.input, { color: colors.text as string }]}
