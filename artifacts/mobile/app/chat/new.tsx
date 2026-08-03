@@ -1,7 +1,6 @@
 import React, {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -13,7 +12,6 @@ import {
   Platform,
   Pressable,
   RefreshControl,
-  SectionList,
   Share,
   StyleSheet,
   Text,
@@ -88,29 +86,8 @@ async function sendInvite(name: string, phone: string) {
 
 type SearchResult = Contact & { _searching?: boolean };
 
-type Section = { title: string; data: Contact[] };
-
 type GroupItem = { id: string; name: string; avatar_url: string | null };
 type ChannelItem = { id: string; name: string; avatar_url: string | null; is_verified?: boolean };
-
-const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ#".split("");
-
-function groupByLetter(contacts: Contact[]): Section[] {
-  const map: Record<string, Contact[]> = {};
-  contacts.forEach((c) => {
-    const ch = c.display_name.charAt(0).toUpperCase();
-    const letter = /[A-Z]/.test(ch) ? ch : "#";
-    if (!map[letter]) map[letter] = [];
-    map[letter].push(c);
-  });
-  return Object.entries(map)
-    .sort(([a], [b]) => {
-      if (a === "#") return 1;
-      if (b === "#") return -1;
-      return a.localeCompare(b);
-    })
-    .map(([title, data]) => ({ title, data }));
-}
 
 export default function NewChatScreen() {
   const { colors, accent } = useTheme();
@@ -137,14 +114,8 @@ export default function NewChatScreen() {
   const [groups, setGroups] = useState<GroupItem[]>([]);
   const [channels, setChannels] = useState<ChannelItem[]>([]);
 
-  const sectionListRef = useRef<SectionList<Contact, Section>>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<TextInput>(null);
-
-  const sectionLetters = useMemo(() => {
-    const sections = groupByLetter(contacts);
-    return sections.map((s) => s.title);
-  }, [contacts]);
 
   useEffect(() => {
     getAllPhonebookNames().then(setPhonebookNames).catch(() => {});
@@ -388,25 +359,6 @@ export default function NewChatScreen() {
     });
   }
 
-  function scrollToLetter(letter: string) {
-    Haptics.selectionAsync();
-    const sections = groupByLetter(contacts);
-    const idx = sections.findIndex((s) => s.title === letter);
-    if (idx >= 0) {
-      sectionListRef.current?.scrollToLocation({
-        sectionIndex: idx,
-        itemIndex: 0,
-        animated: true,
-        viewOffset: 0,
-      });
-    }
-  }
-
-  const filteredSections = useMemo(() => {
-    if (query.trim()) return [];
-    return groupByLetter(contacts);
-  }, [contacts, query]);
-
   const isSearchMode = query.trim().length > 0;
 
   return (
@@ -549,148 +501,113 @@ export default function NewChatScreen() {
           </View>
         ) : (
           /* ── Normal (non-search) view ── */
-          <View style={{ flex: 1, flexDirection: "row" }}>
-            <SectionList
-              ref={sectionListRef}
-              sections={loading ? [] : filteredSections}
-              keyExtractor={(item) => item.id}
-              style={{ flex: 1 }}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-              stickySectionHeadersEnabled
-              contentContainerStyle={{ paddingBottom: 120 }}
-              refreshControl={
-                <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={() => {
-                    setRefreshing(true);
-                    loadContacts();
-                  }}
-                  tintColor={accent}
-                />
-              }
-              ListHeaderComponent={
-                <ListHeader
-                  colors={colors}
-                  accent={accent}
-                  loading={loading}
-                  phoneOnAfu={phoneOnAfu}
-                  selected={selected}
-                  onPhoneContactPress={(c) => {
-                    if (selected.size > 0) {
-                      toggleSelect(c);
-                    } else {
-                      openChat(c.id);
-                    }
-                  }}
-                  phonebookNames={phonebookNames}
-                  contactCount={contacts.length}
-                  groups={groups}
-                  channels={channels}
-                  onGroupPress={(g) => router.push({ pathname: "/chat/[id]", params: { id: g.id } } as any)}
-                  onChannelPress={(c) => router.push({ pathname: "/channel/[id]", params: { id: c.id } } as any)}
-                />
-              }
-              renderSectionHeader={({ section }) => (
-                <View
-                  style={[
-                    styles.sectionHeader,
-                    { backgroundColor: colors.backgroundSecondary },
-                  ]}
-                >
-                  <Text
-                    style={[styles.sectionTitle, { color: accent }]}
-                  >
-                    {section.title}
+          <FlatList
+            data={loading ? [] : contacts}
+            keyExtractor={(item) => item.id}
+            style={{ flex: 1 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 120 }}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={() => {
+                  setRefreshing(true);
+                  loadContacts();
+                }}
+                tintColor={accent}
+              />
+            }
+            ListHeaderComponent={
+              <ListHeader
+                colors={colors}
+                accent={accent}
+                loading={loading}
+                phoneOnAfu={phoneOnAfu}
+                selected={selected}
+                onPhoneContactPress={(c) => {
+                  if (selected.size > 0) {
+                    toggleSelect(c);
+                  } else {
+                    openChat(c.id);
+                  }
+                }}
+                phonebookNames={phonebookNames}
+                contactCount={contacts.length}
+                groups={groups}
+                channels={channels}
+                onGroupPress={(g) => router.push({ pathname: "/chat/[id]", params: { id: g.id } } as any)}
+                onChannelPress={(c) => router.push({ pathname: "/channel/[id]", params: { id: c.id } } as any)}
+              />
+            }
+            renderItem={({ item }) => (
+              <ContactRow
+                item={item}
+                isSelected={selected.has(item.id)}
+                onPress={() => {
+                  if (selected.size > 0) {
+                    toggleSelect(item);
+                  } else {
+                    openChat(item.id);
+                  }
+                }}
+                onLongPress={() => toggleSelect(item)}
+                phonebookName={phonebookNames.get(item.id)}
+                colors={colors}
+                accent={accent}
+              />
+            )}
+            ItemSeparatorComponent={() => <Separator indent={70} />}
+            ListEmptyComponent={
+              !loading ? (
+                <View style={styles.emptyCenter}>
+                  <Ionicons
+                    name="people-circle"
+                    size={72}
+                    color={colors.textMuted}
+                  />
+                  <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                    No contacts yet
+                  </Text>
+                  <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
+                    Follow people to start chatting with them
                   </Text>
                 </View>
-              )}
-              renderItem={({ item }) => (
-                <ContactRow
-                  item={item}
-                  isSelected={selected.has(item.id)}
-                  onPress={() => {
-                    if (selected.size > 0) {
-                      toggleSelect(item);
-                    } else {
-                      openChat(item.id);
-                    }
-                  }}
-                  onLongPress={() => toggleSelect(item)}
-                  phonebookName={phonebookNames.get(item.id)}
-                  colors={colors}
-                  accent={accent}
-                />
-              )}
-              ItemSeparatorComponent={() => <Separator indent={70} />}
-              ListEmptyComponent={
-                !loading ? (
-                  <View style={styles.emptyCenter}>
-                    <Ionicons
-                      name="people-circle"
-                      size={72}
-                      color={colors.textMuted}
-                    />
-                    <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                      No contacts yet
-                    </Text>
-                    <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
-                      Follow people to start chatting with them
+              ) : null
+            }
+            ListFooterComponent={
+              phoneNotAfu.length > 0 ? (
+                <View style={{ paddingBottom: 40 }}>
+                  <View style={[styles.sectionHeader, { backgroundColor: colors.backgroundSecondary, marginTop: 8 }]}>
+                    <Text style={[styles.sectionTitle, { color: accent }]}>
+                      INVITE FRIENDS — {phoneNotAfu.length}
                     </Text>
                   </View>
-                ) : null
-              }
-              ListFooterComponent={
-                phoneNotAfu.length > 0 ? (
-                  <View style={{ paddingBottom: 40 }}>
-                    <View style={[styles.sectionHeader, { backgroundColor: colors.backgroundSecondary, marginTop: 8 }]}>
-                      <Text style={[styles.sectionTitle, { color: accent }]}>
-                        INVITE FRIENDS — {phoneNotAfu.length}
-                      </Text>
-                    </View>
-                    {phoneNotAfu
-                      .slice()
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((item) => (
-                        <View key={item.phone} style={[styles.contactRow, { backgroundColor: colors.surface }]}>
-                          <View style={[styles.avatarWrap, { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.backgroundSecondary, alignItems: "center", justifyContent: "center" }]}>
-                            <Ionicons name="person" size={22} color={colors.textMuted} />
-                          </View>
-                          <View style={styles.contactContent}>
-                            <Text style={[styles.contactName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
-                            <Text style={[styles.contactHandle, { color: colors.textMuted }]} numberOfLines={1}>{item.phone}</Text>
-                          </View>
-                          <TouchableOpacity
-                            style={[styles.inviteBtn, { borderColor: accent }]}
-                            onPress={() => sendInvite(item.name, item.phone)}
-                            activeOpacity={0.7}
-                          >
-                            <Text style={[styles.inviteBtnText, { color: accent }]}>Invite</Text>
-                          </TouchableOpacity>
+                  {phoneNotAfu
+                    .slice()
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((item) => (
+                      <View key={item.phone} style={[styles.contactRow, { backgroundColor: colors.surface }]}>
+                        <View style={[styles.avatarWrap, { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.backgroundSecondary, alignItems: "center", justifyContent: "center" }]}>
+                          <Ionicons name="person" size={22} color={colors.textMuted} />
                         </View>
-                      ))}
-                  </View>
-                ) : <View style={{ height: 40 }} />
-              }
-            />
-
-            {/* ── A-Z Scrubber ── */}
-            {!loading && contacts.length > 0 && (
-              <View style={styles.scrubber}>
-                {sectionLetters.map((letter) => (
-                  <TouchableOpacity
-                    key={letter}
-                    onPress={() => scrollToLetter(letter)}
-                    hitSlop={{ top: 2, bottom: 2, left: 6, right: 6 }}
-                  >
-                    <Text style={[styles.scrubberLetter, { color: accent }]}>
-                      {letter}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
+                        <View style={styles.contactContent}>
+                          <Text style={[styles.contactName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+                          <Text style={[styles.contactHandle, { color: colors.textMuted }]} numberOfLines={1}>{item.phone}</Text>
+                        </View>
+                        <TouchableOpacity
+                          style={[styles.inviteBtn, { borderColor: accent }]}
+                          onPress={() => sendInvite(item.name, item.phone)}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={[styles.inviteBtnText, { color: accent }]}>Invite</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                </View>
+              ) : <View style={{ height: 40 }} />
+            }
+          />
         )}
 
         {/* ── Bottom action bar ── */}
