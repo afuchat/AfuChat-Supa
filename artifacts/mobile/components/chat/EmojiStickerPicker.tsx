@@ -14,6 +14,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
   ActivityIndicator,
@@ -482,58 +483,125 @@ function StickerScrollPanel({ onSendSticker }: { onSendSticker: (s: string) => v
 
 type GifItem = { id: string; preview: string; url: string };
 
+async function fetchGifs(query: string, apiKey: string): Promise<GifItem[]> {
+  const endpoint = query.trim()
+    ? `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query.trim())}&limit=24&rating=g`
+    : `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey}&limit=24&rating=g`;
+  const res  = await fetch(endpoint);
+  const json = await res.json();
+  return (json.data ?? [])
+    .map((r: any) => ({
+      id:      r.id as string,
+      preview: (r.images?.fixed_height_small?.url ?? r.images?.downsized_small?.url ?? "") as string,
+      url:     (r.images?.downsized?.url ?? r.images?.fixed_height?.url ?? "") as string,
+    }))
+    .filter((g: GifItem) => g.url);
+}
+
 function GifPanel({ onSendGif }: { onSendGif: (url: string) => void }) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const { accent } = useAppAccent();
+  const glass = glassTokens(isDark);
+
+  const [query,   setQuery]   = useState("");
   const [results, setResults] = useState<GifItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const apiKeyRef   = useRef<string>("");
 
+  // Load API key once
+  useEffect(() => {
+    import("@/lib/env").then(({ GIPHY_API_KEY }) => {
+      apiKeyRef.current = GIPHY_API_KEY ?? "";
+    }).catch(() => {});
+  }, []);
+
+  // Load initial trending GIFs
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    (async () => {
-      try {
-        const { GIPHY_API_KEY } = await import("@/lib/env");
-        const endpoint = `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=24&rating=g`;
-        const res = await fetch(endpoint);
-        const json = await res.json();
-        if (cancelled) return;
-        const items: GifItem[] = (json.data ?? [])
-          .map((r: any) => ({
-            id:      r.id as string,
-            preview: (r.images?.fixed_height_small?.url ?? r.images?.downsized_small?.url ?? "") as string,
-            url:     (r.images?.downsized?.url ?? r.images?.fixed_height?.url ?? "") as string,
-          }))
-          .filter((g: GifItem) => g.url);
-        setResults(items);
-      } catch {
-        if (!cancelled) setResults([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
+    import("@/lib/env").then(({ GIPHY_API_KEY }) => {
+      return fetchGifs("", GIPHY_API_KEY ?? "");
+    }).then((items) => {
+      if (!cancelled) { setResults(items); setLoading(false); }
+    }).catch(() => {
+      if (!cancelled) setLoading(false);
+    });
     return () => { cancelled = true; };
   }, []);
+
+  // Debounced search on query change
+  const onChangeQuery = useCallback((text: string) => {
+    setQuery(text);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const items = await fetchGifs(text, apiKeyRef.current);
+        setResults(items);
+      } catch {
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 400);
+  }, []);
+
+  const clearQuery = useCallback(() => {
+    onChangeQuery("");
+  }, [onChangeQuery]);
 
   const left  = results.filter((_, i) => i % 2 === 0);
   const right = results.filter((_, i) => i % 2 !== 0);
 
   return (
     <View style={{ flex: 1 }}>
+
+      {/* ── Search bar ─────────────────────────────────────────────────────── */}
+      <View style={[gs.searchRow, { borderBottomColor: glass.border }]}>
+        <View style={[gs.searchBox, {
+          backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+          borderColor: glass.border,
+        }]}>
+          <Ionicons name="search" size={14} color={colors.textMuted as string} style={{ marginRight: 6 }} />
+          <TextInput
+            value={query}
+            onChangeText={onChangeQuery}
+            placeholder="Search GIFs…"
+            placeholderTextColor={colors.textMuted as string}
+            style={[gs.searchInput, { color: colors.text as string }]}
+            returnKeyType="search"
+            autoCorrect={false}
+            autoCapitalize="none"
+            clearButtonMode="never"
+          />
+          {query.length > 0 && (
+            <TouchableOpacity onPress={clearQuery} hitSlop={8} activeOpacity={0.6}>
+              <Ionicons name="close-circle" size={15} color={colors.textMuted as string} />
+            </TouchableOpacity>
+          )}
+        </View>
+        {/* Powered by GIPHY badge */}
+        <Text style={[gs.giphyBadge, { color: colors.textMuted as string }]}>GIPHY</Text>
+      </View>
+
+      {/* ── Grid ──────────────────────────────────────────────────────────── */}
       {loading ? (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <ActivityIndicator color={colors.accent as string} />
+          <ActivityIndicator color={accent} />
         </View>
       ) : results.length === 0 ? (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 8 }}>
-          <Text style={{ fontSize: 32 }}>🎞️</Text>
+          <Text style={{ fontSize: 32 }}>🔍</Text>
           <Text style={[gs.gifNotice, { color: colors.textSecondary as string }]}>
-            Loading trending GIFs…
+            {query.trim() ? `No GIFs found for "${query}"` : "Loading trending GIFs…"}
           </Text>
         </View>
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ padding: 8, paddingTop: 2 }}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ padding: 6, paddingTop: 4 }}
         >
           <View style={{ flexDirection: "row", gap: 4 }}>
             {[left, right].map((col, ci) => (
@@ -562,7 +630,41 @@ function GifPanel({ onSendGif }: { onSendGif: (url: string) => void }) {
 }
 
 const gs = StyleSheet.create({
-  gifNotice: { fontSize: 16, fontFamily: "Inter_600SemiBold" },
+  gifNotice: { fontSize: 14, fontFamily: "Inter_500Medium" },
+
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    gap: 8,
+    borderBottomWidth: 0.5,
+  },
+
+  searchBox: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 0.5,
+    paddingHorizontal: 10,
+  },
+
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    paddingVertical: 0,
+    height: 32,
+  },
+
+  giphyBadge: {
+    fontSize: 9,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 1,
+    opacity: 0.5,
+  },
 });
 
 // ─── Types ────────────────────────────────────────────────────────────────────
