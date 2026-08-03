@@ -209,7 +209,8 @@ async function handleMessage(
   projectId: string,
   accessToken: string,
 ): Promise<void> {
-  const { id: messageId, chat_id, sender_id, content, message_type } = record;
+  // messages table uses encrypted_content (no plain `content` or `message_type` columns)
+  const { id: messageId, chat_id, sender_id, encrypted_content, attachment_url, attachment_type, audio_url } = record;
 
   if (!chat_id || !sender_id) return;
 
@@ -241,7 +242,10 @@ async function handleMessage(
   const isGroup = chat?.type === "group";
   const senderName = sender?.full_name ?? sender?.handle ?? "Someone";
   const title = isGroup ? `${senderName} in ${chat?.name ?? "Group"}` : senderName;
-  const body = _messagePreview(content, message_type);
+
+  // Derive attachment type from columns (no message_type column on messages table)
+  const derivedType = audio_url ? "audio" : attachment_type ?? null;
+  const body = _messagePreview(encrypted_content ?? null, derivedType);
 
   // Get FCM tokens for all recipients + check notification preferences
   const { data: profiles } = await db

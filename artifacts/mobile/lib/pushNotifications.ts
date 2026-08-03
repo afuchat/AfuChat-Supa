@@ -148,10 +148,24 @@ export async function registerForPushNotifications(): Promise<void> {
       await _createAndroidChannels(N);
     }
 
-    // Always use the raw FCM device token — sent directly to Firebase HTTP v1.
-    // No Expo push proxy, no rate limits.
-    const tokenData = await N.getDevicePushTokenAsync();
-    const token = tokenData.data as string;
+    // Prefer the raw FCM device token (works in standalone/dev builds).
+    // Fall back to Expo Push Token for Expo Go — the edge function handles both.
+    let token: string | null = null;
+    try {
+      const tokenData = await N.getDevicePushTokenAsync();
+      token = tokenData.data as string;
+    } catch {
+      // getDevicePushTokenAsync fails in Expo Go because it uses Expo's own
+      // Firebase project. Fall back to the Expo push service token instead.
+      try {
+        const expoToken = await N.getExpoPushTokenAsync();
+        token = expoToken.data;
+      } catch (expErr) {
+        _lastRegistrationError = "Failed to obtain push token (Expo fallback also failed)";
+        console.warn("[Push] getExpoPushTokenAsync fallback error:", expErr);
+        return;
+      }
+    }
 
     if (!token) {
       _lastRegistrationError = "Failed to obtain push token";
@@ -419,8 +433,10 @@ export function getCurrentUserId(): string | null {
 export async function clearPushToken(): Promise<void> {
   if (Platform.OS === "web") return;
   try {
+    // Use a special sentinel — the edge function checks for this exact value
+    // and sets fcm_token to NULL instead of rejecting an empty string.
     await supabase.functions.invoke("register-push-token", {
-      body: { token: "", platform: Platform.OS },
+      body: { token: "__clear__", platform: Platform.OS },
     });
   } catch {}
 }

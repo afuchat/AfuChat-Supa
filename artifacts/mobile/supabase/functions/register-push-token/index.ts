@@ -49,7 +49,7 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { token, platform } = body as { token?: string; platform?: string };
 
-    if (!token || typeof token !== "string" || token.trim() === "") {
+    if (!token || typeof token !== "string") {
       return new Response(JSON.stringify({ error: "token is required" }), {
         status: 400,
         headers: { ...CORS, "Content-Type": "application/json" },
@@ -58,15 +58,25 @@ serve(async (req) => {
 
     const serviceClient = createClient(supabaseUrl, serviceKey);
 
+    // "__clear__" is a sentinel sent on sign-out to remove the stored token.
+    const isClear = token.trim() === "" || token === "__clear__";
+
     // Update fcm_token on the user's profile
     const { error: profileErr } = await serviceClient
       .from("profiles")
       .update({
-        fcm_token: token.trim(),
-        push_token_platform: platform ?? null,
+        fcm_token: isClear ? null : token.trim(),
+        push_token_platform: isClear ? null : (platform ?? null),
         push_token_updated_at: new Date().toISOString(),
       })
       .eq("id", user.id);
+
+    if (isClear) {
+      return new Response(JSON.stringify({ ok: true, cleared: true }), {
+        status: 200,
+        headers: { ...CORS, "Content-Type": "application/json" },
+      });
+    }
 
     if (profileErr) {
       console.error("[register-push-token] profile update failed:", profileErr.message);
