@@ -311,7 +311,7 @@ async function loadSave(userId: string): Promise<KHState | null> {
   return { ...freshState(), ...saved, age: data.current_age ?? saved.age ?? 18 };
 }
 
-async function persistSave(userId: string, s: KHState, displayName: string, handle: string): Promise<void> {
+async function persistSave(userId: string, s: KHState, displayName: string, handle: string, avatarUrl: string | null): Promise<void> {
   const score = computeScore(s);
   const job = getActiveJob(s);
   await supabase.from("life_earth_saves").upsert({
@@ -322,13 +322,16 @@ async function persistSave(userId: string, s: KHState, displayName: string, hand
     career: job?.name ?? "Unemployed",
     country: "Uganda",
     family_class: getTitle(s),
+    display_name: displayName,
+    handle: handle,
+    avatar_url: avatarUrl,
     updated_at: new Date().toISOString(),
   }, { onConflict: "user_id" });
 }
 
 async function loadLeaderboard() {
   const { data } = await supabase
-    .from("life_earth_leaderboard")
+    .from("life_earth_saves")
     .select("handle, display_name, avatar_url, legacy_score, current_age, career, country")
     .order("legacy_score", { ascending: false })
     .limit(30);
@@ -393,6 +396,7 @@ export default function KampalaHustleGame() {
         user.id, state,
         (user as any).display_name ?? "Player",
         (user as any).handle ?? "",
+        (user as any).avatar_url ?? null,
       ).finally(() => setSaving(false));
     }, 1200);
   }, [user]);
