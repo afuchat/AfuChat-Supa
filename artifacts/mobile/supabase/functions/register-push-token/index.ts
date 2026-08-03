@@ -86,21 +86,9 @@ serve(async (req) => {
       });
     }
 
-    // Ensure notification_preferences row exists with push_enabled = true
-    await serviceClient
-      .from("notification_preferences")
-      .upsert(
-        {
-          user_id: user.id,
-          push_enabled: true,
-          push_messages: true,
-          push_likes: true,
-          push_follows: true,
-          push_mentions: true,
-          push_comments: true,
-        },
-        { onConflict: "user_id", ignoreDuplicates: true },
-      );
+    // Ensure notification_preferences row exists.
+    // INSERT only — do not overwrite existing user preferences on every token refresh.
+    await serviceClient.rpc("ensure_notification_preferences", { p_user_id: user.id });
 
     return new Response(JSON.stringify({ ok: true }), {
       status: 200,

@@ -148,23 +148,16 @@ export async function registerForPushNotifications(): Promise<void> {
       await _createAndroidChannels(N);
     }
 
-    // Prefer the raw FCM device token (works in standalone/dev builds).
-    // Fall back to Expo Push Token for Expo Go — the edge function handles both.
-    let token: string | null = null;
+    // Get the raw native FCM/APNs device token — used directly with FCM HTTP v1.
+    // Requires a physical device and google-services.json / GoogleService-Info.plist.
+    let token: string;
     try {
       const tokenData = await N.getDevicePushTokenAsync();
       token = tokenData.data as string;
-    } catch {
-      // getDevicePushTokenAsync fails in Expo Go because it uses Expo's own
-      // Firebase project. Fall back to the Expo push service token instead.
-      try {
-        const expoToken = await N.getExpoPushTokenAsync();
-        token = expoToken.data;
-      } catch (expErr) {
-        _lastRegistrationError = "Failed to obtain push token (Expo fallback also failed)";
-        console.warn("[Push] getExpoPushTokenAsync fallback error:", expErr);
-        return;
-      }
+    } catch (tokenErr: any) {
+      _lastRegistrationError = `Failed to obtain device push token: ${tokenErr?.message ?? tokenErr}`;
+      console.warn("[Push] getDevicePushTokenAsync error:", tokenErr);
+      return;
     }
 
     if (!token) {

@@ -347,7 +347,7 @@ async function handleNotification(
   // Check notification preferences
   const { data: prefs } = await db
     .from("notification_preferences")
-    .select("push_enabled, push_likes, push_follows, push_comments, push_mentions, push_messages, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, quiet_hours_timezone")
+    .select("push_enabled, push_likes, push_follows, push_replies, push_mentions, push_messages, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, quiet_hours_timezone")
     .eq("user_id", user_id)
     .single();
 
@@ -355,7 +355,7 @@ async function handleNotification(
     if (!prefs.push_enabled) return;
     if (type === "like" && prefs.push_likes === false) return;
     if (type === "follow" && prefs.push_follows === false) return;
-    if ((type === "comment" || type === "reply") && prefs.push_comments === false) return;
+    if ((type === "comment" || type === "reply") && prefs.push_replies === false) return;
     if (type === "mention" && prefs.push_mentions === false) return;
 
     // Quiet hours check
