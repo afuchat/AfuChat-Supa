@@ -998,10 +998,13 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
   const { user, profile } = useAuth();
   const insets = useSafeAreaInsets();
   const { width: SCREEN_W, height: SCREEN_H } = useWindowDimensions();
-  // Height taken by the floating tab bar when this feed is embedded in the tabs navigator.
-  // We add this as paddingBottom on the root View so the FlatList (and each video item)
-  // measures the correct available height and never renders behind the tab bar.
-  const tabOffset = 0;
+  // Height taken by the floating pill tab bar when this feed is embedded in the tabs navigator.
+  // PILL_H (62) + PILL_BOTTOM (max(insets.bottom,8)+6) — must match _tabLayout.tsx values.
+  // Applied as paddingBottom so the FlatList measures the correct available height
+  // and each video item stops flush with the top of the tab bar (never behind it).
+  const PILL_H = 62;
+  const PILL_BOTTOM = Math.max(insets.bottom, 8) + 6;
+  const tabOffset = isEmbedded ? PILL_H + PILL_BOTTOM : 0;
 
   const [videoTab, setVideoTab] = useState<"for_you" | "following">("for_you");
   const [videos, setVideos] = useState<VideoPost[]>([]);
