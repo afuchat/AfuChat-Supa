@@ -6893,7 +6893,15 @@ STRICT RULES:
                       <Ionicons name="chevron-up" size={14} color={colors.textMuted} />
                     </View>
                   )}
-                  {(input.trim() || attachmentPreview) && !isRecording ? (
+                  {emojiSearchActive && !isRecording && !(input.trim() || attachmentPreview) ? (
+                    <TouchableOpacity
+                      onPress={() => { Keyboard.dismiss(); }}
+                      activeOpacity={0.75}
+                      style={[st.sendBtn, { backgroundColor: BRAND }]}
+                    >
+                      <Ionicons name="chevron-down" size={22} color="#fff" />
+                    </TouchableOpacity>
+                  ) : (input.trim() || attachmentPreview) && !isRecording ? (
                     <View style={st.sendBtnCol}>
                       {input.trim().length > 50 && !editingMessage && !attachmentPreview
                         ? (

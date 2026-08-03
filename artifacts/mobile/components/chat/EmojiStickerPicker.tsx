@@ -217,6 +217,8 @@ function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange, onScrollDown, o
 
   const isSearching = searchQuery.trim().length > 0;
 
+  useEffect(() => { onSearchModeChange?.(isSearching); }, [isSearching, onSearchModeChange]);
+
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 20 });
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (isScrollingTo.current || !viewableItems.length || mode !== "browse") return;
@@ -519,6 +521,8 @@ function StickerScrollPanel({ onSendSticker, onSearchModeChange, onScrollDown, o
   }, []);
 
   const isSearching = searchQuery.trim().length > 0;
+
+  useEffect(() => { onSearchModeChange?.(isSearching); }, [isSearching, onSearchModeChange]);
 
   const searchResults: string[] = (() => {
     const q = debouncedQ.trim().toLowerCase();
