@@ -298,7 +298,6 @@ function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange, onScrollDown, o
           autoCorrect={false}
           autoCapitalize="none"
           clearButtonMode="never"
-          showSoftInputOnFocus={false}
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => handleSearchChange("")} hitSlop={8} activeOpacity={0.6}>
@@ -530,10 +529,6 @@ function StickerScrollPanel({ onSendSticker, onSearchModeChange, onScrollDown, o
     const seen = new Set<string>();
     const out: string[] = [];
     for (const s of matched) { if (!seen.has(s)) { seen.add(s); out.push(s); } }
-    // if no category matched, search all stickers
-    if (out.length === 0) {
-      for (const s of ALL_STICKERS) { if (!seen.has(s)) { seen.add(s); out.push(s); } }
-    }
     return out;
   })();
 
@@ -639,7 +634,6 @@ function StickerScrollPanel({ onSendSticker, onSearchModeChange, onScrollDown, o
           autoCorrect={false}
           autoCapitalize="none"
           clearButtonMode="never"
-          showSoftInputOnFocus={false}
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => handleSearchChange("")} hitSlop={8} activeOpacity={0.6}>
