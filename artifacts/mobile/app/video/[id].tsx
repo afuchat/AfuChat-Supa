@@ -354,6 +354,9 @@ const VideoItem = React.memo(function VideoItem({
   // without being listed as deps (avoids stale closures on the hot path).
   const inPipRef = useRef(false);
   const pausedRef = useRef(false);
+  // Mirror of the tabFocused prop — read by the AppState handler so it
+  // never resumes playback while the Shorts tab is not the active tab.
+  const tabFocusedRef = useRef(tabFocused);
   // Set to true when PiP stops so the tabFocused effect skips the poster
   // reset until the app has fully returned to the foreground.
   const justExitedPipRef = useRef(false);
@@ -543,13 +546,23 @@ const VideoItem = React.memo(function VideoItem({
   // useFocusEffect fires only on navigation events, NOT the home button, so
   // this listener is the only place to catch app→foreground transitions and
   // resume the video after the user returns (from PiP or from background).
+  // IMPORTANT: tabFocusedRef.current MUST be true — if the user navigated
+  // away from the Shorts tab before backgrounding, we must NOT resume here
+  // (the play/pause effect already paused the player; without this guard
+  // any foreground AppState event would restart audio behind other screens).
   useEffect(() => {
     const sub = AppState.addEventListener("change", (nextState) => {
-      if (nextState === "active" && isActive && !inPipRef.current && !pausedRef.current) {
+      if (
+        nextState === "active" &&
+        isActive &&
+        tabFocusedRef.current &&
+        !inPipRef.current &&
+        !pausedRef.current
+      ) {
         // Brief delay so the PiP-window closing animation fully completes
         // before we call play — avoids a stutter on the returning frame.
         setTimeout(() => {
-          try { if (!inPipRef.current) player.play(); } catch {}
+          try { if (!inPipRef.current && tabFocusedRef.current) player.play(); } catch {}
         }, 100);
       }
     });
@@ -568,9 +581,10 @@ const VideoItem = React.memo(function VideoItem({
     });
   }, [playbackUri, shouldMountVideo]);
 
-  // Keep refs in sync with state so the polling timer can read them stably.
+  // Keep refs in sync with state/props so closures always read current values.
   useEffect(() => { inPipRef.current = inPip; }, [inPip]);
   useEffect(() => { pausedRef.current = paused; }, [paused]);
+  useEffect(() => { tabFocusedRef.current = tabFocused; }, [tabFocused]);
 
   // ── Play / pause control ───────────────────────────────────────────────
   useEffect(() => {
