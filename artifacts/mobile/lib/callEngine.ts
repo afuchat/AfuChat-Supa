@@ -24,7 +24,7 @@
 //   • Expo Go (no native module): calling disabled gracefully
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { Platform, NativeModules } from "react-native";
+import { Platform, NativeModules, TurboModuleRegistry } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { saveLocalCall } from "@/lib/storage/localCallHistory";
 import { notifyMissedCall } from "@/lib/notifyUser";
@@ -66,20 +66,27 @@ const _RTC: _RTCBridge | null = (() => {
 
   // Native (Android / iOS): use react-native-webrtc.
   //
-  // DO NOT gate on NativeModules.WebRTCModule — in Expo SDK 55 + New Architecture
-  // production builds the module uses TurboModules/JSI and does NOT register under
-  // NativeModules, so that check returns null and silently disables all calling.
-  // (Expo Go is the exception: the module truly is absent there, but a failed
-  //  require() returns null safely via the catch below.)
+  // react-native-webrtc v124 checks `NativeModules.WebRTCModule === null` at module
+  // evaluation time and throws if null. In New Architecture production builds (RN 0.73+),
+  // native modules live in TurboModuleRegistry; NativeModules.WebRTCModule is null even
+  // when the module IS present. Our outer try/catch swallows that throw and sets
+  // WEBRTC_AVAILABLE=false — silently disabling all voice calls.
   //
-  // We still want to avoid the uncatchable NullPointerException that Expo Go throws
-  // when react-native-webrtc is required without a native module.  The safest guard
-  // that works on both Expo Go AND New Arch production is: check whether the package
-  // successfully exports a usable RTCPeerConnection constructor rather than checking
-  // the (unreliable in New Arch) NativeModules registry.
+  // Fix: if NativeModules.WebRTCModule is null, pull it from TurboModuleRegistry and
+  // inject it back into NativeModules before requiring react-native-webrtc. This makes
+  // the library's null-guard pass AND ensures all internal WebRTCModule.xxx calls use
+  // the live TurboModule object. If TurboModuleRegistry also has nothing, the module is
+  // genuinely absent (Expo Go) and we return null cleanly.
   try {
+    if (NativeModules.WebRTCModule == null) {
+      // New Architecture path: WebRTCModule is in TurboModuleRegistry, not NativeModules.
+      const turbo: any = TurboModuleRegistry?.get?.("WebRTCModule") ?? null;
+      if (turbo == null) return null; // genuinely unavailable (Expo Go, no native module)
+      // Inject so react-native-webrtc's null-guard and all internal calls work correctly.
+      try { (NativeModules as any).WebRTCModule = turbo; } catch {}
+    }
+
     const rn = require("react-native-webrtc") as typeof import("react-native-webrtc");
-    // Verify the constructor is present — absent in Expo Go, available in prod builds
     if (!rn?.RTCPeerConnection) return null;
     return {
       RTCPeerConnection:     rn.RTCPeerConnection,
