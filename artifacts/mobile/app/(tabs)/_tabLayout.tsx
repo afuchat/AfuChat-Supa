@@ -159,7 +159,7 @@ function CompactTabBar({
                 <View
                   style={[
                     pill.iconWrap,
-                    focused && { backgroundColor: ACTIVE_WRAP, borderRadius: 12 },
+                    focused && { backgroundColor: ACTIVE_WRAP, borderRadius: 18 },
                   ]}
                 >
                   <Ionicons name={tab.icon as any} size={24} color={iconColor} />
