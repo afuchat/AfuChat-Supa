@@ -348,7 +348,7 @@ async function giveNexa(userId: string, amount: number, activityType: string) {
 
 // ─── Tab Types ─────────────────────────────────────────────────────────────────
 
-type TabId = "hustle" | "study" | "wealth" | "living";
+type TabId = "hustle" | "study" | "wealth" | "living" | "wallet";
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
@@ -625,7 +625,7 @@ export default function KampalaHustleGame() {
       } else if (s.age >= 75) {
         setEndReason("retirement");
         setEndVisible(true);
-        if (user) awardACoin(user.id, 20, "kampala_hustle_retired");
+        if (user) giveNexa(user.id, 500, "kampala_hustle_retired");
       }
 
       scheduleSave(s);
@@ -781,7 +781,7 @@ export default function KampalaHustleGame() {
 
       {/* ── Tab nav ─────────────────────────────────────────────────────────── */}
       <View style={st.tabBar}>
-        {([ ["hustle","💼","Hustle"], ["study","🎓","Study"], ["wealth","📈","Wealth"], ["living","🏖️","Living"] ] as [TabId,string,string][]).map(([id,emoji,label]) => (
+        {([ ["hustle","💼","Hustle"], ["study","🎓","Study"], ["wealth","📈","Wealth"], ["living","🏖️","Living"], ["wallet","💳","Wallet"] ] as [TabId,string,string][]).map(([id,emoji,label]) => (
           <TouchableOpacity key={id} style={[st.tabBtn, tab === id && st.tabBtnActive]} onPress={() => setTab(id)}>
             <Text style={st.tabEmoji}>{emoji}</Text>
             <Text style={[st.tabLabel, tab === id && st.tabLabelActive]}>{label}</Text>
@@ -873,7 +873,7 @@ export default function KampalaHustleGame() {
                   </View>
                   <Text style={st.cardDesc}>{edu.desc}</Text>
                   <View style={st.cardFooter}>
-                    <Text style={st.cardGreen}>+{edu.skillGain}% Skill · +5 ACoins</Text>
+                    <Text style={st.cardGreen}>+{edu.skillGain}% Skill · +{edu.level * 50} Nexa XP</Text>
                     {done
                       ? <Text style={st.cardMeta}>Completed ✅</Text>
                       : <TouchableOpacity
@@ -1016,6 +1016,55 @@ export default function KampalaHustleGame() {
             </View>
           </>
         )}
+
+        {tab === "wallet" && (
+          <>
+            <SectionLabel text="💳 WALLET BALANCES" sub="Cash · MoMo · Bank" />
+            <View style={st.card}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Text style={st.cardTitle}>💵 Cash</Text>
+                <Text style={[st.cardGold, { fontSize: 13 }]}>UGX {formatUGX(gs.cashWallet)}</Text>
+              </View>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Text style={st.cardTitle}>📱 MoMo</Text>
+                <Text style={[st.cardGold, { fontSize: 13 }]}>UGX {formatUGX(gs.momoWallet)}</Text>
+              </View>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Text style={st.cardTitle}>🏛️ Bank</Text>
+                <Text style={[st.cardGold, { fontSize: 13 }]}>UGX {formatUGX(gs.bankWallet)}</Text>
+              </View>
+              <View style={[st.cardFooter, { marginTop: 4 }]}>
+                <Text style={st.cardMeta}>TOTAL NET WORTH</Text>
+                <Text style={[st.cardGreen, { fontSize: 13 }]}>UGX {formatUGX(getTotalMoney(gs))}</Text>
+              </View>
+            </View>
+
+            <SectionLabel text="📜 TRANSACTION HISTORY" sub={`${gs.txns.length} entries`} />
+            {gs.txns.map((tx) => (
+              <View key={tx.id} style={[st.card, { paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: 10 }]}>
+                <View style={[
+                  st.txIcon,
+                  { backgroundColor: tx.type === "in" ? "#34d39920" : "#f8717120" },
+                ]}>
+                  <Text style={{ fontSize: 14 }}>{tx.type === "in" ? "⬆️" : "⬇️"}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[st.cardTitle, { fontSize: 11 }]}>{tx.label}</Text>
+                  <Text style={st.cardMeta}>Age {tx.age}</Text>
+                </View>
+                <Text style={[st.cardGold, { fontSize: 12, color: tx.type === "in" ? "#34d399" : "#f87171" }]}>
+                  {tx.type === "in" ? "+" : "-"}UGX {formatUGX(tx.amount)}
+                </Text>
+              </View>
+            ))}
+            {gs.txns.length === 0 && (
+              <View style={[st.card, { alignItems: "center", paddingVertical: 24 }]}>
+                <Text style={{ fontSize: 32, marginBottom: 8 }}>📭</Text>
+                <Text style={st.cardMeta}>No transactions yet. Advance a year to start!</Text>
+              </View>
+            )}
+          </>
+        )}
       </ScrollView>
 
       {/* ── Bottom action bar ────────────────────────────────────────────────── */}
@@ -1089,7 +1138,7 @@ export default function KampalaHustleGame() {
 
             {endReason === "retirement" && (
               <View style={st.endAcoin}>
-                <Text style={st.endAcoinText}>🎉 Retired! +20 ACoins awarded to your wallet!</Text>
+                <Text style={st.endAcoinText}>🎉 Retired! +500 Nexa XP awarded!</Text>
               </View>
             )}
 
@@ -1189,6 +1238,7 @@ const st = StyleSheet.create({
   walletLabel: { fontFamily: "Inter_700Bold", fontSize: 7, color: "rgba(255,255,255,0.4)", marginTop: 2, textTransform: "uppercase", letterSpacing: 0.5 },
   walletValue: { fontFamily: "Inter_700Bold", fontSize: 10, marginTop: 3 },
   taxFlag: { position: "absolute", top: 4, right: 4, width: 6, height: 6, borderRadius: 3, backgroundColor: "#f87171" },
+  txIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
 
   // Vitals
   vitalsRow: { flexDirection: "row", gap: 8, paddingHorizontal: 10, paddingBottom: 8, backgroundColor: "#060d1a", width: "100%" },
