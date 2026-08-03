@@ -162,15 +162,18 @@ function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (e: string) =>
   const glass = glassTokens(isDark);
   const { accent } = useAppAccent();
 
-  const [mode,         setMode]         = useState<EmojiMode>("browse");
-  const [searchQuery,  setSearchQuery]  = useState("");
-  const [historyItems, setHistoryItems] = useState<string[]>([]);
-  const [activeCat,    setActiveCat]    = useState(0);
+  const [mode,           setMode]           = useState<EmojiMode>("browse");
+  const [searchQuery,    setSearchQuery]    = useState("");
+  // Debounced query — filtering only fires after user pauses typing (prevents JS-thread freeze)
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [historyItems,   setHistoryItems]   = useState<string[]>([]);
+  const [activeCat,      setActiveCat]      = useState(0);
 
-  const listRef       = useRef<FlatList>(null);
-  const catBarRef     = useRef<ScrollView>(null);
-  const activeCatRef  = useRef(0);
-  const isScrollingTo = useRef(false);
+  const listRef        = useRef<FlatList>(null);
+  const catBarRef      = useRef<ScrollView>(null);
+  const activeCatRef   = useRef(0);
+  const isScrollingTo  = useRef(false);
+  const debounceTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => { loadHistory(EMOJI_HISTORY_KEY, setHistoryItems); }, []);
 
@@ -179,9 +182,20 @@ function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (e: string) =>
     setHistoryItems((prev) => pushHistory(prev, emoji, EMOJI_HISTORY_KEY));
   }, [onEmojiSelected]);
 
-  // Search results
-  const searchResults: EmojiEntry[] = searchQuery.trim()
-    ? ALL_EMOJIS.filter((e) => e.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  // Update raw query immediately (keeps input responsive) and debounce the filter
+  const handleSearchChange = useCallback((text: string) => {
+    setSearchQuery(text);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => setDebouncedQuery(text), 150);
+  }, []);
+
+  // Emoji names use underscores — normalize before matching so "smiling face" hits "smiling_face"
+  const searchResults: EmojiEntry[] = debouncedQuery.trim()
+    ? ALL_EMOJIS.filter((e) => {
+        const normalized = e.name.replace(/_/g, " ").toLowerCase();
+        const q = debouncedQuery.trim().toLowerCase();
+        return normalized.includes(q) || e.emoji === q;
+      })
     : [];
 
   // Category scroll tracking
@@ -286,8 +300,8 @@ function EmojiScrollPanel({ onEmojiSelected }: { onEmojiSelected: (e: string) =>
   return (
     <View style={{ flex: 1 }}>
       {mode === "search"
-        ? <InlineSearchBar value={searchQuery} onChangeText={setSearchQuery}
-            onClose={() => setMode("browse")} placeholder="Search emojis…" />
+        ? <InlineSearchBar value={searchQuery} onChangeText={handleSearchChange}
+            onClose={() => { setMode("browse"); setSearchQuery(""); setDebouncedQuery(""); }} placeholder="Search emojis…" />
         : catBar
       }
 
@@ -441,33 +455,29 @@ function StickerScrollPanel({ onSendSticker }: { onSendSticker: (s: string) => v
     setHistoryItems((prev) => pushHistory(prev, sticker, STICKER_HISTORY_KEY));
   }, [onSendSticker]);
 
-  // Search results (filter by matching stickers from all categories)
-  const searchResults = searchQuery.trim()
-    ? ALL_STICKERS.filter((_, i) => {
-        // match against label names and position — simplest: return all unique stickers
-        return true; // we just return all but deduplicate
-      }).filter((s, i, arr) => arr.indexOf(s) === i) // deduplicate
-    : [];
+  // Debounced query for sticker search — same freeze-prevention pattern as emoji panel
+  const [debouncedStickerQuery, setDebouncedStickerQuery] = useState("");
+  const stickerDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // For a real text search we match against category labels
-  const filteredResults = searchQuery.trim()
-    ? STICKER_CATEGORIES
-        .filter((cat) => cat.label.toLowerCase().includes(searchQuery.toLowerCase()))
-        .flatMap((cat) => cat.stickers)
-        .concat(
-          // Also just show all if the query doesn't match categories — show all stickers
-          STICKER_CATEGORIES.flatMap((cat) => cat.stickers.filter((s) =>
-            // Return stickers from categories whose emojis contain the query as unicode name approximation
-            cat.stickers.includes(s)
-          ))
-        )
-        .filter((s, i, arr) => arr.indexOf(s) === i)
-        .slice(0, 60)
-    : [];
+  const handleStickerSearchChange = useCallback((text: string) => {
+    setSearchQuery(text);
+    if (stickerDebounceTimer.current) clearTimeout(stickerDebounceTimer.current);
+    stickerDebounceTimer.current = setTimeout(() => setDebouncedStickerQuery(text), 150);
+  }, []);
 
-  // Simplify: search returns all stickers when query exists (user scrolls through)
-  // Better: return all stickers flat when searching since we can't search by emoji name easily
-  const stickerSearchResults = searchQuery.trim() ? ALL_STICKERS.filter((s, i, arr) => arr.indexOf(s) === i) : [];
+  // Search: prioritise categories whose label matches, then include all others as fallback
+  const stickerSearchResults: string[] = (() => {
+    const q = debouncedStickerQuery.trim().toLowerCase();
+    if (!q) return [];
+    const matched = STICKER_CATEGORIES.filter((cat) =>
+      cat.label.toLowerCase().includes(q)
+    ).flatMap((cat) => cat.stickers);
+    // deduplicate and cap for performance
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const s of matched) { if (!seen.has(s)) { seen.add(s); out.push(s); } }
+    return out;
+  })();
 
   // Category scroll tracking
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 20 });
@@ -597,8 +607,8 @@ function StickerScrollPanel({ onSendSticker }: { onSendSticker: (s: string) => v
   return (
     <View style={{ flex: 1 }}>
       {mode === "search"
-        ? <InlineSearchBar value={searchQuery} onChangeText={setSearchQuery}
-            onClose={() => setMode("browse")} placeholder="Search stickers…" />
+        ? <InlineSearchBar value={searchQuery} onChangeText={handleStickerSearchChange}
+            onClose={() => { setMode("browse"); setSearchQuery(""); setDebouncedStickerQuery(""); }} placeholder="Search stickers…" />
         : catBar
       }
 
