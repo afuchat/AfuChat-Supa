@@ -282,7 +282,7 @@ function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange, onScrollDown, o
 
   return (
     <View style={{ flex: 1 }}>
-      {/* ── Search bar — always visible, same style as GIF tab ── */}
+      {/* ── Search bar — always visible, keyboard suppressed ── */}
       <View style={[sb.row, { borderBottomColor: glass.border }]}>
         <View style={[sb.box, {
           backgroundColor: isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)",
@@ -299,6 +299,7 @@ function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange, onScrollDown, o
             autoCorrect={false}
             autoCapitalize="none"
             clearButtonMode="never"
+            showSoftInputOnFocus={false}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => handleSearchChange("")} hitSlop={8} activeOpacity={0.6}>
@@ -608,7 +609,7 @@ function StickerScrollPanel({ onSendSticker, onSearchModeChange, onScrollDown, o
 
   return (
     <View style={{ flex: 1 }}>
-      {/* ── Search bar — always visible, same style as GIF tab ── */}
+      {/* ── Search bar — always visible, keyboard suppressed ── */}
       <View style={[sb.row, { borderBottomColor: glass.border }]}>
         <View style={[sb.box, {
           backgroundColor: isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)",
@@ -625,6 +626,7 @@ function StickerScrollPanel({ onSendSticker, onSearchModeChange, onScrollDown, o
             autoCorrect={false}
             autoCapitalize="none"
             clearButtonMode="never"
+            showSoftInputOnFocus={false}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => handleSearchChange("")} hitSlop={8} activeOpacity={0.6}>
