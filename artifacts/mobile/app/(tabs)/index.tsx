@@ -1735,6 +1735,62 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
 
       <View style={styles.body}>
 
+        {/* ── Folder tab bar — fixed, always visible regardless of list content ── */}
+        {showFolderUI && (
+          <View style={{ backgroundColor: colors.surface, borderBottomWidth: 0.5, borderBottomColor: colors.border }}>
+            <ScrollView
+              ref={folderScrollRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.folderTabBarContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              {pages.map((p, idx) => {
+                const isA = !("filter" in p);
+                const lbl = isA ? "All" : p.name;
+                const ico = isA ? null : p.icon;
+                const act = pageIdx === idx;
+                const cnt = isA ? chats.length : getPageChats(p).length;
+                return (
+                  <TouchableOpacity
+                    key={isA ? "all" : p.id}
+                    onLayout={(e) => {
+                      tabLayoutsRef.current[idx] = { x: e.nativeEvent.layout.x, width: e.nativeEvent.layout.width };
+                      if (idx === pageIdx) { folderPillX.setValue(e.nativeEvent.layout.x); folderPillW.setValue(e.nativeEvent.layout.width); }
+                    }}
+                    onPress={() => {
+                      setPageIdx(idx);
+                      if (hasFolders) {
+                        _PagerView ? pagerRef.current?.setPage(idx) : pagerRef.current?.scrollToIndex({ index: idx, animated: true });
+                      }
+                    }}
+                    onLongPress={() => {
+                      if (!isA) { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setEditingFolder(p as ChatFolder); setShowFolderModal(true); }
+                    }}
+                    activeOpacity={0.75}
+                    style={styles.folderPillWrap}
+                  >
+                    <View style={[styles.folderGlassPill, { borderColor: act ? colors.accent + "55" : isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)", backgroundColor: act ? colors.accent + "18" : colors.backgroundSecondary }]}>
+                      <View style={styles.folderTabInner}>
+                        {ico && <Text style={styles.folderTabIcon}>{ico}</Text>}
+                        <Text style={[styles.folderTabLabel, { color: act ? colors.accent : colors.textMuted, fontFamily: act ? "Inter_700Bold" : "Inter_500Medium" }]}>{lbl}</Text>
+                        {cnt > 0 && <View style={[styles.folderTabBadge, { backgroundColor: act ? colors.accent + "30" : isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.07)" }]}><Text style={[styles.folderTabBadgeText, { color: act ? colors.accent : colors.textMuted }]}>{cnt > 99 ? "99+" : cnt}</Text></View>}
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+              {advancedFeatures.chat_folders && (
+                <TouchableOpacity style={styles.folderPillWrap} onPress={() => { setEditingFolder(null); setShowFolderModal(true); }} activeOpacity={0.7}>
+                  <View style={[styles.folderAddBtn, { borderColor: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)", backgroundColor: colors.backgroundSecondary }]}>
+                    <Ionicons name="add" size={18} color={colors.textMuted} />
+                  </View>
+                </TouchableOpacity>
+              )}
+            </ScrollView>
+          </View>
+        )}
+
         {/* ── Mobile swipeable pager (only when folders exist) ──────────── */}
         {showFolderUI && hasFolders ? (
           _PagerView ? (
@@ -1785,127 +1841,12 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                         )}
                         ItemSeparatorComponent={() => <Separator indent={74} />}
                         ListHeaderComponent={(
-                          <>
-                            {showFolderUI && (
-                              <ScrollView
-                                ref={folderScrollRef}
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={styles.folderTabBarContent}
-                                keyboardShouldPersistTaps="handled"
-                              >
-                                {pages.map((p, idx) => {
-                                  const isA   = !("filter" in p);
-                                  const lbl   = isA ? "All" : p.name;
-                                  const ico   = isA ? null : p.icon;
-                                  const act   = pageIdx === idx;
-                                  const cnt   = isA ? chats.length : getPageChats(p).length;
-                                  return (
-                                    <TouchableOpacity
-                                      key={isA ? "all" : p.id}
-                                      onLayout={(e) => {
-                                        tabLayoutsRef.current[idx] = {
-                                          x: e.nativeEvent.layout.x,
-                                          width: e.nativeEvent.layout.width,
-                                        };
-                                        if (idx === pageIdx) {
-                                          folderPillX.setValue(e.nativeEvent.layout.x);
-                                          folderPillW.setValue(e.nativeEvent.layout.width);
-                                        }
-                                      }}
-                                      onPress={() => {
-                                        setPageIdx(idx);
-                                        if (hasFolders) {
-                                          _PagerView
-                                            ? pagerRef.current?.setPage(idx)
-                                            : pagerRef.current?.scrollToIndex({ index: idx, animated: true });
-                                        }
-                                      }}
-                                      onLongPress={() => {
-                                        if (!isA) {
-                                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                                          setEditingFolder(p as ChatFolder);
-                                          setShowFolderModal(true);
-                                        }
-                                      }}
-                                      activeOpacity={0.75}
-                                      style={styles.folderPillWrap}
-                                    >
-                                      <View
-                                        style={[
-                                          styles.folderGlassPill,
-                                          {
-                                            borderColor: act
-                                              ? colors.accent + "55"
-                                              : isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)",
-                                            backgroundColor: act
-                                              ? colors.accent + "18"
-                                              : colors.backgroundSecondary,
-                                          },
-                                        ]}
-                                      >
-                                        <View style={styles.folderTabInner}>
-                                          {ico && <Text style={styles.folderTabIcon}>{ico}</Text>}
-                                          <Text
-                                            style={[
-                                              styles.folderTabLabel,
-                                              {
-                                                color: act ? colors.accent : colors.textMuted,
-                                                fontFamily: act ? "Inter_700Bold" : "Inter_500Medium",
-                                              },
-                                            ]}
-                                          >
-                                            {lbl}
-                                          </Text>
-                                          {cnt > 0 && (
-                                            <View
-                                              style={[
-                                                styles.folderTabBadge,
-                                                {
-                                                  backgroundColor: act
-                                                    ? colors.accent + "30"
-                                                    : isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.07)",
-                                                },
-                                              ]}
-                                            >
-                                              <Text style={[styles.folderTabBadgeText, { color: act ? colors.accent : colors.textMuted }]}>
-                                                {cnt > 99 ? "99+" : cnt}
-                                              </Text>
-                                            </View>
-                                          )}
-                                        </View>
-                                      </View>
-                                    </TouchableOpacity>
-                                  );
-                                })}
-                                {advancedFeatures.chat_folders && (
-                                  <TouchableOpacity
-                                    style={styles.folderPillWrap}
-                                    onPress={() => { setEditingFolder(null); setShowFolderModal(true); }}
-                                    activeOpacity={0.7}
-                                  >
-                                    <View
-                                      style={[
-                                        styles.folderAddBtn,
-                                        {
-                                          borderColor: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)",
-                                          backgroundColor: colors.backgroundSecondary,
-                                        },
-                                      ]}
-                                    >
-                                      <Ionicons name="add" size={18} color={colors.textMuted} />
-                                    </View>
-                                  </TouchableOpacity>
-                                )}
-                              </ScrollView>
-                            )}
-                            {isAll && !search && user && (
-                              <>
-                                <StoryUploadBanner colors={colors} />
-                                <PostUploadBanner colors={colors} />
-                              </>
-                            )}
-                          </>
+                          isAll && !search && user ? (
+                            <>
+                              <StoryUploadBanner colors={colors} />
+                              <PostUploadBanner colors={colors} />
+                            </>
+                          ) : null
                         )}
                         refreshControl={
                           <RefreshControl
@@ -1977,54 +1918,12 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                         )}
                         ItemSeparatorComponent={() => <Separator indent={74} />}
                         ListHeaderComponent={(
-                          <>
-                            {showFolderUI && (
-                              <ScrollView
-                                ref={folderScrollRef}
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={styles.folderTabBarContent}
-                                keyboardShouldPersistTaps="handled"
-                              >
-                                {pages.map((p, idx) => {
-                                  const isA = !("filter" in p);
-                                  const lbl = isA ? "All" : p.name;
-                                  const ico = isA ? null : p.icon;
-                                  const act = pageIdx === idx;
-                                  const cnt = isA ? chats.length : getPageChats(p).length;
-                                  return (
-                                    <TouchableOpacity
-                                      key={isA ? "all" : p.id}
-                                      onLayout={(e) => {
-                                        tabLayoutsRef.current[idx] = { x: e.nativeEvent.layout.x, width: e.nativeEvent.layout.width };
-                                        if (idx === pageIdx) { folderPillX.setValue(e.nativeEvent.layout.x); folderPillW.setValue(e.nativeEvent.layout.width); }
-                                      }}
-                                      onPress={() => { setPageIdx(idx); if (hasFolders) { _PagerView ? pagerRef.current?.setPage(idx) : pagerRef.current?.scrollToIndex({ index: idx, animated: true }); } }}
-                                      onLongPress={() => { if (!isA) { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setEditingFolder(p as ChatFolder); setShowFolderModal(true); } }}
-                                      activeOpacity={0.75}
-                                      style={styles.folderPillWrap}
-                                    >
-                                      <View style={[styles.folderGlassPill, { borderColor: act ? colors.accent + "55" : isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)", backgroundColor: act ? colors.accent + "18" : colors.backgroundSecondary }]}>
-                                        <View style={styles.folderTabInner}>
-                                          {ico && <Text style={styles.folderTabIcon}>{ico}</Text>}
-                                          <Text style={[styles.folderTabLabel, { color: act ? colors.accent : colors.textMuted, fontFamily: act ? "Inter_700Bold" : "Inter_500Medium" }]}>{lbl}</Text>
-                                          {cnt > 0 && <View style={[styles.folderTabBadge, { backgroundColor: act ? colors.accent + "30" : isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.07)" }]}><Text style={[styles.folderTabBadgeText, { color: act ? colors.accent : colors.textMuted }]}>{cnt > 99 ? "99+" : cnt}</Text></View>}
-                                        </View>
-                                      </View>
-                                    </TouchableOpacity>
-                                  );
-                                })}
-                                {advancedFeatures.chat_folders && (
-                                  <TouchableOpacity style={styles.folderPillWrap} onPress={() => { setEditingFolder(null); setShowFolderModal(true); }} activeOpacity={0.7}>
-                                    <View style={[styles.folderAddBtn, { borderColor: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)", backgroundColor: colors.backgroundSecondary }]}>
-                                      <Ionicons name="add" size={18} color={colors.textMuted} />
-                                    </View>
-                                  </TouchableOpacity>
-                                )}
-                              </ScrollView>
-                            )}
-                            {isAll && !search && user && <><StoryUploadBanner colors={colors} /><PostUploadBanner colors={colors} /></>}
-                          </>
+                          isAll && !search && user ? (
+                            <>
+                              <StoryUploadBanner colors={colors} />
+                              <PostUploadBanner colors={colors} />
+                            </>
+                          ) : null
                         )}
                         refreshControl={
                           <RefreshControl
@@ -2080,54 +1979,12 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                 )}
                 ItemSeparatorComponent={() => <Separator indent={74} />}
                 ListHeaderComponent={(
-                  <>
-                    {showFolderUI && (
-                      <ScrollView
-                        ref={folderScrollRef}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.folderTabBarContent}
-                        keyboardShouldPersistTaps="handled"
-                      >
-                        {pages.map((p, idx) => {
-                          const isA = !("filter" in p);
-                          const lbl = isA ? "All" : p.name;
-                          const ico = isA ? null : p.icon;
-                          const act = pageIdx === idx;
-                          const cnt = isA ? chats.length : getPageChats(p).length;
-                          return (
-                            <TouchableOpacity
-                              key={isA ? "all" : p.id}
-                              onLayout={(e) => {
-                                tabLayoutsRef.current[idx] = { x: e.nativeEvent.layout.x, width: e.nativeEvent.layout.width };
-                                if (idx === pageIdx) { folderPillX.setValue(e.nativeEvent.layout.x); folderPillW.setValue(e.nativeEvent.layout.width); }
-                              }}
-                              onPress={() => { setPageIdx(idx); if (hasFolders) { _PagerView ? pagerRef.current?.setPage(idx) : pagerRef.current?.scrollToIndex({ index: idx, animated: true }); } }}
-                              onLongPress={() => { if (!isA) { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setEditingFolder(p as ChatFolder); setShowFolderModal(true); } }}
-                              activeOpacity={0.75}
-                              style={styles.folderPillWrap}
-                            >
-                              <View style={[styles.folderGlassPill, { borderColor: act ? colors.accent + "55" : isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)", backgroundColor: act ? colors.accent + "18" : colors.backgroundSecondary }]}>
-                                <View style={styles.folderTabInner}>
-                                  {ico && <Text style={styles.folderTabIcon}>{ico}</Text>}
-                                  <Text style={[styles.folderTabLabel, { color: act ? colors.accent : colors.textMuted, fontFamily: act ? "Inter_700Bold" : "Inter_500Medium" }]}>{lbl}</Text>
-                                  {cnt > 0 && <View style={[styles.folderTabBadge, { backgroundColor: act ? colors.accent + "30" : isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.07)" }]}><Text style={[styles.folderTabBadgeText, { color: act ? colors.accent : colors.textMuted }]}>{cnt > 99 ? "99+" : cnt}</Text></View>}
-                                </View>
-                              </View>
-                            </TouchableOpacity>
-                          );
-                        })}
-                        {advancedFeatures.chat_folders && (
-                          <TouchableOpacity style={styles.folderPillWrap} onPress={() => { setEditingFolder(null); setShowFolderModal(true); }} activeOpacity={0.7}>
-                            <View style={[styles.folderAddBtn, { borderColor: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)", backgroundColor: colors.backgroundSecondary }]}>
-                              <Ionicons name="add" size={18} color={colors.textMuted} />
-                            </View>
-                          </TouchableOpacity>
-                        )}
-                      </ScrollView>
-                    )}
-                    {user && tabFilter === "all" && !search && <><StoryUploadBanner colors={colors} /><PostUploadBanner colors={colors} /></>}
-                  </>
+                  user && tabFilter === "all" && !search ? (
+                    <>
+                      <StoryUploadBanner colors={colors} />
+                      <PostUploadBanner colors={colors} />
+                    </>
+                  ) : null
                 )}
                 refreshControl={
                   <RefreshControl
