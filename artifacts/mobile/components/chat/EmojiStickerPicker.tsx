@@ -157,7 +157,7 @@ for (const row of FLAT_ROWS) {
   _off += row.kind === "header" ? HEADER_H : ROW_H;
 }
 
-type EmojiMode = "browse" | "history" | "search";
+type EmojiMode = "browse" | "history";
 
 function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange, onScrollDown, onScrollUp, onSelect }: {
   onEmojiSelected: (e: string) => void;
@@ -170,24 +170,18 @@ function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange, onScrollDown, o
   const glass = glassTokens(isDark);
   const { accent } = useAppAccent();
 
-  const setMode = useCallback((next: EmojiMode) => {
-    _setMode(next);
-    onSearchModeChange?.(next === "search");
-  }, [onSearchModeChange]);
-
-  const [mode,           _setMode]          = useState<EmojiMode>("browse");
+  const [mode,           setMode]           = useState<EmojiMode>("browse");
   const [searchQuery,    setSearchQuery]    = useState("");
-  // Debounced query — filtering only fires after user pauses typing (prevents JS-thread freeze)
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [historyItems,   setHistoryItems]   = useState<string[]>([]);
   const [activeCat,      setActiveCat]      = useState(0);
 
-  const listRef        = useRef<FlatList>(null);
-  const catBarRef      = useRef<ScrollView>(null);
-  const activeCatRef   = useRef(0);
-  const isScrollingTo  = useRef(false);
-  const debounceTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastScrollY    = useRef(0);
+  const listRef       = useRef<FlatList>(null);
+  const catBarRef     = useRef<ScrollView>(null);
+  const activeCatRef  = useRef(0);
+  const isScrollingTo = useRef(false);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastScrollY   = useRef(0);
 
   useEffect(() => { loadHistory(EMOJI_HISTORY_KEY, setHistoryItems); }, []);
 
@@ -205,14 +199,12 @@ function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange, onScrollDown, o
     else if (dy < -4) onScrollUp?.();
   }, [onScrollDown, onScrollUp]);
 
-  // Update raw query immediately (keeps input responsive) and debounce the filter
   const handleSearchChange = useCallback((text: string) => {
     setSearchQuery(text);
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => setDebouncedQuery(text), 150);
   }, []);
 
-  // Search name + keywords so "happy", "sad", "love" etc. all resolve correctly
   const searchResults: EmojiEntry[] = debouncedQuery.trim()
     ? ALL_EMOJIS.filter((e) => {
         const q = debouncedQuery.trim().toLowerCase();
@@ -223,7 +215,8 @@ function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange, onScrollDown, o
       })
     : [];
 
-  // Category scroll tracking
+  const isSearching = searchQuery.trim().length > 0;
+
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 20 });
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (isScrollingTo.current || !viewableItems.length || mode !== "browse") return;
@@ -250,6 +243,8 @@ function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange, onScrollDown, o
     activeCatRef.current = idx;
     setActiveCat(idx);
     setMode("browse");
+    setSearchQuery("");
+    setDebouncedQuery("");
     listRef.current?.scrollToIndex({ index: SECTION_INDICES[idx], animated: true, viewOffset: 0 });
     catBarRef.current?.scrollTo({ x: Math.max(0, idx * 44 - 44), animated: true });
     setTimeout(() => { isScrollingTo.current = false; }, 700);
@@ -285,86 +280,63 @@ function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange, onScrollDown, o
     );
   }, [handleSelect, colors]);
 
-  // ── Category bar ────────────────────────────────────────────────────────────
-  const catBar = (
-    <BlurView intensity={GLASS.blur.medium} tint={isDark ? "dark" : "light"}
-      style={{ height: 44, borderBottomWidth: 0.5, borderBottomColor: glass.border }}>
-      <ScrollView ref={catBarRef} horizontal showsHorizontalScrollIndicator={false}
-        style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 4, alignItems: "center", height: 44 }}>
-
-        {/* History tab */}
-        <TouchableOpacity onPress={() => setMode("history")}
-          style={[ep.catBtn, { borderBottomWidth: mode === "history" ? 2 : 0, borderBottomColor: accent }]}
-          activeOpacity={0.7}>
-          <Ionicons name="time-outline" size={20} color={mode === "history" ? accent : (colors.textMuted as string)} />
-        </TouchableOpacity>
-
-        {/* Category icons */}
-        {SECTION_TITLES.map((title, i) => {
-          const isActive = mode === "browse" && i === activeCat;
-          return (
-            <TouchableOpacity key={title} onPress={() => scrollToCategory(i)}
-              style={[ep.catBtn, { borderBottomWidth: isActive ? 2 : 0, borderBottomColor: accent }]}
-              activeOpacity={0.7}>
-              <Image source={CAT_ICON_SOURCES[title]} style={{ width: 20, height: 20 }}
-                tintColor={isActive ? accent : (colors.textMuted as string)} />
-            </TouchableOpacity>
-          );
-        })}
-
-        {/* Search icon */}
-        <TouchableOpacity onPress={() => { setMode("search"); setSearchQuery(""); }}
-          style={[ep.catBtn, { borderBottomWidth: mode === "search" ? 2 : 0, borderBottomColor: accent }]}
-          activeOpacity={0.7}>
-          <Ionicons name="search-outline" size={19} color={mode === "search" ? accent : (colors.textMuted as string)} />
-        </TouchableOpacity>
-      </ScrollView>
-    </BlurView>
-  );
-
   return (
     <View style={{ flex: 1 }}>
-      {mode === "search"
-        ? <InlineSearchBar value={searchQuery} onChangeText={handleSearchChange}
-            onClose={() => { setMode("browse"); setSearchQuery(""); setDebouncedQuery(""); }} placeholder="Search emojis…" />
-        : catBar
-      }
+      {/* ── Search bar — always visible, same style as GIF tab ── */}
+      <View style={[sb.row, { borderBottomColor: glass.border }]}>
+        <View style={[sb.box, {
+          backgroundColor: isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)",
+          borderColor: glass.border,
+        }]}>
+          <Ionicons name="search" size={14} color={colors.textMuted as string} style={{ marginRight: 6 }} />
+          <TextInput
+            value={searchQuery}
+            onChangeText={handleSearchChange}
+            placeholder="Search emojis…"
+            placeholderTextColor={colors.textMuted as string}
+            style={[sb.input, { color: colors.text as string }]}
+            returnKeyType="search"
+            autoCorrect={false}
+            autoCapitalize="none"
+            clearButtonMode="never"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => handleSearchChange("")} hitSlop={8} activeOpacity={0.6}>
+              <Ionicons name="close-circle" size={15} color={colors.textMuted as string} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
 
-      {/* History view */}
-      {mode === "history" && (
-        historyItems.length === 0 ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 8 }}>
-            <Ionicons name="time-outline" size={36} color={colors.textMuted as string} />
-            <Text style={{ fontSize: 14, fontFamily: "Inter_500Medium", color: colors.textMuted as string }}>
-              No history yet
-            </Text>
-          </View>
-        ) : (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 4, paddingBottom: 56 }}
-            onScroll={handleScroll} scrollEventThrottle={16}>
-            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-              {historyItems.map((emoji) => (
-                <TouchableOpacity key={emoji} onPress={() => handleSelect(emoji)}
-                  style={{ width: `${100 / EMOJI_COLS}%`, alignItems: "center", justifyContent: "center", height: ROW_H }}
-                  activeOpacity={0.6}>
-                  <Text style={{ fontSize: 26 }}>{emoji}</Text>
+      {/* ── Category bar — always visible (hidden during search) ── */}
+      {!isSearching && (
+        <BlurView intensity={GLASS.blur.medium} tint={isDark ? "dark" : "light"}
+          style={{ height: 44, borderBottomWidth: 0.5, borderBottomColor: glass.border }}>
+          <ScrollView ref={catBarRef} horizontal showsHorizontalScrollIndicator={false}
+            style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 4, alignItems: "center", height: 44 }}>
+            <TouchableOpacity onPress={() => { setMode("history"); setSearchQuery(""); setDebouncedQuery(""); }}
+              style={[ep.catBtn, { borderBottomWidth: mode === "history" ? 2 : 0, borderBottomColor: accent }]}
+              activeOpacity={0.7}>
+              <Ionicons name="time-outline" size={20} color={mode === "history" ? accent : (colors.textMuted as string)} />
+            </TouchableOpacity>
+            {SECTION_TITLES.map((title, i) => {
+              const isActive = mode === "browse" && i === activeCat;
+              return (
+                <TouchableOpacity key={title} onPress={() => scrollToCategory(i)}
+                  style={[ep.catBtn, { borderBottomWidth: isActive ? 2 : 0, borderBottomColor: accent }]}
+                  activeOpacity={0.7}>
+                  <Image source={CAT_ICON_SOURCES[title]} style={{ width: 20, height: 20 }}
+                    tintColor={isActive ? accent : (colors.textMuted as string)} />
                 </TouchableOpacity>
-              ))}
-            </View>
+              );
+            })}
           </ScrollView>
-        )
+        </BlurView>
       )}
 
-      {/* Search results */}
-      {mode === "search" && (
-        searchQuery.trim() === "" ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 8 }}>
-            <Ionicons name="search" size={36} color={colors.textMuted as string} />
-            <Text style={{ fontSize: 14, fontFamily: "Inter_500Medium", color: colors.textMuted as string }}>
-              Type to search emojis
-            </Text>
-          </View>
-        ) : searchResults.length === 0 ? (
+      {/* ── Search results ── */}
+      {isSearching && (
+        searchResults.length === 0 ? (
           <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 8 }}>
             <Text style={{ fontSize: 32 }}>🤷</Text>
             <Text style={{ fontSize: 14, fontFamily: "Inter_500Medium", color: colors.textMuted as string }}>
@@ -388,8 +360,33 @@ function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange, onScrollDown, o
         )
       )}
 
-      {/* Browse (normal FlatList) */}
-      {mode === "browse" && (
+      {/* ── History view ── */}
+      {!isSearching && mode === "history" && (
+        historyItems.length === 0 ? (
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <Ionicons name="time-outline" size={36} color={colors.textMuted as string} />
+            <Text style={{ fontSize: 14, fontFamily: "Inter_500Medium", color: colors.textMuted as string }}>
+              No history yet
+            </Text>
+          </View>
+        ) : (
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 4, paddingBottom: 56 }}
+            onScroll={handleScroll} scrollEventThrottle={16}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+              {historyItems.map((emoji) => (
+                <TouchableOpacity key={emoji} onPress={() => handleSelect(emoji)}
+                  style={{ width: `${100 / EMOJI_COLS}%`, alignItems: "center", justifyContent: "center", height: ROW_H }}
+                  activeOpacity={0.6}>
+                  <Text style={{ fontSize: 26 }}>{emoji}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        )
+      )}
+
+      {/* ── Browse FlatList ── */}
+      {!isSearching && mode === "browse" && (
         <FlatList
           ref={listRef}
           data={FLAT_ROWS}
@@ -460,7 +457,7 @@ for (const row of STICKER_FLAT) {
   _soff += row.kind === "header" ? STICKER_HDR_H : STICKER_ROW_H;
 }
 
-type StickerMode = "browse" | "history" | "search";
+type StickerMode = "browse" | "history";
 
 function StickerScrollPanel({ onSendSticker, onSearchModeChange, onScrollDown, onScrollUp, onSelect }: {
   onSendSticker: (s: string) => void;
@@ -473,13 +470,9 @@ function StickerScrollPanel({ onSendSticker, onSearchModeChange, onScrollDown, o
   const glass = glassTokens(isDark);
   const { accent } = useAppAccent();
 
-  const setMode = useCallback((next: StickerMode) => {
-    _setMode(next);
-    onSearchModeChange?.(next === "search");
-  }, [onSearchModeChange]);
-
-  const [mode,         _setMode]        = useState<StickerMode>("browse");
+  const [mode,         setMode]         = useState<StickerMode>("browse");
   const [searchQuery,  setSearchQuery]  = useState("");
+  const [debouncedQ,   setDebouncedQ]   = useState("");
   const [historyItems, setHistoryItems] = useState<string[]>([]);
   const [activeCat,    setActiveCat]    = useState(0);
 
@@ -488,6 +481,7 @@ function StickerScrollPanel({ onSendSticker, onSearchModeChange, onScrollDown, o
   const activeCatRef  = useRef(0);
   const isScrollingTo = useRef(false);
   const lastScrollY   = useRef(0);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => { loadHistory(STICKER_HISTORY_KEY, setHistoryItems); }, []);
 
@@ -505,31 +499,30 @@ function StickerScrollPanel({ onSendSticker, onSearchModeChange, onScrollDown, o
     else if (dy < -4) onScrollUp?.();
   }, [onScrollDown, onScrollUp]);
 
-  // Debounced query for sticker search — same freeze-prevention pattern as emoji panel
-  const [debouncedStickerQuery, setDebouncedStickerQuery] = useState("");
-  const stickerDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleStickerSearchChange = useCallback((text: string) => {
+  const handleSearchChange = useCallback((text: string) => {
     setSearchQuery(text);
-    if (stickerDebounceTimer.current) clearTimeout(stickerDebounceTimer.current);
-    stickerDebounceTimer.current = setTimeout(() => setDebouncedStickerQuery(text), 150);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => setDebouncedQ(text), 150);
   }, []);
 
-  // Search: prioritise categories whose label matches, then include all others as fallback
-  const stickerSearchResults: string[] = (() => {
-    const q = debouncedStickerQuery.trim().toLowerCase();
+  const isSearching = searchQuery.trim().length > 0;
+
+  const searchResults: string[] = (() => {
+    const q = debouncedQ.trim().toLowerCase();
     if (!q) return [];
     const matched = STICKER_CATEGORIES.filter((cat) =>
       cat.label.toLowerCase().includes(q)
     ).flatMap((cat) => cat.stickers);
-    // deduplicate and cap for performance
     const seen = new Set<string>();
     const out: string[] = [];
     for (const s of matched) { if (!seen.has(s)) { seen.add(s); out.push(s); } }
+    // if no category matched, search all stickers
+    if (out.length === 0) {
+      for (const s of ALL_STICKERS) { if (!seen.has(s)) { seen.add(s); out.push(s); } }
+    }
     return out;
   })();
 
-  // Category scroll tracking
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 20 });
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (isScrollingTo.current || !viewableItems.length || mode !== "browse") return;
@@ -556,6 +549,8 @@ function StickerScrollPanel({ onSendSticker, onSearchModeChange, onScrollDown, o
     activeCatRef.current = idx;
     setActiveCat(idx);
     setMode("browse");
+    setSearchQuery("");
+    setDebouncedQ("");
     listRef.current?.scrollToIndex({ index: STICKER_SEC_INDICES[idx], animated: true, viewOffset: 0 });
     catBarRef.current?.scrollTo({ x: Math.max(0, idx * 44 - 44), animated: true });
     setTimeout(() => { isScrollingTo.current = false; }, 700);
@@ -590,56 +585,12 @@ function StickerScrollPanel({ onSendSticker, onSearchModeChange, onScrollDown, o
         {item.stickers.length < STICKER_COLS &&
           Array.from({ length: STICKER_COLS - item.stickers.length }).map((_, i) => (
             <View key={`pad-${i}`} style={{ flex: 1 }} />
-          ))
-        }
+          ))}
       </View>
     );
   }, [handleSend, colors]);
 
-  // ── Category bar ────────────────────────────────────────────────────────────
-  const catBar = (
-    <ScrollView ref={catBarRef} horizontal showsHorizontalScrollIndicator={false}
-      style={{ borderBottomWidth: 0.5, borderBottomColor: glass.border, maxHeight: 44 }}
-      contentContainerStyle={{ paddingHorizontal: 4, alignItems: "center" }}>
-
-      {/* History tab */}
-      <TouchableOpacity onPress={() => setMode("history")}
-        style={[ep.catBtn, { borderBottomWidth: mode === "history" ? 2 : 0, borderBottomColor: accent }]}
-        activeOpacity={0.7}>
-        <Ionicons name="time-outline" size={20} color={mode === "history" ? accent : (colors.textMuted as string)} />
-      </TouchableOpacity>
-
-      {/* Category icons */}
-      {STICKER_CATEGORIES.map((cat, i) => {
-        const isActive = mode === "browse" && i === activeCat;
-        return (
-          <TouchableOpacity key={cat.label} onPress={() => scrollToCategory(i)}
-            style={[ep.catBtn, { borderBottomWidth: isActive ? 2 : 0, borderBottomColor: accent }]}
-            activeOpacity={0.7}>
-            <Ionicons name={cat.ionicon as any} size={20}
-              color={isActive ? accent : (colors.textMuted as string)} />
-          </TouchableOpacity>
-        );
-      })}
-
-      {/* Search icon */}
-      <TouchableOpacity onPress={() => { setMode("search"); setSearchQuery(""); }}
-        style={[ep.catBtn, { borderBottomWidth: mode === "search" ? 2 : 0, borderBottomColor: accent }]}
-        activeOpacity={0.7}>
-        <Ionicons name="search-outline" size={19}
-          color={mode === "search" ? accent : (colors.textMuted as string)} />
-      </TouchableOpacity>
-    </ScrollView>
-  );
-
-  const EmptyState = ({ icon, text }: { icon: string; text: string }) => (
-    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 8 }}>
-      <Text style={{ fontSize: 32 }}>{icon}</Text>
-      <Text style={{ fontSize: 14, fontFamily: "Inter_500Medium", color: colors.textMuted as string }}>{text}</Text>
-    </View>
-  );
-
-  const StickerGrid = ({ stickers }: { stickers: string[] }) => (
+  const StickerGrid = useCallback(({ stickers }: { stickers: string[] }) => (
     <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ padding: 4, paddingBottom: 56 }}
       onScroll={handleScroll} scrollEventThrottle={16}>
@@ -653,32 +604,88 @@ function StickerScrollPanel({ onSendSticker, onSearchModeChange, onScrollDown, o
         ))}
       </View>
     </ScrollView>
-  );
+  ), [handleSend, handleScroll]);
 
   return (
     <View style={{ flex: 1 }}>
-      {mode === "search"
-        ? <InlineSearchBar value={searchQuery} onChangeText={handleStickerSearchChange}
-            onClose={() => { setMode("browse"); setSearchQuery(""); setDebouncedStickerQuery(""); }} placeholder="Search stickers…" />
-        : catBar
-      }
+      {/* ── Search bar — always visible, same style as GIF tab ── */}
+      <View style={[sb.row, { borderBottomColor: glass.border }]}>
+        <View style={[sb.box, {
+          backgroundColor: isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)",
+          borderColor: glass.border,
+        }]}>
+          <Ionicons name="search" size={14} color={colors.textMuted as string} style={{ marginRight: 6 }} />
+          <TextInput
+            value={searchQuery}
+            onChangeText={handleSearchChange}
+            placeholder="Search stickers…"
+            placeholderTextColor={colors.textMuted as string}
+            style={[sb.input, { color: colors.text as string }]}
+            returnKeyType="search"
+            autoCorrect={false}
+            autoCapitalize="none"
+            clearButtonMode="never"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => handleSearchChange("")} hitSlop={8} activeOpacity={0.6}>
+              <Ionicons name="close-circle" size={15} color={colors.textMuted as string} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
 
-      {mode === "history" && (
-        historyItems.length === 0
-          ? <EmptyState icon="🕐" text="No sticker history yet" />
-          : <StickerGrid stickers={historyItems} />
+      {/* ── Category bar — hidden while searching ── */}
+      {!isSearching && (
+        <BlurView intensity={GLASS.blur.medium} tint={isDark ? "dark" : "light"}
+          style={{ height: 44, borderBottomWidth: 0.5, borderBottomColor: glass.border }}>
+          <ScrollView ref={catBarRef} horizontal showsHorizontalScrollIndicator={false}
+            style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 4, alignItems: "center", height: 44 }}>
+            <TouchableOpacity onPress={() => { setMode("history"); setSearchQuery(""); setDebouncedQ(""); }}
+              style={[ep.catBtn, { borderBottomWidth: mode === "history" ? 2 : 0, borderBottomColor: accent }]}
+              activeOpacity={0.7}>
+              <Ionicons name="time-outline" size={20} color={mode === "history" ? accent : (colors.textMuted as string)} />
+            </TouchableOpacity>
+            {STICKER_CATEGORIES.map((cat, i) => {
+              const isActive = mode === "browse" && i === activeCat;
+              return (
+                <TouchableOpacity key={cat.label} onPress={() => scrollToCategory(i)}
+                  style={[ep.catBtn, { borderBottomWidth: isActive ? 2 : 0, borderBottomColor: accent }]}
+                  activeOpacity={0.7}>
+                  <Ionicons name={cat.ionicon as any} size={20}
+                    color={isActive ? accent : (colors.textMuted as string)} />
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </BlurView>
       )}
 
-      {mode === "search" && (
-        searchQuery.trim() === ""
-          ? <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 8 }}>
-              <Ionicons name="search" size={36} color={colors.textMuted as string} />
-              <Text style={{ fontSize: 14, fontFamily: "Inter_500Medium", color: colors.textMuted as string }}>Type to search stickers</Text>
-            </View>
-          : <StickerGrid stickers={stickerSearchResults} />
+      {/* ── Search results ── */}
+      {isSearching && (
+        searchResults.length === 0 ? (
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <Text style={{ fontSize: 32 }}>🤷</Text>
+            <Text style={{ fontSize: 14, fontFamily: "Inter_500Medium", color: colors.textMuted as string }}>
+              No results for "{searchQuery}"
+            </Text>
+          </View>
+        ) : <StickerGrid stickers={searchResults} />
       )}
 
-      {mode === "browse" && (
+      {/* ── History ── */}
+      {!isSearching && mode === "history" && (
+        historyItems.length === 0 ? (
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <Ionicons name="time-outline" size={36} color={colors.textMuted as string} />
+            <Text style={{ fontSize: 14, fontFamily: "Inter_500Medium", color: colors.textMuted as string }}>
+              No history yet
+            </Text>
+          </View>
+        ) : <StickerGrid stickers={historyItems} />
+      )}
+
+      {/* ── Browse FlatList ── */}
+      {!isSearching && mode === "browse" && (
         <FlatList
           ref={listRef}
           data={STICKER_FLAT}
