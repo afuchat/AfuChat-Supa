@@ -311,7 +311,7 @@ export default function NewChatScreen() {
     loadRecents();
     loadGroupsAndChannels();
     loadPhoneContacts();
-    setTimeout(() => inputRef.current?.focus(), 300);
+
   }, [loadContacts, loadRecents, loadGroupsAndChannels, loadPhoneContacts]);
 
   useEffect(() => {
