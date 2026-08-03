@@ -1965,6 +1965,7 @@ function ChatScreen() {
   // Ref set synchronously when the emoji/sticker search TextInput gains focus so the
   // chat input's onFocus handler can distinguish intentional taps from Android focus routing.
   const emojiSearchFocusedRef = useRef(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   // Reset the guard ref whenever the picker is dismissed so the next real tap on the
   // chat input works normally.
   useEffect(() => { if (!showEmojiStickerPicker) emojiSearchFocusedRef.current = false; }, [showEmojiStickerPicker]);
@@ -2015,7 +2016,6 @@ function ChatScreen() {
     }).catch(() => {});
   }, []);
 
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [floatingInputHeight, setFloatingInputHeight] = useState(80);
 
 
