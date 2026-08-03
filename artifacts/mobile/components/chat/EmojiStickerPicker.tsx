@@ -10,6 +10,8 @@
  */
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
+  Animated,
+  Easing,
   FlatList,
   Image,
   ScrollView,
@@ -157,9 +159,12 @@ for (const row of FLAT_ROWS) {
 
 type EmojiMode = "browse" | "history" | "search";
 
-function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange }: {
+function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange, onScrollDown, onScrollUp, onSelect }: {
   onEmojiSelected: (e: string) => void;
   onSearchModeChange?: (active: boolean) => void;
+  onScrollDown?: () => void;
+  onScrollUp?: () => void;
+  onSelect?: () => void;
 }) {
   const { colors, isDark } = useTheme();
   const glass = glassTokens(isDark);
@@ -182,13 +187,23 @@ function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange }: {
   const activeCatRef   = useRef(0);
   const isScrollingTo  = useRef(false);
   const debounceTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastScrollY    = useRef(0);
 
   useEffect(() => { loadHistory(EMOJI_HISTORY_KEY, setHistoryItems); }, []);
 
   const handleSelect = useCallback((emoji: string) => {
     onEmojiSelected(emoji);
+    onSelect?.();
     setHistoryItems((prev) => pushHistory(prev, emoji, EMOJI_HISTORY_KEY));
-  }, [onEmojiSelected]);
+  }, [onEmojiSelected, onSelect]);
+
+  const handleScroll = useCallback((e: any) => {
+    const y  = e.nativeEvent.contentOffset.y;
+    const dy = y - lastScrollY.current;
+    lastScrollY.current = y;
+    if (dy > 8)  onScrollDown?.();
+    else if (dy < -4) onScrollUp?.();
+  }, [onScrollDown, onScrollUp]);
 
   // Update raw query immediately (keeps input responsive) and debounce the filter
   const handleSearchChange = useCallback((text: string) => {
@@ -325,7 +340,8 @@ function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange }: {
             </Text>
           </View>
         ) : (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 4, paddingBottom: 56 }}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 4, paddingBottom: 56 }}
+            onScroll={handleScroll} scrollEventThrottle={16}>
             <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
               {historyItems.map((emoji) => (
                 <TouchableOpacity key={emoji} onPress={() => handleSelect(emoji)}
@@ -357,7 +373,8 @@ function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange }: {
           </View>
         ) : (
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ padding: 4, paddingBottom: 56 }}>
+            contentContainerStyle={{ padding: 4, paddingBottom: 56 }}
+            onScroll={handleScroll} scrollEventThrottle={16}>
             <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
               {searchResults.map((e) => (
                 <TouchableOpacity key={e.name} onPress={() => handleSelect(e.emoji)}
@@ -389,6 +406,8 @@ function EmojiScrollPanel({ onEmojiSelected, onSearchModeChange }: {
           removeClippedSubviews
           contentContainerStyle={{ paddingBottom: 56 }}
           style={{ flex: 1 }}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
         />
       )}
     </View>
@@ -443,9 +462,12 @@ for (const row of STICKER_FLAT) {
 
 type StickerMode = "browse" | "history" | "search";
 
-function StickerScrollPanel({ onSendSticker, onSearchModeChange }: {
+function StickerScrollPanel({ onSendSticker, onSearchModeChange, onScrollDown, onScrollUp, onSelect }: {
   onSendSticker: (s: string) => void;
   onSearchModeChange?: (active: boolean) => void;
+  onScrollDown?: () => void;
+  onScrollUp?: () => void;
+  onSelect?: () => void;
 }) {
   const { colors, isDark } = useTheme();
   const glass = glassTokens(isDark);
@@ -465,13 +487,23 @@ function StickerScrollPanel({ onSendSticker, onSearchModeChange }: {
   const catBarRef     = useRef<ScrollView>(null);
   const activeCatRef  = useRef(0);
   const isScrollingTo = useRef(false);
+  const lastScrollY   = useRef(0);
 
   useEffect(() => { loadHistory(STICKER_HISTORY_KEY, setHistoryItems); }, []);
 
   const handleSend = useCallback((sticker: string) => {
     onSendSticker(sticker);
+    onSelect?.();
     setHistoryItems((prev) => pushHistory(prev, sticker, STICKER_HISTORY_KEY));
-  }, [onSendSticker]);
+  }, [onSendSticker, onSelect]);
+
+  const handleScroll = useCallback((e: any) => {
+    const y  = e.nativeEvent.contentOffset.y;
+    const dy = y - lastScrollY.current;
+    lastScrollY.current = y;
+    if (dy > 8)  onScrollDown?.();
+    else if (dy < -4) onScrollUp?.();
+  }, [onScrollDown, onScrollUp]);
 
   // Debounced query for sticker search — same freeze-prevention pattern as emoji panel
   const [debouncedStickerQuery, setDebouncedStickerQuery] = useState("");
@@ -609,7 +641,8 @@ function StickerScrollPanel({ onSendSticker, onSearchModeChange }: {
 
   const StickerGrid = ({ stickers }: { stickers: string[] }) => (
     <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ padding: 4, paddingBottom: 56 }}>
+      contentContainerStyle={{ padding: 4, paddingBottom: 56 }}
+      onScroll={handleScroll} scrollEventThrottle={16}>
       <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
         {stickers.map((s, i) => (
           <TouchableOpacity key={`${s}-${i}`} onPress={() => handleSend(s)}
@@ -662,6 +695,8 @@ function StickerScrollPanel({ onSendSticker, onSearchModeChange }: {
           removeClippedSubviews
           contentContainerStyle={{ paddingBottom: 56 }}
           style={{ flex: 1 }}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
         />
       )}
     </View>
@@ -687,7 +722,12 @@ async function fetchGifs(query: string, apiKey: string): Promise<GifItem[]> {
     .filter((g: GifItem) => g.url);
 }
 
-function GifPanel({ onSendGif }: { onSendGif: (url: string) => void }) {
+function GifPanel({ onSendGif, onScrollDown, onScrollUp, onSelect }: {
+  onSendGif: (url: string) => void;
+  onScrollDown?: () => void;
+  onScrollUp?: () => void;
+  onSelect?: () => void;
+}) {
   const { colors, isDark } = useTheme();
   const { accent } = useAppAccent();
   const glass = glassTokens(isDark);
@@ -697,6 +737,15 @@ function GifPanel({ onSendGif }: { onSendGif: (url: string) => void }) {
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const apiKeyRef   = useRef<string>("");
+  const lastScrollY = useRef(0);
+
+  const handleScroll = useCallback((e: any) => {
+    const y  = e.nativeEvent.contentOffset.y;
+    const dy = y - lastScrollY.current;
+    lastScrollY.current = y;
+    if (dy > 8)  onScrollDown?.();
+    else if (dy < -4) onScrollUp?.();
+  }, [onScrollDown, onScrollUp]);
 
   useEffect(() => {
     import("@/lib/env").then(({ GIPHY_API_KEY }) => {
@@ -768,12 +817,14 @@ function GifPanel({ onSendGif }: { onSendGif: (url: string) => void }) {
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ padding: 6, paddingTop: 4, paddingBottom: 56 }}>
+          contentContainerStyle={{ padding: 6, paddingTop: 4, paddingBottom: 56 }}
+          onScroll={handleScroll} scrollEventThrottle={16}>
           <View style={{ flexDirection: "row", gap: 4 }}>
             {[left, right].map((col, ci) => (
               <View key={ci} style={{ flex: 1, gap: 4 }}>
                 {col.map((gif) => (
-                  <TouchableOpacity key={gif.id} activeOpacity={0.75} onPress={() => onSendGif(gif.url)}
+                  <TouchableOpacity key={gif.id} activeOpacity={0.75}
+                    onPress={() => { onSendGif(gif.url); onSelect?.(); }}
                     style={{ borderRadius: 8, overflow: "hidden", backgroundColor: colors.inputBg as string }}>
                     <Image source={{ uri: gif.preview }} style={{ width: "100%", aspectRatio: 1.4 }} resizeMode="cover" />
                   </TouchableOpacity>
@@ -820,23 +871,80 @@ export default function EmojiStickerPicker({
 
   const BOTTOM_GAP = 10;
 
+  // ── Bar show / hide animation ───────────────────────────────────────────────
+  // barAnim: 0 = fully visible, 1 = hidden below
+  const barAnim = useRef(new Animated.Value(0)).current;
+
+  const showBar = useCallback(() => {
+    Animated.spring(barAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      damping: 16,
+      stiffness: 220,
+      mass: 0.7,
+    }).start();
+  }, [barAnim]);
+
+  const hideBar = useCallback(() => {
+    Animated.timing(barAnim, {
+      toValue: 1,
+      duration: 180,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [barAnim]);
+
+  const handleTabPress = useCallback((t: Tab) => {
+    setTab(t);
+    showBar();
+  }, [showBar]);
+
+  const pillTranslateY = barAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 70] });
+  const pillOpacity    = barAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
+
   return (
     <View style={[s.root, { height, backgroundColor: colors.surface as string }]}>
 
-      {/* Content area */}
+      {/* Content area — full height, pill floats above */}
       <View style={{ flex: 1 }}>
-        {tab === "emoji"    && <EmojiScrollPanel onEmojiSelected={onEmojiSelected} onSearchModeChange={onSearchModeChange} />}
-        {tab === "gifs"     && <GifPanel onSendGif={onSendGif ?? (() => {})} />}
-        {tab === "stickers" && <StickerScrollPanel onSendSticker={onSendSticker} onSearchModeChange={onSearchModeChange} />}
+        {tab === "emoji"    && (
+          <EmojiScrollPanel
+            onEmojiSelected={onEmojiSelected}
+            onSearchModeChange={onSearchModeChange}
+            onScrollDown={hideBar}
+            onScrollUp={showBar}
+            onSelect={showBar}
+          />
+        )}
+        {tab === "gifs"     && (
+          <GifPanel
+            onSendGif={onSendGif ?? (() => {})}
+            onScrollDown={hideBar}
+            onScrollUp={showBar}
+            onSelect={showBar}
+          />
+        )}
+        {tab === "stickers" && (
+          <StickerScrollPanel
+            onSendSticker={onSendSticker}
+            onSearchModeChange={onSearchModeChange}
+            onScrollDown={hideBar}
+            onScrollUp={showBar}
+            onSelect={showBar}
+          />
+        )}
       </View>
 
-      {/* ── Floating pill row ── */}
-      <View style={[s.pillRow, { bottom: BOTTOM_GAP }]}>
-
+      {/* ── Floating pill row — animated ── */}
+      <Animated.View
+        style={[
+          s.pillRow,
+          { bottom: BOTTOM_GAP, transform: [{ translateY: pillTranslateY }], opacity: pillOpacity },
+        ]}
+      >
         {/* Tab pill */}
         <BlurView intensity={isDark ? 60 : 80} tint={isDark ? "dark" : "light"}
           style={[s.pill, { borderColor: glass.border }, GLASS.shadow.darkSoft as any]}>
-          {/* Solid backing for contrast on any theme */}
           <View style={[StyleSheet.absoluteFillObject, {
             backgroundColor: isDark ? "rgba(30,30,35,0.85)" : "rgba(255,255,255,0.90)",
             borderRadius: GLASS.radius.pill,
@@ -845,7 +953,7 @@ export default function EmojiStickerPicker({
             const active = tab === t;
             const label  = t === "emoji" ? "Emoji" : t === "gifs" ? "GIFs" : "Stickers";
             return (
-              <TouchableOpacity key={t} onPress={() => setTab(t)} activeOpacity={0.7} style={s.pillTab}>
+              <TouchableOpacity key={t} onPress={() => handleTabPress(t)} activeOpacity={0.7} style={s.pillTab}>
                 {active && <View style={[s.activeChip, { backgroundColor: accent + "25" }]} />}
                 <Text style={[
                   s.pillLabel,
@@ -868,13 +976,13 @@ export default function EmojiStickerPicker({
             backgroundColor: isDark ? "rgba(30,30,35,0.85)" : "rgba(255,255,255,0.90)",
             borderRadius: 20,
           }]} />
-          <TouchableOpacity onPress={onDelete} activeOpacity={0.6} hitSlop={8} style={s.deleteInner}>
+          <TouchableOpacity onPress={() => { onDelete?.(); showBar(); }} activeOpacity={0.6} hitSlop={8} style={s.deleteInner}>
             <Ionicons name="backspace-outline" size={20}
               color={isDark ? "rgba(255,255,255,0.70)" : "rgba(0,0,0,0.55)"} />
           </TouchableOpacity>
         </BlurView>
 
-      </View>
+      </Animated.View>
     </View>
   );
 }
