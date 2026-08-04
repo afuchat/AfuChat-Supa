@@ -304,25 +304,73 @@ export async function getFeedCursor(tab: "for_you" | "following"): Promise<strin
 }
 
 // ─── Cached user identity ──────────────────────────────────────────────────────
-// Persisted in MMKV (survives app restarts, synchronous read). Used to detect
-// "was this user previously logged in?" on offline startup before the Supabase
-// session can be validated with the network.
+// PRIMARY:  MMKV (synchronous, instant reads — used for fast startup path).
+// BACKUP:   AsyncStorage key "@ac:uid_bk" — written alongside every MMKV write.
+//           If MMKV falls back to an in-memory store (e.g. JNI init failure in
+//           production), the AsyncStorage backup is the only durable copy.
+//           Call initUserIdCache() early at startup to pre-populate the
+//           synchronous MMKV / in-memory mirror from the AsyncStorage backup.
+// MIRROR:   _uidMirror — module-level variable that reflects the current
+//           session's user ID even when both MMKV and AsyncStorage have not yet
+//           been read (used only as an in-session last resort).
 
 const LAST_USER_KEY = "last_authed_user_id";
+const UID_BACKUP_KEY = "@ac:uid_bk"; // AsyncStorage key for the durable backup
+
+// In-session in-memory mirror. Populated from MMKV on first read and from
+// the AsyncStorage backup by initUserIdCache(). Never survives a process kill.
+let _uidMirror: string | null = null;
+
+/**
+ * Pre-populate the synchronous user-ID cache from the AsyncStorage backup.
+ * Call this once, as early as possible in the app startup (before AuthProvider
+ * mounts), so getCachedUserId() can return the correct value synchronously even
+ * when MMKV is using an in-memory fallback store.
+ *
+ * Safe to call multiple times — exits immediately if the cache is already warm.
+ */
+export async function initUserIdCache(): Promise<void> {
+  // Already warm — nothing to do.
+  if (_uidMirror) return;
+  try {
+    const mmkvVal = storage.getString(LAST_USER_KEY);
+    if (mmkvVal) { _uidMirror = mmkvVal; return; }
+  } catch {}
+  // MMKV miss (memory-store fallback) — restore from AsyncStorage backup.
+  try {
+    const backup = await AsyncStorage.getItem(UID_BACKUP_KEY);
+    if (backup) {
+      _uidMirror = backup;
+      // Promote back to MMKV so future synchronous reads work within this session.
+      try { storage.setString(LAST_USER_KEY, backup); } catch {}
+    }
+  } catch {}
+}
 
 /** Persist the authenticated user's ID synchronously. Call whenever user changes. */
 export function setCachedUserId(userId: string): void {
+  _uidMirror = userId;
   try { storage.setString(LAST_USER_KEY, userId); } catch {}
+  // Async backup — survives a MMKV memory-store fallback across cold restarts.
+  AsyncStorage.setItem(UID_BACKUP_KEY, userId).catch(() => {});
 }
 
 /** Read the last authenticated user's ID instantly (no I/O). */
 export function getCachedUserId(): string | null {
-  try { return storage.getString(LAST_USER_KEY) ?? null; } catch { return null; }
+  try {
+    const v = storage.getString(LAST_USER_KEY);
+    if (v) { _uidMirror = v; return v; }
+  } catch {}
+  // MMKV miss — return the in-session mirror (populated by setCachedUserId or
+  // by initUserIdCache() running asynchronously at startup).
+  return _uidMirror;
 }
 
 /** Erase the cached user ID on explicit sign-out. */
 export function clearCachedUserId(): void {
+  _uidMirror = null;
   try { storage.delete(LAST_USER_KEY); } catch {}
+  AsyncStorage.removeItem(UID_BACKUP_KEY).catch(() => {});
 }
 
 /**
@@ -481,6 +529,9 @@ export async function wipeAllLocalData(): Promise<void> {
 
   // ── 2. AsyncStorage: snapshot device prefs → clear → restore ──────────────
   try {
+    // Also clear the UID backup so a wiped-account cannot be restored from it.
+    _uidMirror = null;
+
     // Save device preferences before the full AsyncStorage clear
     const asyncPairs: Array<[string, string]> = [];
     for (const key of DEVICE_ASYNC_KEYS) {

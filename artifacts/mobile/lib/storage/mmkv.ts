@@ -76,7 +76,11 @@ function isExpoGo(): boolean {
     if (NativeModules?.ExponentConstants?.appOwnership === "expo") return true;
   } catch {}
 
-  if (typeof (global as any).__expo !== "undefined") return true;
+  // NOTE: do NOT check `typeof global.__expo !== "undefined"` here.
+  // The __expo global is injected by the Expo SDK runtime in ALL Expo apps —
+  // including production standalone builds — so that check is a false positive
+  // that causes production apps to silently fall back to the in-memory store
+  // and lose all data on every restart.
 
   return false;
 }
@@ -101,12 +105,24 @@ function getStore(): MMKVLike {
     return _store;
   }
 
-  try {
-    const { MMKV } = require("react-native-mmkv") as any;
-    _store = new MMKV({ id: "afuchat-store" });
-  } catch {
-    _store = createMemoryStore();
+  // Native production build: use real MMKV for durable persistence.
+  // Try twice (in case of a transient JNI init race on some devices).
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const { MMKV } = require("react-native-mmkv") as any;
+      _store = new MMKV({ id: "afuchat-store" });
+      return _store!;
+    } catch (err) {
+      if (attempt === 0) continue; // retry once
+      // Both attempts failed: log prominently so the crash reporter captures it.
+      // Fall back to memory store so the app at least opens.
+      if (typeof console !== "undefined") {
+        console.error("[MMKV] Failed to initialise persistent store — falling back to in-memory. All data will be lost on restart.", err);
+      }
+    }
   }
+
+  _store = createMemoryStore();
   return _store!;
 }
 

@@ -5,7 +5,7 @@ import { getCachedUserId } from "@/lib/offlineStore";
 import { storage, KEYS } from "@/lib/storage/mmkv";
 
 export default function IndexScreen() {
-  const { session, profile, loading } = useAuth();
+  const { session, profile, loading, user } = useAuth();
   const redirected = useRef(false);
   const { handle } = useLocalSearchParams<{ handle?: string }>();
 
@@ -13,7 +13,12 @@ export default function IndexScreen() {
     if (redirected.current) return;
 
     const cachedId  = getCachedUserId();
-    const isLoggedIn = hasSession || Boolean(cachedId);
+    // Three signals for "user is logged in" — any one is sufficient:
+    //  1. hasSession   — Supabase returned a live session this boot
+    //  2. cachedId     — MMKV (or its AsyncStorage backup) has a user ID
+    //  3. user?.id     — AuthContext already set a synthetic user from SecureStore
+    //     (happens when MMKV fell back to memory store but SecureStore still had tokens)
+    const isLoggedIn = hasSession || Boolean(cachedId) || Boolean(user?.id);
 
     // Not logged in — show welcome onboarding first, then login
     if (!isLoggedIn) {
@@ -23,8 +28,9 @@ export default function IndexScreen() {
       return;
     }
 
-    // Known returning user (MMKV has their ID): go home INSTANTLY.
-    if (cachedId) {
+    // Known returning user — go home INSTANTLY.
+    // Use cachedId OR user?.id so SecureStore-restored sessions also skip the wait.
+    if (cachedId || user?.id) {
       redirected.current = true;
       if (hasSession && profileReady && profile?.onboarding_completed === false) {
         router.replace("/onboarding");
@@ -34,7 +40,7 @@ export default function IndexScreen() {
       return;
     }
 
-    // Brand-new sign-in (no cachedId yet): wait for profile before routing
+    // Brand-new sign-in (no cached ID yet): wait for profile before routing
     if (hasSession && !profileReady) return;
 
     redirected.current = true;
@@ -61,23 +67,28 @@ export default function IndexScreen() {
       !!profile,
       profile?.onboarding_completed === true,
     );
-  }, [session, profile, loading, handle]);
+  }, [session, profile, loading, handle, user?.id]);
 
-  // Safety net: if auth takes too long, route based on cached state.
-  // Reduced to 600ms — fast enough to feel instant on both platforms.
+  // Safety net: if auth takes too long, route based on cached/in-memory state.
+  //
+  // Extended to 2 500 ms (was 600 ms) so the slow-path (getSession → AsyncStorage
+  // backup → SecureStore refresh) has time to complete before we make a routing
+  // decision. On a cold start with no MMKV data but a valid SecureStore token the
+  // getSession + setSession + TOKEN_REFRESHED round-trip can easily take 1–2 s on
+  // a slow network or right after a device reboot.
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (redirected.current) return;
       redirected.current = true;
       if (handle) {
         router.replace(`/${handle}` as any);
-      } else if (getCachedUserId()) {
+      } else if (getCachedUserId() || user?.id) {
         router.replace("/(tabs)/chats");
       } else {
         const onboardingDone = (() => { try { return storage.getBoolean(KEYS.ONBOARDING_DONE); } catch { return false; } })();
         router.replace(onboardingDone ? "/(auth)/login" : "/welcome");
       }
-    }, 600);
+    }, 2500);
 
     return () => clearTimeout(timeout);
   }, [handle]);
