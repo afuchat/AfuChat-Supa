@@ -283,14 +283,15 @@ async function handleCall(
   projectId: string,
   accessToken: string,
 ): Promise<void> {
-  const { id: callId, caller_id, receiver_id, call_type } = record;
+  // Column is callee_id (not receiver_id) — matches callEngine.ts INSERT
+  const { id: callId, caller_id, callee_id, call_type } = record;
 
-  if (!caller_id || !receiver_id) return;
+  if (!caller_id || !callee_id) return;
 
-  // Get caller profile + receiver FCM token in parallel
+  // Get caller profile + callee FCM token in parallel
   const [{ data: caller }, { data: receiver }] = await Promise.all([
     db.from("profiles").select("display_name, handle").eq("id", caller_id).single(),
-    db.from("profiles").select("fcm_token").eq("id", receiver_id).single(),
+    db.from("profiles").select("fcm_token").eq("id", callee_id).single(),
   ]);
 
   if (!receiver?.fcm_token) return;
@@ -339,15 +340,16 @@ async function handleNotification(
   // Check notification preferences
   const { data: prefs } = await db
     .from("notification_preferences")
-    .select("push_enabled, push_likes, push_follows, push_replies, push_mentions, push_messages, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, quiet_hours_timezone")
+    .select("push_enabled, push_likes, push_follows, push_replies, push_comments, push_mentions, push_messages, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, quiet_hours_timezone")
     .eq("user_id", user_id)
     .single();
 
   if (prefs) {
     if (!prefs.push_enabled) return;
-    if (type === "like" && prefs.push_likes === false) return;
-    if (type === "follow" && prefs.push_follows === false) return;
-    if ((type === "comment" || type === "reply") && prefs.push_replies === false) return;
+    if (type === "like"    && prefs.push_likes   === false) return;
+    if (type === "follow"  && prefs.push_follows  === false) return;
+    if (type === "comment" && (prefs.push_comments === false || prefs.push_replies === false)) return;
+    if (type === "reply"   && (prefs.push_replies  === false || prefs.push_comments === false)) return;
     if (type === "mention" && prefs.push_mentions === false) return;
 
     // Quiet hours check
