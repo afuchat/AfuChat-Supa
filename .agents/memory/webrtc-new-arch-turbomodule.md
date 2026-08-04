@@ -43,6 +43,23 @@ useEffect(() => {
 
 **How to apply:** Both fixes must stay in sync. If `_getRTC()` logic changes, ensure null is never permanently cached on the first attempt.
 
+## ProGuard — also required
+
+Even with the TurboModuleRegistry injection, ProGuard/R8 in full-mode strips
+`com.oney.WebRTCModule.*` (the Java bridge) because nothing references it from
+Java outside the RN module registry (which uses reflection). Without an explicit
+keep rule, `TurboModuleRegistry.get("WebRTCModule")` returns null even in
+production release builds.
+
+**Fix in proguard-rules.pro:**
+```
+-keep class com.oney.WebRTCModule.** { *; }
+-dontwarn com.oney.WebRTCModule.**
+```
+
+Both the TurboModuleRegistry injection (in callEngine.ts) AND this ProGuard rule
+are required for voice calls to work in production AAB builds.
+
 ## Expo Go Behavior
 
 In Expo Go, `TurboModuleRegistry.get("WebRTCModule")` also returns null (the module isn't bundled in Expo Go). With the null-count guard, after 3 attempts `_rtcBridge` is permanently null — calls are gracefully disabled.
