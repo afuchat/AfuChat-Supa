@@ -20,7 +20,7 @@ initCrashReporter();
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
+import { AppState, Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
 import { Stack, usePathname, router } from "expo-router";
 import { setCurrentPage, resolvePageInfo } from "@/lib/pageTracker";
 import { StatusBar } from "expo-status-bar";
@@ -34,6 +34,8 @@ import {
   isOnline,
   initUserIdCache,
 } from "@/lib/offlineStore";
+import { preloadConversations } from "@/lib/conversationsPreload";
+import { refreshAllPermissions } from "@/lib/permissionsManager";
 
 // ── Boot-time UID cache warm-up ──────────────────────────────────────────────
 // If MMKV fell back to an in-memory store (JNI init failure on some Android
@@ -43,7 +45,6 @@ import {
 // correct value on the very first render.  This prevents the safety-timer in
 // index.tsx from routing a legitimately-logged-in user to the welcome screen.
 initUserIdCache().catch(() => {});
-import { preloadConversations } from "@/lib/conversationsPreload";
 
 import { handleIncomingUrl } from "@/lib/deepLinkHandler";
 import { verifyDeepLinks } from "@/lib/deepLinkVerifier";
@@ -250,6 +251,22 @@ export default function RootLayout() {
   // that might accidentally fall through to [handle].tsx.
   useEffect(() => {
     verifyDeepLinks().catch(() => {});
+  }, []);
+
+  // Refresh OS permission statuses whenever the app comes back to foreground.
+  // The user may have changed a permission (camera, mic, notifications, etc.)
+  // in iOS/Android Settings while the app was backgrounded.  We re-query and
+  // update the MMKV cache so every screen that reads getPermissionStatus() /
+  // isPermissionGranted() always sees the current state without a native
+  // round-trip at call time.
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    const sub = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        refreshAllPermissions().catch(() => {});
+      }
+    });
+    return () => sub.remove();
   }, []);
 
   useEffect(() => {
