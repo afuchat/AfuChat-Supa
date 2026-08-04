@@ -1,6 +1,7 @@
 // ─── MMKV wrapper ──────────────────────────────────────────────────────────────
 // Native (Android/iOS): uses react-native-mmkv (JSI, synchronous).
-// Expo Go fallback: in-memory store (MMKV module is not available in Expo Go).
+// Web:      uses localStorage so data persists across page refreshes.
+// Expo Go:  in-memory store (MMKV module is not available in Expo Go).
 
 type MMKVLike = {
   set(key: string, value: string | number | boolean): void;
@@ -24,6 +25,32 @@ function createMemoryStore(): MMKVLike {
     contains(key) { return mem.has(key); },
     getAllKeys() { return Array.from(mem.keys()); },
     clearAll() { mem.clear(); },
+  };
+}
+
+/**
+ * Web-persistent store backed by localStorage.
+ * Prefixes every key with "mmkv_" to avoid collisions with other libraries.
+ * Survives page refreshes so session/profile data is not lost on web restarts.
+ */
+function createLocalStorageStore(): MMKVLike {
+  const PREFIX = "mmkv_";
+  function _raw(key: string): string | null {
+    try { return localStorage.getItem(PREFIX + key); } catch { return null; }
+  }
+  function _parse(raw: string | null): string | number | boolean | undefined {
+    if (raw === null) return undefined;
+    try { return JSON.parse(raw); } catch { return raw; }
+  }
+  return {
+    set(key, value)   { try { localStorage.setItem(PREFIX + key, JSON.stringify(value)); } catch {} },
+    getString(key)    { const v = _parse(_raw(key)); return typeof v === "string"  ? v : undefined; },
+    getNumber(key)    { const v = _parse(_raw(key)); return typeof v === "number"  ? v : undefined; },
+    getBoolean(key)   { const v = _parse(_raw(key)); return typeof v === "boolean" ? v : undefined; },
+    delete(key)       { try { localStorage.removeItem(PREFIX + key); } catch {} },
+    contains(key)     { try { return localStorage.getItem(PREFIX + key) !== null; } catch { return false; } },
+    getAllKeys()       { try { return Object.keys(localStorage).filter(k => k.startsWith(PREFIX)).map(k => k.slice(PREFIX.length)); } catch { return []; } },
+    clearAll()        { try { Object.keys(localStorage).filter(k => k.startsWith(PREFIX)).forEach(k => localStorage.removeItem(k)); } catch {} },
   };
 }
 
@@ -57,6 +84,18 @@ function isExpoGo(): boolean {
 function getStore(): MMKVLike {
   if (_store) return _store;
 
+  // Web: use localStorage for durable persistence across page refreshes.
+  try {
+    const { Platform } = require("react-native");
+    if (Platform.OS === "web") {
+      _store = typeof localStorage !== "undefined"
+        ? createLocalStorageStore()
+        : createMemoryStore();
+      return _store;
+    }
+  } catch {}
+
+  // Expo Go: MMKV JSI module is absent — fall back to in-memory.
   if (isExpoGo()) {
     _store = createMemoryStore();
     return _store;
@@ -94,6 +133,7 @@ export const storage = {
 
   delete(key: string) { getStore().delete(key); },
   contains(key: string): boolean { return getStore().contains(key); },
+  getAllKeys(): string[] { return getStore().getAllKeys(); },
   clearAll() { getStore().clearAll(); },
 
   setWithTTL<T>(key: string, value: T, ttlMs: number) {

@@ -30,7 +30,19 @@ export type PendingMessage = {
 
 let _isOnline = true;
 let _listeners: ((online: boolean) => void)[] = [];
+// Reconnect-specific listeners — fired ONLY when transitioning from offline → online.
+// Use onReconnect() to subscribe; screens use this to trigger a data refresh
+// without having to filter out the offline→online direction themselves.
+let _reconnectListeners: (() => void)[] = [];
 let _netInfoInitialized = false;
+
+function _fireConnectivity(newOnline: boolean): void {
+  _isOnline = newOnline;
+  _listeners.forEach((fn) => { try { fn(newOnline); } catch {} });
+  if (newOnline) {
+    _reconnectListeners.forEach((fn) => { try { fn(); } catch {} });
+  }
+}
 
 function initNetInfo() {
   if (_netInfoInitialized) return;
@@ -44,18 +56,12 @@ function initNetInfo() {
     // "true" default. This matters on cold start when the phone is offline.
     NetInfo.fetch().then((state: any) => {
       const initialOnline = state.isConnected === true && state.isInternetReachable !== false;
-      if (initialOnline !== _isOnline) {
-        _isOnline = initialOnline;
-        _listeners.forEach((fn) => fn(initialOnline));
-      }
+      if (initialOnline !== _isOnline) _fireConnectivity(initialOnline);
     }).catch(() => {});
 
     NetInfo.addEventListener((state: any) => {
       const newOnline = state.isConnected === true && state.isInternetReachable !== false;
-      if (newOnline !== _isOnline) {
-        _isOnline = newOnline;
-        _listeners.forEach((fn) => fn(newOnline));
-      }
+      if (newOnline !== _isOnline) _fireConnectivity(newOnline);
     });
   } catch {}
 }
@@ -70,6 +76,25 @@ export function onConnectivityChange(fn: (online: boolean) => void): () => void 
   _listeners.push(fn);
   return () => {
     _listeners = _listeners.filter((l) => l !== fn);
+  };
+}
+
+/**
+ * Subscribe to the offline → online reconnect event.
+ *
+ * The callback fires once each time the device regains internet access.
+ * Use it to trigger a background data refresh (conversations, messages, etc.)
+ * without having to implement connectivity direction detection in every screen.
+ *
+ * Returns an unsubscribe function — call it in a useEffect cleanup.
+ *
+ * Example:
+ *   useEffect(() => onReconnect(() => fetchLatestMessages()), []);
+ */
+export function onReconnect(fn: () => void): () => void {
+  _reconnectListeners.push(fn);
+  return () => {
+    _reconnectListeners = _reconnectListeners.filter((l) => l !== fn);
   };
 }
 
@@ -424,9 +449,16 @@ const DEVICE_ASYNC_KEYS: string[] = [
 export async function wipeAllLocalData(): Promise<void> {
   // ── 1. MMKV: snapshot device prefs → clearAll → restore ───────────────────
   try {
-    // Save device preferences before the nuclear clear
+    // Build the full list of keys to preserve:
+    //   • DEVICE_MMKV_KEYS: explicit device-level preferences (theme, sound, etc.)
+    //   • Any key starting with "perm_status_": permission cache entries.
+    //     Permissions belong to the OS / device installation, NOT the user account.
+    //     Wiping them would cause redundant permission prompts after every sign-out.
+    const permKeys = storage.getAllKeys().filter((k) => k.startsWith("perm_status_"));
+    const keysToPreserve = [...DEVICE_MMKV_KEYS, ...permKeys];
+
     const mmkvSnapshot: Array<{ key: string; type: "string" | "number" | "boolean"; value: string | number | boolean }> = [];
-    for (const key of DEVICE_MMKV_KEYS) {
+    for (const key of keysToPreserve) {
       const str = storage.getString(key);
       if (str !== undefined) { mmkvSnapshot.push({ key, type: "string", value: str }); continue; }
       const num = storage.getNumber(key);
@@ -437,7 +469,7 @@ export async function wipeAllLocalData(): Promise<void> {
 
     storage.clearAll();
 
-    // Restore device preferences immediately after the clear
+    // Restore device preferences + permission cache immediately after the clear
     for (const { key, type, value } of mmkvSnapshot) {
       try {
         if (type === "string")  storage.setString(key, value as string);
