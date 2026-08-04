@@ -1128,7 +1128,9 @@ function _saveCallRecord(
     ended_at: now,
     duration_seconds: duration ?? null,
     chat_id: _info.chatId,
-  }, { onConflict: "id", ignoreDuplicates: false }).catch(() => {});
+  }, { onConflict: "id", ignoreDuplicates: false }).then(({ error }) => {
+    if (error) console.warn("[CallEngine] calls upsert error:", error.message);
+  }).catch(() => {});
 }
 
 // ─── SDP: prefer Opus codec ───────────────────────────────────────────────────
