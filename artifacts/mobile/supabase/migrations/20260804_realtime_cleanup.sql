@@ -103,6 +103,13 @@ CREATE POLICY "calls_update"
   ON public.calls FOR UPDATE
   USING (auth.uid() = caller_id OR auth.uid() = callee_id);
 
+-- Add columns that may be missing if the table already existed without them
+ALTER TABLE public.calls ADD COLUMN IF NOT EXISTS answered_at      TIMESTAMPTZ;
+ALTER TABLE public.calls ADD COLUMN IF NOT EXISTS ended_at         TIMESTAMPTZ;
+ALTER TABLE public.calls ADD COLUMN IF NOT EXISTS duration_seconds INTEGER;
+ALTER TABLE public.calls ADD COLUMN IF NOT EXISTS created_at       TIMESTAMPTZ NOT NULL DEFAULT now();
+ALTER TABLE public.calls ADD COLUMN IF NOT EXISTS chat_id          UUID REFERENCES public.chats(id) ON DELETE SET NULL;
+
 -- Index for quick lookup by participant
 CREATE INDEX IF NOT EXISTS idx_calls_caller_id  ON public.calls (caller_id);
 CREATE INDEX IF NOT EXISTS idx_calls_callee_id  ON public.calls (callee_id);
