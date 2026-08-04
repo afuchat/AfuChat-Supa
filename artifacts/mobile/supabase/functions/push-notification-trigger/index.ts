@@ -284,30 +284,33 @@ async function handleCall(
   accessToken: string,
 ): Promise<void> {
   // Column is callee_id (not receiver_id) — matches callEngine.ts INSERT
-  const { id: callId, caller_id, callee_id, call_type } = record;
+  const { id: callId, caller_id, callee_id, call_type, chat_id } = record;
 
   if (!caller_id || !callee_id) return;
 
   // Get caller profile + callee FCM token in parallel
   const [{ data: caller }, { data: receiver }] = await Promise.all([
-    db.from("profiles").select("display_name, handle").eq("id", caller_id).single(),
+    db.from("profiles").select("display_name, handle, avatar_url").eq("id", caller_id).single(),
     db.from("profiles").select("fcm_token").eq("id", callee_id).single(),
   ]);
 
   if (!receiver?.fcm_token) return;
 
-  const callerName = caller?.display_name ?? caller?.handle ?? "Someone";
-  const typeLabel = call_type === "video" ? "Video call" : "Voice call";
+  const callerName   = caller?.display_name ?? caller?.handle ?? "Someone";
+  const callerAvatar = caller?.avatar_url   ?? "";
+  const typeLabel    = call_type === "video" ? "Video call" : "Voice call";
 
   await dispatchToToken(receiver.fcm_token, {
     title: callerName,
     body: `${typeLabel} incoming`,
     data: {
       type: "call",
-      callId: callId ?? "",
-      callerId: caller_id,
+      callId:       callId       ?? "",
+      callerId:     caller_id,
       callerName,
-      callType: call_type ?? "voice",
+      callerAvatar,
+      chatId:       chat_id      ?? "",
+      callType:     call_type    ?? "voice",
     },
     channelId: "calls",
     collapseKey: `call_${callId}`,

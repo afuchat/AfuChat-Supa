@@ -351,11 +351,23 @@ function _routeNotification(data: Record<string, string>): void {
         }
         break;
 
-      case "call":
-        if (data.callId) {
-          // Call screen handles its own routing via CallContext
+      case "call": {
+        // Reconstruct the IncomingCallNotice from push payload and deliver it to
+        // CallContext via the push bridge. This fires when the app was backgrounded
+        // and the user taps the incoming-call notification — the Realtime inbox
+        // broadcast was never received, so the engine is still idle. acceptCall()
+        // already handles idle → incoming_ringing promotion gracefully.
+        const callId    = data.callId    ?? data.call_id    ?? "";
+        const callerId  = data.callerId  ?? data.caller_id  ?? "";
+        const callerName = data.callerName ?? data.caller_name ?? "Someone";
+        const callerAvatar = data.callerAvatar ?? data.caller_avatar ?? null;
+        const chatId    = data.chatId    ?? data.chat_id    ?? null;
+        if (callId && callerId) {
+          const { emitPushIncomingCall } = require("@/lib/callPushBridge");
+          emitPushIncomingCall({ callId, callerId, callerName, callerAvatar, chatId });
         }
         break;
+      }
 
       case "follow":
         if (data.actorHandle || data.actor_handle) {

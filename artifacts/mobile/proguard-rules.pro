@@ -172,8 +172,16 @@
 -keep class expo.modules.taskManager.** { *; }
 
 # ─── React Native WebRTC / media (used in calling feature) ───────────────────
+# org.webrtc — the native C++ WebRTC library (libwebrtc)
 -keep class org.webrtc.** { *; }
 -dontwarn org.webrtc.**
+# com.oney.WebRTCModule — the React Native Java bridge for react-native-webrtc.
+# R8 strips this package in full-mode because nothing references it from Java
+# outside of the RN module registry (which uses reflection). Without this rule
+# TurboModuleRegistry.get("WebRTCModule") returns null and all voice calls fail
+# with WEBRTC_UNAVAILABLE on every production build.
+-keep class com.oney.WebRTCModule.** { *; }
+-dontwarn com.oney.WebRTCModule.**
 
 # ─── Suppress library-internal warnings that do not affect runtime ────────────
 -dontwarn javax.annotation.**
