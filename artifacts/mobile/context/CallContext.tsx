@@ -124,10 +124,15 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   _status_ref.current = status;
 
   // ── Detect WebRTC availability once after mount ───────────────────────────
-  // Must run in a useEffect (not at module-eval time) so the native bridge
-  // and TurboModuleRegistry are fully initialized before we probe for the module.
+  // Defer the probe by 500 ms so TurboModules finish registering before we
+  // inspect them. An immediate probe on mount can return null on production
+  // New-Arch builds even though react-native-webrtc IS compiled in, because
+  // TurboModuleRegistry hasn't populated yet. _getRTC() no longer permanently
+  // caches null, so the real call still works even if this probe misfires —
+  // but delaying here also keeps the UI state accurate sooner.
   useEffect(() => {
-    setWebrtcAvailable(getWebRTCAvailable());
+    const t = setTimeout(() => setWebrtcAvailable(getWebRTCAvailable()), 500);
+    return () => clearTimeout(t);
   }, []);
 
   // ── Init / tear-down engine when auth changes ─────────────────────────────

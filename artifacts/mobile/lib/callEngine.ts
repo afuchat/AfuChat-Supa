@@ -52,7 +52,8 @@ interface _RTCBridge {
 // By detecting lazily (on the first startCall/acceptCall), the bridge is
 // always ready and the lookup succeeds reliably.
 
-let _rtcBridge: _RTCBridge | null | undefined = undefined; // undefined = not yet detected
+let _rtcBridge: _RTCBridge | null | undefined = undefined; // undefined = not yet detected / not yet confirmed null
+let _rtcNullCount = 0; // how many consecutive failed detections (used to give up on Expo Go)
 
 function _detectRTC(): _RTCBridge | null {
   if (Platform.OS === "web") {
@@ -116,12 +117,30 @@ function _detectRTC(): _RTCBridge | null {
   }
 }
 
-/** Returns the RTC bridge, detecting on first call (lazy). */
+/**
+ * Returns the RTC bridge, detecting lazily on first call.
+ *
+ * IMPORTANT — null is NOT permanently cached on the first failed probe.
+ * CallContext probes on mount via getWebRTCAvailable(). On production builds
+ * the first probe can fire before TurboModules finish registering and return
+ * null even though react-native-webrtc IS compiled in. If we cached that null
+ * forever, every subsequent startCall would throw "WEBRTC_UNAVAILABLE".
+ *
+ * Strategy: only cache success permanently. Cache null only after 3+
+ * consecutive failures — by then we're genuinely on Expo Go or a device
+ * that truly has no WebRTC support.
+ */
 function _getRTC(): _RTCBridge | null {
-  if (_rtcBridge === undefined) {
-    _rtcBridge = _detectRTC();
+  if (_rtcBridge !== undefined) return _rtcBridge; // cached success → fast path
+  const result = _detectRTC();
+  if (result !== null) {
+    _rtcBridge = result;       // success — cache permanently
+    _rtcNullCount = 0;
+  } else {
+    _rtcNullCount++;
+    if (_rtcNullCount >= 3) _rtcBridge = null; // give up after 3 failures (Expo Go / no module)
   }
-  return _rtcBridge;
+  return result;
 }
 
 /**

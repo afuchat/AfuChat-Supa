@@ -1,6 +1,6 @@
 ---
 name: WebRTC New Architecture TurboModule injection
-description: react-native-webrtc v124 throws at module-eval when NativeModules.WebRTCModule is null (New Arch production). Fix is to inject from TurboModuleRegistry before requiring the package.
+description: react-native-webrtc v124 throws at module-eval when NativeModules.WebRTCModule is null (New Arch production). Fix is to inject from TurboModuleRegistry before requiring the package. Also: don't permanently cache null from early probes.
 ---
 
 ## The Problem
@@ -18,19 +18,31 @@ In New Architecture production builds (RN 0.73+), `NativeModules.WebRTCModule` i
 
 **Why:** react-native-webrtc v124 does not inject itself into NativeModules in New Architecture. All internal `WebRTCModule.xxx` method calls also rely on the same captured reference.
 
-## The Fix
+## The Fix (Part 1 — module injection)
 
 In `lib/callEngine.ts`, before `require("react-native-webrtc")`:
 
 1. Import `TurboModuleRegistry` from `react-native`
 2. If `NativeModules.WebRTCModule == null`, call `TurboModuleRegistry.get("WebRTCModule")`
 3. If TurboModuleRegistry has it, inject it into `NativeModules.WebRTCModule`
-4. If TurboModuleRegistry also returns null → truly unavailable (Expo Go) → return null
+4. Then `require("react-native-webrtc")` (the library now sees the injected module)
 
-**How to apply:** This must run BEFORE `require("react-native-webrtc")` evaluates, so the injected module is picked up by all internal files. Keep it in the `_RTC` IIFE initialization in callEngine.ts.
+## The Fix (Part 2 — null caching bug)
 
-**Why not postinstall patch:** Even if we remove the null-throw in index.ts, all the individual files (RTCPeerConnection.ts, MediaDevices.ts, etc.) also capture `const { WebRTCModule } = NativeModules` at their own module-eval time — they would all get null and fail.
+`CallContext` calls `getWebRTCAvailable()` in a `useEffect` at mount. On production New Arch builds, TurboModules may not be fully registered yet at mount time — `_detectRTC()` returns null. The old `_getRTC()` cached this null permanently (`undefined` → `null`, never re-detected), so every subsequent `startCall` threw `WEBRTC_UNAVAILABLE`.
+
+**Fix in `_getRTC()`:** Only permanently cache SUCCESS. Track `_rtcNullCount` — after 3 consecutive null detections, permanently cache null (this handles Expo Go). On production, the mount-time probe may fail but the real call-time probe (500ms+ later) succeeds.
+
+**Fix in `CallContext`:** Delay the mount-time probe by 500ms:
+```javascript
+useEffect(() => {
+  const t = setTimeout(() => setWebrtcAvailable(getWebRTCAvailable()), 500);
+  return () => clearTimeout(t);
+}, []);
+```
+
+**How to apply:** Both fixes must stay in sync. If `_getRTC()` logic changes, ensure null is never permanently cached on the first attempt.
 
 ## Expo Go Behavior
 
-In Expo Go, `TurboModuleRegistry.get("WebRTCModule")` also returns null (the module isn't bundled in Expo Go). So `_RTC = null`, `WEBRTC_AVAILABLE = false`, and calls are gracefully disabled — correct behavior.
+In Expo Go, `TurboModuleRegistry.get("WebRTCModule")` also returns null (the module isn't bundled in Expo Go). With the null-count guard, after 3 attempts `_rtcBridge` is permanently null — calls are gracefully disabled.
