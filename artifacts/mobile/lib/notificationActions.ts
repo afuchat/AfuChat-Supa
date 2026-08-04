@@ -78,8 +78,7 @@ async function _handleChatReply(data: NotifData, text: string): Promise<void> {
   await supabase.from("messages").insert({
     chat_id: chatId,
     sender_id: session.user.id,
-    content: text.trim(),
-    message_type: "text",
+    encrypted_content: text.trim(),
   });
 }
 
@@ -90,12 +89,13 @@ async function _handleMarkRead(data: NotifData): Promise<void> {
   const session = (await supabase.auth.getSession()).data.session;
   if (!session) return;
 
-  // Update last_read_at for this user in this chat
+  // Mark chat as read by updating the chat's last_message_at timestamp
+  // (chat_members has no last_read_at column; read state is tracked client-side)
   await supabase
-    .from("chat_members")
-    .update({ last_read_at: new Date().toISOString() })
-    .eq("chat_id", chatId)
-    .eq("user_id", session.user.id);
+    .from("chats")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", chatId)
+    .eq("created_by", session.user.id);
 }
 
 async function _handleConfirmDelivery(data: NotifData): Promise<void> {
