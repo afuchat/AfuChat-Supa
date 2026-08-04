@@ -2318,8 +2318,9 @@ function ChatScreen() {
       const me = allMembers.find((m: any) => m.user_id === user.id);
       setIAmChatAdmin(!!(me?.is_admin));
       const others = allMembers.filter((m) => m.user_id !== user.id);
-      // Self-chat ("My Notes"): when the user is the only member, treat themselves as the other
-      const isSelf = others.length === 0;
+      // Self-chat ("My Notes"): ONLY when the user is the sole member AND we have no
+      // other_id hint from URL params (allMembers empty just means an old DM chat).
+      const isSelf = others.length === 0 && allMembers.length > 0 && !otherId;
       const sourceMember = isSelf ? allMembers.find((m) => m.user_id === user.id) : others[0];
       const profileRaw = sourceMember?.profiles;
       const other: any = Array.isArray(profileRaw) ? profileRaw[0] : profileRaw;

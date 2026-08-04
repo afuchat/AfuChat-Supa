@@ -214,34 +214,34 @@ async function handleMessage(
 
   if (!chat_id || !sender_id) return;
 
-  // Get chat members (excluding sender)
-  const { data: members } = await db
-    .from("chat_members")
-    .select("user_id")
-    .eq("chat_id", chat_id)
-    .neq("user_id", sender_id);
+  // Get chat info + members together
+  const [{ data: chatRow }, { data: members }] = await Promise.all([
+    db.from("chats").select("name, is_group, created_by, user_id").eq("id", chat_id).single(),
+    db.from("chat_members").select("user_id").eq("chat_id", chat_id).neq("user_id", sender_id),
+  ]);
 
-  if (!members?.length) return;
+  // Fallback: when chat_members is empty (old DM chats created without members),
+  // derive recipients from chats.created_by / chats.user_id.
+  let recipientIds: string[] = (members ?? []).map((m: any) => m.user_id);
+  if (recipientIds.length === 0 && chatRow && !chatRow.is_group) {
+    const candidates = [chatRow.created_by, chatRow.user_id].filter(
+      (uid): uid is string => !!uid && uid !== sender_id,
+    );
+    recipientIds = candidates;
+  }
 
-  const recipientIds = members.map((m: any) => m.user_id);
+  if (recipientIds.length === 0) return;
 
   // Get sender profile
   const { data: sender } = await db
     .from("profiles")
-    .select("full_name, handle")
+    .select("display_name, handle")
     .eq("id", sender_id)
     .single();
 
-  // Get chat info (group name)
-  const { data: chat } = await db
-    .from("chats")
-    .select("name, type")
-    .eq("id", chat_id)
-    .single();
-
-  const isGroup = chat?.type === "group";
-  const senderName = sender?.full_name ?? sender?.handle ?? "Someone";
-  const title = isGroup ? `${senderName} in ${chat?.name ?? "Group"}` : senderName;
+  const isGroup = !!chatRow?.is_group;
+  const senderName = sender?.display_name ?? sender?.handle ?? "Someone";
+  const title = isGroup ? `${senderName} in ${chatRow?.name ?? "Group"}` : senderName;
 
   // Derive attachment type from columns (no message_type column on messages table)
   const derivedType = audio_url ? "audio" : attachment_type ?? null;
@@ -287,23 +287,15 @@ async function handleCall(
 
   if (!caller_id || !receiver_id) return;
 
-  // Get caller profile
-  const { data: caller } = await db
-    .from("profiles")
-    .select("full_name, handle")
-    .eq("id", caller_id)
-    .single();
-
-  // Get receiver FCM token
-  const { data: receiver } = await db
-    .from("profiles")
-    .select("fcm_token")
-    .eq("id", receiver_id)
-    .single();
+  // Get caller profile + receiver FCM token in parallel
+  const [{ data: caller }, { data: receiver }] = await Promise.all([
+    db.from("profiles").select("display_name, handle").eq("id", caller_id).single(),
+    db.from("profiles").select("fcm_token").eq("id", receiver_id).single(),
+  ]);
 
   if (!receiver?.fcm_token) return;
 
-  const callerName = caller?.full_name ?? caller?.handle ?? "Someone";
+  const callerName = caller?.display_name ?? caller?.handle ?? "Someone";
   const typeLabel = call_type === "video" ? "Video call" : "Voice call";
 
   await dispatchToToken(receiver.fcm_token, {
