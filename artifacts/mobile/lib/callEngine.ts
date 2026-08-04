@@ -87,10 +87,20 @@ function _detectRTC(): _RTCBridge | null {
   // genuinely absent (Expo Go) and we return null cleanly.
   try {
     if (NativeModules.WebRTCModule == null) {
+      // New Architecture: modules live in TurboModuleRegistry, not NativeModules.
+      // Try to inject it so react-native-webrtc's module-eval null-guard passes.
+      // If TurboModuleRegistry also has nothing, we still attempt require() —
+      // on some OEM builds the legacy-interop layer exposes the module via require
+      // but NOT via TurboModuleRegistry.get(). Never bail here; let the require
+      // outcome (or the RTCPeerConnection null-check) be the real gate.
       let turbo: any = null;
       try { turbo = TurboModuleRegistry?.get?.("WebRTCModule") ?? null; } catch {}
-      if (turbo == null) return null; // genuinely unavailable (Expo Go)
-      try { (NativeModules as any).WebRTCModule = turbo; } catch {}
+      if (turbo == null) {
+        try { turbo = TurboModuleRegistry?.get?.("WebRTC") ?? null; } catch {}
+      }
+      if (turbo != null) {
+        try { (NativeModules as any).WebRTCModule = turbo; } catch {}
+      }
     }
     const rn = require("react-native-webrtc") as typeof import("react-native-webrtc");
     if (!rn?.RTCPeerConnection) return null;
@@ -100,7 +110,8 @@ function _detectRTC(): _RTCBridge | null {
       RTCIceCandidate:       rn.RTCIceCandidate,
       mediaDevices:          rn.mediaDevices as any,
     } satisfies _RTCBridge;
-  } catch {
+  } catch (e) {
+    console.warn("[CallEngine] react-native-webrtc unavailable:", e);
     return null;
   }
 }
