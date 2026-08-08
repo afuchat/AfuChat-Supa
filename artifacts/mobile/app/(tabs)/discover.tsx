@@ -1519,8 +1519,11 @@ export default function DiscoverScreen() {
         }
 
         // Prefetch author avatars and post images in the background
-        prefetchAvatars(mapped.map((p) => p.profile?.avatar_url));
-        prefetchThumbnails(mapped.map((p) => p.image_url));
+        // Prefetch only the first viewport-sized slice. Prefetching every
+        // result page increases bandwidth and image-cache pressure before the
+        // user has viewed the content.
+        prefetchAvatars(mapped.slice(0, 8).map((p) => p.profile?.avatar_url));
+        prefetchThumbnails(mapped.slice(0, 6).map((p) => p.image_url));
 
         if (isRefresh) {
           tabPostsCache.current[activeTab] = mapped;
@@ -1852,8 +1855,8 @@ export default function DiscoverScreen() {
 
       // Prefetch author avatars + post thumbnails in the background now so they
       // are on disk before the user scrolls to each item.
-      prefetchAvatars(diversified.map((p) => (p as any).profile?.avatar_url));
-      prefetchThumbnails(diversified.map((p) => (p as any).image_url));
+      prefetchAvatars(diversified.slice(0, 8).map((p) => (p as any).profile?.avatar_url));
+      prefetchThumbnails(diversified.slice(0, 6).map((p) => (p as any).image_url));
 
       // Mark these posts as seen so they get demoted on the next refresh
       markPostsSeen(diversified.map((p) => p.id)).catch(() => {});
@@ -2636,9 +2639,9 @@ export default function DiscoverScreen() {
                   viewabilityConfig={viewabilityConfig}
                   initialNumToRender={12}
                   maxToRenderPerBatch={10}
-                  windowSize={21}
+                  windowSize={7}
                   updateCellsBatchingPeriod={30}
-                  removeClippedSubviews={false}
+                  removeClippedSubviews={Platform.OS !== "web"}
 
                   refreshControl={
                     <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
@@ -2705,9 +2708,9 @@ export default function DiscoverScreen() {
                   viewabilityConfig={viewabilityConfig}
                   initialNumToRender={12}
                   maxToRenderPerBatch={10}
-                  windowSize={21}
+                  windowSize={7}
                   updateCellsBatchingPeriod={30}
-                  removeClippedSubviews={false}
+                  removeClippedSubviews={Platform.OS !== "web"}
 
                   refreshControl={
                     <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
@@ -2774,9 +2777,9 @@ export default function DiscoverScreen() {
             viewabilityConfig={viewabilityConfig}
             initialNumToRender={12}
             maxToRenderPerBatch={10}
-            windowSize={21}
+            windowSize={7}
             updateCellsBatchingPeriod={30}
-            removeClippedSubviews={false}
+            removeClippedSubviews={Platform.OS !== "web"}
 
             refreshControl={
               <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />

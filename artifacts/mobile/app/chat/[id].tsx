@@ -2368,8 +2368,9 @@ function ChatScreen() {
           oldestCursorRef.current = cached[0].sent_at;
           setHasMore(true);
         }
-        // Background: pre-download attachments so they render from local storage.
-        autoDownloadChatAttachments(cached.map((m) => ({
+        // Only pre-download recent attachments. Downloading the entire local
+        // history on every chat open can create a large background burst.
+        autoDownloadChatAttachments(cached.slice(-100).map((m) => ({
           attachment_url: m.attachment_url,
           attachment_type: m.attachment_type,
           encrypted_content: m.content ?? "",
@@ -2460,7 +2461,7 @@ function ChatScreen() {
       });
 
       saveMessages(chatId, mapped).catch(() => {});
-      autoDownloadChatAttachments(mapped, {
+      autoDownloadChatAttachments(mapped.slice(0, 50), {
         autoDownloadPref: chatPrefs.auto_download ? "wifi_only" : "never",
         saveToGallery: chatPrefs.save_to_gallery,
       });

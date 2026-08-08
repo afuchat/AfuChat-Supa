@@ -4,14 +4,13 @@ import { getDB } from "./storage/db";
 import { storage } from "./storage/mmkv";
 import { isCellular } from "./networkQuality";
 
-// ─── Permanent Video Store ──────────────────────────────────────────────────────
-// Videos are stored in documentDirectory once watched — permanently.
-// The OS never auto-clears documentDirectory (unlike cacheDirectory).
-// Data is only removed when the user explicitly clears storage, or uninstalls.
+// ─── Video Stores ───────────────────────────────────────────────────────────────
+// Watched videos are kept in documentDirectory so the user can use them
+// offline. Prefetches use cacheDirectory instead and may be removed by the OS.
 //
 // RULES:
-//   • No TTL — watched videos stay forever
-//   • No auto-prune — grows until user clears it
+//   • Watched videos have a TTL and bounded size/count
+//   • Prefetches are disposable and are never part of the offline registry
 //   • getCachedVideoUri() returns local path instantly if already on device
 //   • markVideoWatched() is idempotent — calling it twice does nothing extra
 //
@@ -21,9 +20,15 @@ import { isCellular } from "./networkQuality";
 
 // ─── Directories ───────────────────────────────────────────────────────────────
 
-// Permanent watched-video store — survives cache pressure, lives until user deletes.
+// Permanent watched-video store — bounded and user-visible in storage settings.
 // FileSystem.documentDirectory is always a non-null string on Android.
 const VIDEO_DIR = (FileSystem.documentDirectory ?? "") + "afuchat_videos/";
+// Prefetches are disposable. Keeping them outside documentDirectory prevents
+// scrolling through a feed from permanently consuming user storage.
+const PREFETCH_DIR = (FileSystem.cacheDirectory ?? VIDEO_DIR) + "afuchat_video_prefetch/";
+
+const MAX_VIDEO_CACHE_BYTES = 512 * 1024 * 1024;
+const MAX_VIDEO_CACHE_ENTRIES = 50;
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -243,8 +248,8 @@ export function cacheVideo(url: string): Promise<string | null> {
 
   const task = (async (): Promise<string | null> => {
     try {
-      await ensureDir(VIDEO_DIR);
-      const localPath = VIDEO_DIR + urlToFilename(url);
+      await ensureDir(PREFETCH_DIR);
+      const localPath = PREFETCH_DIR + urlToFilename(url);
       const existing = await FileSystem.getInfoAsync(localPath);
       if (existing.exists && (existing as any).size > 0) {
         memoryMap.set(url, localPath);
@@ -295,7 +300,7 @@ export async function markVideoWatched(
     const filename = urlToFilename(url);
     const localPath = VIDEO_DIR + filename;
 
-    // Check if already on device (in video dir)
+    // Check if already on device (in either the watched store or a prefetch).
     const existing = await FileSystem.getInfoAsync(localPath);
     if (existing.exists && (existing as any).size > 0) {
       // Already stored — just update metadata in registry, no download
@@ -311,6 +316,7 @@ export async function markVideoWatched(
         authorName: meta.authorName,
         authorAvatar: meta.authorAvatar,
       });
+      await trimVideoCache();
       return;
     }
 
@@ -318,7 +324,14 @@ export async function markVideoWatched(
     let fileUri = localPath;
     let fileSize = 0;
 
-    if (inProgress.has(url)) {
+    const prefetchedPath = memoryMap.get(url);
+    if (prefetchedPath && prefetchedPath !== localPath) {
+      try {
+        await FileSystem.copyAsync({ from: prefetchedPath, to: localPath });
+        const info = await FileSystem.getInfoAsync(localPath);
+        fileSize = (info as any).size ?? 0;
+      } catch {}
+    } else if (inProgress.has(url)) {
       const result = await inProgress.get(url)!;
       if (result) {
         // Copy from wherever it landed to our permanent path (if different)
@@ -357,10 +370,32 @@ export async function markVideoWatched(
       authorName: meta.authorName,
       authorAvatar: meta.authorAvatar,
     });
+    await trimVideoCache();
   } catch {
   } finally {
     saveInProgress.delete(postId);
   }
+}
+
+/**
+ * Enforce hard bounds on the user-visible offline video store.
+ * The oldest watched entries are removed first until both limits are met.
+ */
+async function trimVideoCache(): Promise<void> {
+  try {
+    const entries = await dbGetAll();
+    let totalBytes = entries.reduce((sum, entry) => sum + Math.max(0, entry.fileSize || 0), 0);
+    let kept = entries.length;
+
+    for (let i = entries.length - 1; i >= 0 && (kept > MAX_VIDEO_CACHE_ENTRIES || totalBytes > MAX_VIDEO_CACHE_BYTES); i--) {
+      const entry = entries[i];
+      await FileSystem.deleteAsync(entry.fileUri, { idempotent: true }).catch(() => {});
+      await dbDeleteEntry(entry.postId);
+      memoryMap.delete(entry.url);
+      totalBytes -= Math.max(0, entry.fileSize || 0);
+      kept--;
+    }
+  } catch {}
 }
 
 // ─── Registry queries ──────────────────────────────────────────────────────────
@@ -445,6 +480,7 @@ export async function clearExpiredOfflineVideos(): Promise<number> {
       // Remove SQLite row
       await db.runAsync("DELETE FROM video_registry WHERE post_id = ?", [row.post_id]);
     }
+    await trimVideoCache();
     return expired.length;
   } catch {
     return 0;
@@ -462,6 +498,7 @@ export async function runScheduledVideoPurge(): Promise<void> {
     if (Date.now() - lastRan < VIDEO_TTL_MS) return; // already ran within 24 h
     storage.setNumber(PURGE_LAST_RAN_KEY, Date.now());
     await clearExpiredOfflineVideos();
+    await trimVideoCache();
   } catch {}
 }
 
@@ -500,4 +537,4 @@ export async function clearVideoCache(): Promise<void> {
   await clearAllOfflineVideos();
 }
 
-export const OFFLINE_TTL_MS_EXPORT = 0; // TTL removed — kept for import compat
+export const OFFLINE_TTL_MS_EXPORT = VIDEO_TTL_MS;

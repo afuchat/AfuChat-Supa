@@ -230,9 +230,8 @@ async function runMigrations(db: DB) {
 
   if (currentVersion < 11) {
     const safe = async (sql: string) => { try { await db.execAsync(sql); } catch {} };
-    await safe("DROP TABLE IF EXISTS notifications");
-    await safe("DROP INDEX IF EXISTS idx_notif_created");
-    await safe("DROP INDEX IF EXISTS idx_notif_unread");
+    // Keep the local notification cache intact during upgrades. Older code
+    // dropped this table, which caused avoidable local data loss.
     await db.runAsync("UPDATE schema_version SET version = 11");
   }
 
@@ -259,5 +258,21 @@ async function runMigrations(db: DB) {
     await safe("ALTER TABLE video_registry ADD COLUMN author_name TEXT");
     await safe("ALTER TABLE video_registry ADD COLUMN author_avatar TEXT");
     await db.runAsync("UPDATE schema_version SET version = 13");
+  }
+
+  // ── v14: restore the notification cache without deleting existing data ───────
+  // Devices that already ran the old v11 migration may no longer have this
+  // local table, so CREATE IF NOT EXISTS repairs them safely.
+  if (currentVersion < 14) {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id TEXT PRIMARY KEY, type TEXT NOT NULL, actor_id TEXT, actor_name TEXT,
+        actor_avatar TEXT, target_id TEXT, body TEXT, read_at TEXT,
+        created_at TEXT NOT NULL, stored_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_notif_created ON notifications(created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_notif_unread ON notifications(read_at) WHERE read_at IS NULL;
+    `);
+    await db.runAsync("UPDATE schema_version SET version = 14");
   }
 }
