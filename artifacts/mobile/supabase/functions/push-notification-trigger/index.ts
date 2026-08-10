@@ -180,7 +180,12 @@ async function sendExpoPush(token: string, opts: FCMOptions): Promise<boolean> {
 }
 
 async function dispatchToProfile(
-  profile: { id?: string; fcm_token?: string | null; expo_push_token?: string | null },
+  profile: {
+    id?: string;
+    fcm_token?: string | null;
+    expo_push_token?: string | null;
+    push_token_platform?: string | null;
+  },
   opts: FCMOptions,
   projectId: string | null,
   accessToken: string | null,
@@ -189,8 +194,10 @@ async function dispatchToProfile(
     ? profile.fcm_token
     : null;
   const expoToken = profile.expo_push_token ?? legacyExpoToken;
+  const isIosNativeToken =
+    profile.push_token_platform === "ios" && !!profile.fcm_token && !legacyExpoToken;
 
-  if (profile.fcm_token && !legacyExpoToken && projectId && accessToken) {
+  if (profile.fcm_token && !legacyExpoToken && !isIosNativeToken && projectId && accessToken) {
     const result = await sendFCM(profile.fcm_token, opts, projectId, accessToken);
     if (result === "ok") return "fcm";
     console.warn(`[push] FCM failed for ${profile.id ?? "profile"} (${result}); trying Expo fallback`);
@@ -277,7 +284,7 @@ async function handleMessage(
   // Get both delivery channels for all recipients.
   const { data: profiles } = await db
     .from("profiles")
-    .select("id, fcm_token, expo_push_token")
+    .select("id, fcm_token, expo_push_token, push_token_platform")
     .in("id", recipientIds)
     .or("fcm_token.not.is.null,expo_push_token.not.is.null");
 
@@ -317,7 +324,7 @@ async function handleCall(
   // Get caller profile + both callee delivery channels in parallel.
   const [{ data: caller }, { data: receiver }] = await Promise.all([
     db.from("profiles").select("display_name, handle, avatar_url").eq("id", caller_id).single(),
-    db.from("profiles").select("id, fcm_token, expo_push_token").eq("id", callee_id).single(),
+    db.from("profiles").select("id, fcm_token, expo_push_token, push_token_platform").eq("id", callee_id).single(),
   ]);
 
   if (!receiver?.fcm_token && !receiver?.expo_push_token) return;
@@ -360,7 +367,7 @@ async function handleNotification(
   // Get both recipient delivery channels.
   const { data: profile } = await db
     .from("profiles")
-    .select("id, fcm_token, expo_push_token")
+    .select("id, fcm_token, expo_push_token, push_token_platform")
     .eq("id", user_id)
     .single();
 
@@ -540,7 +547,7 @@ async function handleShopOrder(
     }
   }
 
-  const { data: profiles } = await db.from("profiles").select("id, fcm_token, expo_push_token").in("id", targets.map(t => t.userId)).or("fcm_token.not.is.null,expo_push_token.not.is.null");
+  const { data: profiles } = await db.from("profiles").select("id, fcm_token, expo_push_token, push_token_platform").in("id", targets.map(t => t.userId)).or("fcm_token.not.is.null,expo_push_token.not.is.null");
   if (!profiles?.length) return;
 
   const tokenMap = Object.fromEntries((profiles as any[]).map((p: any) => [p.id, p]));
@@ -586,7 +593,7 @@ async function handleMerchantOrder(
     }
   }
 
-  const { data: profiles } = await db.from("profiles").select("id, fcm_token, expo_push_token").in("id", targets.map(t => t.userId)).or("fcm_token.not.is.null,expo_push_token.not.is.null");
+  const { data: profiles } = await db.from("profiles").select("id, fcm_token, expo_push_token, push_token_platform").in("id", targets.map(t => t.userId)).or("fcm_token.not.is.null,expo_push_token.not.is.null");
   if (!profiles?.length) return;
 
   const tokenMap = Object.fromEntries((profiles as any[]).map((p: any) => [p.id, p]));
@@ -638,7 +645,7 @@ async function handleFreelanceOrder(
     }
   }
 
-  const { data: profiles } = await db.from("profiles").select("id, fcm_token, expo_push_token").in("id", targets.map(t => t.userId)).or("fcm_token.not.is.null,expo_push_token.not.is.null");
+  const { data: profiles } = await db.from("profiles").select("id, fcm_token, expo_push_token, push_token_platform").in("id", targets.map(t => t.userId)).or("fcm_token.not.is.null,expo_push_token.not.is.null");
   if (!profiles?.length) return;
 
   const tokenMap = Object.fromEntries((profiles as any[]).map((p: any) => [p.id, p]));

@@ -24,6 +24,18 @@ import { supabase } from "@/lib/supabase";
 let Notifications: typeof import("expo-notifications") | null = null;
 let Device: typeof import("expo-device") | null = null;
 
+function isExpoGo(): boolean {
+  try {
+    const Constants = require("expo-constants").default;
+    return (
+      Constants?.appOwnership === "expo" ||
+      Constants?.executionEnvironment === "storeClient"
+    );
+  } catch {
+    return false;
+  }
+}
+
 function getNotifications(): typeof import("expo-notifications") | null {
   if (Notifications) return Notifications;
   try {
@@ -61,6 +73,10 @@ function alreadyHandled(id: string): boolean {
 // ═════════════════════════════════════════════════════════════════════════════
 
 export function setupNotificationHandler(): void {
+  // Android Expo Go no longer includes remote push notification support from
+  // SDK 53 onward. Avoid touching the native notification module there.
+  if (Platform.OS === "web" || isExpoGo()) return;
+
   const N = getNotifications();
   if (!N) return;
 
@@ -118,6 +134,11 @@ export async function registerForPushNotifications(): Promise<void> {
   _lastRegistrationError = null;
 
   if (Platform.OS === "web") return;
+  if (isExpoGo()) {
+    _lastRegistrationError =
+      "Remote push notifications require an Expo development build or standalone app";
+    return;
+  }
 
   const N = getNotifications();
   if (!N || !Device) return;
@@ -154,11 +175,15 @@ export async function registerForPushNotifications(): Promise<void> {
     let fcmToken: string | null = null;
     let expoPushToken: string | null = null;
 
-    try {
-      const tokenData = await N.getDevicePushTokenAsync();
-      if (tokenData?.data) fcmToken = String(tokenData.data);
-    } catch (tokenErr: any) {
-      console.warn("[Push] native device token unavailable:", tokenErr);
+    // On Android this is an FCM registration token. On iOS Expo returns an
+    // APNs token, which must not be sent to the FCM HTTP v1 endpoint.
+    if (Platform.OS === "android") {
+      try {
+        const tokenData = await N.getDevicePushTokenAsync();
+        if (tokenData?.data) fcmToken = String(tokenData.data);
+      } catch (tokenErr: any) {
+        console.warn("[Push] native device token unavailable:", tokenErr);
+      }
     }
 
     try {
@@ -252,6 +277,8 @@ async function _createAndroidChannels(
 // ═════════════════════════════════════════════════════════════════════════════
 
 export async function setupNotificationCategories(): Promise<void> {
+  if (Platform.OS === "web" || isExpoGo()) return;
+
   const N = getNotifications();
   if (!N) return;
 
@@ -308,6 +335,8 @@ export async function setupNotificationCategories(): Promise<void> {
 let _listenersActive = false;
 
 export function setupNotificationListeners(): () => void {
+  if (Platform.OS === "web" || isExpoGo()) return () => {};
+
   const N = getNotifications();
   if (!N || _listenersActive) return () => {};
 
@@ -330,7 +359,7 @@ export function setupNotificationListeners(): () => void {
     // Action buttons (Reply, Mark Read, etc.)
     if (
       actionId !== N.DEFAULT_ACTION_IDENTIFIER &&
-      actionId !== N.DISMISS_ACTION_IDENTIFIER
+      actionId !== "expo.modules.notifications.actions.DISMISSED"
     ) {
       try {
         const { handleNotificationAction } = require("@/lib/notificationActions");
@@ -424,6 +453,8 @@ function _routeNotification(data: Record<string, string>): void {
 // ═════════════════════════════════════════════════════════════════════════════
 
 export async function clearBadge(): Promise<void> {
+  if (Platform.OS === "web") return;
+
   const N = getNotifications();
   if (!N) return;
   try {

@@ -178,7 +178,7 @@ serve(async (req) => {
     // Fetch all registered delivery tokens.
     let query = db
       .from("profiles")
-      .select("fcm_token, expo_push_token")
+      .select("fcm_token, expo_push_token, push_token_platform")
       .or("fcm_token.not.is.null,expo_push_token.not.is.null");
     if (filter === "premium") {
       query = query.not("platinum_until", "is", null).gt("platinum_until", new Date().toISOString());
@@ -186,9 +186,18 @@ serve(async (req) => {
     const { data: profiles, error: dbErr } = await query;
     if (dbErr) throw new Error(dbErr.message);
 
-    const tokens = (profiles ?? [])
-      .flatMap((p: any) => [p.fcm_token, p.expo_push_token])
-      .filter(Boolean) as string[];
+    const tokens = (profiles ?? []).flatMap((p: any) => {
+      const result: Array<{ token: string; kind: "fcm" | "expo" }> = [];
+      if (p.expo_push_token) {
+        result.push({ token: p.expo_push_token, kind: "expo" });
+      }
+      // The client stores an APNs token in fcm_token on older iOS builds.
+      // Never send that token to FCM; use the Expo token for iOS instead.
+      if (p.fcm_token && p.push_token_platform !== "ios") {
+        result.push({ token: p.fcm_token, kind: "fcm" });
+      }
+      return result;
+    });
     if (!tokens.length) {
       return new Response(JSON.stringify({ ok: true, sent: 0, skipped: 0 }), {
         status: 200,
@@ -208,9 +217,9 @@ serve(async (req) => {
       const batch = tokens.slice(i, i + BATCH);
 
       await Promise.all(
-        batch.map(async (token) => {
-          if (token.startsWith("ExponentPushToken[")) {
-            if (await sendOneExpo(token, title, msgBody, broadcastData)) sent++;
+          batch.map(async ({ token, kind }) => {
+           if (kind === "expo" || token.startsWith("ExponentPushToken[")) {
+             if (await sendOneExpo(token, title, msgBody, broadcastData)) sent++;
             else errors++;
           } else {
             if (!projectId || !accessToken) {
