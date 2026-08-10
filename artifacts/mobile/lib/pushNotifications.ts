@@ -481,7 +481,7 @@ export function getCurrentUserId(): string | null {
  * Clears the stored FCM token from the backend when the user signs out,
  * so they no longer receive push notifications on this device.
  */
-export async function clearPushToken(): Promise<void> {
+export async function clearPushToken(_userId?: string): Promise<void> {
   if (Platform.OS === "web") return;
   try {
     // Clear both token channels for this user/device.
@@ -491,14 +491,16 @@ export async function clearPushToken(): Promise<void> {
   } catch {}
 }
 
-let _switchAccountCallback: (() => void) | null = null;
+let _switchAccountCallback: ((userId: string) => Promise<{ success: boolean; error?: string }>) | null = null;
 
 /** Registers a callback invoked when the active account switches. */
-export function registerSwitchAccount(fn: () => void): void {
+export function registerSwitchAccount(
+  fn: (userId: string) => Promise<{ success: boolean; error?: string }>,
+): void {
   _switchAccountCallback = fn;
 }
 
 /** Invoke the registered switch-account callback (call from account switcher). */
-export function notifySwitchAccount(): void {
-  _switchAccountCallback?.();
+export function notifySwitchAccount(userId: string): void {
+  void _switchAccountCallback?.(userId);
 }

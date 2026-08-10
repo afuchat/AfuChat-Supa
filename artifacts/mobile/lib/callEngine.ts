@@ -143,6 +143,22 @@ function _getRTC(): _RTCBridge | null {
   return result;
 }
 
+function _requireRTC(): _RTCBridge {
+  const rtc = _getRTC();
+  if (!rtc) throw new Error("WEBRTC_UNAVAILABLE");
+  return rtc;
+}
+
+function _newRTCSessionDescription(init: unknown): any {
+  const Constructor = _requireRTC().RTCSessionDescription as any;
+  return new Constructor(init);
+}
+
+function _newRTCIceCandidate(init: unknown): any {
+  const Constructor = _requireRTC().RTCIceCandidate as any;
+  return new Constructor(init);
+}
+
 /**
  * Returns true when WebRTC is available on this device/build.
  * Exported so CallContext can check after the native bridge is ready.
@@ -415,7 +431,7 @@ export async function startCall(params: {
       callerAvatar: myAvatar,
       chatId,
     },
-  }).catch(() => {});
+  });
 
   supabase.removeChannel(calleeInbox).catch(() => {});
 
@@ -433,7 +449,7 @@ export async function startCall(params: {
     chat_id: chatId ?? null,
   }).then(({ error }) => {
     if (error) console.warn("[CallEngine] calls insert error:", error.message);
-  }).catch(() => {});
+  }, () => {});
 
   // Ring timeout — callee didn't answer (offline, FCM unreachable, or ignored)
   _ringTimer = setTimeout(() => {
@@ -720,7 +736,8 @@ async function _ensureLocalStream(): Promise<any> {
 }
 
 function _createPC(): any {
-  const pc = new _getRTC()!.RTCPeerConnection({
+  const Constructor = _requireRTC().RTCPeerConnection as any;
+  const pc = new Constructor({
     iceServers: ICE_SERVERS,
     bundlePolicy: "max-bundle",
     rtcpMuxPolicy: "require",
@@ -812,7 +829,7 @@ async function _createAndSendOffer(): Promise<void> {
 
   const sdp = _preferOpus(offer.sdp ?? "");
   const modifiedOffer = { type: offer.type, sdp };
-  await pc.setLocalDescription(new _getRTC()!.RTCSessionDescription(modifiedOffer));
+  await pc.setLocalDescription(_newRTCSessionDescription(modifiedOffer));
 
   _signalingCh?.send({
     type: "broadcast",
@@ -838,7 +855,7 @@ async function _handleOffer(sdp: string): Promise<void> {
   stream.getTracks().forEach((track: any) => pc.addTrack(track, stream));
 
   await pc.setRemoteDescription(
-    new _getRTC()!.RTCSessionDescription({ type: "offer", sdp })
+    _newRTCSessionDescription({ type: "offer", sdp })
   );
   _remoteDescSet = true;
   await _drainPendingCandidates();
@@ -846,7 +863,7 @@ async function _handleOffer(sdp: string): Promise<void> {
   const answer = await pc.createAnswer();
   const answerSdp = _preferOpus(answer.sdp ?? "");
   await pc.setLocalDescription(
-    new _getRTC()!.RTCSessionDescription({ type: "answer", sdp: answerSdp })
+    _newRTCSessionDescription({ type: "answer", sdp: answerSdp })
   );
 
   _signalingCh?.send({
@@ -869,7 +886,7 @@ async function _handleOffer(sdp: string): Promise<void> {
 async function _handleAnswer(sdp: string): Promise<void> {
   if (!_pc) return;
   await _pc.setRemoteDescription(
-    new _getRTC()!.RTCSessionDescription({ type: "answer", sdp })
+    _newRTCSessionDescription({ type: "answer", sdp })
   );
   _remoteDescSet = true;
   if (_info) _info.answeredAt = _info.answeredAt ?? Date.now();
@@ -879,7 +896,7 @@ async function _handleAnswer(sdp: string): Promise<void> {
 function _addRemoteCandidate(candidate: any) {
   if (_remoteDescSet && _pc) {
     try {
-      _pc.addIceCandidate(new _getRTC()!.RTCIceCandidate(candidate)).catch(() => {});
+      void _pc.addIceCandidate(_newRTCIceCandidate(candidate)).catch(() => {});
     } catch {}
   } else {
     _pendingCandidates.push(candidate);
@@ -890,7 +907,7 @@ async function _drainPendingCandidates() {
   if (!_pc) return;
   for (const c of _pendingCandidates) {
     try {
-      await _pc.addIceCandidate(new _getRTC()!.RTCIceCandidate(c));
+      await _pc.addIceCandidate(_newRTCIceCandidate(c));
     } catch {}
   }
   _pendingCandidates = [];
@@ -1112,7 +1129,7 @@ function _saveCallRecord(
     chat_id: _info.chatId,
     caller: { display_name: _info.callerName, avatar_url: _info.callerAvatar ?? undefined },
     callee: { display_name: _info.calleeName, avatar_url: _info.calleeAvatar ?? undefined },
-  }).catch(() => {});
+  });
 
   // Upsert final status to Supabase so the server-side row stays accurate.
   // Uses upsert so it works whether or not the INSERT in startCall succeeded.
@@ -1130,7 +1147,7 @@ function _saveCallRecord(
     chat_id: _info.chatId,
   }, { onConflict: "id", ignoreDuplicates: false }).then(({ error }) => {
     if (error) console.warn("[CallEngine] calls upsert error:", error.message);
-  }).catch(() => {});
+  }, () => {});
 }
 
 // ─── SDP: prefer Opus codec ───────────────────────────────────────────────────

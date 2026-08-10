@@ -9,96 +9,44 @@
  */
 
 // ── Type stubs ────────────────────────────────────────────────────────────────
+//
+// These functions are intentionally no-ops. The app historically used several
+// slightly different payload names at different call sites, so keep this
+// compatibility surface permissive while delivery remains server-side.
+type NotificationPayload = Record<string, unknown>;
 
-export async function notifyNewMessage(_p: {
-  recipientIds: string[];
-  senderName: string;
-  senderUserId: string;
-  messageText: string;
-  chatId: string;
-  isGroup?: boolean;
-  groupName?: string;
-}): Promise<void> {}
+export async function notifyNewMessage(_p: NotificationPayload): Promise<void> {}
 
-export async function notifyPostLike(_p: {
-  postOwnerId: string;
-  likerName: string;
-  likerUserId: string;
-  postId: string;
-  postTitle?: string;
-}): Promise<void> {}
+export async function notifyPostLike(_p: NotificationPayload): Promise<void> {}
 
-export async function notifyPostReply(_p: {
-  postOwnerId: string;
-  replierName: string;
-  replierUserId: string;
-  postId: string;
-  replyText: string;
-}): Promise<void> {}
+export async function notifyPostReply(_p: NotificationPayload): Promise<void> {}
 
-export async function notifyNewFollower(_p: {
-  followedUserId: string;
-  followerName: string;
-  followerUserId: string;
-  followerHandle?: string;
-  followerAvatar?: string;
-}): Promise<void> {}
+export async function notifyNewFollower(_p: NotificationPayload): Promise<void> {}
 
-export async function notifyMention(_p: {
-  mentionedUserId: string;
-  mentionerName: string;
-  mentionerUserId: string;
-  postId?: string;
-  chatId?: string;
-  context?: string;
-}): Promise<void> {}
+/** Backward-compatible name used by older feed components. */
+export const notifyNewFollow = notifyNewFollower;
 
-export async function notifyGiftReceived(_p: {
-  recipientId: string;
-  senderName: string;
-  senderUserId: string;
-  giftName: string;
-  chatId?: string;
-}): Promise<void> {}
+export async function notifyMention(_p: NotificationPayload): Promise<void> {}
 
-export async function notifyOrderShipped(_p: {
-  buyerId: string;
-  sellerName: string;
-  orderId: string;
-  productName?: string;
-}): Promise<void> {}
+export async function notifyGiftReceived(_p: NotificationPayload): Promise<void> {}
 
-export async function notifyOrderStatusChanged(_p: {
-  buyerId: string;
-  orderId: string;
-  status: string;
-  sellerName?: string;
-}): Promise<void> {}
+export async function notifyOrderShipped(_p: NotificationPayload): Promise<void> {}
 
-export async function notifyPaymentReceived(_p: {
-  recipientId: string;
-  senderName: string;
-  amount: number;
-  currency?: string;
-}): Promise<void> {}
+export async function notifyOrderStatusChanged(_p: NotificationPayload): Promise<void> {}
 
-export async function notifyIncomingCall(_p: {
-  recipientId: string;
-  callerName: string;
-  callerUserId: string;
-  callId: string;
-  callType?: string;
-}): Promise<void> {}
+export async function notifyPaymentReceived(_p: NotificationPayload): Promise<void> {}
 
-export async function notifyMissedCall(_p: {
-  recipientId: string;
-  callerName: string;
-  callerUserId: string;
-}): Promise<void> {}
+export async function notifyIncomingCall(_p: NotificationPayload): Promise<void> {}
 
-export async function notifySystemMessage(_p: {
-  recipientIds: string[];
-  title: string;
-  body: string;
-  data?: Record<string, string>;
-}): Promise<void> {}
+export async function notifyMissedCall(_p: NotificationPayload): Promise<void> {}
+
+export async function notifySystemMessage(_p: NotificationPayload): Promise<void> {}
+
+// Legacy commerce notification names retained until their callers are
+// migrated to the database-triggered notification pipeline.
+export async function notifyOrderPlaced(_p: NotificationPayload): Promise<void> {}
+export async function notifyDeliveryConfirmed(_p: NotificationPayload): Promise<void> {}
+export async function notifyDisputeRaised(_p: NotificationPayload): Promise<void> {}
+export async function notifyRefundIssued(_p: NotificationPayload): Promise<void> {}
+export async function notifyAcoinReceived(_p: NotificationPayload): Promise<void> {}
+export async function notifyOrderReview(_p: NotificationPayload): Promise<void> {}

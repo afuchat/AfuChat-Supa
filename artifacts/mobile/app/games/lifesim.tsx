@@ -661,7 +661,13 @@ export default function KampalaHustleGame() {
     setGs(s);
     setEndVisible(false);
     setTab("hustle");
-    if (user) persistSave(user.id, s, (user as any).display_name ?? "Player", (user as any).handle ?? "");
+    if (user) persistSave(
+      user.id,
+      s,
+      (user as any).display_name ?? "Player",
+      (user as any).handle ?? "",
+      (user as any).avatar_url ?? null,
+    );
   }
 
   // ── Leaderboard ───────────────────────────────────────────────────────────────

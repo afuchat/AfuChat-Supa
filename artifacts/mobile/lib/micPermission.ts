@@ -61,7 +61,7 @@ export async function getMicPermissionState(): Promise<MicPermState> {
  * On web the prompt is deferred to getUserMedia — do not call this on web.
  * Returns "granted" or "denied".
  */
-export async function requestMicPermission(): Promise<"granted" | "denied"> {
+export async function requestMicPermission(): Promise<MicPermState> {
   if (Platform.OS === "web") {
     // On web we probe by attempting getUserMedia directly
     try {
