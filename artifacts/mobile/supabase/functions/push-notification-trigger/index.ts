@@ -135,9 +135,14 @@ async function sendFCM(
     },
   );
 
-  if (res.status === 404) return "stale"; // Token not registered
+  const responseText = res.ok ? "" : await res.text();
+  if (
+    res.status === 404 ||
+    responseText.includes("UNREGISTERED") ||
+    responseText.includes("registration-token-not-registered")
+  ) return "stale"; // Token is no longer registered
   if (!res.ok) {
-    console.error(`[FCM] send failed ${res.status}:`, await res.text());
+    console.error(`[FCM] send failed ${res.status}:`, responseText);
     return "error";
   }
   return "ok";
@@ -145,7 +150,7 @@ async function sendFCM(
 
 // ── Expo Push fallback (for dev/Expo Go tokens) ───────────────────────────────
 
-async function sendExpoPush(token: string, opts: FCMOptions): Promise<void> {
+async function sendExpoPush(token: string, opts: FCMOptions): Promise<boolean> {
   const res = await fetch("https://exp.host/--/api/v2/push/send", {
     method: "POST",
     headers: {
@@ -166,18 +171,40 @@ async function sendExpoPush(token: string, opts: FCMOptions): Promise<void> {
       ...(opts.categoryIdentifier && { categoryId: opts.categoryIdentifier }),
     }),
   });
-  if (!res.ok) console.error(`[ExpoPush] send failed ${res.status}:`, await res.text());
+  const payload = await res.json().catch(() => null);
+  if (!res.ok || payload?.data?.status === "error" || payload?.data?.details?.error) {
+    console.error(`[ExpoPush] send failed ${res.status}:`, JSON.stringify(payload));
+    return false;
+  }
+  return true;
 }
 
-async function dispatchToToken(token: string, opts: FCMOptions, projectId: string, accessToken: string): Promise<void> {
-  if (token.startsWith("ExponentPushToken[")) {
-    await sendExpoPush(token, opts);
-  } else {
-    const result = await sendFCM(token, opts, projectId, accessToken);
-    if (result === "stale") {
-      console.log(`[FCM] stale token, skipping`);
+async function dispatchToProfile(
+  profile: { id?: string; fcm_token?: string | null; expo_push_token?: string | null },
+  opts: FCMOptions,
+  projectId: string | null,
+  accessToken: string | null,
+): Promise<"fcm" | "expo" | "failed" | "none"> {
+  const legacyExpoToken = profile.fcm_token?.startsWith("ExponentPushToken[")
+    ? profile.fcm_token
+    : null;
+  const expoToken = profile.expo_push_token ?? legacyExpoToken;
+
+  if (profile.fcm_token && !legacyExpoToken && projectId && accessToken) {
+    const result = await sendFCM(profile.fcm_token, opts, projectId, accessToken);
+    if (result === "ok") return "fcm";
+    console.warn(`[push] FCM failed for ${profile.id ?? "profile"} (${result}); trying Expo fallback`);
+  }
+
+  if (expoToken) {
+    try {
+      if (await sendExpoPush(expoToken, opts)) return "expo";
+    } catch (err) {
+      console.error(`[ExpoPush] send failed for ${profile.id ?? "profile"}:`, err);
     }
   }
+
+  return profile.fcm_token || profile.expo_push_token ? "failed" : "none";
 }
 
 // ── Channel ID helper ─────────────────────────────────────────────────────────
@@ -206,8 +233,8 @@ function notifCategory(type: string): string | undefined {
 async function handleMessage(
   record: Record<string, any>,
   db: ReturnType<typeof createClient>,
-  projectId: string,
-  accessToken: string,
+  projectId: string | null,
+  accessToken: string | null,
 ): Promise<void> {
   // messages table uses encrypted_content (no plain `content` or `message_type` columns)
   const { id: messageId, chat_id, sender_id, encrypted_content, attachment_url, attachment_type, audio_url } = record;
@@ -247,12 +274,12 @@ async function handleMessage(
   const derivedType = audio_url ? "audio" : attachment_type ?? null;
   const body = _messagePreview(encrypted_content ?? null, derivedType);
 
-  // Get FCM tokens for all recipients + check notification preferences
+  // Get both delivery channels for all recipients.
   const { data: profiles } = await db
     .from("profiles")
-    .select("id, fcm_token")
+    .select("id, fcm_token, expo_push_token")
     .in("id", recipientIds)
-    .not("fcm_token", "is", null);
+    .or("fcm_token.not.is.null,expo_push_token.not.is.null");
 
   if (!profiles?.length) return;
 
@@ -272,35 +299,34 @@ async function handleMessage(
 
   await Promise.all(
     profiles
-      .filter((p: any) => p.fcm_token)
-      .map((p: any) => dispatchToToken(p.fcm_token, opts, projectId, accessToken))
+      .map((p: any) => dispatchToProfile(p, opts, projectId, accessToken))
   );
 }
 
 async function handleCall(
   record: Record<string, any>,
   db: ReturnType<typeof createClient>,
-  projectId: string,
-  accessToken: string,
+  projectId: string | null,
+  accessToken: string | null,
 ): Promise<void> {
   // Column is callee_id (not receiver_id) — matches callEngine.ts INSERT
   const { id: callId, caller_id, callee_id, call_type, chat_id } = record;
 
   if (!caller_id || !callee_id) return;
 
-  // Get caller profile + callee FCM token in parallel
+  // Get caller profile + both callee delivery channels in parallel.
   const [{ data: caller }, { data: receiver }] = await Promise.all([
     db.from("profiles").select("display_name, handle, avatar_url").eq("id", caller_id).single(),
-    db.from("profiles").select("fcm_token").eq("id", callee_id).single(),
+    db.from("profiles").select("id, fcm_token, expo_push_token").eq("id", callee_id).single(),
   ]);
 
-  if (!receiver?.fcm_token) return;
+  if (!receiver?.fcm_token && !receiver?.expo_push_token) return;
 
   const callerName   = caller?.display_name ?? caller?.handle ?? "Someone";
   const callerAvatar = caller?.avatar_url   ?? "";
   const typeLabel    = call_type === "video" ? "Video call" : "Voice call";
 
-  await dispatchToToken(receiver.fcm_token, {
+  await dispatchToProfile(receiver, {
     title: callerName,
     body: `${typeLabel} incoming`,
     data: {
@@ -320,8 +346,8 @@ async function handleCall(
 async function handleNotification(
   record: Record<string, any>,
   db: ReturnType<typeof createClient>,
-  projectId: string,
-  accessToken: string,
+  projectId: string | null,
+  accessToken: string | null,
 ): Promise<void> {
   const {
     user_id, type, title, body,
@@ -331,14 +357,14 @@ async function handleNotification(
 
   if (!user_id || !type) return;
 
-  // Get recipient FCM token
+  // Get both recipient delivery channels.
   const { data: profile } = await db
     .from("profiles")
-    .select("fcm_token")
+    .select("id, fcm_token, expo_push_token")
     .eq("id", user_id)
     .single();
 
-  if (!profile?.fcm_token) return;
+  if (!profile?.fcm_token && !profile?.expo_push_token) return;
 
   // Check notification preferences
   const { data: prefs } = await db
@@ -391,7 +417,7 @@ async function handleNotification(
     ...(extraData && typeof extraData === "object" ? extraData : {}),
   };
 
-  await dispatchToToken(profile.fcm_token, {
+  await dispatchToProfile(profile, {
     title: notifTitle,
     body: notifBody,
     data,
@@ -487,8 +513,8 @@ async function handleShopOrder(
   eventType: string,
   oldRecord: Record<string, any> | null,
   db: ReturnType<typeof createClient>,
-  projectId: string,
-  accessToken: string,
+  projectId: string | null,
+  accessToken: string | null,
 ): Promise<void> {
   const { id, buyer_id, seller_id, status, total_acoin } = record;
   if (!buyer_id || !seller_id || !status) return;
@@ -514,15 +540,15 @@ async function handleShopOrder(
     }
   }
 
-  const { data: profiles } = await db.from("profiles").select("id, fcm_token").in("id", targets.map(t => t.userId)).not("fcm_token", "is", null);
+  const { data: profiles } = await db.from("profiles").select("id, fcm_token, expo_push_token").in("id", targets.map(t => t.userId)).or("fcm_token.not.is.null,expo_push_token.not.is.null");
   if (!profiles?.length) return;
 
-  const tokenMap = Object.fromEntries((profiles as any[]).map((p: any) => [p.id, p.fcm_token]));
+  const tokenMap = Object.fromEntries((profiles as any[]).map((p: any) => [p.id, p]));
 
   await Promise.all(
     targets
       .filter(t => tokenMap[t.userId])
-      .map(t => dispatchToToken(tokenMap[t.userId], {
+      .map(t => dispatchToProfile(tokenMap[t.userId], {
         title: t.title,
         body: t.body,
         data: { type: "order", orderId, orderType: "shop" },
@@ -538,8 +564,8 @@ async function handleMerchantOrder(
   eventType: string,
   oldRecord: Record<string, any> | null,
   db: ReturnType<typeof createClient>,
-  projectId: string,
-  accessToken: string,
+  projectId: string | null,
+  accessToken: string | null,
 ): Promise<void> {
   const { id, buyer_id, merchant_id, status } = record;
   if (!buyer_id || !merchant_id || !status) return;
@@ -560,15 +586,15 @@ async function handleMerchantOrder(
     }
   }
 
-  const { data: profiles } = await db.from("profiles").select("id, fcm_token").in("id", targets.map(t => t.userId)).not("fcm_token", "is", null);
+  const { data: profiles } = await db.from("profiles").select("id, fcm_token, expo_push_token").in("id", targets.map(t => t.userId)).or("fcm_token.not.is.null,expo_push_token.not.is.null");
   if (!profiles?.length) return;
 
-  const tokenMap = Object.fromEntries((profiles as any[]).map((p: any) => [p.id, p.fcm_token]));
+  const tokenMap = Object.fromEntries((profiles as any[]).map((p: any) => [p.id, p]));
 
   await Promise.all(
     targets
       .filter(t => tokenMap[t.userId])
-      .map(t => dispatchToToken(tokenMap[t.userId], {
+      .map(t => dispatchToProfile(tokenMap[t.userId], {
         title: t.title,
         body: t.body,
         data: { type: "order", orderId, orderType: "merchant" },
@@ -584,8 +610,8 @@ async function handleFreelanceOrder(
   eventType: string,
   oldRecord: Record<string, any> | null,
   db: ReturnType<typeof createClient>,
-  projectId: string,
-  accessToken: string,
+  projectId: string | null,
+  accessToken: string | null,
 ): Promise<void> {
   const { id, buyer_id, seller_id, status } = record;
   if (!buyer_id || !seller_id || !status) return;
@@ -612,15 +638,15 @@ async function handleFreelanceOrder(
     }
   }
 
-  const { data: profiles } = await db.from("profiles").select("id, fcm_token").in("id", targets.map(t => t.userId)).not("fcm_token", "is", null);
+  const { data: profiles } = await db.from("profiles").select("id, fcm_token, expo_push_token").in("id", targets.map(t => t.userId)).or("fcm_token.not.is.null,expo_push_token.not.is.null");
   if (!profiles?.length) return;
 
-  const tokenMap = Object.fromEntries((profiles as any[]).map((p: any) => [p.id, p.fcm_token]));
+  const tokenMap = Object.fromEntries((profiles as any[]).map((p: any) => [p.id, p]));
 
   await Promise.all(
     targets
       .filter(t => tokenMap[t.userId])
-      .map(t => dispatchToToken(tokenMap[t.userId], {
+      .map(t => dispatchToProfile(tokenMap[t.userId], {
         title: t.title,
         body: t.body,
         data: { type: "order", orderId, orderType: "freelance" },
@@ -641,17 +667,8 @@ serve(async (req) => {
   }
 
   try {
-    const projectId = Deno.env.get("FIREBASE_PROJECT_ID");
-    const saKey     = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_KEY");
-
-    if (!projectId || !saKey) {
-      console.error("[push-trigger] FIREBASE_PROJECT_ID or FIREBASE_SERVICE_ACCOUNT_KEY not set");
-      // Return 200 to prevent pg_net from retrying indefinitely
-      return new Response(JSON.stringify({ ok: false, reason: "missing_credentials" }), {
-        status: 200,
-        headers: { ...CORS, "Content-Type": "application/json" },
-      });
-    }
+    const projectId = Deno.env.get("FIREBASE_PROJECT_ID") || null;
+    const saKey     = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_KEY") || null;
 
     const body = await req.json();
     const { type: eventType, table, record } = body as {
@@ -672,8 +689,12 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Obtain FCM access token once (valid for 1h)
-    const accessToken = await getFCMToken(saKey);
+    // FCM is preferred when configured. Expo Push can still deliver when
+    // Firebase credentials are temporarily unavailable.
+    const accessToken = projectId && saKey ? await getFCMToken(saKey) : null;
+    if (!projectId || !saKey) {
+      console.warn("[push-trigger] FCM credentials missing; using Expo Push tokens only");
+    }
 
     switch (table) {
       case "messages":

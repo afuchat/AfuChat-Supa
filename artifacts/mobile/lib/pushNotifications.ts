@@ -4,7 +4,7 @@
  * Client-side push notification setup.
  *
  * Responsibilities:
- *   1. Request OS permission + obtain FCM/device token
+ *   1. Request OS permission + obtain native FCM/APNs and Expo tokens
  *   2. Register token with the backend (register-push-token edge fn)
  *   3. Set up foreground notification handler
  *   4. Register notification action categories (Reply, Mark Read)
@@ -148,26 +148,41 @@ export async function registerForPushNotifications(): Promise<void> {
       await _createAndroidChannels(N);
     }
 
-    // Get the raw native FCM/APNs device token — used directly with FCM HTTP v1.
-    // Requires a physical device and google-services.json / GoogleService-Info.plist.
-    let token: string;
+    // Keep both token types. Standalone Android/iOS builds prefer the native
+    // token for FCM/APNs, while Expo Go and some development builds only expose
+    // an Expo push token. The server uses FCM first and Expo as a fallback.
+    let fcmToken: string | null = null;
+    let expoPushToken: string | null = null;
+
     try {
       const tokenData = await N.getDevicePushTokenAsync();
-      token = tokenData.data as string;
+      if (tokenData?.data) fcmToken = String(tokenData.data);
     } catch (tokenErr: any) {
-      _lastRegistrationError = `Failed to obtain device push token: ${tokenErr?.message ?? tokenErr}`;
-      console.warn("[Push] getDevicePushTokenAsync error:", tokenErr);
-      return;
+      console.warn("[Push] native device token unavailable:", tokenErr);
     }
 
-    if (!token) {
-      _lastRegistrationError = "Failed to obtain push token";
+    try {
+      const projectId = "7efbd70c-e8d4-485d-88a9-d05e3d34f280";
+      const tokenData = await N.getExpoPushTokenAsync({ projectId });
+      if (tokenData?.data) expoPushToken = String(tokenData.data);
+    } catch (tokenErr: any) {
+      console.warn("[Push] Expo push token unavailable:", tokenErr);
+    }
+
+    if (!fcmToken && !expoPushToken) {
+      _lastRegistrationError = "Failed to obtain a native or Expo push token";
       return;
     }
 
     // Register with backend
+    const registrationBody: Record<string, unknown> = {
+      platform: Platform.OS,
+    };
+    if (fcmToken) registrationBody.fcmToken = fcmToken;
+    if (expoPushToken) registrationBody.expoPushToken = expoPushToken;
+
     const { error } = await supabase.functions.invoke("register-push-token", {
-      body: { token, platform: Platform.OS },
+      body: registrationBody,
     });
 
     if (error) {
@@ -438,10 +453,9 @@ export function getCurrentUserId(): string | null {
 export async function clearPushToken(): Promise<void> {
   if (Platform.OS === "web") return;
   try {
-    // Use a special sentinel — the edge function checks for this exact value
-    // and sets fcm_token to NULL instead of rejecting an empty string.
+    // Clear both token channels for this user/device.
     await supabase.functions.invoke("register-push-token", {
-      body: { token: "__clear__", platform: Platform.OS },
+      body: { token: "__clear__", fcmToken: "__clear__", expoPushToken: "__clear__", platform: Platform.OS },
     });
   } catch {}
 }

@@ -124,12 +124,14 @@ async function sendOneExpo(
   title: string,
   body: string,
   data: Record<string, string>,
-): Promise<void> {
-  await fetch("https://exp.host/--/api/v2/push/send", {
+): Promise<boolean> {
+  const res = await fetch("https://exp.host/--/api/v2/push/send", {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({ to: token, title, body, data, sound: "default", priority: "high" }),
   });
+  const payload = await res.json().catch(() => null);
+  return res.ok && payload?.data?.status !== "error" && !payload?.data?.details?.error;
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -165,29 +167,28 @@ serve(async (req) => {
       });
     }
 
-    const projectId = Deno.env.get("FIREBASE_PROJECT_ID");
-    const saKey     = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_KEY");
-    if (!projectId || !saKey) {
-      return new Response(JSON.stringify({ error: "Firebase credentials not configured" }), {
-        status: 500,
-        headers: { ...CORS, "Content-Type": "application/json" },
-      });
-    }
+    const projectId = Deno.env.get("FIREBASE_PROJECT_ID") || null;
+    const saKey     = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_KEY") || null;
 
     const db = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Fetch all FCM tokens
-    let query = db.from("profiles").select("fcm_token").not("fcm_token", "is", null);
+    // Fetch all registered delivery tokens.
+    let query = db
+      .from("profiles")
+      .select("fcm_token, expo_push_token")
+      .or("fcm_token.not.is.null,expo_push_token.not.is.null");
     if (filter === "premium") {
       query = query.not("platinum_until", "is", null).gt("platinum_until", new Date().toISOString());
     }
     const { data: profiles, error: dbErr } = await query;
     if (dbErr) throw new Error(dbErr.message);
 
-    const tokens = (profiles ?? []).map((p: any) => p.fcm_token as string).filter(Boolean);
+    const tokens = (profiles ?? [])
+      .flatMap((p: any) => [p.fcm_token, p.expo_push_token])
+      .filter(Boolean) as string[];
     if (!tokens.length) {
       return new Response(JSON.stringify({ ok: true, sent: 0, skipped: 0 }), {
         status: 200,
@@ -195,7 +196,7 @@ serve(async (req) => {
       });
     }
 
-    const accessToken = await getFCMToken(saKey);
+    const accessToken = projectId && saKey ? await getFCMToken(saKey) : null;
     const broadcastData = { ...data, type: "broadcast" };
 
     let sent = 0;
@@ -209,9 +210,13 @@ serve(async (req) => {
       await Promise.all(
         batch.map(async (token) => {
           if (token.startsWith("ExponentPushToken[")) {
-            await sendOneExpo(token, title, msgBody, broadcastData);
-            sent++;
+            if (await sendOneExpo(token, title, msgBody, broadcastData)) sent++;
+            else errors++;
           } else {
+            if (!projectId || !accessToken) {
+              errors++;
+              return;
+            }
             const result = await sendOneFCM(token, title, msgBody, broadcastData, projectId, accessToken);
             if (result === "ok") sent++;
             else if (result === "stale") stale++;

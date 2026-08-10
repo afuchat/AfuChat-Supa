@@ -1,9 +1,14 @@
 /**
  * register-push-token
  * ─────────────────────────────────────────────────────────────────────────────
- * Stores or updates a user's FCM push token in their profile row.
+ * Stores or updates a user's native FCM/APNs token and Expo push token.
  *
- * POST body: { token: string, platform: "ios" | "android" }
+ * POST body: {
+ *   fcmToken?: string,
+ *   expoPushToken?: string,
+ *   token?: string, // legacy alias for fcmToken
+ *   platform: "ios" | "android"
+ * }
  * Auth: Bearer <user JWT> (Supabase auth header)
  */
 
@@ -47,10 +52,31 @@ serve(async (req) => {
 
     // Parse body
     const body = await req.json().catch(() => ({}));
-    const { token, platform } = body as { token?: string; platform?: string };
+    const { token, fcmToken, expoPushToken, platform } = body as {
+      token?: string;
+      fcmToken?: string | null;
+      expoPushToken?: string | null;
+      platform?: string;
+    };
 
-    if (!token || typeof token !== "string") {
-      return new Response(JSON.stringify({ error: "token is required" }), {
+    const hasFcmToken = Object.prototype.hasOwnProperty.call(body, "fcmToken") ||
+      Object.prototype.hasOwnProperty.call(body, "token");
+    const hasExpoToken = Object.prototype.hasOwnProperty.call(body, "expoPushToken");
+    const nativeToken = fcmToken ?? token ?? null;
+    const isClear = nativeToken === "__clear__" || expoPushToken === "__clear__";
+    const cleanFcmToken = isClear
+      ? null
+      : typeof nativeToken === "string" && nativeToken.trim()
+        ? nativeToken.trim()
+        : null;
+    const cleanExpoToken = isClear
+      ? null
+      : typeof expoPushToken === "string" && expoPushToken.trim()
+        ? expoPushToken.trim()
+        : null;
+
+    if (!cleanFcmToken && !cleanExpoToken && !isClear) {
+      return new Response(JSON.stringify({ error: "fcmToken or expoPushToken is required" }), {
         status: 400,
         headers: { ...CORS, "Content-Type": "application/json" },
       });
@@ -58,17 +84,25 @@ serve(async (req) => {
 
     const serviceClient = createClient(supabaseUrl, serviceKey);
 
-    // "__clear__" is a sentinel sent on sign-out to remove the stored token.
-    const isClear = token.trim() === "" || token === "__clear__";
+    // Keep the channels separate so Expo Go and standalone builds can coexist.
+    // Only update channels explicitly supplied by the client; a token refresh
+    // must not erase the other working delivery route.
+    const profileUpdate: Record<string, unknown> = {
+      push_token_updated_at: new Date().toISOString(),
+    };
+    if (isClear || hasFcmToken) {
+      profileUpdate.fcm_token = cleanFcmToken;
+    }
+    if (isClear || hasExpoToken) {
+      profileUpdate.expo_push_token = cleanExpoToken;
+    }
+    if (isClear || platform) {
+      profileUpdate.push_token_platform = isClear ? null : (platform ?? null);
+    }
 
-    // Update fcm_token on the user's profile
     const { error: profileErr } = await serviceClient
       .from("profiles")
-      .update({
-        fcm_token: isClear ? null : token.trim(),
-        push_token_platform: isClear ? null : (platform ?? null),
-        push_token_updated_at: new Date().toISOString(),
-      })
+      .update(profileUpdate)
       .eq("id", user.id);
 
     if (isClear) {
