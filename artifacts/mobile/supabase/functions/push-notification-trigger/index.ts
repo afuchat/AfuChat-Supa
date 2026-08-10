@@ -74,6 +74,18 @@ type FCMOptions = {
   channelId?: string;
   collapseKey?: string;
   categoryIdentifier?: string;
+  audit?: {
+    table: string;
+    eventType: string;
+    eventId?: string;
+    notificationType?: string;
+  };
+};
+
+type ProviderResult = {
+  status: "ok" | "stale" | "error";
+  errorCode?: string;
+  errorMessage?: string;
 };
 
 async function sendFCM(
@@ -81,7 +93,7 @@ async function sendFCM(
   opts: FCMOptions,
   projectId: string,
   accessToken: string,
-): Promise<"ok" | "stale" | "error"> {
+): Promise<ProviderResult> {
   const data = Object.fromEntries(
     Object.entries(opts.data ?? {}).map(([k, v]) => [k, String(v)])
   );
@@ -142,17 +154,17 @@ async function sendFCM(
     res.status === 404 ||
     responseText.includes("UNREGISTERED") ||
     responseText.includes("registration-token-not-registered")
-  ) return "stale"; // Token is no longer registered
+  ) return { status: "stale", errorCode: "UNREGISTERED", errorMessage: responseText.slice(0, 500) };
   if (!res.ok) {
     console.error(`[FCM] send failed ${res.status}:`, responseText);
-    return "error";
+    return { status: "error", errorCode: `HTTP_${res.status}`, errorMessage: responseText.slice(0, 500) };
   }
-  return "ok";
+  return { status: "ok" };
 }
 
 // ── Expo Push fallback (for dev/Expo Go tokens) ───────────────────────────────
 
-async function sendExpoPush(token: string, opts: FCMOptions): Promise<boolean> {
+async function sendExpoPush(token: string, opts: FCMOptions): Promise<ProviderResult> {
   const res = await fetch("https://exp.host/--/api/v2/push/send", {
     method: "POST",
     headers: {
@@ -174,11 +186,39 @@ async function sendExpoPush(token: string, opts: FCMOptions): Promise<boolean> {
     }),
   });
   const payload = await res.json().catch(() => null);
-  if (!res.ok || payload?.data?.status === "error" || payload?.data?.details?.error) {
+  const details = payload?.data?.details;
+  if (!res.ok || payload?.data?.status === "error" || details?.error) {
     console.error(`[ExpoPush] send failed ${res.status}:`, JSON.stringify(payload));
-    return false;
+    const errorCode = details?.error ?? `HTTP_${res.status}`;
+    return {
+      status: errorCode === "DeviceNotRegistered" ? "stale" : "error",
+      errorCode,
+      errorMessage: JSON.stringify(payload).slice(0, 500),
+    };
   }
-  return true;
+  return { status: "ok" };
+}
+
+async function recordDeliveryAttempt(
+  db: ReturnType<typeof createClient> | undefined,
+  profileId: string | undefined,
+  provider: string,
+  result: ProviderResult,
+  audit: FCMOptions["audit"],
+): Promise<void> {
+  if (!db || !audit || !profileId) return;
+  const { error } = await db.from("push_delivery_attempts").insert({
+    event_table: audit.table,
+    event_type: audit.eventType,
+    event_id: audit.eventId ?? null,
+    notification_type: audit.notificationType ?? audit.table,
+    recipient_user_id: profileId,
+    provider,
+    status: result.status,
+    error_code: result.errorCode ?? null,
+    error_message: result.errorMessage ?? null,
+  });
+  if (error) console.warn("[push] delivery audit insert failed:", error.message);
 }
 
 async function dispatchToProfile(
@@ -191,6 +231,7 @@ async function dispatchToProfile(
   opts: FCMOptions,
   projectId: string | null,
   accessToken: string | null,
+  db?: ReturnType<typeof createClient>,
 ): Promise<"fcm" | "expo" | "failed" | "none"> {
   const legacyExpoToken = profile.fcm_token?.startsWith("ExponentPushToken[")
     ? profile.fcm_token
@@ -201,18 +242,37 @@ async function dispatchToProfile(
 
   if (profile.fcm_token && !legacyExpoToken && !isIosNativeToken && projectId && accessToken) {
     const result = await sendFCM(profile.fcm_token, opts, projectId, accessToken);
-    if (result === "ok") return "fcm";
-    console.warn(`[push] FCM failed for ${profile.id ?? "profile"} (${result}); trying Expo fallback`);
+    await recordDeliveryAttempt(db, profile.id, "fcm", result, opts.audit);
+    if (result.status === "ok") return "fcm";
+    if (result.status === "stale" && db && profile.id) {
+      await db.from("profiles").update({ fcm_token: null }).eq("id", profile.id).eq("fcm_token", profile.fcm_token);
+    }
+    console.warn(`[push] FCM failed for ${profile.id ?? "profile"} (${result.status}); trying Expo fallback`);
   }
 
   if (expoToken) {
     try {
-      if (await sendExpoPush(expoToken, opts)) return "expo";
+      const result = await sendExpoPush(expoToken, opts);
+      await recordDeliveryAttempt(db, profile.id, "expo", result, opts.audit);
+      if (result.status === "ok") return "expo";
+      if (result.status === "stale" && db && profile.id) {
+        await db.from("profiles").update({ expo_push_token: null }).eq("id", profile.id).eq("expo_push_token", expoToken);
+      }
     } catch (err) {
       console.error(`[ExpoPush] send failed for ${profile.id ?? "profile"}:`, err);
+      await recordDeliveryAttempt(db, profile.id, "expo", {
+        status: "error",
+        errorCode: "EXCEPTION",
+        errorMessage: String(err).slice(0, 500),
+      }, opts.audit);
     }
   }
 
+  await recordDeliveryAttempt(db, profile.id, "none", {
+    status: "error",
+    errorCode: "ALL_PROVIDERS_FAILED",
+    errorMessage: "No push provider accepted the delivery",
+  }, opts.audit);
   return profile.fcm_token || profile.expo_push_token ? "failed" : "none";
 }
 
@@ -304,11 +364,12 @@ async function handleMessage(
     channelId: "messages",
     collapseKey: `chat_${chat_id}`,
     categoryIdentifier: "afuchat_message_reply",
+    audit: { table: "messages", eventType: "INSERT", eventId: messageId, notificationType: "message" },
   };
 
   await Promise.all(
     profiles
-      .map((p: any) => dispatchToProfile(p, opts, projectId, accessToken))
+       .map((p: any) => dispatchToProfile(p, opts, projectId, accessToken, db))
   );
 }
 
@@ -349,7 +410,8 @@ async function handleCall(
     },
     channelId: "calls",
     collapseKey: `call_${callId}`,
-  }, projectId, accessToken);
+    audit: { table: "calls", eventType: "INSERT", eventId: callId, notificationType: "call" },
+  }, projectId, accessToken, db);
 }
 
 async function handleNotification(
@@ -433,7 +495,8 @@ async function handleNotification(
     channelId: notifChannel(type),
     collapseKey: `notif_${type}_${user_id}`,
     categoryIdentifier: notifCategory(type),
-  }, projectId, accessToken);
+    audit: { table: "notifications", eventType: "INSERT", eventId: record.id, notificationType: type },
+  }, projectId, accessToken, db);
 }
 
 // ── Text helpers ──────────────────────────────────────────────────────────────
