@@ -17,6 +17,7 @@
 
 import { Platform } from "react-native";
 import { storage } from "./storage/mmkv";
+import { isExpoGo } from "@/lib/expoEnvironment";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -73,7 +74,7 @@ export function isPermissionGranted(type: PermissionType): boolean {
  * (the user may have changed them in Settings while the app was backgrounded).
  */
 export async function refreshAllPermissions(): Promise<void> {
-  if (Platform.OS === "web") return;
+  if (Platform.OS === "web" || isExpoGo()) return;
   const types: PermissionType[] = [
     "notifications", "camera", "microphone", "mediaLibrary", "contacts",
   ];
@@ -95,6 +96,7 @@ export async function refreshAllPermissions(): Promise<void> {
 export async function requestPermission(type: PermissionType): Promise<PermissionStatus> {
   // Web: forward to browser permission API for notifications; others auto-grant.
   if (Platform.OS === "web") return _requestWeb(type);
+  if (type === "notifications" && isExpoGo()) return "undetermined";
 
   // Fast path: already granted or hard-blocked → no native call needed.
   const cached = getPermissionStatus(type);
@@ -122,6 +124,7 @@ export async function requestPermission(type: PermissionType): Promise<Permissio
  */
 export async function checkPermission(type: PermissionType): Promise<PermissionStatus> {
   if (Platform.OS === "web") return getPermissionStatus(type);
+  if (type === "notifications" && isExpoGo()) return getPermissionStatus(type);
   try {
     switch (type) {
       case "notifications": return await _checkNotifications();

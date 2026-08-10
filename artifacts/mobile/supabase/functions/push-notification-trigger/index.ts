@@ -101,7 +101,9 @@ async function sendFCM(
         default_vibrate_timings: true,
         default_light_settings: true,
         color: "#1f95ff",
-        icon: "ic_notification",
+        // expo-notifications generates this resource from app.json's
+        // notification icon configuration.
+        icon: "notification_icon",
       },
     },
     apns: {

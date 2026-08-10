@@ -29,6 +29,7 @@ import { supabase } from "@/lib/supabase";
 import { saveLocalCall } from "@/lib/storage/localCallHistory";
 import { notifyMissedCall } from "@/lib/notifyUser";
 import { emitCallAudio } from "@/lib/callAudioBus";
+import { isExpoGo } from "@/lib/expoEnvironment";
 
 // ─── WebRTC bridge: native (react-native-webrtc) vs web (browser APIs) ────────
 // On Android/iOS we use react-native-webrtc. On web, every modern browser
@@ -75,6 +76,11 @@ function _detectRTC(): _RTCBridge | null {
       },
     } satisfies _RTCBridge;
   }
+
+  // Expo Go does not bundle react-native-webrtc. Avoid requiring it at all:
+  // importing the package emits a native-module error and an event-target-shim
+  // resolution warning before its failure can be caught.
+  if (isExpoGo()) return null;
 
   // Native (Android / iOS): react-native-webrtc.
   //
@@ -175,7 +181,7 @@ const _AV: typeof import("expo-av") | null = (() => {
   // Do NOT gate on NativeModules.ExponentAV: in Expo SDK 55 + New Architecture
   // production builds, expo-av uses TurboModules/JSI and does NOT register under
   // NativeModules, so that check always returns null and silently disables all audio.
-  if (Platform.OS === "web") return null;
+  if (Platform.OS === "web" || isExpoGo()) return null;
   try { return require("expo-av"); } catch { return null; }
 })();
 

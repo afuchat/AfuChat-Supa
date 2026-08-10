@@ -20,8 +20,9 @@ import type { AVPlaybackStatus } from "expo-av";
 // production builds expo-av uses TurboModules/JSI and is absent from NativeModules,
 // so that check always returns null and silently disables all audio.
 import { Platform as _AvPlatform } from "react-native";
+import { isExpoGo } from "@/lib/expoEnvironment";
 const _AV = (() => {
-  if (_AvPlatform.OS === "web") return null;
+  if (_AvPlatform.OS === "web" || isExpoGo()) return null;
   try { return require("expo-av"); } catch { return null; }
 })();
 const _VT = (() => { try { return require("expo-video-thumbnails"); } catch { return null; } })();

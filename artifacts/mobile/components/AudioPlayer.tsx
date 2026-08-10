@@ -10,12 +10,13 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { isExpoGo } from "@/lib/expoEnvironment";
 // expo-av: lazy-load on native only.
 // Do NOT gate on NativeModules.ExponentAV — in Expo SDK 55 + New Architecture
 // production builds expo-av uses TurboModules/JSI and is absent from NativeModules,
 // so that check always returns null and silently disables all audio.
 let Audio: typeof import("expo-av").Audio | null = null;
-if (Platform.OS !== "web") {
+if (Platform.OS !== "web" && !isExpoGo()) {
   try { Audio = require("expo-av").Audio; } catch {}
 }
 type AVPlaybackStatus = import("expo-av").AVPlaybackStatus;

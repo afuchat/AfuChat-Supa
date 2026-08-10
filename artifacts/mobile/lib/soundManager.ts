@@ -11,6 +11,7 @@
  */
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { isExpoGo } from "@/lib/expoEnvironment";
 
 const SOUND_MODE_KEY = "@afuchat:sound_mode";
 export type SoundMode = "afuchat" | "device" | "silent";
@@ -26,6 +27,7 @@ const PLAYBACK_AUDIO_MODE = {
 };
 
 async function ensureSound(): Promise<any | null> {
+  if (isExpoGo()) return null;
   if (_sound) return _sound;
   if (_loading) return null;
   _loading = true;
@@ -51,6 +53,7 @@ async function ensureSound(): Promise<any | null> {
  * rebuilt fresh (the old instance was created under a different session mode).
  */
 export async function resetToPlaybackMode(): Promise<void> {
+  if (isExpoGo()) return;
   try {
     const { Audio } = await import("expo-av");
     await Audio.setAudioModeAsync(PLAYBACK_AUDIO_MODE);
@@ -89,6 +92,7 @@ export async function setSoundMode(mode: SoundMode): Promise<void> {
 
 export async function playNotificationSound(): Promise<void> {
   try {
+    if (isExpoGo()) return;
     const mode = await getSoundMode();
     if (mode === "silent" || mode === "device") return;
 

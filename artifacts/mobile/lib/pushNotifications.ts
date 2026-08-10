@@ -17,26 +17,17 @@
 
 import { Platform } from "react-native";
 import { router } from "expo-router";
+import Constants from "expo-constants";
 import { supabase } from "@/lib/supabase";
+import { isExpoGo } from "@/lib/expoEnvironment";
 
 // ── Lazy-loaded modules (safe on web / Expo Go without native modules) ────────
 
 let Notifications: typeof import("expo-notifications") | null = null;
 let Device: typeof import("expo-device") | null = null;
 
-function isExpoGo(): boolean {
-  try {
-    const Constants = require("expo-constants").default;
-    return (
-      Constants?.appOwnership === "expo" ||
-      Constants?.executionEnvironment === "storeClient"
-    );
-  } catch {
-    return false;
-  }
-}
-
 function getNotifications(): typeof import("expo-notifications") | null {
+  if (Platform.OS === "web" || isExpoGo()) return null;
   if (Notifications) return Notifications;
   try {
     Notifications = require("expo-notifications");
@@ -187,7 +178,13 @@ export async function registerForPushNotifications(): Promise<void> {
     }
 
     try {
-      const projectId = "7efbd70c-e8d4-485d-88a9-d05e3d34f280";
+      const projectId =
+        Constants.expoConfig?.extra?.eas?.projectId ??
+        process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
+      if (!projectId) {
+        _lastRegistrationError = "Expo project ID is not configured";
+        return;
+      }
       const tokenData = await N.getExpoPushTokenAsync({ projectId });
       if (tokenData?.data) expoPushToken = String(tokenData.data);
     } catch (tokenErr: any) {
@@ -453,7 +450,7 @@ function _routeNotification(data: Record<string, string>): void {
 // ═════════════════════════════════════════════════════════════════════════════
 
 export async function clearBadge(): Promise<void> {
-  if (Platform.OS === "web") return;
+  if (Platform.OS === "web" || isExpoGo()) return;
 
   const N = getNotifications();
   if (!N) return;

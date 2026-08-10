@@ -47,7 +47,8 @@ import * as FileSystem from "expo-file-system";
 let Audio: typeof import("expo-av").Audio | null = null;
 type AudioRecording = import("expo-av/build/Audio/Recording").Recording;
 import { Platform as _Platform } from "react-native";
-if (_Platform.OS !== "web") {
+import { isExpoGo } from "@/lib/expoEnvironment";
+if (_Platform.OS !== "web" && !isExpoGo()) {
   try { Audio = require("expo-av").Audio; } catch {}
 }
 import VideoPreview from "@/components/ui/VideoPreview";
@@ -3051,6 +3052,7 @@ function ChatScreen() {
             const hit = keywords.find((kw: string) => msgLower.includes(kw));
             if (hit) {
               try {
+                 if (isExpoGo()) return;
                 const Notifications = await import("expo-notifications");
                 const { status } = await Notifications.getPermissionsAsync();
                 if (status === "granted") {
@@ -4664,6 +4666,14 @@ STRICT RULES:
 
   async function scheduleReminder(msg: Message, secondsFromNow: number) {
     try {
+      if (isExpoGo()) {
+        showAlert(
+          "Development build required",
+          "Message reminders are unavailable in Expo Go. Use an Expo development build or standalone app.",
+        );
+        setReminderMsg(null);
+        return;
+      }
       const Notifications = await import("expo-notifications");
       const { status } = await Notifications.getPermissionsAsync();
       if (status !== "granted") {

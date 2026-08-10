@@ -13,6 +13,7 @@
 
 import { Platform, Linking } from "react-native";
 import { useEffect, useState } from "react";
+import { isExpoGo } from "@/lib/expoEnvironment";
 
 export type MicPermState = "granted" | "denied" | "prompt";
 
@@ -36,6 +37,10 @@ export async function getMicPermissionState(): Promise<MicPermState> {
       return "prompt";
     }
   }
+
+  // Expo Go does not include the app's native AV module. Return a neutral
+  // state; the standalone build performs the real OS permission check.
+  if (isExpoGo()) return "prompt";
 
   // Native (iOS / Android) — expo-av uses TurboModules/JSI in SDK 55 New Arch
   // production builds, so NativeModules.ExponentAV is absent. Load directly.
@@ -72,6 +77,8 @@ export async function requestMicPermission(): Promise<MicPermState> {
       return "denied";
     }
   }
+
+  if (isExpoGo()) return "prompt";
 
   let Audio: typeof import("expo-av").Audio | null = null;
   try { Audio = require("expo-av").Audio; } catch {}

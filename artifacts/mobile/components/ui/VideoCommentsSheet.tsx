@@ -41,7 +41,8 @@ let Audio: typeof import("expo-av").Audio | null = null;
 type AudioSound = import("expo-av/build/Audio/Sound").Sound;
 type AudioRecording = import("expo-av/build/Audio/Recording").Recording;
 import { Platform as _AvPlatform } from "react-native";
-if (_AvPlatform.OS !== "web") {
+import { isExpoGo } from "@/lib/expoEnvironment";
+if (_AvPlatform.OS !== "web" && !isExpoGo()) {
   try { Audio = require("expo-av").Audio; } catch {}
 }
 import * as ImagePicker from "expo-image-picker";
