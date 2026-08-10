@@ -58,3 +58,4 @@
 - [Async handler safety pattern](async-handler-safety-pattern.md) — all async onPress with loading state need try/finally; all onRefresh need finally; showAlert not Alert.alert for user-facing errors.
 - [Edge fn inter-function auth](edge-fn-inter-function-auth.md) — when one Supabase edge function calls another on the same project, it MUST include Authorization: Bearer <SUPABASE_ANON_KEY> header; without it the target returns 401. SUPABASE_ANON_KEY is auto-injected into every edge function runtime.
 - [Expo DevTools system libraries](expo-devtools-system-libs.md) — missing desktop `.so` dependencies can stall Metro before port 5000 opens; install the logged Nix runtime package and restart.
+- [FCM notification verification](fcm-notification-verification.md) — live Supabase push stack needs Firebase secret names, pg_net, token columns, triggers, and deployed functions; Expo Go cannot prove native FCM delivery.
