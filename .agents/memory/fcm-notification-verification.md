@@ -7,4 +7,4 @@ The push pipeline is considered configured only when the live Supabase project h
 
 **Why:** The trigger endpoint intentionally returns a successful skipped response for health or unsupported events, and it can fall back to Expo Push tokens when Firebase credentials are absent. A public HTTP 200 alone therefore does not prove FCM delivery.
 
-**How to apply:** Verify metadata and secret names through the Supabase Management API, query schema metadata over HTTPS, deploy the two functions with the secure Supabase access token, then test native delivery using an Android development/standalone build. Expo Go on Android with SDK 55 skips remote push registration.
+**How to apply:** Verify metadata and secret names through the Supabase Management API, query schema metadata over HTTPS, deploy the trigger and token-registration functions with the secure Supabase access token, then test native delivery using an Android development/standalone build. Expo Go on Android with SDK 55 skips remote push registration. Treat iOS APNs device tokens as a separate provider; do not send them to FCM.

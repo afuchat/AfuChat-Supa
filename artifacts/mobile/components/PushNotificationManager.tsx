@@ -18,6 +18,7 @@ import {
   registerForPushNotifications,
   setupNotificationListeners,
   clearBadge,
+  getLastPushRegistrationError,
 } from "@/lib/pushNotifications";
 
 const RE_REGISTER_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
@@ -25,6 +26,7 @@ const RE_REGISTER_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
 export function PushNotificationManager() {
   const { user } = useAuth();
   const listenersCleanup = useRef<(() => void) | null>(null);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastRegisteredAt = useRef(0);
 
   // ── One-time: set foreground handler + action categories ───────────────────
@@ -39,12 +41,36 @@ export function PushNotificationManager() {
       // Clean up listeners on sign-out
       listenersCleanup.current?.();
       listenersCleanup.current = null;
+      if (retryTimer.current) clearTimeout(retryTimer.current);
+      retryTimer.current = null;
       return;
     }
 
-    // Register token
-    lastRegisteredAt.current = Date.now();
-    registerForPushNotifications().catch(() => {});
+    let cancelled = false;
+    let retryCount = 0;
+
+    const register = () => {
+      if (cancelled) return;
+      lastRegisteredAt.current = Date.now();
+      registerForPushNotifications()
+        .then((ok) => {
+          if (cancelled || ok || retryCount >= 3) return;
+          // Session restoration and the OS token service can finish after the
+          // first render. Retry on a short backoff instead of waiting for the
+          // next foreground event (or silently losing this device forever).
+          retryCount += 1;
+          retryTimer.current = setTimeout(register, retryCount * 5000);
+          console.warn("[Push] registration retry scheduled:", getLastPushRegistrationError());
+        })
+        .catch((err) => {
+          if (cancelled || retryCount >= 3) return;
+          retryCount += 1;
+          retryTimer.current = setTimeout(register, retryCount * 5000);
+          console.warn("[Push] registration exception; retry scheduled:", err);
+        });
+    };
+
+    register();
 
     // Set up notification response listeners
     if (!listenersCleanup.current) {
@@ -52,6 +78,9 @@ export function PushNotificationManager() {
     }
 
     return () => {
+      cancelled = true;
+      if (retryTimer.current) clearTimeout(retryTimer.current);
+      retryTimer.current = null;
       listenersCleanup.current?.();
       listenersCleanup.current = null;
     };

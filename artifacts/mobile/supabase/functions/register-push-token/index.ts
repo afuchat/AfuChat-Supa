@@ -75,6 +75,15 @@ serve(async (req) => {
         ? expoPushToken.trim()
         : null;
 
+    if (platform === "ios" && !cleanExpoToken && !isClear) {
+      return new Response(JSON.stringify({
+        error: "iOS registration requires an Expo push token until direct APNs delivery is configured",
+      }), {
+        status: 400,
+        headers: { ...CORS, "Content-Type": "application/json" },
+      });
+    }
+
     if (!cleanFcmToken && !cleanExpoToken && !isClear) {
       return new Response(JSON.stringify({ error: "fcmToken or expoPushToken is required" }), {
         status: 400,

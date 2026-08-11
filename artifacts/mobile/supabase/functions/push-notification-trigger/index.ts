@@ -238,10 +238,26 @@ async function dispatchToProfile(
     : null;
   const expoToken = profile.expo_push_token ?? legacyExpoToken;
   const isIosNativeToken =
-    profile.push_token_platform === "ios" && !!profile.fcm_token && !legacyExpoToken;
+    (profile.push_token_platform === "ios" ||
+      isLikelyApnsDeviceToken(profile.fcm_token)) &&
+    !!profile.fcm_token &&
+    !legacyExpoToken;
 
   if (profile.fcm_token && !legacyExpoToken && !isIosNativeToken && projectId && accessToken) {
-    const result = await sendFCM(profile.fcm_token, opts, projectId, accessToken);
+    let result: ProviderResult;
+    try {
+      result = await sendFCM(profile.fcm_token, opts, projectId, accessToken);
+    } catch (err) {
+      // A transport error must not abort this recipient before the Expo
+      // fallback gets a chance. This is especially important during an FCM
+      // outage or when a token is being rotated by Android.
+      console.error(`[FCM] send exception for ${profile.id ?? "profile"}:`, err);
+      result = {
+        status: "error",
+        errorCode: "EXCEPTION",
+        errorMessage: "FCM provider request failed before a response was received",
+      };
+    }
     await recordDeliveryAttempt(db, profile.id, "fcm", result, opts.audit);
     if (result.status === "ok") return "fcm";
     if (result.status === "stale" && db && profile.id) {
@@ -295,6 +311,12 @@ function notifCategory(type: string): string | undefined {
   return undefined;
 }
 
+function isLikelyApnsDeviceToken(token: string | null | undefined): boolean {
+  // Legacy iOS registrations may have no platform metadata. APNs device
+  // tokens are commonly 32-byte hex strings; never submit those to FCM.
+  return !!token && /^[0-9a-f]{64}$/i.test(token);
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
 // Event handlers
 // ═════════════════════════════════════════════════════════════════════════════
@@ -327,6 +349,18 @@ async function handleMessage(
   }
 
   if (recipientIds.length === 0) return;
+
+  const { data: messagePrefs } = await db
+    .from("notification_preferences")
+    .select("push_enabled, push_messages")
+    .eq("user_id", recipientIds[0])
+    .maybeSingle();
+  // For group chats, apply the preference independently per recipient below.
+  // The single-recipient fast path avoids an extra query in the common case.
+  if (recipientIds.length === 1 && messagePrefs &&
+      (messagePrefs.push_enabled === false || messagePrefs.push_messages === false)) {
+    return;
+  }
 
   // Get sender profile
   const { data: sender } = await db
@@ -369,7 +403,17 @@ async function handleMessage(
 
   await Promise.all(
     profiles
-       .map((p: any) => dispatchToProfile(p, opts, projectId, accessToken, db))
+      .map(async (p: any) => {
+        if (recipientIds.length > 1) {
+          const { data: prefs } = await db
+            .from("notification_preferences")
+            .select("push_enabled, push_messages")
+            .eq("user_id", p.id)
+            .maybeSingle();
+          if (prefs && (prefs.push_enabled === false || prefs.push_messages === false)) return;
+        }
+        return dispatchToProfile(p, opts, projectId, accessToken, db);
+      })
   );
 }
 
@@ -395,6 +439,13 @@ async function handleCall(
   const callerName   = caller?.display_name ?? caller?.handle ?? "Someone";
   const callerAvatar = caller?.avatar_url   ?? "";
   const typeLabel    = call_type === "video" ? "Video call" : "Voice call";
+
+  const { data: callPrefs } = await db
+    .from("notification_preferences")
+    .select("push_enabled")
+    .eq("user_id", callee_id)
+    .maybeSingle();
+  if (callPrefs?.push_enabled === false) return;
 
   await dispatchToProfile(receiver, {
     title: callerName,
@@ -451,6 +502,7 @@ async function handleNotification(
     if (type === "comment" && (prefs.push_comments === false || prefs.push_replies === false)) return;
     if (type === "reply"   && (prefs.push_replies  === false || prefs.push_comments === false)) return;
     if (type === "mention" && prefs.push_mentions === false) return;
+    if (type === "gift" && prefs.push_gifts === false) return;
 
     // Quiet hours check
     if (prefs.quiet_hours_enabled) {
@@ -627,7 +679,8 @@ async function handleShopOrder(
         channelId: "marketplace",
         collapseKey: `shop_order_${orderId}`,
         categoryIdentifier: "afuchat_order_update",
-      }, projectId, accessToken))
+        audit: { table: "shop_orders", eventType, eventId: orderId, notificationType: "order" },
+      }, projectId, accessToken, db))
   );
 }
 
@@ -673,7 +726,8 @@ async function handleMerchantOrder(
         channelId: "marketplace",
         collapseKey: `merchant_order_${orderId}`,
         categoryIdentifier: "afuchat_order_update",
-      }, projectId, accessToken))
+        audit: { table: "merchant_orders", eventType, eventId: orderId, notificationType: "order" },
+      }, projectId, accessToken, db))
   );
 }
 
@@ -725,7 +779,8 @@ async function handleFreelanceOrder(
         channelId: "marketplace",
         collapseKey: `freelance_order_${orderId}`,
         categoryIdentifier: "afuchat_order_update",
-      }, projectId, accessToken))
+        audit: { table: "freelance_orders", eventType, eventId: orderId, notificationType: "order" },
+      }, projectId, accessToken, db))
   );
 }
 
@@ -743,6 +798,36 @@ serve(async (req) => {
     const saKey     = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_KEY") || null;
 
     const body = await req.json();
+    if (body?.healthcheck === true) {
+      let serviceAccountProject: string | null = null;
+      let serviceAccountJsonValid = false;
+      try {
+        const parsed = JSON.parse(saKey ?? "{}") as { project_id?: string };
+        serviceAccountProject = parsed.project_id ?? null;
+        serviceAccountJsonValid = !!parsed.client_email && !!parsed.private_key;
+      } catch {
+        serviceAccountJsonValid = false;
+      }
+
+      return new Response(JSON.stringify({
+        ok: true,
+        fcmProjectConfigured: !!projectId,
+        serviceAccountConfigured: !!saKey,
+        serviceAccountJsonValid,
+        senderProjectMatchesServiceAccount:
+          !!projectId && !!serviceAccountProject && projectId === serviceAccountProject,
+        senderProjectMatchesExpected:
+          typeof body.expectedFirebaseProjectId === "string" &&
+          body.expectedFirebaseProjectId.length > 0 &&
+          projectId === body.expectedFirebaseProjectId &&
+          serviceAccountProject === body.expectedFirebaseProjectId,
+        expoFallbackAvailable: true,
+      }), {
+        status: 200,
+        headers: { ...CORS, "Content-Type": "application/json" },
+      });
+    }
+
     const { type: eventType, table, record } = body as {
       type: string;
       table: string;
@@ -763,7 +848,21 @@ serve(async (req) => {
 
     // FCM is preferred when configured. Expo Push can still deliver when
     // Firebase credentials are temporarily unavailable.
-    const accessToken = projectId && saKey ? await getFCMToken(saKey) : null;
+    let accessToken: string | null = null;
+    if (projectId && saKey) {
+      try {
+        const serviceAccount = JSON.parse(saKey) as { project_id?: string };
+        if (serviceAccount.project_id && serviceAccount.project_id !== projectId) {
+          throw new Error("Firebase project ID does not match the service-account project");
+        }
+        accessToken = await getFCMToken(saKey);
+      } catch (err) {
+        // Keep processing the event with Expo tokens when Firebase credentials
+        // are malformed, expired, or temporarily unavailable. A credential
+        // failure must never suppress another valid delivery route.
+        console.error("[push-trigger] FCM credential initialization failed:", err);
+      }
+    }
     if (!projectId || !saKey) {
       console.warn("[push-trigger] FCM credentials missing; using Expo Push tokens only");
     }

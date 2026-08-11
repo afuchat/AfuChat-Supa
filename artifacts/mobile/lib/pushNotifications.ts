@@ -121,23 +121,60 @@ export function getLastPushRegistrationError(): string | null {
   return _lastRegistrationError;
 }
 
-export async function registerForPushNotifications(): Promise<void> {
+let _registrationInFlight: Promise<boolean> | null = null;
+const REGISTRATION_RETRIES = 3;
+
+/**
+ * Register at most once at a time and retry transient startup/auth failures.
+ * App startup commonly races SecureStore hydration, Supabase session restore,
+ * and the OS token service. Without this guard, two registrations can also
+ * overwrite each other with partial token sets.
+ */
+export function registerForPushNotifications(): Promise<boolean> {
+  if (_registrationInFlight) return _registrationInFlight;
+
+  _registrationInFlight = (async () => {
+    for (let attempt = 0; attempt < REGISTRATION_RETRIES; attempt += 1) {
+      const registered = await registerForPushNotificationsOnce();
+      if (registered) return true;
+
+      const error = _lastRegistrationError ?? "";
+      const permanent =
+        error.includes("permission denied") ||
+        error.includes("not supported on simulator") ||
+        error.includes("require an Expo development build");
+      if (permanent || attempt === REGISTRATION_RETRIES - 1) break;
+
+      await new Promise((resolve) => setTimeout(resolve, 750 * (attempt + 1)));
+    }
+    return false;
+  })().finally(() => {
+    _registrationInFlight = null;
+  });
+
+  return _registrationInFlight;
+}
+
+async function registerForPushNotificationsOnce(): Promise<boolean> {
   _lastRegistrationError = null;
 
-  if (Platform.OS === "web") return;
+  if (Platform.OS === "web") return false;
   if (isExpoGo()) {
     _lastRegistrationError =
       "Remote push notifications require an Expo development build or standalone app";
-    return;
+    return false;
   }
 
   const N = getNotifications();
-  if (!N || !Device) return;
+  if (!N || !Device) {
+    _lastRegistrationError = "Native notification module is unavailable";
+    return false;
+  }
 
   if (!Device.isDevice) {
     // Simulators cannot receive push notifications
     _lastRegistrationError = "Push notifications not supported on simulator";
-    return;
+    return false;
   }
 
   try {
@@ -152,7 +189,7 @@ export async function registerForPushNotifications(): Promise<void> {
 
     if (finalStatus !== "granted") {
       _lastRegistrationError = "Push notification permission denied";
-      return;
+      return false;
     }
 
     // Create Android notification channels
@@ -160,14 +197,13 @@ export async function registerForPushNotifications(): Promise<void> {
       await _createAndroidChannels(N);
     }
 
-    // Keep both token types. Standalone Android/iOS builds prefer the native
-    // token for FCM/APNs, while Expo Go and some development builds only expose
-    // an Expo push token. The server uses FCM first and Expo as a fallback.
+    // Android's native device token is an FCM registration token. iOS returns
+    // an APNs device token here, which cannot be sent to FCM HTTP v1. iOS
+    // therefore also needs an Expo push token until a direct APNs provider is
+    // configured on the server.
     let fcmToken: string | null = null;
     let expoPushToken: string | null = null;
 
-    // On Android this is an FCM registration token. On iOS Expo returns an
-    // APNs token, which must not be sent to the FCM HTTP v1 endpoint.
     if (Platform.OS === "android") {
       try {
         const tokenData = await N.getDevicePushTokenAsync();
@@ -183,7 +219,7 @@ export async function registerForPushNotifications(): Promise<void> {
         process.env.EXPO_PUBLIC_EAS_PROJECT_ID;
       if (!projectId) {
         _lastRegistrationError = "Expo project ID is not configured";
-        return;
+        return false;
       }
       const tokenData = await N.getExpoPushTokenAsync({ projectId });
       if (tokenData?.data) expoPushToken = String(tokenData.data);
@@ -191,9 +227,15 @@ export async function registerForPushNotifications(): Promise<void> {
       console.warn("[Push] Expo push token unavailable:", tokenErr);
     }
 
+    if (Platform.OS === "ios" && !expoPushToken) {
+      _lastRegistrationError =
+        "Failed to obtain an Expo push token for iOS delivery";
+      return false;
+    }
+
     if (!fcmToken && !expoPushToken) {
       _lastRegistrationError = "Failed to obtain a native or Expo push token";
-      return;
+      return false;
     }
 
     // Register with backend
@@ -210,10 +252,13 @@ export async function registerForPushNotifications(): Promise<void> {
     if (error) {
       _lastRegistrationError = `Token registration failed: ${error.message}`;
       console.warn("[Push] register-push-token error:", error.message);
+      return false;
     }
+    return true;
   } catch (err: any) {
     _lastRegistrationError = err?.message ?? "Unknown error during push setup";
     console.warn("[Push] registerForPushNotifications error:", err);
+    return false;
   }
 }
 

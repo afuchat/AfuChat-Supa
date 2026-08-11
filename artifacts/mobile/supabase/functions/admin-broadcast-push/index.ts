@@ -97,24 +97,34 @@ async function sendOneFCM(
     data,
   };
 
-  const res = await fetch(
-    `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
+  try {
+    const res = await fetch(
+      `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ message }),
       },
-      body: JSON.stringify({ message }),
-    },
-  );
+    );
 
-  if (res.status === 404) return "stale";
-  if (!res.ok) {
-    console.error(`[FCM broadcast] ${res.status}`, await res.text());
+    const text = res.ok ? "" : await res.text();
+    if (
+      res.status === 404 ||
+      text.includes("UNREGISTERED") ||
+      text.includes("registration-token-not-registered")
+    ) return "stale";
+    if (!res.ok) {
+      console.error(`[FCM broadcast] ${res.status}`, text.slice(0, 500));
+      return "error";
+    }
+    return "ok";
+  } catch (err) {
+    console.error("[FCM broadcast] provider exception:", err);
     return "error";
   }
-  return "ok";
 }
 
 // ── Expo push fallback ────────────────────────────────────────────────────────
@@ -205,7 +215,16 @@ serve(async (req) => {
       });
     }
 
-    const accessToken = projectId && saKey ? await getFCMToken(saKey) : null;
+    let accessToken: string | null = null;
+    if (projectId && saKey) {
+      try {
+        accessToken = await getFCMToken(saKey);
+      } catch (err) {
+        // Expo tokens remain usable if Firebase credentials are invalid or
+        // temporarily unavailable.
+        console.error("[admin-broadcast-push] FCM credential initialization failed:", err);
+      }
+    }
     const broadcastData = { ...data, type: "broadcast" };
 
     let sent = 0;
@@ -217,19 +236,31 @@ serve(async (req) => {
       const batch = tokens.slice(i, i + BATCH);
 
       await Promise.all(
-          batch.map(async ({ token, kind }) => {
-           if (kind === "expo" || token.startsWith("ExponentPushToken[")) {
-             if (await sendOneExpo(token, title, msgBody, broadcastData)) sent++;
+        batch.map(async ({ token, kind }) => {
+          if (kind === "expo" || token.startsWith("ExponentPushToken[")) {
+            if (await sendOneExpo(token, title, msgBody, broadcastData)) sent++;
             else errors++;
+            return;
+          }
+
+          if (!projectId || !accessToken) {
+            errors++;
+            return;
+          }
+
+          const result = await sendOneFCM(token, title, msgBody, broadcastData, projectId, accessToken);
+          if (result === "ok") {
+            sent++;
+          } else if (result === "stale") {
+            stale++;
+            // The token may have rotated while the app was offline. Remove
+            // only this exact value so a newer registration is preserved.
+            await db
+              .from("profiles")
+              .update({ fcm_token: null })
+              .eq("fcm_token", token);
           } else {
-            if (!projectId || !accessToken) {
-              errors++;
-              return;
-            }
-            const result = await sendOneFCM(token, title, msgBody, broadcastData, projectId, accessToken);
-            if (result === "ok") sent++;
-            else if (result === "stale") stale++;
-            else errors++;
+            errors++;
           }
         }),
       );
