@@ -88,6 +88,17 @@ type ProviderResult = {
   errorMessage?: string;
 };
 
+function isSenderIdMismatch(result: ProviderResult): boolean {
+  return (
+    result.status === "error" &&
+    (
+      result.errorCode === "HTTP_403" ||
+      result.errorCode === "DeveloperError"
+    ) &&
+    result.errorMessage?.includes("SENDER_ID_MISMATCH") === true
+  );
+}
+
 async function sendFCM(
   fcmToken: string,
   opts: FCMOptions,
@@ -307,13 +318,7 @@ async function dispatchToProfile(
     if (result.status === "stale" && db && profile.id) {
       await db.from("profiles").update({ fcm_token: null }).eq("id", profile.id).eq("fcm_token", profile.fcm_token);
     }
-    if (
-      result.status === "error" &&
-      result.errorCode === "HTTP_403" &&
-      result.errorMessage?.includes("SENDER_ID_MISMATCH") &&
-      db &&
-      profile.id
-    ) {
+    if (isSenderIdMismatch(result) && db && profile.id) {
       // A token created by a previous Firebase sender cannot ever be repaired
       // by retrying. Remove only this exact token so the next app launch can
       // register a token belonging to the current google-services.json project.
@@ -333,6 +338,17 @@ async function dispatchToProfile(
       if (result.status === "ok") return "expo";
       if (result.status === "stale" && db && profile.id) {
         await db.from("profiles").update({ expo_push_token: null }).eq("id", profile.id).eq("expo_push_token", expoToken);
+      }
+      if (isSenderIdMismatch(result) && db && profile.id) {
+        // Expo Push ultimately routes Android notifications through FCM too.
+        // A sender mismatch means this Expo token is poisoned by the same
+        // Firebase configuration mismatch; clear it so it cannot mask the
+        // need for a fresh native registration.
+        await db
+          .from("profiles")
+          .update({ expo_push_token: null })
+          .eq("id", profile.id)
+          .eq("expo_push_token", expoToken);
       }
     } catch (err) {
       console.error(`[ExpoPush] send failed for ${profile.id ?? "profile"}:`, err);
