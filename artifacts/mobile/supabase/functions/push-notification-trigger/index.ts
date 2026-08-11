@@ -263,6 +263,22 @@ async function dispatchToProfile(
     if (result.status === "stale" && db && profile.id) {
       await db.from("profiles").update({ fcm_token: null }).eq("id", profile.id).eq("fcm_token", profile.fcm_token);
     }
+    if (
+      result.status === "error" &&
+      result.errorCode === "HTTP_403" &&
+      result.errorMessage?.includes("SENDER_ID_MISMATCH") &&
+      db &&
+      profile.id
+    ) {
+      // A token created by a previous Firebase sender cannot ever be repaired
+      // by retrying. Remove only this exact token so the next app launch can
+      // register a token belonging to the current google-services.json project.
+      await db
+        .from("profiles")
+        .update({ fcm_token: null })
+        .eq("id", profile.id)
+        .eq("fcm_token", profile.fcm_token);
+    }
     console.warn(`[push] FCM failed for ${profile.id ?? "profile"} (${result.status}); trying Expo fallback`);
   }
 
