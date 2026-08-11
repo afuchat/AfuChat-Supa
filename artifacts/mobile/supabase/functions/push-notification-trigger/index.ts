@@ -196,7 +196,51 @@ async function sendExpoPush(token: string, opts: FCMOptions): Promise<ProviderRe
       errorMessage: JSON.stringify(payload).slice(0, 500),
     };
   }
-  return { status: "ok" };
+
+  // Expo's send endpoint only acknowledges that a ticket was created. The
+  // receipt is the first provider-level confirmation that Expo accepted the
+  // token for delivery, and it also reports stale/invalid device tokens.
+  const ticketId = typeof payload?.data?.id === "string" ? payload.data.id : null;
+  if (!ticketId) {
+    return {
+      status: "error",
+      errorCode: "EXPO_TICKET_MISSING",
+      errorMessage: "Expo accepted the request but returned no ticket id",
+    };
+  }
+
+  let lastReceipt: any = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 750));
+
+    const receiptRes = await fetch("https://exp.host/--/api/v2/push/getReceipts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ ids: [ticketId] }),
+    });
+    const receiptPayload = await receiptRes.json().catch(() => null);
+    const receipt = receiptPayload?.data?.[ticketId];
+    lastReceipt = receipt ?? receiptPayload;
+
+    if (!receipt) continue;
+    if (receipt.status === "ok") return { status: "ok" };
+
+    const errorCode = receipt.details?.error ?? "EXPO_RECEIPT_ERROR";
+    return {
+      status: errorCode === "DeviceNotRegistered" ? "stale" : "error",
+      errorCode,
+      errorMessage: JSON.stringify(receipt).slice(0, 500),
+    };
+  }
+
+  return {
+    status: "error",
+    errorCode: "EXPO_RECEIPT_PENDING",
+    errorMessage: JSON.stringify(lastReceipt ?? { ticketId }).slice(0, 500),
+  };
 }
 
 async function recordDeliveryAttempt(
