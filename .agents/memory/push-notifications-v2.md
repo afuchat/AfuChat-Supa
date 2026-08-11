@@ -51,4 +51,7 @@ messages, calls, social, marketplace, default
 ## Expo push fallback
 Tokens starting with `ExponentPushToken[` are sent via Expo Push API (works in Expo Go dev builds)
 
+## Expo Go development behavior
+Android Expo Go on SDK 55 cannot receive remote FCM/Expo push tokens. In Expo Go, the client attempts Expo token registration where the installed client supports it; otherwise an Expo-Go-only Supabase Realtime bridge schedules local notifications for messages, calls, social notifications, and order events while the app is open. Native development/standalone builds continue using server-side FCM/Expo delivery.
+
 **Why:** The previous system mixed client-side dispatch (`notifyUser.ts` calling edge functions) with server triggers, causing duplicate sends and broken state when sender app was closed.

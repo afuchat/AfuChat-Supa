@@ -27,7 +27,7 @@ let Notifications: typeof import("expo-notifications") | null = null;
 let Device: typeof import("expo-device") | null = null;
 
 function getNotifications(): typeof import("expo-notifications") | null {
-  if (Platform.OS === "web" || isExpoGo()) return null;
+  if (Platform.OS === "web") return null;
   if (Notifications) return Notifications;
   try {
     Notifications = require("expo-notifications");
@@ -64,9 +64,10 @@ function alreadyHandled(id: string): boolean {
 // ═════════════════════════════════════════════════════════════════════════════
 
 export function setupNotificationHandler(): void {
-  // Android Expo Go no longer includes remote push notification support from
-  // SDK 53 onward. Avoid touching the native notification module there.
-  if (Platform.OS === "web" || isExpoGo()) return;
+  // Expo Go can still handle locally scheduled notifications and, on supported
+  // clients, Expo Push Service notifications. Remote Android push tokens are
+  // handled separately below because SDK 53+ Expo Go does not expose them.
+  if (Platform.OS === "web") return;
 
   const N = getNotifications();
   if (!N) return;
@@ -142,7 +143,8 @@ export function registerForPushNotifications(): Promise<boolean> {
       const permanent =
         error.includes("permission denied") ||
         error.includes("not supported on simulator") ||
-        error.includes("require an Expo development build");
+        error.includes("require an Expo development build") ||
+        error.includes("Android Expo Go does not support remote push tokens");
       if (permanent || attempt === REGISTRATION_RETRIES - 1) break;
 
       await new Promise((resolve) => setTimeout(resolve, 750 * (attempt + 1)));
@@ -159,15 +161,11 @@ async function registerForPushNotificationsOnce(): Promise<boolean> {
   _lastRegistrationError = null;
 
   if (Platform.OS === "web") return false;
-  if (isExpoGo()) {
-    _lastRegistrationError =
-      "Remote push notifications require an Expo development build or standalone app";
-    return false;
-  }
-
   const N = getNotifications();
   if (!N || !Device) {
-    _lastRegistrationError = "Native notification module is unavailable";
+    _lastRegistrationError = isExpoGo()
+      ? "Expo Go notification module is unavailable; use a development build for remote push"
+      : "Native notification module is unavailable";
     return false;
   }
 
@@ -204,7 +202,7 @@ async function registerForPushNotificationsOnce(): Promise<boolean> {
     let fcmToken: string | null = null;
     let expoPushToken: string | null = null;
 
-    if (Platform.OS === "android") {
+    if (Platform.OS === "android" && !isExpoGo()) {
       try {
         const tokenData = await N.getDevicePushTokenAsync();
         if (tokenData?.data) fcmToken = String(tokenData.data);
@@ -224,6 +222,9 @@ async function registerForPushNotificationsOnce(): Promise<boolean> {
       const tokenData = await N.getExpoPushTokenAsync({ projectId });
       if (tokenData?.data) expoPushToken = String(tokenData.data);
     } catch (tokenErr: any) {
+      _lastRegistrationError = isExpoGo() && Platform.OS === "android"
+        ? "Android Expo Go does not support remote push tokens on SDK 55; local development notifications remain available"
+        : `Expo push token unavailable: ${tokenErr?.message ?? "unknown error"}`;
       console.warn("[Push] Expo push token unavailable:", tokenErr);
     }
 
@@ -234,7 +235,9 @@ async function registerForPushNotificationsOnce(): Promise<boolean> {
     }
 
     if (!fcmToken && !expoPushToken) {
-      _lastRegistrationError = "Failed to obtain a native or Expo push token";
+      if (!isExpoGo() || Platform.OS !== "android") {
+        _lastRegistrationError = "Failed to obtain a native or Expo push token";
+      }
       return false;
     }
 
@@ -319,7 +322,7 @@ async function _createAndroidChannels(
 // ═════════════════════════════════════════════════════════════════════════════
 
 export async function setupNotificationCategories(): Promise<void> {
-  if (Platform.OS === "web" || isExpoGo()) return;
+  if (Platform.OS === "web") return;
 
   const N = getNotifications();
   if (!N) return;
@@ -377,7 +380,7 @@ export async function setupNotificationCategories(): Promise<void> {
 let _listenersActive = false;
 
 export function setupNotificationListeners(): () => void {
-  if (Platform.OS === "web" || isExpoGo()) return () => {};
+  if (Platform.OS === "web") return () => {};
 
   const N = getNotifications();
   if (!N || _listenersActive) return () => {};
@@ -495,13 +498,263 @@ function _routeNotification(data: Record<string, string>): void {
 // ═════════════════════════════════════════════════════════════════════════════
 
 export async function clearBadge(): Promise<void> {
-  if (Platform.OS === "web" || isExpoGo()) return;
+  if (Platform.OS === "web") return;
 
   const N = getNotifications();
   if (!N) return;
   try {
     await N.setBadgeCountAsync(0);
   } catch {}
+}
+
+/**
+ * Shows a local notification for development-only realtime events.
+ *
+ * Android Expo Go on SDK 55 cannot expose a remote FCM/Expo token. This keeps
+ * push UX testable in Expo Go while the app is open without pretending that a
+ * remote provider delivered the notification. Native development/standalone
+ * builds continue to use the server-side FCM/Expo pipeline.
+ */
+export async function showDevelopmentLocalNotification(params: {
+  title: string;
+  body: string;
+  data?: Record<string, string>;
+  channelId?: string;
+}): Promise<void> {
+  if (Platform.OS === "web" || !isExpoGo()) return;
+  const N = getNotifications();
+  if (!N) return;
+
+  try {
+    await N.scheduleNotificationAsync({
+      content: {
+        title: params.title,
+        body: params.body,
+        data: params.data ?? {},
+        sound: "default",
+        ...(Platform.OS === "android" && {
+          channelId: params.channelId ?? "default",
+        }),
+      },
+      trigger: null,
+    });
+  } catch (err) {
+    console.warn("[Push] Expo Go local notification failed:", err);
+  }
+}
+
+/**
+ * Subscribes to authenticated realtime rows that correspond to server push
+ * events. This is intentionally Expo Go-only; production/native builds must
+ * exercise the actual server provider path instead.
+ */
+export function setupExpoGoRealtimeBridge(userId: string): () => void {
+  if (Platform.OS === "web" || !isExpoGo() || !userId) return () => {};
+
+  const notificationChannel = supabase
+    .channel(`expo-go-push-notifications:${userId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "notifications",
+        filter: `user_id=eq.${userId}`,
+      },
+      (payload) => {
+        const row = (payload.new ?? {}) as Record<string, any>;
+        const data = {
+          type: String(row.type ?? "notification"),
+          ...(row.actor_id ? { actorId: String(row.actor_id) } : {}),
+          ...Object.fromEntries(
+            Object.entries(row.data ?? {}).map(([key, value]) => [key, String(value)]),
+          ),
+        };
+        void showDevelopmentLocalNotification({
+          title: String(row.title ?? _developmentNotificationTitle(row.type)),
+          body: String(row.body ?? _developmentNotificationBody(row.type)),
+          data,
+          channelId: "social",
+        });
+      },
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "calls",
+        filter: `callee_id=eq.${userId}`,
+      },
+      (payload) => {
+        const row = (payload.new ?? {}) as Record<string, any>;
+        if (row.status && row.status !== "ringing" && row.status !== "initiated") return;
+        void showDevelopmentLocalNotification({
+          title: "Incoming call",
+          body: `${row.call_type === "video" ? "Video" : "Voice"} call from someone`,
+          data: {
+            type: "call",
+            callId: String(row.id ?? ""),
+            callerId: String(row.caller_id ?? ""),
+            chatId: String(row.chat_id ?? ""),
+          },
+          channelId: "calls",
+        });
+      },
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "shop_orders",
+        filter: `buyer_id=eq.${userId}`,
+      },
+      (payload) => {
+        _showExpoGoOrderNotification("shop", userId, payload);
+      },
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "shop_orders",
+        filter: `seller_id=eq.${userId}`,
+      },
+      (payload) => {
+        _showExpoGoOrderNotification("shop", userId, payload);
+      },
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "merchant_orders",
+        filter: `buyer_id=eq.${userId}`,
+      },
+      (payload) => {
+        _showExpoGoOrderNotification("merchant", userId, payload);
+      },
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "merchant_orders",
+        filter: `merchant_id=eq.${userId}`,
+      },
+      (payload) => {
+        _showExpoGoOrderNotification("merchant", userId, payload);
+      },
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "freelance_orders",
+        filter: `buyer_id=eq.${userId}`,
+      },
+      (payload) => {
+        _showExpoGoOrderNotification("freelance", userId, payload);
+      },
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "freelance_orders",
+        filter: `seller_id=eq.${userId}`,
+      },
+      (payload) => {
+        _showExpoGoOrderNotification("freelance", userId, payload);
+      },
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(notificationChannel).catch(() => {});
+  };
+}
+
+function _showExpoGoOrderNotification(
+  orderType: "shop" | "merchant" | "freelance",
+  userId: string,
+  payload: any,
+): void {
+  const row = (payload.new ?? {}) as Record<string, any>;
+  const oldRow = (payload.old ?? {}) as Record<string, any>;
+  const eventType = String(payload.eventType ?? "INSERT");
+  const status = String(row.status ?? "");
+  const oldStatus = String(oldRow.status ?? "");
+
+  // Match the server trigger: INSERT is a new order; UPDATE only matters when
+  // the order status actually changes. A DELETE has no push meaning.
+  if (eventType === "DELETE" || (eventType === "UPDATE" && status === oldStatus)) return;
+
+  const isNew = eventType === "INSERT";
+  const isBuyer = row.buyer_id === userId;
+  const sellerKey = orderType === "merchant" ? "merchant_id" : "seller_id";
+  const isSeller = row[sellerKey] === userId;
+
+  if (isNew && isBuyer) return;
+  if (!isNew && !isBuyer && !isSeller) return;
+
+  const sellerNewTitle = orderType === "freelance" ? "New Order 💼" : "New Order 🛍️";
+  const sellerNewBody = orderType === "freelance"
+    ? "You have a new freelance order"
+    : orderType === "merchant"
+      ? "You have a new merchant order"
+      : `You have a new shop order${row.total_acoin ? ` · ${row.total_acoin} ACoin` : ""}`;
+
+  let title = sellerNewTitle;
+  let body = sellerNewBody;
+
+  if (!isNew) {
+    title = orderType === "freelance" ? "Freelance Order Update" : "Order Update";
+    body = status ? `Order status: ${status}` : "Your order was updated";
+  }
+
+  void showDevelopmentLocalNotification({
+    title,
+    body,
+    data: {
+      type: "order",
+      orderId: String(row.id ?? ""),
+      orderType,
+    },
+    channelId: "marketplace",
+  });
+}
+
+function _developmentNotificationTitle(type: unknown): string {
+  switch (type) {
+    case "like": return "New like";
+    case "comment":
+    case "reply": return "New comment";
+    case "follow": return "New follower";
+    case "mention": return "You were mentioned";
+    case "gift": return "New gift";
+    case "order":
+    case "payment": return "AfuChat update";
+    default: return "AfuChat notification";
+  }
+}
+
+function _developmentNotificationBody(type: unknown): string {
+  switch (type) {
+    case "like": return "Someone liked your post";
+    case "comment":
+    case "reply": return "Someone commented on your post";
+    case "follow": return "Someone followed you";
+    case "mention": return "Someone mentioned you";
+    case "gift": return "Someone sent you a gift";
+    default: return "You have a new AfuChat notification";
+  }
 }
 
 // ═════════════════════════════════════════════════════════════════════════════

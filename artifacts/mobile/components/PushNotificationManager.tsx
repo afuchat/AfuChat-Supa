@@ -19,6 +19,7 @@ import {
   setupNotificationListeners,
   clearBadge,
   getLastPushRegistrationError,
+  setupExpoGoRealtimeBridge,
 } from "@/lib/pushNotifications";
 
 const RE_REGISTER_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
@@ -48,6 +49,7 @@ export function PushNotificationManager() {
 
     let cancelled = false;
     let retryCount = 0;
+    const expoGoBridgeCleanup = setupExpoGoRealtimeBridge(user.id);
 
     const register = () => {
       if (cancelled) return;
@@ -79,6 +81,7 @@ export function PushNotificationManager() {
 
     return () => {
       cancelled = true;
+      expoGoBridgeCleanup();
       if (retryTimer.current) clearTimeout(retryTimer.current);
       retryTimer.current = null;
       listenersCleanup.current?.();
