@@ -4,15 +4,15 @@ import * as WebBrowser from "expo-web-browser";
 import { router } from "expo-router";
 import LegalPage from "@/components/web/LegalPage";
 
-export default function PrivacyScreen() {
+export default function AccountDeletionScreen() {
   useEffect(() => {
     if (Platform.OS === "web") return;
-    WebBrowser.openBrowserAsync("https://afuchat.com/privacy").catch(() => {});
+    WebBrowser.openBrowserAsync("https://afuchat.com/account-deletion").catch(() => {});
     if (router.canGoBack()) router.back();
   }, []);
 
   if (Platform.OS === "web") {
-    return <LegalPage kind="privacy" />;
+    return <LegalPage kind="account-deletion" />;
   }
 
   return null;

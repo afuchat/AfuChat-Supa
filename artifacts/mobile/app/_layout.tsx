@@ -334,7 +334,7 @@ export default function RootLayout() {
     <ErrorBoundary>
       <GestureHandlerRootView style={styles.root}>
         {/* JS splash overlay — visible until fonts load, then fades out */}
-        {!splashDone && (
+        {!splashDone && Platform.OS !== "web" && (
           <SplashScreenView ready={fontsLoaded} onDone={handleSplashDone} />
         )}
         <ThemeProvider>
