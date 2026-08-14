@@ -44,7 +44,7 @@ import { getLocalConversations, saveConversations, deleteLocalConversation, prun
 import { getPreloadedConversations, hasPreloadedConversations, invalidateConversationsPreload } from "@/lib/conversationsPreload";
 import { AFUAI_CONV_ID, AFUAI_BOT_ID, getAIChatSnapshot } from "@/lib/aiChatStore";
 import { useSuperApp } from "@/lib/superapp/MiniAppRuntime";
-import { addOnlineListener, preloadConversationMessages } from "@/lib/offlineSync";
+import { addOnlineListener } from "@/lib/offlineSync";
 import { wasChatRecentlyVisited, clearChatVisited, getActiveChatId, markChatVisited } from "@/lib/chatVisited";
 import { showAlert, confirmAlert } from "@/lib/alert";
 import { showToast, showActionToast } from "@/lib/toast";
@@ -484,6 +484,8 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   // before this component ever mounts). This makes the chat list appear instantly
   // for returning users — no skeleton, no SQLite wait on first render.
   const [chats, setChats] = useState<ChatItem[]>(() => getPreloadedConversations() as any);
+  const chatsRef = useRef<ChatItem[]>([]);
+  chatsRef.current = chats;
   const [loading, setLoading] = useState(() => !hasPreloadedConversations());
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
@@ -545,19 +547,16 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     if (!user) return;
 
     if (!background) {
-      // If the preload already populated initial state, skip the redundant SQLite
-      // read — the user already sees the cached list. Otherwise (first install or
-      // cache miss) fall back to reading SQLite so we still show something fast.
-      if (!hasPreloadedConversations()) {
-        try {
-          const cached = await getLocalConversations();
-          if (cached.length > 0) {
-            setChats(cached as any);
-            setLoading(false);
-          }
-        } catch {
-          // cache read failed — continue to fetch from network
-        }
+      const cacheStartedAt = Date.now();
+      const cached = hasPreloadedConversations()
+        ? getPreloadedConversations()
+        : await getLocalConversations();
+      if (cached.length > 0) {
+        setChats(cached as any);
+        setLoading(false);
+      }
+      if (__DEV__) {
+        console.log("[ChatPerf] cache render", Date.now() - cacheStartedAt, "ms", "chats", cached.length);
       }
     }
 
@@ -567,216 +566,77 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       return;
     }
 
-    let memberRows: { chat_id: string }[] | null = null;
-    let memberFetchFailed = false;
-    try {
-      const { data, error } = await supabase
-        .from("chat_members")
-        .select("chat_id")
-        .eq("user_id", user.id);
-      if (error) {
-        memberFetchFailed = true;
-      } else {
-        memberRows = data;
-      }
-    } catch {
-      memberFetchFailed = true;
-    }
+    const unreadExcludedIds = [
+      getActiveChatId(),
+      ...chatsRef.current.filter((chat) => wasChatRecentlyVisited(chat.id)).map((chat) => chat.id),
+    ].filter((id, index, ids): id is string => !!id && ids.indexOf(id) === index);
 
-    // Query failed (network blip, transient error) — keep showing whatever
-    // the user already sees rather than wiping the list to "No chats yet".
-    if (memberFetchFailed) {
+    const rpcStartedAt = Date.now();
+    if (__DEV__) console.log("[ChatPerf] server RPC start");
+    let chatRows: any[] | null = null;
+    let chatError: { message?: string } | null = null;
+    try {
+      const result = await supabase.rpc(
+        "get_chat_list",
+        { p_unread_excluded_ids: unreadExcludedIds },
+      );
+      chatRows = result.data as any[] | null;
+      chatError = result.error;
+    } catch (error) {
+      chatError = { message: error instanceof Error ? error.message : String(error) };
+    }
+    if (__DEV__) {
+      console.log(
+        "[ChatPerf] server RPC end",
+        Date.now() - rpcStartedAt,
+        "ms",
+        "chats",
+        chatRows?.length ?? 0,
+      );
+    }
+    if (chatError) {
       setLoading(false);
       setRefreshing(false);
       return;
     }
-
-    // Genuinely no chats (new account, left all chats, etc.)
-    if (!memberRows || memberRows.length === 0) {
+    if (!chatRows?.length) {
       setChats([]);
       setLoading(false);
       setRefreshing(false);
       return;
     }
 
-    const chatIds = memberRows.map((m: any) => m.chat_id);
-
-    // Pre-compute which chats need unread counting — skip currently-open and recently-visited chats.
-    // This resolves the race condition where mark-as-read writes from the chat screen haven't
-    // landed in message_status yet by the time loadChats(true) fires.
-    const activeChatId = getActiveChatId();
-    const unreadCheckIds = chatIds.filter(
-      (id) => id !== activeChatId && !wasChatRecentlyVisited(id),
-    );
-
-    let chatResult: any, lastMsgsResult: any, unreadMsgsResult: any, mutesResult: any;
-    try {
-      [chatResult, lastMsgsResult, unreadMsgsResult, mutesResult] = await Promise.all([
-      supabase
-        .from("chats")
-        .select(`
-          id, name, is_group, is_channel, is_pinned, is_archived, avatar_url, updated_at,
-          chat_members(user_id, profiles(id, display_name, avatar_url, is_verified, is_organization_verified, last_seen, show_online_status))
-        `)
-        .in("id", chatIds)
-        .order("updated_at", { ascending: false })
-        .limit(200),
-      // Fetch with a generous limit — one very active chat (e.g. AfuAI) can
-      // consume many rows and crowd out quieter ones. We take the larger of
-      // (chatIds.length * 15) or 300, capped at 1000, so every conversation
-      // is almost certain to get at least one message row in this batch.
-      supabase
-        .from("messages")
-        .select("id, chat_id, encrypted_content, sent_at, attachment_type, sender_id")
-        .in("chat_id", chatIds)
-        .order("sent_at", { ascending: false })
-        .limit(Math.min(Math.max(chatIds.length * 15, 300), 1000)),
-      unreadCheckIds.length > 0
-        ? supabase
-            .from("messages")
-            .select("id, chat_id")
-            .in("chat_id", unreadCheckIds)
-            .neq("sender_id", user.id)
-            .order("sent_at", { ascending: false })
-            .limit(500)
-        : Promise.resolve({ data: [] }),
-      supabase
-        .from("chat_mutes")
-        .select("chat_id, muted_until")
-        .eq("user_id", user.id)
-        .in("chat_id", chatIds),
-      ]);
-    } catch (_) {
-      // Network error during main data fetch — keep showing cached data
-      setLoading(false);
-      setRefreshing(false);
-      return;
-    }
-
-    // Build a map of chatId → muted_until (null = forever; string = ISO expiry; missing = not muted)
-    const now = new Date().toISOString();
-    const muteMap: Record<string, string | null> = {};
-    for (const row of ((mutesResult as any)?.data ?? [])) {
-      if (row.muted_until === null || row.muted_until > now) {
-        muteMap[row.chat_id] = row.muted_until ?? null;
-      }
-    }
-
-    const chatRows = chatResult.data;
-    if (!chatRows) { setLoading(false); setRefreshing(false); return; }
-
-    const lastMsgMap: Record<string, { lastMessage: string; lastMessageAt: string; isFromMe: boolean; lastMsgId: string }> = {};
-
-    function applyMsgRow(m: { id: string; chat_id: string; encrypted_content: string | null; sent_at: string; attachment_type: string | null; sender_id: string }) {
-      if (lastMsgMap[m.chat_id]) return;
-      lastMsgMap[m.chat_id] = {
-        lastMessage: buildMsgPreview(m.encrypted_content, m.attachment_type),
-        lastMessageAt: m.sent_at,
-        isFromMe: m.sender_id === user?.id,
-        lastMsgId: m.id,
-      };
-    }
-
-    for (const m of (lastMsgsResult.data || [])) {
-      applyMsgRow(m);
-    }
-
-    // Phase 2: any chat still missing a preview after the batch query gets its
-    // own targeted fetch. This handles edge cases where one very active chat
-    // exhausts the batch limit and crowds out quieter conversations.
-    const uncoveredIds = chatIds.filter((id) => !lastMsgMap[id]);
-    if (uncoveredIds.length > 0) {
-      const fallbacks = await Promise.all(
-        uncoveredIds.map((id) =>
-          supabase
-            .from("messages")
-            .select("id, chat_id, encrypted_content, sent_at, attachment_type, sender_id")
-            .eq("chat_id", id)
-            .order("sent_at", { ascending: false })
-            .limit(1)
-        )
-      );
-      for (const r of fallbacks) {
-        if (r.data?.[0]) applyMsgRow(r.data[0]);
-      }
-    }
-
-    const myLastMsgIds = Object.values(lastMsgMap).filter(v => v.isFromMe).map(v => v.lastMsgId);
-    const lastMsgStatusMap: Record<string, "read" | "delivered" | "sent"> = {};
-    if (myLastMsgIds.length > 0) {
-      const { data: statusRows } = await supabase
-        .from("message_status")
-        .select("message_id, read_at, delivered_at")
-        .in("message_id", myLastMsgIds);
-      for (const s of (statusRows || []) as any[]) {
-        lastMsgStatusMap[s.message_id] = s.read_at ? "read" : s.delivered_at ? "delivered" : "sent";
-      }
-    }
-
-    const unreadMsgRows = unreadMsgsResult.data || [];
-    const unreadMsgIds = unreadMsgRows.map((m: any) => m.id);
-    let readSet = new Set<string>();
-    if (unreadMsgIds.length > 0) {
-      const batchSize = 200;
-      const readPromises = [];
-      for (let i = 0; i < unreadMsgIds.length; i += batchSize) {
-        readPromises.push(
-          supabase
-            .from("message_status")
-            .select("message_id")
-            .eq("user_id", user.id)
-            .not("read_at", "is", null)
-            .in("message_id", unreadMsgIds.slice(i, i + batchSize))
-        );
-      }
-      const readResults = await Promise.all(readPromises);
-      for (const { data: readRows } of readResults) {
-        for (const r of (readRows || [])) {
-          readSet.add(r.message_id);
-        }
-      }
-    }
-
-    // unreadMsgRows is already pre-filtered to only non-visited, non-active chats
-    // (see unreadCheckIds above) — no need to re-check activeChatId here.
-    const unreadMap: Record<string, number> = {};
-    for (const msg of unreadMsgRows) {
-      if (!readSet.has(msg.id)) {
-        unreadMap[msg.chat_id] = (unreadMap[msg.chat_id] || 0) + 1;
-      }
-    }
-
-    const items: ChatItem[] = chatRows.map((c: any) => {
-      const allMembers = (c.chat_members || []) as any[];
-      const others = allMembers.filter((m: any) => m.user_id !== user.id);
-      // Self-chat ("My Notes"): no other members — use own profile
-      const isSelfChat = !c.is_group && !c.is_channel && others.length === 0;
-      const otherRaw = isSelfChat
-        ? allMembers.find((m: any) => m.user_id === user.id)
-        : others[0];
-      const otherProfile = Array.isArray(otherRaw?.profiles) ? otherRaw.profiles[0] : otherRaw?.profiles;
-      const lm = lastMsgMap[c.id];
+    // The RPC includes chat membership, profile metadata, latest message,
+    // delivery/read state, unread count, and mute state in one server query.
+    const items: ChatItem[] = (chatRows as any[]).map((row: any) => {
+      const isSelfChat = !row.is_group && !row.is_channel && row.other_id === user.id;
       return {
-        id: c.id,
-        name: c.name,
-        is_group: !!c.is_group,
-        is_channel: !!c.is_channel,
-        other_display_name: isSelfChat ? "My Notes" : (otherProfile?.display_name || "Unknown"),
-        other_avatar: isSelfChat ? null : (otherProfile?.avatar_url || null),
-        other_id: isSelfChat ? user.id : (otherProfile?.id || ""),
-        last_message: lm?.lastMessage || "",
-        last_message_at: lm?.lastMessageAt || c.updated_at || "",
-        last_message_is_mine: lm?.isFromMe ?? false,
-        last_message_status: lm?.isFromMe ? (lastMsgStatusMap[lm.lastMsgId] || "sent") : "sent",
-        is_pinned: !!c.is_pinned,
-        is_archived: !!c.is_archived,
-        avatar_url: c.avatar_url,
-        unread_count: unreadMap[c.id] || 0,
-        is_verified: isSelfChat ? false : !!otherProfile?.is_verified,
-        is_organization_verified: isSelfChat ? false : !!otherProfile?.is_organization_verified,
-        other_last_seen: isSelfChat ? null : (otherProfile?.last_seen || null),
-        other_show_online: isSelfChat ? false : (otherProfile?.show_online_status !== false),
-        muted_until: muteMap[c.id] !== undefined ? muteMap[c.id] : undefined,
+        id: row.chat_id,
+        name: row.chat_name ?? null,
+        is_group: !!row.is_group,
+        is_channel: !!row.is_channel,
+        other_display_name: isSelfChat ? "My Notes" : (row.other_display_name || "Unknown"),
+        other_avatar: isSelfChat ? null : (row.other_avatar || null),
+        other_id: isSelfChat ? user.id : (row.other_id || ""),
+        last_message: row.last_message
+          ? buildMsgPreview(row.last_message, row.last_message_attachment_type)
+          : "",
+        last_message_at: row.last_message_at || row.chat_updated_at || "",
+        last_message_is_mine: !!row.last_message_is_mine,
+        last_message_status: row.last_message_status === "read"
+          ? "read"
+          : row.last_message_status === "delivered"
+            ? "delivered"
+            : "sent",
+        is_pinned: !!row.is_pinned,
+        is_archived: !!row.is_archived,
+        avatar_url: row.avatar_url || null,
+        unread_count: Number(row.unread_count) || 0,
+        is_verified: isSelfChat ? false : !!row.is_verified,
+        is_organization_verified: isSelfChat ? false : !!row.is_organization_verified,
+        other_last_seen: isSelfChat ? null : (row.other_last_seen || null),
+        other_show_online: isSelfChat ? false : row.other_show_online !== false,
+        muted_until: row.is_muted ? (row.muted_until || null) : undefined,
       };
     });
 
@@ -951,7 +811,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     setChats(finalItems);
     // Reconciliation complete — allow realtime events to increment unread again.
     suppressUnreadIncrementRef.current = false;
-    // Persisting, image decoding, and message preloading are deliberately moved
+    // Persisting and image decoding are deliberately moved
     // off the navigation path. The list is useful as soon as setChats() runs;
     // these tasks can wait until the current gesture/transition is finished.
     InteractionManager.runAfterInteractions(() => {
@@ -960,9 +820,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       const regularIds = regularItems.map((c) => c.id);
       saveConversations(regularItems).catch(() => {});
       pruneConversations(regularIds).catch(() => {});
-      // Cache only the first few conversations. Preloading every chat made
-      // opening the chat list trigger one sequential network request per chat.
-      preloadConversationMessages(regularIds.slice(0, 6)).catch(() => {});
     });
     setLoading(false);
     setRefreshing(false);
@@ -981,7 +838,11 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       return Promise.resolve();
     }
     lastChatLoadAtRef.current = now;
+    const refreshStartedAt = Date.now();
     const request = loadChatsImpl(background).finally(() => {
+      if (__DEV__) {
+        console.log("[ChatPerf] total refresh", Date.now() - refreshStartedAt, "ms");
+      }
       if (chatLoadInFlightRef.current === request) {
         chatLoadInFlightRef.current = null;
       }
