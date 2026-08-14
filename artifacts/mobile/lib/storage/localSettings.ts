@@ -1,5 +1,5 @@
 // ─── Permanent User Settings Store ─────────────────────────────────────────────
-// All user-configurable settings (privacy, notifications, chat prefs) are stored
+// All user-configurable settings (privacy, chat prefs) are stored
 // in SQLite so they survive app restarts and work offline.
 //
 // Schema: one row per user_id, all settings in columns.
@@ -34,18 +34,6 @@ export type LocalUserSettings = {
   data_personalization: boolean;
   data_analytics: boolean;
 
-  // ── Notifications ──────────────────────────────────────────────────────────
-  notif_likes: boolean;
-  notif_comments: boolean;
-  notif_follows: boolean;
-  notif_messages: boolean;
-  notif_mentions: boolean;
-  notif_reposts: boolean;
-  notif_tips: boolean;
-  notif_system: boolean;
-  notif_stories: boolean;
-  notif_live: boolean;
-
   // ── Chat preferences ───────────────────────────────────────────────────────
   chat_read_receipts: boolean;
   chat_media_autodownload: "always" | "wifi_only" | "never";
@@ -75,16 +63,6 @@ const DEFAULTS: Omit<LocalUserSettings, "user_id" | "stored_at" | "updated_at"> 
   allow_tagging: "everyone",
   data_personalization: true,
   data_analytics: true,
-  notif_likes: true,
-  notif_comments: true,
-  notif_follows: true,
-  notif_messages: true,
-  notif_mentions: true,
-  notif_reposts: true,
-  notif_tips: true,
-  notif_system: true,
-  notif_stories: true,
-  notif_live: true,
   chat_read_receipts: true,
   chat_media_autodownload: "wifi_only",
   chat_bubble_style: "default",
@@ -123,8 +101,6 @@ export async function saveLocalSettings(settings: Partial<LocalUserSettings> & {
         hide_followers_list, hide_following_list, hide_posts_non_followers, hide_from_search,
         message_privacy, reactions_privacy, allow_tagging,
         data_personalization, data_analytics,
-        notif_likes, notif_comments, notif_follows, notif_messages, notif_mentions,
-        notif_reposts, notif_tips, notif_system, notif_stories, notif_live,
         chat_read_receipts, chat_media_autodownload, chat_bubble_style,
         app_language, app_theme,
         stored_at, updated_at
@@ -146,16 +122,6 @@ export async function saveLocalSettings(settings: Partial<LocalUserSettings> & {
         settings.allow_tagging ?? DEFAULTS.allow_tagging,
         b(settings.data_personalization ?? DEFAULTS.data_personalization),
         b(settings.data_analytics ?? DEFAULTS.data_analytics),
-        b(settings.notif_likes ?? DEFAULTS.notif_likes),
-        b(settings.notif_comments ?? DEFAULTS.notif_comments),
-        b(settings.notif_follows ?? DEFAULTS.notif_follows),
-        b(settings.notif_messages ?? DEFAULTS.notif_messages),
-        b(settings.notif_mentions ?? DEFAULTS.notif_mentions),
-        b(settings.notif_reposts ?? DEFAULTS.notif_reposts),
-        b(settings.notif_tips ?? DEFAULTS.notif_tips),
-        b(settings.notif_system ?? DEFAULTS.notif_system),
-        b(settings.notif_stories ?? DEFAULTS.notif_stories),
-        b(settings.notif_live ?? DEFAULTS.notif_live),
         b(settings.chat_read_receipts ?? DEFAULTS.chat_read_receipts),
         settings.chat_media_autodownload ?? DEFAULTS.chat_media_autodownload,
         settings.chat_bubble_style ?? DEFAULTS.chat_bubble_style,
@@ -219,16 +185,6 @@ function rowToSettings(r: any): LocalUserSettings {
     allow_tagging: r.allow_tagging ?? "everyone",
     data_personalization: r.data_personalization !== 0,
     data_analytics: r.data_analytics !== 0,
-    notif_likes: r.notif_likes !== 0,
-    notif_comments: r.notif_comments !== 0,
-    notif_follows: r.notif_follows !== 0,
-    notif_messages: r.notif_messages !== 0,
-    notif_mentions: r.notif_mentions !== 0,
-    notif_reposts: r.notif_reposts !== 0,
-    notif_tips: r.notif_tips !== 0,
-    notif_system: r.notif_system !== 0,
-    notif_stories: r.notif_stories !== 0,
-    notif_live: r.notif_live !== 0,
     chat_read_receipts: r.chat_read_receipts !== 0,
     chat_media_autodownload: r.chat_media_autodownload ?? "wifi_only",
     chat_bubble_style: r.chat_bubble_style ?? "default",

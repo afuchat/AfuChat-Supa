@@ -75,29 +75,7 @@ DO $$ BEGIN
   END IF;
 END$$;
 
--- Push trigger on calls (recreate now that the table exists)
-DROP TRIGGER IF EXISTS push_on_call_insert ON public.calls;
-CREATE TRIGGER push_on_call_insert
-  AFTER INSERT ON public.calls
-  FOR EACH ROW
-  EXECUTE FUNCTION _private.push_on_call_insert();
-
--- ── 5. ensure_notification_preferences RPC ───────────────────
-CREATE OR REPLACE FUNCTION public.ensure_notification_preferences(p_user_id UUID)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  INSERT INTO public.notification_preferences (user_id)
-  VALUES (p_user_id)
-  ON CONFLICT (user_id) DO NOTHING;
-END;
-$$;
-GRANT EXECUTE ON FUNCTION public.ensure_notification_preferences(UUID) TO service_role, postgres, authenticated;
-
--- ── 6. push_replies column ────────────────────────────────────
-ALTER TABLE public.notification_preferences
-  ADD COLUMN IF NOT EXISTS push_replies BOOLEAN NOT NULL DEFAULT true;
-
--- ── 7. Verify ─────────────────────────────────────────────────
+-- ── 5. Verify ─────────────────────────────────────────────────
 SELECT pubname, tablename
 FROM pg_publication_tables
 WHERE pubname = 'supabase_realtime'

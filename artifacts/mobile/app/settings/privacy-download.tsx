@@ -26,7 +26,7 @@ const DATA_TYPES: {
   { id: "profile",      icon: "person-circle",  iconColor: "#007AFF", label: "Profile Data",     description: "Your display name, bio, settings, and account info" },
   { id: "messages",     icon: "chatbubble",      iconColor: "#34C759", label: "Messages",         description: "All your chat conversations and media" },
   { id: "posts",        icon: "document-text",   iconColor: "#FF9500", label: "Posts & Moments",  description: "Everything you've posted on Discover" },
-  { id: "activity",     icon: "analytics",       iconColor: "#AF52DE", label: "Activity History", description: "Notifications, follows, and app activity" },
+  { id: "activity",     icon: "analytics",       iconColor: "#AF52DE", label: "Activity History", description: "Follows and app activity" },
   { id: "transactions", icon: "card",            iconColor: "#FFD60A", label: "Transactions",     description: "ACoin and XP transaction history" },
 ];
 

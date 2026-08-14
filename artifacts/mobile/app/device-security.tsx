@@ -49,7 +49,6 @@ type DeviceSession = {
 
 type SecurityPref = {
   two_factor_enabled: boolean;
-  login_alerts: boolean;
   require_pin: boolean;
   biometric_lock: boolean;
   screenshot_protection: boolean;
@@ -57,7 +56,6 @@ type SecurityPref = {
 
 const defaults: SecurityPref = {
   two_factor_enabled: false,
-  login_alerts: true,
   require_pin: false,
   biometric_lock: false,
   screenshot_protection: false,
@@ -209,7 +207,7 @@ export default function DeviceSecurityScreen() {
       await registerCurrentDevice();
 
       const [{ data: prefData }, { data: sessionData }] = await Promise.all([
-        supabase.from("security_preferences").select("user_id, two_factor_enabled, login_alerts, require_pin, biometric_lock, screenshot_protection").eq("user_id", user.id).maybeSingle(),
+        supabase.from("security_preferences").select("user_id, two_factor_enabled, require_pin, biometric_lock, screenshot_protection").eq("user_id", user.id).maybeSingle(),
         supabase.from("device_sessions").select("id, device_name, device_type, platform, last_seen, ip_address, is_current, location").eq("user_id", user.id)
           .order("is_current", { ascending: false }).order("last_seen", { ascending: false }),
       ]);
@@ -321,12 +319,6 @@ export default function DeviceSecurityScreen() {
         showAlert("Wrong PIN", "Incorrect PIN. Try again.");
       }
     }
-  }
-
-  async function toggleLoginAlerts() {
-    const next = !prefs.login_alerts;
-    setPrefs((p) => ({ ...p, login_alerts: next }));
-    await supabase.from("security_preferences").upsert({ user_id: user!.id, login_alerts: next }, { onConflict: "user_id" });
   }
 
   async function toggleScreenshot() {
@@ -544,19 +536,6 @@ export default function DeviceSecurityScreen() {
               desc="Blocks screenshots and screen recording"
               value={prefs.screenshot_protection}
               onToggle={toggleScreenshot}
-              colors={colors}
-            />
-          </View>
-
-          <Text style={[styles.secGroup, { color: colors.textMuted }]}>ALERTS & NOTIFICATIONS</Text>
-          <View style={[styles.prefCard, { backgroundColor: colors.surface }]}>
-            <PrefRow
-              icon="notifications"
-              iconColor={colors.accent}
-              label="Login Alerts"
-              desc="Get a push notification when a new device signs in to your account"
-              value={prefs.login_alerts}
-              onToggle={toggleLoginAlerts}
               colors={colors}
             />
           </View>

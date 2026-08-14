@@ -128,7 +128,7 @@ const PAGES: Record<
         title: "3. How we use information",
         bullets: [
           "Provide, personalize, maintain, and improve AfuChat features.",
-          "Deliver messages, calls, notifications, media, and other interactions you request.",
+          "Deliver messages, calls, media, and other interactions you request.",
           "Protect users, investigate abuse, prevent fraud, and keep the service secure.",
           "Process purchases, provide support, communicate service updates, and meet legal obligations.",
         ],

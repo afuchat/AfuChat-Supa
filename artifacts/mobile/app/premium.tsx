@@ -201,7 +201,6 @@ const TIER_CONFIG: Record<string, TierCfg> = {
         items: [
           "Unlimited AI messages",
           "AI Themes & Wallpapers",
-          "Smart Notifications (AI)",
         ],
       },
       {

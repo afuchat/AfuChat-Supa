@@ -178,8 +178,6 @@ export const KEYS = {
   FEED_CURSOR_FOLLOWING: "feed_cursor_fw",
   FEED_SCROLL_OFFSET: "feed_scroll_offset",
   VIEWED_POST_IDS: "viewed_post_ids",
-  UNREAD_NOTIF_COUNT: "unread_notif_count",
-  PUSH_TOKEN: "push_token",
   CHAT_DRAFT_PREFIX: "chat_draft_",
   LAST_SEEN_PREFIX: "last_seen_",
   WALLET_BALANCE: "wallet_balance",

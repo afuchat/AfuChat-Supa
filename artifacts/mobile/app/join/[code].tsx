@@ -124,7 +124,7 @@ export default function JoinGroupScreen() {
         throw insertErr;
       }
 
-      // Insert system notification into the group
+      // Insert a system message into the group
       await supabase.from("messages").insert({
         chat_id:           group.id,
         sender_id:         user.id,

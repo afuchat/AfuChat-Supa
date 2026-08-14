@@ -162,7 +162,7 @@
 
 # ─── Background tasks (Expo TaskManager / WorkManager) ───────────────────────
 # TaskManager registers workers by class name; renaming breaks all background
-# tasks (call service, notification handling, etc.).
+# tasks (call service and related background handling).
 -keep class androidx.work.** { *; }
 -dontwarn androidx.work.**
 -keep class expo.modules.taskManager.** { *; }

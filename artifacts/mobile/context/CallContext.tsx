@@ -2,7 +2,7 @@
 // React wrapper around callEngine. Provides:
 //   • current call state (status, info, muted, speaker)
 //   • startCall / acceptCall / declineCall / endCall actions
-//   • incoming call notifications (IncomingCallNotice)
+//   • incoming call UI (IncomingCallNotice)
 // Must be mounted inside <AuthProvider> and outside the navigation stack so
 // IncomingCallModal can render above every screen.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -61,8 +61,6 @@ interface CallContextValue {
   endCall: () => void;
   toggleMute: () => void;
   toggleSpeaker: () => void;
-  /** Called by push-notification handler when app opens via missed incoming_call tap */
-  handlePushIncoming: (notice: IncomingCallNotice) => void;
 }
 
 const CallContext = createContext<CallContextValue | null>(null);
@@ -86,7 +84,6 @@ const _NOOP_CTX: CallContextValue = {
   endCall: () => {},
   toggleMute: () => {},
   toggleSpeaker: () => {},
-  handlePushIncoming: () => {},
 };
 
 export function useCall(): CallContextValue {
@@ -341,12 +338,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setIsSpeaker(newVal);
   }, []);
 
-  const handlePushIncoming = useCallback((notice: IncomingCallNotice) => {
-    // Only show if not already in a call
-    if (_status_ref.current !== "idle") return;
-    setIncomingNotice((prev) => prev ?? notice);
-  }, []);
-
   return (
     <CallContext.Provider value={{
       status,
@@ -363,7 +354,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       endCall,
       toggleMute,
       toggleSpeaker,
-      handlePushIncoming,
     }}>
       {children}
       <MicPermissionModal

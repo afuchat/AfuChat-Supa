@@ -1017,16 +1017,9 @@ export function VideoCommentsSheet({
       if (!wasThreaded) setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 150);
     } else if (error) {
       console.error("[VideoCommentsSheet] sendReply:", error.message, error.code, error.details);
-      // Error 42703 = undefined_column: a stale DB trigger on post_replies tries to write
-      // `post_id` to the notifications table which lacks that column.
-      // Fix: run  ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS post_id uuid;
-      // in the Supabase SQL Editor, then re-deploy migration 20260527_drop_post_replies_notification_trigger.sql
-      const isSchemaErr = error.code === "42703" && error.message?.includes("notifications");
       showAlert(
         "Comment failed",
-        isSchemaErr
-          ? "A database schema update is needed. Please contact support or run the pending migration."
-          : "Your comment could not be posted. Please try again.",
+        "Your comment could not be posted. Please try again.",
         [{ text: "OK" }],
       );
     }

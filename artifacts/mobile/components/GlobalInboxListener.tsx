@@ -12,8 +12,7 @@
  *  3. Auto-reconnects on CLOSED / CHANNEL_ERROR with exponential backoff
  *     (max 15 s) so the ~20 ms fast path survives network hiccups.
  *
- * The listener only delivers messages to the in-app event bus. It does not
- * create local or remote notifications.
+ * The listener only delivers messages to the in-app event bus.
  */
 
 import { useCallback, useEffect, useRef } from "react";

@@ -364,7 +364,7 @@ export function clearCachedUserId(): void {
  * Call this BEFORE setting the new Supabase session.
  *
  * Covers:
- *  - MMKV profile, feed cursors, wallet, search history, push token, etc.
+ *  - MMKV profile, feed cursors, wallet, search history, etc.
  *  - AsyncStorage: profile, conversations, messages, feed caches, search,
  *    feed algorithm weights, media upload usage, feature usage counters,
  *    wallet, suggested-users dismiss list, pending messages.
@@ -379,11 +379,9 @@ export async function clearAccountCache(): Promise<void> {
     storage.delete(KEYS.FEED_CURSOR_FOLLOWING);
     storage.delete(KEYS.FEED_SCROLL_OFFSET);
     storage.delete(KEYS.VIEWED_POST_IDS);
-    storage.delete(KEYS.UNREAD_NOTIF_COUNT);
     storage.delete(KEYS.WALLET_BALANCE);
     storage.delete(KEYS.WALLET_CACHED_AT);
     storage.delete(KEYS.SEARCH_HISTORY);
-    storage.delete(KEYS.PUSH_TOKEN);
     storage.delete(KEYS.INTERESTS);
 
     // ── SQLite — per-account permanent data ───────────────────────────────────
@@ -417,7 +415,6 @@ export async function clearAccountCache(): Promise<void> {
       CACHE_KEYS.CONVERSATIONS,
       CACHE_KEYS.CONTACTS,
       CACHE_KEYS.MOMENTS,
-      CACHE_KEYS.NOTIFICATIONS,
       CACHE_KEYS.PENDING_MESSAGES,
       CACHE_KEYS.WALLET,
       // Feed caches
@@ -463,7 +460,6 @@ const DEVICE_MMKV_KEYS: string[] = [
 /** AsyncStorage keys that must survive wipeAllLocalData. */
 const DEVICE_ASYNC_KEYS: string[] = [
   "@afuchat_theme",    // ThemeContext — persisted theme choice
-  "@afuchat:sound_mode", // soundManager — in-app notification sound
 ];
 
 /**

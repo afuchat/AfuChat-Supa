@@ -12,7 +12,7 @@
     "android": {
       "package": "com.afuchat.afuapp",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/notification-icon-transparent.png",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#1f95ff"
       },
       "googleServicesFile": "./google-services.json",

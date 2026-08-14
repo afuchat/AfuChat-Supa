@@ -101,7 +101,6 @@ import { askAi, aiSuggestReply, transcribeAudio, getEdgeFnBase, edgeHeaders, aiT
 import { getEngagera } from "@/lib/engagera";
 import { streamAiChat } from "@/lib/sseStream";
 import { buildNavigationContext, ACTION_ROUTES_GUIDE, detectVoiceNavCommand, pickNavConfirmation } from "@/lib/platformKnowledge";
-import { playNotificationSound as playMgrSound } from "@/lib/soundManager";
 import { AFUAI_BOT_ID } from "@/lib/afuAiBot";
 import { GIPHY_API_KEY } from "@/lib/env";
 import { useCall } from "@/context/CallContext";
@@ -1820,10 +1819,6 @@ function ChatScreen() {
     return chatIsLowData ? Math.min(base, 0.4) : base;
   })();
 
-  const playNotificationSound = useCallback(() => {
-    if (!chatPrefs.sounds_enabled) return;
-    playMgrSound();
-  }, [chatPrefs.sounds_enabled]);
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>([]);
   const [senderRingMap, setSenderRingMap] = useState<Map<string, 'crown'|'void'|'diamond'>>(new Map());
@@ -2727,7 +2722,6 @@ function ChatScreen() {
         if (prev.some((m) => m.id === gMsg.id)) return prev;
         return [{ ...gMsg, encrypted_content: gMsg.encrypted_content ?? "", sender: senderSnap as any, reactions: [], status: undefined }, ...prev];
       });
-      playNotificationSound();
     });
 
     // Evict any stale channel with this name before creating a fresh one.
@@ -2780,8 +2774,6 @@ function ChatScreen() {
               newMsg.attachment_type !== "video" && newMsg.attachment_type !== "file") {
             ensureChatAttachmentDownloaded(newMsg.attachment_url, newMsg.attachment_type).catch(() => {});
           }
-          playNotificationSound();
-
           // ── Auto-reply — respond automatically for DMs ───────────────────
           const currentChatInfo = chatInfoStateRef.current;
           if (
@@ -3972,28 +3964,8 @@ STRICT RULES:
           `\n\nBe specific, expert and genuinely helpful. The user may ask multiple questions about this item.`;
       }
 
-      // Notification patterns sent by the system bot — exclude these from AI context
-      // so the AI doesn't hallucinate about notification content when the user says "hey".
-      const NOTIFICATION_PATTERNS = [
-        /started following you/i,
-        /liked your (post|comment|story|reel)/i,
-        /commented on your/i,
-        /mentioned you in/i,
-        /sent you a gift/i,
-        /sent you \d+ (Nexa|ACoin)/i,
-        /reacted .* to your/i,
-        /replied to your/i,
-        /^\uD83D\uDD14/, // 🔔 bell emoji prefix (notifications)
-        /^🔔/,
-        /^\[NOTIFICATION\]/i,
-        /You have a new follower/i,
-        /new follower/i,
-      ];
-      const isNotificationMessage = (content: string) =>
-        NOTIFICATION_PATTERNS.some(p => p.test(content));
-
       const conversationMessages = currentMessages
-        .filter(m => !m._pending && m.encrypted_content && !isNotificationMessage(m.encrypted_content))
+        .filter(m => !m._pending && m.encrypted_content)
         .slice(0, 10)
         .reverse()
         .map(m => ({ role: m.sender_id === user?.id ? "user" as const : "assistant" as const, content: m.encrypted_content }));

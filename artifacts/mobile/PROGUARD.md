@@ -145,13 +145,13 @@ because:
 | OkHttp / Okio | Supabase REST client and R2 upload use OkHttp; some internal classes are accessed via reflection |
 | WebSocket listener implementations | Supabase Realtime creates WebSocket listeners reflectively |
 | Kotlinx serialization | Supabase-kt generates serializer companions at compile time; R8 must not rename them |
-| Firebase / GMS | FCM service and token receiver are instantiated by class name from `google-services.json` |
+| Firebase / GMS | Firebase services are instantiated by class name from `google-services.json` |
 | Expo module subclasses | Expo module loader discovers modules by scanning for subclasses of `ExpoModule`; renaming breaks the registry |
 | MMKV v3 | JNI lookup by mangled C++ symbol name; renaming breaks storage entirely |
 | React Native Track Player | `MusicService` is a `MediaBrowserService` declared in the manifest; renaming breaks background audio |
 | Reanimated 4 / Gesture Handler | Worklet runtime crosses the JNI boundary; JNI methods are looked up by name |
 | WorkManager | `CoroutineWorker` subclasses are instantiated by class name from the task registry |
-| Activity / Service / BroadcastReceiver / ContentProvider | Android instantiates these by class name from the manifest; renaming any of them breaks deep links, background tasks, and notifications |
+| Activity / Service / BroadcastReceiver / ContentProvider | Android instantiates these by class name from the manifest; renaming any of them breaks deep links and background tasks |
 | `@SerialName` fields | Supabase JSON deserialization maps JSON keys to Kotlin fields by their serialised name |
 
 ### Rules intentionally NOT included

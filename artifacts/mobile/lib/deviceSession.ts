@@ -1,8 +1,6 @@
 import { Platform } from "react-native";
 import { supabase } from "./supabase";
 import * as Device from "expo-device";
-// Security push notifications are handled server-side via DB triggers
-
 /**
  * Registers the current device in user_device_sessions.
  * If this is a NEW device (not previously seen), the realtime watcher on the
@@ -44,7 +42,6 @@ export async function registerDeviceSession(userId: string): Promise<void> {
         last_seen_at: now,
       });
 
-      // Security push notification is handled server-side via the notifications table trigger
     }
   } catch (err) {
     // Non-critical — don't throw

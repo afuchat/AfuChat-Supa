@@ -39,7 +39,6 @@ import {
 import { Avatar } from "@/components/ui/Avatar";
 import { ensureAfuAiChat } from "@/lib/afuAiBot";
 import { ReferralRewardModal } from "@/components/referral/ReferralRewardModal";
-// Push notifications for referrals are handled server-side via DB triggers
 import { useAppAccent } from "@/context/AppAccentContext";
 import { CHAT_THEME_COLORS, type ChatTheme } from "@/context/ChatPreferencesContext";
 
@@ -485,8 +484,6 @@ export default function OnboardingScreen() {
               referrerAvatar = rp.avatar_url    || null;
             }
           } catch {}
-
-          // Referrer push notification is sent server-side via DB trigger on notifications INSERT
 
           // Queue the success modal — navigation happens on dismiss
           setReferralModal({ referrerName, referrerHandle, referrerAvatar });

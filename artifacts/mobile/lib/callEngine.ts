@@ -9,7 +9,7 @@
 //
 // SIGNALING PROTOCOL (race-free, no DB dependency)
 //   1. Caller subscribes to call:${callId} channel
-//   2. Caller notifies callee via user-call:${calleeId} broadcast + push notification
+//   2. Caller notifies callee via user-call:${calleeId} broadcast
 //   3. Callee receives broadcast → status: incoming_ringing (cancel-watcher subscribed)
 //   4. Callee accepts → cancel-watcher replaced by full signaling → broadcasts `ringing`
 //   5. Caller receives `ringing` → creates offer SDP → broadcasts `offer`
@@ -410,7 +410,7 @@ export async function startCall(params: {
   // Broadcast to callee's inbox (foreground fast-path).
   // IMPORTANT: we must AWAIT the send before removing the channel, otherwise
   // the Realtime WebSocket may be torn down before the broadcast is flushed,
-  // causing the callee to silently never receive the incoming_call notification.
+  // causing the callee to silently never receive the incoming_call event.
   const calleeInbox = supabase.channel(`user-call:${calleeId}`, {
     config: { broadcast: { self: true } },
   });
@@ -440,9 +440,7 @@ export async function startCall(params: {
 
   supabase.removeChannel(calleeInbox).catch(() => {});
 
-  // Insert into `calls` table so the DB trigger fires and sends the FCM
-  // high-priority push to wake up the callee's app if it is backgrounded/killed.
-  // Fire-and-forget — never block the call setup on this.
+  // Persist call history and state without blocking call setup.
   supabase.from("calls").insert({
     id: callId,
     room_id: callId,
@@ -473,12 +471,11 @@ export async function acceptCall(notice: IncomingCallNotice, params: {
   myAvatar: string | null;
 }): Promise<void> {
   if (!_getRTC()) throw new Error("WEBRTC_UNAVAILABLE");
-  // Accept from incoming_ringing (normal path) OR idle (push-notification path
-  // where the app was backgrounded and the realtime inbox broadcast was never
-  // received, so the engine never transitioned out of idle).
+  // Accept from incoming_ringing (normal path) OR idle when a realtime
+  // broadcast was missed while the app was backgrounded.
   if (_status !== "incoming_ringing" && _status !== "idle") throw new Error("Cannot accept now");
-  // If arriving via push (engine is still idle), transition to incoming_ringing
-  // now so all downstream status checks inside the engine see a consistent state.
+  // If the engine is still idle, transition to incoming_ringing now so all
+  // downstream status checks see a consistent state.
   if (_status === "idle") {
     setStatus("incoming_ringing");
   }

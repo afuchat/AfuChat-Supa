@@ -173,11 +173,6 @@ async function runMigrations(db: DB) {
         hide_from_search INTEGER NOT NULL DEFAULT 0, message_privacy TEXT NOT NULL DEFAULT 'everyone',
         reactions_privacy TEXT NOT NULL DEFAULT 'everyone', allow_tagging TEXT NOT NULL DEFAULT 'everyone',
         data_personalization INTEGER NOT NULL DEFAULT 1, data_analytics INTEGER NOT NULL DEFAULT 1,
-        notif_likes INTEGER NOT NULL DEFAULT 1, notif_comments INTEGER NOT NULL DEFAULT 1,
-        notif_follows INTEGER NOT NULL DEFAULT 1, notif_messages INTEGER NOT NULL DEFAULT 1,
-        notif_mentions INTEGER NOT NULL DEFAULT 1, notif_reposts INTEGER NOT NULL DEFAULT 1,
-        notif_tips INTEGER NOT NULL DEFAULT 1, notif_system INTEGER NOT NULL DEFAULT 1,
-        notif_stories INTEGER NOT NULL DEFAULT 1, notif_live INTEGER NOT NULL DEFAULT 1,
         chat_read_receipts INTEGER NOT NULL DEFAULT 1,
         chat_media_autodownload TEXT NOT NULL DEFAULT 'wifi_only',
         chat_bubble_style TEXT NOT NULL DEFAULT 'default', app_language TEXT NOT NULL DEFAULT 'en',
@@ -254,5 +249,18 @@ async function runMigrations(db: DB) {
       DROP TABLE IF EXISTS notifications;
     `);
     await db.runAsync("UPDATE schema_version SET version = 14");
+  }
+
+  // ── v15: remove notification preference columns from local settings ───────
+  if (currentVersion < 15) {
+    const safe = async (sql: string) => { try { await db.execAsync(sql); } catch {} };
+    for (const column of [
+      "notif_likes", "notif_comments", "notif_follows", "notif_messages",
+      "notif_mentions", "notif_reposts", "notif_tips", "notif_system",
+      "notif_stories", "notif_live",
+    ]) {
+      await safe(`ALTER TABLE user_settings DROP COLUMN ${column}`);
+    }
+    await db.runAsync("UPDATE schema_version SET version = 15");
   }
 }
