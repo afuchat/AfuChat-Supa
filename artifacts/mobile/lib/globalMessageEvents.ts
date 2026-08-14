@@ -71,12 +71,38 @@ const _senderChannels = new Map<string, ReturnType<typeof supabase.channel>>();
 const _senderReady    = new Map<string, boolean>();
 const _senderQueue    = new Map<string, Array<object>>();
 
+function sendPushForMessage(recipientId: string, payload: IncomingMessage): void {
+  const body = payload.attachment_type
+    ? "You received an attachment"
+    : "You have a new message";
+
+  supabase.functions.invoke("send-push-notification", {
+    body: {
+      recipientUserId: recipientId,
+      chatId: payload.chat_id,
+      title: payload.sender_display_name || "New message",
+      body,
+      data: {
+        type: "chat_message",
+        chatId: payload.chat_id,
+        messageId: payload.id,
+      },
+    },
+  }).then(({ error }) => {
+    if (error) console.error("[push] message notification failed:", error.message);
+  }).catch((error) => {
+    console.error("[push] message notification failed:", error);
+  });
+}
+
 /**
  * Broadcast a message payload to a specific user's inbox channel.
  * Fire-and-forget — never throws.  Uses a pooled channel per recipient.
  */
 export function broadcastToUserInbox(recipientId: string, payload: IncomingMessage): void {
   try {
+    sendPushForMessage(recipientId, payload);
+
     const channelName = `user-inbox:${recipientId}`;
 
     if (!_senderChannels.has(recipientId)) {

@@ -17,17 +17,36 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const authorization = req.headers.get("Authorization") ?? "";
-  if (!serviceRoleKey || authorization !== `Bearer ${serviceRoleKey}`) {
-    return json({ error: "Server authorization required" }, 401);
+  if (!supabaseUrl || !serviceRoleKey) {
+    return json({ error: "Push delivery is not configured." }, 500);
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-  if (!supabaseUrl) return json({ error: "Push delivery is not configured." }, 500);
-
   const body = await req.json().catch(() => null);
-  const userId = typeof body?.userId === "string" ? body.userId : "";
+  const isServiceRequest = Boolean(serviceRoleKey && authorization === `Bearer ${serviceRoleKey}`);
+  let senderId: string | null = null;
+
+  // The trusted server path can target any user. Client calls must use a
+  // normal Supabase session and are restricted to members of the chat.
+  if (!isServiceRequest) {
+    if (!anonKey || !authorization.startsWith("Bearer ")) {
+      return json({ error: "Authenticated sender required" }, 401);
+    }
+
+    const authClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authorization } },
+    });
+    const { data: userData, error: userError } = await authClient.auth.getUser();
+    if (userError || !userData.user) return json({ error: "Invalid session" }, 401);
+    senderId = userData.user.id;
+  }
+
+  const userId = isServiceRequest
+    ? (typeof body?.userId === "string" ? body.userId : "")
+    : (typeof body?.recipientUserId === "string" ? body.recipientUserId : "");
   const title = typeof body?.title === "string" ? body.title.trim() : "";
   const messageBody = typeof body?.body === "string" ? body.body.trim() : "";
   const data = body?.data && typeof body.data === "object" ? body.data : {};
@@ -37,6 +56,25 @@ Deno.serve(async (req) => {
   }
 
   const admin = createClient(supabaseUrl, serviceRoleKey);
+  if (!isServiceRequest) {
+    const chatId = typeof body?.chatId === "string" ? body.chatId : "";
+    if (!chatId || !senderId || userId === senderId) {
+      return json({ error: "A valid chat recipient is required." }, 400);
+    }
+
+    const { data: members, error: memberError } = await admin
+      .from("chat_members")
+      .select("user_id")
+      .eq("chat_id", chatId)
+      .in("user_id", [senderId, userId]);
+
+    if (memberError) return json({ error: "Could not verify chat membership." }, 500);
+    const memberIds = new Set((members ?? []).map((member) => member.user_id));
+    if (!memberIds.has(senderId) || !memberIds.has(userId)) {
+      return json({ error: "Sender and recipient must belong to the chat." }, 403);
+    }
+  }
+
   const { data: devices, error: deviceError } = await admin
     .from("push_devices")
     .select("id, token")
