@@ -227,7 +227,6 @@ function ChatRow({
   onToggleSelect?: () => void;
 }) {
   const { colors } = useTheme();
-  const isSpecial = item.kind === "notes" || item.kind === "channel_broadcast";
   const isChatMuted = item.muted_until !== undefined && (item.muted_until === null || new Date(item.muted_until) > new Date());
   const displayName = item.kind === "notes"
     ? "My Notes"
@@ -607,8 +606,35 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     }
 
     // The RPC includes chat membership, profile metadata, latest message,
-    // delivery/read state, unread count, and mute state in one server query.
+    // delivery/read state, unread count, mute state, and subscribed channel
+    // broadcasts in one server query.
     const items: ChatItem[] = (chatRows as any[]).map((row: any) => {
+      if (row.kind === "channel_broadcast") {
+        return {
+          id: row.chat_id,
+          channel_id: row.channel_id,
+          kind: "channel_broadcast" as const,
+          name: row.chat_name || "Channel",
+          is_group: false,
+          is_channel: true,
+          other_display_name: row.chat_name || "Channel",
+          other_avatar: null,
+          other_id: "",
+          last_message: row.last_message ? stripMdPreview(row.last_message) : "No posts yet",
+          last_message_at: row.last_message_at || "",
+          last_message_is_mine: false,
+          last_message_status: "sent" as const,
+          is_pinned: false,
+          is_archived: false,
+          avatar_url: row.avatar_url || null,
+          unread_count: 0,
+          is_verified: !!row.is_verified,
+          is_organization_verified: false,
+          other_last_seen: null,
+          other_show_online: false,
+        };
+      }
+
       const isSelfChat = !row.is_group && !row.is_channel && row.other_id === user.id;
       return {
         id: row.chat_id,
@@ -645,7 +671,9 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       (item) => !item.is_group && !item.is_channel && item.other_id === user.id
     );
     const regularItems = items.filter(
-      (item) => !((!item.is_group && !item.is_channel && item.other_id === user.id))
+      (item) =>
+        item.kind !== "channel_broadcast" &&
+        !((!item.is_group && !item.is_channel && item.other_id === user.id))
     );
 
     regularItems.sort((a, b) => {
@@ -691,58 +719,10 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       }
     }
 
-    // ── Fetch subscribed broadcast channels ──────────────────────────────────
-    const { data: subRows } = await supabase
-      .from("channel_subscriptions")
-      .select("channel_id, channels(id, name, avatar_url, is_verified)")
-      .eq("user_id", user.id);
-
-    const channelIds = (subRows || []).map((s: any) => s.channel_id).filter(Boolean);
-    const latestPostMap: Record<string, any> = {};
-    if (channelIds.length > 0) {
-      const { data: latestPosts } = await supabase
-        .from("posts")
-        .select("id, channel_id, content, created_at")
-        .in("channel_id", channelIds)
-        .order("created_at", { ascending: false })
-        .limit(Math.max(channelIds.length * 3, 50));
-      for (const p of (latestPosts || []) as any[]) {
-        if (!latestPostMap[p.channel_id]) latestPostMap[p.channel_id] = p;
-      }
-    }
-
-    const channelItems: ChatItem[] = (subRows || []).flatMap((s: any) => {
-      const ch = Array.isArray(s.channels) ? s.channels[0] : s.channels;
-      if (!ch) return [];
-      const lp = latestPostMap[s.channel_id];
-      return [{
-        id: `channel_broadcast:${ch.id}`,
-        channel_id: ch.id,
-        kind: "channel_broadcast" as const,
-        name: ch.name || "Channel",
-        is_group: false,
-        is_channel: true,
-        other_display_name: ch.name || "Channel",
-        other_avatar: null,
-        other_id: "",
-        last_message: lp?.content ? stripMdPreview(lp.content) : "No posts yet",
-        last_message_at: lp?.created_at || "",
-        last_message_is_mine: false,
-        last_message_status: "sent" as const,
-        is_pinned: false,
-        is_archived: false,
-        avatar_url: ch.avatar_url || null,
-        unread_count: 0,
-        is_verified: !!ch.is_verified,
-        is_organization_verified: false,
-        other_last_seen: null,
-        other_show_online: false,
-      }];
-    });
-
     // ── Load local unsent drafts ──────────────────────────────────────────────
     // Read all draft keys at once so we can (a) show "Draft:" labels and
     // (b) sort drafted chats above non-drafted ones.
+    const channelItems = items.filter((item) => item.kind === "channel_broadcast");
     const combined = [...regularItems, ...channelItems];
     const allCombinedIds = combined.map((c) => c.id).filter(Boolean);
     let draftMap: Record<string, string> = {};
