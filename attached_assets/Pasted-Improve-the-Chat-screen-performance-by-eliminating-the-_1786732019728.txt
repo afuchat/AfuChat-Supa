@@ -1,0 +1,85 @@
+Improve the Chat screen performance by eliminating the expensive client-side refresh workload.
+
+Goal:
+Opening the Chat tab and switching between pages should feel immediate, even for users with many conversations.
+
+Please inspect the existing implementation before editing, especially:
+
+- artifacts/mobile/app/(tabs)/index.tsx
+- artifacts/mobile/lib/storage/localConversations.ts
+- artifacts/mobile/lib/offlineSync.ts
+- Supabase migrations and database functions related to chats, chat_members, messages, and message_status
+
+Requirements:
+
+1. Identify every network request made by the Chat screen during:
+   - Initial mount
+   - Returning to the tab
+   - Pull-to-refresh
+   - Realtime message updates
+   - Reconnecting after going offline
+
+2. Replace the large client-side chat refresh sequence with one server-side Supabase RPC or database function that returns the data needed for the chat list in one request:
+   - Chat ID and metadata
+   - Other member/profile information
+   - Latest message preview and timestamp
+   - Whether the latest message was sent by the current user
+   - Read/delivered status
+   - Unread count
+   - Mute state
+   - Pin/archive state
+
+3. Avoid N+1 queries and do not fetch up to 1,000 messages just to find the latest message for each chat.
+
+4. Preserve existing behavior:
+   - My Notes remains at the top
+   - Pinned chats remain above normal chats
+   - Archived chats remain at the bottom
+   - Draft sorting still works
+   - Channel broadcasts still appear
+   - Unread counts remain accurate
+   - Realtime messages still update the matching chat row instantly
+   - Offline cached conversations still render immediately
+
+5. Keep the current cache-first behavior:
+   - Render SQLite/local cached conversations first.
+   - Fetch the server refresh in the background.
+   - Never show an empty list during a temporary network failure if cached data exists.
+
+6. Keep the existing in-flight request guard and background refresh throttle. Do not reintroduce duplicate refreshes from useEffect, useFocusEffect, realtime callbacks, or reconnect listeners.
+
+7. If a database migration or RPC is required:
+   - Add a clear migration under artifacts/mobile/supabase/migrations/.
+   - Make the RPC secure and restrict results to chats the authenticated user belongs to.
+   - Do not expose messages or profiles from chats the user cannot access.
+   - Document if the migration must be applied manually through the Supabase SQL editor.
+
+8. Add lightweight development-only timing logs around:
+   - Cache render
+   - Server RPC start/end
+   - Total chat refresh duration
+   - Number of chats returned
+   These logs must not run in production.
+
+9. Test the following scenarios:
+   - New account with no chats
+   - Account with one chat
+   - Account with many chats
+   - Offline startup with cached chats
+   - Slow network during refresh
+   - Realtime message arriving during refresh
+   - Switching tabs repeatedly
+   - Pull-to-refresh while another refresh is active
+   - Signing out and signing into another account
+
+10. Run the typecheck and Metro workflow after the changes. Fix any new errors introduced by this work, but do not expand the task into unrelated refactors.
+
+Success criteria:
+
+- Opening the Chat tab does not trigger multiple large Supabase queries.
+- No per-chat latest-message queries remain.
+- Chat rows appear from local cache immediately when available.
+- A server refresh updates the list with one main RPC request.
+- Repeated focus/realtime events do not create overlapping refreshes.
+- No regression in unread counts, ordering, drafts, channels, or offline behavior.
+- Metro starts cleanly and the app remains usable on web and native.
