@@ -30,10 +30,8 @@ import { saveLocalProfile, deleteLocalProfile } from "@/lib/storage/localProfile
 import { saveLocalSettings, deleteLocalSettings } from "@/lib/storage/localSettings";
 import { clearProfileCache } from "@/lib/profileCache";
 import { startOfflineSync } from "@/lib/offlineSync";
-import { clearPushToken, registerSwitchAccount, setCurrentUserId } from "@/lib/pushNotifications";
 import { registerDeviceSession } from "@/lib/deviceSession";
 import { ensureAfuAiChat } from "@/lib/afuAiBot";
-import { ensureAfuSystemChat } from "@/lib/afuSystemChat";
 
 type Profile = {
   id: string;
@@ -499,8 +497,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq("id", newSession.user.id)
         .single()
         .then(({ data }) => {
-          ensureAfuAiChat(newSession!.user.id, data?.display_name).catch(() => {});
-          ensureAfuSystemChat(newSession!.user.id).catch(() => {});
+           ensureAfuAiChat(newSession!.user.id, data?.display_name).catch(() => {});
         });
 
       startOfflineSync();
@@ -527,7 +524,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const signedOutUserId = user?.id;
     try {
       // Fire-and-forget: don't let slow/offline network block the logout UX.
-      if (signedOutUserId) clearPushToken(signedOutUserId).catch(() => {});
 
       // Drop React state immediately so the UI shows nothing while wiping.
       setProfile(null);
@@ -617,8 +613,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .eq("id", session.user.id)
             .single()
             .then(({ data }) => {
-              ensureAfuAiChat(session.user.id, data?.display_name).catch(() => {});
-              ensureAfuSystemChat(session.user.id).catch(() => {});
+               ensureAfuAiChat(session.user.id, data?.display_name).catch(() => {});
             }, () => {});
         } else {
           // No live session — try to stay "soft logged in" from local storage.
@@ -812,8 +807,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .eq("id", newSession.user.id)
               .single()
               .then(({ data }) => {
-                ensureAfuAiChat(newSession.user.id, data?.display_name).catch(() => {});
-                ensureAfuSystemChat(newSession.user.id).catch(() => {});
+                 ensureAfuAiChat(newSession.user.id, data?.display_name).catch(() => {});
               }, () => {});
           })
           .catch(() => {});
@@ -830,10 +824,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       saveCurrentSession();
     }
   }, [session?.access_token, profile?.id]);
-
-  // Keep push notification router aware of the active user
-  useEffect(() => { setCurrentUserId(user?.id ?? null); }, [user?.id]);
-  useEffect(() => { registerSwitchAccount(switchAccount); }, []);
 
   // Update last_seen on app foreground
   useEffect(() => {

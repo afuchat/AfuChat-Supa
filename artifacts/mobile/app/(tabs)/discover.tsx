@@ -48,7 +48,6 @@ import PostUploadBanner from "@/components/ui/PostUploadBanner";
 import { isOnline, onConnectivityChange } from "@/lib/offlineStore";
 import { getLocalFeedPosts, saveFeedPosts, getNewestFeedPostDate, type FeedTab as LocalFeedTab } from "@/lib/storage/localFeed";
 import { getCachedFeedTab, cacheFeedTab, getCachedMoments, cacheMoments } from "@/lib/offlineStore";
-import { notifyPostLike } from "@/lib/notifyUser";
 import { timeAgo as formatRelative, formatPostDate } from "@/lib/timeAgo";
 import { sharePost, shareVideo } from "@/lib/share";
 import { matchInterestsWeighted, recordInteraction, getLearnedInterestBoosts, computeFeedScore, diversifyFeed, getSeenPostIds, markPostsSeen, weightedSample, type FeedSignals } from "@/lib/feedAlgorithm";
@@ -2418,14 +2417,6 @@ export default function DiscoverScreen() {
         learnedWeightsRef.current = await getMergedLearnedWeights();
       });
       trackEvent("like_post", { post_id: postId, author_id: post.author_id });
-      if (post.author_id !== user.id) {
-        notifyPostLike({
-          postAuthorId: post.author_id,
-          likerName: profile?.display_name || "Someone",
-          likerUserId: user.id,
-          postId,
-        });
-      }
       try { const { rewardXp } = await import("../../lib/rewardXp"); rewardXp("post_liked"); } catch (_) {}
       const { error } = await supabase.from("post_acknowledgments").upsert({ post_id: postId, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
       if (error) {

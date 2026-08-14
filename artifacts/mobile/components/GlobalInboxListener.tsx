@@ -12,16 +12,14 @@
  *  3. Auto-reconnects on CLOSED / CHANNEL_ERROR with exponential backoff
  *     (max 15 s) so the ~20 ms fast path survives network hiccups.
  *
- * In-app message banners have been removed. Push notifications (sent via
- * the send-push-notification edge function) are the only out-of-chat alert.
+ * The listener only delivers messages to the in-app event bus. It does not
+ * create local or remote notifications.
  */
 
 import { useCallback, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { emitIncomingMessage, IncomingMessage } from "@/lib/globalMessageEvents";
-import { isExpoGo } from "@/lib/expoEnvironment";
-import { showDevelopmentLocalNotification } from "@/lib/pushNotifications";
 
 export function GlobalInboxListener() {
   const { user } = useAuth();
@@ -41,25 +39,6 @@ export function GlobalInboxListener() {
 
     // Emit to global event bus → chat/[id].tsx fast path picks it up
     emitIncomingMessage(msg);
-    if (isExpoGo()) {
-      void showDevelopmentLocalNotification({
-        title: msg.sender_display_name ?? msg.sender_handle ?? "New message",
-        body: msg.attachment_type === "image"
-          ? "📷 Photo"
-          : msg.attachment_type === "video"
-            ? "🎥 Video"
-            : msg.attachment_type === "audio"
-              ? "🎤 Voice message"
-              : "You have a new message",
-        data: {
-          type: "message",
-          chatId: msg.chat_id,
-          messageId: msg.id,
-          senderId: msg.sender_id,
-        },
-        channelId: "messages",
-      });
-    }
   }, []);
 
   // ── Supabase Broadcast subscription with auto-reconnect ────────────────────

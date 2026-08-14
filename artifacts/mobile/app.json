@@ -9,10 +9,6 @@
     "userInterfaceStyle": "automatic",
     "jsEngine": "hermes",
     "backgroundColor": "#000000",
-    "notification": {
-      "icon": "./assets/images/notification-icon-white.png",
-      "color": "#1f95ff"
-    },
     "android": {
       "package": "com.afuchat.afuapp",
       "adaptiveIcon": {
@@ -23,7 +19,6 @@
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
-        "android.permission.POST_NOTIFICATIONS",
         "android.permission.VIBRATE",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
@@ -118,17 +113,6 @@
           "cameraPermission": "AfuChat uses the camera to take photos and videos for stories and messages.",
           "microphonePermission": "AfuChat uses the microphone to record voice messages and video with audio.",
           "recordAudioAndroid": true
-        }
-      ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/notification-icon-white.png",
-          "color": "#1f95ff",
-          "defaultChannel": "default",
-          "sounds": [
-            "./assets/sounds/notification.wav"
-          ]
         }
       ],
       [

@@ -21,7 +21,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Avatar } from "@/components/ui/Avatar";
 import { useCall } from "@/context/CallContext";
 import { useAuth } from "@/context/AuthContext";
-import { notifyMissedCall } from "@/lib/notifyUser";
 import { GLASS } from "@/constants/glass";
 
 const AUTO_DECLINE_MS = 30_000;
@@ -126,15 +125,6 @@ export function IncomingCallModal() {
     // Auto-decline
     autoDeclineTimer.current = setTimeout(() => {
       if (incomingNotice) {
-        // calleeId = current user (the one who didn't answer)
-        // callerId = the person who placed the call
-        notifyMissedCall({
-          calleeId: user?.id ?? incomingNotice.callerId,
-          callerId: incomingNotice.callerId,
-          callId: incomingNotice.callId,
-          callType: "voice",
-          callerName: incomingNotice.callerName,
-        }).catch(() => {});
         declineCall();
       }
     }, AUTO_DECLINE_MS);

@@ -14,7 +14,6 @@ import {
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { notifyGiftReceived } from "@/lib/notifyUser";
 import * as Haptics from "@/lib/haptics";
 import { supabase } from "@/lib/supabase";
 import { GlassHeader } from "@/components/ui/GlassHeader";
@@ -258,12 +257,6 @@ export default function GiftsScreen() {
         message: sendMsg.trim() || null,
       });
 
-      notifyGiftReceived({
-        recipientId: recipient.id,
-        senderName: profile?.display_name || "Someone",
-        senderUserId: user.id,
-        giftName: `${sendGift.gift.emoji} ${sendGift.gift.name}`,
-      });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       showAlert("Gift Sent!", `${sendGift.gift.emoji} ${sendGift.gift.name} sent to ${recipient.display_name}`);

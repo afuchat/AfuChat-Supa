@@ -55,7 +55,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
 import UserName from "@/components/ui/UserName";
 import { RichText } from "@/components/ui/RichText";
-import { notifyPostReply } from "@/lib/notifyUser";
 import * as Haptics from "@/lib/haptics";
 import { uploadToStorage } from "@/lib/mediaUpload";
 
@@ -1010,15 +1009,6 @@ export function VideoCommentsSheet({
       setReplies((prev) => [...prev, newReply]);
       setNewCommentIds((prev) => new Set([...prev, data.id]));
       onReplyCountChange(postId, 1);
-      if (replyingTo && replyingTo.author_id !== user.id) {
-        notifyPostReply({
-          postAuthorId: replyingTo.author_id,
-          replierName: profile?.display_name || "Someone",
-          replierUserId: user.id,
-          postId,
-          replyPreview: data.content || (finalVoiceUrl ? "🎤 Voice note" : finalImageUrl ? "🖼️ Image" : ""),
-        });
-      }
       const wasThreaded = !!replyingTo;
       setText("");
       setReplyingTo(null);

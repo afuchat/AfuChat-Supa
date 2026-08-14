@@ -60,7 +60,6 @@ import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import UserName from "@/components/ui/UserName";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { useTheme } from "@/hooks/useTheme";
-import { notifyPostLike, notifyPostReply } from "@/lib/notifyUser";
 import { RichText } from "@/components/ui/RichText";
 import { encodeId, decodeId, isUuid } from "@/lib/shortId";
 import { getCachedVideoUri, cacheVideo, markVideoWatched, getOfflineVideos } from "@/lib/videoCache";
@@ -1564,11 +1563,6 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
         // Rollback on failure
         setVideos((prev) => prev.map((v) => v.id === postId ? { ...v, liked: false, likeCount: Math.max(0, v.likeCount - 1) } : v));
       } else {
-        // Fire notification after confirmed DB write — use latest videos ref
-        const post = videosRef.current.find((v) => v.id === postId);
-        if (post && post.author_id !== currentUser.id) {
-          notifyPostLike({ postAuthorId: post.author_id, likerName: profile?.display_name || "Someone", likerUserId: currentUser.id, postId });
-        }
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

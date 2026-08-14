@@ -30,7 +30,6 @@ import UserName from "@/components/ui/UserName";
 import { VideoCommentsSheet } from "@/components/ui/VideoCommentsSheet";
 import { sharePost } from "@/lib/share";
 import Colors from "@/constants/colors";
-import { notifyPostLike } from "@/lib/notifyUser";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -174,9 +173,6 @@ export default function ArticleDetailScreen() {
     } else {
       setLiked(true); setLikeCount((n) => n + 1);
       await supabase.from("post_acknowledgments").upsert({ post_id: article.id, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
-      if (article.author_id !== user.id) {
-        notifyPostLike({ postAuthorId: article.author_id, likerName: "", likerUserId: user.id, postId: article.id });
-      }
     }
   }, [user, article, liked, heartScale]);
 

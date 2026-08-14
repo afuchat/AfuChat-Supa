@@ -58,7 +58,6 @@ import UserName from "@/components/ui/UserName";
 import { RichText } from "@/components/ui/RichText";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { useTheme } from "@/hooks/useTheme";
-import { notifyPostLike, notifyNewFollow } from "@/lib/notifyUser";
 import { VideoFeedSkeleton } from "@/components/ui/Skeleton";
 import { useResolvedVideoSource } from "@/hooks/useResolvedVideoSource";
 import { getPreferredVideoHeight, isWifi } from "@/lib/networkQuality";
@@ -1426,9 +1425,6 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
         if (error) setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, liked: true, likeCount: p.likeCount + 1 } : p));
       } else {
         setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, liked: true, likeCount: p.likeCount + 1 } : p));
-        if (post.author_id !== user.id) {
-          notifyPostLike({ postAuthorId: post.author_id, likerName: profile?.display_name || "Someone", likerUserId: user.id, postId });
-        }
         const { error } = await supabase.from("post_acknowledgments").upsert(
           { post_id: postId, user_id: user.id },
           { onConflict: "post_id,user_id", ignoreDuplicates: true }
@@ -1444,7 +1440,6 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
       if (!user) { router.push("/(auth)/login" as any); return; }
       setPosts((prev) => prev.map((p) => (p.author_id === authorId ? { ...p, following: true } : p)));
       await supabase.from("follows").insert({ follower_id: user.id, following_id: authorId });
-      try { notifyNewFollow({ targetUserId: authorId, followerName: profile?.display_name || "Someone", followerUserId: user.id }); } catch (_) {}
       try { const { rewardXp } = await import("../lib/rewardXp"); rewardXp("follow_user"); } catch (_) {}
     },
     [user, profile],

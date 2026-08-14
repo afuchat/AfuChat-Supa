@@ -9,7 +9,6 @@ const CACHE_KEYS = {
   CONTACTS: "offline_contacts",
   MESSAGES_PREFIX: "offline_messages_",
   MOMENTS: "offline_moments",
-  NOTIFICATIONS: "offline_notifications",
   PENDING_MESSAGES: "offline_pending_messages",
   FEED_FOR_YOU: "feed_tab_cache_for_you_v3",
   FEED_FOLLOWING: "feed_tab_cache_following_v3",
@@ -177,21 +176,6 @@ export async function cacheMoments(moments: any[]): Promise<void> {
 export async function getCachedMoments(): Promise<any[]> {
   try {
     const raw = await AsyncStorage.getItem(CACHE_KEYS.MOMENTS);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-export async function cacheNotifications(notifications: any[]): Promise<void> {
-  try {
-    await AsyncStorage.setItem(CACHE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
-  } catch {}
-}
-
-export async function getCachedNotifications(): Promise<any[]> {
-  try {
-    const raw = await AsyncStorage.getItem(CACHE_KEYS.NOTIFICATIONS);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -554,7 +538,7 @@ export async function wipeAllLocalData(): Promise<void> {
     const { getDB } = await import("./storage/db");
     const db = await getDB();
     const tables = [
-      "conversations", "messages", "feed_posts", "notifications",
+      "conversations", "messages", "feed_posts",
       "search_history", "media_cache", "offline_queue", "contacts",
       "video_registry", "phone_contact_names", "chat_folders",
       "user_profiles", "user_settings", "call_history",

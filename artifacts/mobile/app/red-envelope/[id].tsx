@@ -17,7 +17,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
 import Colors from "@/constants/colors";
 import { showAlert } from "@/lib/alert";
-import { notifyGiftReceived } from "@/lib/notifyUser";
 import { shareRedEnvelope } from "@/lib/share";
 import { isUuid, isEncodedId, decodeId } from "@/lib/shortId";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
@@ -115,12 +114,6 @@ export default function RedEnvelopeScreen() {
       setMyClaim(data.amount);
       try { const { rewardXp } = await import("../../lib/rewardXp"); rewardXp("red_envelope_claimed"); } catch (_) {}
       if (envelope.sender_id !== user.id) {
-        notifyGiftReceived({
-          recipientId: envelope.sender_id,
-          senderName: profile?.display_name || "Someone",
-          senderUserId: user.id,
-          giftName: `opened your red envelope (${data.amount} ACoin)`,
-        });
       }
       load();
     }

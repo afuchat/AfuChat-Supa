@@ -32,7 +32,6 @@ import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import { showAlert } from "@/lib/alert";
 import { isOnline } from "@/lib/offlineStore";
 import * as Haptics from "@/lib/haptics";
-import { notifySystemMessage } from "@/lib/notifyUser";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -472,17 +471,6 @@ export default function GroupManageScreen() {
         metadata: { system_action: "members_added", added_by: user.id, added_ids: selectedIds },
       }).single();
 
-      // Send push notification to each added user
-      await Promise.allSettled(
-        selectedIds.map((uid) =>
-          notifySystemMessage({
-            userId: uid,
-            title: `You were added to "${groupName}"`,
-            body: `${adderName} added you to this group. Tap to see it.`,
-            url: `/group/${id}`,
-          })
-        )
-      );
     }
 
     setShowAddSheet(false);

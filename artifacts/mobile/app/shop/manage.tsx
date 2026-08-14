@@ -27,7 +27,6 @@ import { uploadToStorage } from "@/lib/mediaUpload";
 import { Shop, ShopProduct, ShopOrder, SHOP_CATEGORIES, PRODUCT_CATEGORIES, ORDER_STATUS_LABELS, ESCROW_STATUS_LABELS, formatShopAcoin, formatShopUSD, PLATFORM_FEE_PCT } from "@/lib/shop";
 import Colors from "@/constants/colors";
 import { showAlert } from "@/lib/alert";
-import { notifyOrderShipped } from "@/lib/notifyUser";
 
 type ManageTab = "overview" | "products" | "orders";
 
@@ -248,16 +247,6 @@ export default function ShopManage() {
       setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, status: status as any, ...(status === "shipped" ? { seller_confirmed_at: now } : {}) } : o));
       if (status === "shipped") {
         await supabase.from("shop_order_messages").insert({ order_id: orderId, sender_id: user?.id, message: "📦 Your order has been shipped! Please confirm delivery once you receive it to release payment to me." });
-        // Notify buyer that their order has shipped
-        const ord = orders.find(o => o.id === orderId);
-        if (ord && user && profile) {
-          notifyOrderShipped({
-            buyerId: ord.buyer_id,
-            sellerName: profile.display_name || shop?.name || "The seller",
-            sellerUserId: user.id,
-            orderId,
-          });
-        }
       }
     } catch (_) {
       showAlert("Error", "Could not update order status. Please try again.");

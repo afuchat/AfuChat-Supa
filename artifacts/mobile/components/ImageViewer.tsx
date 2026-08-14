@@ -22,7 +22,6 @@ import { Avatar } from "@/components/ui/Avatar";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
-import { notifyPostReply } from "@/lib/notifyUser";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Lazy-load Reanimated + GestureHandler with a try-catch IIFE.
@@ -638,14 +637,6 @@ function PostChrome({
         content: replyText.trim(),
       }).select("id").single();
       if (!error && data) {
-        try {
-          await notifyPostReply({
-            postId: meta.postId,
-            postAuthorId: meta.authorId,
-            replierUserId: user.id,
-            replierName: myProfile?.display_name ?? "Someone",
-          });
-        } catch {}
         setReplyText("");
         Keyboard.dismiss();
       }

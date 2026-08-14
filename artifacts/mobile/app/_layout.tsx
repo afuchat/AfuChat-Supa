@@ -68,7 +68,6 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastContainer } from "@/components/ui/ToastContainer";
 import AlertModal from "@/components/ui/AlertModal";
 import OfflineBanner from "@/components/ui/OfflineBanner";
-import { PushNotificationManager } from "@/components/PushNotificationManager";
 import { GlobalInboxListener } from "@/components/GlobalInboxListener";
 import UpdatePrompt from "@/components/UpdatePrompt";
 import { initActivityTracker } from "@/lib/activityTracker";
@@ -350,7 +349,6 @@ export default function RootLayout() {
                     <CrashReporterUserSync />
                     <CrashSupportHandler />
                     <PageWatcher />
-                    <PushNotificationManager />
                     <GlobalInboxListener />
                     <UpdatePrompt />
                     {/* Incoming call overlay — renders above every screen */}

@@ -43,7 +43,6 @@ import { RichText } from "@/components/ui/RichText";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import UserName from "@/components/ui/UserName";
 import { ImageViewer, useImageViewer } from "@/components/ImageViewer";
-import { notifyPostLike, notifyPostReply } from "@/lib/notifyUser";
 import { uploadToStorage } from "@/lib/mediaUpload";
 import { showAlert } from "@/lib/alert";
 import {
@@ -477,9 +476,6 @@ export default function PostDetailScreen() {
       setLiked(true); setLikeCount((n) => n + 1);
       try {
         await supabase.from("post_acknowledgments").upsert({ post_id: post.id, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
-        if (post.author_id !== user.id) {
-          notifyPostLike({ postAuthorId: post.author_id, likerName: "", likerUserId: user.id, postId: post.id });
-        }
       } catch { setLiked(false); setLikeCount((n) => Math.max(0, n - 1)); }
     }
   }, [user, post, liked, heartScale]);
@@ -709,15 +705,6 @@ export default function PostDetailScreen() {
       };
       setReplies((prev) => [...prev, newReply]);
       setNewCommentIds((prev) => new Set([...prev, data.id]));
-      if (replyingTo && replyingTo.author_id !== user.id) {
-        notifyPostReply({
-          postAuthorId: replyingTo.author_id,
-          replierName: profile?.display_name || "Someone",
-          replierUserId: user.id,
-          postId: post.id,
-          replyPreview: data.content || (finalVoiceUrl ? "\uD83C\uDFA4 Voice note" : finalImageUrl ? "\uD83D\uDDBC\uFE0F Image" : ""),
-        });
-      }
       const wasThreaded = !!replyingTo;
       setText(""); setReplyingTo(null); discardRecording(); setAttachedImage(null); setShowEmojiPanel(false);
       if (!wasThreaded) setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 150);

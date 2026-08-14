@@ -33,8 +33,6 @@ import {
   type CallInfo,
   type IncomingCallNotice,
 } from "@/lib/callEngine";
-import { listenPushIncomingCall } from "@/lib/callPushBridge";
-import { notifyIncomingCall } from "@/lib/notifyUser";
 import { showToast } from "@/lib/toast";
 import { getMicPermissionState, requestMicPermission } from "@/lib/micPermission";
 import { MicPermissionModal } from "@/components/MicPermissionModal";
@@ -171,16 +169,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // ── Handle push-notification incoming calls (app was in background) ─────────
-  useEffect(() => {
-    const unsub = listenPushIncomingCall((notice) => {
-      // Accept if idle OR incoming_ringing (duplicate push for the same call)
-      if (_status_ref.current !== "idle" && _status_ref.current !== "incoming_ringing") return;
-      setIncomingNotice((prev) => prev ?? notice);
-    });
-    return unsub;
-  }, []);
-
   // ── Subscribe to engine events ─────────────────────────────────────────────
   useEffect(() => {
     const unsub = addCallEngineListener((event) => {
@@ -280,15 +268,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         chatId: params.chatId,
       });
 
-      // Push notification as fallback for background callee
-      notifyIncomingCall({
-        calleeId: params.calleeId,
-        callerId: u.id,
-        callId,
-        callerName: p?.display_name ?? "Unknown",
-        callerAvatar: p?.avatar_url ?? null,
-        chatId: params.chatId,
-      }).catch(() => {});
     } catch (e: any) {
       showToast("Could not start call", { type: "error", duration: 3000 });
     }

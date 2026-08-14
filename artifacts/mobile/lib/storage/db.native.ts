@@ -72,13 +72,6 @@ async function runMigrations(db: DB) {
       );
       CREATE INDEX IF NOT EXISTS idx_feed_tab_created ON feed_posts(tab, created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_feed_created ON feed_posts(created_at DESC);
-      CREATE TABLE IF NOT EXISTS notifications (
-        id TEXT PRIMARY KEY, type TEXT NOT NULL, actor_id TEXT, actor_name TEXT,
-        actor_avatar TEXT, target_id TEXT, body TEXT, read_at TEXT,
-        created_at TEXT NOT NULL, stored_at INTEGER NOT NULL
-      );
-      CREATE INDEX IF NOT EXISTS idx_notif_created ON notifications(created_at DESC);
-      CREATE INDEX IF NOT EXISTS idx_notif_unread ON notifications(read_at) WHERE read_at IS NULL;
       CREATE TABLE IF NOT EXISTS offline_queue (
         id TEXT PRIMARY KEY, action_type TEXT NOT NULL, payload TEXT NOT NULL,
         created_at INTEGER NOT NULL, retry_count INTEGER NOT NULL DEFAULT 0, last_error TEXT
@@ -114,13 +107,6 @@ async function runMigrations(db: DB) {
 
   if (currentVersion < 3) {
     const safeAdd = async (sql: string) => { try { await db.execAsync(sql); } catch {} };
-    await safeAdd("ALTER TABLE notifications ADD COLUMN post_id TEXT");
-    await safeAdd("ALTER TABLE notifications ADD COLUMN reference_id TEXT");
-    await safeAdd("ALTER TABLE notifications ADD COLUMN reference_type TEXT");
-    await safeAdd("ALTER TABLE notifications ADD COLUMN actor_handle TEXT");
-    await safeAdd("ALTER TABLE notifications ADD COLUMN actor_is_verified INTEGER NOT NULL DEFAULT 0");
-    await safeAdd("ALTER TABLE notifications ADD COLUMN actor_is_org_verified INTEGER NOT NULL DEFAULT 0");
-    await safeAdd("ALTER TABLE notifications ADD COLUMN is_read INTEGER NOT NULL DEFAULT 0");
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS contacts (
         id TEXT PRIMARY KEY, display_name TEXT NOT NULL, handle TEXT NOT NULL,
@@ -260,18 +246,12 @@ async function runMigrations(db: DB) {
     await db.runAsync("UPDATE schema_version SET version = 13");
   }
 
-  // ── v14: restore the notification cache without deleting existing data ───────
-  // Devices that already ran the old v11 migration may no longer have this
-  // local table, so CREATE IF NOT EXISTS repairs them safely.
+  // ── v14: remove the legacy notification cache ──────────────────────────────
   if (currentVersion < 14) {
     await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS notifications (
-        id TEXT PRIMARY KEY, type TEXT NOT NULL, actor_id TEXT, actor_name TEXT,
-        actor_avatar TEXT, target_id TEXT, body TEXT, read_at TEXT,
-        created_at TEXT NOT NULL, stored_at INTEGER NOT NULL
-      );
-      CREATE INDEX IF NOT EXISTS idx_notif_created ON notifications(created_at DESC);
-      CREATE INDEX IF NOT EXISTS idx_notif_unread ON notifications(read_at) WHERE read_at IS NULL;
+      DROP INDEX IF EXISTS idx_notif_created;
+      DROP INDEX IF EXISTS idx_notif_unread;
+      DROP TABLE IF EXISTS notifications;
     `);
     await db.runAsync("UPDATE schema_version SET version = 14");
   }

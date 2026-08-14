@@ -75,7 +75,6 @@ import { showToast as globalShowToast } from "@/lib/toast";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import UserName from "@/components/ui/UserName";
 
-import { notifyNewMessage, notifyGiftReceived } from "@/lib/notifyUser";
 import {
   queueMessage,
   isOnline,
@@ -104,12 +103,11 @@ import { streamAiChat } from "@/lib/sseStream";
 import { buildNavigationContext, ACTION_ROUTES_GUIDE, detectVoiceNavCommand, pickNavConfirmation } from "@/lib/platformKnowledge";
 import { playNotificationSound as playMgrSound } from "@/lib/soundManager";
 import { AFUAI_BOT_ID } from "@/lib/afuAiBot";
-import { AFUCHAT_SYSTEM_ID } from "@/lib/afuSystemChat";
 import { GIPHY_API_KEY } from "@/lib/env";
 import { useCall } from "@/context/CallContext";
 import { BlurView } from "expo-blur";
-import { SystemNotificationCard, GroupedSystemNotificationCard, tryParseSysNotif, type GroupedSysNotifData } from "@/components/chat/SystemNotificationCard";
 import WallpaperOverlay from "@/components/chat/WallpaperOverlay";
+import { SystemNotificationCard, GroupedSystemNotificationCard, tryParseSysNotif, type GroupedSysNotifData } from "@/components/chat/SystemNotificationCard";
 import { getDailyUsage, recordDailyUsage } from "@/lib/featureUsage";
 import EmojiStickerPicker from "@/components/chat/EmojiStickerPicker";
 import GiftPickerSheet, { DbGift } from "@/components/gifts/GiftPickerSheet";
@@ -247,10 +245,6 @@ if (Platform.OS === "android" && !("RN$Bridgeless" in global) && UIManager.setLa
 
 const REACTION_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 const REACTION_EMOJIS_ADVANCED = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "👏", "😍", "🤔", "😭", "🥳", "💯", "🎉", "😎", "✨"];
-const NOTIF_FILTER_SOCIAL   = new Set(["new_follower","new_like","new_reply","new_mention","gift","missed_call","live_started","channel_post"]);
-const NOTIF_FILTER_SHOP     = new Set(["order_placed","order_shipped","escrow_released","dispute_raised","refund_issued","shop_review"]);
-const NOTIF_FILTER_PAYMENTS = new Set(["acoin_received","acoin_sent","subscription_activated","seller_approved","seller_rejected","verification_approved","verification_update"]);
-const GROUPABLE_NOTIF_TYPES = new Set(["new_like","new_reply","new_mention","new_follower"]);
 const BRAND_FALLBACK = Colors.brand;
 const DISAPPEAR_OPTIONS = [
   { label: "Off",      seconds: 0 },
@@ -1928,7 +1922,9 @@ function ChatScreen() {
   const chatInfoStateRef = useRef(chatInfo);
   chatInfoStateRef.current = chatInfo;
   const isAfuAiDirectChat = chatInfo?.other_id === AFUAI_BOT_ID;
-  const isAfuChatSystemChat = chatInfo?.other_id === AFUCHAT_SYSTEM_ID && !chatInfo?.is_group && !chatInfo?.is_channel;
+  // The legacy system-notification chat is intentionally disabled.
+  const AFUCHAT_SYSTEM_ID = "__notifications_removed__";
+  const isAfuChatSystemChat = false;
   const isSelfChat = !chatInfo?.is_group && !chatInfo?.is_channel && !!chatInfo?.other_id && chatInfo?.other_id === user?.id;
   const [phonebookName, setPhonebookName] = useState<string | null>(null);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
@@ -1983,7 +1979,6 @@ function ChatScreen() {
   }, [keyboardHeight]);
   const [miniProfileUserId, setMiniProfileUserId] = useState<string | null>(null);
   const [emojiKeyboardHeight, setEmojiKeyboardHeight] = useState(280);
-  const [reminderMsg, setReminderMsg] = useState<Message | null>(null);
   const [iAmChatAdmin, setIAmChatAdmin] = useState(false);
   const [showAddMembers, setShowAddMembers] = useState(false);
   const [showInviteLink, setShowInviteLink] = useState(false);
@@ -2049,9 +2044,8 @@ function ChatScreen() {
   }, []);
   const [showChatOptions, setShowChatOptions] = useState(false);
   const [showAppearanceSheet, setShowAppearanceSheet] = useState(false);
-  const notifPillAnim = useRef(new Animated.Value(80)).current;
-  const [notifRowsMap, setNotifRowsMap] = useState<Map<string, any>>(new Map());
-  const [actorProfileCache, setActorProfileCache] = useState<Map<string, { display_name: string | null; handle: string | null; avatar_url: string | null }>>(new Map());
+  const notifRowsMap = new Map<string, any>();
+  const actorProfileCache = new Map<string, { display_name: string | null; handle: string | null; avatar_url: string | null }>();
   const [muteUntil, setMuteUntil] = useState<string | null | undefined>(undefined);
   const [showMutePicker, setShowMutePicker] = useState(false);
   // null = muted forever; ISO string = muted until that time; undefined = not loaded / not muted
@@ -2059,18 +2053,6 @@ function ChatScreen() {
   const [disappearingEnabled, setDisappearingEnabled] = useState(false);
   const [disappearingTimer, setDisappearingTimer] = useState(86400); // seconds; 0 = off
   const [showDisappearingPicker, setShowDisappearingPicker] = useState(false);
-  // Animate the filter pill sliding up when the notifications modal opens
-  useEffect(() => {
-    if (showChatOptions && isAfuChatSystemChat) {
-      notifPillAnim.setValue(80);
-      Animated.spring(notifPillAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        speed: 18,
-        bounciness: 5,
-      }).start();
-    }
-  }, [showChatOptions, isAfuChatSystemChat]);
   const [isBlocked, setIsBlocked] = useState(false);
   const [showGiftPicker, setShowGiftPicker] = useState(false);
   const [giftSending, setGiftSending] = useState(false);
@@ -2468,16 +2450,6 @@ function ChatScreen() {
       });
       clearUnread(chatId).catch(() => {});
 
-      // ── If this is the system notification chat, mark all notifications read ──
-      if (chatInfoStateRef.current?.other_id === AFUCHAT_SYSTEM_ID && user) {
-        supabase
-          .from("notifications")
-          .update({ read: true })
-          .eq("user_id", user.id)
-          .eq("read", false)
-          .then(() => {});
-      }
-
       if (!newestStored) {
         oldestCursorRef.current = data.length > 0 ? data[data.length - 1].sent_at : null;
         setHasMore(data.length >= 50);
@@ -2667,231 +2639,7 @@ function ChatScreen() {
     };
   }, []);
 
-  // ── Fetch notifications table rows + resolve all actor profiles ──────────────
-  // DB triggers often insert notifications with actor_id but no name/avatar.
-  // We batch-resolve ALL actor_ids (from notification rows AND raw message
-  // content) in one profiles query so every notification card shows a real name.
-  useEffect(() => {
-    if (!isAfuChatSystemChat || !user) return;
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const { data: rows } = await supabase
-          .from("notifications")
-          .select("id, type, actor_id, actor_name, actor_handle, actor_avatar, entity_id, entity_type, data, title, body, created_at")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(300);
-
-        if (cancelled) return;
-
-        // Collect actor_ids that still need profile resolution:
-        // 1. from notification rows (actor_id set, name missing)
-        const notifActorIds = new Set<string>();
-        for (const r of rows || []) {
-          if (r.actor_id && (!r.actor_name && !r.actor_handle)) {
-            notifActorIds.add(r.actor_id);
-          }
-        }
-
-        // 2. from raw message content of system chat messages
-        //    (DB trigger may store actor_id only inside the JSON payload)
-        const msgActorIds = new Set<string>();
-        for (const msg of messages) {
-          if (msg.sender_id !== AFUCHAT_SYSTEM_ID) continue;
-          try {
-            const raw = JSON.parse(msg.encrypted_content || "{}");
-            const aid = raw.actor_id || raw.data?.actorId || raw.data?.actor_id;
-            if (aid && typeof aid === "string") msgActorIds.add(aid);
-          } catch {}
-        }
-
-        const allMissingIds = [...new Set([...notifActorIds, ...msgActorIds])];
-
-        const profileMap = new Map<string, { display_name: string | null; handle: string | null; avatar_url: string | null }>();
-        if (allMissingIds.length > 0) {
-          const { data: profiles } = await supabase
-            .from("profiles")
-            .select("id, display_name, handle, avatar_url")
-            .in("id", allMissingIds);
-          if (profiles) {
-            for (const p of profiles) {
-              profileMap.set(p.id, { display_name: p.display_name, handle: p.handle, avatar_url: p.avatar_url });
-            }
-          }
-        }
-
-        if (cancelled) return;
-
-        // Merge resolved profile data into notification rows
-        const enrichedRows = (rows || []).map((r) => {
-          if (r.actor_id && (!r.actor_name && !r.actor_handle)) {
-            const prof = profileMap.get(r.actor_id);
-            if (prof) {
-              return {
-                ...r,
-                actor_name: prof.display_name ?? r.actor_name,
-                actor_handle: prof.handle ?? r.actor_handle,
-                actor_avatar: prof.avatar_url ?? r.actor_avatar,
-              };
-            }
-          }
-          return r;
-        });
-
-        const map = new Map<string, any>();
-        for (const r of enrichedRows) {
-          map.set(r.created_at, r);
-          const trunc = r.created_at.replace(/\.\d+Z?$/, "");
-          if (!map.has(trunc)) map.set(trunc, r);
-        }
-        setNotifRowsMap(map);
-
-        // Store the actor profile cache for use in enrichOne when notification
-        // rows have no actor_id at all (actor_id lives only in message content)
-        setActorProfileCache(profileMap);
-      } catch {}
-    })();
-
-    return () => { cancelled = true; };
-  }, [isAfuChatSystemChat, user?.id, messages.length]);
-
-  // ── Group same-post like/reply/mention/follower notifications ────────────────
-  // Returns Map<msgId, {isRepresentative, groupData?}> for O(1) lookup in renderMessage.
-  const groupedNotifMap = useMemo(() => {
-    const result = new Map<string, { isRepresentative: boolean; groupData?: GroupedSysNotifData }>();
-    if (!isAfuChatSystemChat || messages.length === 0) return result;
-
-    // Inline enrichment — mirrors the logic in renderMessage
-    function enrichOne(msg: Message) {
-      let notif = tryParseSysNotif(msg.encrypted_content || "");
-      // Enrich _sys_notif messages whose stored JSON has actor_id but no name yet
-      // (happens when DB stored the message before actor info was populated)
-      if (notif && notif.actor_id && !notif.actor_name && !notif.actor_handle) {
-        const sentMs = new Date(msg.sent_at).getTime();
-        const notifRow =
-          notifRowsMap.get(msg.sent_at) ||
-          notifRowsMap.get(msg.sent_at.replace(/\.\d+Z?$/, "")) ||
-          (() => {
-            for (const [, r] of notifRowsMap) {
-              if (r.type === notif!.type && Math.abs(new Date(r.created_at).getTime() - sentMs) < 3000) return r;
-            }
-            return null;
-          })();
-        const cachedProf = actorProfileCache.get(notif.actor_id);
-        notif = {
-          ...notif,
-          actor_name: notifRow?.actor_name || cachedProf?.display_name || notif.actor_name,
-          actor_handle: notifRow?.actor_handle || cachedProf?.handle || notif.actor_handle,
-          actor_avatar: notifRow?.actor_avatar || cachedProf?.avatar_url || notif.actor_avatar,
-        };
-      }
-      if (!notif && msg.sender_id === AFUCHAT_SYSTEM_ID) {
-        try {
-          const raw = JSON.parse(msg.encrypted_content || "{}");
-          if (raw?.type && typeof raw.type === "string") {
-            const sentMs = new Date(msg.sent_at).getTime();
-            const notifRow =
-              notifRowsMap.get(msg.sent_at) ||
-              notifRowsMap.get(msg.sent_at.replace(/\.\d+Z?$/, "")) ||
-              (() => {
-                for (const [, r] of notifRowsMap) {
-                  if (r.type === raw.type && Math.abs(new Date(r.created_at).getTime() - sentMs) < 3000) return r;
-                }
-                return null;
-              })();
-
-            // Resolve actor from: notifRow → raw content → actorProfileCache
-            const rawActorId = notifRow?.actor_id || raw.actor_id || raw.data?.actorId || raw.data?.actor_id;
-            const cachedProf = rawActorId ? actorProfileCache.get(rawActorId) : undefined;
-            const actorName = notifRow?.actor_name || cachedProf?.display_name || undefined;
-            const actorHandle = notifRow?.actor_handle || cachedProf?.handle || undefined;
-            const actorAvatar = notifRow?.actor_avatar || cachedProf?.avatar_url || undefined;
-
-            notif = {
-              _sys_notif: true as const,
-              type: (notifRow?.type || raw.type) as string,
-              title: notifRow?.title || raw.title || "",
-              body: notifRow?.body || raw.body || "",
-              actor_id: rawActorId,
-              actor_name: actorName,
-              actor_handle: actorHandle,
-              actor_avatar: actorAvatar,
-              entity_id: notifRow?.entity_id,
-              entity_type: notifRow?.entity_type,
-              post_id: notifRow?.entity_type === "post" ? notifRow?.entity_id : (raw.data?.postId ?? undefined),
-              data: { ...(notifRow?.data || {}), ...(raw.data || {}) },
-              created_at: msg.sent_at,
-              notif_id: notifRow?.id,
-            };
-          }
-        } catch {}
-      }
-      return notif;
-    }
-
-    type GroupEntry = {
-      representativeId: string;
-      repNotif: ReturnType<typeof enrichOne>;
-      actors: GroupedSysNotifData["actors"];
-      actorKeys: Set<string>;
-      totalCount: number;
-    };
-    const groups = new Map<string, GroupEntry>();
-    const msgGroupKey = new Map<string, string>();
-
-    // messages[0] = newest; first occurrence of a group key = representative
-    for (const msg of messages) {
-      if (msg.sender_id !== AFUCHAT_SYSTEM_ID) continue;
-      const notif = enrichOne(msg);
-      if (!notif || !GROUPABLE_NOTIF_TYPES.has(notif.type)) continue;
-
-      const groupKey = notif.type === "new_follower"
-        ? "new_follower"
-        : notif.post_id ? `${notif.type}:${notif.post_id}` : null;
-      if (!groupKey) continue;
-
-      msgGroupKey.set(msg.id, groupKey);
-
-      const actorKey = notif.actor_id || notif.actor_name || "";
-      const actor = { id: notif.actor_id, name: notif.actor_name, handle: notif.actor_handle, avatar: notif.actor_avatar };
-
-      if (!groups.has(groupKey)) {
-        groups.set(groupKey, {
-          representativeId: msg.id,
-          repNotif: notif,
-          actors: [actor],
-          actorKeys: new Set(actorKey ? [actorKey] : []),
-          totalCount: 1,
-        });
-      } else {
-        const g = groups.get(groupKey)!;
-        g.totalCount++;
-        if (actorKey && !g.actorKeys.has(actorKey) && g.actors.length < 3) {
-          g.actors.push(actor);
-          g.actorKeys.add(actorKey);
-        }
-      }
-    }
-
-    for (const [msgId, groupKey] of msgGroupKey) {
-      const g = groups.get(groupKey)!;
-      if (g.totalCount < 2) continue; // single → render normally
-      const isRep = g.representativeId === msgId;
-      result.set(msgId, {
-        isRepresentative: isRep,
-        groupData: isRep && g.repNotif ? {
-          ...g.repNotif,
-          _grouped: true as const,
-          actors: g.actors,
-          totalCount: g.totalCount,
-        } : undefined,
-      });
-    }
-
-    return result;
-  }, [isAfuChatSystemChat, messages, notifRowsMap, actorProfileCache]);
+  const groupedNotifMap = new Map();
 
   const checkMessageGating = useCallback(async () => {
     if (!user) return;
@@ -3044,30 +2792,6 @@ function ChatScreen() {
             ensureChatAttachmentDownloaded(newMsg.attachment_url, newMsg.attachment_type).catch(() => {});
           }
           playNotificationSound();
-
-          // ── Keyword alerts — notify when a watched word appears ──────────
-          if (kf.keyword_alerts && kf.keyword_alerts_list && newMsg.encrypted_content) {
-            const keywords = kf.keyword_alerts_list.split(",").map((k: string) => k.trim().toLowerCase()).filter(Boolean);
-            const msgLower = (newMsg.encrypted_content as string).toLowerCase();
-            const hit = keywords.find((kw: string) => msgLower.includes(kw));
-            if (hit) {
-              try {
-                 if (isExpoGo()) return;
-                const Notifications = await import("expo-notifications");
-                const { status } = await Notifications.getPermissionsAsync();
-                if (status === "granted") {
-                  await Notifications.scheduleNotificationAsync({
-                    content: {
-                      title: `🔔 Keyword alert: "${hit}"`,
-                      body: (newMsg.encrypted_content as string).slice(0, 100),
-                      data: { chatId: activeChatId, type: "keyword_alert" },
-                    },
-                    trigger: null,
-                  });
-                }
-              } catch {}
-            }
-          }
 
           // ── Auto-reply — respond automatically for DMs ───────────────────
           const currentChatInfo = chatInfoStateRef.current;
@@ -4097,19 +3821,6 @@ function ChatScreen() {
             : "Failed to add members."
         );
       }
-      for (const uid of uids) {
-        try {
-          await supabase.from("notifications").insert({
-            user_id: uid,
-            type: "group_invite",
-            actor_id: user?.id,
-            entity_type: "chat",
-            title: "Added to group",
-            body: `You were added to ${chatInfo?.name || "a group"}`,
-            data: { chat_id: chatId },
-          });
-        } catch {}
-      }
       globalShowToast(`Added ${uids.length} member${uids.length > 1 ? "s" : ""}`, { type: "success", icon: "people" });
       setShowAddMembers(false);
     } catch (e: any) {
@@ -4664,60 +4375,6 @@ STRICT RULES:
     } catch {}
   }
 
-  async function scheduleReminder(msg: Message, secondsFromNow: number) {
-    try {
-      if (isExpoGo()) {
-        showAlert(
-          "Development build required",
-          "Message reminders are unavailable in Expo Go. Use an Expo development build or standalone app.",
-        );
-        setReminderMsg(null);
-        return;
-      }
-      const Notifications = await import("expo-notifications");
-      const { status } = await Notifications.getPermissionsAsync();
-      if (status !== "granted") {
-        const { status: reqStatus } = await Notifications.requestPermissionsAsync();
-        if (reqStatus !== "granted") {
-          showAlert("Permission needed", "Allow notifications to use message reminders.");
-          setReminderMsg(null);
-          return;
-        }
-      }
-      const preview = msg.encrypted_content?.slice(0, 80) || "Message";
-      const senderName = msg.sender?.display_name || "Someone";
-      const activeChatId = isDraft ? realChatId : id;
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: `⏰ Reminder: ${senderName}`,
-          body: preview,
-          data: { chatId: activeChatId || id, type: "message_reminder" },
-          sound: "notification.wav",
-          ...(Platform.OS === "android" && {
-            icon: "@mipmap/notification_icon",
-            largeIcon: "@mipmap/ic_launcher",
-            color: "#1f95ff",
-          }),
-        },
-        trigger: {
-          type: "timeInterval",
-          seconds: secondsFromNow,
-          repeats: false,
-        } as any,
-      });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      const label =
-        secondsFromNow <= 1800 ? "30 minutes" :
-        secondsFromNow <= 3600 ? "1 hour" :
-        secondsFromNow <= 14400 ? "4 hours" :
-        secondsFromNow <= 86400 ? "tomorrow morning" : "next week";
-      showAlert("Reminder set", `You'll be reminded about this message in ${label}.`);
-    } catch (e) {
-      showAlert("Error", "Could not set reminder. Please try again.");
-    }
-    setReminderMsg(null);
-  }
-
   async function openForward(msg: Message) {
     setForwardMsg(msg);
     const { data } = await supabase
@@ -5021,16 +4678,6 @@ STRICT RULES:
       ).filter((rid: string) => rid !== user.id);
 
       if (recipientIds.length > 0) {
-        notifyNewMessage({
-          recipientIds,
-          senderName: profile?.display_name || "Someone",
-          senderUserId: user.id,
-          messageText: text,
-          chatId: activeChatId,
-          isGroup: chatInfo.is_group,
-          groupName: chatInfo.name || undefined,
-        });
-
         // ── Broadcast fast-path: deliver instantly to every recipient's inbox ─
         // Recipients subscribed to user-inbox:${recipientId} receive this in
         // ~20 ms via Supabase Broadcast, before Postgres Changes fires.
@@ -5183,12 +4830,6 @@ STRICT RULES:
       encrypted_content: `🎁 ${gift.emoji} ${gift.name}${message.trim() ? ` - ${message.trim()}` : ""}|giftId:${gift.id}|receiverId:${receiverId}`,
     });
 
-    notifyGiftReceived({
-      recipientId: receiverId,
-      senderName: profile?.display_name || "Someone",
-      senderUserId: user.id,
-      giftName: `${gift.emoji} ${gift.name}`,
-    });
     try { const { rewardXp } = await import("../../lib/rewardXp"); rewardXp("gift_sent"); } catch (_) {}
     setShowGiftPicker(false);
     setGiftSending(false);
@@ -5335,15 +4976,7 @@ STRICT RULES:
           ? chatInfo.member_ids
           : chatInfo.other_id ? [chatInfo.other_id] : [];
         if (recipientIds.length > 0) {
-          notifyNewMessage({
-            recipientIds,
-            senderName: profile?.display_name || "Someone",
-            senderUserId: user.id,
-            messageText: label,
-            chatId: activeChatId,
-            isGroup: chatInfo.is_group,
-            groupName: chatInfo.name || undefined,
-          });
+          // Broadcast delivery is handled by the message inbox channel below.
         }
       }
     } catch (e: any) {
@@ -5962,12 +5595,7 @@ STRICT RULES:
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     try { const { rewardXp } = await import("../../lib/rewardXp"); rewardXp("red_envelope_claimed"); } catch (_) {}
     if (!isSender) {
-      notifyGiftReceived({
-        recipientId: env.sender_id,
-        senderName: profile?.display_name || "Someone",
-        senderUserId: user?.id || "",
-        giftName: `opened your red envelope (${claimResult.amount} ACoin)`,
-      });
+      // The claim is persisted by the red-envelope RPC; no notification row is created.
     }
 
     setEnvReveal({
@@ -7756,46 +7384,6 @@ STRICT RULES:
               <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: colors.textMuted, marginTop: 2 }}>Delete all messages and start a new thread</Text>
             </View>
           </TouchableOpacity>
-        </View>
-      </BottomSheet>
-
-      <BottomSheet visible={!!reminderMsg} onClose={() => setReminderMsg(null)}>
-        <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 }}>
-            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.accent + "18", alignItems: "center", justifyContent: "center" }}>
-              <Ionicons name="alarm" size={20} color={colors.accent} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 16, fontFamily: "Inter_700Bold", color: colors.text }}>Remind Me</Text>
-              <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: colors.textMuted, marginTop: 1 }} numberOfLines={1}>
-                {reminderMsg?.encrypted_content?.slice(0, 60) || "This message"}
-              </Text>
-            </View>
-          </View>
-          {[
-            { label: "In 30 minutes", icon: "time" as const, seconds: 30 * 60 },
-            { label: "In 1 hour",     icon: "time" as const, seconds: 60 * 60 },
-            { label: "In 4 hours",    icon: "time" as const, seconds: 4 * 60 * 60 },
-            { label: "Tomorrow morning", icon: "sunny" as const, seconds: (() => {
-                const now = new Date();
-                const tom = new Date(now);
-                tom.setDate(tom.getDate() + 1);
-                tom.setHours(8, 0, 0, 0);
-                return Math.max(3600, Math.floor((tom.getTime() - now.getTime()) / 1000));
-              })() },
-            { label: "Next week",     icon: "calendar" as const, seconds: 7 * 24 * 60 * 60 },
-          ].map((opt) => (
-            <TouchableOpacity
-              key={opt.label}
-              style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 13, borderTopColor: colors.border }}
-              onPress={() => reminderMsg && scheduleReminder(reminderMsg, opt.seconds)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name={opt.icon} size={20} color={colors.accent} />
-              <Text style={{ fontSize: 15, fontFamily: "Inter_500Medium", color: colors.text, flex: 1 }}>{opt.label}</Text>
-              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-            </TouchableOpacity>
-          ))}
         </View>
       </BottomSheet>
 
