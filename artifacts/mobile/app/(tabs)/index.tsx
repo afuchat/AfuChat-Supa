@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Animated,
   FlatList,
+  InteractionManager,
   Image,
   Platform,
   Pressable,
@@ -491,6 +492,8 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   const [typingChatIds, setTypingChatIds] = useState<Record<string, boolean>>({});
   const typingTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const realtimeReconcileTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chatLoadInFlightRef = useRef<Promise<void> | null>(null);
+  const lastChatLoadAtRef = useRef(0);
   // When the device goes offline the realtime channel may replay buffered
   // INSERT events on reconnect, causing every chat to appear unread. We
   // suppress the +1 increment until loadChats() has finished reconciling
@@ -538,7 +541,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     }
   }, [fabAnim]);
 
-  const loadChats = useCallback(async (background = false) => {
+  const loadChatsImpl = useCallback(async (background = false) => {
     if (!user) return;
 
     if (!background) {
@@ -946,28 +949,46 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     });
 
     setChats(finalItems);
-    // Prefetch avatars for all visible conversations so they render instantly
-    // next time, even if the app is restarted before the user opens those chats.
-    prefetchListImages(finalItems, { avatarFields: ["avatar_url", "other_avatar"] });
     // Reconciliation complete — allow realtime events to increment unread again.
     suppressUnreadIncrementRef.current = false;
-    // Discard the in-memory preload — SQLite is now fresh so next app launch
-    // will re-read it cleanly via preloadConversations().
-    invalidateConversationsPreload();
-    // Only persist real chat/group items locally (not synthetic notes or channel items)
-    const regularIds = regularItems.map((c) => c.id);
-    saveConversations(regularItems).catch(() => {});
-    // Remove any locally-cached conversations that are no longer returned by
-    // Supabase (e.g. deleted chats, chats the user left on another device).
-    // This is the primary guard against stale deleted chats reappearing.
-    pruneConversations(regularIds).catch(() => {});
-    // Proactively pre-cache messages for all visible chats so they open offline
-    // even if the user has never tapped into that conversation before.
-    // Fire-and-forget — skips any chat that already has local messages.
-    preloadConversationMessages(regularItems.map((c) => c.id)).catch(() => {});
+    // Persisting, image decoding, and message preloading are deliberately moved
+    // off the navigation path. The list is useful as soon as setChats() runs;
+    // these tasks can wait until the current gesture/transition is finished.
+    InteractionManager.runAfterInteractions(() => {
+      prefetchListImages(finalItems, { avatarFields: ["avatar_url", "other_avatar"] });
+      invalidateConversationsPreload();
+      const regularIds = regularItems.map((c) => c.id);
+      saveConversations(regularItems).catch(() => {});
+      pruneConversations(regularIds).catch(() => {});
+      // Cache only the first few conversations. Preloading every chat made
+      // opening the chat list trigger one sequential network request per chat.
+      preloadConversationMessages(regularIds.slice(0, 6)).catch(() => {});
+    });
     setLoading(false);
     setRefreshing(false);
   }, [user]);
+
+  // Initial mount and focus can fire together, and realtime can request a
+  // refresh while the previous one is still running. Reuse the active promise
+  // instead of starting another full Supabase/SQLite reconciliation. Also
+  // throttle background focus refreshes so a tab switch cannot become a
+  // network request storm.
+  const loadChats = useCallback((background = false): Promise<void> => {
+    if (!user) return Promise.resolve();
+    if (chatLoadInFlightRef.current) return chatLoadInFlightRef.current;
+    const now = Date.now();
+    if (background && now - lastChatLoadAtRef.current < 5_000) {
+      return Promise.resolve();
+    }
+    lastChatLoadAtRef.current = now;
+    const request = loadChatsImpl(background).finally(() => {
+      if (chatLoadInFlightRef.current === request) {
+        chatLoadInFlightRef.current = null;
+      }
+    });
+    chatLoadInFlightRef.current = request;
+    return request;
+  }, [user, loadChatsImpl]);
 
   useEffect(() => { loadChats(); }, [loadChats]);
   useFocusEffect(useCallback(() => { loadChats(true); }, [loadChats]));
@@ -1281,16 +1302,19 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
 
     const chatIds = chatIdsKey.split(",");
 
-    // Subscribe to new messages in each known chat.
-    // Use Date.now() suffix so each effect run gets a fresh channel name — if
-    // chatIdsKey changes while the old channel is still subscribed, Supabase
-    // would return the same cached instance and throw "cannot add postgres_changes
-    // callbacks after subscribe()".
+    // One filtered callback is much cheaper than registering one callback per
+    // chat. The client still verifies the chat ID below, while Supabase does
+    // the first-stage filtering server-side.
+    const realtimeChatIds = chatIds.slice(0, 100);
     const msgChannel = supabase.channel(`chatlist-messages:${user.id}:${Date.now()}`);
-    chatIds.forEach((chatId) => {
-      msgChannel.on(
+    msgChannel.on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages", filter: `chat_id=eq.${chatId}` },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `chat_id=in.(${realtimeChatIds.join(",")})`,
+        },
         (payload: any) => {
           const msg = payload.new as {
             id: string;
@@ -1350,7 +1374,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
           realtimeReconcileTimer.current = setTimeout(() => loadChats(true), 2000);
         }
       );
-    });
     // The status callback fires synchronously when the WebSocket closes —
     // BEFORE Supabase replays any buffered events. This closes the race window
     // where NetInfo fires `offline` too late and buffered INSERTs slip through

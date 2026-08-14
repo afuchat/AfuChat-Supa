@@ -19,7 +19,7 @@ initCrashReporter();
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { AppState, Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
+import { AppState, InteractionManager, Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
 import { Stack, usePathname, router } from "expo-router";
 import { setCurrentPage, resolvePageInfo } from "@/lib/pageTracker";
 import { StatusBar } from "expo-status-bar";
@@ -238,6 +238,15 @@ export default function RootLayout() {
     setSplashDone(true);
   }, []);
 
+  // The visual splash overlay is intentionally native-only. Explicitly hide
+  // the platform splash on web as well; otherwise preventAutoHideAsync() above
+  // can leave the web preview looking like a blank screen forever.
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, []);
+
   // Enable react-native-screens optimisation. Called here (inside a component,
   // not at module-eval time) so the Android activity is guaranteed to be fully
   // initialized before the native call runs. Module-eval is too early on some
@@ -293,39 +302,32 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    // Conversations pre-warm: kick off the SQLite read NOW so ChatsScreen can
-    // initialise synchronously from the in-memory snapshot instead of waiting
-    // for an async read.  Doing this inside useEffect (not at module-eval time)
-    // ensures the native runtime is fully up before we touch MMKV storage.
-    if (getCachedUserId()) {
-      preloadConversations();
-    }
+    // Keep the first route responsive. These jobs are useful, but none of them
+    // is required to render or navigate the first screen. Starting them all in
+    // the same effect as navigation made cold starts compete with SQLite,
+    // image decoding, and queued network work for the JS/native bridge.
+    const task = InteractionManager.runAfterInteractions(() => {
+      if (getCachedUserId()) {
+        preloadConversations();
+      }
 
-    // Decode bundled visuals and icon glyphs while the first route is mounting.
-    // These assets are shipped inside the app and do not require internet.
-    Asset.loadAsync([
-      require("@/assets/images/icon.png"),
-      require("@/assets/images/logo_white.webp"),
-      require("@/assets/images/logo_black.webp"),
-      require("@/assets/illustrations/messaging.webp"),
-      require("@/assets/illustrations/community.webp"),
-      require("@/assets/illustrations/ai.webp"),
-      require("@/assets/illustrations/wallet.webp"),
-    ]).catch(() => {});
-    Ionicons.loadFont().catch(() => {});
+      Asset.loadAsync([
+        require("@/assets/images/icon.png"),
+        require("@/assets/images/logo_white.webp"),
+        require("@/assets/images/logo_black.webp"),
+        require("@/assets/illustrations/messaging.webp"),
+        require("@/assets/illustrations/community.webp"),
+        require("@/assets/illustrations/ai.webp"),
+        require("@/assets/illustrations/wallet.webp"),
+      ]).catch(() => {});
+      Ionicons.loadFont().catch(() => {});
 
-    // Start the offline sync engine and action queue auto-drain.
-    // These are idempotent — safe to call multiple times (they guard internally).
-    // • startOfflineSync: drains pending messages and reconnects Supabase Realtime
-    //   when the network comes back.
-    // • startSyncQueue: replays queued offline actions (likes, follows, bookmarks,
-    //   reactions, read receipts) the moment connectivity is restored.
-    startOfflineSync();
-    startSyncQueue();
+      startOfflineSync();
+      startSyncQueue();
+      runScheduledVideoPurge().catch(() => {});
+    });
 
-    // Auto-purge offline videos older than 24 hours. Throttled internally so it
-    // runs at most once per 24-hour window regardless of how often the app opens.
-    runScheduledVideoPurge().catch(() => {});
+    return () => task.cancel();
   }, []);
 
 
