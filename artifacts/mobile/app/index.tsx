@@ -79,20 +79,25 @@ export default function IndexScreen() {
   // a slow network or right after a device reboot.
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (redirected.current) return;
-      redirected.current = true;
+      // If auth already resolved, the main effect owns navigation. The old
+      // timer could still redirect just after a slow Android auth restore and
+      // replace a valid destination with Welcome/Chats.
+      if (redirected.current || !loading) return;
       if (handle) {
+        redirected.current = true;
         router.replace(`/${handle}` as any);
       } else if (getCachedUserId() || user?.id) {
+        redirected.current = true;
         router.replace("/(tabs)/chats");
       } else {
+        redirected.current = true;
         const onboardingDone = (() => { try { return storage.getBoolean(KEYS.ONBOARDING_DONE); } catch { return false; } })();
         router.replace(onboardingDone ? "/(auth)/login" : "/welcome");
       }
     }, 2500);
 
     return () => clearTimeout(timeout);
-  }, [handle]);
+  }, [handle, loading, user?.id]);
 
   // Keep the boot route visibly responsive while Supabase restores a session
   // or the cached identity decides where to route. Returning null here made a

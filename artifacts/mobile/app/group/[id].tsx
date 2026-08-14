@@ -373,7 +373,7 @@ export default function GroupManageScreen() {
               .delete()
               .eq("chat_id", id)
               .eq("user_id", user.id);
-            router.replace("/(tabs)/index");
+            router.replace("/(tabs)/chats" as any);
           },
         },
       ]
@@ -394,7 +394,7 @@ export default function GroupManageScreen() {
           onPress: async () => {
             setSaving(true);
             await supabase.from("chats").delete().eq("id", id);
-            router.replace("/(tabs)/index");
+            router.replace("/(tabs)/chats" as any);
           },
         },
       ]

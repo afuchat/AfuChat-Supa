@@ -1284,6 +1284,7 @@ export default function DiscoverScreen() {
   // Ref tracking the newest post's created_at currently shown in feed (for polling)
   const newestPostAtRef = useRef<string | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollInFlightRef = useRef(false);
   // Timestamp of the last pill dismissal — poller won't show pill again until cooldown expires
   const pillDismissedAtRef = useRef<number>(0);
   const PILL_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
@@ -2098,6 +2099,13 @@ export default function DiscoverScreen() {
   }, []);
 
   useEffect(() => {
+    const staleChannel = supabase
+      .getChannels()
+      .find((channel) => channel.topic === "realtime:discover-posts-realtime");
+    if (staleChannel) {
+      supabase.removeChannel(staleChannel).catch(() => {});
+    }
+
     const channel = supabase
       .channel("discover-posts-realtime")
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "posts" }, (payload: any) => {
@@ -2150,8 +2158,10 @@ export default function DiscoverScreen() {
   // taps the pill — so the current reading position never shifts unexpectedly.
   useEffect(() => {
     const POLL_INTERVAL_MS = 60_000;
+    let cancelled = false;
 
     const poll = async () => {
+      if (pollInFlightRef.current) return;
       if (!isOnline()) return;
       const newestAt = newestPostAtRef.current;
       if (!newestAt) return;
@@ -2160,6 +2170,8 @@ export default function DiscoverScreen() {
       // Respect the cooldown after pill dismissal
       if (Date.now() - pillDismissedAtRef.current < PILL_COOLDOWN_MS) return;
 
+      pollInFlightRef.current = true;
+      try {
       const activeTab = feedTabRef.current;
       const fySelect = `
         id, author_id, content, image_url, created_at, view_count, like_count, visibility,
@@ -2201,7 +2213,7 @@ export default function DiscoverScreen() {
         }
       }
 
-      if (!newPostsData.length) return;
+      if (!newPostsData.length || cancelled) return;
 
       // Map to PostItem
       const mappedPosts: PostItem[] = newPostsData.map((p: any) => ({
@@ -2271,10 +2283,14 @@ export default function DiscoverScreen() {
           return combined.slice(0, 5);
         });
       }
+      } finally {
+        pollInFlightRef.current = false;
+      }
     };
 
     pollIntervalRef.current = setInterval(poll, POLL_INTERVAL_MS);
     return () => {
+      cancelled = true;
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     };
   // Re-run when user changes so we get the right `user?.id` closure

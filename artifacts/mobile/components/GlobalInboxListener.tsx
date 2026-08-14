@@ -49,6 +49,16 @@ export function GlobalInboxListener() {
     let retryCount = 0;
     let currentChannel: ReturnType<typeof supabase.channel> | null = null;
 
+    // React effects can be re-entered during auth transitions or dev Strict
+    // Mode. Evict a channel left behind by the previous effect before adding
+    // handlers; Supabase caches channels by topic.
+    const staleChannel = supabase
+      .getChannels()
+      .find((channel) => channel.topic === `realtime:user-inbox:${user.id}`);
+    if (staleChannel) {
+      supabase.removeChannel(staleChannel).catch(() => {});
+    }
+
     const connect = () => {
       if (destroyed) return;
 
@@ -58,8 +68,13 @@ export function GlobalInboxListener() {
         })
         .on("broadcast", { event: "new_message" }, ({ payload }) => {
           handlePayload(payload);
-        })
-        .subscribe((status: string) => {
+        });
+
+      // Assign before subscribe. A fast terminal status can otherwise arrive
+      // before currentChannel is set and leave the failed channel registered.
+      currentChannel = ch;
+      ch.subscribe((status: string) => {
+          if (currentChannel !== ch) return;
           if (status === "SUBSCRIBED") {
             retryCount = 0;
           } else if (
@@ -78,8 +93,6 @@ export function GlobalInboxListener() {
             }
           }
         });
-
-      currentChannel = ch;
     };
 
     connect();

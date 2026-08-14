@@ -19,21 +19,15 @@ initCrashReporter();
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { AppState, InteractionManager, Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
+import { AppState, Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
 import { Stack, usePathname, router } from "expo-router";
 import { setCurrentPage, resolvePageInfo } from "@/lib/pageTracker";
 import { StatusBar } from "expo-status-bar";
 import * as Font from "expo-font";
-import { Asset } from "expo-asset";
-import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import {
-  getCachedUserId,
-  onConnectivityChange,
-  isOnline,
   initUserIdCache,
 } from "@/lib/offlineStore";
-import { preloadConversations } from "@/lib/conversationsPreload";
 import { refreshAllPermissions } from "@/lib/permissionsManager";
 
 // ── Boot-time UID cache warm-up ──────────────────────────────────────────────
@@ -70,9 +64,6 @@ import OfflineBanner from "@/components/ui/OfflineBanner";
 import { GlobalInboxListener } from "@/components/GlobalInboxListener";
 import UpdatePrompt from "@/components/UpdatePrompt";
 import { initActivityTracker } from "@/lib/activityTracker";
-import { startOfflineSync } from "@/lib/offlineSync";
-import { startSyncQueue } from "@/lib/storage/syncQueue";
-import { runScheduledVideoPurge } from "@/lib/videoCache";
 import { MiniAppRuntimeProvider } from "@/lib/superapp/MiniAppRuntime";
 import { AnimationGuardInit } from "@/components/AnimationGuardInit";
 import { SplashScreenView } from "@/components/ui/SplashScreenView";
@@ -302,32 +293,22 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    // Keep the first route responsive. These jobs are useful, but none of them
-    // is required to render or navigate the first screen. Starting them all in
-    // the same effect as navigation made cold starts compete with SQLite,
-    // image decoding, and queued network work for the JS/native bridge.
-    const task = InteractionManager.runAfterInteractions(() => {
-      if (getCachedUserId()) {
-        preloadConversations();
-      }
+    // Do not compete with the first route for the JS/native bridge. Auth starts
+    // sync only after identity restoration, while storage maintenance is delayed
+    // until the first screen has had time to settle.
+    const timer = setTimeout(() => {
+      // Keep maintenance modules out of the critical startup bundle. These
+      // imports are intentionally lazy because storage/index re-exports many
+      // SQLite/cache modules.
+      import("@/lib/storage")
+        .then(({ initDeviceStorage }) => initDeviceStorage())
+        .catch(() => {});
+      import("@/lib/videoCache")
+        .then(({ runScheduledVideoPurge }) => runScheduledVideoPurge())
+        .catch(() => {});
+    }, 2000);
 
-      Asset.loadAsync([
-        require("@/assets/images/icon.png"),
-        require("@/assets/images/logo_white.webp"),
-        require("@/assets/images/logo_black.webp"),
-        require("@/assets/illustrations/messaging.webp"),
-        require("@/assets/illustrations/community.webp"),
-        require("@/assets/illustrations/ai.webp"),
-        require("@/assets/illustrations/wallet.webp"),
-      ]).catch(() => {});
-      Ionicons.loadFont().catch(() => {});
-
-      startOfflineSync();
-      startSyncQueue();
-      runScheduledVideoPurge().catch(() => {});
-    });
-
-    return () => task.cancel();
+    return () => clearTimeout(timer);
   }, []);
 
 

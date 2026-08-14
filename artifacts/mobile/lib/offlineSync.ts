@@ -5,7 +5,7 @@ import {
   onConnectivityChange,
   isOnline,
 } from "./offlineStore";
-import { drainQueue } from "./storage/syncQueue";
+import { drainQueue, startSyncQueue } from "./storage/syncQueue";
 import {
   getPendingLocalMessages,
   markMessageSynced,
@@ -138,6 +138,10 @@ function stopRetryInterval(): void {
 
 export function startOfflineSync(): void {
   if (unsubscribe) return;
+
+  // Keep both offline systems under the same authenticated lifecycle. The root
+  // layout must not start either one before Supabase has restored identity.
+  startSyncQueue();
 
   unsubscribe = onConnectivityChange((online) => {
     if (online) {
