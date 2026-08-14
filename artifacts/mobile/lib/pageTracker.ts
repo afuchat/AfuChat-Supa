@@ -126,11 +126,10 @@ const ROUTE_MAP: Array<{ match: RegExp; name: string; summary: string }> = [
   { match: /^\/settings\/privacy-restricted/, name: "Restricted Accounts", summary: "Manage accounts you've restricted from interacting with you." },
   { match: /^\/settings\/privacy/, name: "Privacy Settings", summary: "Manage your privacy settings — who can see and interact with your account." },
   { match: /^\/settings\/security/, name: "Security Settings", summary: "Password, two-factor authentication, and linked accounts." },
-  { match: /^\/settings\/notifications/, name: "Notification Settings", summary: "Manage which notifications you receive from AfuChat." },
   { match: /^\/settings\/blocked/, name: "Blocked Users", summary: "View and manage the accounts you've blocked." },
   { match: /^\/settings\/chat/, name: "Chat Settings", summary: "Chat appearance and message preferences." },
   { match: /^\/settings\/storage/, name: "Storage Settings", summary: "Manage downloaded content and free up app storage." },
-  { match: /^\/settings/, name: "Settings", summary: "AfuChat account and app settings — security, privacy, notifications, and more." },
+  { match: /^\/settings/, name: "Settings", summary: "AfuChat account, privacy, and app settings." },
 
   // Lab / AI
   { match: /^\/lab/, name: "AfuChat Lab (AI Lens)", summary: "AfuChat Lab's AI Lens — point your camera at anything for instant AI-powered identification, facts, and answers." },

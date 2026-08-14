@@ -129,7 +129,6 @@ export const PLATFORM_NAV_MAP = `
 | /settings/privacy-download | Download your data |
 | /settings/privacy-data | Data usage settings |
 | /settings/privacy-restricted | Restricted accounts |
-| /settings/notifications | Notification preferences |
 | /settings/blocked | Manage blocked accounts |
 | /settings/chat | Chat appearance and preferences |
 | /settings/storage | Manage downloaded content and storage |
@@ -305,7 +304,7 @@ export const ACTION_ROUTES_GUIDE = `
 Valid routes for [ACTION:Button label:/route] tags:
 /wallet | /wallet/topup | /wallet/requests | /wallet/gift-vault
 /premium | /referral | /monetize | /prestige | /username-market
-/profile/edit | /settings | /settings/security | /settings/privacy | /settings/notifications | /settings/blocked | /settings/two-factor
+/profile/edit | /settings | /settings/security | /settings/privacy | /settings/blocked | /settings/two-factor
 /moments/create | /moments/create-video | /moments/create-article | /shorts | /saved-posts | /my-posts
 /search | /discover | /contacts | /communities | /me | /user-discovery
 /shop/cart | /shop/my-orders | /shop/manage | /shop/apply | /gifts/marketplace | /gifts

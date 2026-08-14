@@ -10,7 +10,7 @@ description: lib/permissionsManager.ts and lib/navigation.ts provide centralised
 **Rule:** All permission requests must go through `requestPermission(type)` or `checkPermission(type)`.
 
 - Caches statuses in MMKV under `perm_status_<type>` keys — synchronous read via `getPermissionStatus(type)`.
-- Types: `"notifications" | "camera" | "microphone" | "mediaLibrary" | "contacts" | "location"`.
+- Types: `"camera" | "microphone" | "mediaLibrary" | "contacts" | "location"`.
 - Fast-path: if MMKV has `"granted"` or `"blocked"`, no native call is made.
 - `refreshAllPermissions()` — re-checks all statuses from OS; call when app returns to foreground.
 - **Permission keys survive `wipeAllLocalData`** — they are preserved in the MMKV snapshot/restore loop (device-level, not account-level).
@@ -23,7 +23,6 @@ description: lib/permissionsManager.ts and lib/navigation.ts provide centralised
 
 - `Navigate.toChat(params)`, `Navigate.toChats()`, `Navigate.toLogin()`, `Navigate.back()`, etc.
 - Works identically online and offline (Expo Router resolves from local bundle).
-- `ChatParams.fromNotification` is `string` not `boolean` (Expo Router `UnknownInputParams` requires `string | number | (string|number)[]`).
 
 **Why:** Hardcoded path strings scattered across 50+ files; renaming a route required grep-and-replace across the whole codebase.
 

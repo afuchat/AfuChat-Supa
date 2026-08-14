@@ -13,7 +13,7 @@ description: Systematic crash risks found and fixed in AfuChat (Expo React Nativ
 ### 2. Supabase .then() without .catch() (HIGH)
 Promise chains from supabase calls inside useEffect, event handlers, or background tasks silently crash.
 **Fix:** Always add `.catch(() => {})` on any `.then()` chain from supabase.
-**Files hit:** AuthContext, pushNotifications, notificationActions, AdvancedFeaturesContext, me.tsx, notifications.tsx
+**Files hit:** AuthContext, AdvancedFeaturesContext, me.tsx
 
 ### 3. await supabase calls without try/catch (MEDIUM)
 `await supabase.from(...).select(...)` without try/catch crashes if network is down or session expired.

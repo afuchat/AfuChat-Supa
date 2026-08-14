@@ -252,7 +252,7 @@ export default function RootLayout() {
   }, []);
 
   // Refresh OS permission statuses whenever the app comes back to foreground.
-  // The user may have changed a permission (camera, mic, notifications, etc.)
+  // The user may have changed a permission (camera, mic, etc.)
   // in iOS/Android Settings while the app was backgrounded.  We re-query and
   // update the MMKV cache so every screen that reads getPermissionStatus() /
   // isPermissionGranted() always sees the current state without a native

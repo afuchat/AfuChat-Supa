@@ -24,4 +24,4 @@ In APK release builds (`__DEV__ = false`), the guard is bypassed → `makeMutabl
 - Use a plain mutable object `{ value: false }` with `useRef` — no Reanimated needed at all
 - This is the fix applied in `artifacts/mobile/context/TabSwipeContext.tsx`
 
-Also note: the `ClassicTabLayout` in `_tabLayout.tsx` uses `lazy: false` as the default `screenOptions`, meaning ALL tab screens (chats, discover, notifications, apps, me) mount simultaneously on first navigation to any tab route. Any crash in any tab screen's first render will appear as a crash "when logging in."
+Also note: the `ClassicTabLayout` in `_tabLayout.tsx` uses `lazy: false` as the default `screenOptions`, meaning all tab screens mount simultaneously on first navigation to any tab route. Any crash in any tab screen's first render will appear as a crash "when logging in."

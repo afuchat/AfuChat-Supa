@@ -211,8 +211,7 @@ async function runMigrations(db: DB) {
 
   if (currentVersion < 11) {
     const safe = async (sql: string) => { try { await db.execAsync(sql); } catch {} };
-    // Keep the local notification cache intact during upgrades. Older code
-    // dropped this table, which caused avoidable local data loss.
+    // Preserve existing local data during this schema version.
     await db.runAsync("UPDATE schema_version SET version = 11");
   }
 
@@ -241,7 +240,7 @@ async function runMigrations(db: DB) {
     await db.runAsync("UPDATE schema_version SET version = 13");
   }
 
-  // ── v14: remove the legacy notification cache ──────────────────────────────
+  // ── v14: remove an obsolete local cache ────────────────────────────────────
   if (currentVersion < 14) {
     await db.execAsync(`
       DROP INDEX IF EXISTS idx_notif_created;
@@ -251,7 +250,7 @@ async function runMigrations(db: DB) {
     await db.runAsync("UPDATE schema_version SET version = 14");
   }
 
-  // ── v15: remove notification preference columns from local settings ───────
+  // ── v15: remove obsolete preference columns from local settings ────────────
   if (currentVersion < 15) {
     const safe = async (sql: string) => { try { await db.execAsync(sql); } catch {} };
     for (const column of [

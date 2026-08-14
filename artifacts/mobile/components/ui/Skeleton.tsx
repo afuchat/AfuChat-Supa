@@ -245,19 +245,6 @@ export function ContactProfileSkeleton() {
   );
 }
 
-export function NotificationSkeleton() {
-  const { colors } = useTheme();
-  return (
-    <View style={[sk.row, { borderBottomColor: colors.border }]}>
-      <Skeleton width={40} height={40} borderRadius={20} />
-      <View style={sk.rowContent}>
-        <Skeleton width={180} height={14} />
-        <Skeleton width={100} height={12} style={{ marginTop: 6 }} />
-      </View>
-    </View>
-  );
-}
-
 export function GiftCardSkeleton() {
   const { colors } = useTheme();
   return (

@@ -12,7 +12,6 @@ Do NOT use `Reanimated.View` + `useAnimatedStyle(() => ({ transform: [...] }))` 
 - For page-level swipe animations: use native `ScrollView` with `horizontal + pagingEnabled` + `scrollTo` imperative control. No transform arrays needed.
 - For dot indicators: use plain `View` with step-based inline styles (width/borderRadius/opacity) instead of `useAnimatedStyle`.
 - For static accent/scale effects: use `borderWidth + borderColor` instead of `transform: [{ scale }]` in StyleSheet.
-- `vibrationPattern` arrays in `setNotificationChannelAsync` also crash in Expo Go new arch — remove them, `enableVibrate: true` is sufficient.
 - Screens in (tabs) use React Native's `Animated.View` (old arch animation API) for transforms — this works fine. The crash is specific to `Reanimated.View`.
 - The onboarding fix: replaced `GestureDetector + Reanimated.View pager` with `ScrollView pagingEnabled + onMomentumScrollEnd` for swipe validation.
 - `MiniAppWindow.tsx` fix: replaced `useSharedValue/useAnimatedStyle/withSpring/withTiming/runOnJS` with `useRef(new Animated.Value)` + `Animated.spring/timing/parallel`. `.start()` callback replaces `runOnJS(setShowing)`. Behaviour is identical.
