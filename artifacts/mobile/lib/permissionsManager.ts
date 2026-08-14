@@ -13,8 +13,6 @@
 //   if (status !== "granted") { /* show guidance */ }
 //
 //   // Or check cached status synchronously (no native call):
-//   if (isPermissionGranted("notifications")) { ... }
-
 import { Platform } from "react-native";
 import { storage } from "./storage/mmkv";
 import { isExpoGo } from "@/lib/expoEnvironment";
@@ -22,7 +20,6 @@ import { isExpoGo } from "@/lib/expoEnvironment";
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 export type PermissionType =
-  | "notifications"
   | "camera"
   | "microphone"
   | "mediaLibrary"
@@ -76,7 +73,7 @@ export function isPermissionGranted(type: PermissionType): boolean {
 export async function refreshAllPermissions(): Promise<void> {
   if (Platform.OS === "web" || isExpoGo()) return;
   const types: PermissionType[] = [
-    "notifications", "camera", "microphone", "mediaLibrary", "contacts",
+    "camera", "microphone", "mediaLibrary", "contacts",
   ];
   await Promise.all(types.map((t) => checkPermission(t).catch(() => {})));
 }
@@ -94,9 +91,7 @@ export async function refreshAllPermissions(): Promise<void> {
  * Safe to call multiple times — uses cached state to skip redundant prompts.
  */
 export async function requestPermission(type: PermissionType): Promise<PermissionStatus> {
-  // Web: forward to browser permission API for notifications; others auto-grant.
   if (Platform.OS === "web") return _requestWeb(type);
-  if (type === "notifications" && isExpoGo()) return "undetermined";
 
   // Fast path: already granted or hard-blocked → no native call needed.
   const cached = getPermissionStatus(type);
@@ -105,7 +100,6 @@ export async function requestPermission(type: PermissionType): Promise<Permissio
 
   try {
     switch (type) {
-      case "notifications": return await _requestNotifications();
       case "camera":        return await _requestCamera();
       case "microphone":    return await _requestMicrophone();
       case "mediaLibrary":  return await _requestMediaLibrary();
@@ -124,10 +118,8 @@ export async function requestPermission(type: PermissionType): Promise<Permissio
  */
 export async function checkPermission(type: PermissionType): Promise<PermissionStatus> {
   if (Platform.OS === "web") return getPermissionStatus(type);
-  if (type === "notifications" && isExpoGo()) return getPermissionStatus(type);
   try {
     switch (type) {
-      case "notifications": return await _checkNotifications();
       case "camera":        return await _checkCamera();
       case "microphone":    return await _checkMicrophone();
       case "mediaLibrary":  return await _checkMediaLibrary();
@@ -154,40 +146,9 @@ function _norm(raw: string, type: PermissionType): PermissionStatus {
 // ─── Internal: web ─────────────────────────────────────────────────────────────
 
 async function _requestWeb(type: PermissionType): Promise<PermissionStatus> {
-  if (type === "notifications") {
-    try {
-      if (typeof Notification === "undefined") return "undetermined";
-      if (Notification.permission === "granted") { setPermissionStatus(type, "granted"); return "granted"; }
-      if (Notification.permission === "denied")  { setPermissionStatus(type, "blocked"); return "blocked"; }
-      const result = await Notification.requestPermission();
-      const s: PermissionStatus = result === "granted" ? "granted" : "blocked";
-      setPermissionStatus(type, s);
-      return s;
-    } catch { return "undetermined"; }
-  }
   // Camera/microphone use getUserMedia — we don't cache the result here
   // (the browser manages them); report as undetermined so callers fall through.
   return "undetermined";
-}
-
-// ─── Internal: notifications ───────────────────────────────────────────────────
-
-async function _requestNotifications(): Promise<PermissionStatus> {
-  try {
-    const { requestPermissionsAsync } = require("expo-notifications") as typeof import("expo-notifications");
-    const { status } = await requestPermissionsAsync({
-      ios: { allowAlert: true, allowBadge: true, allowSound: true },
-    });
-    return _norm(status, "notifications");
-  } catch { return "undetermined"; }
-}
-
-async function _checkNotifications(): Promise<PermissionStatus> {
-  try {
-    const { getPermissionsAsync } = require("expo-notifications") as typeof import("expo-notifications");
-    const { status } = await getPermissionsAsync();
-    return _norm(status, "notifications");
-  } catch { return getPermissionStatus("notifications"); }
 }
 
 // ─── Internal: camera ──────────────────────────────────────────────────────────

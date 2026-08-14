@@ -27,7 +27,6 @@
 import { Platform, NativeModules, TurboModuleRegistry } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { saveLocalCall } from "@/lib/storage/localCallHistory";
-import { notifyMissedCall } from "@/lib/notifyUser";
 import { emitCallAudio } from "@/lib/callAudioBus";
 import { isExpoGo } from "@/lib/expoEnvironment";
 
@@ -457,20 +456,10 @@ export async function startCall(params: {
     if (error) console.warn("[CallEngine] calls insert error:", error.message);
   }, () => {});
 
-  // Ring timeout — callee didn't answer (offline, FCM unreachable, or ignored)
+  // Ring timeout — callee didn't answer (offline or ignored)
   _ringTimer = setTimeout(() => {
     if (_status === "outgoing_ringing") {
-      const info = _info;
       _saveCallRecord("missed");
-      if (info) {
-        notifyMissedCall({
-          calleeId: info.calleeId,
-          callerId: info.callerId,
-          callId: info.callId,
-          callType: "voice",
-          callerName: info.callerName,
-        }).catch(() => {});
-      }
       _doHangup("unreachable");
     }
   }, RING_TIMEOUT_MS);

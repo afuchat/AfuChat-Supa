@@ -75,7 +75,7 @@
 }
 -dontwarn kotlinx.serialization.**
 
-# ─── Firebase + Google Play Services (FCM push notifications) ────────────────
+# ─── Firebase + Google Play Services ─────────────────────────────────────────
 -keep class com.google.firebase.** { *; }
 -keep class com.google.android.gms.** { *; }
 -dontwarn com.google.firebase.**
@@ -93,10 +93,6 @@
 # (expo-av has its own keep-screen-on logic), so suppressing the missing-class
 # warning is safe and is the fix recommended in the generated missing_rules.txt.
 -dontwarn expo.modules.core.interfaces.services.KeepAwakeManager
-
-# Expo Notifications — the NotificationsModule uses BroadcastReceiver and
-# Service subclasses that Android instantiates by name from the manifest.
--keep class expo.modules.notifications.** { *; }
 
 # Expo SecureStore — calls Android Keystore APIs via JNI reflection.
 -keep class expo.modules.securestore.** { *; }

@@ -96,21 +96,6 @@ export default function MoneyRequestScreen() {
 
       if (error) { showAlert("Error", "Could not send request. Please try again."); setSending(false); return; }
 
-      // Notify the target using existing notifications table columns
-      supabase.from("notifications").insert({
-        user_id: target.id,
-        type: "money_request",
-        actor_id: user.id,
-        actor_name: profile.display_name,
-        actor_handle: profile.handle,
-        actor_avatar: (profile as any).avatar_url || null,
-        entity_type: "money_request",
-        title: "Money Request",
-        body: `@${profile.handle} is requesting ${fmtAmt(amt)} ${currency === "acoin" ? "ACoin" : "Nexa"} from you`,
-        data: { currency, amount: amt, note: note.trim() || null },
-        read: false,
-      }).then(() => {}, () => {});
-
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       showAlert(
         "Request Sent!",

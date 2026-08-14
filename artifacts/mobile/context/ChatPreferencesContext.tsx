@@ -49,7 +49,6 @@ export type ChatPrefs = {
   reactions_enabled: boolean;
   autoplay_gifs: boolean;
   screenshot_protection: boolean;
-  notification_preview: boolean;
   send_haptics: boolean;
   message_grouping: boolean;
 };
@@ -111,7 +110,6 @@ export const defaults: ChatPrefs = {
   reactions_enabled: true,
   autoplay_gifs: true,
   screenshot_protection: false,
-  notification_preview: true,
   send_haptics: true,
   message_grouping: true,
 };

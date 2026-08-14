@@ -1,6 +1,5 @@
 import "@/polyfills";
 import "react-native-gesture-handler";
-import "@/lib/callService";
 import * as SplashScreen from "expo-splash-screen";
 
 // Keep the native splash visible until we explicitly hide it

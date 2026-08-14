@@ -28,7 +28,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "@/lib/haptics";
 import { supabase } from "@/lib/supabase";
-import { AFUCHAT_SYSTEM_ID } from "@/lib/afuSystemChat";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
@@ -87,88 +86,6 @@ function stripMdPreview(s: string): string {
     .trim();
 }
 
-function decodeSysNotifPreview(raw: string): string | null {
-  if (!raw.startsWith("{")) return null;
-  try {
-    const p = JSON.parse(raw);
-    // Helper: resolve actor name from either format
-    const actor: string =
-      p.actor_name || p.actor_handle ||
-      (p.data as any)?.actorName || (p.data as any)?.actor_name ||
-      "Someone";
-
-    // ── Format 1: _sys_notif (SystemNotificationCard format) ──────────────────
-    if (p?._sys_notif) {
-      const type: string = p.type || "";
-      switch (type) {
-        case "new_follower":           return `👤 ${actor} started following you`;
-        case "new_like":               return `❤️ ${actor} liked your post`;
-        case "new_reply":              return `💬 ${actor} replied to your post`;
-        case "new_mention":            return `💬 ${actor} mentioned you`;
-        case "gift":                   return `🎁 ${actor} sent you a gift`;
-        case "missed_call":            return `📞 Missed call from ${actor}`;
-        case "order_placed":           return `🛍️ New order from ${actor}`;
-        case "order_shipped":          return `📦 Your order has shipped`;
-        case "escrow_released":        return `💰 Payment released to your wallet`;
-        case "dispute_raised":         return `⚠️ Dispute opened by ${actor}`;
-        case "refund_issued":          return `✅ Refund issued to your wallet`;
-        case "shop_review":            return `⭐ ${actor} left you a review`;
-        case "acoin_received":         return `💰 ${p.body || "AC received"}`;
-        case "acoin_sent":             return `💸 ${p.body || "AC sent"}`;
-        case "live_started":           return `🔴 ${actor} is live now`;
-        case "channel_post":           return `📢 New post from ${actor}`;
-        case "subscription_activated": return `⭐ Premium subscription activated`;
-        case "seller_approved":        return `✅ Seller account approved`;
-        case "verification_approved":  return `✅ Your account is now verified`;
-        case "system_welcome":         return `👋 Welcome to AfuChat!`;
-        default:                       return p.title || p.body || "Notification";
-      }
-    }
-
-    // ── Format 2: raw notification / push-payload format ─────────────────────
-    // Shape: { body: string, data: {...}, type: string, title?: string }
-    // This is what the DB trigger stores when routing notifications to the
-    // system chat. body is often empty so we fall back to a type-based label.
-    if (p?.type && typeof p.type === "string") {
-      const body: string = typeof p.body === "string" ? p.body.trim() : "";
-      const title: string = typeof p.title === "string" ? p.title.trim() : "";
-      if (body) return body;
-      if (title) return title;
-      const t: string = p.type;
-      switch (t) {
-        case "new_follower":           return `👤 ${actor} started following you`;
-        case "new_like":               return `❤️ ${actor} liked your post`;
-        case "new_reply":              return `💬 ${actor} replied to your post`;
-        case "new_mention":            return `💬 ${actor} mentioned you`;
-        case "gift":                   return `🎁 ${actor} sent you a gift`;
-        case "missed_call":
-        case "call":                   return `📞 Missed call from ${actor}`;
-        case "message":                return `💬 New message`;
-        case "order_placed":           return `🛍️ New order from ${actor}`;
-        case "order_shipped":          return `📦 Your order has shipped`;
-        case "escrow_released":        return `💰 Payment released`;
-        case "dispute_raised":         return `⚠️ Dispute opened`;
-        case "refund_issued":          return `✅ Refund issued`;
-        case "shop_review":            return `⭐ ${actor} left a review`;
-        case "acoin_received":         return `💰 AfuCoins received`;
-        case "acoin_sent":             return `💸 AfuCoins sent`;
-        case "live_started":           return `🔴 ${actor} is live`;
-        case "channel_post":           return `📢 New post from ${actor}`;
-        case "subscription_activated": return `⭐ Premium activated`;
-        case "seller_approved":        return `✅ Seller account approved`;
-        case "verification_approved":  return `✅ Account verified`;
-        case "system_welcome":
-        case "system":                 return `📬 AfuChat notification`;
-        default:                       return `📬 Notification`;
-      }
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-}
-
 function buildMsgPreview(encrypted_content: string | null, attachment_type: string | null): string {
   const raw = encrypted_content || "";
   if (attachment_type === "story_reply") {
@@ -195,8 +112,6 @@ function buildMsgPreview(encrypted_content: string | null, attachment_type: stri
   if (raw.startsWith("🧧")) {
     return raw.replace(/\[[0-9a-f-]{36}\]\s*-?\s*/i, "").trim() || "🧧 Red Envelope";
   }
-  const sysPreview = decodeSysNotifPreview(raw);
-  if (sysPreview) return sysPreview;
   return stripMdPreview(raw);
 }
 
@@ -320,7 +235,7 @@ function ChatRow({
       : (phonebookName || item.other_display_name);
   const avatar = item.kind === "notes" ? null : item.is_group || item.is_channel ? item.avatar_url : item.other_avatar;
   const hasUnread = item.unread_count > 0 && !wasChatRecentlyVisited(item.id);
-  const isOnlineDot = !item.is_group && !item.is_channel && (item.other_id === AFUCHAT_SYSTEM_ID || isUserOnline(item.other_last_seen, item.other_show_online));
+  const isOnlineDot = !item.is_group && !item.is_channel && isUserOnline(item.other_last_seen, item.other_show_online);
 
   return (
     <View>

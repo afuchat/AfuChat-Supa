@@ -328,24 +328,6 @@ export default function CompanyPageScreen() {
     const publishedContent = postText.trim();
     closePostModal();
     load();
-    notifyFollowers(page, user.id, publishedContent);
-  }
-
-  async function notifyFollowers(p: OrgPage, senderId: string, content: string) {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
-      const { data: rows } = await supabase
-        .from("organization_page_followers")
-        .select("user_id").eq("page_id", p.id).neq("user_id", senderId).limit(100);
-      if (!rows || rows.length === 0) return;
-      const body = content.length > 120 ? content.slice(0, 117) + "…" : content;
-      await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}`, apikey: supabaseAnonKey },
-        body: JSON.stringify({ userIds: rows.map((r: any) => r.user_id), title: p.name, body, data: { type: "org_update", page_id: p.id, page_slug: p.slug } }),
-      });
-    } catch (_) {}
   }
 
   async function submitJob() {

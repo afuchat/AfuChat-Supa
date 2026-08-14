@@ -134,23 +134,14 @@ Deno.serve(async (req) => {
           }
 
           case "activity": {
-            const [notifRes, followRes] = await Promise.all([
-              admin
-                .from("notifications")
-                .select("id, type, data, is_read, created_at")
-                .eq("user_id", userId)
-                .order("created_at", { ascending: false })
-                .limit(200),
-              admin
-                .from("follows")
-                .select("following_id, created_at")
-                .eq("follower_id", userId)
-                .order("created_at", { ascending: false })
-                .limit(200),
-            ]);
+            const { data: follows } = await admin
+              .from("follows")
+              .select("following_id, created_at")
+              .eq("follower_id", userId)
+              .order("created_at", { ascending: false })
+              .limit(200);
             dataPackage.activity = {
-              notifications: notifRes.data ?? [],
-              follows:       followRes.data ?? [],
+              follows: follows ?? [],
             };
             break;
           }
@@ -256,7 +247,7 @@ Deno.serve(async (req) => {
     <p class="meta">This export was requested from your AfuChat account.<br/>Questions? Contact <a href="mailto:support@afuchat.com" style="color:#00BCD4">support@afuchat.com</a></p>
   </div>
   <div class="footer">
-    <p>This email was sent from <a href="mailto:notifications@afuchat.com">notifications@afuchat.com</a></p>
+    <p>This email was sent from <a href="mailto:support@afuchat.com">support@afuchat.com</a></p>
     <p style="margin-top:6px">AfuChat · Making connections meaningful</p>
   </div>
 </div>

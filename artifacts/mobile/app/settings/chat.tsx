@@ -404,14 +404,6 @@ export default function ChatSettingsScreen() {
           )}
         </View>
 
-        {/* ── NOTIFICATIONS ─────────────────────────────────── */}
-        <SectionTitle label="NOTIFICATIONS" />
-        <View style={[s.group, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <TogRow colors={colors} themeColor={themeColor} icon="notifications"
-            label="Message Preview" desc="Show message content in notification banners"
-            value={prefs.notification_preview} onChange={(v) => updatePref("notification_preview", v)} />
-        </View>
-
         {/* ── PRIVACY & SECURITY ───────────────────────────── */}
         <SectionTitle label="PRIVACY & SECURITY" />
         <View style={[s.group, { backgroundColor: colors.surface, borderColor: colors.border }]}>

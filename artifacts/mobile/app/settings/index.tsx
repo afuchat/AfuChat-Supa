@@ -340,21 +340,6 @@ export default function SettingsScreen() {
           />
         </Section>
 
-        {/* ── Notifications ─────────────────────────────────────────────── */}
-        {(
-          <Section title="NOTIFICATIONS" colors={colors}>
-            <Row
-              icon="notifications-outline"
-              label="Notifications"
-              sublabel="Alerts, sounds and vibration"
-              onPress={() => router.push("/settings/notifications")}
-              last
-              colors={colors}
-              accent={accent}
-            />
-          </Section>
-        )}
-
         {/* ── Messaging ─────────────────────────────────────────────────── */}
         <Section title="MESSAGING" colors={colors}>
           <Row

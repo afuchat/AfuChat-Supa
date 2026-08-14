@@ -344,7 +344,6 @@ export const NAV_INTENT_MAP: { patterns: RegExp; route: string; label: string }[
   { patterns: /\b(settings|account\s+settings)\b/i, route: "/settings", label: "Settings" },
   { patterns: /\bsecurity\b/i, route: "/settings/security", label: "Security Settings" },
   { patterns: /\b(privacy\s+settings?|my\s+privacy)\b/i, route: "/settings/privacy", label: "Privacy Settings" },
-  { patterns: /\b(notification\s+settings?|manage\s+notifications?)\b/i, route: "/settings/notifications", label: "Notification Settings" },
   { patterns: /\bblocked\b/i, route: "/settings/blocked", label: "Blocked Users" },
   { patterns: /\b(2fa|two.factor|two\s+factor)\b/i, route: "/settings/two-factor", label: "Two-Factor Auth" },
   { patterns: /\b(create\s+post|new\s+post|share\s+something|write\s+a\s+post)\b/i, route: "/moments/create", label: "Create Post" },

@@ -203,20 +203,6 @@ export default function IncomingRequestsScreen() {
       }).eq("id", req.id);
 
       // Notify requester (fire-and-forget)
-      supabase.from("notifications").insert({
-        user_id: req.requester_id,
-        type: "money_request_accepted",
-        actor_id: user.id,
-        actor_name: profile.display_name,
-        actor_handle: profile.handle,
-        actor_avatar: (profile as any).avatar_url ?? null,
-        entity_type: "money_request",
-        title: "Request Accepted!",
-        body: `@${profile.handle} sent you ${fmtAmt(req.amount)} ${req.currency === "acoin" ? "ACoin" : "Nexa"} 🎉`,
-        data: { currency: req.currency, amount: req.amount, request_id: req.id },
-        read: false,
-      }).then(null, () => {});
-
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       showAlert("Sent!", `You sent ${fmtAmt(req.amount)} ${req.currency === "acoin" ? "ACoin" : "Nexa"} to @${req.requester?.handle || "them"}.`);
       load();
@@ -234,20 +220,6 @@ export default function IncomingRequestsScreen() {
       status: "denied",
       responded_at: new Date().toISOString(),
     }).eq("id", req.id);
-
-    supabase.from("notifications").insert({
-      user_id: req.requester_id,
-      type: "money_request_denied",
-      actor_id: user.id,
-      actor_name: profile.display_name,
-      actor_handle: profile.handle,
-      actor_avatar: (profile as any).avatar_url || null,
-      entity_type: "money_request",
-      title: "Request Declined",
-      body: `@${profile.handle} declined your ${fmtAmt(req.amount)} ${req.currency === "acoin" ? "ACoin" : "Nexa"} request`,
-      data: { currency: req.currency, amount: req.amount, request_id: req.id },
-      read: false,
-    }).then(() => {}, () => {});
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     load();

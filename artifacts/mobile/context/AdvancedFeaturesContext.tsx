@@ -21,7 +21,6 @@ export type AdvancedFeatureSettings = {
   drag_drop_upload: boolean;
   user_tagging: boolean;
   in_app_browser: boolean;
-  smart_notifications: boolean;
   message_translation: boolean;
   translation_language: string;
   voice_to_text: boolean;
@@ -60,7 +59,6 @@ const defaults: AdvancedFeatureSettings = {
   drag_drop_upload: true,
   user_tagging: true,
   in_app_browser: true,
-  smart_notifications: true,
   message_translation: false,
   translation_language: "en",
   voice_to_text: true,

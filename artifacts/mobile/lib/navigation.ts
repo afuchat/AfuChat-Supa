@@ -20,8 +20,6 @@ export type ChatParams = {
   id: string;
   name?: string;
   avatar?: string;
-  /** pass "1" when opening from a push notification to skip online-only guards */
-  fromNotification?: string;
 };
 
 export type PostParams    = { postId: string };
@@ -120,10 +118,6 @@ export const Navigate = {
 
   toSettings() {
     router.push("/settings" as any);
-  },
-
-  toNotificationSettings() {
-    router.push("/settings/notifications" as any);
   },
 
   toPrivacySettings() {

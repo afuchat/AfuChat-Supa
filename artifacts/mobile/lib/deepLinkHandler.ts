@@ -110,7 +110,7 @@ const SYSTEM_ROUTES = new Set([
   "saved-posts", "my-posts", "profile", "followers", "user-discovery",
   "linked-accounts", "device-security", "status", "contact", "group",
   "channel", "digital-events", "ref", "app", "download", "privacy",
-  "terms", "about", "help", "feedback", "notifications", "likes",
+  "terms", "about", "help", "feedback", "likes",
   "explore", "trending", "feed", "home", "index", "join",
   "lab", "achievements", "watch-history",
   "business", "collections", "games", "welcome",

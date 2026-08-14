@@ -517,7 +517,7 @@ export default function DangerZoneScreen() {
         deletionDate.setDate(deletionDate.getDate() + 30);
         await supabase
           .from("profiles")
-          .update({ scheduled_deletion_at: deletionDate.toISOString(), fcm_token: null })
+          .update({ scheduled_deletion_at: deletionDate.toISOString() })
           .eq("id", user.id);
       }
       await signOut();

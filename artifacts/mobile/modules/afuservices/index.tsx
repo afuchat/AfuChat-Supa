@@ -100,14 +100,7 @@ export default function AfuServicesApp() {
         status: "pending",
       });
       if (error) {
-        // If the table doesn't exist yet, create a notification record instead
-        await supabase.from("notifications").insert({
-          user_id: user.id,
-          type: "service_payment_request",
-          title: `${activeService!.label} Payment`,
-          body: `Payment of KES ${amt.toLocaleString()} to ${accountNo.trim()} is being processed.`,
-          data: { service: activeService!.id, account: accountNo.trim(), amount: amt },
-        }).maybeSingle();
+        throw error;
       }
       setPaying(false);
       setScreen("list");
