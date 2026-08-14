@@ -182,7 +182,7 @@
     "experiments": {
       "typedRoutes": true
     },
-    "owner": "afuchat-2",
+    "owner": "afuchat",
     "web": {
       "bundler": "metro",
       "output": "single"
@@ -197,7 +197,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "784a87ad-e3d1-438c-9c84-1b336f4fd2d2"
+        "projectId": "7efbd70c-e8d4-485d-88a9-d05e3d34f280"
       }
     }
   }
