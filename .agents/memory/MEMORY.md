@@ -56,3 +56,4 @@
 - [Edge fn inter-function auth](edge-fn-inter-function-auth.md) — when one Supabase edge function calls another on the same project, it MUST include Authorization: Bearer <SUPABASE_ANON_KEY> header; without it the target returns 401. SUPABASE_ANON_KEY is auto-injected into every edge function runtime.
 - [Expo DevTools system libraries](expo-devtools-system-libs.md) — missing desktop `.so` dependencies can stall Metro before port 5000 opens; install the logged Nix runtime package and restart.
 - [Web-only legal routes](web-only-legal-routes.md) — use Platform.OS branches in shared Expo Router routes and skip the native splash overlay on web so public legal pages render directly.
+- [EAS project migration](eas-project-migration.md) — replacement EAS projects require synchronized profile IDs and fresh Expo push-token registration.

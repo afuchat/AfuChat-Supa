@@ -2,7 +2,7 @@
   "expo": {
     "name": "AfuChat",
     "slug": "afuchat",
-    "version": "2.2.11",
+    "version": "2.2.12",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "afuchat",
@@ -37,7 +37,8 @@
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.WRITE_CONTACTS"
       ],
       "intentFilters": [
         {
@@ -73,7 +74,7 @@
           ]
         }
       ],
-      "versionCode": 260
+      "versionCode": 2212
     },
     "plugins": [
       [
@@ -181,23 +182,23 @@
     "experiments": {
       "typedRoutes": true
     },
-    "owner": "afuapp",
-    "extra": {
-      "eas": {
-        "projectId": "7efbd70c-e8d4-485d-88a9-d05e3d34f280"
-      }
-    },
+    "owner": "afuchat-2",
     "web": {
       "bundler": "metro",
       "output": "single"
     },
     "ios": {
       "bundleIdentifier": "com.afuchat.afuapp",
-      "buildNumber": "2.2.8",
+      "buildNumber": "2.2.12",
       "associatedDomains": [
         "applinks:afuchat.com",
         "applinks:www.afuchat.com"
       ]
+    },
+    "extra": {
+      "eas": {
+        "projectId": "784a87ad-e3d1-438c-9c84-1b336f4fd2d2"
+      }
     }
   }
 }
