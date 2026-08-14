@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
-  View, Text, TouchableOpacity, ScrollView, ActivityIndicator,
-  StyleSheet, Platform,
+  View, Text, TouchableOpacity, ScrollView,
+  StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
@@ -12,6 +12,7 @@ import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import UserName from "@/components/ui/UserName";
 import { safeRouter } from "@/lib/navUtils";
 import * as Haptics from "@/lib/haptics";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type SuggestUser = {
   id: string;
@@ -30,7 +31,68 @@ type Props = {
   onRequireAuth?: () => void;
 };
 
-export function UserRecsCard({ seed = 0, onRequireAuth }: Props) {
+type RecommendationCacheEntry = {
+  users: SuggestUser[];
+  fetchedAt: number;
+  promise?: Promise<SuggestUser[]>;
+};
+
+const RECOMMENDATIONS_TTL = 5 * 60 * 1000;
+const recommendationsCache = new Map<string, RecommendationCacheEntry>();
+
+async function fetchRecommendations(userId: string | null): Promise<SuggestUser[]> {
+  const cacheKey = userId ?? "anonymous";
+  const cached = recommendationsCache.get(cacheKey);
+  if (cached?.users.length && Date.now() - cached.fetchedAt < RECOMMENDATIONS_TTL) {
+    return cached.users;
+  }
+  if (cached?.promise) return cached.promise;
+
+  const promise = (async () => {
+    const [{ data: followData }, { data }] = await Promise.all([
+      userId
+        ? supabase.from("follows").select("following_id").eq("follower_id", userId).limit(500)
+        : Promise.resolve({ data: [] as { following_id: string }[] }),
+      supabase
+        .from("profiles")
+        .select("id, display_name, handle, avatar_url, is_verified, is_organization_verified, follower_count, bio")
+        .not("avatar_url", "is", null)
+        .not("bio", "is", null)
+        .not("display_name", "is", null)
+        .order("follower_count", { ascending: false })
+        .limit(60),
+    ]);
+
+    const excluded = new Set((followData || []).map((f: any) => f.following_id));
+    if (userId) excluded.add(userId);
+    const users = (data || [])
+      .filter((u: any) => !excluded.has(u.id))
+      .map((u: any) => ({ ...u, followed: false })) as SuggestUser[];
+
+    recommendationsCache.set(cacheKey, { users, fetchedAt: Date.now() });
+    return users;
+  })();
+
+  recommendationsCache.set(cacheKey, {
+    users: cached?.users ?? [],
+    fetchedAt: cached?.fetchedAt ?? 0,
+    promise,
+  });
+  try {
+    return await promise;
+  } catch (error) {
+    recommendationsCache.delete(cacheKey);
+    throw error;
+  }
+}
+
+function pickRecommendations(users: SuggestUser[], seed: number): SuggestUser[] {
+  if (users.length <= 5) return users.slice();
+  const start = Math.abs(seed * 5) % users.length;
+  return Array.from({ length: Math.min(5, users.length) }, (_, index) => users[(start + index) % users.length]);
+}
+
+export const UserRecsCard = React.memo(function UserRecsCard({ seed = 0, onRequireAuth }: Props) {
   const { colors } = useTheme();
   const { user } = useAuth();
   const [users, setUsers] = useState<SuggestUser[]>([]);
@@ -39,42 +101,47 @@ export function UserRecsCard({ seed = 0, onRequireAuth }: Props) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: followData } = user
-        ? await supabase.from("follows").select("following_id").eq("follower_id", user.id).limit(500)
-        : { data: [] };
-      const followingIds = new Set((followData || []).map((f: any) => f.following_id));
-      if (user) followingIds.add(user.id);
+      const pool = await fetchRecommendations(user?.id ?? null);
+      setUsers(pickRecommendations(pool, seed));
+    } catch (_) {
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [seed, user?.id]);
 
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, display_name, handle, avatar_url, is_verified, is_organization_verified, follower_count, bio")
-        .not("avatar_url", "is", null)
-        .not("bio", "is", null)
-        .not("display_name", "is", null)
-        .order("follower_count", { ascending: false })
-        .limit(40);
-
-      if (!data) { setLoading(false); return; }
-      const pool = data.filter((u: any) => !followingIds.has(u.id));
-      const shuffled = pool.sort(() => Math.random() - 0.5);
-      setUsers(shuffled.slice(0, 5).map((u: any) => ({ ...u, followed: false })));
-    } catch (_) {}
-    setLoading(false);
-  }, [user]);
-
-  useEffect(() => { load(); }, [seed]);
+  useEffect(() => {
+    load().catch(() => {});
+  }, [load]);
 
   const follow = useCallback((uid: string) => {
     if (!user) { onRequireAuth?.(); return; }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setUsers((prev) => prev.map((u) => u.id === uid ? { ...u, followed: !u.followed } : u));
+    const cache = recommendationsCache.get(user.id);
+    if (cache) cache.users = cache.users.map((u) => u.id === uid ? { ...u, followed: true } : u);
     supabase.from("follows").upsert({ follower_id: user.id, following_id: uid }).then(() => {});
-  }, [user]);
+  }, [onRequireAuth, user]);
 
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.surface }]}>
-        <ActivityIndicator size="small" color={colors.accent} style={{ margin: 24 }} />
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Skeleton width={16} height={16} borderRadius={8} />
+            <Skeleton width={112} height={14} borderRadius={6} />
+          </View>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.list}>
+          {[0, 1, 2].map((i) => (
+            <View key={i} style={[styles.card, { backgroundColor: colors.surface }]}>
+              <Skeleton width={52} height={52} borderRadius={26} />
+              <Skeleton width={82} height={13} borderRadius={6} style={{ marginTop: 6 }} />
+              <Skeleton width={62} height={10} borderRadius={5} />
+              <Skeleton width={112} height={24} borderRadius={12} style={{ marginTop: 8 }} />
+            </View>
+          ))}
+        </ScrollView>
       </View>
     );
   }
@@ -136,7 +203,7 @@ export function UserRecsCard({ seed = 0, onRequireAuth }: Props) {
       </ScrollView>
     </View>
   );
-}
+});
 
 function formatFollowers(n: number) {
   if (!n) return "0";

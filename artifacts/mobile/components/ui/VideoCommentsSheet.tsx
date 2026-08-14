@@ -321,7 +321,7 @@ const vpStyles = StyleSheet.create({
 
 // ─── VideoReplyItem ───────────────────────────────────────────────────────────
 
-export function VideoReplyItem({
+export const VideoReplyItem = React.memo(function VideoReplyItem({
   reply: r, depth, onReplyTo, isCreator, isNew, accent, likedSet, onLike, isDark = true,
 }: {
   reply: Reply; depth: number; onReplyTo: (r: Reply) => void;
@@ -456,7 +456,7 @@ export function VideoReplyItem({
       ))}
     </Animated.View>
   );
-}
+});
 
 // ─── RecordingBar ─────────────────────────────────────────────────────────────
 
@@ -673,10 +673,18 @@ export function VideoCommentsSheet({
     id: string; handle: string; display_name: string; avatar_url: string | null;
   }>>([]);
   const mentionQueryRef = useRef<string | null>(null);
+  const mentionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const listRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
   const sendScale = useRef(new Animated.Value(1)).current;
+  const repliesLoadSeqRef = useRef(0);
+  const repliesReloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const visibleRef = useRef(visible);
+
+  useEffect(() => {
+    visibleRef.current = visible;
+  }, [visible]);
 
   useEffect(() => {
     // iOS fires Will* events with exact keyboard animation duration for perfect sync.
@@ -700,52 +708,66 @@ export function VideoCommentsSheet({
     return () => { show.remove(); hide.remove(); };
   }, []);
 
-  const loadReplies = useCallback(() => {
-    if (!postId) return;
-    supabase
+  const loadReplies = useCallback(async () => {
+    if (!postId || !visibleRef.current) return;
+    const requestId = ++repliesLoadSeqRef.current;
+    const { data, error } = await supabase
       .from("post_replies")
       .select("id, author_id, content, created_at, parent_reply_id, voice_url, voice_duration, image_url, profiles!post_replies_author_id_fkey(display_name, handle, avatar_url)")
       .eq("post_id", postId)
       .order("created_at", { ascending: true })
-      .limit(50)
-      .then(async ({ data, error }) => {
-        if (error) console.error("[VideoCommentsSheet] loadReplies:", error.message, error.code);
-        if (data) {
-          const replyIds = data.map((r: any) => r.id);
-          const [likesRes, myLikesRes] = await Promise.all([
-            replyIds.length > 0
-              ? supabase.from("post_reply_likes").select("reply_id").in("reply_id", replyIds)
-              : { data: [] as any[] },
-            replyIds.length > 0 && user
-              ? supabase.from("post_reply_likes").select("reply_id").in("reply_id", replyIds).eq("user_id", user.id)
-              : { data: [] as any[] },
-          ]);
-          const likeCountMap: Record<string, number> = {};
-          for (const l of likesRes.data || []) {
-            likeCountMap[l.reply_id] = (likeCountMap[l.reply_id] || 0) + 1;
-          }
-          const myLikedSet = new Set<string>((myLikesRes.data || []).map((l: any) => l.reply_id as string));
-          setLikedIds(myLikedSet);
-          setReplies(data.map((r: any) => ({
-            id: r.id,
-            author_id: r.author_id,
-            content: r.content || "",
-            created_at: r.created_at,
-            parent_reply_id: r.parent_reply_id || null,
-            like_count: likeCountMap[r.id] || 0,
-            voice_url: r.voice_url || null,
-            voice_duration: r.voice_duration ?? null,
-            image_url: r.image_url || null,
-            profile: {
-              display_name: r.profiles?.display_name || "User",
-              handle: r.profiles?.handle || "user",
-              avatar_url: r.profiles?.avatar_url || null,
-            },
-          })));
-        }
-        setLoading(false);
-      });
+      .limit(50);
+
+    if (error) {
+      console.error("[VideoCommentsSheet] loadReplies:", error.message, error.code);
+      if (requestId === repliesLoadSeqRef.current) setLoading(false);
+      return;
+    }
+    if (!data || requestId !== repliesLoadSeqRef.current || !visibleRef.current) return;
+
+    const replyIds = data.map((r: any) => r.id);
+    const [likesRes, myLikesRes] = await Promise.all([
+      replyIds.length > 0
+        ? supabase.from("post_reply_likes").select("reply_id").in("reply_id", replyIds)
+        : { data: [] as any[] },
+      replyIds.length > 0 && user
+        ? supabase.from("post_reply_likes").select("reply_id").in("reply_id", replyIds).eq("user_id", user.id)
+        : { data: [] as any[] },
+    ]);
+    if (requestId !== repliesLoadSeqRef.current || !visibleRef.current) return;
+
+    const likeCountMap: Record<string, number> = {};
+    for (const l of likesRes.data || []) {
+      likeCountMap[l.reply_id] = (likeCountMap[l.reply_id] || 0) + 1;
+    }
+    setLikedIds(new Set<string>((myLikesRes.data || []).map((l: any) => l.reply_id as string)));
+    setReplies(data.map((r: any) => ({
+      id: r.id,
+      author_id: r.author_id,
+      content: r.content || "",
+      created_at: r.created_at,
+      parent_reply_id: r.parent_reply_id || null,
+      like_count: likeCountMap[r.id] || 0,
+      voice_url: r.voice_url || null,
+      voice_duration: r.voice_duration ?? null,
+      image_url: r.image_url || null,
+      profile: {
+        display_name: r.profiles?.display_name || "User",
+        handle: r.profiles?.handle || "user",
+        avatar_url: r.profiles?.avatar_url || null,
+      },
+    })));
+    setLoading(false);
   }, [postId, user?.id]);
+
+  const scheduleRepliesReload = useCallback(() => {
+    if (!visibleRef.current) return;
+    if (repliesReloadTimerRef.current) clearTimeout(repliesReloadTimerRef.current);
+    repliesReloadTimerRef.current = setTimeout(() => {
+      repliesReloadTimerRef.current = null;
+      loadReplies().catch(() => {});
+    }, 250);
+  }, [loadReplies]);
 
   useEffect(() => {
     if (!visible || !postId) return;
@@ -753,18 +775,24 @@ export function VideoCommentsSheet({
     discardRecording();
     setAttachedImage(null);
     setShowEmojiPanel(false);
-    loadReplies();
+    loadReplies().catch(() => {});
   }, [visible, postId, loadReplies]);
 
   useEffect(() => {
     if (!visible || !postId) return;
     const ch = supabase
       .channel(`video-comments:${postId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "post_replies", filter: `post_id=eq.${postId}` }, loadReplies)
-      .on("postgres_changes", { event: "DELETE", schema: "public", table: "post_replies", filter: `post_id=eq.${postId}` }, loadReplies)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "post_replies", filter: `post_id=eq.${postId}` }, scheduleRepliesReload)
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "post_replies", filter: `post_id=eq.${postId}` }, scheduleRepliesReload)
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [visible, postId, loadReplies]);
+    return () => {
+      supabase.removeChannel(ch);
+      if (repliesReloadTimerRef.current) {
+        clearTimeout(repliesReloadTimerRef.current);
+        repliesReloadTimerRef.current = null;
+      }
+    };
+  }, [visible, postId, scheduleRepliesReload]);
 
   async function fetchMentionSuggestions(query: string) {
     try {
@@ -786,7 +814,11 @@ export function VideoCommentsSheet({
     if (match) {
       const query = match[1];
       mentionQueryRef.current = query;
-      fetchMentionSuggestions(query);
+      if (mentionTimerRef.current) clearTimeout(mentionTimerRef.current);
+      mentionTimerRef.current = setTimeout(() => {
+        mentionTimerRef.current = null;
+        fetchMentionSuggestions(query);
+      }, 180);
     } else {
       mentionQueryRef.current = null;
       if (mentionSuggestions.length > 0) setMentionSuggestions([]);
@@ -801,13 +833,13 @@ export function VideoCommentsSheet({
     inputRef.current?.focus();
   }
 
-  function handleReplyTo(reply: Reply) {
+  const handleReplyTo = useCallback((reply: Reply) => {
     setReplyingTo(reply);
     setText("");
     setTimeout(() => inputRef.current?.focus(), 100);
-  }
+  }, []);
 
-  function handleReplyLike(id: string, wasLiked: boolean) {
+  const handleReplyLike = useCallback((id: string, wasLiked: boolean) => {
     if (!user) return;
     if (wasLiked) {
       setLikedIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
@@ -818,9 +850,9 @@ export function VideoCommentsSheet({
       setReplies((prev) => prev.map((r) => r.id === id ? { ...r, like_count: r.like_count + 1 } : r));
       supabase.from("post_reply_likes").insert({ reply_id: id, user_id: user.id }).then(() => {});
     }
-  }
+  }, [user?.id]);
 
-  function getSortedTree(): Reply[] {
+  const sortedTree = useMemo(() => {
     const tree = buildReplyTree(replies);
     if (sortMode === "top") {
       return [...tree].sort((a, b) => {
@@ -830,7 +862,7 @@ export function VideoCommentsSheet({
       });
     }
     return [...tree].reverse();
-  }
+  }, [replies, sortMode]);
 
   function stopTimer() {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
@@ -1026,7 +1058,6 @@ export function VideoCommentsSheet({
     setSending(false);
   }
 
-  const sortedTree = getSortedTree();
   const charLeft = 500 - text.length;
   const { height: screenDimH } = useWindowDimensions();
   const sheetMaxH = Math.min(screenDimH * 0.88, 680);

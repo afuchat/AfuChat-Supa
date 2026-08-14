@@ -1049,7 +1049,6 @@ export default function DiscoverScreen() {
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [suppressedAuthors, setSuppressedAuthors] = useState<Set<string>>(new Set());
   const [dismissTarget, setDismissTarget] = useState<PostItem | null>(null);
-  const [dismissedUpsellVariants, setDismissedUpsellVariants] = useState<Set<string>>(new Set());
 
   type UndoEntry = { type: "post"; id: string } | { type: "author"; id: string };
   const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
@@ -1112,7 +1111,7 @@ export default function DiscoverScreen() {
       }
     }
     return entries;
-  }, [filteredPosts, dismissedUpsellVariants]);
+  }, [filteredPosts]);
 
   const onDismissPost = useCallback((postId: string) => {
     const post = posts.find(p => p.id === postId);
@@ -1162,6 +1161,7 @@ export default function DiscoverScreen() {
 
   const tabPostsCache = useRef<Record<"for_you" | "following", PostItem[]>>({ for_you: [], following: [] });
   const tabCacheTimestamp = useRef<Record<"for_you" | "following", number>>({ for_you: 0, following: 0 });
+  const initialHydrationDoneRef = useRef(false);
   const learnedWeightsRef = useRef<Record<string, number>>({});
   const postsRef = useRef<PostItem[]>([]);
   const feedTabRef = useRef<"for_you" | "following">("for_you");
@@ -1990,6 +1990,7 @@ export default function DiscoverScreen() {
 
   // Tab switch — show cached posts immediately, background-refresh if stale
   useEffect(() => {
+    if (!initialHydrationDoneRef.current) return;
     const dataTab = feedTab;
     const STALE_MS = 3 * 60 * 1000;
     const cached = tabPostsCache.current[dataTab];
@@ -2059,9 +2060,13 @@ export default function DiscoverScreen() {
         tabPostsCache.current.following = flCache.posts as PostItem[];
         tabCacheTimestamp.current.following = flCache.cachedAt;
       }
-      const hasFyCache = (fyCache?.posts?.length ?? 0) > 0;
+      initialHydrationDoneRef.current = true;
+      const activeTab = feedTabRef.current;
+      const hasActiveCache = tabPostsCache.current[activeTab].length > 0;
       if (isOnline()) {
-        loadPostsRef.current("for_you", hasFyCache);
+        loadPostsRef.current(activeTab, hasActiveCache);
+      } else if (!hasActiveCache) {
+        setLoading(false);
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2073,6 +2078,7 @@ export default function DiscoverScreen() {
   const _authKeyRef = useRef("");
   useEffect(() => {
     const key = `${user?.id ?? ""}:${JSON.stringify(profile?.interests ?? [])}`;
+    if (!initialHydrationDoneRef.current) return;
     if (key === _authKeyRef.current) return;
     _authKeyRef.current = key;
     if (!user?.id && !profile) return;
@@ -2439,6 +2445,29 @@ export default function DiscoverScreen() {
 
   const onRequireAuth = useCallback(() => setShowSignInPrompt(true), []);
 
+  const renderFeedItem = useCallback(
+    ({ item: entry }: { item: FeedEntry }) => {
+      if (entry._kind === "user_recs") {
+        return <UserRecsCard seed={entry.seed} onRequireAuth={onRequireAuth} />;
+      }
+      if (entry._kind === "premium") return null;
+      return (
+        <PostCard
+          item={entry.item}
+          onToggleLike={toggleLike}
+          onToggleBookmark={toggleBookmark}
+          onToggleFollow={toggleFollow}
+          onImagePress={imgViewer.openViewer}
+          onRequireAuth={onRequireAuth}
+          onOpenComments={onOpenComments}
+          onDismiss={onDismissPost}
+          onMuteAuthor={onMuteAuthor}
+        />
+      );
+    },
+    [imgViewer.openViewer, onDismissPost, onMuteAuthor, onOpenComments, onRequireAuth, toggleBookmark, toggleFollow, toggleLike],
+  );
+
   // Re-sync isFollowing for every post whenever Discover comes back into focus
   // (handles the "follow from profile page → back to feed" stale-state case).
   useFocusEffect(
@@ -2612,13 +2641,7 @@ export default function DiscoverScreen() {
                   ref={flatListRef}
                   data={augmentedFeed}
                   keyExtractor={(entry) => entry._kind === "post" ? entry.item.id : entry.id}
-                  renderItem={({ item: entry }) => {
-                    if (entry._kind === "user_recs") return <UserRecsCard seed={entry.seed} onRequireAuth={onRequireAuth} />;
-                    if (entry._kind === "premium") return null;
-                    return (
-                      <PostCard item={entry.item} onToggleLike={toggleLike} onToggleBookmark={toggleBookmark} onToggleFollow={toggleFollow} onImagePress={imgViewer.openViewer} onRequireAuth={onRequireAuth} onOpenComments={onOpenComments} onDismiss={onDismissPost} onMuteAuthor={onMuteAuthor} />
-                    );
-                  }}
+                  renderItem={renderFeedItem}
                   ListHeaderComponent={<StoriesRow userId={user?.id ?? null} avatarUrl={profile?.avatar_url ?? null} displayName={profile?.display_name ?? null} />}
                   contentContainerStyle={{ gap: 8, paddingTop: headerHeight + 8, paddingBottom: insets.bottom + 100 }}
                   showsVerticalScrollIndicator={false}
@@ -2682,13 +2705,7 @@ export default function DiscoverScreen() {
                   ref={flatListRef}
                   data={augmentedFeed}
                   keyExtractor={(entry) => entry._kind === "post" ? entry.item.id : entry.id}
-                  renderItem={({ item: entry }) => {
-                    if (entry._kind === "user_recs") return <UserRecsCard seed={entry.seed} onRequireAuth={onRequireAuth} />;
-                    if (entry._kind === "premium") return null;
-                    return (
-                      <PostCard item={entry.item} onToggleLike={toggleLike} onToggleBookmark={toggleBookmark} onToggleFollow={toggleFollow} onImagePress={imgViewer.openViewer} onRequireAuth={onRequireAuth} onOpenComments={onOpenComments} onDismiss={onDismissPost} onMuteAuthor={onMuteAuthor} />
-                    );
-                  }}
+                   renderItem={renderFeedItem}
                   contentContainerStyle={{ gap: 8, paddingTop: headerHeight + 8, paddingBottom: insets.bottom + 100 }}
                   showsVerticalScrollIndicator={false}
                   onScroll={onFeedScroll}
@@ -2750,13 +2767,7 @@ export default function DiscoverScreen() {
             ref={flatListRef}
             data={augmentedFeed}
             keyExtractor={(entry) => entry._kind === "post" ? entry.item.id : entry.id}
-            renderItem={({ item: entry }) => {
-              if (entry._kind === "user_recs") return <UserRecsCard seed={entry.seed} onRequireAuth={onRequireAuth} />;
-              if (entry._kind === "premium") return null;
-              return (
-                <PostCard item={entry.item} onToggleLike={toggleLike} onToggleBookmark={toggleBookmark} onToggleFollow={toggleFollow} onImagePress={imgViewer.openViewer} onRequireAuth={onRequireAuth} onOpenComments={onOpenComments} onDismiss={onDismissPost} onMuteAuthor={onMuteAuthor} />
-              );
-            }}
+            renderItem={renderFeedItem}
             ListHeaderComponent={<StoriesRow userId={user?.id ?? null} avatarUrl={profile?.avatar_url ?? null} displayName={profile?.display_name ?? null} />}
             contentContainerStyle={{ gap: 8, paddingTop: headerHeight + 8, paddingBottom: insets.bottom + 100 }}
             showsVerticalScrollIndicator={false}

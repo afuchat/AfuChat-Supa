@@ -1,0 +1,44 @@
+The next best target is the Discover/feed experience, since Chat’s main refresh path is now optimized. Copy and paste this prompt:
+
+```text
+Continue optimizing AfuChat performance after the Chat list RPC has been deployed and verified.
+
+Focus next on Discover and the video/feed experience. Do not rewrite the app or remove existing features.
+
+Goals:
+1. Audit Discover, video feed, comments, profile recommendations, and related Supabase queries.
+2. Identify the three largest performance bottlenecks using the current code, workflow logs, network patterns, and query structure.
+3. Start with the highest-impact bottleneck and implement the fix completely.
+4. Eliminate duplicate requests, N+1 queries, unnecessary realtime subscriptions, repeated feed recomputation, and avoidable full-list rerenders.
+5. Preserve:
+   - For You and Following tabs
+   - Pagination
+   - Pull-to-refresh
+   - Realtime updates
+   - Bookmarks
+   - Sharing
+   - Video mute behavior
+   - Watch history
+   - Account switching
+   - Offline/cache-first startup
+6. Improve FlatList/virtualized-list performance where appropriate:
+   - Stable keys
+   - Memoized row components
+   - Stable callbacks
+   - Proper viewability handling
+   - Avoid rendering non-visible heavy media unnecessarily
+7. Replace avoidable loading spinners with the existing shimmer skeleton components.
+8. Inspect Supabase query plans and add secure RPCs or indexes only when they provide a measurable benefit.
+9. Enforce all user access restrictions server-side using auth.uid() and membership checks.
+10. Use the existing SUPABASE_ACCESS_TOKEN through the secure environment only. Never ask me for credentials, print secrets, or put secrets in source code.
+11. If you create a Supabase migration, apply it through the Supabase HTTPS management API and verify that the function/indexes exist remotely. Do not leave a migration unapplied.
+12. Do not change the database provider or introduce a new dependency unless absolutely necessary.
+13. Keep the existing Chat RPC and cache behavior unchanged unless you find a concrete regression.
+
+Verification requirements:
+- Run typecheck and fix any errors caused by this work.
+- Restart the Expo workflow after code changes.
+- Check workflow and browser logs.
+- Test Discover initial load, tab switching, pagination, refresh, video playback, comments, bookmarks, and offline cached startup.
+- Report the bottleneck found, the measured improvement, files changed, database changes applied, and any unrelated pre-existing warnings or type errors.
+```

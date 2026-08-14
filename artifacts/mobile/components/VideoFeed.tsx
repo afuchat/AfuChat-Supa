@@ -1103,7 +1103,7 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
       try {
         // ── For You: wide pool → score → diversify ──────────────────────────
         if (currentTab === "for_you" && !cursor) {
-          const SELECT_COLS = `id, author_id, content, video_url, image_url, audio_name, created_at, view_count,
+           const SELECT_COLS = `id, author_id, content, video_url, image_url, audio_name, created_at, view_count, like_count,
                      profiles!posts_author_id_fkey(display_name, handle, avatar_url, is_verified, is_organization_verified)`;
 
           // 6-month window first — broad enough for most platforms
@@ -1141,16 +1141,12 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
           const authorIds = [...new Set(raw.map((p: any) => p.author_id as string))];
 
           const [
-            { data: likesData },
             { data: repliesData },
-            { data: viewsData },
             { data: myLikes },
             { data: myBookmarks },
             { data: myFollows },
           ] = await Promise.all([
-            supabase.from("post_acknowledgments").select("post_id").in("post_id", postIds),
             supabase.from("post_replies").select("post_id").in("post_id", postIds),
-            supabase.from("post_views").select("post_id").in("post_id", postIds),
             user
               ? supabase.from("post_acknowledgments").select("post_id").in("post_id", postIds).eq("user_id", user.id)
               : Promise.resolve({ data: [] as any[] }),
@@ -1162,12 +1158,8 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
               : Promise.resolve({ data: [] as any[] }),
           ]);
 
-          const likeMap: Record<string, number> = {};
-          for (const l of (likesData || [])) likeMap[(l as any).post_id] = (likeMap[(l as any).post_id] || 0) + 1;
           const replyMap: Record<string, number> = {};
           for (const r of (repliesData || [])) replyMap[(r as any).post_id] = (replyMap[(r as any).post_id] || 0) + 1;
-          const viewMap: Record<string, number> = {};
-          for (const v of (viewsData || [])) viewMap[(v as any).post_id] = (viewMap[(v as any).post_id] || 0) + 1;
           const myLikeSet = new Set((myLikes || []).map((l: any) => l.post_id as string));
           const myBookmarkSet = new Set((myBookmarks || []).map((b: any) => b.post_id as string));
           const followedSet = new Set((myFollows || []).map((f: any) => f.following_id as string));
@@ -1184,9 +1176,9 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
           type ScoredVideo = VideoPost & { score: number };
 
           const scored: ScoredVideo[] = raw.map((p: any) => {
-            const lc = likeMap[p.id] || 0;
+             const lc = p.like_count || 0;
             const rc = replyMap[p.id] || 0;
-            const vc = viewMap[p.id] || (p.view_count ?? 0);
+             const vc = p.view_count ?? 0;
             const interestMatches = matchInterestsWeighted(p.content || "", [], learnedWeights);
             const seenAt = seenVideoMap.get(p.id);
             const hashtags = extractHashtags(p.content || "");
@@ -1217,7 +1209,7 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
               notInterestedTopicCount,
             };
             return {
-              id: p.id,
+             id: p.id,
               author_id: p.author_id,
               content: p.content || "",
               video_url: p.video_url,
@@ -1234,7 +1226,7 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
               },
               liked: myLikeSet.has(p.id),
               bookmarked: myBookmarkSet.has(p.id),
-              likeCount: lc,
+             likeCount: lc,
               replyCount: rc,
               following: followedSet.has(p.author_id),
               score: computeFeedScore(signals),
@@ -1283,7 +1275,7 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
         if (currentTab === "following") {
           if (!user) { setPosts([]); setLoading(false); return; }
 
-          const { data: followData } = await supabase
+           const { data: followData } = await supabase
             .from("follows")
             .select("following_id")
             .eq("follower_id", user.id);
@@ -1293,7 +1285,7 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
 
           let query = supabase
             .from("posts")
-            .select(`id, author_id, content, video_url, image_url, audio_name, created_at, view_count,
+            .select(`id, author_id, content, video_url, image_url, audio_name, created_at, view_count, like_count,
                      profiles!posts_author_id_fkey(display_name, handle, avatar_url, is_verified, is_organization_verified)`)
             .eq("post_type", "video")
             .in("author_id", followingIds)
@@ -1323,29 +1315,20 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
           }
 
           const postIds = data.map((p: any) => p.id as string);
-          const authorIds = [...new Set(data.map((p: any) => p.author_id as string))];
-
           const [
-            { data: likesData },
             { data: repliesData },
             { data: myLikes },
             { data: myBookmarks },
-            { data: myFollows },
           ] = await Promise.all([
-            supabase.from("post_acknowledgments").select("post_id").in("post_id", postIds),
             supabase.from("post_replies").select("post_id").in("post_id", postIds),
             supabase.from("post_acknowledgments").select("post_id").in("post_id", postIds).eq("user_id", user.id),
             supabase.from("post_bookmarks").select("post_id").in("post_id", postIds).eq("user_id", user.id),
-            supabase.from("follows").select("following_id").eq("follower_id", user.id).in("following_id", authorIds),
           ]);
 
-          const likeMap: Record<string, number> = {};
-          for (const l of (likesData || [])) likeMap[(l as any).post_id] = (likeMap[(l as any).post_id] || 0) + 1;
           const replyMap: Record<string, number> = {};
           for (const r of (repliesData || [])) replyMap[(r as any).post_id] = (replyMap[(r as any).post_id] || 0) + 1;
           const myLikeSet = new Set((myLikes || []).map((l: any) => l.post_id as string));
           const myBookmarkSet = new Set((myBookmarks || []).map((b: any) => b.post_id as string));
-          const followedSet = new Set((myFollows || []).map((f: any) => f.following_id as string));
 
           const enriched: VideoPost[] = data.map((p: any) => ({
             id: p.id, author_id: p.author_id, content: p.content || "",
@@ -1358,12 +1341,11 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
               is_verified: !!p.profiles?.is_verified,
               is_organization_verified: !!p.profiles?.is_organization_verified,
             },
-            liked: myLikeSet.has(p.id), bookmarked: myBookmarkSet.has(p.id),
-            likeCount: likeMap[p.id] || 0, replyCount: replyMap[p.id] || 0,
-            following: followedSet.has(p.author_id),
+             liked: myLikeSet.has(p.id), bookmarked: myBookmarkSet.has(p.id),
+             likeCount: p.like_count || 0, replyCount: replyMap[p.id] || 0,
+             following: true,
           }));
 
-          const more = data.length === PAGE_SIZE;
           cursorRef.current = data[data.length - 1]?.created_at ?? null;
           // Always hasMore=true so we can loop; actual end is handled above
           setHasMore(true); hasMoreRef.current = true;
