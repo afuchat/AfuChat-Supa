@@ -131,6 +131,14 @@
         }
       ],
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#1f95ff",
+          "defaultChannel": "messages"
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {

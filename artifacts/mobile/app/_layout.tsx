@@ -76,6 +76,7 @@ import { runScheduledVideoPurge } from "@/lib/videoCache";
 import { MiniAppRuntimeProvider } from "@/lib/superapp/MiniAppRuntime";
 import { AnimationGuardInit } from "@/components/AnimationGuardInit";
 import { SplashScreenView } from "@/components/ui/SplashScreenView";
+import PushNotificationManager from "@/components/PushNotificationManager";
 
 // NOTE: react-native-mmkv has been downgraded to v3 (stable JSI bridge) and
 // react-native-nitro-modules has been removed.  v4/Nitro caused an unrecoverable
@@ -347,6 +348,7 @@ export default function RootLayout() {
                     <ActivityTrackerSync />
                     <CrashReporterUserSync />
                     <CrashSupportHandler />
+                    <PushNotificationManager />
                     <PageWatcher />
                     <GlobalInboxListener />
                     <UpdatePrompt />
