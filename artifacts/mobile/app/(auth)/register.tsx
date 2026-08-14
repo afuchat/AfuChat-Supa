@@ -252,6 +252,11 @@ export default function SignUpScreen() {
   }
 
   async function nativeGoogleSignIn() {
+    if (Platform.OS === "web") {
+      await webGoogleSignIn();
+      return;
+    }
+
     setOauthLoading(true);
     const result = await googleSignIn();
     if (!result.ok) {
@@ -271,6 +276,21 @@ export default function SignUpScreen() {
   async function webGoogleSignIn() {
     try {
       setOauthLoading(true);
+      if (Platform.OS === "web" && typeof window !== "undefined") {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${window.location.origin}/`,
+            queryParams: { prompt: "select_account" },
+          },
+        });
+        if (error) {
+          showAlert("Error", error.message);
+          setOauthLoading(false);
+        }
+        return;
+      }
+
       const redirectUrl = makeRedirectUri({ native: "afuchat://(auth)/register" });
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -313,6 +333,18 @@ export default function SignUpScreen() {
   async function handleGitHub() {
     try {
       setOauthLoading(true);
+      if (Platform.OS === "web" && typeof window !== "undefined") {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "github",
+          options: { redirectTo: `${window.location.origin}/` },
+        });
+        if (error) {
+          showAlert("Error", error.message);
+          setOauthLoading(false);
+        }
+        return;
+      }
+
       const redirectUrl = makeRedirectUri({ native: "afuchat://(auth)/register" });
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "github",

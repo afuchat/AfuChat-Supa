@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
+import { Platform } from "react-native";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./env";
 
 export const supabaseUrl = SUPABASE_URL;
@@ -42,12 +43,28 @@ if (typeof console !== "undefined" && typeof console.error === "function") {
   };
 }
 
+const isWeb = Platform.OS === "web";
+
+// AsyncStorage is the correct durable store for native builds. On web, use the
+// browser's localStorage directly so Supabase can persist the PKCE verifier and
+// restore the session after the OAuth provider redirects back to the site.
+const webStorage = {
+  getItem: async (key: string) =>
+    typeof window !== "undefined" ? window.localStorage.getItem(key) : null,
+  setItem: async (key: string, value: string) => {
+    if (typeof window !== "undefined") window.localStorage.setItem(key, value);
+  },
+  removeItem: async (key: string) => {
+    if (typeof window !== "undefined") window.localStorage.removeItem(key);
+  },
+};
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: AsyncStorage,
+    storage: isWeb ? webStorage : AsyncStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
+    detectSessionInUrl: isWeb,
     flowType: "pkce",
   },
   realtime: {
