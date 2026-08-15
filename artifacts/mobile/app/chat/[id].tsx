@@ -6335,7 +6335,10 @@ STRICT RULES:
           </View>
         ) : isRecording && recLocked ? (
           <View style={[st.inputFloatOuter, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-            <View style={[st.inputGlassPill, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+            <View style={[st.inputGlassPill, {
+              backgroundColor: isDark ? "rgba(255,255,255,0.12)" : colors.inputBg,
+              borderColor: isDark ? "rgba(255,255,255,0.22)" : colors.border,
+            }]}>
               <View style={st.recLockedInner}>
                 <TouchableOpacity onPress={cancelVoiceRecording} hitSlop={12} style={st.recLockedTrash}>
                   <Ionicons name="trash" size={20} color="#FF3B30" />
@@ -6372,7 +6375,11 @@ STRICT RULES:
               />
               {/* Pill + action button sit side-by-side; mic/send is outside the pill */}
               <View style={st.inputRowOuter}>
-                <View style={[st.inputGlassPill, { flex: 1, backgroundColor: colors.inputBg, borderColor: colors.border }, isRecording && !recLocked ? st.recHoldGlass : undefined]}>
+                <View style={[st.inputGlassPill, {
+                  flex: 1,
+                  backgroundColor: isDark ? "rgba(255,255,255,0.12)" : colors.inputBg,
+                  borderColor: isDark ? "rgba(255,255,255,0.22)" : colors.border,
+                }, isRecording && !recLocked ? st.recHoldGlass : undefined]}>
                   <View style={st.inputBarRow}>
                     {isRecording && !recLocked ? (
                       <>
