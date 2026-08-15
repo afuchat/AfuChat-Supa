@@ -185,7 +185,8 @@
     "owner": "afuchat",
     "web": {
       "bundler": "metro",
-      "output": "single"
+      "output": "single",
+      "favicon": "./assets/images/icon.png"
     },
     "ios": {
       "bundleIdentifier": "com.afuchat.afuapp",
