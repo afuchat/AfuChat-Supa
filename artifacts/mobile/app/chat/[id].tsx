@@ -970,6 +970,33 @@ function LensContextCard({ msg, onSuggestionTap }: {
   );
 }
 
+function AutoSelectMessageText({ value, style }: { value: string; style?: any }) {
+  const inputRef = useRef<TextInput>(null);
+  const selection = { start: 0, end: value.length };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, Platform.OS === "web" ? 0 : 80);
+    return () => clearTimeout(timer);
+  }, [value]);
+
+  return (
+    <TextInput
+      ref={inputRef}
+      value={value}
+      editable={false}
+      multiline
+      scrollEnabled={false}
+      selectTextOnFocus
+      selection={selection}
+      showSoftInputOnFocus={false}
+      contextMenuHidden={false}
+      style={[style, { paddingHorizontal: 0, paddingVertical: 0 }]}
+    />
+  );
+}
+
 function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, replyPreview, onTapReply, isHighlighted, onTapEnvelope, onTapGift, onImageTap, onConfirmExec, onCancelExec, onSuggestionTap, onSenderPress, onReactionPress, onStatusPress, brandColor, flatSurface, hideTimestamp, isTextSelectionEnabled }: {
   msg: Message;
   isMe: boolean;
@@ -994,7 +1021,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   flatSurface?: boolean;
   /** When true, hides per-message timestamps (used in AfuAI chat) */
   hideTimestamp?: boolean;
-  /** Enables native text handles only after the user chooses Select. */
+  /** Automatically selects the full message text after the user chooses Select. */
   isTextSelectionEnabled?: boolean;
 }) {
   const { colors, isDark } = useTheme();
@@ -1341,7 +1368,14 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                   </View>
                 </TouchableOpacity>
               {hasTextContent && (
-                <RichText style={[st.bubbleText, { color: textColor, marginTop: 3, fontSize: _perChatFont, lineHeight: _perChatFont + 5 }]} linkColor={isMe ? "#FFFFFF" : BRAND} selectable={isTextSelectionEnabled}>{displayText}</RichText>
+                isTextSelectionEnabled ? (
+                  <AutoSelectMessageText
+                    value={displayText}
+                    style={[st.bubbleText, { color: textColor, marginTop: 3, fontSize: _perChatFont, lineHeight: _perChatFont + 5 }]}
+                  />
+                ) : (
+                  <RichText style={[st.bubbleText, { color: textColor, marginTop: 3, fontSize: _perChatFont, lineHeight: _perChatFont + 5 }]} linkColor={isMe ? "#FFFFFF" : BRAND}>{displayText}</RichText>
+                )
               )}
             </>
           ) : hasVideo ? (
@@ -1523,14 +1557,20 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                   return (
                     <>
                       <TouchableOpacity onLongPress={messageLongPress} delayLongPress={500} activeOpacity={0.9} style={{ minWidth: _tsWidth + 16 }}>
-                        <RichText
-                          style={[st.bubbleText, { color: textColor, fontSize: _fontSize, lineHeight: _lineH }]}
-                          linkColor={isMe ? "#FFFFFF" : BRAND}
-                          selectable={isTextSelectionEnabled}
-                          tail={ghost}
-                        >
-                          {displayText}
-                        </RichText>
+                         {isTextSelectionEnabled ? (
+                           <AutoSelectMessageText
+                             value={displayText}
+                             style={[st.bubbleText, { color: textColor, fontSize: _fontSize, lineHeight: _lineH, paddingRight: _tsWidth }]}
+                           />
+                         ) : (
+                           <RichText
+                             style={[st.bubbleText, { color: textColor, fontSize: _fontSize, lineHeight: _lineH }]}
+                             linkColor={isMe ? "#FFFFFF" : BRAND}
+                             tail={ghost}
+                           >
+                             {displayText}
+                           </RichText>
+                         )}
                       </TouchableOpacity>
                       {/* Real timestamp floats at bottom-right, over the invisible ghost */}
                       <View style={[st.metaRow, { position: "absolute", bottom: 4, right: 10 }]}>
@@ -1567,8 +1607,14 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                 })()
               ) : (
                 <TouchableOpacity onLongPress={messageLongPress} delayLongPress={500} activeOpacity={0.9}>
-                  {msg._isAi
+                         {msg._isAi
                     ? (
+                      isTextSelectionEnabled ? (
+                        <AutoSelectMessageText
+                          value={displayText}
+                          style={[st.bubbleText, { color: textColor, fontSize: _perChatFont, lineHeight: _perChatFont + 5 }]}
+                        />
+                      ) : (
                       <>
                         {msg._streaming && !displayText ? (
                           // Empty streaming bubble — show bouncing dots while first tokens arrive
@@ -1584,19 +1630,30 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                           <StreamingCursor color={colors.textMuted} />
                         )}
                       </>
+                      )
                     )
                     : (
-                      <RichText
-                        style={[st.bubbleText, {
-                          color: textColor,
-                          fontSize: _perChatFont,
-                          lineHeight: _perChatFont + 5,
-                        }]}
-                        linkColor={isMe ? "#FFFFFF" : BRAND}
-                        selectable={isTextSelectionEnabled}
-                      >
-                        {displayText}
-                      </RichText>
+                      isTextSelectionEnabled ? (
+                        <AutoSelectMessageText
+                          value={displayText}
+                          style={[st.bubbleText, {
+                            color: textColor,
+                            fontSize: _perChatFont,
+                            lineHeight: _perChatFont + 5,
+                          }]}
+                        />
+                      ) : (
+                        <RichText
+                          style={[st.bubbleText, {
+                            color: textColor,
+                            fontSize: _perChatFont,
+                            lineHeight: _perChatFont + 5,
+                          }]}
+                          linkColor={isMe ? "#FFFFFF" : BRAND}
+                        >
+                          {displayText}
+                        </RichText>
+                      )
                     )
                   }
                 </TouchableOpacity>
