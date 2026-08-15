@@ -7158,21 +7158,7 @@ STRICT RULES:
       >
         <View style={st.messageOptionsOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={closeMessageOptions} />
-          <View style={[st.messageOptionsCard, { backgroundColor: colors.surface, maxHeight: Math.min(460, Dimensions.get("window").height * 0.62) }]}>
-            <View style={[st.messageOptionsHeader, { borderBottomColor: colors.border, borderBottomWidth: 0 }]}>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={[st.messageOptionsEyebrow, { color: colors.textMuted }]}>Message actions</Text>
-                <Text
-                  style={[st.messageOptionsPreview, { color: colors.text }]}
-                  numberOfLines={1}
-                >
-                  {showReactions?.encrypted_content?.trim() || (showReactions?.attachment_url ? "Attachment" : "Message")}
-                </Text>
-              </View>
-              <TouchableOpacity onPress={closeMessageOptions} hitSlop={10} accessibilityLabel="Close message options">
-                <Ionicons name="close-circle" size={21} color={colors.textMuted} />
-              </TouchableOpacity>
-            </View>
+          <View style={[st.messageOptionsCard, { backgroundColor: colors.surface, maxHeight: Math.min(380, Dimensions.get("window").height * 0.52) }]}>
             <ScrollView
               showsVerticalScrollIndicator={false}
               bounces={false}
@@ -7232,26 +7218,6 @@ STRICT RULES:
         )}
 
         <View style={[st.reactRowSep, { backgroundColor: colors.border }]} />
-
-          {/* Select is opt-in so message long-press always opens this modal first.
-              After tapping it, only the selected message exposes native handles. */}
-         {showReactions?.encrypted_content?.trim() && (
-           <TouchableOpacity
-             style={st.reactRow}
-             activeOpacity={0.65}
-             onPress={() => {
-               if (!showReactions) return;
-               setTextSelectionMessageId(showReactions.id);
-               closeMessageOptions();
-             }}
-           >
-             <Ionicons name="text-outline" size={24} color={colors.text} style={st.reactRowIcon} />
-             <View style={{ flex: 1 }}>
-                <Text style={[st.reactRowLabel, { color: colors.text }]}>Select</Text>
-                <Text style={[st.reactRowHint, { color: colors.textMuted }]}>Use the handles to keep only what you need</Text>
-             </View>
-           </TouchableOpacity>
-         )}
 
         {/* Reply */}
         <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) { setReplyTo(showReactions); setTimeout(() => chatInputRef.current?.focus(), 50); setShowReactions(null); } }}>
@@ -8218,8 +8184,8 @@ const st = StyleSheet.create({
   },
   messageOptionsCard: {
     width: "100%",
-    maxWidth: 320,
-    borderRadius: 18,
+    maxWidth: 300,
+    borderRadius: 16,
     overflow: "hidden",
     elevation: 18,
     ...Platform.select({
