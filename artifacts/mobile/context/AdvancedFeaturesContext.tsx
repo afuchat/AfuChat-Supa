@@ -63,7 +63,7 @@ const defaults: AdvancedFeatureSettings = {
   translation_language: "en",
   voice_to_text: true,
   text_to_speech: true,
-  chat_folders: true,
+  chat_folders: false,
   temp_chat_enabled: false,
   temp_chat_default_minutes: 60,
   auto_reply_enabled: false,
