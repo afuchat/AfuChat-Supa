@@ -152,12 +152,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // involuntary sign-outs (expired token, server error, network failure).
   // onAuthStateChange ignores SIGNED_OUT unless this is true.
   const isUserSigningOut = useRef(false);
+  // Invalidates async bootstrap/account-switch work when auth identity changes.
+  // Late completions must never restore an old user or navigate over a newer flow.
+  const authGenerationRef = useRef(0);
+  const switchOperationRef = useRef(0);
+  const linkedAccountsRequestRef = useRef(0);
 
   // ── Profile fetch ───────────────────────────────────────────────────────────
 
-  async function fetchProfile(userId: string): Promise<Profile | null> {
+  async function fetchProfile(
+    userId: string,
+    isCurrent: () => boolean = () => true,
+  ): Promise<Profile | null> {
+    if (!isCurrent()) return null;
+
     if (!isOnline()) {
       const cached = await getCachedProfile();
+      if (!isCurrent()) return null;
       if (cached) setProfile(cached as Profile);
       setSubscription(null);
       return cached as Profile | null;
@@ -187,6 +198,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .eq("user_id", userId)
           .eq("equipped", true),
       ]);
+
+      if (!isCurrent()) return null;
 
       if (profileData) {
         setProfile(profileData as Profile);
@@ -222,6 +235,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       try {
         const cached = await getCachedProfile();
+        if (!isCurrent()) return null;
         if (cached) setProfile(cached as Profile);
         return cached as Profile | null;
       } catch {
@@ -246,7 +260,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ── Linked accounts ─────────────────────────────────────────────────────────
 
   async function refreshLinkedAccounts() {
+    const requestId = ++linkedAccountsRequestRef.current;
     const accounts = await getStoredAccounts();
+    if (requestId !== linkedAccountsRequestRef.current) return;
     setLinkedAccounts(accounts);
   }
 
@@ -254,8 +270,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Only persists tokens; never overwrites profile metadata (that's handled
   // inside fetchProfile via updateAccountProfile).
 
-  async function saveCurrentSession() {
-    if (isSwitchingRef.current || isLinkingRef.current) return;
+  async function saveCurrentSession(allowDuringTransition = false) {
+    if (!allowDuringTransition && (isSwitchingRef.current || isLinkingRef.current)) return;
     let live: Session | null = null;
     try {
       const { data } = await supabase.auth.getSession();
@@ -403,18 +419,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function switchAccount(
     userId: string
   ): Promise<{ success: boolean; error?: string }> {
-    if (isSwitchingRef.current) return { success: false, error: "Already switching." };
+    if (isSwitchingRef.current || switchOperationRef.current !== 0) {
+      return { success: false, error: "Already switching." };
+    }
 
-    const target = await getStoredAccount(userId);
-    if (!target) return { success: false, error: "Account not found. Please add it again." };
-
-    // ── 1. Snapshot current session ──────────────────────────────────────────
-    await saveCurrentSession();
-
-    // ── 2. Gate all side-effects ─────────────────────────────────────────────
+    const operationId = ++authGenerationRef.current;
+    switchOperationRef.current = operationId;
     isSwitchingRef.current = true;
+    const isCurrentSwitch = () =>
+      authGenerationRef.current === operationId &&
+      switchOperationRef.current === operationId &&
+      !isUserSigningOut.current;
 
     try {
+      const target = await getStoredAccount(userId);
+      if (!target) return { success: false, error: "Account not found. Please add it again." };
+
+      // ── 1. Snapshot current session before caches are wiped ────────────────
+      await saveCurrentSession(true);
+      if (!isCurrentSwitch()) return { success: false, error: "Account switch cancelled." };
+
       // ── 3. Clear React state immediately (screens show skeletons) ───────────
       setProfile(null);
       setSubscription(null);
@@ -430,9 +454,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         clearAccountCache(),
         clearAllConversations(),
       ]);
+      if (!isCurrentSwitch()) return { success: false, error: "Account switch cancelled." };
 
       // ── 5. Sign out locally (keeps server session alive) ────────────────────
       await supabase.auth.signOut({ scope: "local" });
+      if (!isCurrentSwitch()) return { success: false, error: "Account switch cancelled." };
 
       // ── 6. Set the new session ───────────────────────────────────────────────
       let newSession: Session | null = null;
@@ -459,7 +485,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // ── 8. Session is dead — remove it and abort ─────────────────────
           await removeStoredAccount(userId);
           await refreshLinkedAccounts();
-          setLoading(false);
+          if (isCurrentSwitch()) setLoading(false);
           return {
             success: false,
             error: "This session has expired. Please add this account again.",
@@ -474,24 +500,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
       }
 
+      if (!newSession || !isCurrentSwitch()) {
+        return { success: false, error: "Account switch cancelled." };
+      }
+
       // ── 9. Update React identity state ──────────────────────────────────────
       setSession(newSession);
       setUser(newSession.user);
       setCachedUserId(newSession.user.id);
 
       // Fetch the new account's profile directly (don't wait for onAuthStateChange)
-      await fetchProfile(newSession.user.id);
+      await fetchProfile(newSession.user.id, isCurrentSwitch);
       await refreshLinkedAccounts();
 
+      if (!isCurrentSwitch()) return { success: false, error: "Account switch cancelled." };
       setLoading(false);
-
-      if (!newSession) {
-        return { success: false, error: "Unable to restore the selected account session." };
-      }
       const switchedUserId = newSession.user.id;
 
       // ── 10. Reset navigation so stale screens are gone ───────────────────────
-       safeRouter.replace("/(tabs)/discover");
+      safeRouter.replace("/(tabs)/discover");
 
       // Background: register device + ensure AI chat exists
       registerDeviceSession(newSession.user.id).catch(() => {});
@@ -509,7 +536,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: true };
     } finally {
       // ── 11. Always un-gate ───────────────────────────────────────────────────
-      isSwitchingRef.current = false;
+      if (switchOperationRef.current === operationId) {
+        switchOperationRef.current = 0;
+        isSwitchingRef.current = false;
+      }
     }
   }
 
@@ -524,6 +554,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     isUserSigningOut.current = true; // mark as intentional before any state changes
+    authGenerationRef.current += 1;
+    switchOperationRef.current = 0;
     isSwitchingRef.current = true;  // suppress saveCurrentSession
     const signedOutUserId = user?.id;
     try {
@@ -565,6 +597,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ── Bootstrap ────────────────────────────────────────────────────────────────
 
   useEffect(() => {
+    const bootstrapGeneration = ++authGenerationRef.current;
+    const isCurrentBootstrap = () => authGenerationRef.current === bootstrapGeneration;
+
     // ── FAST PATH: synchronous MMKV identity check ──────────────────────────
     // MMKV is synchronous and survives all app restarts (online or offline).
     // If the user has ever logged in on this device, their ID is in MMKV.
@@ -577,6 +612,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (offlineSyncTimer) return;
       offlineSyncTimer = setTimeout(() => {
         offlineSyncTimer = null;
+        if (!isCurrentBootstrap()) return;
         startOfflineSync();
       }, 350);
     };
@@ -584,16 +620,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const fastCachedId = getCachedUserId();
     if (fastCachedId) {
       const fastProfile = getCachedProfileSync();
-      if (fastProfile) setProfile(fastProfile as Profile);
-      setUser({
-        id: fastCachedId,
-        email: (fastProfile as any)?.email ?? "",
-        app_metadata: {},
-        user_metadata: {},
-        aud: "authenticated",
-        created_at: "",
-      } as User);
-      setLoading(false); // ← index.tsx sees this synchronously, routes to chats
+      if (isCurrentBootstrap()) {
+        if (fastProfile) setProfile(fastProfile as Profile);
+        setUser({
+          id: fastCachedId,
+          email: (fastProfile as any)?.email ?? "",
+          app_metadata: {},
+          user_metadata: {},
+          aud: "authenticated",
+          created_at: "",
+        } as User);
+        setLoading(false); // ← index.tsx sees this synchronously, routes to chats
+      }
       scheduleOfflineSync();
     }
 
@@ -601,12 +639,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // just silence), release the splash after 3.5 s so the user is never locked out.
     let safetyFired = false;
     const safetyTimer = setTimeout(() => {
+      if (!isCurrentBootstrap()) return;
       safetyFired = true;
       setLoading(false);
     }, 3500);
 
     supabase.auth.getSession()
       .then(async ({ data: { session } }) => {
+        if (!isCurrentBootstrap()) return;
         clearTimeout(safetyTimer);
         if (session?.user) {
           setSession(session);
@@ -618,7 +658,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (cachedSync) setProfile(cachedSync as Profile);
           setLoading(false);
           // Refresh profile from Supabase in the background (non-blocking)
-          fetchProfile(session.user.id);
+           fetchProfile(session.user.id, isCurrentBootstrap).catch(() => {});
           scheduleOfflineSync();
           supabase
             .from("profiles")
@@ -636,6 +676,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // stored account's userId so the user is NEVER routed to the welcome screen.
           const cachedUserId = getCachedUserId();
           const accounts = await getStoredAccounts();
+          if (!isCurrentBootstrap()) return;
           const primaryAccount = accounts[0] ?? null;
 
           // Use stored account userId as fallback when MMKV was wiped
@@ -654,6 +695,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (!cachedUserId && effectiveUserId) setCachedUserId(effectiveUserId);
 
             const cached = await getCachedProfile();
+            if (!isCurrentBootstrap()) return;
             if (cached) setProfile(cached as Profile);
 
             // Set a synthetic user IMMEDIATELY so the app routes to home without
@@ -667,6 +709,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               aud: "authenticated",
               created_at: "",
             } as User;
+            if (!isCurrentBootstrap()) return;
             setUser(syntheticUser);
             // Release loading NOW — home renders before refresh completes.
             setLoading(false);
@@ -693,8 +736,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 // SecureStore was temporarily unavailable (Android Keystore race on
                 // fresh reboot). Retry in 3 s — by then the Keystore is accessible.
                 setTimeout(async () => {
+                  if (!isCurrentBootstrap()) return;
                   try {
                     const retried = await getStoredAccounts();
+                    if (!isCurrentBootstrap()) return;
                     const stored = retried[0] ?? null;
                     if (!stored) return;
                     // Try to promote the synthetic session to a real one.
@@ -712,17 +757,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             // Truly no identity anywhere — user has never logged in on this device.
             const cached = await getCachedProfile();
+            if (!isCurrentBootstrap()) return;
             if (cached) setProfile(cached as Profile);
             setLoading(false);
           }
         }
       })
       .catch(() => {
+        if (!isCurrentBootstrap()) return;
         clearTimeout(safetyTimer);
         if (!safetyFired) setLoading(false);
       });
 
     const linkedAccountsTimer = setTimeout(() => {
+      if (!isCurrentBootstrap()) return;
       refreshLinkedAccounts().catch(() => {});
     }, 800);
 
@@ -730,6 +778,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Suppress all state mutations during a switch or link operation.
       // The switch function manages state directly; we don't want a race.
       if (isSwitchingRef.current || isLinkingRef.current) return;
+      const eventGeneration = authGenerationRef.current;
 
       // TOKEN_REFRESHED: patch tokens in-place, don't re-fetch the profile.
       if (event === "TOKEN_REFRESHED") {
@@ -768,6 +817,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // A user who has ever logged in must NEVER be involuntarily signed out.
           getStoredAccounts()
             .then(async (accts) => {
+              if (
+                authGenerationRef.current !== eventGeneration ||
+                isUserSigningOut.current ||
+                isSwitchingRef.current
+              ) return;
               const stored = accts[0] ?? null;
               if (!stored) return;
 
@@ -814,7 +868,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }).catch(() => {});
 
         registerDeviceSession(newSession.user.id).catch(() => {});
-        fetchProfile(newSession.user.id)
+        fetchProfile(
+          newSession.user.id,
+          () =>
+            authGenerationRef.current === eventGeneration &&
+            !isSwitchingRef.current &&
+            !isUserSigningOut.current,
+        )
           .then(() => {
             supabase
               .from("profiles")
@@ -830,6 +890,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
+      authGenerationRef.current += 1;
       if (offlineSyncTimer) clearTimeout(offlineSyncTimer);
       clearTimeout(linkedAccountsTimer);
       listener.subscription.unsubscribe();

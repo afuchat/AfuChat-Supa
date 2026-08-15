@@ -12,7 +12,7 @@
 //   Navigate.toChat({ id: chatId, name: "Alice" });
 //   Navigate.back();
 
-import { router } from "expo-router";
+import { safeRouter } from "@/lib/navUtils";
 
 // ─── Param shapes ──────────────────────────────────────────────────────────────
 
@@ -35,109 +35,109 @@ export const Navigate = {
 
   /** Replace the current stack with the Chats tab (home screen). */
   toChats() {
-    router.replace("/(tabs)/chats" as any);
+    safeRouter.replace("/(tabs)/chats" as any);
   },
 
   toDiscover() {
-    router.replace("/(tabs)/discover" as any);
+    safeRouter.replace("/(tabs)/discover" as any);
   },
 
   toShorts() {
-    router.replace("/(tabs)/shorts" as any);
+    safeRouter.replace("/(tabs)/shorts" as any);
   },
 
   toProfile() {
-    router.replace("/(tabs)/profile" as any);
+    safeRouter.replace("/(tabs)/profile" as any);
   },
 
   // ── Auth ─────────────────────────────────────────────────────────────────────
 
   toWelcome() {
-    router.replace("/welcome" as any);
+    safeRouter.replace("/welcome" as any);
   },
 
   toLogin() {
-    router.replace("/(auth)/login" as any);
+    safeRouter.replace("/(auth)/login" as any);
   },
 
   toOnboarding() {
-    router.replace("/onboarding" as any);
+    safeRouter.replace("/onboarding" as any);
   },
 
   // ── Chat ─────────────────────────────────────────────────────────────────────
 
   /** Open an existing chat conversation. */
   toChat(params: ChatParams) {
-    router.push({ pathname: "/chat/[id]" as any, params });
+    safeRouter.push({ pathname: "/chat/[id]" as any, params });
   },
 
   toNewChat() {
-    router.push("/new-chat" as any);
+    safeRouter.push("/new-chat" as any);
   },
 
   toNewGroup() {
-    router.push("/new-group" as any);
+    safeRouter.push("/new-group" as any);
   },
 
   toChatInfo(params: { id: string }) {
-    router.push({ pathname: "/chat/[id]/info" as any, params });
+    safeRouter.push({ pathname: "/chat/[id]/info" as any, params });
   },
 
   // ── Content ──────────────────────────────────────────────────────────────────
 
   toPost(params: PostParams) {
-    router.push({ pathname: "/post/[id]" as any, params: { id: params.postId } });
+    safeRouter.push({ pathname: "/post/[id]" as any, params: { id: params.postId } });
   },
 
   toVideo(params: VideoParams) {
-    router.push({ pathname: "/video/[id]" as any, params });
+    safeRouter.push({ pathname: "/video/[id]" as any, params });
   },
 
   toCreatePost() {
-    router.push("/create" as any);
+    safeRouter.push("/create" as any);
   },
 
   // ── User profiles ─────────────────────────────────────────────────────────────
 
   /** Push a user's public profile page (e.g. "/@alice"). */
   toUserProfile(handle: string) {
-    router.push(`/${handle}` as any);
+    safeRouter.push(`/${handle}` as any);
   },
 
   // ── Search / discovery ───────────────────────────────────────────────────────
 
   toSearch() {
-    router.push("/search" as any);
+    safeRouter.push("/search" as any);
   },
 
   toUserDiscovery() {
-    router.push("/user-discovery" as any);
+    safeRouter.push("/user-discovery" as any);
   },
 
   // ── Settings ─────────────────────────────────────────────────────────────────
 
   toSettings() {
-    router.push("/settings" as any);
+    safeRouter.push("/settings" as any);
   },
 
   toPrivacySettings() {
-    router.push("/settings/privacy" as any);
+    safeRouter.push("/settings/privacy" as any);
   },
 
   toStorageSettings() {
-    router.push("/settings/storage" as any);
+    safeRouter.push("/settings/storage" as any);
   },
 
   // ── Wallet / payments ─────────────────────────────────────────────────────────
 
   toWallet() {
-    router.push("/wallet" as any);
+    safeRouter.push("/wallet" as any);
   },
 
   // ── Calls ─────────────────────────────────────────────────────────────────────
 
   toIncomingCall(params: { callId: string; callerId: string; callerName?: string }) {
-    router.push({ pathname: "/call/incoming" as any, params });
+    safeRouter.push({ pathname: "/call/incoming" as any, params });
   },
 
   // ── Utilities ─────────────────────────────────────────────────────────────────
@@ -148,11 +148,7 @@ export const Navigate = {
    * so the user is never stranded.
    */
   back() {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      Navigate.toChats();
-    }
+    safeRouter.back("/(tabs)/chats");
   },
 
   /**
@@ -161,6 +157,6 @@ export const Navigate = {
    * (e.g. after sign-out or when handling deep links).
    */
   reset(href: string) {
-    router.replace(href as any);
+    safeRouter.replace(href as any);
   },
 };

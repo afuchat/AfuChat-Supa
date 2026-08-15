@@ -23,6 +23,7 @@ import { emitIncomingMessage, IncomingMessage } from "@/lib/globalMessageEvents"
 export function GlobalInboxListener() {
   const { user } = useAuth();
   const recentIds = useRef(new Set<string>());
+  const evictionTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const userIdRef = useRef(user?.id);
   userIdRef.current = user?.id;
 
@@ -34,7 +35,11 @@ export function GlobalInboxListener() {
     // Deduplicate — broadcast may fire more than once if sender re-tries
     if (recentIds.current.has(msg.id)) return;
     recentIds.current.add(msg.id);
-    setTimeout(() => recentIds.current.delete(msg.id), 15_000);
+    const timer = setTimeout(() => {
+      recentIds.current.delete(msg.id);
+      evictionTimers.current.delete(msg.id);
+    }, 15_000);
+    evictionTimers.current.set(msg.id, timer);
 
     // Emit to global event bus → chat/[id].tsx fast path picks it up
     emitIncomingMessage(msg);
@@ -101,6 +106,9 @@ export function GlobalInboxListener() {
       destroyed = true;
       if (reconnectTimer) clearTimeout(reconnectTimer);
       if (currentChannel) supabase.removeChannel(currentChannel).catch(() => {});
+      recentIds.current.clear();
+      evictionTimers.current.forEach((timer) => clearTimeout(timer));
+      evictionTimers.current.clear();
     };
   }, [user?.id, handlePayload]);
 
