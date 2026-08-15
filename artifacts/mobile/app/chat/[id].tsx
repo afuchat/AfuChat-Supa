@@ -6694,7 +6694,7 @@ STRICT RULES:
                             name={editingMessage ? "checkmark" : "send"}
                             size={18}
                             color="#fff"
-                            style={editingMessage ? undefined : { transform: [{ rotate: "45deg" }] }}
+                            style={editingMessage ? undefined : { transform: [{ rotate: "-45deg" }] }}
                           />
                         )}
                       </TouchableOpacity>
