@@ -189,6 +189,7 @@ function AppNavigationStack() {
       {/* Boot / auth-shell screens — no directional slide, instant swap */}
       <Stack.Screen name="index"      options={{ animation: "none", contentStyle: { backgroundColor: bg } }} />
       <Stack.Screen name="welcome"    options={{ animation: "none", gestureEnabled: false }} />
+      <Stack.Screen name="(auth)"     options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="(tabs)"     options={{ animation: "none" }} />
       {/* Every other group and screen inherits the instant transition */}
       <Stack.Screen name="+not-found" />

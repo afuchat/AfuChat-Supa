@@ -30,7 +30,6 @@ const SLIDES = [
   {
     accent: "#1f95ff",
     accentAlt: "#7B5EA7",
-    tag: "MESSAGING",
     title: "Chat like\nnever before",
     subtitle:
       "Real-time messages, voice notes & encrypted video calls — with read receipts that actually work.",
@@ -43,7 +42,6 @@ const SLIDES = [
   {
     accent: "#AF52DE",
     accentAlt: "#FF6B9D",
-    tag: "COMMUNITY",
     title: "Find your\ntribe nearby",
     subtitle:
       "Discover people, join communities, share stories and grow your circle every single day.",
@@ -56,7 +54,6 @@ const SLIDES = [
   {
     accent: "#FF9500",
     accentAlt: "#FF6B35",
-    tag: "AI FEATURES",
     title: "AI that works\nfor you",
     subtitle:
       "Smart replies, image generation, voice transcription and instant translation — right in your chats.",
@@ -69,7 +66,6 @@ const SLIDES = [
   {
     accent: "#34C759",
     accentAlt: "#00D4AA",
-    tag: "WALLET",
     title: "Earn as you\nconnect",
     subtitle:
       "Send money, earn Nexa points, tip creators and manage your digital wallet — all in one place.",
@@ -84,11 +80,6 @@ const SLIDES = [
 const TOTAL = SLIDES.length;
 const SWIPE_THRESHOLD = 52;
 const BG = "#000000";
-
-function finish() {
-  try { storage.setBoolean(KEYS.ONBOARDING_DONE, true); } catch {}
-  router.replace("/(auth)/login");
-}
 
 // ─── Soft orb (layered circles simulate radial gradient) ──────────────────────
 function SoftOrb({ cx, cy, size, color }: { cx: number; cy: number; size: number; color: string }) {
@@ -136,154 +127,57 @@ const IL_SOURCES: { key: string; src: any }[] = [
   { key: "wallet",    src: IL_WALLET },
 ];
 
-// ─── Main component ────────────────────────────────────────────────────────────
-export default function WelcomeScreen() {
-  const { user } = useAuth();
-  const insets = useSafeAreaInsets();
-  const { width: SW, height: SH } = useWindowDimensions();
+type OnboardingPageProps = {
+  slide: (typeof SLIDES)[number];
+  index: number;
+  width: number;
+  height: number;
+  topInset: number;
+  bottomInset: number;
+  activeIndex: number;
+  onNext: (index: number) => void;
+  onSkip: () => void;
+  onSelect: (index: number) => void;
+};
 
-  const [activeIndex, setActiveIndex] = useState(0);
-  const activeIndexRef = useRef(0);
-  const isBusyRef = useRef(false);
-
-  const contentOpacity = useRef(new Animated.Value(1)).current;
-  const contentX = useRef(new Animated.Value(0)).current;
-  const contentY = useRef(new Animated.Value(0)).current;
-  const illustrationScale = useRef(new Animated.Value(1)).current;
-  const illustrationX = useRef(new Animated.Value(0)).current;
-  const illustrationOpacity = useRef(new Animated.Value(1)).current;
-
-  // Orb animated values — first slide starts at 1 so the illustration is
-  // visible immediately on mount (no waiting for a fade-in decode delay).
-  const orbOpacities = useRef(SLIDES.map((_, i) => ({
-    o1: new Animated.Value(i === 0 ? 1 : 0),
-    o2: new Animated.Value(i === 0 ? 1 : 0),
-    o3: new Animated.Value(i === 0 ? 1 : 0),
-  }))).current;
-
-  useEffect(() => {
-    if (user) router.replace("/(tabs)/discover");
-    // First slide orbs are already at 1 — nothing to animate on mount.
-  }, [user]);
-
-  function crossfadeTo(nextIdx: number) {
-    if (isBusyRef.current) return;
-    const current = activeIndexRef.current;
-    if (nextIdx === current || nextIdx < 0 || nextIdx >= TOTAL) return;
-    isBusyRef.current = true;
-    activeIndexRef.current = nextIdx;
-    const direction = nextIdx > current ? 1 : -1;
-    Haptics.selectionAsync();
-
-    // Slide the current content out in the navigation direction before
-    // swapping the slide, then bring the new content in from that edge.
-    Animated.sequence([
-      Animated.parallel([
-        Animated.timing(contentOpacity, { toValue: 0, duration: 120, useNativeDriver: true }),
-        Animated.timing(contentX, { toValue: -direction * 56, duration: 180, useNativeDriver: true }),
-        Animated.timing(contentY, { toValue: 10, duration: 120, useNativeDriver: true }),
-        Animated.timing(illustrationOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
-        Animated.timing(illustrationX, { toValue: -direction * 30, duration: 200, useNativeDriver: true }),
-        Animated.timing(illustrationScale, { toValue: 0.92, duration: 200, useNativeDriver: true }),
-      ]),
-    ]).start(() => {
-      setActiveIndex(nextIdx);
-      contentX.setValue(direction * 56);
-      contentY.setValue(10);
-      illustrationX.setValue(direction * 30);
-      // Fade orbs out
-      Animated.parallel([
-        Animated.timing(orbOpacities[current].o1, { toValue: 0, duration: 350, useNativeDriver: true }),
-        Animated.timing(orbOpacities[current].o2, { toValue: 0, duration: 350, useNativeDriver: true }),
-        Animated.timing(orbOpacities[current].o3, { toValue: 0, duration: 350, useNativeDriver: true }),
-      ]).start();
-      // Fade new orbs in
-      Animated.parallel([
-        Animated.timing(orbOpacities[nextIdx].o1, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(orbOpacities[nextIdx].o2, { toValue: 1, duration: 600, useNativeDriver: true }),
-        Animated.timing(orbOpacities[nextIdx].o3, { toValue: 1, duration: 700, useNativeDriver: true }),
-      ]).start();
-      // Content in
-      Animated.parallel([
-        Animated.timing(contentOpacity, { toValue: 1, duration: 260, useNativeDriver: true }),
-        Animated.timing(contentX, { toValue: 0, duration: 300, useNativeDriver: true }),
-        Animated.timing(contentY, { toValue: 0, duration: 260, useNativeDriver: true }),
-        Animated.timing(illustrationOpacity, { toValue: 1, duration: 360, useNativeDriver: true }),
-        Animated.timing(illustrationX, { toValue: 0, duration: 360, useNativeDriver: true }),
-        Animated.spring(illustrationScale, { toValue: 1, useNativeDriver: true, tension: 200, friction: 20 }),
-      ]).start(() => { isBusyRef.current = false; });
-    });
-  }
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, g) =>
-        Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy),
-      onPanResponderRelease: (_, g) => {
-        if (g.dx < -SWIPE_THRESHOLD && activeIndexRef.current < TOTAL - 1)
-          crossfadeTo(activeIndexRef.current + 1);
-        else if (g.dx > SWIPE_THRESHOLD && activeIndexRef.current > 0)
-          crossfadeTo(activeIndexRef.current - 1);
-      },
-    })
-  ).current;
-
-  function goNext() {
-    if (activeIndex < TOTAL - 1) {
-      crossfadeTo(activeIndex + 1);
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      finish();
-    }
-  }
-
-  const slide = SLIDES[activeIndex];
-  const isLast = activeIndex === TOTAL - 1;
+function OnboardingPage({
+  slide,
+  index,
+  width,
+  height,
+  topInset,
+  bottomInset,
+  activeIndex,
+  onNext,
+  onSkip,
+  onSelect,
+}: OnboardingPageProps) {
+  const isLast = index === TOTAL - 1;
 
   return (
-    <View style={[s.root, { backgroundColor: BG }]} {...panResponder.panHandlers}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+    <View style={[s.page, { width, height, backgroundColor: BG }]}>
+      {/* Every page owns its illustration, background orbs, header, and CTA.
+          The parent track moves this complete surface as one unit. */}
+      <View style={s.illustrationBg} pointerEvents="none">
+        <Image
+          source={IL_SOURCES[index].src}
+          style={s.illustrationBgImage}
+          resizeMode="contain"
+        />
+      </View>
 
-      {/* ── Layer 1: All illustrations pre-rendered — decode on mount, not per-slide ── */}
-      {/* They live BEHIND the orbs so they're part of the background, not overlaid on it */}
-      {IL_SOURCES.map(({ key, src }, si) => (
-        <Animated.View
-          key={key}
-          style={[s.illustrationBg, {
-            opacity: Animated.multiply(
-              illustrationOpacity,
-              orbOpacities[si].o1, // reuse orb opacity as slide visibility
-            ),
-            transform: [{ translateX: illustrationX }, { scale: illustrationScale }],
-            pointerEvents: "none",
-          }]}
-        >
-          <Image
-            source={src}
-            style={s.illustrationBgImage}
-            resizeMode="contain"
-          />
-        </Animated.View>
-      ))}
-
-      {/* ── Layer 2: Orbs on top of the illustration ── */}
-      {SLIDES.map((sl, si) => (
-        <View key={si} style={[StyleSheet.absoluteFill, { pointerEvents: "none" } as any]}>
-          <Animated.View style={[StyleSheet.absoluteFill, { opacity: orbOpacities[si].o1 }]}>
-            <SoftOrb cx={SW * sl.orb1.x} cy={SH * sl.orb1.y} size={sl.orb1.size} color={sl.orb1.color} />
-          </Animated.View>
-          <Animated.View style={[StyleSheet.absoluteFill, { opacity: orbOpacities[si].o2 }]}>
-            <SoftOrb cx={SW * sl.orb2.x} cy={SH * sl.orb2.y} size={sl.orb2.size} color={sl.orb2.color} />
-          </Animated.View>
-          <Animated.View style={[StyleSheet.absoluteFill, { opacity: orbOpacities[si].o3 }]}>
-            <SoftOrb cx={SW * sl.orb3.x} cy={SH * sl.orb3.y} size={sl.orb3.size} color={sl.orb3.color} />
-          </Animated.View>
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        <View style={StyleSheet.absoluteFill}>
+          <SoftOrb cx={width * slide.orb1.x} cy={height * slide.orb1.y} size={slide.orb1.size} color={slide.orb1.color} />
         </View>
-      ))}
+        <View style={StyleSheet.absoluteFill}>
+          <SoftOrb cx={width * slide.orb2.x} cy={height * slide.orb2.y} size={slide.orb2.size} color={slide.orb2.color} />
+        </View>
+        <View style={StyleSheet.absoluteFill}>
+          <SoftOrb cx={width * slide.orb3.x} cy={height * slide.orb3.y} size={slide.orb3.size} color={slide.orb3.color} />
+        </View>
+      </View>
 
-      {/* ── Layer 3: Gradient that blends the whole background into the dark bottom ── */}
-      {/* Starts at ~30% down so the illustration top is fully visible */}
       <LinearGradient
         colors={["transparent", `${BG}00`, `${BG}B0`, BG, BG]}
         locations={[0, 0.28, 0.52, 0.70, 1]}
@@ -291,52 +185,37 @@ export default function WelcomeScreen() {
         style={[StyleSheet.absoluteFill, { pointerEvents: "none" } as any]}
       />
 
-      {/* ── Top bar ── */}
-      <View style={[s.topBar, { paddingTop: insets.top + 12 }]}>
+      <View style={[s.topBar, { paddingTop: topInset + 12 }]}>
         <View style={s.logoRow}>
           <Image source={LOGO_WHITE} style={s.logoImg} />
           <Text style={s.logoText}>AfuChat</Text>
         </View>
-        <TouchableOpacity onPress={finish} hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}>
+        <TouchableOpacity onPress={onSkip} hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}>
           <View style={s.skipPill}>
             <Text style={s.skipText}>Skip</Text>
           </View>
         </TouchableOpacity>
       </View>
 
-      {/* ── Glass content card ── */}
-      <View style={[s.card, { paddingBottom: Math.max(insets.bottom, 20) + 8 }]}>
-        {/* Top gradient border on card */}
+      <View style={[s.card, { paddingBottom: Math.max(bottomInset, 20) + 8 }]}>
         <LinearGradient
           colors={[slide.accent + "55", slide.accentAlt + "30", "transparent"]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
           style={s.cardTopBorder}
         />
 
-        <Animated.View style={{ opacity: contentOpacity, transform: [{ translateX: contentX }, { translateY: contentY }] }}>
-          {/* Feature tag */}
-          <View style={s.tagRow}>
-            <View style={[s.tag, { backgroundColor: slide.accent + "20", borderColor: slide.accent + "40" }]}>
-              <View style={[s.tagDot, { backgroundColor: slide.accent }]} />
-              <Text style={[s.tagText, { color: slide.accent }]}>{slide.tag}</Text>
-            </View>
-          </View>
-
-          {/* Title */}
+        <View>
           <Text style={s.title}>{slide.title}</Text>
-
-          {/* Subtitle */}
           <Text style={s.subtitle}>{slide.subtitle}</Text>
-        </Animated.View>
+        </View>
 
-        {/* Progress bar */}
         <View style={s.progressRow}>
           {SLIDES.map((_, i) => {
             const active = i === activeIndex;
             return (
               <TouchableOpacity
                 key={i}
-                onPress={() => crossfadeTo(i)}
+                onPress={() => onSelect(i)}
                 hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
               >
                 <View style={[s.progressSegment, { backgroundColor: "rgba(255,255,255,0.12)" }]}>
@@ -351,8 +230,7 @@ export default function WelcomeScreen() {
           })}
         </View>
 
-        {/* CTA */}
-        <TouchableOpacity style={s.ctaWrap} onPress={goNext} activeOpacity={0.84}>
+        <TouchableOpacity style={s.ctaWrap} onPress={() => onNext(index)} activeOpacity={0.84}>
           <LinearGradient
             colors={[slide.accent, slide.accentAlt]}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
@@ -365,10 +243,9 @@ export default function WelcomeScreen() {
           </LinearGradient>
         </TouchableOpacity>
 
-        {/* Auth hint */}
         <View style={s.hintRow}>
           <Text style={s.hintText}>Already have an account? </Text>
-          <TouchableOpacity onPress={finish} hitSlop={8}>
+          <TouchableOpacity onPress={onSkip} hitSlop={8}>
             <Text style={[s.hintLink, { color: slide.accent }]}>Sign in</Text>
           </TouchableOpacity>
         </View>
@@ -377,9 +254,104 @@ export default function WelcomeScreen() {
   );
 }
 
+// ─── Main component ────────────────────────────────────────────────────────────
+export default function WelcomeScreen() {
+  const { user } = useAuth();
+  const insets = useSafeAreaInsets();
+  const { width: SW, height: SH } = useWindowDimensions();
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeIndexRef = useRef(0);
+  const isBusyRef = useRef(false);
+  const pageX = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (user) router.replace("/(tabs)/discover");
+  }, [user]);
+
+  function goTo(nextIdx: number) {
+    const current = activeIndexRef.current;
+    if (isBusyRef.current || nextIdx === current || nextIdx < 0 || nextIdx >= TOTAL) return;
+    isBusyRef.current = true;
+    activeIndexRef.current = nextIdx;
+    setActiveIndex(nextIdx);
+    Haptics.selectionAsync();
+    Animated.timing(pageX, {
+      toValue: -nextIdx * SW,
+      duration: 360,
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      isBusyRef.current = false;
+      if (!finished) {
+        pageX.setValue(-activeIndexRef.current * SW);
+      }
+    });
+  }
+
+  const finish = () => {
+    if (isBusyRef.current) return;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    try { storage.setBoolean(KEYS.ONBOARDING_DONE, true); } catch {}
+    // The root auth-group transition is directional, so login slides in rather
+    // than replacing the onboarding screen as an instant jump.
+    router.replace("/(auth)/login");
+  };
+
+  const goNext = (index: number) => {
+    if (index < TOTAL - 1) goTo(index + 1);
+    else finish();
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy),
+      onPanResponderRelease: (_, g) => {
+        if (g.dx < -SWIPE_THRESHOLD) goTo(activeIndexRef.current + 1);
+        else if (g.dx > SWIPE_THRESHOLD) goTo(activeIndexRef.current - 1);
+      },
+    }),
+  ).current;
+
+  return (
+    <View style={[s.root, { backgroundColor: BG }]} {...panResponder.panHandlers}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <Animated.View
+        style={[
+          s.pageTrack,
+          { width: SW * TOTAL, height: SH, transform: [{ translateX: pageX }] },
+        ]}
+      >
+        {SLIDES.map((slide, index) => (
+          <OnboardingPage
+            key={index}
+            slide={slide}
+            index={index}
+            width={SW}
+            height={SH}
+            topInset={insets.top}
+            bottomInset={insets.bottom}
+            activeIndex={activeIndex}
+            onNext={goNext}
+            onSkip={finish}
+            onSelect={goTo}
+          />
+        ))}
+      </Animated.View>
+    </View>
+  );
+}
+
 // ─── Screen styles ─────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, overflow: "hidden" },
+  pageTrack: {
+    flexDirection: "row",
+  },
+  page: {
+    flexShrink: 0,
+    overflow: "hidden",
+  },
 
   topBar: {
     position: "absolute",
@@ -446,21 +418,6 @@ const s = StyleSheet.create({
     borderRadius: 1,
     marginBottom: 0,
   },
-
-  tagRow: {
-    flexDirection: "row",
-    marginBottom: 14,
-  },
-  tag: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 11,
-    paddingVertical: 5,
-    borderRadius: 999,
-    gap: 6,
-  },
-  tagDot: { width: 6, height: 6, borderRadius: 3 },
-  tagText: { fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 1.2 },
 
   title: {
     fontSize: 38,
