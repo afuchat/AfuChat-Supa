@@ -68,7 +68,7 @@ import { SuggestedUsers } from "@/components/ui/SuggestedUsers";
 import { StoryRing } from "@/components/ui/StoryRing";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { BlurView } from "expo-blur";
-import { GLASS } from "@/constants/glass";
+import { GLASS, glassTokens } from "@/constants/glass";
 import { useUserEffects } from "@/hooks/useUserEffects";
 import { getViewedUserIds } from "@/lib/storyViewedStore";
 import { prefetchAvatars, prefetchThumbnails, prefetchListImages } from "@/lib/storage/imagePrefetcher";
@@ -1028,6 +1028,7 @@ export default function DiscoverScreen() {
   "use no memo";
   const { horizontalScrollActive } = React.useContext(TabSwipeContext);
   const { colors, isDark, setForceDark } = useTheme();
+  const pillGlass = glassTokens(isDark);
   const { user, profile } = useAuth();
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
@@ -2964,7 +2965,11 @@ export default function DiscoverScreen() {
         ]}
       >
         <Pressable
-          style={({ pressed }) => [styles.newPostsPillBtn, { opacity: pressed ? 0.82 : 1 }]}
+          style={({ pressed }) => [
+            styles.newPostsPillBtn,
+            pillGlass.shadow,
+            { opacity: pressed ? 0.82 : 1 },
+          ]}
           onPress={handleShowNewPosts}
         >
           <BlurView
@@ -2974,22 +2979,29 @@ export default function DiscoverScreen() {
           />
           {/* glass fill */}
           <View style={[StyleSheet.absoluteFill, {
-            backgroundColor: isDark ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.50)",
+            backgroundColor: pillGlass.fillSubtle,
             borderRadius: 999,
           }]} />
           {/* specular border */}
           <View style={[StyleSheet.absoluteFill, {
             borderRadius: 999,
             borderWidth: 0.75,
-            borderColor: isDark ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.80)",
+            borderColor: pillGlass.border,
           }]} />
-          <Ionicons name="arrow-up" size={14} color="#fff" />
+          <Ionicons name="arrow-up" size={14} color={colors.text} />
           {/* Up to 3 plain avatar circles — no Avatar component, no rings */}
           <View style={styles.newPostsAvatars}>
             {popupSnapshot.slice(0, 3).map((a, i) => (
               <View
                 key={a.id}
-                style={[styles.newPostsAvatarCircle, { marginLeft: i > 0 ? -10 : 0, zIndex: 10 - i }]}
+                style={[
+                  styles.newPostsAvatarCircle,
+                  {
+                    marginLeft: i > 0 ? -10 : 0,
+                    zIndex: 10 - i,
+                    borderColor: isDark ? "rgba(255,255,255,0.86)" : "rgba(0,0,0,0.14)",
+                  },
+                ]}
               >
                 {a.avatar_url ? (
                   <CachedImage
@@ -2999,8 +3011,10 @@ export default function DiscoverScreen() {
                     contentFit="cover"
                   />
                 ) : (
-                  <View style={styles.newPostsAvatarFallback}>
-                    <Text style={styles.newPostsAvatarInitial}>
+                  <View style={[styles.newPostsAvatarFallback, {
+                    backgroundColor: isDark ? "rgba(255,255,255,0.22)" : "rgba(0,0,0,0.08)",
+                  }]}>
+                    <Text style={[styles.newPostsAvatarInitial, { color: colors.text }]}>
                       {(a.display_name?.[0] ?? "?").toUpperCase()}
                     </Text>
                   </View>
@@ -3008,7 +3022,7 @@ export default function DiscoverScreen() {
               </View>
             ))}
           </View>
-          <Text style={styles.newPostsPillLabel}>
+          <Text style={[styles.newPostsPillLabel, { color: colors.text }]}>
             {pendingCount > 1 ? `${pendingCount} new posts` : "new posts"}
           </Text>
         </Pressable>
@@ -3476,7 +3490,6 @@ const styles = StyleSheet.create({
     paddingLeft: 12,
     paddingRight: 16,
     gap: 7,
-    ...GLASS.shadow.dark,
   },
   newPostsAvatars: {
     flexDirection: "row",
