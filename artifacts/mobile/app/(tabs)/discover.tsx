@@ -1353,8 +1353,9 @@ export default function DiscoverScreen() {
 
   // Animate the floating "new posts" popup in when new authors arrive,
   // out when the list is cleared (refresh, tab switch, etc.).
-  // useNativeDriver is only available on native — web uses JS-driven animation.
-  const _useND = true;
+  // The native animated driver is unavailable on web; keep the same animation
+  // behavior there with the JS driver instead of triggering a runtime warning.
+  const _useND = Platform.OS !== "web";
   useEffect(() => {
     if (newPostAuthors.length === 0) {
       if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
@@ -2957,7 +2958,9 @@ export default function DiscoverScreen() {
         style={[
           styles.newPostsFloatingWrap,
           {
-            top: insets.top + 8,
+            // Keep the pill directly below the complete header, including the
+            // For You / Following tabs, on every safe-area size.
+            top: headerHeight + 6,
             transform: [{ translateY: popupSlide }],
             opacity: popupOpacity,
             pointerEvents: popupSnapshot.length > 0 ? "auto" : "none",
