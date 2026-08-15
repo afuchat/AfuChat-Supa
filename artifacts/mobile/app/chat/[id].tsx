@@ -5841,6 +5841,20 @@ STRICT RULES:
       ? "My Notes"
       : (phonebookName || chatInfo?.other_name || "Chat");
   const headerAvatar = chatInfo?.is_group || chatInfo?.is_channel ? chatInfo?.avatar_url : isSelfChat ? null : chatInfo?.other_avatar;
+  const canOpenDirectProfile = !!chatInfo?.other_id && !chatInfo.is_group && !chatInfo.is_channel && !isSelfChat;
+  const handleOpenDirectProfile = useCallback(() => {
+    if (!canOpenDirectProfile || !chatInfo?.other_id) return;
+    router.push({
+      pathname: "/contact/[id]",
+      params: {
+        id: chatInfo.other_id,
+        init_name: headerTitle,
+        init_avatar: headerAvatar ?? "",
+        init_verified: chatInfo.is_verified ? "1" : "0",
+        init_org_verified: chatInfo.is_organization_verified ? "1" : "0",
+      },
+    } as any);
+  }, [canOpenDirectProfile, chatInfo?.other_id, chatInfo?.is_verified, chatInfo?.is_organization_verified, headerTitle, headerAvatar]);
 
   const getMessageSpacing = useCallback((index: number): number => {
     if (index === 0) return 0;
@@ -5934,7 +5948,12 @@ STRICT RULES:
             <Ionicons name="chevron-back" size={26} color={colors.text} />
           </TouchableOpacity>
         )}
-        <View style={st.headerProfile}>
+        <TouchableOpacity
+          style={st.headerProfile}
+          onPress={handleOpenDirectProfile}
+          disabled={!canOpenDirectProfile}
+          activeOpacity={0.7}
+        >
           <Avatar uri={headerAvatar} name={headerTitle} size={38} square={!!(chatInfo?.is_organization_verified)} userId={(!chatInfo?.is_group && !chatInfo?.is_channel) ? chatInfo?.other_id : undefined} />
           <View style={st.headerInfo}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
@@ -5970,7 +5989,7 @@ STRICT RULES:
               return <Text style={[st.headerSub, { color: ls.isOnline ? "#34C759" : colors.textMuted }]}>{ls.text}</Text>;
             })()}
           </View>
-        </View>
+        </TouchableOpacity>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
           {chatInfo?.is_group && iAmChatAdmin && (
             <TouchableOpacity style={st.headerAction} hitSlop={8} onPress={handleOpenAddMembers}>

@@ -236,7 +236,6 @@ function isUserOnline(lastSeen: string | null, showOnline: boolean): boolean {
 function ChatRow({
   item,
   onPress,
-  onProfilePress,
   onAction,
   isActive,
   isTyping,
@@ -248,7 +247,6 @@ function ChatRow({
 }: {
   item: ChatItem;
   onPress: () => void;
-  onProfilePress?: (item: ChatItem) => void;
   onAction?: (
     action: "togglePin" | "toggleArchive" | "delete" | "open" | "mute" | "unmute",
     item: ChatItem,
@@ -291,24 +289,18 @@ function ChatRow({
         </View>
       )}
       <View style={{ position: "relative" }}>
-        <Pressable
-          disabled={!onProfilePress || item.kind === "notes" || item.is_group || item.is_channel || !item.other_id}
-          onPress={() => onProfilePress?.(item)}
-          hitSlop={6}
-        >
-          {item.kind === "notes" ? (
-            <LinearGradient
-              colors={["#7B61FF", "#00C2CB"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{ width: 50, height: 50, borderRadius: 25, alignItems: "center", justifyContent: "center" }}
-            >
-              <Ionicons name="bookmark" size={24} color="#fff" />
-            </LinearGradient>
-          ) : (
-            <Avatar uri={avatar} name={displayName || "Chat"} size={50} square={!!(item.is_organization_verified)} userId={!item.is_group && !item.is_channel ? item.other_id : undefined} />
-          )}
-        </Pressable>
+        {item.kind === "notes" ? (
+          <LinearGradient
+            colors={["#7B61FF", "#00C2CB"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ width: 50, height: 50, borderRadius: 25, alignItems: "center", justifyContent: "center" }}
+          >
+            <Ionicons name="bookmark" size={24} color="#fff" />
+          </LinearGradient>
+        ) : (
+          <Avatar uri={avatar} name={displayName || "Chat"} size={50} square={!!(item.is_organization_verified)} userId={!item.is_group && !item.is_channel ? item.other_id : undefined} />
+        )}
         {isOnlineDot && (
           <View style={[styles.onlineDot, { borderColor: colors.surface }]} />
         )}
@@ -323,18 +315,12 @@ function ChatRow({
               <Ionicons name="archive" size={12} color={colors.textMuted} style={{ marginRight: 4 }} />
             )}
             {(!item.is_group && !item.is_channel && item.other_id) ? (
-              <Pressable
-                disabled={!onProfilePress}
-                onPress={() => onProfilePress?.(item)}
-                hitSlop={4}
-              >
-                <UserName
-                  userId={item.other_id}
-                  name={displayName || "Chat"}
-                  style={[styles.name, { color: colors.text, fontFamily: hasUnread ? "Inter_700Bold" : "Inter_600SemiBold" }]}
-                  numberOfLines={1}
-                />
-              </Pressable>
+              <UserName
+                userId={item.other_id}
+                name={displayName || "Chat"}
+                style={[styles.name, { color: colors.text, fontFamily: hasUnread ? "Inter_700Bold" : "Inter_600SemiBold" }]}
+                numberOfLines={1}
+              />
             ) : (
               <Text
                 style={[styles.name, { color: colors.text, fontFamily: hasUnread ? "Inter_700Bold" : "Inter_600SemiBold" }]}
@@ -1059,20 +1045,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     });
   }, [user, onOpenChat, phonebookNames]);
 
-  const handleProfilePress = useCallback((item: ChatItem) => {
-    if (!user || item.kind === "notes" || item.is_group || item.is_channel || !item.other_id) return;
-    safeRouter.push({
-      pathname: "/contact/[id]",
-      params: {
-        id: item.other_id,
-        init_name: phonebookNames.get(item.other_id) || item.other_display_name || "",
-        init_avatar: item.other_avatar || "",
-        init_verified: item.is_verified ? "1" : "0",
-        init_org_verified: item.is_organization_verified ? "1" : "0",
-      },
-    } as any);
-  }, [user, phonebookNames]);
-
   // ── Multi-select handlers ─────────────────────────────────────────────────
   const enterSelectMode = useCallback((id: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -1635,7 +1607,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                         renderItem={({ item }: { item: ChatItem }) => (
                           <ChatRow
                             item={item}
-                            onProfilePress={handleProfilePress}
                             phonebookName={!item.is_group && !item.is_channel ? phonebookNames.get(item.other_id) : undefined}
                             isTyping={chatPrefs.typing_indicators && !!typingChatIds[item.id]}
                             selectMode={selectMode}
@@ -1713,7 +1684,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                         renderItem={({ item }: { item: ChatItem }) => (
                           <ChatRow
                             item={item}
-                            onProfilePress={handleProfilePress}
                             phonebookName={!item.is_group && !item.is_channel ? phonebookNames.get(item.other_id) : undefined}
                             isTyping={chatPrefs.typing_indicators && !!typingChatIds[item.id]}
                             selectMode={selectMode}
@@ -1774,7 +1744,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                 renderItem={({ item }: { item: ChatItem }) => (
                   <ChatRow
                     item={item}
-                    onProfilePress={handleProfilePress}
                     phonebookName={!item.is_group && !item.is_channel ? phonebookNames.get(item.other_id) : undefined}
                     isActive={panelMode && item.id === activeChatId}
                     isTyping={chatPrefs.typing_indicators && !!typingChatIds[item.id]}
