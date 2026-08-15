@@ -60,7 +60,6 @@ import { ChatLoadingSkeleton, ChatBubbleSkeleton } from "@/components/ui/Skeleto
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useChatAppearance } from "@/lib/chatAppearance";
 import ChatAppearanceSheet from "@/components/chat/ChatAppearanceSheet";
-import { SmartSheet } from "@/components/ui/SmartSheet";
 import { supabase, supabaseUrl as SUPA_URL, supabaseAnonKey as SUPA_KEY } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
@@ -971,7 +970,7 @@ function LensContextCard({ msg, onSuggestionTap }: {
   );
 }
 
-function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, replyPreview, onTapReply, isHighlighted, onTapEnvelope, onTapGift, onImageTap, onConfirmExec, onCancelExec, onSuggestionTap, onSenderPress, onReactionPress, onStatusPress, brandColor, flatSurface, hideTimestamp }: {
+function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, replyPreview, onTapReply, isHighlighted, onTapEnvelope, onTapGift, onImageTap, onConfirmExec, onCancelExec, onSuggestionTap, onSenderPress, onReactionPress, onStatusPress, brandColor, flatSurface, hideTimestamp, isTextSelectionEnabled }: {
   msg: Message;
   isMe: boolean;
   showTail: boolean;
@@ -995,6 +994,8 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   flatSurface?: boolean;
   /** When true, hides per-message timestamps (used in AfuAI chat) */
   hideTimestamp?: boolean;
+  /** Enables native text handles only after the user chooses Select. */
+  isTextSelectionEnabled?: boolean;
 }) {
   const { colors, isDark } = useTheme();
   const BRAND = brandColor ?? colors.accent;
@@ -1002,6 +1003,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   const { themeColors: chatTheme, bubbleRadius: chatRadius, prefs: chatPrefsLocal } = useChatPreferences();
   const _perChatFont = React.useContext(ChatFontSizeCtx);
   const { features: msgBubbleFeatures } = useAdvancedFeatures();
+  const messageLongPress = isTextSelectionEnabled ? undefined : () => onLongPress(msg);
   const [translated, setTranslated] = useState<string | null>(null);
   const [translating, setTranslating] = useState(false);
   const [showTranslated, setShowTranslated] = useState(false);
@@ -1186,7 +1188,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   if (isRedEnvelope) {
     return (
       <View style={[st.msgRow, isMe ? st.msgRowMe : st.msgRowOther]}>
-        <TouchableOpacity onPress={() => onTapEnvelope?.(msg)} onLongPress={() => onLongPress(msg)} delayLongPress={300} activeOpacity={0.7} style={st.specialMsgTap}>
+        <TouchableOpacity onPress={() => onTapEnvelope?.(msg)} onLongPress={messageLongPress} delayLongPress={300} activeOpacity={0.7} style={st.specialMsgTap}>
           <Text style={st.specialMsgEmoji}>🧧</Text>
         </TouchableOpacity>
       </View>
@@ -1200,7 +1202,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
 
     return (
       <View style={[st.msgRow, isMe ? st.msgRowMe : st.msgRowOther]}>
-        <TouchableOpacity onPress={() => onTapGift?.(msg)} onLongPress={() => onLongPress(msg)} delayLongPress={300} activeOpacity={0.7} style={st.specialMsgTap}>
+        <TouchableOpacity onPress={() => onTapGift?.(msg)} onLongPress={messageLongPress} delayLongPress={300} activeOpacity={0.7} style={st.specialMsgTap}>
           <Text style={st.specialMsgEmoji}>{giftEmoji}</Text>
         </TouchableOpacity>
       </View>
@@ -1244,7 +1246,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
         {showTail && !flatSurface && <BubbleTail isMe={isMe} color={bubbleColor} />}
 
         <Pressable
-          onLongPress={() => onLongPress(msg)}
+          onLongPress={messageLongPress}
           delayLongPress={300}
           style={[
             st.bubble,
@@ -1301,7 +1303,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
             <>
               <TouchableOpacity
                   onPress={() => onImageTap?.([attachUri || msg.attachment_url!], 0)}
-                  onLongPress={() => onLongPress(msg)}
+                  onLongPress={messageLongPress}
                   delayLongPress={300}
                   activeOpacity={0.9}
                 >
@@ -1310,11 +1312,11 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                   </View>
                 </TouchableOpacity>
               {hasTextContent && (
-                <RichText style={[st.bubbleText, { color: textColor, marginTop: 3, fontSize: _perChatFont, lineHeight: _perChatFont + 5 }]} linkColor={isMe ? "#FFFFFF" : BRAND} selectable={true}>{displayText}</RichText>
+                <RichText style={[st.bubbleText, { color: textColor, marginTop: 3, fontSize: _perChatFont, lineHeight: _perChatFont + 5 }]} linkColor={isMe ? "#FFFFFF" : BRAND} selectable={isTextSelectionEnabled}>{displayText}</RichText>
               )}
             </>
           ) : hasVideo ? (
-            <TouchableOpacity onLongPress={() => onLongPress(msg)} delayLongPress={300} activeOpacity={0.9}>
+            <TouchableOpacity onLongPress={messageLongPress} delayLongPress={300} activeOpacity={0.9}>
               <View style={st.attachVideo}>
                 <VideoPreview
                   uri={msg.attachment_url!}
@@ -1327,7 +1329,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
               </View>
             </TouchableOpacity>
           ) : hasAudio ? (
-            <TouchableOpacity onLongPress={() => onLongPress(msg)} delayLongPress={300} activeOpacity={1}>
+            <TouchableOpacity onLongPress={messageLongPress} delayLongPress={300} activeOpacity={1}>
               <AudioPlayer uri={attachUri || msg.attachment_url!} tintColor={textColor} waveColor={isMe ? "#FFFFFF" : BRAND} />
               {canTranscribe && (
                 <TouchableOpacity
@@ -1352,7 +1354,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
           ) : hasFile ? (
             <TouchableOpacity
               onPress={handleFileTap}
-              onLongPress={() => onLongPress(msg)}
+              onLongPress={messageLongPress}
               delayLongPress={300}
               activeOpacity={0.9}
               style={st.fileRow}
@@ -1394,7 +1396,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
               return (
                 <TouchableOpacity
                   onPress={() => storyUserId && router.push({ pathname: "/stories/view", params: { userId: storyUserId } })}
-                  onLongPress={() => onLongPress(msg)}
+                  onLongPress={messageLongPress}
                   delayLongPress={300}
                   activeOpacity={0.85}
                 >
@@ -1432,7 +1434,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
               const accentColor = pay.currency === "nexa" ? "#FF9500" : "#10B981";
               const coinLabel = pay.currency === "nexa" ? "Nexa" : "ACoin";
               return (
-                <TouchableOpacity onLongPress={() => onLongPress(msg)} delayLongPress={300} activeOpacity={0.85}>
+            <TouchableOpacity onLongPress={messageLongPress} delayLongPress={300} activeOpacity={0.85}>
                   <View style={{ minWidth: 200, gap: 10 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                       <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: accentColor + "25", alignItems: "center", justifyContent: "center" }}>
@@ -1463,7 +1465,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
               );
             })()
           ) : msg.attachment_type === "sticker" ? (
-            <TouchableOpacity onLongPress={() => onLongPress(msg)} delayLongPress={300} activeOpacity={0.8}>
+            <TouchableOpacity onLongPress={messageLongPress} delayLongPress={300} activeOpacity={0.8}>
               <Text style={{ fontSize: 64, lineHeight: 74 }}>{msg.encrypted_content ?? ""}</Text>
             </TouchableOpacity>
           ) : (
@@ -1491,11 +1493,11 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                   );
                   return (
                     <>
-                      <TouchableOpacity onLongPress={() => onLongPress(msg)} delayLongPress={500} activeOpacity={0.9} style={{ minWidth: _tsWidth + 16 }}>
+                      <TouchableOpacity onLongPress={messageLongPress} delayLongPress={500} activeOpacity={0.9} style={{ minWidth: _tsWidth + 16 }}>
                         <RichText
                           style={[st.bubbleText, { color: textColor, fontSize: _fontSize, lineHeight: _lineH }]}
                           linkColor={isMe ? "#FFFFFF" : BRAND}
-                          selectable={true}
+                          selectable={isTextSelectionEnabled}
                           tail={ghost}
                         >
                           {displayText}
@@ -1535,7 +1537,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                   );
                 })()
               ) : (
-                <TouchableOpacity onLongPress={() => onLongPress(msg)} delayLongPress={500} activeOpacity={0.9}>
+                <TouchableOpacity onLongPress={messageLongPress} delayLongPress={500} activeOpacity={0.9}>
                   {msg._isAi
                     ? (
                       <>
@@ -1562,7 +1564,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                           lineHeight: _perChatFont + 5,
                         }]}
                         linkColor={isMe ? "#FFFFFF" : BRAND}
-                        selectable={true}
+                        selectable={isTextSelectionEnabled}
                       >
                         {displayText}
                       </RichText>
@@ -1949,6 +1951,14 @@ function ChatScreen() {
   const [editHistoryLoading, setEditHistoryLoading] = useState(false);
   const [showReactions, setShowReactions] = useState<Message | null>(null);
   const [showMoreEmojis, setShowMoreEmojis] = useState(false);
+  const [textSelectionMessageId, setTextSelectionMessageId] = useState<string | null>(null);
+  const closeMessageOptions = useCallback(() => {
+    setShowReactions(null);
+    setAiResult(null);
+    setAiResultType(null);
+    setAiReplies([]);
+    setShowMoreEmojis(false);
+  }, []);
   const [msgInfoTarget, setMsgInfoTarget] = useState<Message | null>(null);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionSuggestions, setMentionSuggestions] = useState<{ id: string; handle: string; display_name: string; avatar_url: string | null }[]>([]);
@@ -5900,7 +5910,11 @@ STRICT RULES:
             isMe={isMe}
             showTail={shouldShowTail(index)}
             showName={shouldShowName(index)}
-            onLongPress={(m) => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowReactions(m); }}
+            onLongPress={(m) => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              setTextSelectionMessageId(null);
+              setShowReactions(m);
+            }}
             onReply={(m) => { setReplyTo(m); setTimeout(() => chatInputRef.current?.focus(), 50); }}
             replyPreview={getReplyPreview(item.reply_to_message_id)}
             onTapReply={item.reply_to_message_id ? () => scrollToMessage(item.reply_to_message_id!) : undefined}
@@ -5916,11 +5930,12 @@ STRICT RULES:
             onStatusPress={isMe ? (m) => setMsgInfoTarget(m) : undefined}
             brandColor={chatAppearance?.bubbleColor}
             hideTimestamp={isAfuAiDirectChat}
+            isTextSelectionEnabled={item.id === textSelectionMessageId}
           />
         )}
       </View>
     );
-  }, [listData, messages, user, colors, highlightedMsgId, scrollToMessage, advancedFeatures.mini_profile_popup, chatAppearance?.bubbleColor]);
+  }, [listData, messages, user, colors, highlightedMsgId, scrollToMessage, advancedFeatures.mini_profile_popup, chatAppearance?.bubbleColor, textSelectionMessageId]);
 
   // Single source of truth for the bottom offset.
   // The floatingInputContainer is position:absolute so it cannot rely on
@@ -7074,13 +7089,34 @@ STRICT RULES:
         currentChatId={chatInfo && !chatInfo.is_group && chatInfo.other_id === miniProfileUserId ? chatInfo.other_id : null}
       />
 
-      {/* ── Message actions bottom sheet ─────────────────────────── */}
-      <SmartSheet
+      {/* ── Message actions modal ─────────────────────────────────────── */}
+      <Modal
         visible={!!showReactions}
-        onClose={() => { setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); setShowMoreEmojis(false); }}
-        backgroundColor={colors.surface}
-        peekFraction={0.72}
+        transparent
+        animationType="fade"
+        onRequestClose={closeMessageOptions}
       >
+        <View style={st.messageOptionsOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={closeMessageOptions} />
+          <View style={[st.messageOptionsCard, { backgroundColor: colors.surface, maxHeight: Math.min(620, Dimensions.get("window").height * 0.82) }]}>
+            <View style={[st.messageOptionsHeader, { borderBottomColor: colors.border }]}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[st.messageOptionsTitle, { color: colors.text }]}>Message options</Text>
+                {showReactions && (
+                  <Text style={[st.messageOptionsPreview, { color: colors.textMuted }]} numberOfLines={2}>
+                    {showReactions.encrypted_content || "Attachment"}
+                  </Text>
+                )}
+              </View>
+              <TouchableOpacity onPress={closeMessageOptions} hitSlop={10} accessibilityLabel="Close message options">
+                <Ionicons name="close" size={22} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+              contentContainerStyle={{ paddingBottom: 8 }}
+            >
          {/* Emoji picker row — reactions are a server feature, not part of local Notes */}
          {!isLocalNotes && <View style={st.reactEmojiRow}>
            {REACTION_EMOJIS.map((emoji) => {
@@ -7088,7 +7124,7 @@ STRICT RULES:
             return (
               <TouchableOpacity
                 key={emoji}
-                style={[st.reactEmojiPillBtn, alreadyReacted && { backgroundColor: BRAND + "22", transform: [{ scale: 1.18 }] }]}
+                 style={[st.reactEmojiPillBtn, alreadyReacted && { transform: [{ scale: 1.18 }] }]}
                 onPress={() => {
                   if (!showReactions) return;
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -7103,7 +7139,7 @@ STRICT RULES:
             );
           })}
           <TouchableOpacity
-            style={[st.reactEmojiPillBtn, showMoreEmojis && { backgroundColor: colors.inputBg }]}
+             style={[st.reactEmojiPillBtn, showMoreEmojis && { transform: [{ scale: 1.08 }] }]}
             onPress={() => setShowMoreEmojis((v) => !v)}
           >
             <Ionicons name={showMoreEmojis ? "chevron-up" : "add"} size={22} color={colors.text} />
@@ -7117,7 +7153,7 @@ STRICT RULES:
               return (
                 <TouchableOpacity
                   key={emoji}
-                  style={[st.reactMoreGridBtn, alreadyReacted && { backgroundColor: BRAND + "22" }]}
+                   style={[st.reactMoreGridBtn, alreadyReacted && { transform: [{ scale: 1.14 }] }]}
                   onPress={() => {
                     if (!showReactions) return;
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -7135,6 +7171,26 @@ STRICT RULES:
         )}
 
         <View style={[st.reactRowSep, { backgroundColor: colors.border }]} />
+
+         {/* Select text — selection is opt-in so message long-press never
+             accidentally opens the native text-selection handles. */}
+         {showReactions?.encrypted_content?.trim() && (
+           <TouchableOpacity
+             style={st.reactRow}
+             activeOpacity={0.65}
+             onPress={() => {
+               if (!showReactions) return;
+               setTextSelectionMessageId(showReactions.id);
+               closeMessageOptions();
+             }}
+           >
+             <Ionicons name="text-outline" size={24} color={colors.text} style={st.reactRowIcon} />
+             <View style={{ flex: 1 }}>
+               <Text style={[st.reactRowLabel, { color: colors.text }]}>Select text</Text>
+               <Text style={[st.reactRowHint, { color: colors.textMuted }]}>Drag the handles to keep only what you need</Text>
+             </View>
+           </TouchableOpacity>
+         )}
 
         {/* Reply */}
         <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) { setReplyTo(showReactions); setTimeout(() => chatInputRef.current?.focus(), 50); setShowReactions(null); } }}>
@@ -7326,7 +7382,10 @@ STRICT RULES:
             )}
           </>
         )}
-      </SmartSheet>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       <ChatAppearanceSheet
         visible={showAppearanceSheet}
@@ -7585,6 +7644,26 @@ STRICT RULES:
           </View>
         </View>
       </Modal>
+
+      {textSelectionMessageId && (
+        <View pointerEvents="box-none" style={st.textSelectionOverlay}>
+          <View style={[st.textSelectionBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Ionicons name="text-outline" size={17} color={BRAND} />
+            <View style={{ flex: 1 }}>
+              <Text style={[st.textSelectionTitle, { color: colors.text }]}>Text selection on</Text>
+              <Text style={[st.textSelectionSubtitle, { color: colors.textMuted }]}>Drag the handles to choose what to copy</Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setTextSelectionMessageId(null)}
+              hitSlop={10}
+              style={[st.textSelectionDone, { backgroundColor: BRAND }]}
+            >
+              <Text style={st.textSelectionDoneText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       <ImageViewer
         images={imgViewer.images}
         initialIndex={imgViewer.index}
@@ -8065,6 +8144,35 @@ const st = StyleSheet.create({
   backBtn: { padding: 6 },
 
   optionsOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" },
+  messageOptionsOverlay: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 18,
+    backgroundColor: "rgba(0,0,0,0.56)",
+  },
+  messageOptionsCard: {
+    width: "100%",
+    maxWidth: 460,
+    borderRadius: 24,
+    overflow: "hidden",
+    elevation: 24,
+    ...Platform.select({
+      web: { boxShadow: "0 18px 55px rgba(0,0,0,0.34)" } as any,
+      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.32, shadowRadius: 28 },
+    }),
+  },
+  messageOptionsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  messageOptionsTitle: { fontSize: 17, fontFamily: "Inter_700Bold" },
+  messageOptionsPreview: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 3 },
   optionsSheet: {
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
@@ -8480,6 +8588,13 @@ const st = StyleSheet.create({
   reactRow:            { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16, minHeight: 56 },
   reactRowIcon:        { marginRight: 18, width: 24, textAlign: "center" },
   reactRowLabel:       { flex: 1, fontSize: 16, fontFamily: "Inter_700Bold" },
+  reactRowHint:        { fontSize: 11.5, fontFamily: "Inter_400Regular", marginTop: 2 },
+  textSelectionOverlay: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 1000, alignItems: "center", paddingHorizontal: 14, paddingTop: 10 },
+  textSelectionBar: { width: "100%", maxWidth: 460, flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 18, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10, elevation: 12, ...Platform.select({ web: { boxShadow: "0 6px 20px rgba(0,0,0,0.20)" } as any, default: { shadowColor: "#000", shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.2, shadowRadius: 12 } }) },
+  textSelectionTitle: { fontSize: 12.5, fontFamily: "Inter_700Bold" },
+  textSelectionSubtitle: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 1 },
+  textSelectionDone: { borderRadius: 14, paddingHorizontal: 12, paddingVertical: 7 },
+  textSelectionDoneText: { color: "#fff", fontSize: 12, fontFamily: "Inter_700Bold" },
 
   sheetActionRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 4 },
   sheetActionText: { fontSize: 16, fontFamily: "Inter_500Medium" },

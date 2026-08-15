@@ -385,7 +385,7 @@ export function RichText({
                 key={i}
                 style={[styles.link, { color: effectiveLinkColor }]}
                 onPress={() => handlePress(span)}
-                onLongPress={() => {
+                onLongPress={selectable ? undefined : () => {
                   let url = span.text;
                   if (!url.startsWith("http")) url = "https://" + url;
                   showLinkSheet(url);
