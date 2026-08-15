@@ -5,6 +5,7 @@
  */
 
 const CACHE = new Map<string, string>();
+const SOURCE_LANGUAGE_CACHE = new Map<string, string | null>();
 
 function cacheKey(text: string, targetLang: string): string {
   return `${targetLang}:${text.slice(0, 120)}`;
@@ -50,6 +51,39 @@ export async function translateText(text: string, targetLang: string): Promise<s
     return text;
   } catch {
     return text;
+  }
+}
+
+/**
+ * Detect the source language without translating the message for display.
+ * Google returns the detected language in the third response slot when the
+ * source language is set to auto.
+ */
+export async function detectMessageLanguage(text: string): Promise<string | null> {
+  const trimmed = text?.trim() ?? "";
+  const stripped = trimmed.replace(/[\p{Emoji}\s]/gu, "");
+  if (!stripped || trimmed.length < 2) return null;
+
+  const key = trimmed.slice(0, 240);
+  if (SOURCE_LANGUAGE_CACHE.has(key)) return SOURCE_LANGUAGE_CACHE.get(key) ?? null;
+
+  try {
+    const url =
+      `https://translate.googleapis.com/translate_a/single` +
+      `?client=gtx&sl=auto&tl=en&dt=t` +
+      `&q=${encodeURIComponent(trimmed)}`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const json = await res.json();
+    const detected = typeof json?.[2] === "string" ? json[2].split("-")[0] : null;
+    SOURCE_LANGUAGE_CACHE.set(key, detected);
+    return detected;
+  } catch {
+    return null;
   }
 }
 

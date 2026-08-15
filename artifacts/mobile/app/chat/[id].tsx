@@ -98,7 +98,7 @@ import { getLocalAttachmentUri, ensureChatAttachmentDownloaded, autoDownloadChat
 import { uploadChatMedia } from "@/lib/mediaUpload";
 import { syncPendingMessages } from "@/lib/offlineSync";
 import OfflineBanner from "@/components/ui/OfflineBanner";
-import { translateText, LANG_LABELS } from "@/lib/translate";
+import { translateText, detectMessageLanguage, LANG_LABELS } from "@/lib/translate";
 import { useLanguage } from "@/context/LanguageContext";
 import { useChatPreferences, CHAT_THEME_COLORS, BUBBLE_RADIUS } from "@/context/ChatPreferencesContext";
 import { useAdvancedFeatures } from "@/context/AdvancedFeaturesContext";
@@ -1092,23 +1092,52 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
     msg.encrypted_content?.startsWith("🎁") ||
     ["📷 Photo", "🎥 Video", "GIF"].includes(msg.encrypted_content ?? "");
 
-  const canTranslate = !isMe && !!msg.encrypted_content && !isSpecial && !!preferredLang;
+  const canCheckTranslation =
+    !isMe &&
+    !!msg.encrypted_content &&
+    !isSpecial &&
+    !!preferredLang;
+  const [messageSourceLanguage, setMessageSourceLanguage] = useState<string | null>(null);
+  const canTranslate =
+    canCheckTranslation &&
+    (preferredLang === "en" ||
+      (messageSourceLanguage !== null && messageSourceLanguage !== "en"));
   const canTranscribe = !!msg.attachment_url && msg.attachment_type === "audio" && voiceToText;
   const canSpeak = textToSpeech && !!msg.encrypted_content && !isSpecial && msg.attachment_type !== "audio";
 
   useEffect(() => {
-    if (!canTranslate || !preferredLang) return;
+    if (!canCheckTranslation || !preferredLang) {
+      setMessageSourceLanguage(null);
+      setTranslated(null);
+      setShowTranslated(false);
+      return;
+    }
+
     let cancelled = false;
     const timer = setTimeout(() => {
-      translateText(msg.encrypted_content, preferredLang).then((result) => {
+      const detectAndTranslate = async () => {
+        if (preferredLang === "en") {
+          setMessageSourceLanguage("en");
+          return;
+        }
+
+        const sourceLanguage = await detectMessageLanguage(msg.encrypted_content);
+        if (cancelled) return;
+        setMessageSourceLanguage(sourceLanguage);
+        if (!sourceLanguage || sourceLanguage === "en") return;
+
+        const result = await translateText(msg.encrypted_content, preferredLang);
         if (!cancelled && result && result !== msg.encrypted_content) {
           setTranslated(result);
           setShowTranslated(true);
         }
-      }).catch(() => {});
+      };
+      detectAndTranslate().catch(() => {
+        if (!cancelled) setMessageSourceLanguage("en");
+      });
     }, Math.random() * 600);
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [canTranslate, preferredLang, msg.encrypted_content]);
+  }, [canCheckTranslation, preferredLang, msg.encrypted_content]);
 
   async function handleTranslate() {
     if (showTranslated) { setShowTranslated(false); return; }
@@ -1818,7 +1847,7 @@ function ChatScreen() {
   const { colors, isDark } = useTheme();
   const { appearance: chatAppearance, updateAppearance: updateChatAppearance } = useChatAppearance(id as string | undefined);
   const BRAND = chatAppearance?.bubbleColor ?? colors.accent;
-  const { textToSpeech: ttsEnabled } = useLanguage();
+  const { preferredLang, textToSpeech: ttsEnabled } = useLanguage();
   const { prefs: chatPrefs, themeColors: chatThemeColors, bubbleRadius: chatBubbleRadius } = useChatPreferences();
   const effectiveChatFontSize = chatAppearance?.fontSize ?? chatPrefs?.font_size ?? 14;
   const { features: advancedFeatures } = useAdvancedFeatures();
@@ -1952,6 +1981,37 @@ function ChatScreen() {
   const [showReactions, setShowReactions] = useState<Message | null>(null);
   const [showMoreEmojis, setShowMoreEmojis] = useState(false);
   const [textSelectionMessageId, setTextSelectionMessageId] = useState<string | null>(null);
+  const [messageSourceLanguage, setMessageSourceLanguage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const message = showReactions;
+    const text = message?.encrypted_content?.trim() ?? "";
+    const isSpecialMessage =
+      !text ||
+      text.startsWith("🧧") ||
+      text.startsWith("🎁 ") ||
+      text.includes("|giftId:") ||
+      ["📷 Photo", "🎥 Video", "GIF"].includes(text);
+
+    if (!message || isLocalNotes || isSpecialMessage || !preferredLang) {
+      setMessageSourceLanguage(null);
+      return;
+    }
+    if (preferredLang === "en") {
+      setMessageSourceLanguage("en");
+      return;
+    }
+
+    let cancelled = false;
+    setMessageSourceLanguage(null);
+    detectMessageLanguage(text).then((sourceLanguage) => {
+      if (!cancelled) setMessageSourceLanguage(sourceLanguage);
+    }).catch(() => {
+      if (!cancelled) setMessageSourceLanguage(null);
+    });
+    return () => { cancelled = true; };
+  }, [showReactions?.id, showReactions?.encrypted_content, preferredLang, isLocalNotes]);
+
   const closeMessageOptions = useCallback(() => {
     setShowReactions(null);
     setAiResult(null);
@@ -7099,8 +7159,8 @@ STRICT RULES:
         <View style={st.messageOptionsOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={closeMessageOptions} />
           <View style={[st.messageOptionsCard, { backgroundColor: colors.surface, maxHeight: Math.min(560, Dimensions.get("window").height * 0.68) }]}>
-            <View style={[st.messageOptionsHeader, { borderBottomColor: colors.border }]}>
-              <Text style={[st.messageOptionsTitle, { color: colors.text }]}>Message options</Text>
+            <View style={[st.messageOptionsHeader, { borderBottomColor: colors.border, borderBottomWidth: 0, paddingBottom: 4 }]}>
+              <View style={{ flex: 1 }} />
               <TouchableOpacity onPress={closeMessageOptions} hitSlop={10} accessibilityLabel="Close message options">
                 <Ionicons name="close" size={22} color={colors.textMuted} />
               </TouchableOpacity>
@@ -7233,8 +7293,12 @@ STRICT RULES:
           </TouchableOpacity>
         )}
 
-         {/* Translate — online chats only */}
-         {!isLocalNotes && (
+         {/* Translate — only for non-English messages, unless English is the
+             user's explicitly selected translation language. */}
+         {!isLocalNotes &&
+           !!preferredLang &&
+           !!messageSourceLanguage &&
+           (preferredLang === "en" || messageSourceLanguage !== "en") && (
            <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) openTranslatePicker(showReactions); }}>
              <Ionicons name="language" size={24} color={colors.text} style={st.reactRowIcon} />
              <Text style={[st.reactRowLabel, { color: colors.text }]}>Translate</Text>
@@ -8164,7 +8228,6 @@ const st = StyleSheet.create({
     paddingBottom: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  messageOptionsTitle: { fontSize: 17, fontFamily: "Inter_700Bold" },
   optionsSheet: {
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
