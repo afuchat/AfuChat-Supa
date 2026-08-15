@@ -1,14 +1,24 @@
 import { useEffect } from "react";
 import { InteractionManager } from "react-native";
+import { router } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import {
+  addNotificationResponseListener,
   addPushTokenListener,
+  clearLastNotificationResponse,
   configurePushNotifications,
   disablePushToken,
+  getLastNotificationResponse,
+  getNotificationTarget,
+  handleNotificationResponse,
   registerPushToken,
+  PUSH_ACTION_MARK_READ,
+  type PushNotificationResponse,
 } from "@/lib/pushNotifications";
 import { getNotificationPreferences } from "@/lib/notificationPreferences";
 import { KEYS, storage } from "@/lib/storage/mmkv";
+
+const handledResponseIds = new Set<string>();
 
 export default function PushNotificationManager() {
   const { user } = useAuth();
@@ -21,6 +31,25 @@ export default function PushNotificationManager() {
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let retryCount = 0;
     let interactionTask: { cancel?: () => void } | null = null;
+
+    const handleResponse = async (response: PushNotificationResponse) => {
+      const requestId = response.notification?.request?.identifier ?? "unknown";
+      const responseKey = `${requestId}:${response.actionIdentifier}:${response.userText ?? ""}`;
+      if (handledResponseIds.has(responseKey)) return;
+      handledResponseIds.add(responseKey);
+
+      try {
+        await handleNotificationResponse(response, user.id);
+        const { chatId } = getNotificationTarget(response);
+        if (response.actionIdentifier !== PUSH_ACTION_MARK_READ && chatId) {
+          router.push({ pathname: "/chat/[id]", params: { id: chatId } } as any);
+        }
+      } catch (error) {
+        if (__DEV__) console.warn("[push] notification action failed:", error);
+      } finally {
+        clearLastNotificationResponse();
+      }
+    };
 
     const register = () => {
       if (!getNotificationPreferences().enabled) return;
@@ -46,6 +75,16 @@ export default function PushNotificationManager() {
       register();
     });
 
+    const responseListener = addNotificationResponseListener((response) => {
+      void handleResponse(response);
+    });
+
+    getLastNotificationResponse()
+      .then((response) => {
+        if (response) void handleResponse(response);
+      })
+      .catch(() => {});
+
     if (getNotificationPreferences().enabled) {
       configurePushNotifications();
       // Push registration can invoke a permission prompt and network request.
@@ -60,6 +99,7 @@ export default function PushNotificationManager() {
       interactionTask?.cancel?.();
       if (retryTimer) clearTimeout(retryTimer);
       tokenListener?.remove();
+      responseListener?.remove();
       if (registeredToken) {
         disablePushToken(registeredToken).catch(() => {});
         storage.delete(KEYS.PUSH_TOKEN);

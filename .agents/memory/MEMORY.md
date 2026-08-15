@@ -59,4 +59,5 @@
 - [Expo DevTools system libraries](expo-devtools-system-libs.md) — missing desktop `.so` dependencies can stall Metro before port 5000 opens; install the logged Nix runtime package and restart.
 - [Web-only legal routes](web-only-legal-routes.md) — use Platform.OS branches in shared Expo Router routes and skip the native splash overlay on web so public legal pages render directly.
 - [Web OAuth callback](web-oauth-callback.md) — web OAuth must use window.origin + browser redirect, localStorage PKCE persistence, and detectSessionInUrl; Expo deep links remain native-only.
+- [Push notification actions](push-notification-actions.md) — categories must be registered in the native client and categoryId/chatId/messageId sent in Expo payloads; response listeners handle warm and cold starts.
 - [EAS project migration](eas-project-migration.md) — replacement EAS projects require synchronized profile IDs and fresh Expo push-token registration.

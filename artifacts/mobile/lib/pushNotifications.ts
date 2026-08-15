@@ -8,6 +8,25 @@ type NotificationsModule = typeof import("expo-notifications");
 let cachedNotifications: NotificationsModule | null | undefined;
 let handlerConfigured = false;
 
+export const PUSH_CATEGORY_MESSAGE = "message";
+export const PUSH_ACTION_REPLY = "reply";
+export const PUSH_ACTION_MARK_READ = "mark_read";
+export const PUSH_ACTION_OPEN = "open";
+export const PUSH_ACTION_DEFAULT = "expo.modules.notifications.actions.DEFAULT";
+
+export type PushNotificationResponse = {
+  actionIdentifier: string;
+  userText?: string;
+  notification?: {
+    request?: {
+      identifier?: string;
+      content?: {
+        data?: Record<string, unknown>;
+      };
+    };
+  };
+};
+
 function getNotifications(): NotificationsModule | null {
   if (cachedNotifications !== undefined) return cachedNotifications;
   if (Platform.OS === "web") {
@@ -58,7 +77,134 @@ export function configurePushNotifications(): void {
       .catch(() => {});
   }
 
+  notifications
+    .setNotificationCategoryAsync(PUSH_CATEGORY_MESSAGE, [
+      {
+        identifier: PUSH_ACTION_REPLY,
+        buttonTitle: "Reply",
+        textInput: {
+          submitButtonTitle: "Send",
+          placeholder: "Write a reply…",
+        },
+        options: { opensAppToForeground: true },
+      },
+      {
+        identifier: PUSH_ACTION_MARK_READ,
+        buttonTitle: "Mark as read",
+        options: { opensAppToForeground: true },
+      },
+      {
+        identifier: PUSH_ACTION_OPEN,
+        buttonTitle: "Open",
+        options: { opensAppToForeground: true },
+      },
+    ])
+    .catch(() => {});
+
   handlerConfigured = true;
+}
+
+export function addNotificationResponseListener(
+  onResponse: (response: PushNotificationResponse) => void,
+): { remove: () => void } | null {
+  const notifications = getNotifications();
+  if (!notifications) return null;
+  return notifications.addNotificationResponseReceivedListener(onResponse as any);
+}
+
+export async function getLastNotificationResponse(): Promise<PushNotificationResponse | null> {
+  const notifications = getNotifications();
+  if (!notifications) return null;
+  return (await notifications.getLastNotificationResponseAsync()) as PushNotificationResponse | null;
+}
+
+export function clearLastNotificationResponse(): void {
+  const notifications = getNotifications();
+  notifications?.clearLastNotificationResponse?.();
+}
+
+export function getNotificationTarget(response: PushNotificationResponse): {
+  chatId: string | null;
+  messageId: string | null;
+} {
+  const data = response.notification?.request?.content?.data ?? {};
+  const chatId =
+    typeof data.chatId === "string"
+      ? data.chatId
+      : typeof data.chat_id === "string"
+        ? data.chat_id
+        : null;
+  const messageId =
+    typeof data.messageId === "string"
+      ? data.messageId
+      : typeof data.message_id === "string"
+        ? data.message_id
+        : null;
+  return { chatId, messageId };
+}
+
+async function markNotificationRead(
+  response: PushNotificationResponse,
+  userId: string,
+): Promise<void> {
+  const { chatId, messageId } = getNotificationTarget(response);
+  if (!userId || (!chatId && !messageId)) return;
+
+  const now = new Date().toISOString();
+  if (messageId) {
+    await supabase.from("message_status").upsert(
+      {
+        message_id: messageId,
+        user_id: userId,
+        delivered_at: now,
+        read_at: now,
+      },
+      { onConflict: "message_id,user_id" },
+    );
+    return;
+  }
+
+  const { data: unreadMessages } = await supabase
+    .from("messages")
+    .select("id")
+    .eq("chat_id", chatId)
+    .neq("sender_id", userId)
+    .limit(200);
+  if (!unreadMessages?.length) return;
+
+  await supabase.from("message_status").upsert(
+    unreadMessages.map((message) => ({
+      message_id: message.id,
+      user_id: userId,
+      delivered_at: now,
+      read_at: now,
+    })),
+    { onConflict: "message_id,user_id" },
+  );
+}
+
+export async function handleNotificationResponse(
+  response: PushNotificationResponse,
+  userId: string,
+): Promise<void> {
+  if (response.actionIdentifier === PUSH_ACTION_MARK_READ) {
+    await markNotificationRead(response, userId);
+    return;
+  }
+
+  if (response.actionIdentifier !== PUSH_ACTION_REPLY) return;
+
+  const text = response.userText?.trim();
+  const { chatId, messageId } = getNotificationTarget(response);
+  if (!text || !chatId || !userId) return;
+
+  await supabase.from("messages").insert({
+    chat_id: chatId,
+    sender_id: userId,
+    encrypted_content: text,
+    ...(messageId ? { reply_to_message_id: messageId } : {}),
+  });
+  await markNotificationRead(response, userId);
 }
 
 export async function registerPushToken(): Promise<string | null> {

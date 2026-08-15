@@ -50,6 +50,14 @@ Deno.serve(async (req) => {
   const title = typeof body?.title === "string" ? body.title.trim() : "";
   const messageBody = typeof body?.body === "string" ? body.body.trim() : "";
   const data = body?.data && typeof body.data === "object" ? body.data : {};
+  const categoryId = typeof body?.categoryId === "string" ? body.categoryId : "message";
+  const chatId = typeof body?.chatId === "string" ? body.chatId : "";
+  const messageId = typeof body?.messageId === "string" ? body.messageId : "";
+  const notificationData = {
+    ...data,
+    ...(chatId ? { chatId } : {}),
+    ...(messageId ? { messageId } : {}),
+  };
 
   if (!userId || !title || !messageBody) {
     return json({ error: "userId, title, and body are required." }, 400);
@@ -88,7 +96,8 @@ Deno.serve(async (req) => {
     to: device.token,
     title,
     body: messageBody,
-    data,
+    data: notificationData,
+    categoryId,
     channelId: "messages",
     sound: "default",
   }));
