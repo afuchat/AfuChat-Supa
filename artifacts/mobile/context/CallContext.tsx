@@ -15,9 +15,9 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Platform } from "react-native";
-import { router } from "expo-router";
+import { InteractionManager, Platform } from "react-native";
 import { useAuth } from "@/context/AuthContext";
+import { safeRouter } from "@/lib/navUtils";
 import {
   initCallEngine,
   teardownCallEngine,
@@ -126,9 +126,13 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   // caches null, so the real call still works even if this probe misfires —
   // but delaying here also keeps the UI state accurate sooner.
   useEffect(() => {
+    if (!user?.id) {
+      setWebrtcAvailable(false);
+      return;
+    }
     const t = setTimeout(() => setWebrtcAvailable(getWebRTCAvailable()), 500);
     return () => clearTimeout(t);
-  }, []);
+  }, [user?.id]);
 
   // ── Init / tear-down engine when auth changes ─────────────────────────────
   useEffect(() => {
@@ -144,12 +148,17 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   // ── Mic permission — check once on mount; re-check when app foregrounds ────
   useEffect(() => {
+    if (!user?.id) {
+      setMicBlocked(false);
+      return;
+    }
+
     let cancelled = false;
     const check = () =>
       getMicPermissionState().then((s) => {
         if (!cancelled) setMicBlocked(s === "denied");
       });
-    check();
+    const interactionTask = InteractionManager.runAfterInteractions(check);
     // On native, re-check whenever the app comes back to foreground (user may
     // have changed settings). AppState is a RN API — import lazily to avoid
     // pulling it into web bundles unnecessarily.
@@ -162,9 +171,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     }
     return () => {
       cancelled = true;
+      interactionTask.cancel();
       sub?.remove?.();
     };
-  }, []);
+  }, [user?.id]);
 
   // ── Subscribe to engine events ─────────────────────────────────────────────
   useEffect(() => {
@@ -184,7 +194,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           }
           // Navigate to call screen when a call starts (outgoing)
           if (event.status === "outgoing_ringing" && event.info) {
-            router.push({
+            safeRouter.push({
               pathname: "/call/[id]",
               params: { id: event.info.callId },
             } as any);
@@ -305,7 +315,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       // Clear incoming notice only once accept has succeeded
       setIncomingNotice(null);
 
-      router.push({
+      safeRouter.push({
         pathname: "/call/[id]",
         params: { id: notice.callId },
       } as any);

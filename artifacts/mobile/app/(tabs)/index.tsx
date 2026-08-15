@@ -24,13 +24,14 @@ import AfuLogo from "@/components/ui/AfuLogo";
 const SafeFlashList: any =
   (require("@shopify/flash-list").FlashList as any);
 import { LinearGradient } from "@/components/ui/SafeGradient";
-import { Redirect, router, useFocusEffect, useNavigation, usePathname } from "expo-router";
+import { Redirect, useFocusEffect, useNavigation, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "@/lib/haptics";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
+import { safeRouter } from "@/lib/navUtils";
 import { Avatar } from "@/components/ui/Avatar";
 import UserName from "@/components/ui/UserName";
 import { Separator } from "@/components/ui/Separator";
@@ -849,11 +850,11 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       if (action === "open") {
         Haptics.selectionAsync();
         if (item.kind === "channel_broadcast" && item.channel_id) {
-          router.push({ pathname: "/channel/[id]", params: { id: item.channel_id } } as any);
+          safeRouter.push({ pathname: "/channel/[id]", params: { id: item.channel_id } } as any);
           return;
         }
         let chatId = item.id;
-        router.push({
+        safeRouter.push({
           pathname: "/chat/[id]",
           params: {
             id: chatId,
@@ -1025,11 +1026,11 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       clearUnread(item.id).catch(() => {});
     }
     if (item.kind === "channel_broadcast" && item.channel_id) {
-      router.push({ pathname: "/channel/[id]", params: { id: item.channel_id } } as any);
+      safeRouter.push({ pathname: "/channel/[id]", params: { id: item.channel_id } } as any);
       return;
     }
     if (onOpenChat) { onOpenChat(item, item.id); return; }
-    router.push({
+    safeRouter.push({
       pathname: "/chat/[id]",
       params: {
         id: item.id,
@@ -1419,7 +1420,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
           <Text style={[styles.panelTitle, { color: colors.text }]}>Chats</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
             <TouchableOpacity
-              onPress={() => router.push("/chat/new" as any)}
+              onPress={() => safeRouter.push("/chat/new" as any)}
               style={[styles.panelHeaderBtn, { backgroundColor: colors.backgroundSecondary }]}
               activeOpacity={0.7}
             >
@@ -1445,7 +1446,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
           </TouchableOpacity>
         ) : user ? (
           <TouchableOpacity
-            onPress={() => router.push("/(tabs)/me" as any)}
+            onPress={() => safeRouter.push("/(tabs)/me" as any)}
             activeOpacity={0.8}
             hitSlop={{ top: 6, right: 6, bottom: 6, left: 6 }}
           >
@@ -1493,7 +1494,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
             </TouchableOpacity>
           ) : !panelMode ? (
             <TouchableOpacity
-              onPress={() => router.push("/chat-search" as any)}
+              onPress={() => safeRouter.push("/chat-search" as any)}
               hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
               style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.backgroundSecondary, alignItems: "center", justifyContent: "center" }}
               activeOpacity={0.7}

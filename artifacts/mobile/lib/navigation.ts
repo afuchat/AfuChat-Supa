@@ -47,7 +47,7 @@ export const Navigate = {
   },
 
   toProfile() {
-    safeRouter.replace("/(tabs)/profile" as any);
+    safeRouter.replace("/(tabs)/me" as any);
   },
 
   // ── Auth ─────────────────────────────────────────────────────────────────────
@@ -72,11 +72,11 @@ export const Navigate = {
   },
 
   toNewChat() {
-    safeRouter.push("/new-chat" as any);
+    safeRouter.push("/chat/new" as any);
   },
 
   toNewGroup() {
-    safeRouter.push("/new-group" as any);
+    safeRouter.push("/group/create" as any);
   },
 
   toChatInfo(params: { id: string }) {
@@ -94,7 +94,7 @@ export const Navigate = {
   },
 
   toCreatePost() {
-    safeRouter.push("/create" as any);
+    safeRouter.push("/moments/create" as any);
   },
 
   // ── User profiles ─────────────────────────────────────────────────────────────

@@ -22,7 +22,7 @@ let screensEnabled = false;
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AppState, Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
-import { Stack, usePathname } from "expo-router";
+import { Stack, usePathname, useRootNavigationState } from "expo-router";
 import { setCurrentPage, resolvePageInfo } from "@/lib/pageTracker";
 import { StatusBar } from "expo-status-bar";
 import * as Font from "expo-font";
@@ -219,6 +219,7 @@ function ThemedRoot({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
+  const rootNavigationState = useRootNavigationState();
   const [fontsLoaded, fontError] = Font.useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -286,6 +287,11 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
+    // Deep-link events can arrive before Expo Router has mounted its root
+    // navigator. Waiting for the navigation key prevents a push into an
+    // unmounted tree during cold starts and auth restoration.
+    if (!rootNavigationState?.key) return;
+
     async function handleUrl(url: string | null) {
       const action = await handleIncomingUrl(url);
       if (!action) return;
@@ -307,7 +313,7 @@ export default function RootLayout() {
     Linking.getInitialURL().then(handleUrl).catch(() => {});
     const sub = Linking.addEventListener("url", ({ url }) => handleUrl(url));
     return () => sub.remove();
-  }, []);
+  }, [rootNavigationState?.key]);
 
   useEffect(() => {
     // Do not compete with the first route for the JS/native bridge. Auth starts

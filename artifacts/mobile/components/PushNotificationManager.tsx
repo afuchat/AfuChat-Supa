@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { InteractionManager } from "react-native";
-import { router } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
+import { safeRouter } from "@/lib/navUtils";
 import {
   addNotificationResponseListener,
   addPushTokenListener,
@@ -42,7 +42,7 @@ export default function PushNotificationManager() {
         await handleNotificationResponse(response, user.id);
         const { chatId } = getNotificationTarget(response);
         if (response.actionIdentifier !== PUSH_ACTION_MARK_READ && chatId) {
-          router.push({ pathname: "/chat/[id]", params: { id: chatId } } as any);
+          safeRouter.push({ pathname: "/chat/[id]", params: { id: chatId } } as any);
         }
       } catch (error) {
         if (__DEV__) console.warn("[push] notification action failed:", error);
