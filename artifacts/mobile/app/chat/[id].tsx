@@ -7158,11 +7158,19 @@ STRICT RULES:
       >
         <View style={st.messageOptionsOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={closeMessageOptions} />
-          <View style={[st.messageOptionsCard, { backgroundColor: colors.surface, maxHeight: Math.min(560, Dimensions.get("window").height * 0.68) }]}>
-            <View style={[st.messageOptionsHeader, { borderBottomColor: colors.border, borderBottomWidth: 0, paddingBottom: 4 }]}>
-              <View style={{ flex: 1 }} />
+          <View style={[st.messageOptionsCard, { backgroundColor: colors.surface, maxHeight: Math.min(460, Dimensions.get("window").height * 0.62) }]}>
+            <View style={[st.messageOptionsHeader, { borderBottomColor: colors.border, borderBottomWidth: 0 }]}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[st.messageOptionsEyebrow, { color: colors.textMuted }]}>Message actions</Text>
+                <Text
+                  style={[st.messageOptionsPreview, { color: colors.text }]}
+                  numberOfLines={1}
+                >
+                  {showReactions?.encrypted_content?.trim() || (showReactions?.attachment_url ? "Attachment" : "Message")}
+                </Text>
+              </View>
               <TouchableOpacity onPress={closeMessageOptions} hitSlop={10} accessibilityLabel="Close message options">
-                <Ionicons name="close" size={22} color={colors.textMuted} />
+                <Ionicons name="close-circle" size={21} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
             <ScrollView
@@ -7171,7 +7179,7 @@ STRICT RULES:
               contentContainerStyle={{ paddingBottom: 8 }}
             >
          {/* Emoji picker row — reactions are a server feature, not part of local Notes */}
-         {!isLocalNotes && <View style={st.reactEmojiRow}>
+          {!isLocalNotes && <View style={[st.reactEmojiRow, { backgroundColor: colors.inputBg }]}>
            {REACTION_EMOJIS.map((emoji) => {
             const alreadyReacted = showReactions?.reactions?.some((r) => r.emoji === emoji && r.myReaction);
             return (
@@ -8205,28 +8213,39 @@ const st = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 18,
-    backgroundColor: "rgba(0,0,0,0.56)",
+    paddingHorizontal: 14,
+    backgroundColor: "rgba(0,0,0,0.48)",
   },
   messageOptionsCard: {
     width: "100%",
-    maxWidth: 360,
-    borderRadius: 24,
+    maxWidth: 320,
+    borderRadius: 18,
     overflow: "hidden",
-    elevation: 24,
+    elevation: 18,
     ...Platform.select({
-      web: { boxShadow: "0 18px 55px rgba(0,0,0,0.34)" } as any,
-      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.32, shadowRadius: 28 },
+      web: { boxShadow: "0 14px 38px rgba(0,0,0,0.28)" } as any,
+      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.28, shadowRadius: 22 },
     }),
   },
   messageOptionsHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 14,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  messageOptionsEyebrow: {
+    fontSize: 10,
+    fontFamily: "Inter_600SemiBold",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  messageOptionsPreview: {
+    fontSize: 13,
+    fontFamily: "Inter_500Medium",
+    marginTop: 2,
   },
   optionsSheet: {
     borderTopLeftRadius: 18,
@@ -8636,13 +8655,13 @@ const st = StyleSheet.create({
   },
   reactMoreGridBtn: { width: 40, height: 40, borderRadius: 0, backgroundColor: "transparent", alignItems: "center", justifyContent: "center" },
 
-  reactEmojiRow:       { flexDirection: "row", justifyContent: "center", alignItems: "center", paddingVertical: 8, paddingHorizontal: 8, gap: 6 },
-  reactMoreGridInline: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", paddingHorizontal: 8, paddingBottom: 8, gap: 6 },
-  reactRowSep:         { height: StyleSheet.hairlineWidth, marginVertical: 2 },
-  reactRow:            { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16, minHeight: 56 },
-  reactRowIcon:        { marginRight: 18, width: 24, textAlign: "center" },
-  reactRowLabel:       { flex: 1, fontSize: 16, fontFamily: "Inter_700Bold" },
-  reactRowHint:        { fontSize: 11.5, fontFamily: "Inter_400Regular", marginTop: 2 },
+  reactEmojiRow:       { flexDirection: "row", justifyContent: "center", alignItems: "center", marginHorizontal: 10, marginTop: 2, marginBottom: 7, borderRadius: 22, paddingVertical: 3, paddingHorizontal: 5, gap: 2 },
+  reactMoreGridInline: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", marginHorizontal: 10, paddingHorizontal: 8, paddingBottom: 7, gap: 3 },
+  reactRowSep:         { height: StyleSheet.hairlineWidth, marginVertical: 1 },
+  reactRow:            { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 9, minHeight: 43 },
+  reactRowIcon:        { marginRight: 12, width: 20, textAlign: "center" },
+  reactRowLabel:       { flex: 1, fontSize: 14.5, fontFamily: "Inter_600SemiBold" },
+  reactRowHint:        { fontSize: 10.5, fontFamily: "Inter_400Regular", marginTop: 1 },
   textSelectionOverlay: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 1000, alignItems: "center", paddingHorizontal: 14, paddingTop: 10 },
   textSelectionBar: { width: "100%", maxWidth: 460, flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 18, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10, elevation: 12, ...Platform.select({ web: { boxShadow: "0 6px 20px rgba(0,0,0,0.20)" } as any, default: { shadowColor: "#000", shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.2, shadowRadius: 12 } }) },
   textSelectionTitle: { fontSize: 12.5, fontFamily: "Inter_700Bold" },
