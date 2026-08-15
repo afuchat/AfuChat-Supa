@@ -1,5 +1,4 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { router } from "expo-router";
 import { AppState } from "react-native";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
@@ -32,6 +31,7 @@ import { clearProfileCache } from "@/lib/profileCache";
 import { startOfflineSync } from "@/lib/offlineSync";
 import { registerDeviceSession } from "@/lib/deviceSession";
 import { ensureAfuAiChat } from "@/lib/afuAiBot";
+import { safeRouter } from "@/lib/navUtils";
 
 type Profile = {
   id: string;
@@ -491,7 +491,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const switchedUserId = newSession.user.id;
 
       // ── 10. Reset navigation so stale screens are gone ───────────────────────
-      router.replace("/(tabs)/discover");
+       safeRouter.replace("/(tabs)/discover");
 
       // Background: register device + ensure AI chat exists
       registerDeviceSession(newSession.user.id).catch(() => {});
@@ -500,10 +500,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .select("display_name")
         .eq("id", switchedUserId)
         .single()
-        .then(({ data }) => {
+         .then(({ data }) => {
            ensureAfuAiChat(switchedUserId, data?.display_name).catch(() => {});
-        })
-        .catch(() => {});
+         }, () => {});
 
       startOfflineSync();
 
@@ -553,7 +552,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Sign out from Supabase (best-effort — works offline too via local clear).
       await supabase.auth.signOut().catch(() => {});
 
-      router.replace("/welcome");
+       safeRouter.replace("/welcome");
     } finally {
       isSwitchingRef.current = false;
       // Keep isUserSigningOut=true for 3 s after the call so the async
@@ -573,6 +572,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // routes straight to chats — the user NEVER sees the welcome/onboarding
     // screen even when the network is down or getSession() is slow.
     // getSession() still runs below and silently upgrades to a real session.
+    let offlineSyncTimer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleOfflineSync = () => {
+      if (offlineSyncTimer) return;
+      offlineSyncTimer = setTimeout(() => {
+        offlineSyncTimer = null;
+        startOfflineSync();
+      }, 350);
+    };
+
     const fastCachedId = getCachedUserId();
     if (fastCachedId) {
       const fastProfile = getCachedProfileSync();
@@ -586,7 +594,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         created_at: "",
       } as User);
       setLoading(false); // ← index.tsx sees this synchronously, routes to chats
-      startOfflineSync();
+      scheduleOfflineSync();
     }
 
     // Safety-net: if getSession() ever hangs indefinitely on native (no reject,
@@ -611,7 +619,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setLoading(false);
           // Refresh profile from Supabase in the background (non-blocking)
           fetchProfile(session.user.id);
-          startOfflineSync();
+          scheduleOfflineSync();
           supabase
             .from("profiles")
             .select("display_name")
@@ -699,7 +707,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 }, 3000);
               }
             } else {
-              startOfflineSync();
+              scheduleOfflineSync();
             }
           } else {
             // Truly no identity anywhere — user has never logged in on this device.
@@ -714,7 +722,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!safetyFired) setLoading(false);
       });
 
-    refreshLinkedAccounts().catch(() => {});
+    const linkedAccountsTimer = setTimeout(() => {
+      refreshLinkedAccounts().catch(() => {});
+    }, 800);
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, newSession) => {
       // Suppress all state mutations during a switch or link operation.
@@ -819,7 +829,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    return () => listener.subscription.unsubscribe();
+    return () => {
+      if (offlineSyncTimer) clearTimeout(offlineSyncTimer);
+      clearTimeout(linkedAccountsTimer);
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   // Save current session tokens whenever the live session changes.

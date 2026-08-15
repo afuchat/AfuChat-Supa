@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "react";
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "@/context/AuthContext";
 import { getCachedUserId } from "@/lib/offlineStore";
 import { storage, KEYS } from "@/lib/storage/mmkv";
+import { safeRouter } from "@/lib/navUtils";
 
 export default function IndexScreen() {
   const { session, profile, loading, user } = useAuth();
@@ -25,7 +26,7 @@ export default function IndexScreen() {
     if (!isLoggedIn) {
       redirected.current = true;
       const onboardingDone = (() => { try { return storage.getBoolean(KEYS.ONBOARDING_DONE); } catch { return false; } })();
-      router.replace(onboardingDone ? "/(auth)/login" : "/welcome");
+      safeRouter.replace(onboardingDone ? "/(auth)/login" : "/welcome");
       return;
     }
 
@@ -34,9 +35,9 @@ export default function IndexScreen() {
     if (cachedId || user?.id) {
       redirected.current = true;
       if (hasSession && profileReady && profile?.onboarding_completed === false) {
-        router.replace("/onboarding");
+        safeRouter.replace("/onboarding");
       } else {
-        router.replace("/(tabs)/chats");
+        safeRouter.replace("/(tabs)/chats");
       }
       return;
     }
@@ -46,9 +47,9 @@ export default function IndexScreen() {
 
     redirected.current = true;
     if (hasSession && profileReady && !profileOnboarded) {
-      router.replace("/onboarding");
+      safeRouter.replace("/onboarding");
     } else {
-      router.replace("/(tabs)/chats");
+      safeRouter.replace("/(tabs)/chats");
     }
   }
 
@@ -56,7 +57,7 @@ export default function IndexScreen() {
   useEffect(() => {
     if (!handle || redirected.current || loading) return;
     redirected.current = true;
-    router.replace(`/${handle}` as any);
+    safeRouter.replace(`/${handle}` as any);
   }, [handle, loading]);
 
   // Main routing — fires whenever auth state resolves
@@ -85,14 +86,14 @@ export default function IndexScreen() {
       if (redirected.current || !loading) return;
       if (handle) {
         redirected.current = true;
-        router.replace(`/${handle}` as any);
+        safeRouter.replace(`/${handle}` as any);
       } else if (getCachedUserId() || user?.id) {
         redirected.current = true;
-        router.replace("/(tabs)/chats");
+        safeRouter.replace("/(tabs)/chats");
       } else {
         redirected.current = true;
         const onboardingDone = (() => { try { return storage.getBoolean(KEYS.ONBOARDING_DONE); } catch { return false; } })();
-        router.replace(onboardingDone ? "/(auth)/login" : "/welcome");
+        safeRouter.replace(onboardingDone ? "/(auth)/login" : "/welcome");
       }
     }, 2500);
 

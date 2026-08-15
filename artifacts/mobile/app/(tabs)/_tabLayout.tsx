@@ -14,7 +14,7 @@ import {
   View,
 } from "react-native";
 import { Image as ExpoImage } from "expo-image";
-import { router, usePathname } from "expo-router";
+import { usePathname } from "expo-router";
 import { safeRouter } from "@/lib/navUtils";
 import type { Session } from "@supabase/supabase-js";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -53,13 +53,21 @@ function useTotalUnread(userId: string | undefined): number {
 
     const unsubStore = subscribeUnread(setTotal);
 
-    const fallbackRefresh = async () => {
-      try {
-        const convs = await getLocalConversations();
-        setTotal(convs.reduce((s, c) => s + (c.unread_count ?? 0), 0));
-      } catch {}
+    let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+    let cancelled = false;
+    const fallbackRefresh = () => {
+      if (refreshTimer) return;
+      refreshTimer = setTimeout(async () => {
+        refreshTimer = null;
+        try {
+          const convs = await getLocalConversations();
+          if (!cancelled) {
+            setTotal(convs.reduce((s, c) => s + (c.unread_count ?? 0), 0));
+          }
+        } catch {}
+      }, 250);
     };
-    const chName = `tab-bar-unread-${userId}-${Date.now()}`;
+    const chName = `tab-bar-unread-${userId}`;
     const ch = supabase
       .channel(chName)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "message_status", filter: `user_id=eq.${userId}` }, fallbackRefresh)
@@ -67,8 +75,10 @@ function useTotalUnread(userId: string | undefined): number {
       .subscribe();
 
     return () => {
+      cancelled = true;
+      if (refreshTimer) clearTimeout(refreshTimer);
       unsubStore();
-      supabase.removeChannel(ch);
+      supabase.removeChannel(ch).catch(() => {});
     };
   }, [userId]);
 
@@ -418,7 +428,7 @@ export default function TabLayout() {
     if (loading) return;
     const isFullySignedOut = session === null && user === null;
     if (prevSessionRef.current !== null && isFullySignedOut) {
-      router.replace("/(auth)/login");
+      safeRouter.replace("/(auth)/login");
     }
     prevSessionRef.current = session;
   }, [session, user, loading]);
@@ -428,7 +438,7 @@ export default function TabLayout() {
     if (!session || !user) return;
     if (!profile) return;
     if (profile.onboarding_completed === false) {
-      router.replace("/onboarding");
+      safeRouter.replace("/onboarding");
     }
   }, [session, user, profile, loading]);
 

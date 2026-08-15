@@ -22,7 +22,7 @@ let screensEnabled = false;
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AppState, Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
-import { Stack, usePathname, router } from "expo-router";
+import { Stack, usePathname } from "expo-router";
 import { setCurrentPage, resolvePageInfo } from "@/lib/pageTracker";
 import { StatusBar } from "expo-status-bar";
 import * as Font from "expo-font";
@@ -70,6 +70,7 @@ import { MiniAppRuntimeProvider } from "@/lib/superapp/MiniAppRuntime";
 import { AnimationGuardInit } from "@/components/AnimationGuardInit";
 import { SplashScreenView } from "@/components/ui/SplashScreenView";
 import PushNotificationManager from "@/components/PushNotificationManager";
+import { safeRouter } from "@/lib/navUtils";
 
 // NOTE: react-native-mmkv has been downgraded to v3 (stable JSI bridge) and
 // react-native-nitro-modules has been removed.  v4/Nitro caused an unrecoverable
@@ -129,7 +130,7 @@ function CrashSupportHandler() {
             onPress: () => {
               // Small delay so the alert dismisses cleanly before navigation.
               setTimeout(() => {
-                router.push({
+                safeRouter.push({
                   pathname: "/support" as any,
                   params: {
                     // Pass the full (untruncated) error as the ticket subject.
@@ -218,7 +219,7 @@ function ThemedRoot({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded] = Font.useFonts({
+  const [fontsLoaded, fontError] = Font.useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
@@ -239,6 +240,15 @@ export default function RootLayout() {
       SplashScreen.hideAsync().catch(() => {});
     }
   }, []);
+
+  // If a production bundle cannot load a font asset, do not leave the native
+  // splash covering a blank screen forever. System fonts keep layout usable.
+  useEffect(() => {
+    if (fontError) {
+      SplashScreen.hideAsync().catch(() => {});
+      setSplashDone(true);
+    }
+  }, [fontError]);
 
   // Enable react-native-screens optimisation. Called here (inside a component,
   // not at module-eval time) so the Android activity is guaranteed to be fully
@@ -281,15 +291,15 @@ export default function RootLayout() {
       if (!action) return;
 
       if (action.type === "join_group") {
-        router.push({ pathname: "/join/[code]", params: { code: action.code } } as any);
+        safeRouter.push({ pathname: "/join/[code]", params: { code: action.code } } as any);
         return;
       }
 
       if (action.type === "navigate") {
         if (action.params) {
-          router.push({ pathname: action.path as any, params: action.params });
+          safeRouter.push({ pathname: action.path as any, params: action.params });
         } else {
-          router.push(action.path as any);
+          safeRouter.push(action.path as any);
         }
         return;
       }
@@ -324,7 +334,7 @@ export default function RootLayout() {
       <GestureHandlerRootView style={styles.root}>
         {/* JS splash overlay — visible until fonts load, then fades out */}
         {!splashDone && Platform.OS !== "web" && (
-          <SplashScreenView ready={fontsLoaded} onDone={handleSplashDone} />
+          <SplashScreenView ready={fontsLoaded || !!fontError} onDone={handleSplashDone} />
         )}
         <ThemeProvider>
           <ThemedRoot>
