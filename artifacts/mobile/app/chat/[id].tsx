@@ -8637,7 +8637,9 @@ const st = StyleSheet.create({
   },
   pillIcon: { paddingHorizontal: 5 },
   input: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular", lineHeight: 20, outlineStyle: "none" as any, paddingTop: 6, paddingBottom: 6, minHeight: 24, maxHeight: 120 },
-  sendBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  // Slightly taller than wide so the send control feels vertical without
+  // turning into a narrow full-height bar beside the composer.
+  sendBtn: { width: 42, height: 50, borderRadius: 17, alignItems: "center", justifyContent: "center" },
   sendBtnCol: { alignSelf: "stretch", alignItems: "center", justifyContent: "space-between", paddingVertical: 6 },
   aiAboveSendBtn: { paddingHorizontal: 9, paddingVertical: 4, borderRadius: 10, borderWidth: 1.5, alignItems: "center", justifyContent: "center", minWidth: 32, gap: 1 },
   wordCountLabel: { fontSize: 8, fontFamily: "Inter_600SemiBold", opacity: 0.75 },
