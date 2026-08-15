@@ -195,6 +195,13 @@ $$;
 REVOKE ALL ON FUNCTION public.get_chat_list(uuid[]) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_chat_list(uuid[]) TO authenticated;
 
+-- @afuchat follows normal user-controlled pin behavior; remove the old
+-- default pin once when this migration is applied.
+UPDATE public.chats
+SET is_pinned = false
+WHERE lower(trim(both '@' from COALESCE(name, ''))) = 'afuchat'
+  AND is_pinned = true;
+
 CREATE INDEX IF NOT EXISTS chat_members_user_chat_idx
   ON public.chat_members (user_id, chat_id);
 

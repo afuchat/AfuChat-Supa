@@ -1924,6 +1924,7 @@ function ChatScreen() {
   chatInfoStateRef.current = chatInfo;
   const isAfuAiDirectChat = chatInfo?.other_id === AFUAI_BOT_ID;
   const isSelfChat = !chatInfo?.is_group && !chatInfo?.is_channel && !!chatInfo?.other_id && chatInfo?.other_id === user?.id;
+  const isLocalNotes = isLocalNotesId(id);
   const [phonebookName, setPhonebookName] = useState<string | null>(null);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const typingMapRef = useRef<Map<string, string>>(new Map());
@@ -4800,6 +4801,10 @@ STRICT RULES:
 
   async function sendGift(gift: DbGift, message: string, price: number) {
     if (!user || giftSending) return;
+    if (isLocalNotes) {
+      showAlert("My Notes", "Notes stay text-only and fully offline.");
+      return;
+    }
     if (messageLimited) {
       showAlert("Message limit", `You can only send one message until ${chatInfo?.other_name || "this user"} replies or follows you.`);
       return;
@@ -4949,6 +4954,11 @@ STRICT RULES:
 
   async function sendAttachment() {
     if (!user || !attachmentPreview) return;
+    if (isLocalNotes) {
+      showAlert("My Notes", "Notes stay text-only and fully offline.");
+      setAttachmentPreview(null);
+      return;
+    }
     if (messageLimited) {
       showAlert("Message limit", `You can only send one message until ${chatInfo?.other_name || "this user"} replies or follows you.`);
       return;
@@ -5040,6 +5050,11 @@ STRICT RULES:
 
   async function sendStickerMessage(emoji: string) {
     if (!user) return;
+    if (isLocalNotes) {
+      setShowEmojiStickerPicker(false);
+      await sendMessage(emoji);
+      return;
+    }
     if (messageLimited) {
       showAlert("Message limit", `You can only send one message until ${chatInfo?.other_name || "this user"} replies or follows you.`);
       return;
@@ -5904,6 +5919,8 @@ STRICT RULES:
               <Text style={[st.headerSub, { color: BRAND }]}>
                 {`${typingUsers.join(", ")} typing...`}
               </Text>
+            ) : isLocalNotes ? (
+              <Text style={[st.headerSub, { color: colors.textMuted }]}>Private · stored on this device</Text>
             ) : !networkOnline ? (
               <Text style={[st.headerSub, { color: "#FF9500" }]}>Waiting for network...</Text>
             ) : chatInfo?.is_channel ? (
@@ -5928,6 +5945,7 @@ STRICT RULES:
           {chatInfo &&
             !chatInfo.is_group &&
             !chatInfo.is_channel &&
+             !isLocalNotes &&
             !isSelfChat &&
             !isAfuAiDirectChat &&
             chatInfo.other_id &&
@@ -6400,7 +6418,7 @@ STRICT RULES:
                         />
                         {!input.trim() && (
                           <>
-                            {!chatInfo?.is_group && !chatInfo?.is_channel && !isAfuAiDirectChat && (
+                            {!chatInfo?.is_group && !chatInfo?.is_channel && !isAfuAiDirectChat && !isLocalNotes && (
                               <TouchableOpacity onPress={() => setShowGiftPicker(true)} hitSlop={8} style={st.pillIcon}>
                                 <Ionicons name="gift" size={22} color={colors.textMuted} />
                               </TouchableOpacity>
@@ -6410,7 +6428,7 @@ STRICT RULES:
                                 <Text style={{ fontSize: 19 }}>🧧</Text>
                               </TouchableOpacity>
                             )}
-                            {!isAfuAiDirectChat && (
+                            {!isAfuAiDirectChat && !isLocalNotes && (
                               <TouchableOpacity onPress={() => {
                                 Keyboard.dismiss();
                                 setShowEmojiStickerPicker(false);
@@ -6466,6 +6484,10 @@ STRICT RULES:
                           <Ionicons name={editingMessage ? "checkmark" : "send"} size={18} color="#fff" />
                         )}
                       </TouchableOpacity>
+                    </View>
+                  ) : isLocalNotes ? (
+                    <View style={[st.sendBtn, { backgroundColor: colors.textMuted + "28" }]}>
+                      <Ionicons name="lock-closed" size={17} color={colors.textMuted} />
                     </View>
                   ) : (
                     <View style={isRecording && !recLocked ? st.recMicWrap : undefined}>
@@ -6524,6 +6546,10 @@ STRICT RULES:
               setShowEmojiStickerPicker(false);
               setEmojiSearchActive(false);
               if (!user) return;
+              if (isLocalNotes) {
+                showAlert("My Notes", "GIFs are available only in online chats.");
+                return;
+              }
               if (messageLimited) { showAlert("Message limit", `You can only send one message until ${chatInfo?.other_name || "this user"} replies or follows you.`); return; }
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               const activeChatId = await getOrCreateChatId();

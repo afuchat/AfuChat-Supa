@@ -482,7 +482,11 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   // Initialize from the in-memory preload cache if available (populated by _layout.tsx
   // before this component ever mounts). This makes the chat list appear instantly
   // for returning users — no skeleton, no SQLite wait on first render.
-  const [chats, setChats] = useState<ChatItem[]>(() => getPreloadedConversations() as any);
+  const [chats, setChats] = useState<ChatItem[]>(() =>
+    getPreloadedConversations()
+      .filter((item: any) => !isLocalNotesId(item.id))
+      .map((item: any) => item as ChatItem),
+  );
   const chatsRef = useRef<ChatItem[]>([]);
   chatsRef.current = chats;
   const [loading, setLoading] = useState(() => !hasPreloadedConversations());
@@ -552,7 +556,10 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         ? getPreloadedConversations()
         : await getLocalConversations();
       const cachedItems = cached
-        .filter((item: any) => !(item.other_id === user.id && !isLocalNotesId(item.id)))
+        .filter((item: any) =>
+          (localNotes || !isLocalNotesId(item.id)) &&
+          !(item.other_id === user.id && !isLocalNotesId(item.id))
+        )
         .map((item: any) => isLocalNotesId(item.id) ? { ...item, kind: "notes" as const } : item);
       if (localNotes && !cachedItems.some((item: any) => item.id === localNotes.id)) {
         cachedItems.push(localNotesToChatItem(localNotes));
@@ -690,25 +697,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         item.kind !== "channel_broadcast" &&
         !((!item.is_group && !item.is_channel && item.other_id === user.id))
     );
-
-    // Clear the old forced pin on the official @afuchat conversation. It now
-    // follows normal user-controlled pin ordering.
-    const afuChatIds = regularItems
-      .filter((item) => {
-        const names = [item.name, item.other_display_name]
-          .filter(Boolean)
-          .map((value) => String(value).replace(/^@/, "").trim().toLowerCase());
-        return names.includes("afuchat") && item.is_pinned;
-      })
-      .map((item) => item.id);
-    if (afuChatIds.length > 0) {
-      regularItems.forEach((item) => {
-        if (afuChatIds.includes(item.id)) item.is_pinned = false;
-      });
-      Promise.all(
-        afuChatIds.map((chatId) => supabase.from("chats").update({ is_pinned: false }).eq("id", chatId)),
-      ).catch(() => {});
-    }
 
     regularItems.sort((a, b) => {
       // Pinned floats to top; archived sinks to bottom; otherwise newest-first
@@ -1087,7 +1075,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     const count = selectedIds.size;
     const ok = await confirmAlert(
       `Delete ${count} chat${count !== 1 ? "s" : ""}?`,
-      "This will permanently delete the selected conversations for everyone.",
+      "This removes the selected conversations from your chat list. Online chats are removed from the server; My Notes stays on this device only.",
       { confirmText: "Delete", destructive: true },
     );
     if (!ok) return;
@@ -1098,6 +1086,9 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     await Promise.all([
       ...ids.map((id) => {
         const c = chatMap.get(id);
+        if (c?.kind === "notes") {
+          return removeLocalNotesConversation(user!.id);
+        }
         if (c?.is_group && !c?.is_channel) {
           // Leave the group — remove only this user's membership
           return supabase.from("chat_members").delete().eq("chat_id", id).eq("user_id", user!.id);
