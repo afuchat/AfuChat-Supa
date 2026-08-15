@@ -24,14 +24,15 @@ import { TabSwipeProvider } from "@/context/TabSwipeContext";
 import { getLocalConversations } from "@/lib/storage/localConversations";
 import { supabase } from "@/lib/supabase";
 import { getTotalUnread, subscribeUnread } from "@/lib/chatUnreadEvents";
+import { Avatar } from "@/components/ui/Avatar";
 
-// Visible bottom bar tabs — Chat · Discover · Shorts · Apps · Account
+// Visible bottom bar tabs — Chat · Discover · Shorts · Apps · Me
 const BOTTOM_TABS = [
   { route: "/(tabs)/chats",    icon: "chatbubbles",        label: "Chat"     },
   { route: "/(tabs)/discover", icon: "compass",            label: "Discover" },
   { route: "/(tabs)/shorts",   icon: "play-circle",        label: "Shorts"   },
   { route: "/(tabs)/apps",     icon: "grid",               label: "Apps"     },
-  { route: "/(tabs)/me",       icon: "person-circle",      label: "Account"  },
+  { route: "/(tabs)/me",       icon: "person-circle",      label: "ME"       },
 ] as const;
 
 function normalizeTabPath(p: string): string {
@@ -89,9 +90,11 @@ function useTotalUnread(userId: string | undefined): number {
 function CompactTabBar({
   userId,
   avatarUrl,
+  displayName,
 }: {
   userId: string | undefined;
   avatarUrl: string | null | undefined;
+  displayName: string | null | undefined;
 }) {
   const pathname           = usePathname();
   const insets             = useSafeAreaInsets();
@@ -172,7 +175,16 @@ function CompactTabBar({
                     focused && { backgroundColor: ACTIVE_WRAP, borderRadius: 18 },
                   ]}
                 >
-                  <Ionicons name={tab.icon as any} size={22} color={iconColor} />
+                  {tab.route === "/(tabs)/me" ? (
+                    <Avatar
+                      uri={avatarUrl}
+                      name={displayName || "Me"}
+                      size={24}
+                      userId={userId}
+                    />
+                  ) : (
+                    <Ionicons name={tab.icon as any} size={22} color={iconColor} />
+                  )}
                   {/* Unread badge on Chat */}
                   {tab.route === "/(tabs)/chats" && totalUnread > 0 && (
                     <View style={[pill.badge, { backgroundColor: ACCENT }]}>
@@ -451,6 +463,7 @@ export default function TabLayout() {
           <CompactTabBar
             userId={user?.id}
             avatarUrl={profile?.avatar_url}
+            displayName={profile?.display_name}
           />
         )}
 

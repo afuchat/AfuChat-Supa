@@ -18,6 +18,7 @@ const IL_AI         = require("@/assets/illustrations/ai.webp");
 const IL_WALLET     = require("@/assets/illustrations/wallet.webp");
 const LOGO_WHITE    = require("@/assets/images/logo_white.webp");
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { useAuth } from "@/context/AuthContext";
@@ -146,8 +147,10 @@ export default function WelcomeScreen() {
   const isBusyRef = useRef(false);
 
   const contentOpacity = useRef(new Animated.Value(1)).current;
+  const contentX = useRef(new Animated.Value(0)).current;
   const contentY = useRef(new Animated.Value(0)).current;
   const illustrationScale = useRef(new Animated.Value(1)).current;
+  const illustrationX = useRef(new Animated.Value(0)).current;
   const illustrationOpacity = useRef(new Animated.Value(1)).current;
 
   // Orb animated values — first slide starts at 1 so the illustration is
@@ -169,18 +172,25 @@ export default function WelcomeScreen() {
     if (nextIdx === current || nextIdx < 0 || nextIdx >= TOTAL) return;
     isBusyRef.current = true;
     activeIndexRef.current = nextIdx;
+    const direction = nextIdx > current ? 1 : -1;
     Haptics.selectionAsync();
 
-    // Content out → change → in
+    // Slide the current content out in the navigation direction before
+    // swapping the slide, then bring the new content in from that edge.
     Animated.sequence([
       Animated.parallel([
         Animated.timing(contentOpacity, { toValue: 0, duration: 120, useNativeDriver: true }),
+        Animated.timing(contentX, { toValue: -direction * 56, duration: 180, useNativeDriver: true }),
         Animated.timing(contentY, { toValue: 10, duration: 120, useNativeDriver: true }),
         Animated.timing(illustrationOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+        Animated.timing(illustrationX, { toValue: -direction * 30, duration: 200, useNativeDriver: true }),
         Animated.timing(illustrationScale, { toValue: 0.92, duration: 200, useNativeDriver: true }),
       ]),
     ]).start(() => {
       setActiveIndex(nextIdx);
+      contentX.setValue(direction * 56);
+      contentY.setValue(10);
+      illustrationX.setValue(direction * 30);
       // Fade orbs out
       Animated.parallel([
         Animated.timing(orbOpacities[current].o1, { toValue: 0, duration: 350, useNativeDriver: true }),
@@ -196,8 +206,10 @@ export default function WelcomeScreen() {
       // Content in
       Animated.parallel([
         Animated.timing(contentOpacity, { toValue: 1, duration: 260, useNativeDriver: true }),
+        Animated.timing(contentX, { toValue: 0, duration: 300, useNativeDriver: true }),
         Animated.timing(contentY, { toValue: 0, duration: 260, useNativeDriver: true }),
         Animated.timing(illustrationOpacity, { toValue: 1, duration: 360, useNativeDriver: true }),
+        Animated.timing(illustrationX, { toValue: 0, duration: 360, useNativeDriver: true }),
         Animated.spring(illustrationScale, { toValue: 1, useNativeDriver: true, tension: 200, friction: 20 }),
       ]).start(() => { isBusyRef.current = false; });
     });
@@ -243,7 +255,7 @@ export default function WelcomeScreen() {
               illustrationOpacity,
               orbOpacities[si].o1, // reuse orb opacity as slide visibility
             ),
-            transform: [{ scale: illustrationScale }],
+            transform: [{ translateX: illustrationX }, { scale: illustrationScale }],
             pointerEvents: "none",
           }]}
         >
@@ -301,7 +313,7 @@ export default function WelcomeScreen() {
           style={s.cardTopBorder}
         />
 
-        <Animated.View style={{ opacity: contentOpacity, transform: [{ translateY: contentY }] }}>
+        <Animated.View style={{ opacity: contentOpacity, transform: [{ translateX: contentX }, { translateY: contentY }] }}>
           {/* Feature tag */}
           <View style={s.tagRow}>
             <View style={[s.tag, { backgroundColor: slide.accent + "20", borderColor: slide.accent + "40" }]}>
@@ -348,7 +360,7 @@ export default function WelcomeScreen() {
           >
             <Text style={s.ctaText}>{slide.action}</Text>
             <View style={s.ctaArrowCircle}>
-              <Text style={[s.ctaArrow, { color: slide.accent }]}>{isLast ? "✓" : "→"}</Text>
+              <Ionicons name={isLast ? "checkmark" : "arrow-forward"} size={22} color="#111827" />
             </View>
           </LinearGradient>
         </TouchableOpacity>
@@ -487,8 +499,8 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    height: 58,
-    gap: 10,
+    height: 62,
+    gap: 12,
   },
   ctaText: {
     color: "#fff",
@@ -497,15 +509,15 @@ const s = StyleSheet.create({
     letterSpacing: -0.2,
   },
   ctaArrowCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.22)",
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
   },
   ctaArrow: {
-    fontSize: 14,
+    fontSize: 21,
     fontFamily: "Inter_700Bold",
   },
 

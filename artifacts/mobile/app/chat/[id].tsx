@@ -5791,18 +5791,7 @@ STRICT RULES:
             <Ionicons name="chevron-back" size={26} color={colors.text} />
           </TouchableOpacity>
         )}
-        <TouchableOpacity
-          style={st.headerProfile}
-          activeOpacity={0.7}
-          onPress={() => {
-            if (isSelfChat) return;
-            if (chatInfo && !chatInfo.is_group && !chatInfo.is_channel && chatInfo.other_id) {
-              router.push({ pathname: "/contact/[id]", params: { id: chatInfo.other_id } });
-            } else if (chatInfo && (chatInfo.is_group || chatInfo.is_channel) && id) {
-              router.push({ pathname: "/group/[id]", params: { id: id as string } });
-            }
-          }}
-        >
+        <View style={st.headerProfile}>
           <Avatar uri={headerAvatar} name={headerTitle} size={38} square={!!(chatInfo?.is_organization_verified)} userId={(!chatInfo?.is_group && !chatInfo?.is_channel) ? chatInfo?.other_id : undefined} />
           <View style={st.headerInfo}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
@@ -5836,7 +5825,7 @@ STRICT RULES:
               return <Text style={[st.headerSub, { color: ls.isOnline ? "#34C759" : colors.textMuted }]}>{ls.text}</Text>;
             })()}
           </View>
-        </TouchableOpacity>
+        </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
           {chatInfo?.is_group && iAmChatAdmin && (
             <TouchableOpacity style={st.headerAction} hitSlop={8} onPress={handleOpenAddMembers}>

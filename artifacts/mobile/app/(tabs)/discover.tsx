@@ -2527,27 +2527,8 @@ export default function DiscoverScreen() {
 
         {/* ── Row 1: user avatar | centered wordmark | bell ── */}
         <View style={[styles.headerTop, { paddingTop: insets.top + 6 }]}>
-          {/* Left: user avatar (or AC initials) */}
-          <TouchableOpacity
-            style={styles.headerSpacer}
-            onPress={() => user ? safeRouter.push("/(tabs)/me") : safeRouter.push("/(auth)/login")}
-            activeOpacity={0.8}
-          >
-            {profile?.avatar_url ? (
-              <CachedImage
-                uri={profile.avatar_url}
-                cacheType="avatar"
-                style={{ width: 34, height: 34, borderRadius: 17 }}
-                contentFit="cover"
-              />
-            ) : (
-              <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: colors.accent, alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ color: "#fff", fontSize: 13, fontFamily: "Inter_700Bold" }}>
-                  {user ? (profile?.display_name?.[0] ?? profile?.handle?.[0] ?? "A").toUpperCase() : "AC"}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          {/* Left spacer keeps the wordmark centered without a profile shortcut. */}
+          <View style={styles.headerSpacer} />
 
           {/* Brand wordmark — centred */}
           <View style={styles.wordmarkRow}>
