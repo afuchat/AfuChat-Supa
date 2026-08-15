@@ -7,4 +7,9 @@ Actionable Expo notifications require both sides: the native client must registe
 
 **Why:** A plain push token registry and title/body payload can display notifications but cannot show Reply/Mark as read/Open actions or identify which chat/message an action belongs to.
 
-**How to apply:** Keep message category registration and cold-start response handling in the client; preserve chatId/messageId in the sender payload; ship a new native build because existing installs do not receive runtime category code changes.
+**How to apply:** Keep message category registration and cold-start response handling in the client; preserve chatId/messageId in the sender payload; ship a new native build because existing installs do not receive runtime category code changes. Treat notification preferences as a server-side delivery concern too: local handler settings cannot suppress background pushes or enforce quiet hours.
+
+## Audit warning
+The client currently stores message/call/social/marketplace, preview, and quiet-hours preferences locally, but the push delivery function only filters by the device's master `enabled` flag. Every notification producer must apply the user's category and quiet-hours preferences before sending, and message previews must be redacted when disabled.
+
+**Why:** Android background notifications are displayed by the OS without the foreground notification handler, so local UI preferences alone do not prevent unwanted alerts or message text from appearing.
