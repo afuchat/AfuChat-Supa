@@ -40,7 +40,8 @@ import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import OfflineBanner from "@/components/ui/OfflineBanner";
 import { HomeBanner } from "@/components/ui/HomeBanner";
 import { isOnline, onConnectivityChange, getCachedUserId } from "@/lib/offlineStore";
-import { getLocalConversations, saveConversations, deleteLocalConversation, pruneConversations, clearUnread } from "@/lib/storage/localConversations";
+import { getLocalConversations, saveConversations, deleteLocalConversation, pruneConversations, clearUnread, updateConversationFlags } from "@/lib/storage/localConversations";
+import { getLocalNotesConversation, isLocalNotesId, removeLocalNotesConversation, LOCAL_NOTES_NAME } from "@/lib/storage/localNotes";
 import { getPreloadedConversations, hasPreloadedConversations, invalidateConversationsPreload } from "@/lib/conversationsPreload";
 import { AFUAI_CONV_ID, AFUAI_BOT_ID, getAIChatSnapshot } from "@/lib/aiChatStore";
 import { useSuperApp } from "@/lib/superapp/MiniAppRuntime";
@@ -121,7 +122,7 @@ type ChatItem = {
   name: string | null;
   is_group: boolean;
   is_channel: boolean;
-  /** "notes" = My Notes self-chat (always pinned first); "channel_broadcast" = subscribed broadcast channel */
+  /** "notes" = explicitly-created local Notes; "channel_broadcast" = subscribed broadcast channel */
   kind?: "notes" | "channel_broadcast";
   /** For kind === "channel_broadcast": the real ID in the `channels` table */
   channel_id?: string;
@@ -145,6 +146,31 @@ type ChatItem = {
   /** null = muted forever; ISO string = muted until that time; undefined = not muted */
   muted_until?: string | null;
 };
+
+function localNotesToChatItem(local: any): ChatItem {
+  return {
+    id: local.id,
+    kind: "notes",
+    name: LOCAL_NOTES_NAME,
+    is_group: false,
+    is_channel: false,
+    other_display_name: LOCAL_NOTES_NAME,
+    other_avatar: null,
+    other_id: local.other_id || "",
+    last_message: local.last_message || "",
+    last_message_at: local.last_message_at || "",
+    last_message_is_mine: !!local.last_message_is_mine,
+    last_message_status: (local.last_message_status || "sent") as ChatItem["last_message_status"],
+    is_pinned: !!local.is_pinned,
+    is_archived: !!local.is_archived,
+    avatar_url: null,
+    unread_count: 0,
+    is_verified: false,
+    is_organization_verified: false,
+    other_last_seen: null,
+    other_show_online: false,
+  };
+}
 
 function TypingDots({ color }: { color: string }) {
   const dots = [useRef(new Animated.Value(0)).current, useRef(new Animated.Value(0)).current, useRef(new Animated.Value(0)).current];
@@ -423,38 +449,6 @@ const uploadBannerStyles = StyleSheet.create({
 
 type ChatTabKey = "all" | "unread" | "personal" | "groups" | "channels";
 
-const NOTES_CACHE_KEY = "notes_chat_id_v2";
-// In-memory cache so Notes opens instantly on the second+ press (skips AsyncStorage round-trip)
-let _notesChatIdMem: string | null = null;
-
-async function findOrCreateNotesChatId(userId: string): Promise<string | null> {
-  if (_notesChatIdMem) return _notesChatIdMem;
-  let id = await AsyncStorage.getItem(NOTES_CACHE_KEY).catch(() => null);
-  if (id) {
-    const { data } = await supabase.from("chats").select("id").eq("id", id).maybeSingle();
-    if (!data) id = null;
-  }
-  if (!id) {
-    const { data: found } = await supabase
-      .from("chats").select("id").eq("name", `notes:${userId}`).maybeSingle();
-    if (found) {
-      id = found.id;
-    } else {
-      const { data: newChat } = await supabase
-        .from("chats")
-        .insert({ name: `notes:${userId}`, is_group: false, is_channel: false })
-        .select("id").single();
-      if (newChat) {
-        id = newChat.id;
-        await supabase.from("chat_members").insert({ chat_id: id, user_id: userId });
-      }
-    }
-    if (id) await AsyncStorage.setItem(NOTES_CACHE_KEY, id).catch(() => {});
-  }
-  if (id) _notesChatIdMem = id;
-  return id;
-}
-
 /**
  * The chats screen. By default this renders as a full-page route (chats tab).
  * When mounted with `panelMode`, it renders as a fixed-width 360px column
@@ -550,12 +544,15 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       const cached = hasPreloadedConversations()
         ? getPreloadedConversations()
         : await getLocalConversations();
-      if (cached.length > 0) {
-        setChats(cached as any);
+      const cachedItems = cached
+        .filter((item: any) => !(item.other_id === user.id && !isLocalNotesId(item.id)))
+        .map((item: any) => isLocalNotesId(item.id) ? { ...item, kind: "notes" as const } : item);
+      if (cachedItems.length > 0) {
+        setChats(cachedItems as any);
         setLoading(false);
       }
       if (__DEV__) {
-        console.log("[ChatPerf] cache render", Date.now() - cacheStartedAt, "ms", "chats", cached.length);
+        console.log("[ChatPerf] cache render", Date.now() - cacheStartedAt, "ms", "chats", cachedItems.length);
       }
     }
 
@@ -598,8 +595,9 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       setRefreshing(false);
       return;
     }
+    const localNotes = await getLocalNotesConversation(user.id);
     if (!chatRows?.length) {
-      setChats([]);
+      setChats(localNotes ? [localNotesToChatItem(localNotes)] : []);
       setLoading(false);
       setRefreshing(false);
       return;
@@ -666,15 +664,32 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       };
     });
 
-    // Extract self-chat (My Notes) from items so we can always pin it at position 0
-    const selfChatItem = items.find(
-      (item) => !item.is_group && !item.is_channel && item.other_id === user.id
-    );
+    // My Notes is a local-only conversation. Hide any legacy server self-chat
+    // instead of resurfacing the old auto-created version.
     const regularItems = items.filter(
       (item) =>
         item.kind !== "channel_broadcast" &&
         !((!item.is_group && !item.is_channel && item.other_id === user.id))
     );
+
+    // Clear the old forced pin on the official @afuchat conversation. It now
+    // follows normal user-controlled pin ordering.
+    const afuChatIds = regularItems
+      .filter((item) => {
+        const names = [item.name, item.other_display_name]
+          .filter(Boolean)
+          .map((value) => String(value).replace(/^@/, "").trim().toLowerCase());
+        return names.includes("afuchat") && item.is_pinned;
+      })
+      .map((item) => item.id);
+    if (afuChatIds.length > 0) {
+      regularItems.forEach((item) => {
+        if (afuChatIds.includes(item.id)) item.is_pinned = false;
+      });
+      Promise.all(
+        afuChatIds.map((chatId) => supabase.from("chats").update({ is_pinned: false }).eq("id", chatId)),
+      ).catch(() => {});
+    }
 
     regularItems.sort((a, b) => {
       // Pinned floats to top; archived sinks to bottom; otherwise newest-first
@@ -723,7 +738,12 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     // Read all draft keys at once so we can (a) show "Draft:" labels and
     // (b) sort drafted chats above non-drafted ones.
     const channelItems = items.filter((item) => item.kind === "channel_broadcast");
-    const combined = [...regularItems, ...channelItems];
+    const notesItem = localNotes ? localNotesToChatItem(localNotes) : null;
+    const combined = [
+      ...regularItems,
+      ...(notesItem ? [notesItem] : []),
+      ...channelItems,
+    ];
     const allCombinedIds = combined.map((c) => c.id).filter(Boolean);
     let draftMap: Record<string, string> = {};
     try {
@@ -752,35 +772,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       return new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime();
     });
 
-    // Build My Notes item — always at position 0 regardless of activity
-    const notesItem: ChatItem = {
-      id: selfChatItem?.id || "MY_NOTES_VIRTUAL",
-      kind: "notes" as const,
-      name: "My Notes",
-      is_group: false,
-      is_channel: false,
-      other_display_name: "My Notes",
-      other_avatar: null,
-      other_id: user.id,
-      last_message: selfChatItem?.last_message || "",
-      last_message_at: selfChatItem?.last_message_at || "",
-      last_message_is_mine: selfChatItem?.last_message_is_mine ?? true,
-      last_message_status: "sent" as const,
-      is_pinned: false,
-      is_archived: false,
-      avatar_url: null,
-      unread_count: selfChatItem?.unread_count || 0,
-      is_verified: false,
-      is_organization_verified: false,
-      other_last_seen: null,
-      other_show_online: false,
-      draft: draftMap[selfChatItem?.id || ""] || "",
-    };
-
-    const finalItems: ChatItem[] = [
-      notesItem,
-      ...combined.map((item) => ({ ...item, draft: draftMap[item.id] || "" })),
-    ];
+    const finalItems: ChatItem[] = combined.map((item) => ({ ...item, draft: draftMap[item.id] || "" }));
 
     finalItems.forEach((item) => {
       if (item.unread_count === 0 && item.kind !== "notes" && item.kind !== "channel_broadcast") {
@@ -797,8 +789,8 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     InteractionManager.runAfterInteractions(() => {
       prefetchListImages(finalItems, { avatarFields: ["avatar_url", "other_avatar"] });
       invalidateConversationsPreload();
-      const regularIds = regularItems.map((c) => c.id);
-      saveConversations(regularItems).catch(() => {});
+      const regularIds = [...regularItems.map((c) => c.id), ...(notesItem ? [notesItem.id] : [])];
+      saveConversations(notesItem ? [...regularItems, notesItem] : regularItems).catch(() => {});
       pruneConversations(regularIds).catch(() => {});
     });
     setLoading(false);
@@ -834,12 +826,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   useEffect(() => { loadChats(); }, [loadChats]);
   useFocusEffect(useCallback(() => { loadChats(true); }, [loadChats]));
 
-  // Pre-warm the Notes chat ID in the background so the first tap on "My Notes"
-  // is instant (avoids an AsyncStorage + Supabase round-trip on press).
-  useEffect(() => {
-    if (user?.id) findOrCreateNotesChatId(user.id).catch(() => {});
-  }, [user?.id]);
-
   // Push the latest total unread into the shared in-memory store so the tab
   // bar badge updates instantly without waiting for a SQLite round-trip.
   useEffect(() => {
@@ -860,10 +846,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
           return;
         }
         let chatId = item.id;
-        if (item.kind === "notes" && chatId === "MY_NOTES_VIRTUAL") {
-          chatId = (await findOrCreateNotesChatId(user?.id || "")) || "";
-          if (!chatId) return;
-        }
         router.push({
           pathname: "/chat/[id]",
           params: {
@@ -879,17 +861,20 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         });
         return;
       }
-      // Don't allow pin/archive/delete on special items
-      if (item.kind === "notes" || item.kind === "channel_broadcast") return;
+      // Broadcast-only channel rows are not real chat records. Local Notes
+      // uses the same user-controlled pin/archive/delete actions as any chat.
+      if (item.kind === "channel_broadcast") return;
       if (action === "togglePin") {
         const next = !item.is_pinned;
         setChats((prev) =>
           prev.map((c) => (c.id === item.id ? { ...c, is_pinned: next } : c)),
         );
-        const { error } = await supabase
-          .from("chats")
-          .update({ is_pinned: next })
-          .eq("id", item.id);
+        const { error } = item.kind === "notes"
+          ? { error: await (async () => {
+              await updateConversationFlags(item.id, { is_pinned: next });
+              return null;
+            })() }
+          : await supabase.from("chats").update({ is_pinned: next }).eq("id", item.id);
         if (error) {
           showAlert("Couldn't update pin", error.message);
           loadChats(true);
@@ -901,7 +886,13 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               setChats((prev) =>
                 prev.map((c) => (c.id === item.id ? { ...c, is_pinned: !next } : c)),
               );
-              try { await supabase.from("chats").update({ is_pinned: !next }).eq("id", item.id); } catch {}
+              try {
+                if (item.kind === "notes") {
+                  await updateConversationFlags(item.id, { is_pinned: !next });
+                } else {
+                  await supabase.from("chats").update({ is_pinned: !next }).eq("id", item.id);
+                }
+              } catch {}
             },
             { type: "info", icon: next ? "pin" : "pin" },
           );
@@ -913,10 +904,12 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         setChats((prev) =>
           prev.map((c) => c.id === item.id ? { ...c, is_archived: next } : c),
         );
-        const { error } = await supabase
-          .from("chats")
-          .update({ is_archived: next })
-          .eq("id", item.id);
+        const { error } = item.kind === "notes"
+          ? { error: await (async () => {
+              await updateConversationFlags(item.id, { is_archived: next });
+              return null;
+            })() }
+          : await supabase.from("chats").update({ is_archived: next }).eq("id", item.id);
         if (error) {
           showAlert("Couldn't archive chat", error.message);
           loadChats(true);
@@ -928,7 +921,13 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               setChats((prev) =>
                 prev.map((c) => (c.id === item.id ? { ...c, is_archived: !next } : c)),
               );
-              try { await supabase.from("chats").update({ is_archived: !next }).eq("id", item.id); } catch {}
+              try {
+                if (item.kind === "notes") {
+                  await updateConversationFlags(item.id, { is_archived: !next });
+                } else {
+                  await supabase.from("chats").update({ is_archived: !next }).eq("id", item.id);
+                }
+              } catch {}
             },
             { type: "info", icon: next ? "archive" : "archive" },
           );
@@ -946,6 +945,10 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         );
         if (!ok) return;
         setChats((prev) => prev.filter((c) => c.id !== item.id));
+        if (item.kind === "notes") {
+          await removeLocalNotesConversation(user!.id);
+          return;
+        }
         deleteLocalConversation(item.id).catch(() => {});
         if (isGroup) {
           // Leave the group — remove only this user's membership
@@ -972,6 +975,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       }
       if (action === "mute" || action === "unmute") {
         if (!user) return;
+        if (item.kind === "notes") return;
         if (action === "unmute") {
           setChats((prev) => prev.map((c) => c.id === item.id ? { ...c, muted_until: undefined } : c));
           await supabase.from("chat_mutes").delete().eq("user_id", user.id).eq("chat_id", item.id);
@@ -1015,20 +1019,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     }
     if (item.kind === "channel_broadcast" && item.channel_id) {
       router.push({ pathname: "/channel/[id]", params: { id: item.channel_id } } as any);
-      return;
-    }
-    if (item.kind === "notes" && item.id === "MY_NOTES_VIRTUAL") {
-      const cached = _notesChatIdMem;
-      if (cached) {
-        if (onOpenChat) { onOpenChat(item, cached); return; }
-        router.push({ pathname: "/chat/[id]", params: { id: cached, otherName: "My Notes", otherAvatar: "", otherId: "", isGroup: "false", isChannel: "false", chatName: "", chatAvatar: "" } });
-      } else {
-        findOrCreateNotesChatId(user.id).then((chatId) => {
-          if (!chatId) return;
-          if (onOpenChat) { onOpenChat(item, chatId); return; }
-          router.push({ pathname: "/chat/[id]", params: { id: chatId, otherName: "My Notes", otherAvatar: "", otherId: "", isGroup: "false", isChannel: "false", chatName: "", chatAvatar: "" } });
-        }).catch(() => {});
-      }
       return;
     }
     if (onOpenChat) { onOpenChat(item, item.id); return; }
@@ -1193,11 +1183,9 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                 };
               });
 
-              // Re-sort: pinned first, then archived last, then by latest message.
-              // My Notes (kind === "notes") always stays at index 0.
-              const notes = updated.filter((c) => c.kind === "notes");
-              const rest  = updated.filter((c) => c.kind !== "notes");
-              rest.sort((a, b) => {
+              // Re-sort like every other conversation: user-pinned first,
+              // archived last, then newest activity. Notes is not special here.
+              updated.sort((a, b) => {
                 if (a.is_pinned && !b.is_pinned) return -1;
                 if (!a.is_pinned && b.is_pinned) return 1;
                 if (a.is_archived && !b.is_archived) return 1;
@@ -1206,7 +1194,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                 if (a.last_message_at && !b.last_message_at) return -1;
                 return new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime();
               });
-              return [...notes, ...rest];
+              return updated;
             });
           }
 

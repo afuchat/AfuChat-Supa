@@ -46,6 +46,7 @@ import {
   saveLocalContacts,
   getAllPhonebookNames,
 } from "@/lib/storage/localContacts";
+import { createLocalNotesConversation, LOCAL_NOTES_NAME } from "@/lib/storage/localNotes";
 
 type Contact = {
   id: string;
@@ -344,6 +345,22 @@ export default function NewChatScreen() {
     });
   }
 
+  async function openMyNotes() {
+    if (!user) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const notesId = await createLocalNotesConversation(user.id);
+    router.push({
+      pathname: "/chat/[id]",
+      params: {
+        id: notesId,
+        otherName: LOCAL_NOTES_NAME,
+        otherId: user.id,
+        isGroup: "false",
+        isChannel: "false",
+      },
+    });
+  }
+
   async function createGroup() {
     if (selected.size < 2) {
       showAlert("Select contacts", "Pick at least 2 contacts to create a group.");
@@ -538,6 +555,7 @@ export default function NewChatScreen() {
                 channels={channels}
                 onGroupPress={(g) => router.push({ pathname: "/chat/[id]", params: { id: g.id } } as any)}
                 onChannelPress={(c) => router.push({ pathname: "/channel/[id]", params: { id: c.id } } as any)}
+                onNotesPress={openMyNotes}
               />
             }
             renderItem={({ item }) => (
@@ -670,6 +688,7 @@ function ListHeader({
   channels,
   onGroupPress,
   onChannelPress,
+  onNotesPress,
 }: {
   colors: any;
   accent: string;
@@ -683,6 +702,7 @@ function ListHeader({
   channels: ChannelItem[];
   onGroupPress: (g: GroupItem) => void;
   onChannelPress: (c: ChannelItem) => void;
+  onNotesPress: () => void;
 }) {
   return (
     <View>
@@ -706,6 +726,14 @@ function ListHeader({
           iconBg="#34C759"
           label="New Channel"
           onPress={() => router.push("/channel/intro" as any)}
+          colors={colors}
+        />
+        <Separator indent={58} />
+        <QuickAction
+          icon="bookmark"
+          iconBg="#7B61FF"
+          label="My Notes"
+          onPress={onNotesPress}
           colors={colors}
         />
       </View>

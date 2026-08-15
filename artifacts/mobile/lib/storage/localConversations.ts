@@ -162,6 +162,32 @@ export async function updateConversationLastMessage(
   } catch {}
 }
 
+export async function updateConversationFlags(
+  id: string,
+  flags: { is_pinned?: boolean; is_archived?: boolean },
+): Promise<void> {
+  try {
+    const db = await getDB();
+    const updates: string[] = [];
+    const params: any[] = [];
+    if (flags.is_pinned !== undefined) {
+      updates.push("is_pinned = ?");
+      params.push(flags.is_pinned ? 1 : 0);
+    }
+    if (flags.is_archived !== undefined) {
+      updates.push("is_archived = ?");
+      params.push(flags.is_archived ? 1 : 0);
+    }
+    if (updates.length === 0) return;
+    updates.push("stored_at = ?");
+    params.push(Date.now(), id);
+    await db.runAsync(
+      `UPDATE conversations SET ${updates.join(", ")} WHERE id = ?`,
+      params,
+    );
+  } catch {}
+}
+
 export async function incrementUnread(conversationId: string): Promise<void> {
   try {
     const db = await getDB();
