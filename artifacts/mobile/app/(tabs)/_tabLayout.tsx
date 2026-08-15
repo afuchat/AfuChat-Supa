@@ -199,6 +199,8 @@ function CompactTabBar({
                     { color: focused ? ACTIVE_ICON : INACTIVE_ICON },
                   ]}
                   numberOfLines={1}
+                  allowFontScaling={false}
+                  maxFontSizeMultiplier={1}
                 >
                   {tab.label}
                 </Text>
@@ -311,6 +313,11 @@ const pill = StyleSheet.create({
   },
   tab: {
     flex: 1,
+    flexBasis: 0,
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 0,
+    alignSelf: "stretch",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 0,
@@ -322,11 +329,14 @@ const pill = StyleSheet.create({
     justifyContent: "center",
   },
   label: {
+    width: "100%",
     fontSize: 9,
     lineHeight: 11,
     fontFamily: "Inter_700Bold",
     letterSpacing: 0.2,
     marginTop: 1,
+    textAlign: "center",
+    includeFontPadding: false,
     textTransform: "uppercase",
   },
   fab: {
