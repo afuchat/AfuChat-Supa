@@ -15,16 +15,22 @@ const PagerView = React.forwardRef(function PagerView(
   ref
 ) {
   const pages = React.Children.toArray(children);
-  const [page, setPageState] = React.useState(initialPage);
+  const [page, setPageState] = React.useState(() => {
+    const max = Math.max(0, pages.length - 1);
+    return Math.max(0, Math.min(initialPage, max));
+  });
+  const onPageSelectedRef = React.useRef(onPageSelected);
+  onPageSelectedRef.current = onPageSelected;
 
   React.useImperativeHandle(ref, () => ({
     setPage(index) {
-      setPageState(index);
+      const max = Math.max(0, pages.length - 1);
+      setPageState(Math.max(0, Math.min(index, max)));
     },
   }));
 
   React.useEffect(() => {
-    onPageSelected?.({ nativeEvent: { position: page } });
+    onPageSelectedRef.current?.({ nativeEvent: { position: page } });
   }, [page]);
 
   return (

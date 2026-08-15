@@ -48,6 +48,9 @@ export type StoredEvent = {
 let _userId: string | null             = null;
 let _syncTimer: ReturnType<typeof setTimeout> | null = null;
 let _pendingCount                      = 0;
+let _ringCache: StoredEvent[] | null   = null;
+let _ringLoad: Promise<StoredEvent[]> | null = null;
+let _appendQueue: Promise<void>         = Promise.resolve();
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -89,9 +92,7 @@ export async function getRecentEvents(
   limit = 200,
 ): Promise<StoredEvent[]> {
   try {
-    const raw = await AsyncStorage.getItem(RING_KEY);
-    if (!raw) return [];
-    const ring: StoredEvent[] = JSON.parse(raw);
+    const ring = await _loadRing();
     const cutoff = Date.now() - MAX_AGE_MS;
     return ring
       .filter((e) => e.ts > cutoff && (!type || e.type === type))
@@ -112,9 +113,8 @@ export async function flushActivitySync(): Promise<void> {
 async function _appendEvent(
   ev: Omit<StoredEvent, "id" | "ts" | "synced">,
 ): Promise<void> {
-  try {
-    const raw  = await AsyncStorage.getItem(RING_KEY);
-    let ring: StoredEvent[] = raw ? JSON.parse(raw) : [];
+  const write = _appendQueue.then(async () => {
+    let ring = await _loadRing();
 
     const now    = Date.now();
     const cutoff = now - MAX_AGE_MS;
@@ -141,16 +141,38 @@ async function _appendEvent(
 
     if (ring.length > MAX_EVENTS) ring = ring.slice(-MAX_EVENTS);
 
+    _ringCache = ring;
     await AsyncStorage.setItem(RING_KEY, JSON.stringify(ring));
-  } catch {}
+  });
+  _appendQueue = write.catch(() => {});
+  await write.catch(() => {});
+}
+
+async function _loadRing(): Promise<StoredEvent[]> {
+  if (_ringCache) return _ringCache;
+  if (_ringLoad) return _ringLoad;
+  _ringLoad = AsyncStorage.getItem(RING_KEY)
+    .then((raw) => {
+      try {
+        const parsed = raw ? JSON.parse(raw) : [];
+        _ringCache = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        _ringCache = [];
+      }
+      return _ringCache;
+    })
+    .catch(() => {
+      _ringCache = [];
+      return _ringCache;
+    })
+    .finally(() => { _ringLoad = null; });
+  return _ringLoad;
 }
 
 async function _syncToSupabase(): Promise<void> {
   if (!_userId || !isOnline()) return;
   try {
-    const raw = await AsyncStorage.getItem(RING_KEY);
-    if (!raw) return;
-    let ring: StoredEvent[] = JSON.parse(raw);
+    let ring = await _loadRing();
     const uid      = _userId;
     const unsynced = ring.filter((e) => !e.synced && e.userId === uid).slice(0, SYNC_BATCH);
     if (unsynced.length === 0) return;
@@ -166,6 +188,7 @@ async function _syncToSupabase(): Promise<void> {
     if (!error) {
       const syncedIds = new Set(unsynced.map((e) => e.id));
       ring = ring.map((e) => syncedIds.has(e.id) ? { ...e, synced: true } : e);
+      _ringCache = ring;
       await AsyncStorage.setItem(RING_KEY, JSON.stringify(ring));
     }
   } catch {}

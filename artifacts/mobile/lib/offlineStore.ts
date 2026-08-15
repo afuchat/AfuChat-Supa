@@ -27,18 +27,27 @@ export type PendingMessage = {
   created_at: string;
 };
 
-let _isOnline = true;
+// Start cache-first until NetInfo has provided a real answer. Treating a cold
+// boot as online makes offline Android launches wait on doomed Supabase calls.
+let _isOnline = false;
 let _listeners: ((online: boolean) => void)[] = [];
 // Reconnect-specific listeners — fired ONLY when transitioning from offline → online.
 // Use onReconnect() to subscribe; screens use this to trigger a data refresh
 // without having to filter out the offline→online direction themselves.
 let _reconnectListeners: (() => void)[] = [];
 let _netInfoInitialized = false;
+let _netInfoReported = false;
 
 function _fireConnectivity(newOnline: boolean): void {
+  const wasOnline = _isOnline;
+  const hadInitialReport = _netInfoReported;
+  _netInfoReported = true;
   _isOnline = newOnline;
   _listeners.forEach((fn) => { try { fn(newOnline); } catch {} });
-  if (newOnline) {
+  // Do not classify the first NetInfo answer as a reconnect. Auth bootstrap
+  // already owns the initial fetch; reconnect listeners are for a real
+  // offline -> online transition after the device has reported once.
+  if (newOnline && hadInitialReport && !wasOnline) {
     _reconnectListeners.forEach((fn) => { try { fn(); } catch {} });
   }
 }
@@ -55,12 +64,15 @@ function initNetInfo() {
     // "true" default. This matters on cold start when the phone is offline.
     NetInfo.fetch().then((state: any) => {
       const initialOnline = state.isConnected === true && state.isInternetReachable !== false;
-      if (initialOnline !== _isOnline) _fireConnectivity(initialOnline);
+      // Always publish the first result, including an online result. This
+      // makes the initial unknown -> online transition available to reconnect
+      // listeners that mounted during auth restoration.
+      if (initialOnline !== _isOnline || !_netInfoReported) _fireConnectivity(initialOnline);
     }).catch(() => {});
 
     NetInfo.addEventListener((state: any) => {
       const newOnline = state.isConnected === true && state.isInternetReachable !== false;
-      if (newOnline !== _isOnline) _fireConnectivity(newOnline);
+      if (newOnline !== _isOnline || !_netInfoReported) _fireConnectivity(newOnline);
     });
   } catch {}
 }

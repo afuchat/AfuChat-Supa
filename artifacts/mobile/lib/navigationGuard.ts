@@ -59,26 +59,36 @@ const _origReplace = router.replace.bind(router);
 const _origBack    = router.back.bind(router);
 const _origCanGoBack = router.canGoBack.bind(router);
 
+function runWithMountRetry(action: () => void, attempt = 0): void {
+  try {
+    action();
+  } catch (e: any) {
+    const message = String(e?.message ?? e);
+    if (!message.includes("mounting") || attempt >= 8) {
+      if (!message.includes("mounting")) throw e;
+      return;
+    }
+    // Expo Router can receive a notification/deep-link action before the root
+    // navigator finishes mounting. Retry that known race instead of dropping
+    // the navigation or surfacing a native-looking red screen.
+    setTimeout(() => runWithMountRetry(action, attempt + 1), 60);
+  }
+}
+
 (router as any).push = (...args: Parameters<typeof router.push>) => {
   if (!acquire(keyFor("push", args))) return;
-  try { _origPush(...args); } catch (e: any) {
-    if (!String(e?.message).includes("mounting")) throw e;
-  }
+  runWithMountRetry(() => _origPush(...args));
 };
 
 (router as any).replace = (...args: Parameters<typeof router.replace>) => {
   if (!acquire(keyFor("replace", args))) return;
-  try { _origReplace(...args); } catch (e: any) {
-    if (!String(e?.message).includes("mounting")) throw e;
-  }
+  runWithMountRetry(() => _origReplace(...args));
 };
 
 (router as any).back = () => {
   if (!acquire(keyFor("back"))) return;
-  try {
+  runWithMountRetry(() => {
     if (_origCanGoBack()) _origBack();
     else _origReplace("/(tabs)/chats" as any);
-  } catch (e: any) {
-    if (!String(e?.message).includes("mounting")) throw e;
-  }
+  });
 };
