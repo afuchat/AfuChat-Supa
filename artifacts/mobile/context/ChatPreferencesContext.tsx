@@ -3,6 +3,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { patchLocalSetting } from "@/lib/storage/localSettings";
+import { setScreenshotProtectionEnabled } from "@/lib/appLock";
+import { saveNotificationPreferences } from "@/lib/notificationPreferences";
 
 const CHAT_PREF_TO_LOCAL: Partial<Record<string, string>> = {
   read_receipts: "chat_read_receipts",
@@ -138,7 +140,11 @@ export function ChatPreferencesProvider({ children }: { children: React.ReactNod
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    if (!user) { setLoading(false); return; }
+    if (!user) {
+      setPrefs(defaults);
+      setLoading(false);
+      return;
+    }
     try {
       // Load server-side prefs
       const { data } = await supabase
@@ -149,15 +155,26 @@ export function ChatPreferencesProvider({ children }: { children: React.ReactNod
 
       // Load client-side prefs from AsyncStorage
       const localRaw = await AsyncStorage.getItem(LOCAL_PREFS_KEY + "_" + user.id);
-      const localPrefs = localRaw ? JSON.parse(localRaw) : {};
+      let localPrefs: Partial<ChatPrefs> = {};
+      try {
+        localPrefs = localRaw ? JSON.parse(localRaw) : {};
+      } catch {
+        localPrefs = {};
+      }
+      setScreenshotProtectionEnabled(!!localPrefs.screenshot_protection).catch(() => {});
 
       if (data) {
         setPrefs({ ...defaults, ...data, ...localPrefs });
       } else {
         setPrefs({ ...defaults, ...localPrefs });
       }
-    } catch {}
-    setLoading(false);
+    } catch {
+      // Keep the defaults available offline, but never leave the settings
+      // screen in a permanent loading state.
+      setPrefs(defaults);
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   useEffect(() => { load(); }, [load]);
@@ -166,6 +183,15 @@ export function ChatPreferencesProvider({ children }: { children: React.ReactNod
     setPrefs((p) => ({ ...p, [key]: value }));
 
     if (key === "chat_theme") AsyncStorage.setItem(APP_ACCENT_KEY, value as string).catch(() => {});
+    if (key === "screenshot_protection") {
+      // The preference used to be written but never applied to the OS.
+      // appLock is a safe no-op on web/unsupported devices.
+      setScreenshotProtectionEnabled(value as boolean).catch(() => {});
+    }
+    if (key === "sounds_enabled") {
+      // Keep message notification audio in sync with the chat preference.
+      saveNotificationPreferences({ sounds: value as boolean });
+    }
 
     const localKey = CHAT_PREF_TO_LOCAL[key as string];
     if (localKey && user) {
@@ -178,9 +204,10 @@ export function ChatPreferencesProvider({ children }: { children: React.ReactNod
       // Persist to Supabase
       if (!user) return;
       try {
-        await supabase
+        const { error } = await supabase
           .from("chat_preferences")
           .upsert({ user_id: user.id, [key]: value }, { onConflict: "user_id" });
+        if (error) throw error;
       } catch {}
     } else {
       // Persist client-only prefs to AsyncStorage

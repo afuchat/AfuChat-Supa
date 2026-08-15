@@ -146,13 +146,16 @@ export async function patchLocalSetting<K extends keyof Omit<LocalUserSettings, 
   try {
     const db = await getDB();
     const sqlValue = typeof value === "boolean" ? (value ? 1 : 0) : value;
+    // Auth restoration normally seeds this row, but settings must also work
+    // during the first offline session. UPDATE alone silently changed zero
+    // rows for new users.
+    await db.runAsync(
+      "INSERT OR IGNORE INTO user_settings (user_id, stored_at, updated_at) VALUES (?, ?, ?)",
+      [userId, Date.now(), Date.now()],
+    );
     await db.runAsync(
       `UPDATE user_settings SET ${key} = ?, updated_at = ? WHERE user_id = ?`,
       [sqlValue, Date.now(), userId],
-    );
-    // If no row exists yet, seed defaults and then apply
-    const changed = await db.runAsync(
-      `SELECT changes()`,
     );
   } catch {}
 }

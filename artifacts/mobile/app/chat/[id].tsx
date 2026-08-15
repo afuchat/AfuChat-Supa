@@ -1066,6 +1066,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   useEffect(() => {
     const url  = msg.attachment_url;
     const type = msg.attachment_type;
+    if (!chatPrefsLocal.auto_download) return;
     // Skip video (stream from URL) and file (user must choose to download)
     if (!url || !type || type === "video" || type === "file") return;
     // Already resolved to a local path — nothing to do
@@ -1073,7 +1074,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
     ensureChatAttachmentDownloaded(url, type)
       .then((local) => { if (local && local !== attachUri) setAttachUri(local); })
       .catch(() => {});
-  }, [msg.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [msg.id, chatPrefsLocal.auto_download]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleFileTap() {
     if (!msg.attachment_url) return;
@@ -1328,6 +1329,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
             !flatSurface && showTail ? (isMe ? st.bubbleTailMe : st.bubbleTailOther) : null,
             replyPreview ? st.bubbleWithReply : null,
             isPending && { opacity: 0.6 },
+            !flatSurface && chatPrefsLocal.compact_mode && { paddingVertical: 5 },
           ]}>
           {!isMe && showName && (
             onSenderPress ? (
@@ -1379,7 +1381,14 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                   activeOpacity={0.9}
                 >
                   <View>
-                    <ExpoImage source={{ uri: attachUri || msg.attachment_url! }} style={st.attachImage} contentFit="cover" cachePolicy="memory-disk" transition={0} />
+              <ExpoImage
+                source={{ uri: attachUri || msg.attachment_url! }}
+                style={st.attachImage}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                transition={0}
+                autoplay={msg.attachment_type !== "gif" || chatPrefsLocal.autoplay_gifs}
+              />
                   </View>
                 </TouchableOpacity>
               {hasTextContent && (
@@ -1773,7 +1782,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
           )}
         </Pressable>
 
-        {msg.reactions && msg.reactions.length > 0 && (
+          {chatPrefsLocal.reactions_enabled && msg.reactions && msg.reactions.length > 0 && (
           <View style={[st.reactionsRow, isMe ? st.reactionsMe : st.reactionsOther]}>
             {msg.reactions.map((r, i) => (
               <TouchableOpacity
@@ -1878,7 +1887,74 @@ export default function ChatScreenRoute() {
     return <Redirect href="/(auth)/login" />;
   }
 
-  return <ChatScreen />;
+  return (
+    <ChatLockGate>
+      <ChatScreen />
+    </ChatLockGate>
+  );
+}
+
+function ChatLockGate({ children }: { children: React.ReactNode }) {
+  const { prefs } = useChatPreferences();
+  const { colors } = useTheme();
+  const [unlocked, setUnlocked] = useState(!prefs.chat_lock || Platform.OS === "web");
+  const [checking, setChecking] = useState(false);
+
+  const authenticate = useCallback(async () => {
+    if (!prefs.chat_lock || Platform.OS === "web") {
+      setUnlocked(true);
+      return;
+    }
+    setChecking(true);
+    try {
+      const LocalAuthentication = require("expo-local-authentication") as typeof import("expo-local-authentication");
+      if (!(await LocalAuthentication.hasHardwareAsync()) || !(await LocalAuthentication.isEnrolledAsync())) {
+        setUnlocked(true);
+        return;
+      }
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Unlock your chats",
+        cancelLabel: "Cancel",
+        disableDeviceFallback: false,
+      });
+      setUnlocked(result.success);
+    } catch {
+      // Unsupported clients must not strand the user behind an unusable lock.
+      setUnlocked(true);
+    } finally {
+      setChecking(false);
+    }
+  }, [prefs.chat_lock]);
+
+  useEffect(() => {
+    if (!prefs.chat_lock || Platform.OS === "web") {
+      setUnlocked(true);
+      return;
+    }
+    setUnlocked(false);
+    authenticate();
+  }, [prefs.chat_lock, authenticate]);
+
+  if (!prefs.chat_lock || unlocked) return <>{children}</>;
+
+  return (
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 28, backgroundColor: colors.background }}>
+      <View style={{ width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", backgroundColor: colors.surface, marginBottom: 18 }}>
+        <Ionicons name="lock-closed" size={30} color={colors.accent} />
+      </View>
+      <Text style={{ color: colors.text, fontFamily: "Inter_700Bold", fontSize: 20, textAlign: "center" }}>Chats are locked</Text>
+      <Text style={{ color: colors.textMuted, fontFamily: "Inter_400Regular", fontSize: 14, lineHeight: 21, textAlign: "center", marginTop: 8 }}>
+        Authenticate to open this conversation.
+      </Text>
+      <TouchableOpacity
+        onPress={authenticate}
+        disabled={checking}
+        style={{ marginTop: 22, paddingHorizontal: 22, paddingVertical: 12, borderRadius: 14, backgroundColor: colors.accent, minWidth: 130, alignItems: "center" }}
+      >
+        {checking ? <ActivityIndicator color="#fff" /> : <Text style={{ color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 15 }}>Unlock</Text>}
+      </TouchableOpacity>
+    </View>
+  );
 }
 
 function ChatScreen() {
@@ -2978,7 +3054,7 @@ function ChatScreen() {
             });
           }
           // Auto-download images/gifs/audio on incoming messages (NOT files — user must tap)
-          if (newMsg.attachment_url && newMsg.attachment_type &&
+          if (chatPrefs.auto_download && newMsg.attachment_url && newMsg.attachment_type &&
               newMsg.attachment_type !== "video" && newMsg.attachment_type !== "file") {
             ensureChatAttachmentDownloaded(newMsg.attachment_url, newMsg.attachment_type).catch(() => {});
           }
@@ -5905,6 +5981,7 @@ STRICT RULES:
 
   function shouldShowTail(index: number): boolean {
     const current = listData[index];
+    if (!chatPrefs.message_grouping) return true;
     // Replied messages always show a tail regardless of group position
     if (current?.reply_to_message_id) return true;
     // The FlatList is inverted: index 0 = bottom (most recent).
@@ -5919,6 +5996,7 @@ STRICT RULES:
 
   function shouldShowName(index: number): boolean {
     if (!chatInfo?.is_group && !chatInfo?.is_channel) return false;
+    if (!chatPrefs.message_grouping) return true;
     // Show sender name on the TOP message of each group (oldest in sequence).
     // In the inverted list that's when the message ABOVE (index + 1, older)
     // belongs to a different sender.
@@ -6000,11 +6078,12 @@ STRICT RULES:
 
   const getMessageSpacing = useCallback((index: number): number => {
     if (index === 0) return 0;
+    if (!chatPrefs.message_grouping) return 8;
     const current = listData[index];
     const prev = listData[index - 1];
     if (!current || !prev) return 8;
     return current.sender_id === prev.sender_id ? 2 : 8;
-  }, [listData]);
+  }, [listData, chatPrefs.message_grouping]);
 
   const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => {
     const isMe = item.sender_id === user?.id;
@@ -6043,7 +6122,7 @@ STRICT RULES:
             showTail={shouldShowTail(index)}
             showName={shouldShowName(index)}
             onLongPress={(m) => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              if (chatPrefs.send_haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               setTextSelectionMessageId(null);
               setShowReactions(m);
             }}
@@ -7235,7 +7314,7 @@ STRICT RULES:
       >
         <View style={st.messageOptionsOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={closeMessageOptions} />
-          {!isLocalNotes && (
+          {!isLocalNotes && chatPrefs.reactions_enabled && (
             <View style={[st.reactionFloatingGroup, { backgroundColor: colors.inputBg }]}>
               <View style={st.reactEmojiRow}>
                 {REACTION_EMOJIS.map((emoji) => {
@@ -7246,7 +7325,7 @@ STRICT RULES:
                       style={[st.reactEmojiPillBtn, alreadyReacted && { transform: [{ scale: 1.18 }] }]}
                       onPress={() => {
                         if (!showReactions) return;
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        if (chatPrefs.send_haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         addReaction(showReactions, emoji);
                         setShowReactions(null);
                         setShowMoreEmojis(false);
@@ -7275,7 +7354,7 @@ STRICT RULES:
                         style={[st.reactMoreGridBtn, alreadyReacted && { transform: [{ scale: 1.14 }] }]}
                         onPress={() => {
                           if (!showReactions) return;
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          if (chatPrefs.send_haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                           addReaction(showReactions, emoji);
                           setShowReactions(null);
                           setShowMoreEmojis(false);
@@ -7499,7 +7578,7 @@ STRICT RULES:
                   <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: "#D4A853", textTransform: "uppercase", letterSpacing: 0.5 }}>Tap to use</Text>
                 </View>
                 {aiReplies.map((reply, i) => (
-                  <TouchableOpacity key={i} onPress={() => { setInput(reply); setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} style={{ backgroundColor: colors.inputBg, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: "#D4A853" + "25", flexDirection: "row", alignItems: "center", gap: 8 }} activeOpacity={0.6}>
+                  <TouchableOpacity key={i} onPress={() => { setInput(reply); setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); if (chatPrefs.send_haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} style={{ backgroundColor: colors.inputBg, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: "#D4A853" + "25", flexDirection: "row", alignItems: "center", gap: 8 }} activeOpacity={0.6}>
                     <Text style={{ flex: 1, fontSize: 14, color: colors.text, fontFamily: "Inter_400Regular", lineHeight: 19 }}>{reply}</Text>
                     <Ionicons name="arrow-forward-circle" size={16} color="#D4A853" style={{ opacity: 0.5 }} />
                   </TouchableOpacity>

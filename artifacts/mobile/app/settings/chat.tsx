@@ -92,16 +92,19 @@ export default function ChatSettingsScreen() {
     if (!user) return;
     setBackingUp(true);
     try {
-      const { count } = await supabase
+      const { count, error } = await supabase
         .from("chat_members")
         .select("chat_id", { count: "exact", head: true })
         .eq("user_id", user.id);
+      if (error) throw error;
       const n = count ?? 0;
       if (n === 0) { showAlert("Backup", "No chats to back up."); return; }
       showAlert(
         "Cloud sync is automatic",
         `Your ${n} chat${n === 1 ? "" : "s"} are continuously synced to AfuChat cloud while you're online — no manual backup needed.`,
       );
+    } catch (error: any) {
+      showAlert("Backup unavailable", error?.message || "We couldn't verify cloud sync right now. Please try again.");
     } finally {
       setBackingUp(false);
     }
@@ -427,23 +430,29 @@ export default function ChatSettingsScreen() {
         {/* ── BACKUP ───────────────────────────────────────── */}
         <SectionTitle label="BACKUP" />
         <View style={[s.group, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <TogRow colors={colors} themeColor={themeColor} icon="cloud-upload"
-            label="Auto Chat Backup" desc="Automatically back up your chats to the cloud"
-            value={prefs.chat_backup} onChange={(v) => updatePref("chat_backup", v)} />
-          {prefs.chat_backup && (
-            <>
-              <Sep color={colors.border} />
-              <TouchableOpacity style={s.row} onPress={handleBackupNow} activeOpacity={0.7} disabled={backingUp}>
-                <View style={s.iconWrap}>
-                  {backingUp
-                    ? <ActivityIndicator size="small" color={colors.text} />
-                    : <Ionicons name="refresh-outline" size={22} color={colors.text} />}
-                </View>
-                <Text style={[s.rowLabel, { color: colors.text, flex: 1 }]}>Back Up Now</Text>
-                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-              </TouchableOpacity>
-            </>
-          )}
+          <View style={s.row}>
+            <View style={s.iconWrap}>
+              <Ionicons name="cloud-done-outline" size={22} color={colors.accent} />
+            </View>
+            <View style={s.rowText}>
+              <Text style={[s.rowLabel, { color: colors.text }]}>Cloud sync</Text>
+              <Text style={[s.rowDesc, { color: colors.textMuted }]}>Your chats sync automatically while you’re online</Text>
+            </View>
+            <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
+          </View>
+          <Sep color={colors.border} />
+          <TouchableOpacity style={s.row} onPress={handleBackupNow} activeOpacity={0.7} disabled={backingUp}>
+            <View style={s.iconWrap}>
+              {backingUp
+                ? <ActivityIndicator size="small" color={colors.text} />
+                : <Ionicons name="refresh-outline" size={22} color={colors.text} />}
+            </View>
+            <View style={s.rowText}>
+              <Text style={[s.rowLabel, { color: colors.text }]}>Check sync status</Text>
+              <Text style={[s.rowDesc, { color: colors.textMuted }]}>Verify your conversations are backed up</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+          </TouchableOpacity>
         </View>
 
         {/* ── DANGER ZONE ──────────────────────────────────── */}
