@@ -6,7 +6,7 @@
  * Dark theme  → logo_white.webp  on black  (#000000)
  * Light theme → logo_black.webp  on cream  (#F5F0E8)
  *
- * Fades out and scales up once `ready` becomes true, then calls `onDone`
+ * Fades out quickly once `ready` becomes true, then calls `onDone`
  * so the parent can call SplashScreen.hideAsync().
  */
 
@@ -62,14 +62,14 @@ export function SplashScreenView({ ready, onDone }: Props) {
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 0,
-        duration: 380,
-        delay: 120,
+        duration: 180,
+        delay: 0,
         useNativeDriver: true,
       }),
       Animated.timing(scale, {
         toValue: 1.08,
-        duration: 380,
-        delay: 120,
+        duration: 180,
+        delay: 0,
         useNativeDriver: true,
       }),
     ]).start(() => onDoneRef.current());

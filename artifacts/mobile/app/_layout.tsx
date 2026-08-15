@@ -184,7 +184,6 @@ function AppNavigationStack() {
         animation: "none",
         gestureEnabled: true,
         contentStyle: { backgroundColor: bg },
-        freezeOnBlur: true,
       }}
     >
       {/* Boot / auth-shell screens — no directional slide, instant swap */}

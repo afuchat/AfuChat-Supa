@@ -86,7 +86,7 @@ export const Navigate = {
   // ── Content ──────────────────────────────────────────────────────────────────
 
   toPost(params: PostParams) {
-    router.push({ pathname: "/post/[postId]" as any, params });
+    router.push({ pathname: "/post/[id]" as any, params: { id: params.postId } });
   },
 
   toVideo(params: VideoParams) {

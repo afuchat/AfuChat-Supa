@@ -401,7 +401,6 @@ function ClassicTabLayout({ isLoggedIn, bottomPadding }: { isLoggedIn: boolean; 
     <Tabs
       screenOptions={{
         headerShown: false,
-        freezeOnBlur: true,
         animation: "none",
         sceneStyle: { backgroundColor: "transparent", paddingBottom: bottomPadding },
         tabBarStyle: {
@@ -434,7 +433,10 @@ export default function TabLayout() {
   const insets         = useSafeAreaInsets();
   const PILL_H         = 62;
   const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 8;
-  const bottomPadding  = 0;
+  // The custom pill bar is absolutely positioned over the tab scenes. Reserve
+  // its full occupied height so list content and keyboard/toolbars cannot hide
+  // underneath it on devices with different home-indicator insets.
+  const bottomPadding  = isLoggedIn ? PILL_H + PILL_BOTTOM + 8 : 0;
 
   useEffect(() => {
     if (loading) return;
@@ -453,6 +455,14 @@ export default function TabLayout() {
       safeRouter.replace("/onboarding");
     }
   }, [session, user, profile, loading]);
+
+  const isRedirecting =
+    (!loading && prevSessionRef.current !== null && !isLoggedIn) ||
+    (!loading && isLoggedIn && profile?.onboarding_completed === false);
+
+  if (loading || isRedirecting) {
+    return <View style={{ flex: 1, backgroundColor: "transparent" }} />;
+  }
 
   return (
     <TabSwipeProvider>

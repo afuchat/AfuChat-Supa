@@ -86,6 +86,16 @@ function navigationKey(kind: string, href: unknown): string {
   }
 }
 
+function runNavigation(action: () => void): void {
+  try {
+    action();
+  } catch (error) {
+    // Router actions can race with screen unmounts during auth/deep-link
+    // transitions. Never let a native/router exception take down the app.
+    if (__DEV__) console.warn("[navigation] ignored route transition error", error);
+  }
+}
+
 // ── Safe router ───────────────────────────────────────────────────────────────
 
 /**
@@ -97,10 +107,14 @@ function navigationKey(kind: string, href: unknown): string {
  *   safeRouter.push("/profile");
  */
 export const safeRouter = {
-  push    (href: any, cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("push", href))) { try { router.push(href); } catch (e: any) { if (!String(e?.message).includes("mounting")) throw e; } } },
-  replace (href: any, cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("replace", href))) { try { router.replace(href); } catch (e: any) { if (!String(e?.message).includes("mounting")) throw e; } } },
-  navigate(href: any, cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("navigate", href))) { try { router.navigate(href); } catch (e: any) { if (!String(e?.message).includes("mounting")) throw e; } } },
-  back    (fallback: string = "/(tabs)/chats", cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("back", fallback))) { try { if (router.canGoBack()) router.back(); else router.replace(fallback as any); } catch {} } },
+  push    (href: any, cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("push", href))) runNavigation(() => router.push(href)); },
+  replace (href: any, cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("replace", href))) runNavigation(() => router.replace(href)); },
+  navigate(href: any, cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("navigate", href))) runNavigation(() => router.navigate(href)); },
+  back    (fallback: string = "/(tabs)/chats", cooldown = NAV_COOLDOWN_MS): void {
+    if (acquireNavLock(cooldown, navigationKey("back", fallback))) {
+      runNavigation(() => { if (router.canGoBack()) router.back(); else router.replace(fallback as any); });
+    }
+  },
 };
 
 // ── React hooks ───────────────────────────────────────────────────────────────

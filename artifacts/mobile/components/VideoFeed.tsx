@@ -512,7 +512,7 @@ const VideoItem = React.memo(
             if (dur > 0) {
               const frac = currentTime / dur;
               progressFill.value = frac;
-              if (duration !== dur) { setDuration(dur); durationRef.current = dur; }
+              if (durationRef.current !== dur) { durationRef.current = dur; setDuration(dur); }
               // Fallback advance in case playToEnd fires late (network stall)
               if (!endFired.current && frac >= 0.97) {
                 endFired.current = true;
@@ -524,7 +524,7 @@ const VideoItem = React.memo(
       } catch {}
 
       return () => subs.forEach(s => { try { s.remove(); } catch {} });
-    }, [isActive, duration, onVideoEnd]);
+    }, [isActive, onVideoEnd]);
 
     // ── Animated styles ───────────────────────────────────────────────────────
     const heartAnimStyle = useAnimatedStyle(() => ({
@@ -1583,7 +1583,7 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
         data={posts}
         keyExtractor={(p) => p.id}
         renderItem={renderItem}
-        extraData={[activeIndex, globalMuted]}
+         extraData={activeIndex * 2 + (globalMuted ? 1 : 0)}
         snapToInterval={ITEM_H}
         snapToAlignment="start"
         disableIntervalMomentum

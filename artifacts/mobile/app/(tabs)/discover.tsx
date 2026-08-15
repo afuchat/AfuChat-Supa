@@ -2519,7 +2519,10 @@ export default function DiscoverScreen() {
 
       {/* ── Auto-hiding header ── */}
       <Animated.View
-        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+        onLayout={(e) => {
+          const nextHeight = Math.round(e.nativeEvent.layout.height);
+          setHeaderHeight((current) => current === nextHeight ? current : nextHeight);
+        }}
         style={[styles.headerBlock, { transform: [{ translateY: headerOffset }] }]}
       >
         {/* Flat header background — unified BG, no separate surface colour */}
