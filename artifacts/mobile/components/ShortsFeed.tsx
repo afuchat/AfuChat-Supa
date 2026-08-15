@@ -48,6 +48,7 @@ import { cacheShortsTab, getCachedShortsTab } from "@/lib/offlineStore";
 import { getCachedVideoUri, markVideoWatched, cacheVideo } from "@/lib/videoCache";
 import { showToast } from "@/lib/toast";
 import { subscribeCallAudio } from "@/lib/callAudioBus";
+import { safePause, safePlay } from "@/lib/safeMedia";
 
 type ShortPost = {
   id: string;
@@ -103,7 +104,7 @@ function NativeShortsPlayer({
   const player = useVideoPlayer(src ? { uri: src } : null, (p) => {
     p.loop = loop;
     p.muted = false;
-    if (active && !paused && !preloadOnly) p.play();
+    if (active && !paused && !preloadOnly) safePlay(p);
   });
 
   const touchRef = useRef<{ y: number; t: number } | null>(null);
@@ -152,12 +153,12 @@ function NativeShortsPlayer({
       if (event === "takeover") {
         if (active && !paused && !preloadOnly) {
           pausedByCallRef.current = true;
-          try { player.pause(); } catch {}
+          safePause(player);
         }
       } else if (event === "release") {
         if (pausedByCallRef.current) {
           pausedByCallRef.current = false;
-          if (active && !preloadOnly) { try { player.play(); } catch {} }
+          if (active && !preloadOnly) safePlay(player);
         }
       }
     });
@@ -171,14 +172,12 @@ function NativeShortsPlayer({
 
   // Play / pause control
   React.useEffect(() => {
-    try {
-      if (active && !paused && !preloadOnly) {
-        player.muted = false;
-        player.play();
-      } else {
-        player.pause();
-      }
-    } catch {}
+    if (active && !paused && !preloadOnly) {
+      player.muted = false;
+      safePlay(player);
+    } else {
+      safePause(player);
+    }
   }, [active, paused, preloadOnly]);
 
   // Restart from beginning when card becomes active (scrolled back to)

@@ -85,8 +85,6 @@ import { safeRouter } from "@/lib/navUtils";
 (Text as any).defaultProps = { ...((Text as any).defaultProps ?? {}), allowFontScaling: false };
 (TextInput as any).defaultProps = { ...((TextInput as any).defaultProps ?? {}), allowFontScaling: false };
 
-LogBox.ignoreLogs(['"shadow*" style props are deprecated', "props.pointerEvents is deprecated"]);
-
 function ActivityTrackerSync() {
   const { user } = useAuth();
   useEffect(() => { initActivityTracker(user?.id ?? null); }, [user?.id]);

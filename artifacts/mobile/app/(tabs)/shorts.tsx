@@ -22,8 +22,8 @@ export default function ShortsTab() {
             right: 0,
             height: insets.bottom,
             backgroundColor: "#000",
+            pointerEvents: "none",
           }}
-          pointerEvents="none"
         />
       )}
     </View>

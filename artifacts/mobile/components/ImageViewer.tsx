@@ -897,8 +897,10 @@ function AnimatedImageViewer({ images, initialIndex = 0, visible, onClose, meta 
 
         {/* ── All overlay chrome animated together ── */}
         <Animated.View
-          style={[StyleSheet.absoluteFill, { opacity: overlayAnim }]}
-          pointerEvents={overlayVisible ? "box-none" : "none"}
+          style={[
+            StyleSheet.absoluteFill,
+            { opacity: overlayAnim, pointerEvents: overlayVisible ? "box-none" : "none" },
+          ]}
         >
           {/* Top bar */}
           <TopBar
@@ -1009,8 +1011,10 @@ function SimpleImageViewer({ images, initialIndex = 0, visible, onClose, meta }:
 
         {/* ── All overlay chrome animated together ── */}
         <Animated.View
-          style={[StyleSheet.absoluteFill, { opacity: overlayAnim }]}
-          pointerEvents={overlayVisible ? "box-none" : "none"}
+          style={[
+            StyleSheet.absoluteFill,
+            { opacity: overlayAnim, pointerEvents: overlayVisible ? "box-none" : "none" },
+          ]}
         >
           <TopBar
             images={images} index={index} hasMultiple={hasMultiple}

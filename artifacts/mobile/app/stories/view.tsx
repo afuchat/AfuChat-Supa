@@ -24,6 +24,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import { shareStory } from "@/lib/share";
 import { markStoriesViewed } from "@/lib/storyViewedStore";
+import { safePause, safePlay } from "@/lib/safeMedia";
 
 const STORY_DURATION = 5000;
 
@@ -284,15 +285,15 @@ export default function ViewStoryScreen() {
   // ── Video player: update source + play/pause when story changes ──────────────
   useEffect(() => {
     videoFinishedRef.current = false;
-    if (!isVideoStory || !story?.media_url) { storyVideoPlayer.pause(); return; }
+    if (!isVideoStory || !story?.media_url) { safePause(storyVideoPlayer); return; }
     storyVideoPlayer.replaceAsync({ uri: story.media_url }).catch(() => {});
-    if (!paused) storyVideoPlayer.play();
+    if (!paused) safePlay(storyVideoPlayer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [story?.media_url, isVideoStory]);
 
   useEffect(() => {
     if (!isVideoStory) return;
-    if (paused) storyVideoPlayer.pause(); else storyVideoPlayer.play();
+    if (paused) safePause(storyVideoPlayer); else safePlay(storyVideoPlayer);
   }, [paused, isVideoStory]);
 
   // ── Video progress + finish detection (100 ms poll) ──────────────────────────

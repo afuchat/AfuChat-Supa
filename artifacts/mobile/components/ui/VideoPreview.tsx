@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { VideoView, useVideoPlayer } from "expo-video";
 import type { StyleProp, ViewStyle } from "react-native";
+import { safePause, safePlay } from "@/lib/safeMedia";
 
 type ContentFit = "contain" | "cover" | "fill";
 
@@ -30,7 +31,7 @@ export default function VideoPreview({
     p.loop = isLooping;
     p.muted = isMuted;
     p.playbackRate = playbackRate;
-    if (shouldPlay) p.play();
+    if (shouldPlay) safePlay(p);
   });
 
   useEffect(() => {
@@ -39,12 +40,12 @@ export default function VideoPreview({
     player.loop = isLooping;
     player.muted = isMuted;
     player.playbackRate = playbackRate;
-    if (shouldPlay) player.play(); else player.pause();
+    if (shouldPlay) safePlay(player); else safePause(player);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uri]);
 
   useEffect(() => {
-    if (shouldPlay) player.play(); else player.pause();
+    if (shouldPlay) safePlay(player); else safePause(player);
   }, [shouldPlay]);
 
   useEffect(() => { player.muted = isMuted; }, [isMuted]);

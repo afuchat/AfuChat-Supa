@@ -123,11 +123,16 @@ const st = StyleSheet.create({
     zIndex: 999,
     borderRadius: 16,
     borderWidth: 1,
-    shadowColor: "#5856D6",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 10,
+    ...Platform.select({
+      web: { boxShadow: "0 4px 16px rgba(88,86,214,0.18)" } as any,
+      default: {
+        shadowColor: "#5856D6",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.18,
+        shadowRadius: 12,
+        elevation: 10,
+      },
+    }),
   },
   row: {
     flexDirection: "row",

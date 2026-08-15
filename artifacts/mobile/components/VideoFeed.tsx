@@ -63,6 +63,7 @@ import { useResolvedVideoSource } from "@/hooks/useResolvedVideoSource";
 import { getPreferredVideoHeight, isWifi } from "@/lib/networkQuality";
 import { getCachedVideoUri, cacheVideo, markVideoWatched } from "@/lib/videoCache";
 import { recordWatchHistory } from "@/lib/watchHistory";
+import { safePause, safePlay } from "@/lib/safeMedia";
 import {
   computeFeedScore,
   detectTopicsInContent,
@@ -441,7 +442,7 @@ const VideoItem = React.memo(
           // Seek to start so a preloaded (partially-played) source starts fresh
           try { player.currentTime = 0; } catch {}
           if (isActiveRef.current && !pausedRef.current) {
-            try { player.play(); } catch {}
+            safePlay(player);
           }
         })
         .catch(() => {
@@ -452,8 +453,8 @@ const VideoItem = React.memo(
     // Play / pause — handles isActive / paused toggle changes after source is loaded
     useEffect(() => {
       try {
-        if (!isNearActive) { player.pause(); return; }
-        if (!isActive || paused) { player.pause(); } else { player.play(); }
+        if (!isNearActive) { safePause(player); return; }
+        if (!isActive || paused) { safePause(player); } else { safePlay(player); }
       } catch (_) {}
     }, [isActive, isNearActive, paused]);
 
@@ -1073,14 +1074,14 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
       if (event === "takeover") {
         videosPausedByCallRef.current = true;
         playerMapRef.current.forEach((player) => {
-          try { player.pause(); } catch {}
+          safePause(player);
         });
       } else if (event === "release") {
         if (!videosPausedByCallRef.current) return;
         videosPausedByCallRef.current = false;
         // Resume only the currently-active video (not every preloaded one).
         const activePlayer = playerMapRef.current.get(activeIndexRef.current);
-        if (activePlayer) { try { activePlayer.play(); } catch {} }
+        if (activePlayer) safePlay(activePlayer);
       }
     });
   }, []);
@@ -1485,8 +1486,8 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
         // there is no perceivable delay between the scroll settling and the
         // correct video playing/stopping.
         if (prevIdx !== idx) {
-          try { playerMapRef.current.get(prevIdx)?.pause(); } catch {}
-          try { playerMapRef.current.get(idx)?.play(); } catch {}
+          safePause(playerMapRef.current.get(prevIdx));
+          safePlay(playerMapRef.current.get(idx));
         }
         activeIndexRef.current = idx;
         setActiveIndex(idx);

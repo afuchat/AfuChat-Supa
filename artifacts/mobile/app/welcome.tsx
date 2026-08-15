@@ -158,7 +158,7 @@ function OnboardingPage({
     <View style={[s.page, { width, height, backgroundColor: BG }]}>
       {/* Every page owns its illustration, background orbs, header, and CTA.
           The parent track moves this complete surface as one unit. */}
-      <View style={s.illustrationBg} pointerEvents="none">
+      <View style={[s.illustrationBg, { pointerEvents: "none" }]}>
         <Image
           source={IL_SOURCES[index].src}
           style={s.illustrationBgImage}
@@ -166,7 +166,7 @@ function OnboardingPage({
         />
       </View>
 
-      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      <View style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}>
         <View style={StyleSheet.absoluteFill}>
           <SoftOrb cx={width * slide.orb1.x} cy={height * slide.orb1.y} size={slide.orb1.size} color={slide.orb1.color} />
         </View>

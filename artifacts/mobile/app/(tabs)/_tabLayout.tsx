@@ -131,9 +131,8 @@ function CompactTabBar({
       <View
         style={[
           pill.rowWrap,
-          { bottom: PILL_BOTTOM },
+          { bottom: PILL_BOTTOM, pointerEvents: "box-none" },
         ]}
-        pointerEvents="box-none"
       >
         <View
           style={[
