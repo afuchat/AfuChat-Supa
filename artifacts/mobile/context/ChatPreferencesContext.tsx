@@ -14,6 +14,7 @@ const CHAT_PREF_TO_LOCAL: Partial<Record<string, string>> = {
 
 const APP_ACCENT_KEY = "app_color_theme";
 const LOCAL_PREFS_KEY = "chat_prefs_local";
+const PENDING_SERVER_PREFS_KEY = "chat_prefs_pending_server";
 
 // These keys are stored server-side (Supabase chat_preferences table)
 const SERVER_KEYS = new Set([
@@ -146,32 +147,64 @@ export function ChatPreferencesProvider({ children }: { children: React.ReactNod
       return;
     }
     try {
-      // Load server-side prefs
-      const { data } = await supabase
-        .from("chat_preferences")
-        .select("user_id, chat_theme, bubble_style, font_size, sounds_enabled, auto_download, read_receipts, chat_lock, enter_to_send, media_quality, save_to_gallery, link_previews, typing_indicators, archive_on_delete, chat_backup")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      // Load client-side prefs from AsyncStorage
-      const localRaw = await AsyncStorage.getItem(LOCAL_PREFS_KEY + "_" + user.id);
+      // Read local values first. They are the only source of truth while the
+      // device is offline, and must not be lost just because the server query
+      // is unavailable.
+      const [localRaw, pendingRaw] = await Promise.all([
+        AsyncStorage.getItem(LOCAL_PREFS_KEY + "_" + user.id),
+        AsyncStorage.getItem(PENDING_SERVER_PREFS_KEY + "_" + user.id),
+      ]);
       let localPrefs: Partial<ChatPrefs> = {};
+      let pendingServerPrefs: Partial<ChatPrefs> = {};
       try {
         localPrefs = localRaw ? JSON.parse(localRaw) : {};
       } catch {
         localPrefs = {};
       }
+      try {
+        pendingServerPrefs = pendingRaw ? JSON.parse(pendingRaw) : {};
+      } catch {
+        pendingServerPrefs = {};
+      }
       setScreenshotProtectionEnabled(!!localPrefs.screenshot_protection).catch(() => {});
 
-      if (data) {
-        setPrefs({ ...defaults, ...data, ...localPrefs });
-      } else {
-        setPrefs({ ...defaults, ...localPrefs });
+      // Load server-side prefs. Supabase returns errors instead of throwing,
+      // so check the error explicitly before treating the response as valid.
+      const { data, error: serverError } = await supabase
+        .from("chat_preferences")
+        .select("user_id, chat_theme, bubble_style, font_size, sounds_enabled, auto_download, read_receipts, chat_lock, enter_to_send, media_quality, save_to_gallery, link_previews, typing_indicators, archive_on_delete, chat_backup")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!serverError && Object.keys(pendingServerPrefs).length > 0) {
+        const { error: pendingError } = await supabase
+          .from("chat_preferences")
+          .upsert({ user_id: user.id, ...pendingServerPrefs }, { onConflict: "user_id" });
+        if (!pendingError) {
+          await AsyncStorage.removeItem(PENDING_SERVER_PREFS_KEY + "_" + user.id);
+          pendingServerPrefs = {};
+        }
       }
+
+      // Pending writes win over a stale server snapshot. This keeps a setting
+      // changed offline visible immediately and lets the next online load sync
+      // it without reverting the switch.
+      setPrefs({
+        ...defaults,
+        ...(data ?? {}),
+        ...localPrefs,
+        ...pendingServerPrefs,
+      });
     } catch {
       // Keep the defaults available offline, but never leave the settings
       // screen in a permanent loading state.
-      setPrefs(defaults);
+      try {
+        const raw = await AsyncStorage.getItem(LOCAL_PREFS_KEY + "_" + user.id);
+        const localPrefs = raw ? JSON.parse(raw) : {};
+        setPrefs({ ...defaults, ...localPrefs });
+      } catch {
+        setPrefs(defaults);
+      }
     } finally {
       setLoading(false);
     }
@@ -208,7 +241,28 @@ export function ChatPreferencesProvider({ children }: { children: React.ReactNod
           .from("chat_preferences")
           .upsert({ user_id: user.id, [key]: value }, { onConflict: "user_id" });
         if (error) throw error;
-      } catch {}
+        const pendingKey = PENDING_SERVER_PREFS_KEY + "_" + user.id;
+        const raw = await AsyncStorage.getItem(pendingKey);
+        if (raw) {
+          const pending = JSON.parse(raw) as Record<string, unknown>;
+          delete pending[key as string];
+          if (Object.keys(pending).length > 0) {
+            await AsyncStorage.setItem(pendingKey, JSON.stringify(pending));
+          } else {
+            await AsyncStorage.removeItem(pendingKey);
+          }
+        }
+      } catch (error) {
+        // Keep the user's choice across an offline session. The next load
+        // retries the pending server write instead of silently reverting.
+        try {
+          const pendingKey = PENDING_SERVER_PREFS_KEY + "_" + user.id;
+          const raw = await AsyncStorage.getItem(pendingKey);
+          const pending = raw ? JSON.parse(raw) : {};
+          await AsyncStorage.setItem(pendingKey, JSON.stringify({ ...pending, [key]: value }));
+        } catch {}
+        console.warn("[ChatPreferences] server sync deferred", key, error);
+      }
     } else {
       // Persist client-only prefs to AsyncStorage
       if (!user) return;

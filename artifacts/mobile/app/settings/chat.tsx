@@ -64,16 +64,27 @@ export default function ChatSettingsScreen() {
             if (!user) return;
             setClearing(true);
             try {
-              const { data: memberRows } = await supabase
+              const { data: memberRows, error: memberError } = await supabase
                 .from("chat_members")
                 .select("chat_id")
                 .eq("user_id", user.id);
+              if (memberError) throw memberError;
               if (memberRows && memberRows.length > 0) {
                 const chatIds = memberRows.map((r) => r.chat_id);
                 if (prefs.archive_on_delete) {
-                  await supabase.from("messages").update({ is_archived: true }).in("chat_id", chatIds).eq("sender_id", user.id);
+                  const { error } = await supabase
+                    .from("messages")
+                    .update({ is_archived: true })
+                    .in("chat_id", chatIds)
+                    .eq("sender_id", user.id);
+                  if (error) throw error;
                 } else {
-                  await supabase.from("messages").delete().in("chat_id", chatIds).eq("sender_id", user.id);
+                  const { error } = await supabase
+                    .from("messages")
+                    .delete()
+                    .in("chat_id", chatIds)
+                    .eq("sender_id", user.id);
+                  if (error) throw error;
                 }
               }
               showAlert("Done", prefs.archive_on_delete ? "Your messages have been archived." : "All chat history has been cleared.");
@@ -598,6 +609,7 @@ const s = StyleSheet.create({
     paddingVertical: 13,
     gap: 12,
   },
+  rowText: { flex: 1 },
   iconWrap: {
     width: 28, height: 28,
     alignItems: "center", justifyContent: "center",

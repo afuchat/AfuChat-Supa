@@ -239,6 +239,12 @@ export default function ChatAppearanceScreen() {
     getChatAppearance(id).then((saved) => {
       if (saved) setAppearance(saved);
     });
+    return () => {
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+      }
+    };
   }, [id]);
 
   async function applyChange(patch: Partial<ChatAppearance>) {
@@ -264,6 +270,10 @@ export default function ChatAppearanceScreen() {
 
   async function resetAll() {
     if (!id) return;
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
     setAppearance({});
     await clearChatAppearance(id);
   }

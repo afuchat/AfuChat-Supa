@@ -2788,7 +2788,15 @@ function ChatScreen() {
       }
     }
     setLoading(false);
-  }, [id, user, isDraft, realChatId]);
+  }, [
+    id,
+    user,
+    isDraft,
+    realChatId,
+    chatPrefs.auto_download,
+    chatPrefs.save_to_gallery,
+    chatPrefs.read_receipts,
+  ]);
 
   const loadMoreMessages = useCallback(async () => {
     const chatId = isDraft ? realChatId : id;
@@ -3258,7 +3266,14 @@ function ChatScreen() {
       typingTimersRef.current.clear();
       typingMapRef.current.clear();
     };
-  }, [user, id, chatInfo?.other_id, chatInfo?.is_group, chatInfo?.is_channel]);
+  }, [
+    user,
+    id,
+    chatInfo?.other_id,
+    chatInfo?.is_group,
+    chatInfo?.is_channel,
+    chatPrefs.read_receipts,
+  ]);
 
   // ── Realtime: message_status DB changes → update sender's tick colour ────────
   // Handles the "recipient was offline when message was sent, then comes back
@@ -3546,7 +3561,9 @@ function ChatScreen() {
   }
 
   function handleSmartReply(text: string) {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (chatPrefs.send_haptics) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     sendMessage(text);
   }
 

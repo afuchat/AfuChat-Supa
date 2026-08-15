@@ -67,8 +67,12 @@ export default function ChatDangerScreen() {
           {
             text: "Unblock",
             onPress: async () => {
-              await supabase.from("blocks").delete()
+              const { error } = await supabase.from("blocks").delete()
                 .eq("blocker_id", user.id).eq("blocked_id", otherId);
+              if (error) {
+                showAlert("Could not unblock", error.message || "Please try again.");
+                return;
+              }
               setIsBlocked(false);
             },
           },
@@ -84,7 +88,13 @@ export default function ChatDangerScreen() {
             text: "Block",
             style: "destructive",
             onPress: async () => {
-              await supabase.from("blocks").insert({ blocker_id: user.id, blocked_id: otherId });
+              const { error } = await supabase
+                .from("blocks")
+                .insert({ blocker_id: user.id, blocked_id: otherId });
+              if (error) {
+                showAlert("Could not block", error.message || "Please try again.");
+                return;
+              }
               setIsBlocked(true);
             },
           },
@@ -147,11 +157,14 @@ export default function ChatDangerScreen() {
           onPress: async () => {
             try {
               if (isGroup || isChannel) {
-                await supabase.from("chat_members").delete()
+                const { error } = await supabase.from("chat_members").delete()
                   .eq("chat_id", id).eq("user_id", user.id);
+                if (error) throw error;
               } else {
-                await supabase.from("messages").delete().eq("chat_id", id);
-                await supabase.from("conversations").delete().eq("id", id);
+                const { error: messagesError } = await supabase.from("messages").delete().eq("chat_id", id);
+                if (messagesError) throw messagesError;
+                const { error: conversationError } = await supabase.from("conversations").delete().eq("id", id);
+                if (conversationError) throw conversationError;
               }
               router.replace("/(tabs)/chats" as any);
             } catch {

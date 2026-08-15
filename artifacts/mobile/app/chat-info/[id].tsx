@@ -347,20 +347,30 @@ export default function ChatInfoScreen() {
 
   async function handleMute(hours: number | null) {
     if (!user) return;
+    const previous = muteUntil;
     const val = hours === null ? null : new Date(Date.now() + hours * 3_600_000).toISOString();
     setMuteUntil(val);
     setShowMutePicker(false);
-    await supabase.from("chat_mutes").upsert(
+    const { error } = await supabase.from("chat_mutes").upsert(
       { user_id: user.id, chat_id: id, muted_until: val, created_at: new Date().toISOString() },
       { onConflict: "user_id,chat_id" },
     );
+    if (error) {
+      setMuteUntil(previous);
+      showAlert("Mute unavailable", error.message || "Could not update mute settings.");
+    }
   }
 
   async function handleUnmute() {
     if (!user) return;
+    const previous = muteUntil;
     setMuteUntil(undefined);
     setShowMutePicker(false);
-    await supabase.from("chat_mutes").delete().eq("user_id", user.id).eq("chat_id", id);
+    const { error } = await supabase.from("chat_mutes").delete().eq("user_id", user.id).eq("chat_id", id);
+    if (error) {
+      setMuteUntil(previous);
+      showAlert("Unmute unavailable", error.message || "Could not update mute settings.");
+    }
   }
 
   const handleLeaveGroup = useCallback(async () => {
@@ -373,7 +383,15 @@ export default function ChatInfoScreen() {
         {
           text: "Leave", style: "destructive",
           onPress: async () => {
-            await supabase.from("chat_members").delete().eq("chat_id", id).eq("user_id", user.id);
+            const { error } = await supabase
+              .from("chat_members")
+              .delete()
+              .eq("chat_id", id)
+              .eq("user_id", user.id);
+            if (error) {
+              showAlert("Could not leave", error.message || "Please try again.");
+              return;
+            }
             router.replace("/(tabs)/chats");
           },
         },
