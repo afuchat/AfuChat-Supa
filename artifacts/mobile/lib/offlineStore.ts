@@ -77,13 +77,16 @@ function initNetInfo() {
   } catch {}
 }
 
-initNetInfo();
-
 export function isOnline(): boolean {
+  // Start the connectivity bridge on first use instead of during module
+  // evaluation. This keeps importing the offline cache safe and cheap during
+  // auth/navigation startup while preserving the cache-first default.
+  initNetInfo();
   return _isOnline;
 }
 
 export function onConnectivityChange(fn: (online: boolean) => void): () => void {
+  initNetInfo();
   _listeners.push(fn);
   return () => {
     _listeners = _listeners.filter((l) => l !== fn);
@@ -103,6 +106,7 @@ export function onConnectivityChange(fn: (online: boolean) => void): () => void 
  *   useEffect(() => onReconnect(() => fetchLatestMessages()), []);
  */
 export function onReconnect(fn: () => void): () => void {
+  initNetInfo();
   _reconnectListeners.push(fn);
   return () => {
     _reconnectListeners = _reconnectListeners.filter((l) => l !== fn);

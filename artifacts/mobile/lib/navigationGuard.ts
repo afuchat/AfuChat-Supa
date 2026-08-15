@@ -65,7 +65,10 @@ function runWithMountRetry(action: () => void, attempt = 0): void {
   } catch (e: any) {
     const message = String(e?.message ?? e);
     if (!message.includes("mounting") || attempt >= 8) {
-      if (!message.includes("mounting")) throw e;
+      // Navigation can race with auth restoration, deep-link handling, or a
+      // screen unmount. Never turn that race into a production app crash.
+      // The caller can still retry from the next user action.
+      if (__DEV__) console.warn("[navigation] ignored route transition error", e);
       return;
     }
     // Expo Router can receive a notification/deep-link action before the root

@@ -251,6 +251,18 @@ export default function RootLayout() {
     }
   }, [fontError]);
 
+  // A broken or unusually slow font/asset load must never leave users behind
+  // the native splash forever in a production build. The normal path still
+  // waits for fonts and the short fade; this is only a bounded escape hatch.
+  useEffect(() => {
+    if (Platform.OS === "web" || splashDone) return;
+    const timeout = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+      setSplashDone(true);
+    }, 5000);
+    return () => clearTimeout(timeout);
+  }, [splashDone]);
+
   // Enable react-native-screens optimisation. Called here (inside a component,
   // not at module-eval time) so the Android activity is guaranteed to be fully
   // initialized before the native call runs. Module-eval is too early on some
@@ -319,19 +331,31 @@ export default function RootLayout() {
     // Do not compete with the first route for the JS/native bridge. Auth starts
     // sync only after identity restoration, while storage maintenance is delayed
     // until the first screen has had time to settle.
-    const timer = setTimeout(() => {
+    let purgeTimer: ReturnType<typeof setTimeout> | null = null;
+    const storageTimer = setTimeout(() => {
+      if (AppState.currentState !== "active") return;
       // Keep maintenance modules out of the critical startup bundle. These
       // imports are intentionally lazy because storage/index re-exports many
       // SQLite/cache modules.
-      import("@/lib/storage")
+      const storageReady = import("@/lib/storage")
         .then(({ initDeviceStorage }) => initDeviceStorage())
-        .catch(() => {});
-      import("@/lib/videoCache")
-        .then(({ runScheduledVideoPurge }) => runScheduledVideoPurge())
-        .catch(() => {});
+        .catch(() => undefined);
+
+      // Video cleanup can open the same SQLite database and touch the file
+      // system. Let the first storage pass settle before doing that work.
+      purgeTimer = setTimeout(() => {
+        if (AppState.currentState !== "active") return;
+        storageReady
+          .then(() => import("@/lib/videoCache"))
+          .then(({ runScheduledVideoPurge }) => runScheduledVideoPurge())
+          .catch(() => {});
+      }, 5000);
     }, 2000);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(storageTimer);
+      if (purgeTimer) clearTimeout(purgeTimer);
+    };
   }, []);
 
 
