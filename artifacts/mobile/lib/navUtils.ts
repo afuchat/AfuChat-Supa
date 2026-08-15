@@ -79,7 +79,7 @@ export const safeRouter = {
   push    (href: any, cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("push", href))) { try { router.push(href); } catch (e: any) { if (!String(e?.message).includes("mounting")) throw e; } } },
   replace (href: any, cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("replace", href))) { try { router.replace(href); } catch (e: any) { if (!String(e?.message).includes("mounting")) throw e; } } },
   navigate(href: any, cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("navigate", href))) { try { router.navigate(href); } catch (e: any) { if (!String(e?.message).includes("mounting")) throw e; } } },
-  back    (fallback: string = "/(tabs)/discover", cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("back", fallback))) { try { if (router.canGoBack()) router.back(); else router.replace(fallback as any); } catch {} } },
+  back    (fallback: string = "/(tabs)/chats", cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("back", fallback))) { try { if (router.canGoBack()) router.back(); else router.replace(fallback as any); } catch {} } },
 };
 
 // ── React hooks ───────────────────────────────────────────────────────────────

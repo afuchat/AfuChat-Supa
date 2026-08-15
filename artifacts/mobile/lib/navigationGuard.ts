@@ -49,6 +49,7 @@ function keyFor(kind: "push" | "replace" | "back", args: unknown[] = []): string
 const _origPush    = router.push.bind(router);
 const _origReplace = router.replace.bind(router);
 const _origBack    = router.back.bind(router);
+const _origCanGoBack = router.canGoBack.bind(router);
 
 (router as any).push = (...args: Parameters<typeof router.push>) => {
   if (!acquire(keyFor("push", args))) return;
@@ -66,7 +67,10 @@ const _origBack    = router.back.bind(router);
 
 (router as any).back = () => {
   if (!acquire(keyFor("back"))) return;
-  try { _origBack(); } catch (e: any) {
+  try {
+    if (_origCanGoBack()) _origBack();
+    else _origReplace("/(tabs)/chats" as any);
+  } catch (e: any) {
     if (!String(e?.message).includes("mounting")) throw e;
   }
 };
