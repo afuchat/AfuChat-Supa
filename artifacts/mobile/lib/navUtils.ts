@@ -22,6 +22,27 @@ export const NAV_COOLDOWN_MS = 250;
 
 let _lastActionKey = "";
 let _lastActionAt = 0;
+let _lastClockValue = 0;
+let _nextHandlerId = 1;
+const _handlerIds = new WeakMap<Function, string>();
+
+function monotonicNow(): number {
+  const perfNow = globalThis.performance?.now;
+  const current = typeof perfNow === "function" ? perfNow.call(globalThis.performance) : Date.now();
+  _lastClockValue = Math.max(_lastClockValue, current);
+  return _lastClockValue;
+}
+
+export function navActionKeyForHandler(handler: unknown): string {
+  if (typeof handler !== "function") return "__press__";
+  const fn = handler as Function;
+  let id = _handlerIds.get(fn);
+  if (!id) {
+    id = `handler:${_nextHandlerId++}`;
+    _handlerIds.set(fn, id);
+  }
+  return id;
+}
 
 // ── Core lock ─────────────────────────────────────────────────────────────────
 
@@ -34,7 +55,7 @@ export function acquireNavLock(
   cooldownMs = NAV_COOLDOWN_MS,
   actionKey = "__press__",
 ): boolean {
-  const now = Date.now();
+  const now = monotonicNow();
   if (
     actionKey === _lastActionKey &&
     now - _lastActionAt < cooldownMs
@@ -48,7 +69,7 @@ export function acquireNavLock(
 
 /** True while the lock is held (i.e., navigation in progress). */
 export function isNavLocked(): boolean {
-  return Date.now() - _lastActionAt < NAV_COOLDOWN_MS;
+  return monotonicNow() - _lastActionAt < NAV_COOLDOWN_MS;
 }
 
 /** Force-release the lock early (e.g., on back-gesture completion). */
@@ -117,7 +138,7 @@ export function useSafePress<T extends any[]>(
   ref.current = handler;              // always up-to-date without re-creating
   return useCallback(
     (...args: T) => {
-      if (!acquireNavLock(cooldown)) return;
+      if (!acquireNavLock(cooldown, navActionKeyForHandler(ref.current))) return;
       ref.current(...args);
     },
     // cooldown intentionally omitted — it never changes in practice

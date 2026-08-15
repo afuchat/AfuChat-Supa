@@ -35,15 +35,23 @@ export class ErrorBoundary extends Component<
     console.error("[ErrorBoundary] Stack:", error.stack);
     console.error("[ErrorBoundary] Component stack:", info.componentStack);
 
-    reportCrash({
-      error_type: "react_render",
-      error_message: error.message,
-      stack_trace: error.stack,
-      component_stack: info.componentStack,
-    });
+    try {
+      reportCrash({
+        error_type: "react_render",
+        error_message: error.message,
+        stack_trace: error.stack,
+        component_stack: info.componentStack,
+      });
+    } catch {
+      // Crash reporting must never prevent the fallback UI from rendering.
+    }
 
     if (typeof this.props.onError === "function") {
-      this.props.onError(error, info.componentStack);
+      try {
+        this.props.onError(error, info.componentStack);
+      } catch {
+        // An optional error callback is outside the boundary's recovery path.
+      }
     }
   }
 

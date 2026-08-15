@@ -16,9 +16,17 @@ const DUPLICATE_WINDOW_MS = 250;
 
 let _lastActionKey = "";
 let _lastActionAt = 0;
+let _lastClockValue = 0;
+
+function monotonicNow(): number {
+  const perfNow = globalThis.performance?.now;
+  const current = typeof perfNow === "function" ? perfNow.call(globalThis.performance) : Date.now();
+  _lastClockValue = Math.max(_lastClockValue, current);
+  return _lastClockValue;
+}
 
 function acquire(actionKey: string): boolean {
-  const now = Date.now();
+  const now = monotonicNow();
   if (
     actionKey === _lastActionKey &&
     now - _lastActionAt < DUPLICATE_WINDOW_MS

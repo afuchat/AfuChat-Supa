@@ -485,6 +485,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setLoading(false);
 
+      if (!newSession) {
+        return { success: false, error: "Unable to restore the selected account session." };
+      }
+      const switchedUserId = newSession.user.id;
+
       // ── 10. Reset navigation so stale screens are gone ───────────────────────
       router.replace("/(tabs)/discover");
 
@@ -493,11 +498,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       supabase
         .from("profiles")
         .select("display_name")
-        .eq("id", newSession.user.id)
+        .eq("id", switchedUserId)
         .single()
         .then(({ data }) => {
-           ensureAfuAiChat(newSession!.user.id, data?.display_name).catch(() => {});
-        });
+           ensureAfuAiChat(switchedUserId, data?.display_name).catch(() => {});
+        })
+        .catch(() => {});
 
       startOfflineSync();
 

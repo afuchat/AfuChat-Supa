@@ -18,14 +18,14 @@
  *   <SafeTouchableOpacity onPress={() => navigate("/(tabs)/apps")} activeOpacity={0.8} />
  */
 
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Pressable,
   TouchableOpacity,
   type PressableProps,
   type TouchableOpacityProps,
 } from "react-native";
-import { acquireNavLock, NAV_COOLDOWN_MS } from "@/lib/navUtils";
+import { acquireNavLock, navActionKeyForHandler, NAV_COOLDOWN_MS } from "@/lib/navUtils";
 
 // ── SafePressable ─────────────────────────────────────────────────────────────
 
@@ -44,11 +44,17 @@ export function SafePressable({
   const [locked, setLocked] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
   const handlePress = useCallback(
     (e: any) => {
       if (locked) return;
       if (!onPress) return;
-      if (!acquireNavLock(cooldown)) return;
+       if (!acquireNavLock(cooldown, navActionKeyForHandler(onPress))) return;
 
       setLocked(true);
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -94,11 +100,17 @@ export function SafeTouchableOpacity({
   const [locked, setLocked] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
   const handlePress = useCallback(
     (e: any) => {
       if (locked) return;
       if (!onPress) return;
-      if (!acquireNavLock(cooldown)) return;
+       if (!acquireNavLock(cooldown, navActionKeyForHandler(onPress))) return;
 
       setLocked(true);
       if (timerRef.current) clearTimeout(timerRef.current);

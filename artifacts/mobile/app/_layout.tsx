@@ -9,6 +9,7 @@ import { enableScreens } from "react-native-screens";
 import { initCrashReporter, setCrashReporterUserId, setCrashNotificationHandler } from "@/lib/crashReporter";
 import { showAlert } from "@/lib/alert";
 initCrashReporter();
+let screensEnabled = false;
 
 // enableScreens() is intentionally moved out of module-evaluation scope.
 // Calling it synchronously at the top level (before any React component mounts)
@@ -244,12 +245,17 @@ export default function RootLayout() {
   // initialized before the native call runs. Module-eval is too early on some
   // Android devices and causes a native crash before any JS error handler exists.
   useEffect(() => {
-    try { enableScreens(true); } catch {}
+    if (screensEnabled) return;
+    try {
+      enableScreens(true);
+      screensEnabled = true;
+    } catch {}
   }, []);
 
   // Run deep-link route verification once in dev mode to catch any routes
   // that might accidentally fall through to [handle].tsx.
   useEffect(() => {
+    if (!__DEV__) return;
     verifyDeepLinks().catch(() => {});
   }, []);
 
