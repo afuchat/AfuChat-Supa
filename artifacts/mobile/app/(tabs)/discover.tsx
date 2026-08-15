@@ -1189,8 +1189,8 @@ export default function DiscoverScreen() {
   // Uses Animated.event (not a plain onScroll function) so FlatList's internal
   // scroll tracking for onEndReached is never overridden.
   const [headerHeight, setHeaderHeight] = useState(0);
-  const headerOffset = useRef(new Animated.Value(0)).current;
   const scrollYAnim = useRef(new Animated.Value(0)).current;
+  const headerOffset = useRef(new Animated.Value(0)).current;
   const prevScrollYRef = useRef(0);
   const headerVisibleRef = useRef(true);
   // useNativeDriver:false because headerOffset target changes dynamically
@@ -1219,26 +1219,21 @@ export default function DiscoverScreen() {
     }).start();
   }
 
-  // Auto-hide header when scrolling down, reveal when scrolling up.
-  useEffect(() => {
-    const id = scrollYAnim.addListener(({ value }) => {
-      const delta = value - prevScrollYRef.current;
-      // Only hide after the user has scrolled past the stories row (~80px)
-      if (value > 80 && delta > 8) {
-        hideHeader(headerHeight);
-      } else if (delta < -4 || value <= 10) {
-        revealHeader();
-      }
-      prevScrollYRef.current = value;
-    });
-    return () => scrollYAnim.removeListener(id);
+  // Keep scroll work on the native driver. Header direction is evaluated only
+  // when a drag/momentum phase settles, rather than on every scroll frame.
+  const onFeedScroll = Platform.OS === "web"
+    ? undefined
+    : Animated.event(
+        [{ nativeEvent: { contentOffset: { y: scrollYAnim } } }],
+        { useNativeDriver: true }
+      );
+  const handleFeedScrollSettled = useCallback((event: any) => {
+    const y = Number(event?.nativeEvent?.contentOffset?.y ?? 0);
+    const delta = y - prevScrollYRef.current;
+    if (y > 80 && delta > 8) hideHeader(headerHeight);
+    else if (delta < -4 || y <= 10) revealHeader();
+    prevScrollYRef.current = y;
   }, [headerHeight]);
-
-  // The Animated.event passed to FlatList — compatible with onEndReached.
-  const onFeedScroll = Animated.event(
-    [{ nativeEvent: { contentOffset: { y: scrollYAnim } } }],
-    { useNativeDriver: DRIVER }
-  );
   // ────────────────────────────────────────────────────────────────────────
   const viewabilityConfig = useRef({ minimumViewTime: 800, itemVisiblePercentThreshold: 50 }).current;
   const onViewableItemsChangedRef = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {});
@@ -1265,8 +1260,9 @@ export default function DiscoverScreen() {
             .from("post_views")
             .insert(ids.map((id) => ({ post_id: id, viewer_id: uid })))
             .then(() => {
+              const idSet = new Set(ids);
               setPosts((prev) =>
-                prev.map((p) => ids.includes(p.id) ? { ...p, view_count: (p.view_count || 0) + 1 } : p)
+                prev.map((p) => idSet.has(p.id) ? { ...p, view_count: (p.view_count || 0) + 1 } : p)
               );
             });
         }, 3000);
@@ -1277,6 +1273,55 @@ export default function DiscoverScreen() {
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     onViewableItemsChangedRef.current({ viewableItems });
   }).current;
+
+  type PendingRealtimePatch = {
+    likeDelta?: number;
+    replyDelta?: number;
+    following?: boolean;
+    deleted?: boolean;
+    authorId?: string;
+  };
+  const pendingRealtimePatchesRef = useRef<Map<string, PendingRealtimePatch>>(new Map());
+  const realtimeFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queueRealtimePatch = useCallback((key: string, patch: PendingRealtimePatch) => {
+    const current = pendingRealtimePatchesRef.current.get(key) ?? {};
+    pendingRealtimePatchesRef.current.set(key, {
+      ...current,
+      ...patch,
+      likeDelta: (current.likeDelta ?? 0) + (patch.likeDelta ?? 0),
+      replyDelta: (current.replyDelta ?? 0) + (patch.replyDelta ?? 0),
+    });
+    if (realtimeFlushTimerRef.current !== null) return;
+    realtimeFlushTimerRef.current = setTimeout(() => {
+      realtimeFlushTimerRef.current = null;
+      const patches = new Map(pendingRealtimePatchesRef.current);
+      pendingRealtimePatchesRef.current.clear();
+      setPosts((prev) => {
+        let changed = false;
+        const next = prev.flatMap((post) => {
+          const direct = patches.get(post.id);
+          if (direct?.deleted) {
+            changed = true;
+            return [];
+          }
+          const authorPatch = patches.get(`author:${post.author_id}`);
+          if (!direct && !authorPatch) return [post];
+          changed = true;
+          return [{
+            ...post,
+            likeCount: Math.max(0, post.likeCount + (direct?.likeDelta ?? 0)),
+            replyCount: Math.max(0, post.replyCount + (direct?.replyDelta ?? 0)),
+            ...(authorPatch?.following !== undefined ? { isFollowing: authorPatch.following } : {}),
+          }];
+        });
+        return changed ? next : prev;
+      });
+    }, 120);
+  }, []);
+
+  useEffect(() => () => {
+    if (realtimeFlushTimerRef.current !== null) clearTimeout(realtimeFlushTimerRef.current);
+  }, []);
   const [newPostAuthors, setNewPostAuthors] = useState<{ id: string; avatar_url: string | null; display_name: string }[]>([]);
   const newPostAuthorIdsRef = useRef<Set<string>>(new Set());
   const pendingPostsRef = useRef<PostItem[]>([]);
@@ -1512,18 +1557,17 @@ export default function DiscoverScreen() {
           language_code: p.language_code || null,
         }));
 
-        // Seed handle→id cache — makes mention-taps to these authors instant
-        for (const p of data) {
-          const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
-          if (p.author_id && profile?.handle) setHandleId(profile.handle, p.author_id);
-        }
-
-        // Prefetch author avatars and post images in the background
-        // Prefetch only the first viewport-sized slice. Prefetching every
-        // result page increases bandwidth and image-cache pressure before the
-        // user has viewed the content.
-        prefetchAvatars(mapped.slice(0, 8).map((p) => p.profile?.avatar_url));
-        prefetchThumbnails(mapped.slice(0, 6).map((p) => p.image_url));
+        // Enrichment is deliberately deferred until the first interactions
+        // have been handled. The post rows can paint without warming every
+        // profile/image cache up front.
+        InteractionManager.runAfterInteractions(() => {
+          for (const p of data) {
+            const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles;
+            if (p.author_id && profile?.handle) setHandleId(profile.handle, p.author_id);
+          }
+          prefetchAvatars(mapped.slice(0, 8).map((p) => p.profile?.avatar_url));
+          prefetchThumbnails(mapped.slice(0, 6).map((p) => p.image_url));
+        });
 
         if (isRefresh) {
           tabPostsCache.current[activeTab] = mapped;
@@ -1853,13 +1897,12 @@ export default function DiscoverScreen() {
       // Diversify: no same-author back-to-back, no 3 same post-types in a row
       const diversified = diversifyFeed(sampled.map((p) => ({ ...p, postType: p.post_type })));
 
-      // Prefetch author avatars + post thumbnails in the background now so they
-      // are on disk before the user scrolls to each item.
-      prefetchAvatars(diversified.slice(0, 8).map((p) => (p as any).profile?.avatar_url));
-      prefetchThumbnails(diversified.slice(0, 6).map((p) => (p as any).image_url));
-
-      // Mark these posts as seen so they get demoted on the next refresh
-      markPostsSeen(diversified.map((p) => p.id)).catch(() => {});
+      InteractionManager.runAfterInteractions(() => {
+        prefetchAvatars(diversified.slice(0, 8).map((p) => (p as any).profile?.avatar_url));
+        prefetchThumbnails(diversified.slice(0, 6).map((p) => (p as any).image_url));
+        // Mark these posts as seen so they get demoted on the next refresh.
+        markPostsSeen(diversified.map((p) => p.id)).catch(() => {});
+      });
 
       // Org posts were fetched in parallel with the metadata queries above.
       let orgPostItems: PostItem[] = [];
@@ -2110,9 +2153,7 @@ export default function DiscoverScreen() {
       .channel("discover-posts-realtime")
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "posts" }, (payload: any) => {
         const deletedId = payload.old?.id;
-        if (deletedId) {
-          setPosts((prev) => prev.filter((p) => p.id !== deletedId));
-        }
+        if (deletedId) queueRealtimePatch(deletedId, { deleted: true });
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "post_acknowledgments" }, (payload: any) => {
         const postId = payload.new?.post_id || payload.old?.post_id;
@@ -2122,7 +2163,7 @@ export default function DiscoverScreen() {
         const isOwnAction = (evType === "INSERT" && payload.new?.user_id === user?.id) || (evType === "DELETE" && payload.old?.user_id === user?.id);
         if (isOwnAction) return;
         const delta = evType === "INSERT" ? 1 : -1;
-        setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, likeCount: Math.max(0, p.likeCount + delta) } : p));
+        queueRealtimePatch(postId, { likeDelta: delta });
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "post_replies" }, (payload: any) => {
         const postId = payload.new?.post_id || payload.old?.post_id;
@@ -2130,26 +2171,26 @@ export default function DiscoverScreen() {
         const evType = payload.eventType;
         const delta = evType === "INSERT" ? 1 : evType === "DELETE" ? -1 : 0;
         if (delta !== 0) {
-          setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, replyCount: Math.max(0, p.replyCount + delta) } : p));
+          queueRealtimePatch(postId, { replyDelta: delta });
         }
       })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "follows" }, (payload: any) => {
         const followerId = payload.new?.follower_id;
         const followingId = payload.new?.following_id;
         if (followerId === user?.id && followingId) {
-          setPosts((prev) => prev.map((p) => p.author_id === followingId ? { ...p, isFollowing: true } : p));
+          queueRealtimePatch(`author:${followingId}`, { authorId: followingId, following: true });
         }
       })
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "follows" }, (payload: any) => {
         const followerId = payload.old?.follower_id;
         const followingId = payload.old?.following_id;
         if (followerId === user?.id && followingId) {
-          setPosts((prev) => prev.map((p) => p.author_id === followingId ? { ...p, isFollowing: false } : p));
+          queueRealtimePatch(`author:${followingId}`, { authorId: followingId, following: false });
         }
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user?.id]);
+  }, [user?.id, queueRealtimePatch]);
 
   // ── Twitter/X-style background poller ──────────────────────────────────────
   // Every 60 s the poller silently queries for posts newer than the newest one
@@ -2646,14 +2687,16 @@ export default function DiscoverScreen() {
                   contentContainerStyle={{ gap: 8, paddingTop: headerHeight + 8, paddingBottom: insets.bottom + 100 }}
                   showsVerticalScrollIndicator={false}
                   onScroll={onFeedScroll}
-                  scrollEventThrottle={16}
+                  scrollEventThrottle={32}
+                  onScrollEndDrag={handleFeedScrollSettled}
+                  onMomentumScrollEnd={handleFeedScrollSettled}
                   onEndReached={loadMore}
                   onEndReachedThreshold={0.5}
                   onViewableItemsChanged={onViewableItemsChanged}
                   viewabilityConfig={viewabilityConfig}
-                  initialNumToRender={12}
-                  maxToRenderPerBatch={10}
-                  windowSize={7}
+                  initialNumToRender={6}
+                  maxToRenderPerBatch={4}
+                  windowSize={5}
                   updateCellsBatchingPeriod={30}
                   removeClippedSubviews={Platform.OS !== "web"}
 
@@ -2709,14 +2752,16 @@ export default function DiscoverScreen() {
                   contentContainerStyle={{ gap: 8, paddingTop: headerHeight + 8, paddingBottom: insets.bottom + 100 }}
                   showsVerticalScrollIndicator={false}
                   onScroll={onFeedScroll}
-                  scrollEventThrottle={16}
+                  scrollEventThrottle={32}
+                  onScrollEndDrag={handleFeedScrollSettled}
+                  onMomentumScrollEnd={handleFeedScrollSettled}
                   onEndReached={loadMore}
                   onEndReachedThreshold={0.5}
                   onViewableItemsChanged={onViewableItemsChanged}
                   viewabilityConfig={viewabilityConfig}
-                  initialNumToRender={12}
-                  maxToRenderPerBatch={10}
-                  windowSize={7}
+                  initialNumToRender={6}
+                  maxToRenderPerBatch={4}
+                  windowSize={5}
                   updateCellsBatchingPeriod={30}
                   removeClippedSubviews={Platform.OS !== "web"}
 
@@ -2772,14 +2817,16 @@ export default function DiscoverScreen() {
             contentContainerStyle={{ gap: 8, paddingTop: headerHeight + 8, paddingBottom: insets.bottom + 100 }}
             showsVerticalScrollIndicator={false}
             onScroll={onFeedScroll}
-            scrollEventThrottle={16}
+              scrollEventThrottle={32}
+              onScrollEndDrag={handleFeedScrollSettled}
+              onMomentumScrollEnd={handleFeedScrollSettled}
             onEndReached={loadMore}
             onEndReachedThreshold={0.5}
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={viewabilityConfig}
-            initialNumToRender={12}
-            maxToRenderPerBatch={10}
-            windowSize={7}
+              initialNumToRender={6}
+              maxToRenderPerBatch={4}
+              windowSize={5}
             updateCellsBatchingPeriod={30}
             removeClippedSubviews={Platform.OS !== "web"}
 

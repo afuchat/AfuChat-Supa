@@ -1479,6 +1479,7 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
       if (viewableItems.length > 0 && viewableItems[0].index !== null) {
         const idx = viewableItems[0].index!;
         const prevIdx = activeIndexRef.current;
+        if (prevIdx === idx) return;
         // Immediately stop the old video and start the new one via the player
         // map — this fires synchronously before React has re-rendered, so
         // there is no perceivable delay between the scroll settling and the
@@ -1592,11 +1593,13 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
         getItemLayout={getItemLayout}
+        // Each item keeps only its active/adjacent VideoView mounted. Native
+        // clipping removes off-window rows; web keeps the safer layout path.
         windowSize={3}
         initialNumToRender={1}
-        maxToRenderPerBatch={2}
-        updateCellsBatchingPeriod={50}
-        removeClippedSubviews={false}
+        maxToRenderPerBatch={1}
+        updateCellsBatchingPeriod={40}
+        removeClippedSubviews={Platform.OS !== "web"}
         onEndReached={onEndReached}
         onEndReachedThreshold={4}
         style={{ flex: 1, backgroundColor: "#000" }}
