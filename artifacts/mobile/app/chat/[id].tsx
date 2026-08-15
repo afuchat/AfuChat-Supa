@@ -977,6 +977,11 @@ function AutoSelectMessageText({ value, style }: { value: string; style?: any })
   useEffect(() => {
     const timer = setTimeout(() => {
       inputRef.current?.focus();
+      setTimeout(() => {
+        inputRef.current?.setNativeProps({
+          selection: { start: 0, end: value.length },
+        });
+      }, 16);
     }, Platform.OS === "web" ? 0 : 80);
     return () => clearTimeout(timer);
   }, [value]);
@@ -985,7 +990,17 @@ function AutoSelectMessageText({ value, style }: { value: string; style?: any })
     <TextInput
       ref={inputRef}
       value={value}
-      editable={false}
+      // Native selection does not activate reliably on Android when editable
+      // is false. Keep the field controlled and discard edits while allowing
+      // the OS to focus and select the complete range.
+      editable
+      autoFocus
+      onChangeText={() => {}}
+      onFocus={() => {
+        inputRef.current?.setNativeProps({
+          selection: { start: 0, end: value.length },
+        });
+      }}
       multiline
       scrollEnabled={false}
       selectTextOnFocus
