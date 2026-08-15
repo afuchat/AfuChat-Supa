@@ -292,8 +292,6 @@ export default function MeScreen() {
     return () => { supabase.removeChannel(ch); };
   }, [user?.id]);
 
-  // My Notes lives in the Chats tab (pinned at top) — no longer exposed here.
-
   if (!loading && !profile) return <Redirect href="/discover" />;
   if (loading || !profile) {
     return (

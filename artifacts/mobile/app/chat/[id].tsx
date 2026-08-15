@@ -82,6 +82,13 @@ import {
   onConnectivityChange,
 } from "@/lib/offlineStore";
 import { getLocalMessages, saveMessages, savePendingMessage, getNewestMessageDate, deleteAllLocalMessages } from "@/lib/storage/localMessages";
+import {
+  getLocalNotesConversation,
+  getLocalNotesMessages,
+  clearLocalNotesMessages,
+  isLocalNotesId,
+  saveLocalNotesMessage,
+} from "@/lib/storage/localNotes";
 import { LinkPreview } from "@/components/ui/LinkPreview";
 import { getPhonebookName } from "@/lib/storage/localContacts";
 import { clearUnread, getLocalConversation } from "@/lib/storage/localConversations";
@@ -1985,6 +1992,25 @@ function ChatScreen() {
   // without any network delay, even if nav params weren't passed.
   useEffect(() => {
     if (isDraft || chatInfo) return;
+    if (isLocalNotesId(id)) {
+      getLocalNotesConversation(user?.id || "").then((local) => {
+        if (!local) return;
+        const notesOwnerId = local.other_id || user?.id || "";
+        setChatInfo((prev) => prev ?? {
+          is_group: false,
+          is_channel: false,
+          name: local.name || "My Notes",
+          other_name: local.name || "My Notes",
+          other_avatar: null,
+          other_id: notesOwnerId,
+          member_ids: [notesOwnerId],
+          avatar_url: null,
+          other_last_seen: null,
+          other_show_online_status: false,
+        });
+      }).catch(() => {});
+      return;
+    }
     getLocalConversation(id).then((local) => {
       if (!local) return;
       setChatInfo((prev) => prev ?? {
@@ -2000,7 +2026,7 @@ function ChatScreen() {
         other_show_online_status: local.other_show_online,
       });
     }).catch(() => {});
-  }, []);
+  }, [id, isDraft, chatInfo, user?.id]);
 
   const [floatingInputHeight, setFloatingInputHeight] = useState(80);
 
@@ -2274,7 +2300,7 @@ function ChatScreen() {
   const effectiveChatId = isDraft ? realChatId : id;
 
   const loadChatInfo = useCallback(async () => {
-    if (!id || !user || isDraft) return;
+    if (!id || !user || isDraft || isLocalNotesId(id)) return;
     // SQLite fallback (useEffect above) already hydrates chatInfo when offline —
     // skip the network round-trip so we don't leave a dangling fetch.
     if (!isOnline()) return;
@@ -2316,6 +2342,26 @@ function ChatScreen() {
   const loadMessages = useCallback(async () => {
     const chatId = isDraft ? realChatId : id;
     if (!chatId || !user) return;
+
+    // My Notes is intentionally device-only. Do not query Supabase, subscribe
+    // to realtime, or attempt any server sync for this conversation.
+    if (isLocalNotesId(chatId)) {
+      const localNotes = await getLocalNotesMessages(user.id);
+      setMessages([...localNotes].reverse().map((message) => ({
+        id: message.id,
+        chat_id: message.chat_id,
+        sender_id: message.sender_id,
+        encrypted_content: message.encrypted_content,
+        sent_at: message.sent_at,
+        reply_to_message_id: message.reply_to_message_id,
+        attachment_url: message.attachment_url,
+        attachment_type: message.attachment_type,
+        status: message.status,
+        reactions: [],
+      })));
+      setLoading(false);
+      return;
+    }
 
     // ── Load from local SQLite cache first (instant render, no network) ──
     {
@@ -2627,6 +2673,10 @@ function ChatScreen() {
 
   const checkMessageGating = useCallback(async () => {
     if (!user) return;
+    if (isLocalNotesId(id)) {
+      setMessageLimited(false);
+      return;
+    }
     const info = chatInfo;
     if (!info || info.is_group || info.is_channel || !info.other_id || info.other_id === AFUAI_BOT_ID) {
       setMessageLimited(false);
@@ -2668,6 +2718,10 @@ function ChatScreen() {
 
   const checkIfStranger = useCallback(async () => {
     if (!user) return;
+    if (isLocalNotesId(id)) {
+      setIsStranger(false);
+      return;
+    }
     const info = chatInfo;
     if (!info || info.is_group || info.is_channel || !info.other_id || info.other_id === AFUAI_BOT_ID) {
       setIsStranger(false);
@@ -2708,6 +2762,14 @@ function ChatScreen() {
 
     loadChatInfo();
     loadMessages();
+
+    if (isLocalNotesId(activeChatId)) {
+      markChatVisited(activeChatId);
+      setActiveChatId(activeChatId);
+      return () => {
+        clearActiveChatId();
+      };
+    }
 
     // ── Fast-path: messages delivered via GlobalInboxListener broadcast ──────
     // This fires ~20 ms after send (before Postgres Changes arrives).
@@ -2880,7 +2942,7 @@ function ChatScreen() {
 
   // ── Realtime: typing indicators + read receipts (user-scoped for DMs) ─────
   useEffect(() => {
-    if (!user || !id) return;
+    if (!user || !id || isLocalNotesId(id)) return;
     const isDM = !!chatInfo && !chatInfo.is_group && !chatInfo.is_channel && !!chatInfo.other_id;
     const otherId = chatInfo?.other_id;
 
@@ -3030,7 +3092,7 @@ function ChatScreen() {
   // ── Realtime: online status (1-on-1 chats only) ───────────────────────────
   useEffect(() => {
     const otherId = chatInfo?.other_id;
-    if (!otherId || chatInfo?.is_group || chatInfo?.is_channel || isDraft) return;
+    if (!otherId || chatInfo?.is_group || chatInfo?.is_channel || isDraft || isLocalNotesId(id)) return;
 
     const _stalePresence = supabase.getChannels().find(
       (ch) => ch.topic === `realtime:presence-watch:${id}:${otherId}`
@@ -3057,7 +3119,7 @@ function ChatScreen() {
   }, [chatInfo?.other_id, chatInfo?.is_group, chatInfo?.is_channel, id, isDraft]);
 
   function handleTyping() {
-    if (!user || !id || isDraft) return;
+    if (!user || !id || isDraft || isLocalNotesId(id)) return;
     if (!chatPrefs.typing_indicators) return;
     if (typingTimeout.current) clearTimeout(typingTimeout.current);
     const isDM = !!chatInfo && !chatInfo.is_group && !chatInfo.is_channel;
@@ -3071,6 +3133,7 @@ function ChatScreen() {
 
   function saveDraft(text: string) {
     if (!id) return;
+    const notesChat = isLocalNotesId(id);
     if (draftSaveTimer.current) clearTimeout(draftSaveTimer.current);
     draftSaveTimer.current = setTimeout(() => {
       const key = `chat_draft_${id}`;
@@ -3078,18 +3141,18 @@ function ChatScreen() {
         // Always clear — even if the offline_drafts feature flag is off —
         // so an empty input never shows as a draft in the chats list.
         AsyncStorage.removeItem(key).catch(() => {});
-        if (user) {
+        if (user && !notesChat) {
           supabase.from("chat_drafts")
             .delete().eq("user_id", user.id).eq("chat_id", id)
             .then(() => {});
         }
         return;
       }
-      if (!advancedFeatures.offline_drafts) return;
+      if (!advancedFeatures.offline_drafts && !notesChat) return;
       // Write to AsyncStorage immediately so the chats list can reflect the
       // draft on the next focus without waiting for Supabase.
       AsyncStorage.setItem(key, text).catch(() => {});
-      if (user) {
+      if (user && !notesChat) {
         supabase.from("chat_drafts")
           .upsert(
             { user_id: user.id, chat_id: id, content: text, updated_at: new Date().toISOString() },
@@ -3102,7 +3165,7 @@ function ChatScreen() {
 
   useEffect(() => {
     if (!id) return;
-    if (user) {
+    if (user && !isLocalNotesId(id)) {
       supabase.from("chat_drafts")
         .select("content").eq("user_id", user.id).eq("chat_id", id)
         .maybeSingle()
@@ -3522,6 +3585,12 @@ function ChatScreen() {
   useEffect(() => {
     const chatId = isDraft ? realChatId : id;
     if (!chatId || !user) return;
+    if (isLocalNotesId(chatId)) {
+      setMuteUntil(undefined);
+      AsyncStorage.getItem(`afu_disappearing_${chatId}`).then((v) => setDisappearingEnabled(v === "1")).catch(() => {});
+      AsyncStorage.getItem(`afu_disappearing_timer_${chatId}`).then((v) => { if (v) setDisappearingTimer(parseInt(v, 10)); }).catch(() => {});
+      return;
+    }
     supabase.from("chat_mutes").select("muted_until").eq("user_id", user.id).eq("chat_id", chatId).maybeSingle()
       .then(({ data }) => {
         if (!data) { setMuteUntil(undefined); return; }
@@ -3550,6 +3619,7 @@ function ChatScreen() {
   async function handleMuteChat(hours: number | null) {
     const chatId = isDraft ? realChatId : id;
     if (!chatId || !user) return;
+    if (isLocalNotesId(chatId)) return;
     const muteUntilVal = hours === null ? null : new Date(Date.now() + hours * 3600_000).toISOString();
     setMuteUntil(muteUntilVal);
     setShowMutePicker(false);
@@ -3563,6 +3633,7 @@ function ChatScreen() {
   async function handleUnmuteChat() {
     const chatId = isDraft ? realChatId : id;
     if (!chatId || !user) return;
+    if (isLocalNotesId(chatId)) return;
     setMuteUntil(undefined);
     setShowMutePicker(false);
     await supabase.from("chat_mutes").delete().eq("user_id", user.id).eq("chat_id", chatId);
@@ -3610,6 +3681,7 @@ function ChatScreen() {
 
   async function handleBlockUser() {
     if (!user || !chatInfo?.other_id) return;
+    if (isLocalNotesId(id)) return;
     if (isBlocked) {
       showAlert("Unblock User", `Allow ${headerTitle} to message you again?`, [
         { text: "Cancel", style: "cancel" },
@@ -3640,6 +3712,7 @@ function ChatScreen() {
 
   async function handleReportUser() {
     if (!user || !chatInfo?.other_id) return;
+    if (isLocalNotesId(id)) return;
     showAlert("Report User", `Why are you reporting ${headerTitle}?`, [
       { text: "Spam", onPress: async () => { try { await supabase.from("user_reports").insert({ reporter_id: user.id, reported_id: chatInfo.other_id, reason: "spam" }); setShowChatOptions(false); showAlert("Reported", "Thank you. We'll review this report."); } catch (_) {} } },
       { text: "Harassment", onPress: async () => { try { await supabase.from("user_reports").insert({ reporter_id: user.id, reported_id: chatInfo.other_id, reason: "harassment" }); setShowChatOptions(false); showAlert("Reported", "Thank you. We'll review this report."); } catch (_) {} } },
@@ -3666,6 +3739,9 @@ function ChatScreen() {
             const clearedAt = new Date().toISOString();
             await AsyncStorage.setItem(`chat_cleared_${user.id}_${chatId}`, clearedAt);
             await deleteAllLocalMessages(chatId);
+            if (isLocalNotesId(chatId)) {
+              await clearLocalNotesMessages(user.id);
+            }
             if (chatInfo?.other_id === AFUAI_BOT_ID) {
               try { await supabase.rpc("clear_afuai_chat", { p_chat_id: chatId }); } catch {}
             }
@@ -4527,7 +4603,9 @@ STRICT RULES:
     if (!directText) setInput("");
     if (id) {
       AsyncStorage.removeItem(`chat_draft_${id}`).catch(() => {});
-      if (user) { supabase.from("chat_drafts").delete().eq("user_id", user.id).eq("chat_id", id).then(() => {}); }
+      if (user && !isLocalNotesId(id)) {
+        supabase.from("chat_drafts").delete().eq("user_id", user.id).eq("chat_id", id).then(() => {});
+      }
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
@@ -4559,6 +4637,20 @@ STRICT RULES:
     setNewMsgCount(0);
     setReplyTo(null);
     setSending(false);
+
+    if (isLocalNotesId(activeChatId)) {
+      await saveLocalNotesMessage(user.id, {
+        id: msgId,
+        sender_id: user.id,
+        encrypted_content: text,
+        sent_at: now,
+        reply_to_message_id: userMsg.reply_to_message_id || null,
+        attachment_url: null,
+        attachment_type: null,
+        status: "sent",
+      });
+      return;
+    }
 
     if (isAfuAiDirectChat) {
       const aiTier = (subscription?.plan_tier as "free" | "silver" | "gold" | "platinum") || "free";

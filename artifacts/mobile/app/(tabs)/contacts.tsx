@@ -28,6 +28,7 @@ import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import OfflineBanner from "@/components/ui/OfflineBanner";
 import { isOnline } from "@/lib/offlineStore";
 import { getLocalContacts, saveLocalContacts, getAllPhonebookNames } from "@/lib/storage/localContacts";
+import { createLocalNotesConversation } from "@/lib/storage/localNotes";
 
 type Contact = {
   id: string;
@@ -202,6 +203,17 @@ export default function ContactsScreen() {
     loadContacts();
   }
 
+  async function openNotes() {
+    if (!user) return;
+    Haptics.selectionAsync();
+    const notesId = await createLocalNotesConversation(user.id);
+    safeRouter.push({ pathname: "/chat/[id]", params: {
+      id: notesId,
+      otherName: "My Notes",
+      otherId: user.id,
+    } });
+  }
+
   const filtered = search
     ? contacts.filter(
         (c) =>
@@ -299,6 +311,21 @@ export default function ContactsScreen() {
         ListHeaderComponent={
           <View>
             <View style={[styles.actionGroup, { backgroundColor: colors.surface }]}>
+              <TouchableOpacity
+                style={styles.actionRow}
+                onPress={openNotes}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.actionIcon, { backgroundColor: colors.accent }]}>
+                  <Ionicons name="bookmark" size={20} color="#fff" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.actionLabel, { color: colors.text }]}>My Notes</Text>
+                  <Text style={[styles.actionHint, { color: colors.textMuted }]}>Private, stored only on this device</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+              </TouchableOpacity>
+              <Separator indent={58} />
               <TouchableOpacity
                 style={styles.actionRow}
                 onPress={() => safeRouter.push("/group/create")}
@@ -434,6 +461,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   actionLabel: { fontSize: 16, fontFamily: "Inter_500Medium" },
+  actionHint: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
   sectionLabel: { paddingHorizontal: 16, paddingVertical: 8 },
   sectionLabelText: { fontSize: 13, fontFamily: "Inter_500Medium" },
   emptySearch: { paddingVertical: 40, alignItems: "center" },

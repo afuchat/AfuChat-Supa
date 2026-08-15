@@ -41,7 +41,13 @@ import OfflineBanner from "@/components/ui/OfflineBanner";
 import { HomeBanner } from "@/components/ui/HomeBanner";
 import { isOnline, onConnectivityChange, getCachedUserId } from "@/lib/offlineStore";
 import { getLocalConversations, saveConversations, deleteLocalConversation, pruneConversations, clearUnread, updateConversationFlags } from "@/lib/storage/localConversations";
-import { getLocalNotesConversation, isLocalNotesId, removeLocalNotesConversation, LOCAL_NOTES_NAME } from "@/lib/storage/localNotes";
+import {
+  getLocalNotesConversation,
+  isLocalNotesId,
+  removeLocalNotesConversation,
+  updateLocalNotesFlags,
+  LOCAL_NOTES_NAME,
+} from "@/lib/storage/localNotes";
 import { getPreloadedConversations, hasPreloadedConversations, invalidateConversationsPreload } from "@/lib/conversationsPreload";
 import { AFUAI_CONV_ID, AFUAI_BOT_ID, getAIChatSnapshot } from "@/lib/aiChatStore";
 import { useSuperApp } from "@/lib/superapp/MiniAppRuntime";
@@ -538,6 +544,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
 
   const loadChatsImpl = useCallback(async (background = false) => {
     if (!user) return;
+    const localNotes = await getLocalNotesConversation(user.id);
 
     if (!background) {
       const cacheStartedAt = Date.now();
@@ -547,6 +554,9 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       const cachedItems = cached
         .filter((item: any) => !(item.other_id === user.id && !isLocalNotesId(item.id)))
         .map((item: any) => isLocalNotesId(item.id) ? { ...item, kind: "notes" as const } : item);
+      if (localNotes && !cachedItems.some((item: any) => item.id === localNotes.id)) {
+        cachedItems.push(localNotesToChatItem(localNotes));
+      }
       if (cachedItems.length > 0) {
         setChats(cachedItems as any);
         setLoading(false);
@@ -557,6 +567,10 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     }
 
     if (!isOnline()) {
+      setChats((prev) => {
+        const withoutNotes = prev.filter((item) => !isLocalNotesId(item.id));
+        return localNotes ? [...withoutNotes, localNotesToChatItem(localNotes)] : withoutNotes;
+      });
       setLoading(false);
       setRefreshing(false);
       return;
@@ -591,11 +605,16 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       );
     }
     if (chatError) {
+      if (localNotes) {
+        setChats((prev) => [
+          ...prev.filter((item) => !isLocalNotesId(item.id)),
+          localNotesToChatItem(localNotes),
+        ]);
+      }
       setLoading(false);
       setRefreshing(false);
       return;
     }
-    const localNotes = await getLocalNotesConversation(user.id);
     if (!chatRows?.length) {
       setChats(localNotes ? [localNotesToChatItem(localNotes)] : []);
       setLoading(false);
@@ -871,7 +890,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         );
         const { error } = item.kind === "notes"
           ? { error: await (async () => {
-              await updateConversationFlags(item.id, { is_pinned: next });
+               await updateLocalNotesFlags(user!.id, { is_pinned: next });
               return null;
             })() }
           : await supabase.from("chats").update({ is_pinned: next }).eq("id", item.id);
@@ -888,7 +907,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               );
               try {
                 if (item.kind === "notes") {
-                  await updateConversationFlags(item.id, { is_pinned: !next });
+                   await updateLocalNotesFlags(user!.id, { is_pinned: !next });
                 } else {
                   await supabase.from("chats").update({ is_pinned: !next }).eq("id", item.id);
                 }
@@ -906,7 +925,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         );
         const { error } = item.kind === "notes"
           ? { error: await (async () => {
-              await updateConversationFlags(item.id, { is_archived: next });
+               await updateLocalNotesFlags(user!.id, { is_archived: next });
               return null;
             })() }
           : await supabase.from("chats").update({ is_archived: next }).eq("id", item.id);
@@ -923,7 +942,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               );
               try {
                 if (item.kind === "notes") {
-                  await updateConversationFlags(item.id, { is_archived: !next });
+                   await updateLocalNotesFlags(user!.id, { is_archived: !next });
                 } else {
                   await supabase.from("chats").update({ is_archived: !next }).eq("id", item.id);
                 }
