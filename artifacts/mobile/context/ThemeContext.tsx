@@ -16,13 +16,13 @@ const THEME_KEY = "@afuchat_theme";
 // Module-level cache — persists across hot-reloads and navigation so the
 // theme is available synchronously on every subsequent render without
 // waiting for AsyncStorage again → no flash on re-mount.
-// Default is "dark" because the entire app is designed as a dark-first product
-// (welcome, login, and all auth screens hardcode the #000000 dark background).
+// Follow the device by default. Explicit light/dark choices are still persisted
+// and honoured when the user selects one in Settings.
 let _moduleCache: ThemeMode | null = null;
 
 const ThemeContext = createContext<ThemeContextType>({
-  themeMode: "dark",
-  isDark: true,
+  themeMode: "system",
+  isDark: false,
   setThemeMode: () => {},
   setForceDark: () => {},
 });
@@ -32,10 +32,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Use the module-level cache as the initial value so hot-reloads and
   // re-mounts instantly show the correct theme without an async round-trip.
-  // Fall back to "dark" (not "system") so the app is always dark until the
-  // user explicitly chooses otherwise in Settings.
+  // Fall back to the device scheme so a fresh install follows the system
+  // appearance without waiting for the AsyncStorage read.
   const [themeMode, setThemeModeState] = useState<ThemeMode>(
-    _moduleCache ?? "dark"
+    _moduleCache ?? "system"
   );
   const [forceDark, setForceDarkState] = useState(false);
 
@@ -46,11 +46,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     loaded.current = true;
     AsyncStorage.getItem(THEME_KEY)
       .then((val) => {
-        // Only honour an explicitly stored "light" or "dark" choice.
-        // A stored "system" value is treated as no preference — the app
-        // defaults to "dark" because every screen is designed for the dark
-        // palette and light-mode devices would otherwise see the wrong theme.
-        if (val === "light" || val === "dark") {
+        // Honour all valid saved modes, including "system". Invalid or
+        // missing values keep the device-following default above.
+        if (val === "system" || val === "light" || val === "dark") {
           _moduleCache = val;
           setThemeModeState((prev) => (prev === val ? prev : val));
         }

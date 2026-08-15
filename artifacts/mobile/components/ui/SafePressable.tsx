@@ -30,7 +30,7 @@ import { acquireNavLock, NAV_COOLDOWN_MS } from "@/lib/navUtils";
 // ── SafePressable ─────────────────────────────────────────────────────────────
 
 export interface SafePressableProps extends PressableProps {
-  /** Cooldown in ms. Defaults to NAV_COOLDOWN_MS (600). */
+  /** Cooldown in ms. Defaults to NAV_COOLDOWN_MS (250). */
   cooldown?: number;
 }
 
@@ -80,7 +80,7 @@ export function SafePressable({
 // ── SafeTouchableOpacity ──────────────────────────────────────────────────────
 
 export interface SafeTouchableOpacityProps extends TouchableOpacityProps {
-  /** Cooldown in ms. Defaults to NAV_COOLDOWN_MS (600). */
+  /** Cooldown in ms. Defaults to NAV_COOLDOWN_MS (250). */
   cooldown?: number;
 }
 

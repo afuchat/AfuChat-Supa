@@ -7,9 +7,9 @@
  * lands on an unintended deep stack or sees a flickering screen.
  *
  * HOW:
- * - A module-level boolean `_locked` is set to `true` the instant any
- *   navigation is triggered and reset after NAV_COOLDOWN_MS.
- * - Every navigation helper checks and sets this lock atomically.
+ * - A module-level action key records the most recent navigation and blocks
+ *   only an immediate duplicate of that same action.
+ * - Different destinations can be selected without waiting for a cooldown.
  * - `SafePressable` / `SafeTouchableOpacity` (in components/ui) also
  *   check the lock so even button presses that trigger navigation
  *   indirectly (like openApp()) are protected.
@@ -18,10 +18,10 @@
 import { router } from "expo-router";
 import { useCallback, useRef } from "react";
 
-export const NAV_COOLDOWN_MS = 600;
+export const NAV_COOLDOWN_MS = 250;
 
-let _locked    = false;
-let _lockTimer: ReturnType<typeof setTimeout> | null = null;
+let _lastActionKey = "";
+let _lastActionAt = 0;
 
 // ── Core lock ─────────────────────────────────────────────────────────────────
 
@@ -30,26 +30,39 @@ let _lockTimer: ReturnType<typeof setTimeout> | null = null;
  * Returns `true` (and sets the lock) if navigation is allowed.
  * Returns `false` immediately if the lock is already held.
  */
-export function acquireNavLock(cooldownMs = NAV_COOLDOWN_MS): boolean {
-  if (_locked) return false;
-  _locked = true;
-  if (_lockTimer) clearTimeout(_lockTimer);
-  _lockTimer = setTimeout(() => {
-    _locked   = false;
-    _lockTimer = null;
-  }, cooldownMs);
+export function acquireNavLock(
+  cooldownMs = NAV_COOLDOWN_MS,
+  actionKey = "__press__",
+): boolean {
+  const now = Date.now();
+  if (
+    actionKey === _lastActionKey &&
+    now - _lastActionAt < cooldownMs
+  ) {
+    return false;
+  }
+  _lastActionKey = actionKey;
+  _lastActionAt = now;
   return true;
 }
 
 /** True while the lock is held (i.e., navigation in progress). */
 export function isNavLocked(): boolean {
-  return _locked;
+  return Date.now() - _lastActionAt < NAV_COOLDOWN_MS;
 }
 
 /** Force-release the lock early (e.g., on back-gesture completion). */
 export function releaseNavLock(): void {
-  _locked = false;
-  if (_lockTimer) { clearTimeout(_lockTimer); _lockTimer = null; }
+  _lastActionKey = "";
+  _lastActionAt = 0;
+}
+
+function navigationKey(kind: string, href: unknown): string {
+  try {
+    return `${kind}:${JSON.stringify(href)}`;
+  } catch {
+    return kind;
+  }
 }
 
 // ── Safe router ───────────────────────────────────────────────────────────────
@@ -63,10 +76,10 @@ export function releaseNavLock(): void {
  *   safeRouter.push("/profile");
  */
 export const safeRouter = {
-  push    (href: any, cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown)) { try { router.push(href); } catch (e: any) { if (!String(e?.message).includes("mounting")) throw e; } } },
-  replace (href: any, cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown)) { try { router.replace(href); } catch (e: any) { if (!String(e?.message).includes("mounting")) throw e; } } },
-  navigate(href: any, cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown)) { try { router.navigate(href); } catch (e: any) { if (!String(e?.message).includes("mounting")) throw e; } } },
-  back    (fallback: string = "/(tabs)/discover", cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown)) { try { if (router.canGoBack()) router.back(); else router.replace(fallback as any); } catch {} } },
+  push    (href: any, cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("push", href))) { try { router.push(href); } catch (e: any) { if (!String(e?.message).includes("mounting")) throw e; } } },
+  replace (href: any, cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("replace", href))) { try { router.replace(href); } catch (e: any) { if (!String(e?.message).includes("mounting")) throw e; } } },
+  navigate(href: any, cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("navigate", href))) { try { router.navigate(href); } catch (e: any) { if (!String(e?.message).includes("mounting")) throw e; } } },
+  back    (fallback: string = "/(tabs)/discover", cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("back", fallback))) { try { if (router.canGoBack()) router.back(); else router.replace(fallback as any); } catch {} } },
 };
 
 // ── React hooks ───────────────────────────────────────────────────────────────

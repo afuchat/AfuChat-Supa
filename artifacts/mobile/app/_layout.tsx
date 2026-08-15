@@ -169,8 +169,8 @@ function PageWatcher() {
 // ─── AppNavigationStack ───────────────────────────────────────────────────────
 // Reads the theme background so every screen card uses the real background
 // colour instead of "transparent" (which causes a white flash on push/pop).
-// Uses "slide_from_right" globally — native platform slide on every push/pop,
-// no flash, steady feel.  Tabs and initial boot screens stay animation:"none".
+// Use instant route swaps globally. This keeps taps responsive on Android and
+// avoids stacking a transition delay on top of data-loading screens.
 function AppNavigationStack() {
   const { colors } = useTheme();
   const bg = colors.background;
@@ -178,7 +178,7 @@ function AppNavigationStack() {
     <Stack
       screenOptions={{
         headerShown: false,
-        animation: "slide_from_right",
+        animation: "none",
         gestureEnabled: true,
         contentStyle: { backgroundColor: bg },
         freezeOnBlur: true,
@@ -188,7 +188,7 @@ function AppNavigationStack() {
       <Stack.Screen name="index"      options={{ animation: "none", contentStyle: { backgroundColor: bg } }} />
       <Stack.Screen name="welcome"    options={{ animation: "none", gestureEnabled: false }} />
       <Stack.Screen name="(tabs)"     options={{ animation: "none" }} />
-      {/* Every other group and screen inherits slide_from_right */}
+      {/* Every other group and screen inherits the instant transition */}
       <Stack.Screen name="+not-found" />
     </Stack>
   );
