@@ -361,6 +361,18 @@ export default function SettingsScreen() {
           />
         </Section>
 
+        <Section title="ADVANCED" colors={colors}>
+          <Row
+            icon="notifications-outline"
+            label="Notifications"
+            sublabel="Push alerts, sounds, previews and quiet hours"
+            onPress={() => router.push("/settings/notifications" as any)}
+            last
+            colors={colors}
+            accent={accent}
+          />
+        </Section>
+
         {/* ── Privacy & Security ────────────────────────────────────────── */}
         <Section title="PRIVACY & SECURITY" colors={colors}>
           <Row

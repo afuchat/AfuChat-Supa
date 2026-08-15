@@ -18,7 +18,8 @@ const BASE_URL = "https://rhnsjqqtdzlkvqazfcbg.supabase.co/functions/v1";
  * Drop-in replacement for `engagera.chat.stream()` that works on Android.
  */
 export async function* streamAiChat(
-  params: Pick<ChatCreateParams, "messages" | "model" | "conversationId" | "contextHint">
+  params: Pick<ChatCreateParams, "messages" | "model"> &
+    Partial<Pick<ChatCreateParams, "conversationId" | "contextHint">>
 ): AsyncGenerator<ChatStreamEvent> {
   if (!ENGAGERA_API_KEY) throw new Error("ENGAGERA_API_KEY is not configured");
 

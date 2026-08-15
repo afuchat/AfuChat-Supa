@@ -7044,14 +7044,6 @@ STRICT RULES:
           </TouchableOpacity>
         )}
 
-        {/* Remind Me */}
-        {advancedFeatures.message_reminders && showReactions?.encrypted_content && !showReactions.encrypted_content.startsWith("🎁 ") && !showReactions.encrypted_content.startsWith("🧧") && !["📷 Photo", "🎥 Video", "GIF"].includes(showReactions.encrypted_content) && (
-          <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { setReminderMsg(showReactions); setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); }}>
-            <Ionicons name="alarm" size={24} color={colors.text} style={st.reactRowIcon} />
-            <Text style={[st.reactRowLabel, { color: colors.text }]}>Remind Me</Text>
-          </TouchableOpacity>
-        )}
-
         {/* Share to Feed */}
         {advancedFeatures.chat_to_post && showReactions && (() => {
           const txt = showReactions.encrypted_content?.trim();

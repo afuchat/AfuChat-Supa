@@ -478,7 +478,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(newSession);
       setUser(newSession.user);
       setCachedUserId(newSession.user.id);
-      setCurrentUserId(newSession.user.id);
 
       // Fetch the new account's profile directly (don't wait for onAuthStateChange)
       await fetchProfile(newSession.user.id);

@@ -1,5 +1,6 @@
 {pkgs}: {
   deps = [
+    pkgs.libxkbcommon
     pkgs.libgbm
     pkgs.mesa
     pkgs.xorg.libxcb

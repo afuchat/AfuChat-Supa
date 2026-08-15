@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
 import { supabase } from "@/lib/supabase";
+import { KEYS, storage } from "@/lib/storage/mmkv";
 
 type NotificationsModule = typeof import("expo-notifications");
 
@@ -33,12 +34,16 @@ export function configurePushNotifications(): void {
   if (!notifications || handlerConfigured) return;
 
   notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-    }),
+    handleNotification: async () => {
+      const preferences = storage.getObject<{ enabled?: boolean; sounds?: boolean }>(KEYS.NOTIFICATION_PREFERENCES);
+      const enabled = preferences?.enabled ?? true;
+      return {
+        shouldShowBanner: enabled,
+        shouldShowList: enabled,
+        shouldPlaySound: enabled && (preferences?.sounds ?? true),
+        shouldSetBadge: enabled,
+      };
+    },
   });
 
   if (Platform.OS === "android") {
