@@ -7158,66 +7158,84 @@ STRICT RULES:
       >
         <View style={st.messageOptionsOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={closeMessageOptions} />
+          {!isLocalNotes && (
+            <View style={[st.reactionFloatingGroup, { backgroundColor: colors.inputBg }]}>
+              <View style={st.reactEmojiRow}>
+                {REACTION_EMOJIS.map((emoji) => {
+                  const alreadyReacted = showReactions?.reactions?.some((r) => r.emoji === emoji && r.myReaction);
+                  return (
+                    <TouchableOpacity
+                      key={emoji}
+                      style={[st.reactEmojiPillBtn, alreadyReacted && { transform: [{ scale: 1.18 }] }]}
+                      onPress={() => {
+                        if (!showReactions) return;
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        addReaction(showReactions, emoji);
+                        setShowReactions(null);
+                        setShowMoreEmojis(false);
+                      }}
+                    >
+                      <Text style={st.reactEmojiPillText}>{emoji}</Text>
+                      {alreadyReacted && <View style={[st.reactEmojiActiveDot, { backgroundColor: BRAND }]} />}
+                    </TouchableOpacity>
+                  );
+                })}
+                <TouchableOpacity
+                  style={[st.reactEmojiPillBtn, showMoreEmojis && { transform: [{ scale: 1.08 }] }]}
+                  onPress={() => setShowMoreEmojis((v) => !v)}
+                >
+                  <Ionicons name={showMoreEmojis ? "chevron-up" : "add"} size={22} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+
+              {showMoreEmojis && (
+                <View style={st.reactMoreGridInline}>
+                  {REACTION_EMOJIS_ADVANCED.filter((e) => !REACTION_EMOJIS.includes(e)).map((emoji) => {
+                    const alreadyReacted = showReactions?.reactions?.some((r) => r.emoji === emoji && r.myReaction);
+                    return (
+                      <TouchableOpacity
+                        key={emoji}
+                        style={[st.reactMoreGridBtn, alreadyReacted && { transform: [{ scale: 1.14 }] }]}
+                        onPress={() => {
+                          if (!showReactions) return;
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          addReaction(showReactions, emoji);
+                          setShowReactions(null);
+                          setShowMoreEmojis(false);
+                        }}
+                      >
+                        <Text style={st.reactEmojiPillText}>{emoji}</Text>
+                        {alreadyReacted && <View style={[st.reactEmojiActiveDot, { backgroundColor: BRAND }]} />}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          )}
           <View style={[st.messageOptionsCard, { backgroundColor: colors.surface, maxHeight: Math.min(380, Dimensions.get("window").height * 0.52) }]}>
             <ScrollView
               showsVerticalScrollIndicator={false}
               bounces={false}
               contentContainerStyle={{ paddingBottom: 8 }}
             >
-         {/* Emoji picker row — reactions are a server feature, not part of local Notes */}
-          {!isLocalNotes && <View style={[st.reactEmojiRow, { backgroundColor: colors.inputBg }]}>
-           {REACTION_EMOJIS.map((emoji) => {
-            const alreadyReacted = showReactions?.reactions?.some((r) => r.emoji === emoji && r.myReaction);
-            return (
-              <TouchableOpacity
-                key={emoji}
-                 style={[st.reactEmojiPillBtn, alreadyReacted && { transform: [{ scale: 1.18 }] }]}
-                onPress={() => {
-                  if (!showReactions) return;
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  addReaction(showReactions, emoji);
-                  setShowReactions(null);
-                  setShowMoreEmojis(false);
-                }}
-              >
-                <Text style={st.reactEmojiPillText}>{emoji}</Text>
-                {alreadyReacted && <View style={[st.reactEmojiActiveDot, { backgroundColor: BRAND }]} />}
-              </TouchableOpacity>
-            );
-          })}
-          <TouchableOpacity
-             style={[st.reactEmojiPillBtn, showMoreEmojis && { transform: [{ scale: 1.08 }] }]}
-            onPress={() => setShowMoreEmojis((v) => !v)}
-          >
-            <Ionicons name={showMoreEmojis ? "chevron-up" : "add"} size={22} color={colors.text} />
-          </TouchableOpacity>
-         </View>}
+         {/* Select is intentionally a single compact action with no helper copy. */}
+         {showReactions?.encrypted_content?.trim() && (
+           <TouchableOpacity
+             style={st.reactRow}
+             activeOpacity={0.65}
+             onPress={() => {
+               if (!showReactions) return;
+               setTextSelectionMessageId(showReactions.id);
+               closeMessageOptions();
+             }}
+           >
+             <Ionicons name="text-outline" size={21} color={colors.text} style={st.reactRowIcon} />
+             <Text style={[st.reactRowLabel, { color: colors.text }]}>Select</Text>
+           </TouchableOpacity>
+         )}
 
-         {!isLocalNotes && showMoreEmojis && (
-          <View style={st.reactMoreGridInline}>
-            {REACTION_EMOJIS_ADVANCED.filter((e) => !REACTION_EMOJIS.includes(e)).map((emoji) => {
-              const alreadyReacted = showReactions?.reactions?.some((r) => r.emoji === emoji && r.myReaction);
-              return (
-                <TouchableOpacity
-                  key={emoji}
-                   style={[st.reactMoreGridBtn, alreadyReacted && { transform: [{ scale: 1.14 }] }]}
-                  onPress={() => {
-                    if (!showReactions) return;
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    addReaction(showReactions, emoji);
-                    setShowReactions(null);
-                    setShowMoreEmojis(false);
-                  }}
-                >
-                  <Text style={st.reactEmojiPillText}>{emoji}</Text>
-                  {alreadyReacted && <View style={[st.reactEmojiActiveDot, { backgroundColor: BRAND }]} />}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
-
-        <View style={[st.reactRowSep, { backgroundColor: colors.border }]} />
+         <View style={[st.reactRowSep, { backgroundColor: colors.border }]} />
 
         {/* Reply */}
         <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) { setReplyTo(showReactions); setTimeout(() => chatInputRef.current?.focus(), 50); setShowReactions(null); } }}>
@@ -8623,6 +8641,17 @@ const st = StyleSheet.create({
 
   reactEmojiRow:       { flexDirection: "row", justifyContent: "center", alignItems: "center", marginHorizontal: 10, marginTop: 2, marginBottom: 7, borderRadius: 22, paddingVertical: 3, paddingHorizontal: 5, gap: 2 },
   reactMoreGridInline: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", marginHorizontal: 10, paddingHorizontal: 8, paddingBottom: 7, gap: 3 },
+  reactionFloatingGroup: {
+    maxWidth: 300,
+    marginBottom: 8,
+    borderRadius: 24,
+    overflow: "hidden",
+    elevation: 16,
+    ...Platform.select({
+      web: { boxShadow: "0 6px 22px rgba(0,0,0,0.26)" } as any,
+      default: { shadowColor: "#000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.26, shadowRadius: 16 },
+    }),
+  },
   reactRowSep:         { height: StyleSheet.hairlineWidth, marginVertical: 1 },
   reactRow:            { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 9, minHeight: 43 },
   reactRowIcon:        { marginRight: 12, width: 20, textAlign: "center" },
