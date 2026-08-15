@@ -1677,7 +1677,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
             {msg.reactions.map((r, i) => (
               <TouchableOpacity
                 key={i}
-                style={[st.reactionPill, r.myReaction && { borderColor: BRAND, borderWidth: 1.5 }]}
+                 style={[st.reactionPill, r.myReaction && { transform: [{ scale: 1.08 }] }]}
                 onPress={() => onReactionPress?.(msg, r.emoji)}
                 activeOpacity={0.7}
               >
@@ -7098,16 +7098,9 @@ STRICT RULES:
       >
         <View style={st.messageOptionsOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={closeMessageOptions} />
-          <View style={[st.messageOptionsCard, { backgroundColor: colors.surface, maxHeight: Math.min(620, Dimensions.get("window").height * 0.82) }]}>
+          <View style={[st.messageOptionsCard, { backgroundColor: colors.surface, maxHeight: Math.min(560, Dimensions.get("window").height * 0.68) }]}>
             <View style={[st.messageOptionsHeader, { borderBottomColor: colors.border }]}>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={[st.messageOptionsTitle, { color: colors.text }]}>Message options</Text>
-                {showReactions && (
-                  <Text style={[st.messageOptionsPreview, { color: colors.textMuted }]} numberOfLines={2}>
-                    {showReactions.encrypted_content || "Attachment"}
-                  </Text>
-                )}
-              </View>
+              <Text style={[st.messageOptionsTitle, { color: colors.text }]}>Message options</Text>
               <TouchableOpacity onPress={closeMessageOptions} hitSlop={10} accessibilityLabel="Close message options">
                 <Ionicons name="close" size={22} color={colors.textMuted} />
               </TouchableOpacity>
@@ -7172,8 +7165,8 @@ STRICT RULES:
 
         <View style={[st.reactRowSep, { backgroundColor: colors.border }]} />
 
-         {/* Select text — selection is opt-in so message long-press never
-             accidentally opens the native text-selection handles. */}
+          {/* Select is opt-in so message long-press always opens this modal first.
+              After tapping it, only the selected message exposes native handles. */}
          {showReactions?.encrypted_content?.trim() && (
            <TouchableOpacity
              style={st.reactRow}
@@ -7186,8 +7179,8 @@ STRICT RULES:
            >
              <Ionicons name="text-outline" size={24} color={colors.text} style={st.reactRowIcon} />
              <View style={{ flex: 1 }}>
-               <Text style={[st.reactRowLabel, { color: colors.text }]}>Select text</Text>
-               <Text style={[st.reactRowHint, { color: colors.textMuted }]}>Drag the handles to keep only what you need</Text>
+                <Text style={[st.reactRowLabel, { color: colors.text }]}>Select</Text>
+                <Text style={[st.reactRowHint, { color: colors.textMuted }]}>Use the handles to keep only what you need</Text>
              </View>
            </TouchableOpacity>
          )}
@@ -8153,7 +8146,7 @@ const st = StyleSheet.create({
   },
   messageOptionsCard: {
     width: "100%",
-    maxWidth: 460,
+    maxWidth: 360,
     borderRadius: 24,
     overflow: "hidden",
     elevation: 24,
@@ -8172,7 +8165,6 @@ const st = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   messageOptionsTitle: { fontSize: 17, fontFamily: "Inter_700Bold" },
-  messageOptionsPreview: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 3 },
   optionsSheet: {
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
@@ -8378,11 +8370,10 @@ const st = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 2,
-    backgroundColor: "rgba(128,128,128,0.12)",
-    borderRadius: 12,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderWidth: 1,
+    backgroundColor: "transparent",
+    paddingHorizontal: 0,
+    paddingVertical: 1,
+    borderWidth: 0,
     borderColor: "transparent",
   },
   reactionEmoji: { fontSize: 14 },
@@ -8570,9 +8561,9 @@ const st = StyleSheet.create({
     elevation: 16,
     ...Platform.select({ web: { boxShadow: "0 4px 20px rgba(0,0,0,0.28)" } as any, default: { shadowColor: "#000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.28, shadowRadius: 16 } }),
   },
-  reactEmojiPillBtn: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
+  reactEmojiPillBtn: { width: 40, height: 40, borderRadius: 0, backgroundColor: "transparent", alignItems: "center", justifyContent: "center" },
   reactEmojiPillText: { fontSize: 26 },
-  reactEmojiActiveDot: { position: "absolute", bottom: 5, alignSelf: "center", width: 5, height: 5, borderRadius: 2.5 },
+  reactEmojiActiveDot: { position: "absolute", bottom: 1, alignSelf: "center", width: 5, height: 5, borderRadius: 2.5 },
   reactMoreGrid: {
     width: "100%", flexDirection: "row", flexWrap: "wrap",
     justifyContent: "center", gap: 4,
@@ -8580,10 +8571,10 @@ const st = StyleSheet.create({
     elevation: 10,
     ...Platform.select({ web: { boxShadow: "0 4px 12px rgba(0,0,0,0.18)" } as any, default: { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.18, shadowRadius: 12 } }),
   },
-  reactMoreGridBtn: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
+  reactMoreGridBtn: { width: 40, height: 40, borderRadius: 0, backgroundColor: "transparent", alignItems: "center", justifyContent: "center" },
 
-  reactEmojiRow:       { flexDirection: "row", justifyContent: "center", alignItems: "center", paddingVertical: 12, paddingHorizontal: 8, gap: 2 },
-  reactMoreGridInline: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", paddingHorizontal: 8, paddingBottom: 8, gap: 4 },
+  reactEmojiRow:       { flexDirection: "row", justifyContent: "center", alignItems: "center", paddingVertical: 8, paddingHorizontal: 8, gap: 6 },
+  reactMoreGridInline: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", paddingHorizontal: 8, paddingBottom: 8, gap: 6 },
   reactRowSep:         { height: StyleSheet.hairlineWidth, marginVertical: 2 },
   reactRow:            { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16, minHeight: 56 },
   reactRowIcon:        { marginRight: 18, width: 24, textAlign: "center" },
