@@ -107,6 +107,7 @@ export async function removeLocalNotesConversation(userId: string): Promise<void
       `${ENABLED_PREFIX}${userId}`,
       `${DATA_PREFIX}${userId}`,
       `${MESSAGES_PREFIX}${userId}`,
+      `chat_draft_${id}`,
     ]).catch(() => {}),
   ]);
 }
@@ -133,6 +134,47 @@ export async function saveLocalNotesMessage(
     .sort((a, b) => a.sent_at.localeCompare(b.sent_at));
   await AsyncStorage.setItem(key, JSON.stringify(next)).catch(() => {});
   await updateLocalNotesLastMessage(userId, message.encrypted_content, message.sent_at);
+}
+
+export async function updateLocalNotesMessage(
+  userId: string,
+  messageId: string,
+  encryptedContent: string,
+): Promise<void> {
+  const messages = await getLocalNotesMessages(userId);
+  const next = messages.map((message) =>
+    message.id === messageId
+      ? { ...message, encrypted_content: encryptedContent }
+      : message,
+  );
+  if (next.length === messages.length) {
+    await AsyncStorage.setItem(`${MESSAGES_PREFIX}${userId}`, JSON.stringify(next)).catch(() => {});
+  }
+
+  const sorted = [...next].sort((a, b) => a.sent_at.localeCompare(b.sent_at));
+  const latest = sorted[sorted.length - 1];
+  if (latest) {
+    await updateLocalNotesLastMessage(userId, latest.encrypted_content, latest.sent_at);
+  } else {
+    await clearLocalNotesMessages(userId);
+  }
+}
+
+export async function deleteLocalNotesMessage(
+  userId: string,
+  messageId: string,
+): Promise<void> {
+  const messages = await getLocalNotesMessages(userId);
+  const next = messages.filter((message) => message.id !== messageId);
+  await AsyncStorage.setItem(`${MESSAGES_PREFIX}${userId}`, JSON.stringify(next)).catch(() => {});
+
+  const sorted = [...next].sort((a, b) => a.sent_at.localeCompare(b.sent_at));
+  const latest = sorted[sorted.length - 1];
+  if (latest) {
+    await updateLocalNotesLastMessage(userId, latest.encrypted_content, latest.sent_at);
+  } else {
+    await clearLocalNotesMessages(userId);
+  }
 }
 
 export async function getLocalNotesMessages(userId: string): Promise<LocalNotesMessage[]> {

@@ -86,8 +86,11 @@ import {
   getLocalNotesConversation,
   getLocalNotesMessages,
   clearLocalNotesMessages,
+  deleteLocalNotesMessage,
   isLocalNotesId,
+  removeLocalNotesConversation,
   saveLocalNotesMessage,
+  updateLocalNotesMessage,
 } from "@/lib/storage/localNotes";
 import { LinkPreview } from "@/components/ui/LinkPreview";
 import { getPhonebookName } from "@/lib/storage/localContacts";
@@ -2635,7 +2638,7 @@ function ChatScreen() {
     // Native-only: web has no offline queue and no connectivity events to handle.
     const unsub = onConnectivityChange(async (online) => {
       setNetworkOnline(online);
-      if (online) {
+      if (online && !isLocalNotes) {
         await syncPendingMessages().catch(() => {});
         setMessages((prev) => prev.filter((m) => !m._pending));
         loadMessages();
@@ -3045,7 +3048,7 @@ function ChatScreen() {
   // We subscribe without a row filter (no IN support in Supabase realtime)
   // and do a lightweight client-side check inside setMessages.
   useEffect(() => {
-    if (!user || !id) return;
+    if (!user || !id || isLocalNotes) return;
     // Evict stale channel — double-tap can mount this effect twice for the same
     // chat before the first cleanup fires, leaving an already-subscribed channel.
     const _staleStatus = supabase.getChannels().find(
@@ -3088,7 +3091,7 @@ function ChatScreen() {
       )
       .subscribe();
     return () => { supabase.removeChannel(statusSub); };
-  }, [user, id]);
+  }, [user, id, isLocalNotes]);
 
   // ── Realtime: online status (1-on-1 chats only) ───────────────────────────
   useEffect(() => {
@@ -3772,7 +3775,9 @@ function ChatScreen() {
           onPress: async () => {
             setShowChatOptions(false);
             try {
-              if (isGroup) {
+              if (isLocalNotes) {
+                await removeLocalNotesConversation(user.id);
+              } else if (isGroup) {
                 await supabase.from("chat_members").delete().eq("chat_id", chatId).eq("user_id", user.id);
               } else {
                 await supabase.from("messages").delete().eq("chat_id", chatId);
@@ -4168,6 +4173,7 @@ STRICT RULES:
   }
 
   function handleReportMessage(msg: Message) {
+    if (isLocalNotes) return;
     setShowReactions(null);
     setAiResult(null);
     setAiResultType(null);
@@ -4195,6 +4201,7 @@ STRICT RULES:
   }
 
   async function handleSaveToPhone(msg: Message) {
+    if (isLocalNotes) return;
     setShowReactions(null);
     setAiResult(null);
     setAiResultType(null);
@@ -4227,6 +4234,7 @@ STRICT RULES:
   }
 
   async function handleViewEditHistory(msg: Message) {
+    if (isLocalNotes) return;
     setEditHistoryMsg(msg);
     setEditHistoryLoading(true);
     setShowReactions(null);
@@ -4249,6 +4257,21 @@ STRICT RULES:
       return;
     }
     setSending(true);
+    if (isLocalNotes) {
+      const editedAt = new Date().toISOString();
+      await updateLocalNotesMessage(user.id, editingMessage.id, text);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === editingMessage.id
+            ? { ...m, encrypted_content: text, edited_at: editedAt }
+            : m,
+        ),
+      );
+      setEditingMessage(null);
+      setInput("");
+      setSending(false);
+      return;
+    }
     await supabase.from("message_edit_history").insert({
       message_id: editingMessage.id,
       edited_by: user.id,
@@ -4286,6 +4309,13 @@ STRICT RULES:
         text: "Delete",
         style: "destructive" as const,
         onPress: async () => {
+          if (isLocalNotes) {
+            await deleteLocalNotesMessage(user?.id || "", msg.id);
+            setMessages((prev) => prev.filter((m) => m.id !== msg.id));
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            globalShowToast("Message deleted", { type: "info", icon: "trash" });
+            return;
+          }
           const { error } = await supabase
             .from("messages")
             .delete()
@@ -4305,7 +4335,7 @@ STRICT RULES:
   }
 
   async function handleStarMessage(msg: Message) {
-    if (!user) return;
+    if (!user || isLocalNotes) return;
     setShowReactions(null);
     setAiResult(null);
     setAiResultType(null);
@@ -4335,7 +4365,7 @@ STRICT RULES:
   }
 
   async function handleTranslateToLang(langCode: string) {
-    if (!translateMsg || translatingLang) return;
+    if (!translateMsg || translatingLang || isLocalNotes) return;
     setTranslatingLang(true);
     setAiResultType("translate");
     setAiResult(null);
@@ -4365,6 +4395,7 @@ STRICT RULES:
   }
 
   async function handleChatSummaryFull() {
+    if (isLocalNotes) return;
     setShowChatOptions(false);
     const recent = [...messages].slice(0, 30).reverse();
     const usable = recent.filter(
@@ -4414,6 +4445,7 @@ STRICT RULES:
   }
 
   async function openForward(msg: Message) {
+    if (isLocalNotes) return;
     setForwardMsg(msg);
     const { data } = await supabase
       .from("chats")
@@ -4478,7 +4510,7 @@ STRICT RULES:
   }
 
   async function addReaction(msg: Message, emoji: string) {
-    if (!user) return;
+    if (!user || isLocalNotes) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setShowReactions(null);
 
@@ -4762,6 +4794,10 @@ STRICT RULES:
     const amount = parseInt(envelopeAmount, 10);
     const count = parseInt(envelopeCount, 10) || 1;
     if (!amount || amount < 1 || !user) return;
+    if (isLocalNotes) {
+      showAlert("My Notes", "Notes stay text-only and fully offline.");
+      return;
+    }
     if (messageLimited) {
       showAlert("Message limit", `You can only send one message until ${chatInfo?.other_name || "this user"} replies or follows you.`);
       return;
@@ -7019,9 +7055,9 @@ STRICT RULES:
         backgroundColor={colors.surface}
         peekFraction={0.72}
       >
-        {/* Emoji picker row */}
-        <View style={st.reactEmojiRow}>
-          {REACTION_EMOJIS.map((emoji) => {
+         {/* Emoji picker row — reactions are a server feature, not part of local Notes */}
+         {!isLocalNotes && <View style={st.reactEmojiRow}>
+           {REACTION_EMOJIS.map((emoji) => {
             const alreadyReacted = showReactions?.reactions?.some((r) => r.emoji === emoji && r.myReaction);
             return (
               <TouchableOpacity
@@ -7046,9 +7082,9 @@ STRICT RULES:
           >
             <Ionicons name={showMoreEmojis ? "chevron-up" : "add"} size={22} color={colors.text} />
           </TouchableOpacity>
-        </View>
+         </View>}
 
-        {showMoreEmojis && (
+         {!isLocalNotes && showMoreEmojis && (
           <View style={st.reactMoreGridInline}>
             {REACTION_EMOJIS_ADVANCED.filter((e) => !REACTION_EMOJIS.includes(e)).map((emoji) => {
               const alreadyReacted = showReactions?.reactions?.some((r) => r.emoji === emoji && r.myReaction);
@@ -7093,14 +7129,16 @@ STRICT RULES:
           );
         })()}
 
-        {/* Forward */}
-        <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) { openForward(showReactions); setShowReactions(null); } }}>
-          <Ionicons name="arrow-redo" size={24} color={colors.text} style={st.reactRowIcon} />
-          <Text style={[st.reactRowLabel, { color: colors.text }]}>Forward</Text>
-        </TouchableOpacity>
+         {/* Forward — online chats only */}
+         {!isLocalNotes && (
+           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) { openForward(showReactions); setShowReactions(null); } }}>
+             <Ionicons name="arrow-redo" size={24} color={colors.text} style={st.reactRowIcon} />
+             <Text style={[st.reactRowLabel, { color: colors.text }]}>Forward</Text>
+           </TouchableOpacity>
+         )}
 
-        {/* Star Message */}
-        {showReactions && (() => {
+         {/* Star Message — online chats only */}
+         {!isLocalNotes && showReactions && (() => {
           const txt = showReactions.encrypted_content?.trim();
           const isGift = !txt || txt.startsWith("🎁 ") || txt.startsWith("🧧") || txt.includes("|giftId:");
           if (isGift) return null;
@@ -7113,19 +7151,21 @@ STRICT RULES:
         })()}
 
         {/* Save to Phone */}
-        {showReactions?.attachment_url && showReactions.attachment_type !== "video" && (
+         {!isLocalNotes && showReactions?.attachment_url && showReactions.attachment_type !== "video" && (
           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) handleSaveToPhone(showReactions); }}>
             <Ionicons name="download" size={24} color={colors.text} style={st.reactRowIcon} />
             <Text style={[st.reactRowLabel, { color: colors.text }]}>Save to Phone</Text>
           </TouchableOpacity>
         )}
 
-        {/* Translate */}
-        <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) openTranslatePicker(showReactions); }}>
-          <Ionicons name="language" size={24} color={colors.text} style={st.reactRowIcon} />
-          <Text style={[st.reactRowLabel, { color: colors.text }]}>Translate</Text>
-          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-        </TouchableOpacity>
+         {/* Translate — online chats only */}
+         {!isLocalNotes && (
+           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) openTranslatePicker(showReactions); }}>
+             <Ionicons name="language" size={24} color={colors.text} style={st.reactRowIcon} />
+             <Text style={[st.reactRowLabel, { color: colors.text }]}>Translate</Text>
+             <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+           </TouchableOpacity>
+         )}
 
         {/* Edit (own non-gift messages) */}
         {showReactions?.sender_id === user?.id && !showReactions?.attachment_url && !showReactions?.encrypted_content.startsWith("🎁 ") && !showReactions?.encrypted_content.startsWith("🧧") && !showReactions?.encrypted_content.includes("|giftId:") && (
@@ -7135,8 +7175,8 @@ STRICT RULES:
           </TouchableOpacity>
         )}
 
-        {/* Message Info */}
-        {showReactions?.sender_id === user?.id && (
+         {/* Message Info — delivery receipts are not used by local Notes */}
+         {!isLocalNotes && showReactions?.sender_id === user?.id && (
           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { setMsgInfoTarget(showReactions); setShowReactions(null); setAiResult(null); setAiResultType(null); setAiReplies([]); }}>
             <Ionicons name="information-circle" size={24} color={colors.text} style={st.reactRowIcon} />
             <Text style={[st.reactRowLabel, { color: colors.text }]}>Message Info</Text>
@@ -7144,7 +7184,7 @@ STRICT RULES:
         )}
 
         {/* View Edit History */}
-        {advancedFeatures.message_edit_history && showReactions?.edited_at && (
+         {!isLocalNotes && advancedFeatures.message_edit_history && showReactions?.edited_at && (
           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) handleViewEditHistory(showReactions); }}>
             <Ionicons name="time" size={24} color={colors.text} style={st.reactRowIcon} />
             <Text style={[st.reactRowLabel, { color: colors.text }]}>View Edit History</Text>
@@ -7152,7 +7192,7 @@ STRICT RULES:
         )}
 
         {/* Share to Feed */}
-        {advancedFeatures.chat_to_post && showReactions && (() => {
+         {!isLocalNotes && advancedFeatures.chat_to_post && showReactions && (() => {
           const txt = showReactions.encrypted_content?.trim();
           const isGift = !txt || txt.startsWith("🎁 ") || txt.startsWith("🧧") || txt.includes("|giftId:");
           if (isGift) return null;
@@ -7206,7 +7246,7 @@ STRICT RULES:
         )}
 
         {/* Report Message (others' messages) */}
-        {showReactions?.sender_id !== user?.id && (
+         {!isLocalNotes && showReactions?.sender_id !== user?.id && (
           <TouchableOpacity style={st.reactRow} activeOpacity={0.65} onPress={() => { if (showReactions) handleReportMessage(showReactions); }}>
             <Ionicons name="flag" size={24} color="#FF3B30" style={st.reactRowIcon} />
             <Text style={[st.reactRowLabel, { color: "#FF3B30" }]}>Report Message</Text>
@@ -7214,7 +7254,7 @@ STRICT RULES:
         )}
 
         {/* AI Features — group/channel chats only */}
-        {(chatInfo?.is_group || chatInfo?.is_channel) && (
+         {!isLocalNotes && (chatInfo?.is_group || chatInfo?.is_channel) && (
           <>
             <View style={[st.reactRowSep, { backgroundColor: colors.border }]} />
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 20, paddingVertical: 10 }}>
@@ -7565,7 +7605,7 @@ STRICT RULES:
                   label="Invite via Link"
                   onPress={() => { setShowChatOptions(false); setShowInviteLink(true); }} />
               )}
-              {advancedFeatures.chat_summary && (
+               {advancedFeatures.chat_summary && !isLocalNotes && (
                 <DdRow colors={colors} icon="sparkles" label="Summarize Chat"
                   onPress={() => { setShowChatOptions(false); handleChatSummaryFull(); }} />
               )}
