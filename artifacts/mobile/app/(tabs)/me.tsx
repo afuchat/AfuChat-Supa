@@ -542,14 +542,6 @@ export default function MeScreen() {
               colors={colors}
             />
             <MenuItem
-              icon="people-circle"
-              iconColor={accent}
-              label="Phone Contacts"
-              onPress={() => router.push("/phone-contacts" as any)}
-              showSeparator
-              colors={colors}
-            />
-            <MenuItem
               icon="ribbon"
               iconColor={accent}
               label="Achievements"
