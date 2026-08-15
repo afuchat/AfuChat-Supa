@@ -11,6 +11,12 @@ try {
   ScreenCapture = require("expo-screen-capture");
 } catch {}
 
+// Screen capture protection is process-wide on native platforms. Keep the
+// account preference and active chat policies separate so leaving one chat
+// cannot disable protection required by another.
+let accountScreenshotProtection = false;
+const protectedChatIds = new Set<string>();
+
 function simpleHash(pin: string): string {
   let hash = 5381;
   for (let i = 0; i < pin.length; i++) {
@@ -67,10 +73,17 @@ export async function isBiometricEnabled(): Promise<boolean> {
 }
 
 export async function setScreenshotProtectionEnabled(enabled: boolean): Promise<void> {
+  accountScreenshotProtection = enabled;
   try {
     await SecureStore?.setItemAsync(SCREENSHOT_KEY, enabled ? "1" : "0");
-    await applyScreenshotProtection(enabled);
+    await applyEffectiveScreenshotProtection();
   } catch {}
+}
+
+export async function setChatScreenshotProtection(chatId: string, enabled: boolean): Promise<void> {
+  if (enabled) protectedChatIds.add(chatId);
+  else protectedChatIds.delete(chatId);
+  await applyEffectiveScreenshotProtection();
 }
 
 export async function isScreenshotProtectionEnabled(): Promise<boolean> {
@@ -93,9 +106,13 @@ export async function applyScreenshotProtection(enabled: boolean): Promise<void>
   } catch {}
 }
 
+async function applyEffectiveScreenshotProtection(): Promise<void> {
+  await applyScreenshotProtection(accountScreenshotProtection || protectedChatIds.size > 0);
+}
+
 export async function restoreScreenshotProtection(): Promise<void> {
   try {
-    const enabled = await isScreenshotProtectionEnabled();
-    await applyScreenshotProtection(enabled);
+    accountScreenshotProtection = await isScreenshotProtectionEnabled();
+    await applyEffectiveScreenshotProtection();
   } catch {}
 }

@@ -3,7 +3,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { patchLocalSetting } from "@/lib/storage/localSettings";
-import { setScreenshotProtectionEnabled } from "@/lib/appLock";
 import { saveNotificationPreferences } from "@/lib/notificationPreferences";
 
 const CHAT_PREF_TO_LOCAL: Partial<Record<string, string>> = {
@@ -21,6 +20,7 @@ const SERVER_KEYS = new Set([
   "chat_theme", "bubble_style", "font_size", "sounds_enabled", "auto_download",
   "read_receipts", "chat_lock", "enter_to_send", "media_quality", "save_to_gallery",
   "link_previews", "typing_indicators", "archive_on_delete", "chat_backup",
+  "screenshot_protection",
 ]);
 
 export type ChatTheme =
@@ -47,11 +47,11 @@ export type ChatPrefs = {
   typing_indicators: boolean;
   archive_on_delete: boolean;
   chat_backup: boolean;
+  screenshot_protection: boolean;
   // ── Client-side prefs (AsyncStorage) ──
   compact_mode: boolean;
   reactions_enabled: boolean;
   autoplay_gifs: boolean;
-  screenshot_protection: boolean;
   send_haptics: boolean;
   message_grouping: boolean;
 };
@@ -166,13 +166,15 @@ export function ChatPreferencesProvider({ children }: { children: React.ReactNod
       } catch {
         pendingServerPrefs = {};
       }
-      setScreenshotProtectionEnabled(!!localPrefs.screenshot_protection).catch(() => {});
+      // Older builds stored this key locally. It is now server-side so the
+      // other participants can enforce the same policy in their chat.
+      delete localPrefs.screenshot_protection;
 
       // Load server-side prefs. Supabase returns errors instead of throwing,
       // so check the error explicitly before treating the response as valid.
       const { data, error: serverError } = await supabase
         .from("chat_preferences")
-        .select("user_id, chat_theme, bubble_style, font_size, sounds_enabled, auto_download, read_receipts, chat_lock, enter_to_send, media_quality, save_to_gallery, link_previews, typing_indicators, archive_on_delete, chat_backup")
+        .select("user_id, chat_theme, bubble_style, font_size, sounds_enabled, auto_download, read_receipts, chat_lock, enter_to_send, media_quality, save_to_gallery, link_previews, typing_indicators, archive_on_delete, chat_backup, screenshot_protection")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -189,19 +191,22 @@ export function ChatPreferencesProvider({ children }: { children: React.ReactNod
       // Pending writes win over a stale server snapshot. This keeps a setting
       // changed offline visible immediately and lets the next online load sync
       // it without reverting the switch.
-      setPrefs({
+      const mergedPrefs: ChatPrefs = {
         ...defaults,
         ...(data ?? {}),
         ...localPrefs,
         ...pendingServerPrefs,
-      });
+      };
+      setPrefs(mergedPrefs);
     } catch {
       // Keep the defaults available offline, but never leave the settings
       // screen in a permanent loading state.
       try {
         const raw = await AsyncStorage.getItem(LOCAL_PREFS_KEY + "_" + user.id);
         const localPrefs = raw ? JSON.parse(raw) : {};
-        setPrefs({ ...defaults, ...localPrefs });
+        delete localPrefs.screenshot_protection;
+        const fallbackPrefs = { ...defaults, ...localPrefs };
+        setPrefs(fallbackPrefs);
       } catch {
         setPrefs(defaults);
       }
@@ -216,11 +221,6 @@ export function ChatPreferencesProvider({ children }: { children: React.ReactNod
     setPrefs((p) => ({ ...p, [key]: value }));
 
     if (key === "chat_theme") AsyncStorage.setItem(APP_ACCENT_KEY, value as string).catch(() => {});
-    if (key === "screenshot_protection") {
-      // The preference used to be written but never applied to the OS.
-      // appLock is a safe no-op on web/unsupported devices.
-      setScreenshotProtectionEnabled(value as boolean).catch(() => {});
-    }
     if (key === "sounds_enabled") {
       // Keep message notification audio in sync with the chat preference.
       saveNotificationPreferences({ sounds: value as boolean });

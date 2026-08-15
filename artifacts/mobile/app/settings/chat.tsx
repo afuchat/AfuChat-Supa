@@ -428,7 +428,7 @@ export default function ChatSettingsScreen() {
             <>
               <Sep color={colors.border} />
               <TogRow colors={colors} themeColor={themeColor} icon="eye-off"
-                label="Screenshot Protection" desc="Blur chat content when app is in the background"
+                label="Screenshot Protection" desc="If any chat member enables this, screenshots are blocked for everyone in that chat"
                 value={prefs.screenshot_protection} onChange={(v) => updatePref("screenshot_protection", v)} />
             </>
           )}

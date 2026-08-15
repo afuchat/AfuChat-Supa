@@ -69,6 +69,7 @@ import { RichText } from "@/components/ui/RichText";
 import Colors from "@/constants/colors";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { showAlert } from "@/lib/alert";
+import { setChatScreenshotProtection } from "@/lib/appLock";
 import { generateGroupInviteLink } from "@/lib/groupInvite";
 import { showToast as globalShowToast } from "@/lib/toast";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
@@ -2007,6 +2008,43 @@ function ChatScreen() {
     const base = chatPrefs.media_quality === "High" ? 1.0 : chatPrefs.media_quality === "Low" ? 0.4 : 0.8;
     return chatIsLowData ? Math.min(base, 0.4) : base;
   })();
+
+  // Screen capture is process-wide. The server RPC checks every member in
+  // this conversation, so one participant opting in protects the chat for
+  // everyone viewing it. Default to protected while the policy is being
+  // checked: failure must never create a privacy window.
+  useEffect(() => {
+    const chatId = isDraft ? undefined : id;
+    if (!user || !chatId || isLocalNotesId(chatId)) return;
+    let cancelled = false;
+    setChatScreenshotProtection(chatId, true).catch(() => {});
+
+    const refreshPolicy = () => {
+      supabase
+        .rpc("chat_has_screenshot_protection", { p_chat_id: chatId })
+        .then(({ data, error }) => {
+          if (cancelled) return;
+          // Keep protection enabled if the policy cannot be verified.
+          setChatScreenshotProtection(chatId, error ? true : data === true).catch(() => {});
+        });
+    };
+    refreshPolicy();
+
+    const policyChannel = supabase
+      .channel(`chat-screenshot-policy:${chatId}:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "chat_preferences" },
+        refreshPolicy,
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      setChatScreenshotProtection(chatId, false).catch(() => {});
+      supabase.removeChannel(policyChannel);
+    };
+  }, [user?.id, id, isDraft, chatPrefs.screenshot_protection]);
 
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>([]);
