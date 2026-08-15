@@ -4395,7 +4395,7 @@ STRICT RULES:
   }
 
   async function handleChatSummaryFull() {
-    if (isLocalNotes) return;
+    if (isLocalNotes || (!chatInfo?.is_group && !chatInfo?.is_channel)) return;
     setShowChatOptions(false);
     const recent = [...messages].slice(0, 30).reverse();
     const usable = recent.filter(
@@ -7631,7 +7631,7 @@ STRICT RULES:
                   label="Invite via Link"
                   onPress={() => { setShowChatOptions(false); setShowInviteLink(true); }} />
               )}
-               {advancedFeatures.chat_summary && !isLocalNotes && (
+               {advancedFeatures.chat_summary && !isLocalNotes && (chatInfo?.is_group || chatInfo?.is_channel) && (
                 <DdRow colors={colors} icon="sparkles" label="Summarize Chat"
                   onPress={() => { setShowChatOptions(false); handleChatSummaryFull(); }} />
               )}
