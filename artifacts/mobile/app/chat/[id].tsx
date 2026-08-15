@@ -7694,25 +7694,6 @@ STRICT RULES:
         </View>
       </Modal>
 
-      {textSelectionMessageId && (
-        <View pointerEvents="box-none" style={st.textSelectionOverlay}>
-          <View style={[st.textSelectionBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Ionicons name="text-outline" size={17} color={BRAND} />
-            <View style={{ flex: 1 }}>
-              <Text style={[st.textSelectionTitle, { color: colors.text }]}>Text selection on</Text>
-              <Text style={[st.textSelectionSubtitle, { color: colors.textMuted }]}>Drag the handles to choose what to copy</Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => setTextSelectionMessageId(null)}
-              hitSlop={10}
-              style={[st.textSelectionDone, { backgroundColor: BRAND }]}
-            >
-              <Text style={st.textSelectionDoneText}>Done</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
       <ImageViewer
         images={imgViewer.images}
         initialIndex={imgViewer.index}
@@ -8657,13 +8638,6 @@ const st = StyleSheet.create({
   reactRowIcon:        { marginRight: 12, width: 20, textAlign: "center" },
   reactRowLabel:       { flex: 1, fontSize: 14.5, fontFamily: "Inter_600SemiBold" },
   reactRowHint:        { fontSize: 10.5, fontFamily: "Inter_400Regular", marginTop: 1 },
-  textSelectionOverlay: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 1000, alignItems: "center", paddingHorizontal: 14, paddingTop: 10 },
-  textSelectionBar: { width: "100%", maxWidth: 460, flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 18, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10, elevation: 12, ...Platform.select({ web: { boxShadow: "0 6px 20px rgba(0,0,0,0.20)" } as any, default: { shadowColor: "#000", shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.2, shadowRadius: 12 } }) },
-  textSelectionTitle: { fontSize: 12.5, fontFamily: "Inter_700Bold" },
-  textSelectionSubtitle: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 1 },
-  textSelectionDone: { borderRadius: 14, paddingHorizontal: 12, paddingVertical: 7 },
-  textSelectionDoneText: { color: "#fff", fontSize: 12, fontFamily: "Inter_700Bold" },
-
   sheetActionRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 4 },
   sheetActionText: { fontSize: 16, fontFamily: "Inter_500Medium" },
 
