@@ -678,9 +678,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // If MMKV was cleared but SecureStore still has tokens, fall back to the
           // stored account's userId so the user is NEVER routed to the welcome screen.
           const cachedUserId = getCachedUserId();
-          const accounts = await getStoredAccounts();
-          if (!isCurrentBootstrap()) return;
-          const primaryAccount = accounts[0] ?? null;
+          // When MMKV already has the identity, do not block the fast path on
+          // SecureStore/Android Keystore. Keystore initialization can be slow
+          // in standalone release builds even while the rest of the app is
+          // ready. The account entry is only needed for background token
+          // refresh and is retried below.
+          let primaryAccount: StoredAccount | null = null;
+          if (!cachedUserId) {
+            const accounts = await getStoredAccounts();
+            if (!isCurrentBootstrap()) return;
+            primaryAccount = accounts[0] ?? null;
+          }
 
           // Use stored account userId as fallback when MMKV was wiped
           const effectiveUserId = cachedUserId ?? primaryAccount?.userId ?? null;

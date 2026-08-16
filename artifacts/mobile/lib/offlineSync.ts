@@ -106,6 +106,16 @@ const onlineListeners: Array<() => void> = [];
 
 export function addOnlineListener(fn: () => void): () => void {
   onlineListeners.push(fn);
+  // A screen can mount after NetInfo has already reported the initial online
+  // state. In that case it would otherwise wait for the next connectivity
+  // transition and look offline until the next network change.
+  if (isOnline()) {
+    setTimeout(() => {
+      if (onlineListeners.includes(fn) && isOnline()) {
+        try { fn(); } catch {}
+      }
+    }, 0);
+  }
   return () => {
     const idx = onlineListeners.indexOf(fn);
     if (idx !== -1) onlineListeners.splice(idx, 1);

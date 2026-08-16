@@ -88,6 +88,17 @@ export function isOnline(): boolean {
 export function onConnectivityChange(fn: (online: boolean) => void): () => void {
   initNetInfo();
   _listeners.push(fn);
+  // NetInfo may finish its initial fetch before a screen's effect subscribes
+  // (more common in release builds, where module evaluation is faster). Replay
+  // the known state once so screens do not remain on their offline/cache path
+  // until the next physical network transition.
+  if (_netInfoReported) {
+    setTimeout(() => {
+      if (_listeners.includes(fn)) {
+        try { fn(_isOnline); } catch {}
+      }
+    }, 0);
+  }
   return () => {
     _listeners = _listeners.filter((l) => l !== fn);
   };

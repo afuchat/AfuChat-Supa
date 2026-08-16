@@ -278,7 +278,7 @@ export default function WelcomeScreen() {
     Animated.timing(pageX, {
       toValue: -nextIdx * SW,
       duration: 360,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== "web",
     }).start(({ finished }) => {
       isBusyRef.current = false;
       if (!finished) {
