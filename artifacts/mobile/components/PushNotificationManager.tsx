@@ -11,6 +11,10 @@ import {
   getNotificationTarget,
   handleNotificationResponse,
   registerPushToken,
+  getPushDiagnostics,
+  isPushTokenRegistrationDue,
+  PUSH_DIAGNOSTICS_ENABLED,
+  PUSH_NOTIFICATIONS_DISABLED,
   PUSH_ACTION_MARK_READ,
   type PushNotificationResponse,
 } from "@/lib/pushNotifications";
@@ -24,6 +28,7 @@ export default function PushNotificationManager() {
   const { user, session } = useAuth();
 
   useEffect(() => {
+    if (PUSH_NOTIFICATIONS_DISABLED) return;
     // AuthContext can briefly expose a cached/synthetic user while Android
     // restores the real Supabase session. Do not register a push token during
     // that window: the edge function needs a verified bearer session, and a
@@ -33,9 +38,12 @@ export default function PushNotificationManager() {
     let disposed = false;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let startupFallback: ReturnType<typeof setTimeout> | null = null;
+    let diagnosticsTimer: ReturnType<typeof setInterval> | null = null;
     let retryCount = 0;
     let interactionTask: { cancel?: () => void } | null = null;
     let registrationStarted = false;
+    let registrationInFlight = false;
+    let scheduledForce = false;
 
     const handleResponse = async (response: PushNotificationResponse) => {
       const requestId = response.notification?.request?.identifier ?? "unknown";
@@ -56,8 +64,10 @@ export default function PushNotificationManager() {
       }
     };
 
-    const register = () => {
-      if (!getNotificationPreferences().enabled) return;
+    const register = (force = false) => {
+      if (!getNotificationPreferences().enabled || registrationInFlight) return;
+      if (!force && !isPushTokenRegistrationDue()) return;
+      registrationInFlight = true;
       registerPushToken()
         .then((token) => {
           if (disposed) return;
@@ -69,28 +79,45 @@ export default function PushNotificationManager() {
           if (disposed || retryCount >= 3) return;
           const delay = Math.min(1000 * 2 ** retryCount, 15_000);
           retryCount += 1;
-          retryTimer = setTimeout(register, delay);
+           scheduleRegister(delay);
+         })
+         .finally(() => {
+           registrationInFlight = false;
         });
+    };
+
+    const scheduleRegister = (delay: number, force = false) => {
+      scheduledForce = scheduledForce || force;
+      if (retryTimer) return;
+      retryTimer = setTimeout(() => {
+        retryTimer = null;
+        const nextForce = scheduledForce;
+        scheduledForce = false;
+        register(nextForce);
+      }, delay);
     };
 
     const tokenListener = addPushTokenListener((token) => {
       if (disposed) return;
-      registeredToken = token;
-      register();
+      storage.setString(KEYS.PUSH_TOKEN, token);
+      storage.delete(KEYS.PUSH_TOKEN_REGISTERED_AT);
+      scheduleRegister(0, true);
     });
 
     const appStateSubscription = AppState.addEventListener("change", (state) => {
-      if (state === "active" && getNotificationPreferences().enabled) {
+      if (state === "active" && getNotificationPreferences().enabled && isPushTokenRegistrationDue()) {
         retryCount = 0;
         if (retryTimer) clearTimeout(retryTimer);
-        retryTimer = setTimeout(register, 250);
+        retryTimer = null;
+        scheduleRegister(250);
       }
     });
     const connectivityCleanup = onConnectivityChange((online) => {
-      if (!online || disposed || !getNotificationPreferences().enabled) return;
+      if (!online || disposed || !getNotificationPreferences().enabled || !isPushTokenRegistrationDue()) return;
       retryCount = 0;
       if (retryTimer) clearTimeout(retryTimer);
-      retryTimer = setTimeout(register, 250);
+      retryTimer = null;
+      scheduleRegister(250);
     });
 
     const responseListener = addNotificationResponseListener((response) => {
@@ -110,7 +137,7 @@ export default function PushNotificationManager() {
         if (registrationStarted || disposed) return;
         registrationStarted = true;
         configurePushNotifications();
-        retryTimer = setTimeout(register, 1500);
+        scheduleRegister(1500);
       };
       interactionTask = InteractionManager.runAfterInteractions(startRegistration);
       // InteractionManager can remain queued on slower devices while an
@@ -118,12 +145,18 @@ export default function PushNotificationManager() {
       // prevent the device from ever registering its push token.
       startupFallback = setTimeout(startRegistration, 2500);
     }
+    if (PUSH_DIAGNOSTICS_ENABLED) {
+      diagnosticsTimer = setInterval(() => {
+        console.info("[push diagnostics]", getPushDiagnostics());
+      }, 30_000);
+    }
 
     return () => {
       disposed = true;
       interactionTask?.cancel?.();
       if (startupFallback) clearTimeout(startupFallback);
       if (retryTimer) clearTimeout(retryTimer);
+      if (diagnosticsTimer) clearInterval(diagnosticsTimer);
       tokenListener?.remove();
       responseListener?.remove();
       appStateSubscription.remove();

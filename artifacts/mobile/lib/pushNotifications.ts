@@ -7,6 +7,54 @@ type NotificationsModule = typeof import("expo-notifications");
 
 let cachedNotifications: NotificationsModule | null | undefined;
 let handlerConfigured = false;
+let registrationInFlight: Promise<string | null> | null = null;
+const inFlightDeliveryKeys = new Set<string>();
+
+const PUSH_REGISTRATION_TTL_MS = 24 * 60 * 60 * 1000;
+export const PUSH_NOTIFICATIONS_DISABLED =
+  typeof process !== "undefined" && process.env.EXPO_PUBLIC_DISABLE_PUSH_NOTIFICATIONS === "1";
+export const PUSH_DIAGNOSTICS_ENABLED =
+  typeof process !== "undefined" && process.env.EXPO_PUBLIC_NOTIFICATION_DIAGNOSTICS === "1";
+
+type PushDiagnostics = {
+  registrationAttempts: number;
+  registrationDedupeHits: number;
+  registrationNetworkRequests: number;
+  registrationCacheHits: number;
+  deliveryRecipientRequests: number;
+  responseEvents: number;
+  activeResponseListeners: number;
+  activeTokenListeners: number;
+  configured: boolean;
+};
+
+const pushDiagnostics: PushDiagnostics = {
+  registrationAttempts: 0,
+  registrationDedupeHits: 0,
+  registrationNetworkRequests: 0,
+  registrationCacheHits: 0,
+  deliveryRecipientRequests: 0,
+  responseEvents: 0,
+  activeResponseListeners: 0,
+  activeTokenListeners: 0,
+  configured: false,
+};
+
+function recordPushDiagnostic(key: keyof Omit<PushDiagnostics, "activeResponseListeners" | "activeTokenListeners" | "configured">, amount = 1): void {
+  if (!PUSH_DIAGNOSTICS_ENABLED) return;
+  pushDiagnostics[key] += amount;
+}
+
+export function getPushDiagnostics(): PushDiagnostics {
+  return { ...pushDiagnostics };
+}
+
+export function isPushTokenRegistrationDue(): boolean {
+  if (PUSH_NOTIFICATIONS_DISABLED) return false;
+  const token = storage.getString(KEYS.PUSH_TOKEN);
+  const registeredAt = storage.getNumber(KEYS.PUSH_TOKEN_REGISTERED_AT) ?? 0;
+  return !token || !registeredAt || Date.now() - registeredAt >= PUSH_REGISTRATION_TTL_MS;
+}
 
 export const PUSH_CATEGORY_MESSAGE = "message";
 export const PUSH_ACTION_REPLY = "reply";
@@ -49,6 +97,7 @@ function getProjectId(): string | null {
 }
 
 export function configurePushNotifications(): void {
+  if (PUSH_NOTIFICATIONS_DISABLED) return;
   const notifications = getNotifications();
   if (!notifications || handlerConfigured) return;
 
@@ -102,17 +151,33 @@ export function configurePushNotifications(): void {
     .catch(() => {});
 
   handlerConfigured = true;
+  pushDiagnostics.configured = true;
 }
 
 export function addNotificationResponseListener(
   onResponse: (response: PushNotificationResponse) => void,
 ): { remove: () => void } | null {
+  if (PUSH_NOTIFICATIONS_DISABLED) return null;
   const notifications = getNotifications();
   if (!notifications) return null;
-  return notifications.addNotificationResponseReceivedListener(onResponse as any);
+  const subscription = notifications.addNotificationResponseReceivedListener((response) => {
+    recordPushDiagnostic("responseEvents");
+    onResponse(response as any);
+  });
+  if (PUSH_DIAGNOSTICS_ENABLED) pushDiagnostics.activeResponseListeners += 1;
+  let removed = false;
+  return {
+    remove: () => {
+      if (removed) return;
+      removed = true;
+      if (PUSH_DIAGNOSTICS_ENABLED) pushDiagnostics.activeResponseListeners = Math.max(0, pushDiagnostics.activeResponseListeners - 1);
+      subscription.remove();
+    },
+  };
 }
 
 export async function getLastNotificationResponse(): Promise<PushNotificationResponse | null> {
+  if (PUSH_NOTIFICATIONS_DISABLED) return null;
   const notifications = getNotifications();
   if (!notifications) return null;
   return (await notifications.getLastNotificationResponseAsync()) as PushNotificationResponse | null;
@@ -208,6 +273,14 @@ export async function handleNotificationResponse(
 }
 
 export async function registerPushToken(): Promise<string | null> {
+  if (PUSH_NOTIFICATIONS_DISABLED) return null;
+  if (registrationInFlight) {
+    recordPushDiagnostic("registrationDedupeHits");
+    return registrationInFlight;
+  }
+
+  const registration = (async (): Promise<string | null> => {
+    recordPushDiagnostic("registrationAttempts");
   const notifications = getNotifications();
   if (!notifications || Platform.OS === "web") return null;
 
@@ -232,15 +305,38 @@ export async function registerPushToken(): Promise<string | null> {
   const token = (await notifications.getExpoPushTokenAsync({ projectId })).data;
   if (!token) return null;
 
+  const previousToken = storage.getString(KEYS.PUSH_TOKEN);
+  const previousRegistrationAt = storage.getNumber(KEYS.PUSH_TOKEN_REGISTERED_AT) ?? 0;
+  if (
+    previousToken === token &&
+    previousRegistrationAt > 0 &&
+    Date.now() - previousRegistrationAt < PUSH_REGISTRATION_TTL_MS
+  ) {
+    recordPushDiagnostic("registrationCacheHits");
+    return token;
+  }
+
+  recordPushDiagnostic("registrationNetworkRequests");
   const { error } = await supabase.functions.invoke("register-push-token", {
     body: { token, platform: Platform.OS },
   });
   if (error) throw error;
 
+  storage.setString(KEYS.PUSH_TOKEN, token);
+  storage.setNumber(KEYS.PUSH_TOKEN_REGISTERED_AT, Date.now());
   return token;
+  })();
+
+  registrationInFlight = registration;
+  try {
+    return await registration;
+  } finally {
+    if (registrationInFlight === registration) registrationInFlight = null;
+  }
 }
 
 export async function disablePushToken(token: string): Promise<void> {
+  if (PUSH_NOTIFICATIONS_DISABLED) return;
   if (!token) return;
   await supabase.functions.invoke("register-push-token", {
     body: { token, platform: Platform.OS, enabled: false },
@@ -250,13 +346,22 @@ export async function disablePushToken(token: string): Promise<void> {
 export function addPushTokenListener(
   onToken: (token: string) => void,
 ): { remove: () => void } | null {
+  if (PUSH_NOTIFICATIONS_DISABLED) return null;
   const notifications = getNotifications();
   if (!notifications) return null;
-  return notifications.addPushTokenListener((event) => {
-    if (typeof event.data === "string" && event.data.length > 0) {
-      onToken(event.data);
-    }
+  const subscription = notifications.addPushTokenListener((event) => {
+    if (typeof event.data === "string" && event.data.length > 0) onToken(event.data);
   });
+  if (PUSH_DIAGNOSTICS_ENABLED) pushDiagnostics.activeTokenListeners += 1;
+  let removed = false;
+  return {
+    remove: () => {
+      if (removed) return;
+      removed = true;
+      if (PUSH_DIAGNOSTICS_ENABLED) pushDiagnostics.activeTokenListeners = Math.max(0, pushDiagnostics.activeTokenListeners - 1);
+      subscription.remove();
+    },
+  };
 }
 
 export async function notifyChatRecipients(params: {
@@ -270,43 +375,46 @@ export async function notifyChatRecipients(params: {
   attachmentUrl?: string | null;
   attachmentType?: string | null;
 }): Promise<void> {
-  if (Platform.OS === "web" || params.recipientIds.length === 0) return;
+  if (PUSH_NOTIFICATIONS_DISABLED || Platform.OS === "web" || params.recipientIds.length === 0) return;
+  const recipientIds = [...new Set(params.recipientIds)].filter((id) => id && id !== params.senderId);
+  if (recipientIds.length === 0) return;
 
-  const results = await Promise.allSettled(
-    params.recipientIds.map((recipientUserId) =>
-      supabase.functions.invoke("send-push-notification", {
-        body: {
-          recipientUserId,
-          senderId: params.senderId,
-          senderName: params.senderName,
-          senderAvatarUrl: params.senderAvatarUrl ?? undefined,
-          body: params.body,
+  // A message can be observed by more than one optimistic/send path. Keep one
+  // delivery job per message and recipient set, rather than creating a burst
+  // of identical Edge Function requests.
+  const deliveryKey = `${params.messageId}:${[...recipientIds].sort().join(",")}`;
+  if (inFlightDeliveryKeys.has(deliveryKey)) return;
+  inFlightDeliveryKeys.add(deliveryKey);
+  recordPushDiagnostic("deliveryRecipientRequests", recipientIds.length);
+
+  try {
+    const { error } = await supabase.functions.invoke("send-push-notification", {
+      body: {
+        recipientUserIds: recipientIds,
+        senderId: params.senderId,
+        senderName: params.senderName,
+        senderAvatarUrl: params.senderAvatarUrl ?? undefined,
+        body: params.body,
+        chatId: params.chatId,
+        messageId: params.messageId,
+        attachmentUrl: params.attachmentUrl ?? undefined,
+        attachmentType: params.attachmentType ?? undefined,
+        categoryId: PUSH_CATEGORY_MESSAGE,
+        data: {
           chatId: params.chatId,
           messageId: params.messageId,
-          attachmentUrl: params.attachmentUrl ?? undefined,
-          attachmentType: params.attachmentType ?? undefined,
-          categoryId: PUSH_CATEGORY_MESSAGE,
-          data: {
-            chatId: params.chatId,
-            messageId: params.messageId,
-            senderId: params.senderId ?? null,
-            senderName: params.senderName,
-            senderAvatarUrl: params.senderAvatarUrl ?? null,
-            attachmentUrl: params.attachmentUrl ?? null,
-            attachmentType: params.attachmentType ?? null,
-          },
+          senderId: params.senderId ?? null,
+          senderName: params.senderName,
+          senderAvatarUrl: params.senderAvatarUrl ?? null,
+          attachmentUrl: params.attachmentUrl ?? null,
+          attachmentType: params.attachmentType ?? null,
         },
-      }),
-    ),
-  );
-
-  if (__DEV__) {
-    results.forEach((result) => {
-      if (result.status === "rejected") {
-        console.warn("[push] message notification failed:", result.reason);
-      } else if (result.value.error) {
-        console.warn("[push] message notification rejected:", result.value.error);
-      }
+      },
     });
+    if (__DEV__ && error) console.warn("[push] message notification rejected:", error);
+  } catch (error) {
+    if (__DEV__) console.warn("[push] message notification failed:", error);
+  } finally {
+    inFlightDeliveryKeys.delete(deliveryKey);
   }
 }

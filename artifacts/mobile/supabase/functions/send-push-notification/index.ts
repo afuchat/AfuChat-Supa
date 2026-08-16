@@ -59,9 +59,16 @@ Deno.serve(async (req) => {
     senderId = userData.user.id;
   }
 
-  const userId = isServiceRequest
-    ? (typeof body?.userId === "string" ? body.userId : "")
-    : (typeof body?.recipientUserId === "string" ? body.recipientUserId : "");
+  const requestedRecipientIds = Array.isArray(body?.recipientUserIds)
+    ? body.recipientUserIds.filter((value: unknown): value is string => typeof value === "string" && value.length > 0)
+    : typeof body?.recipientUserId === "string"
+      ? [body.recipientUserId]
+      : [];
+  const recipientUserIds = [...new Set(
+    isServiceRequest
+      ? (typeof body?.userId === "string" ? [body.userId] : requestedRecipientIds)
+      : requestedRecipientIds,
+  )].slice(0, 100);
   const data = body?.data && typeof body.data === "object" ? body.data : {};
   const suppliedSenderId =
     typeof body?.senderId === "string"
@@ -146,12 +153,12 @@ Deno.serve(async (req) => {
     ...(finalSenderAvatarUrl ? { senderAvatarUrl: finalSenderAvatarUrl } : {}),
     ...(finalAttachmentUrl ? { attachmentUrl: finalAttachmentUrl } : {}),
   };
-  if (!userId || (!title && !suppliedSenderName) || !messageBody) {
-    return json({ error: "userId, sender name/title, and body are required." }, 400);
+  if (recipientUserIds.length === 0 || (!title && !suppliedSenderName) || !messageBody) {
+    return json({ error: "recipient, sender name/title, and body are required." }, 400);
   }
   if (!isServiceRequest) {
     const chatId = typeof body?.chatId === "string" ? body.chatId : "";
-    if (!chatId || !senderId || userId === senderId) {
+    if (!chatId || !senderId || recipientUserIds.includes(senderId)) {
       return json({ error: "A valid chat recipient is required." }, 400);
     }
 
@@ -159,11 +166,11 @@ Deno.serve(async (req) => {
       .from("chat_members")
       .select("user_id")
       .eq("chat_id", chatId)
-      .in("user_id", [senderId, userId]);
+      .in("user_id", [senderId, ...recipientUserIds]);
 
     if (memberError) return json({ error: "Could not verify chat membership." }, 500);
     const memberIds = new Set((members ?? []).map((member) => member.user_id));
-    if (!memberIds.has(senderId) || !memberIds.has(userId)) {
+    if (!memberIds.has(senderId) || recipientUserIds.some((recipientId) => !memberIds.has(recipientId))) {
       return json({ error: "Sender and recipient must belong to the chat." }, 403);
     }
   }
@@ -171,7 +178,7 @@ Deno.serve(async (req) => {
   const { data: devices, error: deviceError } = await admin
     .from("push_devices")
     .select("id, token")
-    .eq("user_id", userId)
+    .in("user_id", recipientUserIds)
     .eq("enabled", true);
 
   if (deviceError) return json({ error: "Could not load push devices." }, 500);
