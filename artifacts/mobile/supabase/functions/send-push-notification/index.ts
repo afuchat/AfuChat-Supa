@@ -13,6 +13,21 @@ function json(body: unknown, status = 200) {
   });
 }
 
+function validRemoteUrl(value: string): string {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
+function isImageAttachment(type: string, url: string): boolean {
+  if (type === "image" || type === "gif") return true;
+  if (type) return false;
+  return /\.(?:png|jpe?g|gif|webp)(?:$|[?#])/i.test(url);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -95,11 +110,13 @@ Deno.serve(async (req) => {
   const chatId = typeof body?.chatId === "string" ? body.chatId : "";
   const messageId = typeof body?.messageId === "string" ? body.messageId : "";
   const resolvedSenderId = senderId || suppliedSenderId;
+  const safeSenderAvatarUrl = validRemoteUrl(senderAvatarUrl);
+  const safeAttachmentUrl = validRemoteUrl(attachmentUrl);
   const notificationData = {
     ...data,
     ...(resolvedSenderId ? { senderId: resolvedSenderId } : {}),
-    ...(suppliedSenderAvatarUrl ? { senderAvatarUrl: suppliedSenderAvatarUrl } : {}),
-    ...(attachmentUrl ? { attachmentUrl } : {}),
+    ...(safeSenderAvatarUrl ? { senderAvatarUrl: safeSenderAvatarUrl } : {}),
+    ...(safeAttachmentUrl ? { attachmentUrl: safeAttachmentUrl } : {}),
     ...(attachmentType ? { attachmentType } : {}),
     ...(chatId ? { chatId } : {}),
     ...(messageId ? { messageId } : {}),
@@ -118,10 +135,16 @@ Deno.serve(async (req) => {
     senderAvatarUrl = senderProfile?.avatar_url?.trim() || senderAvatarUrl;
   }
   const title = senderName || suppliedTitle;
+  const finalSenderAvatarUrl = validRemoteUrl(senderAvatarUrl);
+  const finalAttachmentUrl = validRemoteUrl(attachmentUrl);
+  const richImage = isImageAttachment(attachmentType, finalAttachmentUrl)
+    ? finalAttachmentUrl
+    : finalSenderAvatarUrl;
   const finalNotificationData = {
     ...notificationData,
     ...(senderName ? { senderName } : {}),
-    ...(senderAvatarUrl ? { senderAvatarUrl } : {}),
+    ...(finalSenderAvatarUrl ? { senderAvatarUrl: finalSenderAvatarUrl } : {}),
+    ...(finalAttachmentUrl ? { attachmentUrl: finalAttachmentUrl } : {}),
   };
   if (!userId || (!title && !suppliedSenderName) || !messageBody) {
     return json({ error: "userId, sender name/title, and body are required." }, 400);
@@ -162,8 +185,8 @@ Deno.serve(async (req) => {
     categoryId,
     channelId: "messages",
     sound: "default",
-    ...(attachmentUrl || senderAvatarUrl
-      ? { richContent: { image: attachmentUrl || senderAvatarUrl } }
+    ...(richImage
+      ? { mutableContent: true, richContent: { image: richImage } }
       : {}),
   }));
 

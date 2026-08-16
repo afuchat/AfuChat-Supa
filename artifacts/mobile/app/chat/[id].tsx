@@ -4850,6 +4850,36 @@ STRICT RULES:
     }
   }
 
+  function notifyInsertedChatMessage(params: {
+    chatId: string;
+    messageId?: string | null;
+    body: string;
+    attachmentUrl?: string | null;
+    attachmentType?: string | null;
+  }) {
+    if (!user || !chatInfo || !params.messageId) return;
+    const recipientIds = (
+      chatInfo.member_ids.length > 0
+        ? chatInfo.member_ids
+        : chatInfo.other_id
+          ? [chatInfo.other_id]
+          : []
+    ).filter((recipientId: string) => recipientId !== user.id);
+    if (recipientIds.length === 0) return;
+
+    void notifyChatRecipients({
+      recipientIds,
+      senderId: user.id,
+      senderName: profile?.display_name || "Someone",
+      senderAvatarUrl: profile?.avatar_url ?? null,
+      body: params.body,
+      chatId: params.chatId,
+      messageId: params.messageId,
+      attachmentUrl: params.attachmentUrl ?? null,
+      attachmentType: params.attachmentType ?? null,
+    });
+  }
+
   async function handleInlineSendMoney() {
     if (!user || !profile || !chatInfo?.other_id || walletSending) return;
     const amt = parseInt(walletAmount, 10);
@@ -4884,6 +4914,11 @@ STRICT RULES:
           const newMsg: Message = { ...msgResult.data, sender: { display_name: profile.display_name || "You", avatar_url: profile.avatar_url || null, handle: profile.handle || "" }, reactions: [], status: "sent" };
           setMessages((prev) => [newMsg, ...prev]);
           flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+          notifyInsertedChatMessage({
+            chatId: activeChatId,
+            messageId: msgResult.data.id,
+            body: `${walletCurrency === "acoin" ? "🪙" : "✨"} Sent ${amt.toLocaleString()} ${coinLabel}${noteText ? ` - ${noteText}` : ""}`,
+          });
         }
       }
       refreshProfile?.();
@@ -5053,16 +5088,8 @@ STRICT RULES:
           sender_handle: profile?.handle ?? "",
         };
         recipientIds.forEach((rid: string) => broadcastToUserInbox(rid, broadcastPayload));
-         void notifyChatRecipients({
-           recipientIds,
-           senderId: user.id,
-           senderName: profile?.display_name || "Someone",
-           senderAvatarUrl: profile?.avatar_url ?? null,
-           body: text,
-           chatId: activeChatId,
-           messageId: inserted.id,
-         });
       }
+      notifyInsertedChatMessage({ chatId: activeChatId, messageId: inserted.id, body: text });
     }
 
     try { const { rewardXp } = await import("../../lib/rewardXp"); rewardXp("message_sent"); } catch (_) {}
@@ -5104,10 +5131,15 @@ STRICT RULES:
     }
 
     const envId = envResult?.envelope_id || "";
-    await supabase.from("messages").insert({
+    const { data: insertedEnvelope } = await supabase.from("messages").insert({
       chat_id: activeChatId,
       sender_id: user.id,
       encrypted_content: `🧧 Red Envelope [${envId}] - ${envelopeMsg || "Good luck!"}`,
+    }).select("id").single();
+    notifyInsertedChatMessage({
+      chatId: activeChatId,
+      messageId: insertedEnvelope?.id,
+      body: `🧧 Red Envelope - ${envelopeMsg || "Good luck!"}`,
     });
 
     try { const { rewardXp } = await import("../../lib/rewardXp"); rewardXp("red_envelope_sent"); } catch (_) {}
@@ -5201,10 +5233,15 @@ STRICT RULES:
         last_updated: new Date().toISOString(),
       }, { onConflict: "gift_id" });
 
-    await supabase.from("messages").insert({
+    const { data: insertedGift } = await supabase.from("messages").insert({
       chat_id: activeChatId,
       sender_id: user.id,
       encrypted_content: `🎁 ${gift.emoji} ${gift.name}${message.trim() ? ` - ${message.trim()}` : ""}|giftId:${gift.id}|receiverId:${receiverId}`,
+    }).select("id").single();
+    notifyInsertedChatMessage({
+      chatId: activeChatId,
+      messageId: insertedGift?.id,
+      body: `🎁 ${gift.emoji} ${gift.name}${message.trim() ? ` - ${message.trim()}` : ""}`,
     });
 
     try { const { rewardXp } = await import("../../lib/rewardXp"); rewardXp("gift_sent"); } catch (_) {}
@@ -5417,6 +5454,12 @@ STRICT RULES:
 
     if (inserted) {
       setMessages((prev) => prev.map((m) => m.id === tempId ? { ...m, id: inserted.id } : m));
+      notifyInsertedChatMessage({
+        chatId: activeChatId,
+        messageId: inserted.id,
+        body: emoji,
+        attachmentType: "sticker",
+      });
     }
   }
 
@@ -5687,13 +5730,13 @@ STRICT RULES:
           return;
         }
 
-        const { error: insertErr } = await supabase.from("messages").insert({
+        const { data: insertedVoice, error: insertErr } = await supabase.from("messages").insert({
           chat_id: activeChatId,
           sender_id: user.id,
           encrypted_content: "🎤 Voice message",
           attachment_url: publicUrl,
           attachment_type: "audio",
-        });
+        }).select("id").single();
         if (insertErr) {
           setMessages((prev) => prev.filter((m) => m.id !== tempId));
           showAlert("Error", "Failed to send voice message.");
@@ -5704,6 +5747,13 @@ STRICT RULES:
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         loadMessages();
         setSending(false);
+        notifyInsertedChatMessage({
+          chatId: activeChatId,
+          messageId: insertedVoice?.id,
+          body: "🎤 Voice message",
+          attachmentUrl: publicUrl,
+          attachmentType: "audio",
+        });
       } catch (err: any) {
         console.warn("[Voice/web] Error:", err?.message || err);
         webMediaRecorderRef.current = null;
@@ -5790,21 +5840,13 @@ STRICT RULES:
       loadMessages();
       setSending(false);
       if (insertedVoice?.id && chatInfo) {
-        const recipientIds = (
-          chatInfo.member_ids.length > 0 ? chatInfo.member_ids : chatInfo.other_id ? [chatInfo.other_id] : []
-        ).filter((rid: string) => rid !== user.id);
-        if (recipientIds.length > 0) {
-          void notifyChatRecipients({
-            recipientIds,
-            senderId: user.id,
-            senderName: profile?.display_name || "Someone",
-            senderAvatarUrl: profile?.avatar_url ?? null,
-            body: "🎤 Voice message",
-            chatId: activeChatId,
-            messageId: insertedVoice.id,
-            attachmentType: "audio",
-          });
-        }
+        notifyInsertedChatMessage({
+          chatId: activeChatId,
+          messageId: insertedVoice.id,
+          body: "🎤 Voice message",
+          attachmentUrl: publicUrl,
+          attachmentType: "audio",
+        });
       }
       // Delete the local recording from cacheDirectory now that upload is complete
       if (uri) {
@@ -6945,23 +6987,14 @@ STRICT RULES:
                 .insert({ chat_id: activeChatId, sender_id: user.id, encrypted_content: "GIF", attachment_url: url, attachment_type: "gif" })
                 .select("id")
                 .single();
-              if (!gifError && insertedGif?.id && chatInfo) {
-                const recipientIds = (
-                  chatInfo.member_ids.length > 0 ? chatInfo.member_ids : chatInfo.other_id ? [chatInfo.other_id] : []
-                ).filter((rid: string) => rid !== user.id);
-                if (recipientIds.length > 0) {
-                  void notifyChatRecipients({
-                    recipientIds,
-                    senderId: user.id,
-                    senderName: profile?.display_name || "Someone",
-                    senderAvatarUrl: profile?.avatar_url ?? null,
-                    body: "GIF",
-                    chatId: activeChatId,
-                    messageId: insertedGif.id,
-                    attachmentUrl: url,
-                    attachmentType: "gif",
-                  });
-                }
+              if (!gifError && insertedGif?.id) {
+                notifyInsertedChatMessage({
+                  chatId: activeChatId,
+                  messageId: insertedGif.id,
+                  body: "GIF",
+                  attachmentUrl: url,
+                  attachmentType: "gif",
+                });
               }
               loadMessages();
             }}
@@ -7165,10 +7198,16 @@ STRICT RULES:
                           try {
                             const activeChatId = await getOrCreateChatId();
                             if (!activeChatId || !user) return;
-                            await supabase.from("messages").insert({
+                            const { data: insertedContact } = await supabase.from("messages").insert({
                               chat_id: activeChatId,
                               sender_id: user.id,
                               encrypted_content: `👤 ${item.name}${item.phone ? `\n${item.phone}` : ""}`,
+                            }).select("id").single();
+                            notifyInsertedChatMessage({
+                              chatId: activeChatId,
+                              messageId: insertedContact?.id,
+                              body: `👤 ${item.name}${item.phone ? `\n${item.phone}` : ""}`,
+                              attachmentType: "contact",
                             });
                             setShowAttachPanel(false);
                           } catch { showAlert("Error", "Could not send contact."); }
