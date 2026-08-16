@@ -102,7 +102,9 @@ export function GlobalInboxListener() {
     };
 
     const interactionTask = InteractionManager.runAfterInteractions(() => {
-      reconnectTimer = setTimeout(connect, 700);
+      // Let the initial route and its primary data requests settle before
+      // opening another realtime channel on release Android builds.
+      reconnectTimer = setTimeout(connect, 2000);
     });
 
     return () => {

@@ -661,16 +661,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (cachedSync) setProfile(cachedSync as Profile);
           setLoading(false);
           // Refresh profile from Supabase in the background (non-blocking)
-           fetchProfile(session.user.id, isCurrentBootstrap).catch(() => {});
+           fetchProfile(session.user.id, isCurrentBootstrap)
+             .then((freshProfile) => {
+               // AI-chat provisioning is housekeeping, not boot-critical data.
+               // Avoid a fourth Supabase request competing with the first chat
+               // list/feed requests in a standalone release build.
+               setTimeout(() => {
+                 if (isCurrentBootstrap()) {
+                   ensureAfuAiChat(session.user.id, freshProfile?.display_name).catch(() => {});
+                 }
+               }, 5000);
+             })
+             .catch(() => {});
           scheduleOfflineSync();
-          supabase
-            .from("profiles")
-            .select("display_name")
-            .eq("id", session.user.id)
-            .single()
-            .then(({ data }) => {
-               ensureAfuAiChat(session.user.id, data?.display_name).catch(() => {});
-            }, () => {});
         } else {
           // No live session — try to stay "soft logged in" from local storage.
           //
@@ -886,15 +889,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             !isSwitchingRef.current &&
             !isUserSigningOut.current,
         )
-          .then(() => {
-            supabase
-              .from("profiles")
-              .select("display_name")
-              .eq("id", newSession.user.id)
-              .single()
-              .then(({ data }) => {
-                 ensureAfuAiChat(newSession.user.id, data?.display_name).catch(() => {});
-              }, () => {});
+           .then((freshProfile) => {
+             setTimeout(() => {
+               if (
+                 authGenerationRef.current === eventGeneration &&
+                 !isSwitchingRef.current &&
+                 !isUserSigningOut.current
+               ) {
+                 ensureAfuAiChat(newSession.user.id, freshProfile?.display_name).catch(() => {});
+               }
+             }, 5000);
           })
           .catch(() => {});
       }

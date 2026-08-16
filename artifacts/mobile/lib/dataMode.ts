@@ -6,8 +6,11 @@ type Listener = (mode: DataMode) => void;
 
 const STORAGE_KEY = "afu_data_mode_override";
 
-let _mode: DataMode = "low";
-let _isWifi = false;
+// Native NetInfo is asynchronous. Start with the unrestricted mode so a
+// connected release build does not throttle its first feed/media requests
+// while the initial network classification is still in flight.
+let _mode: DataMode = "high";
+let _isWifi = true;
 let _manualOverride: DataMode | null = null;
 let _listeners: Listener[] = [];
 let _initialized = false;

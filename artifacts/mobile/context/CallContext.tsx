@@ -152,7 +152,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       const interactionTask = InteractionManager.runAfterInteractions(() => {
         timer = setTimeout(() => {
           if (!cancelled) initCallEngine(user.id);
-        }, 700);
+        // Call signaling is not needed to render the first screen. Standalone
+        // Android builds initialize native/WebRTC services more expensively
+        // than Expo Go, so keep this off the critical data-loading window.
+        }, 2500);
       });
       return () => {
         cancelled = true;

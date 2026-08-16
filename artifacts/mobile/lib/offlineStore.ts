@@ -27,9 +27,13 @@ export type PendingMessage = {
   created_at: string;
 };
 
-// Start cache-first until NetInfo has provided a real answer. Treating a cold
-// boot as online makes offline Android launches wait on doomed Supabase calls.
-let _isOnline = false;
+// NetInfo is asynchronous on native, and release builds can mount the first
+// screen before its initial fetch resolves. Treating that unknown window as
+// offline makes connected users take the cache-only branch and can leave the
+// app looking offline until the next network transition. Screens already
+// hydrate local caches first, so allow network work during the short unknown
+// window; once NetInfo reports, the real state takes over immediately.
+let _isOnline = true;
 let _listeners: ((online: boolean) => void)[] = [];
 // Reconnect-specific listeners — fired ONLY when transitioning from offline → online.
 // Use onReconnect() to subscribe; screens use this to trigger a data refresh
@@ -80,9 +84,11 @@ function initNetInfo() {
 export function isOnline(): boolean {
   // Start the connectivity bridge on first use instead of during module
   // evaluation. This keeps importing the offline cache safe and cheap during
-  // auth/navigation startup while preserving the cache-first default.
+  // auth/navigation startup while preserving a cache-first render.
   initNetInfo();
-  return _isOnline;
+  // Unknown connectivity must not make a connected release build look offline.
+  // NetInfo will correct this as soon as its first native result arrives.
+  return _netInfoReported ? _isOnline : true;
 }
 
 export function onConnectivityChange(fn: (online: boolean) => void): () => void {

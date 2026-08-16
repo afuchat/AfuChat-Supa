@@ -90,7 +90,7 @@ export default function PushNotificationManager() {
       // are all native work. Keep them out of the first release-build frame.
       interactionTask = InteractionManager.runAfterInteractions(() => {
         configurePushNotifications();
-        retryTimer = setTimeout(register, 1200);
+        retryTimer = setTimeout(register, 3500);
       });
     }
 
