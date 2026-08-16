@@ -26,7 +26,7 @@ import QRPosterSheet from "@/components/ui/QRPosterSheet";
 import Colors from "@/constants/colors";
 import OfflineBanner from "@/components/ui/OfflineBanner";
 import { showAlert } from "@/lib/alert";
-import { isOnline } from "@/lib/offlineStore";
+import { isOnline, onConnectivityChange } from "@/lib/offlineStore";
 import { showToast } from "@/lib/toast";
 import { TrustpilotReviewCard } from "@/components/TrustpilotReviewPrompt";
 
@@ -210,21 +210,30 @@ export default function MeScreen() {
 
   async function showHandlePurchase(handle: string) {
     void Haptics.selectionAsync();
+    if (!isOnline()) {
+      showToast("Username details are unavailable offline");
+      return;
+    }
     setPurchaseLoading(true);
-    const { data } = await supabase
-      .from("username_listings")
-      .select("price, created_at, seller_id, profiles!username_listings_seller_id_fkey(handle)")
-      .eq("username", handle)
-      .not("sold_to_id", "is", null)
-      .maybeSingle();
-    setPurchaseLoading(false);
-    if (!data) return;
-    setPurchasePopup({
-      handle,
-      price: (data as any).price ?? 0,
-      purchasedAt: (data as any).created_at ?? "",
-      sellerHandle: (data as any).profiles?.handle ?? null,
-    });
+    try {
+      const { data } = await supabase
+        .from("username_listings")
+        .select("price, created_at, seller_id, profiles!username_listings_seller_id_fkey(handle)")
+        .eq("username", handle)
+        .not("sold_to_id", "is", null)
+        .maybeSingle();
+      if (!data) return;
+      setPurchasePopup({
+        handle,
+        price: (data as any).price ?? 0,
+        purchasedAt: (data as any).created_at ?? "",
+        sellerHandle: (data as any).profiles?.handle ?? null,
+      });
+    } catch {
+      showToast("Username details are unavailable right now");
+    } finally {
+      setPurchaseLoading(false);
+    }
   }
 
   function fmtDate(iso: string) {
@@ -239,15 +248,26 @@ export default function MeScreen() {
     AsyncStorage.getItem(STATS_KEY).then((raw) => {
       if (raw) { try { const { fc, fgc, pc } = JSON.parse(raw); setFollowerCount(fc ?? 0); setFollowingCount(fgc ?? 0); setPostCount(pc ?? 0); } catch {} }
     }).catch(() => {});
-    if (!isOnline()) return;
-    Promise.all([
-      supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", user.id),
-      supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", user.id),
-      supabase.from("posts").select("*", { count: "exact", head: true }).eq("author_id", user.id),
-    ]).then(([{ count: fc }, { count: fgc }, { count: pc }]) => {
-      setFollowerCount(fc ?? 0); setFollowingCount(fgc ?? 0); setPostCount(pc ?? 0);
-      AsyncStorage.setItem(STATS_KEY, JSON.stringify({ fc, fgc, pc })).catch(() => {});
-    }).catch(() => {});
+    let cancelled = false;
+    const loadRemoteStats = () => {
+      if (cancelled || !isOnline()) return;
+      Promise.all([
+        supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", user.id),
+        supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", user.id),
+        supabase.from("posts").select("*", { count: "exact", head: true }).eq("author_id", user.id),
+      ]).then(([{ count: fc }, { count: fgc }, { count: pc }]) => {
+        if (cancelled) return;
+        setFollowerCount(fc ?? 0); setFollowingCount(fgc ?? 0); setPostCount(pc ?? 0);
+        AsyncStorage.setItem(STATS_KEY, JSON.stringify({ fc, fgc, pc })).catch(() => {});
+      }).catch(() => {});
+    };
+    const unsubscribe = onConnectivityChange((online) => {
+      if (online) loadRemoteStats();
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, [user?.id]);
 
   // ── Live stats via realtime ──────────────────────────────────────────────────
@@ -259,39 +279,83 @@ export default function MeScreen() {
         try { const cur = raw ? JSON.parse(raw) : {}; AsyncStorage.setItem(STATS_KEY, JSON.stringify({ ...cur, ...patch })).catch(() => {}); } catch {}
       });
     }
-    const ch = supabase
-      .channel(`me-stats:${user.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "follows", filter: `following_id=eq.${user.id}` }, () =>
-        void (async () => {
-          try {
-            const { count } = await supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", user.id);
-            setFollowerCount(count ?? 0);
-            persist({ fc: count ?? 0 });
-          } catch {}
-        })()
-      )
-      .on("postgres_changes", { event: "*", schema: "public", table: "follows", filter: `follower_id=eq.${user.id}` }, () =>
-        void (async () => {
-          try {
-            const { count } = await supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", user.id);
-            setFollowingCount(count ?? 0);
-            persist({ fgc: count ?? 0 });
-          } catch {}
-        })()
-      )
-      .on("postgres_changes", { event: "*", schema: "public", table: "posts", filter: `author_id=eq.${user.id}` }, () =>
-        void (async () => {
-          try {
-            const { count } = await supabase.from("posts").select("*", { count: "exact", head: true }).eq("author_id", user.id);
-            setPostCount(count ?? 0);
-            persist({ pc: count ?? 0 });
-          } catch {}
-        })()
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    let channel: any = null;
+    let cancelled = false;
+
+    const startRealtime = () => {
+      if (cancelled || channel || !isOnline()) return;
+      channel = supabase
+        .channel(`me-stats:${user.id}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "follows", filter: `following_id=eq.${user.id}` }, () =>
+          void (async () => {
+            try {
+              const { count } = await supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", user.id);
+              setFollowerCount(count ?? 0);
+              persist({ fc: count ?? 0 });
+            } catch {}
+          })()
+        )
+        .on("postgres_changes", { event: "*", schema: "public", table: "follows", filter: `follower_id=eq.${user.id}` }, () =>
+          void (async () => {
+            try {
+              const { count } = await supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", user.id);
+              setFollowingCount(count ?? 0);
+              persist({ fgc: count ?? 0 });
+            } catch {}
+          })()
+        )
+        .on("postgres_changes", { event: "*", schema: "public", table: "posts", filter: `author_id=eq.${user.id}` }, () =>
+          void (async () => {
+            try {
+              const { count } = await supabase.from("posts").select("*", { count: "exact", head: true }).eq("author_id", user.id);
+              setPostCount(count ?? 0);
+              persist({ pc: count ?? 0 });
+            } catch {}
+          })()
+        )
+        .subscribe();
+    };
+
+    const stopRealtime = () => {
+      if (!channel) return;
+      const current = channel;
+      channel = null;
+      supabase.removeChannel(current).catch(() => {});
+    };
+
+    // Wait for NetInfo's first result before opening a channel. This avoids
+    // Supabase's reconnect loop when the app is launched without connectivity.
+    const unsubscribe = onConnectivityChange((online) => {
+      if (online) startRealtime();
+      else stopRealtime();
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+      stopRealtime();
+    };
   }, [user?.id]);
 
+  // A cached/synthetic user can keep the app shell usable while offline even
+  // when this device has never persisted the full profile row. Do not bounce
+  // the user out of the Me tab in that state.
+  if (!loading && !profile && user) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
+        <OfflineBanner />
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32, gap: 12 }}>
+          <Ionicons name="person-circle-outline" size={52} color={colors.textMuted} />
+          <Text style={{ color: colors.text, fontSize: 17, fontFamily: "Inter_600SemiBold", textAlign: "center" }}>
+            Your profile is available when you reconnect
+          </Text>
+          <Text style={{ color: colors.textMuted, fontSize: 13, lineHeight: 19, textAlign: "center" }}>
+            We could not find a saved profile on this device yet. Your account and cached chats are still safe.
+          </Text>
+        </View>
+      </View>
+    );
+  }
   if (!loading && !profile) return <Redirect href="/discover" />;
   if (loading || !profile) {
     return (

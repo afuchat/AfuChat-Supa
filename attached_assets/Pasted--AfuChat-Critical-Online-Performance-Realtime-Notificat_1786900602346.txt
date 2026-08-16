@@ -1,0 +1,808 @@
+# AfuChat — Critical Online Performance, Realtime & Notification Fix
+
+You are a senior React Native, Expo, Supabase Realtime, Android performance, and push-notification engineer.
+
+AfuChat has a critical production problem that must be diagnosed and fixed at the architectural level.
+
+## The Most Important Observation
+
+The behavior is now clearly established:
+
+### When AfuChat is offline:
+
+* The application is fast.
+* Navigation is responsive.
+* Back buttons respond normally.
+* Pages open normally.
+* Chats open normally.
+* Buttons respond normally.
+* The application feels smooth.
+
+### When AfuChat is online:
+
+* The application initially opens fast.
+* Once network data starts arriving, performance begins to deteriorate.
+* The more realtime/data activity occurs, the slower the application becomes.
+* Eventually even basic interactions become extremely slow.
+* Opening chats becomes slow.
+* Opening pages becomes slow.
+* Navigation becomes slow.
+* Back buttons become slow.
+* Saving becomes slow.
+* Tapping UI elements can feel delayed or completely unresponsive.
+
+### Critical conclusion
+
+**Do NOT treat this as a general navigation-performance problem.**
+
+The strongest hypothesis is that incoming network/realtime data is causing excessive:
+
+* JavaScript execution
+* state updates
+* React rerenders
+* realtime event processing
+* database requests
+* cache updates
+* subscriptions
+* listeners
+* memory usage
+* data transformations
+
+The app is fast when the incoming workload disappears.
+
+Therefore, the first priority is to identify exactly what happens when AfuChat goes from:
+
+```text
+OFFLINE
+↓
+FAST
+```
+
+to:
+
+```text
+ONLINE
+↓
+DATA ARRIVES
+↓
+PROCESSING INCREASES
+↓
+RENDERS/STATE UPDATES INCREASE
+↓
+JS THREAD BECOMES BUSY
+↓
+ENTIRE APP BECOMES SLOW
+```
+
+---
+
+# 1. DO NOT RANDOMLY OPTIMIZE SCREENS
+
+Do not begin by individually optimizing:
+
+* Home
+* Chat
+* Discover
+* Profile
+* Settings
+* Notifications
+* Wallet
+* Stories
+
+Those screens may only be victims of a global performance problem.
+
+First identify the online-data workload responsible for freezing the application.
+
+---
+
+# 2. CREATE A CONTROLLED ONLINE/OFFLINE TEST
+
+Create a diagnostic build with instrumentation.
+
+Test the same device using:
+
+### Test A — Offline
+
+Disable network connectivity.
+
+Measure:
+
+* startup
+* navigation
+* back button
+* chat opening
+* page opening
+* button response
+* memory
+* JS FPS
+
+### Test B — Online but Realtime Disabled
+
+Allow normal API requests but temporarily disable all Realtime subscriptions.
+
+Measure the same operations.
+
+### Test C — Realtime Enabled
+
+Enable Realtime.
+
+Allow AfuChat to run for at least 20–30 minutes while receiving data.
+
+Measure:
+
+* FPS
+* memory
+* renders
+* subscriptions
+* events/sec
+* state updates/sec
+* database requests
+* JS thread activity
+
+The objective is to identify exactly when performance begins to deteriorate.
+
+---
+
+# 3. ISOLATE EVERY REALTIME SYSTEM
+
+Do not enable everything at once.
+
+Create diagnostic configurations:
+
+### Build 1
+
+No Realtime.
+
+### Build 2
+
+Messaging Realtime only.
+
+### Build 3
+
+Messaging + presence.
+
+### Build 4
+
+Messaging + notifications.
+
+### Build 5
+
+Messaging + presence + notifications + feed updates.
+
+### Build 6
+
+Everything.
+
+Compare performance between each build.
+
+This must identify which subsystem causes the degradation.
+
+---
+
+# 4. COUNT REALTIME SUBSCRIPTIONS
+
+Instrument the application.
+
+Display/log:
+
+```text
+Active Realtime Channels
+Active Listeners
+Incoming Events/sec
+State Updates/sec
+```
+
+Test:
+
+```text
+Launch
+Open Chat
+Back
+Open Chat
+Back
+Switch tabs
+Return
+Open Chat
+Back
+Repeat
+```
+
+The number of active subscriptions must remain predictable.
+
+If it looks like:
+
+```text
+Launch: 5
+After navigation: 10
+After more navigation: 20
+After more navigation: 40
+After more navigation: 80
+```
+
+there is a subscription lifecycle leak.
+
+Fix it.
+
+Every subscription must have proper cleanup.
+
+---
+
+# 5. TRACE EVERY REALTIME EVENT
+
+For every important realtime event, trace:
+
+```text
+Realtime event
+↓
+Event handler
+↓
+Data transformation
+↓
+State/cache update
+↓
+Components affected
+↓
+React renders
+```
+
+We need to know:
+
+> How much work does one incoming event cause?
+
+A single message should not cause the entire application to rerender.
+
+---
+
+# 6. FIND GLOBAL RERENDERING
+
+Investigate all global providers and stores.
+
+Especially:
+
+* Auth
+* User
+* Chat
+* Notifications
+* Presence
+* App state
+* Wallet
+* Stories
+* Feed
+* Calls
+* Settings
+
+Determine whether incoming data causes:
+
+```text
+Realtime event
+↓
+Global provider update
+↓
+Entire navigation tree rerender
+```
+
+If yes, redesign the data flow.
+
+High-frequency data must be isolated.
+
+---
+
+# 7. ISOLATE HIGH-FREQUENCY DATA
+
+Do not allow these to trigger global application rerenders:
+
+* typing indicators
+* presence
+* online status
+* unread counts
+* message delivery
+* read receipts
+* reactions
+* message events
+* call status
+
+Use targeted state updates.
+
+Preferred architecture:
+
+```text
+Realtime
+↓
+Targeted store/cache
+↓
+Affected feature
+↓
+Affected components only
+```
+
+Not:
+
+```text
+Realtime
+↓
+Global Context
+↓
+Entire application
+```
+
+---
+
+# 8. INVESTIGATE PRESENCE
+
+The notification system currently has another serious problem:
+
+A user can be actively using AfuChat, but the system can treat the user as offline.
+
+Do not use one simplistic:
+
+```text
+user.online = true
+```
+
+value as the entire presence system.
+
+Presence must account for:
+
+* active app session
+* background state
+* disconnected state
+* reconnection
+* multiple devices
+* network interruption
+
+Do not update the database on every user interaction.
+
+Throttle activity updates.
+
+---
+
+# 9. DO NOT USE PRESENCE AS THE ONLY PUSH-NOTIFICATION DECISION
+
+Do NOT implement:
+
+```text
+if online:
+    don't send notification
+else:
+    send notification
+```
+
+based solely on Realtime Presence.
+
+A Realtime connection is not the same thing as:
+
+> "The user is currently looking at this conversation."
+
+The notification system must distinguish between:
+
+```text
+User active + viewing this conversation
+User active + viewing another screen
+User backgrounded
+User offline
+```
+
+Example:
+
+```text
+User is active
++
+Viewing John's conversation
++
+John sends message
+=
+Update chat UI
+No unnecessary push
+```
+
+But:
+
+```text
+User is active
++
+Browsing Discover
++
+John sends message
+=
+Push/notification should be allowed
+```
+
+---
+
+# 10. FIX PUSH NOTIFICATION REGISTRATION
+
+Every registered device must have its own valid notification information.
+
+Track appropriately:
+
+```text
+user_id
+device_id
+push_token
+platform
+app_version
+enabled
+last_registered_at
+last_seen_at
+```
+
+Do not assume one push token per user.
+
+Verify that tokens are actually registered and usable.
+
+Handle:
+
+* token changes
+* logout
+* reinstall
+* multiple devices
+* invalid tokens
+* disabled notifications
+
+---
+
+# 11. TRACE THE COMPLETE PUSH PIPELINE
+
+For every notification, verify:
+
+```text
+Message/event
+↓
+Database trigger/function
+↓
+Recipient identified
+↓
+Device identified
+↓
+Push token found
+↓
+Push provider request
+↓
+FCM/provider response
+↓
+Notification delivered
+```
+
+Do not log only:
+
+```text
+Notification sent
+```
+
+Record meaningful diagnostic information at every stage.
+
+Determine exactly where delivery fails when an active user is incorrectly classified.
+
+---
+
+# 12. CHECK FOR DUPLICATE DATABASE REQUESTS
+
+Incoming realtime events may be causing additional API/database calls.
+
+Look for:
+
+```text
+Realtime event
+↓
+State update
+↓
+useEffect
+↓
+Supabase query
+↓
+Another state update
+↓
+Another query
+```
+
+This can create a feedback loop.
+
+Instrument all Supabase requests.
+
+Track:
+
+```text
+Requests/minute
+Average response size
+Duplicate requests
+Requests triggered by realtime
+Requests triggered by navigation
+```
+
+---
+
+# 13. CHECK FOR DATA ACCUMULATION
+
+Look for arrays that continuously grow:
+
+* messages
+* notifications
+* posts
+* stories
+* reactions
+* events
+* presence
+* cached records
+
+Watch for patterns such as:
+
+```js
+setData(prev => [...prev, newData])
+```
+
+Determine whether data is being:
+
+* duplicated
+* accumulated indefinitely
+* unnecessarily copied
+* repeatedly sorted
+* repeatedly filtered
+* repeatedly transformed
+
+Use pagination, limits, deduplication, and targeted updates.
+
+---
+
+# 14. CHECK MEMORY GROWTH
+
+Measure memory:
+
+```text
+Startup
+5 minutes
+10 minutes
+20 minutes
+30 minutes
+```
+
+Then repeat while:
+
+* receiving messages
+* opening chats
+* switching tabs
+* receiving notifications
+* receiving realtime events
+* scrolling feeds
+
+If memory continuously increases, investigate:
+
+* subscriptions
+* listeners
+* timers
+* closures
+* cached objects
+* message arrays
+* media
+* retained components
+
+---
+
+# 15. CHECK TIMERS AND LISTENERS
+
+Search the entire codebase for:
+
+```text
+setInterval
+setTimeout
+requestAnimationFrame
+AppState
+useFocusEffect
+navigation listeners
+notification listeners
+keyboard listeners
+NetInfo listeners
+```
+
+Verify every listener/timer has proper cleanup.
+
+A listener must not multiply every time the user navigates.
+
+---
+
+# 16. KEEP THE JAVASCRIPT THREAD FREE
+
+The application must remain responsive while data arrives.
+
+Investigate expensive operations such as:
+
+```text
+JSON.parse
+JSON.stringify
+map
+filter
+sort
+reduce
+large object cloning
+large state updates
+```
+
+Especially when executed for every realtime event.
+
+Do not process thousands of records because one new message arrived.
+
+---
+
+# 17. LOW-END ANDROID IS A PRIMARY REQUIREMENT
+
+This is not an optimization only for flagship phones.
+
+AfuChat must be designed to work well on:
+
+* older Android devices
+* low-RAM devices
+* slower CPUs
+* slower storage
+* slower networks
+
+Test on actual low-performance Android hardware if possible.
+
+Do not assume that performance on a modern development machine represents the user's experience.
+
+---
+
+# 18. MEDIA PERFORMANCE
+
+AfuChat contains images and other media.
+
+For low-end devices:
+
+* Use thumbnails.
+* Resize images appropriately.
+* Lazy-load media.
+* Avoid loading full-resolution images unnecessarily.
+* Avoid decoding many large images simultaneously.
+* Do not preload unnecessary videos.
+* Cache intelligently.
+* Limit simultaneous media work.
+
+---
+
+# 19. STARTUP MUST NOT WAIT FOR EVERYTHING
+
+The application should become interactive quickly.
+
+Only critical operations should happen before the UI becomes usable.
+
+Move non-critical work after initial rendering:
+
+```text
+Critical:
+Authentication
+Navigation
+Essential user state
+
+Deferred:
+Analytics
+Secondary synchronization
+Non-critical caches
+Optional services
+Background refresh
+```
+
+---
+
+# 20. PRODUCTION RELEASE TESTING
+
+Expo Go being fast is NOT sufficient.
+
+Build and test an actual release APK/AAB.
+
+The test must be performed on a low-performance Android device.
+
+Test:
+
+```text
+Launch
+↓
+Connect to network
+↓
+Data begins arriving
+↓
+Leave app running
+↓
+Receive realtime events
+↓
+Navigate
+↓
+Open chats
+↓
+Send messages
+↓
+Receive messages
+↓
+Switch tabs
+↓
+Repeat for 20–30 minutes
+```
+
+The app must remain responsive throughout.
+
+---
+
+# 21. PERFORMANCE ACCEPTANCE CRITERIA
+
+The final application must satisfy all of the following:
+
+### Offline
+
+Fast.
+
+### Online with normal data
+
+Still fast.
+
+### Online with active Realtime
+
+Still fast.
+
+### High realtime activity
+
+Still responsive.
+
+### Low-end Android
+
+Still usable.
+
+### Long sessions
+
+Performance must not progressively deteriorate.
+
+### Navigation
+
+Back and navigation actions must remain responsive.
+
+### Chat
+
+Chat must open quickly.
+
+### Buttons
+
+Buttons must respond without noticeable delays.
+
+### Memory
+
+Memory must remain stable.
+
+### Realtime
+
+No subscription leaks.
+
+### Notifications
+
+Registered users must reliably receive notifications according to their actual app/session state.
+
+### Presence
+
+Active users must not incorrectly appear offline.
+
+---
+
+# 22. FINAL RULE
+
+Do not declare the application optimized because:
+
+> "It opens quickly."
+
+That is not the problem.
+
+The real requirement is:
+
+> **AfuChat must remain fast after it connects, starts receiving real user data, and continues running realtime systems.**
+
+The current behavior proves that the application is fast when the data workload is absent.
+
+Therefore:
+
+**Find what incoming data is doing to the application.**
+
+Measure it.
+
+Identify the exact bottleneck.
+
+Fix the architecture.
+
+Then verify it on a real low-performance Android device using a production release build.
+
+The final result must be:
+
+**Fast offline → Fast online → Fast under realtime activity → Fast on low-end Android → Stable for long sessions → Reliable notifications.**

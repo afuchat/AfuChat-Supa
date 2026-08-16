@@ -72,12 +72,18 @@ importers:
 
   .:
     dependencies:
+      '@afuchat1/engagera':
+        specifier: 0.1.5
+        version: 0.1.5
       '@babel/generator':
         specifier: 7.29.7
         version: 7.29.7
       '@babel/types':
         specifier: 7.29.7
         version: 7.29.7
+      react-native-compressor:
+        specifier: 1.6.0
+        version: 1.6.0(react-native@0.83.6(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0)
     devDependencies:
       typescript:
         specifier: ~5.9.2
@@ -1665,10 +1671,12 @@ packages:
   '@xmldom/xmldom@0.8.13':
     resolution: {integrity: sha512-KRYzxepc14G/CEpEGc3Yn+JKaAeT63smlDr+vjB8jRfgTBBI9wRj/nkQEO+ucV8p8I9bfKLWp37uHgFrbntPvw==}
     engines: {node: '>=10.0.0'}
+    deprecated: this version has critical issues, please update to the latest version
 
   '@xmldom/xmldom@0.9.10':
     resolution: {integrity: sha512-A9gOqLdi6cV4ibazAjcQufGj0B1y/vDqYrcuP6d/6x8P27gRS8643Dj9o1dEKtB6O7fwxb2FgBmJS2mX7gpvdw==}
     engines: {node: '>=14.6'}
+    deprecated: this version has critical issues, please update to the latest version
 
   abort-controller@3.0.0:
     resolution: {integrity: sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==}
@@ -3389,6 +3397,12 @@ packages:
   react-native-compressor@1.19.4:
     resolution: {integrity: sha512-xRFgCHtGLxwHpf2WyyVqPWuYQvawrhBNPVf59GT6kpzRtA4IYSk87Q6wHq8boEqrlX/e8ENOvAxxEaY+823aAA==}
     engines: {node: '>= 22.11.0'}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
+
+  react-native-compressor@1.6.0:
+    resolution: {integrity: sha512-v6HkV0syvq7FRNXM7nz1YDAWZEChRYjCLA1NHE5kaBVHL1KvpS/qZ+Z+pARQPZKHaleyUcV9Tj25hRhRqxZQZw==}
     peerDependencies:
       react: '*'
       react-native: '*'
@@ -7739,6 +7753,11 @@ snapshots:
   react-is@19.2.8: {}
 
   react-native-compressor@1.19.4(react-native@0.83.6(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0):
+    dependencies:
+      react: 19.2.0
+      react-native: 0.83.6(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0)
+
+  react-native-compressor@1.6.0(react-native@0.83.6(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0):
     dependencies:
       react: 19.2.0
       react-native: 0.83.6(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0)

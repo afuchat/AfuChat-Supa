@@ -7,7 +7,9 @@
     "typescript": "~5.9.2"
   },
   "dependencies": {
+    "@afuchat1/engagera": "0.1.5",
     "@babel/generator": "7.29.7",
-    "@babel/types": "7.29.7"
+    "@babel/types": "7.29.7",
+    "react-native-compressor": "1.6.0"
   }
 }

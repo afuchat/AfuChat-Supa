@@ -25,7 +25,7 @@ import {
 } from "@/lib/offlineStore";
 import { clearAllConversations } from "@/lib/storage/localConversations";
 import { invalidateConversationsPreload } from "@/lib/conversationsPreload";
-import { saveLocalProfile, deleteLocalProfile } from "@/lib/storage/localProfile";
+import { saveLocalProfile, deleteLocalProfile, getLocalProfile } from "@/lib/storage/localProfile";
 import { saveLocalSettings, deleteLocalSettings } from "@/lib/storage/localSettings";
 import { clearProfileCache } from "@/lib/profileCache";
 import { startOfflineSync } from "@/lib/offlineSync";
@@ -167,7 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!isCurrent()) return null;
 
     if (!isOnline()) {
-      const cached = await getCachedProfile();
+      const cached = (await getCachedProfile()) ?? (await getLocalProfile(userId));
       if (!isCurrent()) return null;
       if (cached) setProfile(cached as Profile);
       setSubscription(null);
@@ -234,7 +234,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return profileData as Profile | null;
     } catch {
       try {
-        const cached = await getCachedProfile();
+        const cached = (await getCachedProfile()) ?? (await getLocalProfile(userId));
         if (!isCurrent()) return null;
         if (cached) setProfile(cached as Profile);
         return cached as Profile | null;
@@ -708,7 +708,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Restore MMKV userId if it was wiped (ensures fast startup next time)
             if (!cachedUserId && effectiveUserId) setCachedUserId(effectiveUserId);
 
-            const cached = await getCachedProfile();
+            const cached = (await getCachedProfile()) ?? (await getLocalProfile(effectiveUserId));
             if (!isCurrentBootstrap()) return;
             if (cached) setProfile(cached as Profile);
 
