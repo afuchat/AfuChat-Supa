@@ -32,7 +32,11 @@ function applyNetworkState(detected: DataMode) {
 }
 
 function detectFromNetState(state: any): DataMode {
-  if (!state.isConnected) return "low";
+  // NetInfo reports `null` while the native connectivity probe is still
+  // resolving. Treat that short window as unrestricted so a connected release
+  // build does not enter cache-only/low-data behavior during startup.
+  if (state.isConnected === false) return "low";
+  if (state.isConnected !== true) return "high";
   if (state.type === "cellular") return "low";
   if (state.details?.isConnectionExpensive) return "low";
   return "high";

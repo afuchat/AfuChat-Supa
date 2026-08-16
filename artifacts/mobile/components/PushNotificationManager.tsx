@@ -7,7 +7,6 @@ import {
   addPushTokenListener,
   clearLastNotificationResponse,
   configurePushNotifications,
-  disablePushToken,
   getLastNotificationResponse,
   getNotificationTarget,
   handleNotificationResponse,
@@ -32,10 +31,11 @@ export default function PushNotificationManager() {
     if (!user?.id || !session?.user?.id || session.user.id !== user.id) return;
 
     let disposed = false;
-    let registeredToken: string | null = null;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let startupFallback: ReturnType<typeof setTimeout> | null = null;
     let retryCount = 0;
     let interactionTask: { cancel?: () => void } | null = null;
+    let registrationStarted = false;
 
     const handleResponse = async (response: PushNotificationResponse) => {
       const requestId = response.notification?.request?.identifier ?? "unknown";
@@ -61,7 +61,6 @@ export default function PushNotificationManager() {
       registerPushToken()
         .then((token) => {
           if (disposed) return;
-          registeredToken = token;
           if (token) storage.setString(KEYS.PUSH_TOKEN, token);
           retryCount = 0;
         })
@@ -107,24 +106,28 @@ export default function PushNotificationManager() {
     if (getNotificationPreferences().enabled) {
       // Notification channel setup, permission checks, and token registration
       // are all native work. Keep them out of the first release-build frame.
-      interactionTask = InteractionManager.runAfterInteractions(() => {
+      const startRegistration = () => {
+        if (registrationStarted || disposed) return;
+        registrationStarted = true;
         configurePushNotifications();
-        retryTimer = setTimeout(register, 3500);
-      });
+        retryTimer = setTimeout(register, 1500);
+      };
+      interactionTask = InteractionManager.runAfterInteractions(startRegistration);
+      // InteractionManager can remain queued on slower devices while an
+      // animation or native interaction never fully settles. Do not let that
+      // prevent the device from ever registering its push token.
+      startupFallback = setTimeout(startRegistration, 2500);
     }
 
     return () => {
       disposed = true;
       interactionTask?.cancel?.();
+      if (startupFallback) clearTimeout(startupFallback);
       if (retryTimer) clearTimeout(retryTimer);
       tokenListener?.remove();
       responseListener?.remove();
       appStateSubscription.remove();
       connectivityCleanup();
-      if (registeredToken) {
-        disablePushToken(registeredToken).catch(() => {});
-        storage.delete(KEYS.PUSH_TOKEN);
-      }
     };
   }, [user?.id, session?.user?.id]);
 

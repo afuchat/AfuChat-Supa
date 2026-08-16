@@ -19,6 +19,7 @@
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.POST_NOTIFICATIONS",
         "android.permission.VIBRATE",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
@@ -92,6 +93,13 @@
       [
         "expo-router",
         {}
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#1f95ff"
+        }
       ],
       "expo-font",
       "@react-native-google-signin/google-signin",
