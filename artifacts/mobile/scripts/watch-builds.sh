@@ -1,6 +1,6 @@
 #!/bin/bash
 cd "$(dirname "$0")/.."
-export EXPO_TOKEN="${EXPO_TOKEN:-$(grep -oP '(?<=EXPO_TOKEN=)[^\s'"'"']+' ../../.replit 2>/dev/null | head -1)}"
+export EXPO_TOKEN="${EXPO_TOKEN:-${EXPO_ACCESS_TOKEN:-}}"
 APK_ID="f6bf701b-9a7e-4e9e-9413-b59cc7c94318"
 AAB_ID="e4cdd882-b26f-4046-bf6e-65815cab78c0"
 echo "=== Monitoring EAS Android builds (bug fixes + OAuth) ==="

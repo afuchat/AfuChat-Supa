@@ -6,7 +6,7 @@ echo "Bumping version..."
 node scripts/bump-version.js
 
 echo "Starting EAS build..."
-EAS_NO_VCS=1 EXPO_NO_INTERACTIVE=1 npx eas-cli@latest build \
+EAS_NO_VCS=1 EXPO_NO_INTERACTIVE=1 EXPO_TOKEN="${EXPO_TOKEN:-${EXPO_ACCESS_TOKEN:-}}" npx eas-cli@latest build \
   --platform android \
   --profile preview \
   --non-interactive \

@@ -2,7 +2,7 @@
   "expo": {
     "name": "AfuChat",
     "slug": "afuchat",
-    "version": "2.2.13",
+    "version": "2.2.14",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "afuchat",
@@ -74,7 +74,7 @@
           ]
         }
       ],
-      "versionCode": 2214
+      "versionCode": 2216
     },
     "plugins": [
       [
@@ -190,7 +190,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.afuchat.afuapp",
-      "buildNumber": "2.2.13",
+      "buildNumber": "2.2.14",
       "associatedDomains": [
         "applinks:afuchat.com",
         "applinks:www.afuchat.com"
