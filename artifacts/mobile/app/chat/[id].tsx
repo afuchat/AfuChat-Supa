@@ -5057,6 +5057,7 @@ STRICT RULES:
            recipientIds,
            senderId: user.id,
            senderName: profile?.display_name || "Someone",
+           senderAvatarUrl: profile?.avatar_url ?? null,
            body: text,
            chatId: activeChatId,
            messageId: inserted.id,
@@ -5356,8 +5357,19 @@ STRICT RULES:
         const recipientIds = chatInfo.member_ids.length > 0
           ? chatInfo.member_ids
           : chatInfo.other_id ? [chatInfo.other_id] : [];
-        if (recipientIds.length > 0) {
-          // Broadcast delivery is handled by the message inbox channel below.
+        const filteredRecipients = recipientIds.filter((rid: string) => rid !== user.id);
+        if (inserted?.id && filteredRecipients.length > 0) {
+          void notifyChatRecipients({
+            recipientIds: filteredRecipients,
+            senderId: user.id,
+            senderName: profile?.display_name || "Someone",
+            senderAvatarUrl: profile?.avatar_url ?? null,
+            body: caption || label,
+            chatId: activeChatId,
+            messageId: inserted.id,
+            attachmentUrl: publicUrl,
+            attachmentType: type,
+          });
         }
       }
     } catch (e: any) {
@@ -5760,13 +5772,13 @@ STRICT RULES:
         return;
       }
 
-      const { error: insertErr } = await supabase.from("messages").insert({
+      const { data: insertedVoice, error: insertErr } = await supabase.from("messages").insert({
         chat_id: activeChatId,
         sender_id: user.id,
         encrypted_content: "🎤 Voice message",
         attachment_url: publicUrl,
         attachment_type: "audio",
-      });
+      }).select("id").single();
       if (insertErr) {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         showAlert("Error", "Failed to send voice message.");
@@ -5777,6 +5789,23 @@ STRICT RULES:
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       loadMessages();
       setSending(false);
+      if (insertedVoice?.id && chatInfo) {
+        const recipientIds = (
+          chatInfo.member_ids.length > 0 ? chatInfo.member_ids : chatInfo.other_id ? [chatInfo.other_id] : []
+        ).filter((rid: string) => rid !== user.id);
+        if (recipientIds.length > 0) {
+          void notifyChatRecipients({
+            recipientIds,
+            senderId: user.id,
+            senderName: profile?.display_name || "Someone",
+            senderAvatarUrl: profile?.avatar_url ?? null,
+            body: "🎤 Voice message",
+            chatId: activeChatId,
+            messageId: insertedVoice.id,
+            attachmentType: "audio",
+          });
+        }
+      }
       // Delete the local recording from cacheDirectory now that upload is complete
       if (uri) {
         FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {});
@@ -6911,7 +6940,29 @@ STRICT RULES:
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               const activeChatId = await getOrCreateChatId();
               if (!activeChatId) return;
-              await supabase.from("messages").insert({ chat_id: activeChatId, sender_id: user.id, encrypted_content: "GIF", attachment_url: url, attachment_type: "gif" });
+              const { data: insertedGif, error: gifError } = await supabase
+                .from("messages")
+                .insert({ chat_id: activeChatId, sender_id: user.id, encrypted_content: "GIF", attachment_url: url, attachment_type: "gif" })
+                .select("id")
+                .single();
+              if (!gifError && insertedGif?.id && chatInfo) {
+                const recipientIds = (
+                  chatInfo.member_ids.length > 0 ? chatInfo.member_ids : chatInfo.other_id ? [chatInfo.other_id] : []
+                ).filter((rid: string) => rid !== user.id);
+                if (recipientIds.length > 0) {
+                  void notifyChatRecipients({
+                    recipientIds,
+                    senderId: user.id,
+                    senderName: profile?.display_name || "Someone",
+                    senderAvatarUrl: profile?.avatar_url ?? null,
+                    body: "GIF",
+                    chatId: activeChatId,
+                    messageId: insertedGif.id,
+                    attachmentUrl: url,
+                    attachmentType: "gif",
+                  });
+                }
+              }
               loadMessages();
             }}
             onDelete={() => setInput((prev) => {

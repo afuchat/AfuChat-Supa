@@ -262,10 +262,13 @@ export function addPushTokenListener(
 export async function notifyChatRecipients(params: {
   recipientIds: string[];
   senderName: string;
+  senderAvatarUrl?: string | null;
   body: string;
   chatId: string;
   messageId: string;
   senderId?: string;
+  attachmentUrl?: string | null;
+  attachmentType?: string | null;
 }): Promise<void> {
   if (Platform.OS === "web" || params.recipientIds.length === 0) return;
 
@@ -274,16 +277,23 @@ export async function notifyChatRecipients(params: {
       supabase.functions.invoke("send-push-notification", {
         body: {
           recipientUserId,
+          senderId: params.senderId,
           senderName: params.senderName,
+          senderAvatarUrl: params.senderAvatarUrl ?? undefined,
           body: params.body,
           chatId: params.chatId,
           messageId: params.messageId,
+          attachmentUrl: params.attachmentUrl ?? undefined,
+          attachmentType: params.attachmentType ?? undefined,
           categoryId: PUSH_CATEGORY_MESSAGE,
           data: {
             chatId: params.chatId,
             messageId: params.messageId,
             senderId: params.senderId ?? null,
             senderName: params.senderName,
+            senderAvatarUrl: params.senderAvatarUrl ?? null,
+            attachmentUrl: params.attachmentUrl ?? null,
+            attachmentType: params.attachmentType ?? null,
           },
         },
       }),

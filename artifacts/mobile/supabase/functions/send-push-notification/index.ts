@@ -48,8 +48,14 @@ Deno.serve(async (req) => {
     ? (typeof body?.userId === "string" ? body.userId : "")
     : (typeof body?.recipientUserId === "string" ? body.recipientUserId : "");
   const data = body?.data && typeof body.data === "object" ? body.data : {};
+  const suppliedSenderId =
+    typeof body?.senderId === "string"
+      ? body.senderId
+      : typeof data.senderId === "string"
+        ? data.senderId
+        : "";
   const suppliedTitle = typeof body?.title === "string" ? body.title.trim() : "";
-  const senderName =
+  const suppliedSenderName =
     typeof body?.senderName === "string" && body.senderName.trim()
       ? body.senderName.trim()
       : typeof body?.sender_display_name === "string" && body.sender_display_name.trim()
@@ -59,7 +65,12 @@ Deno.serve(async (req) => {
           : typeof data.sender_display_name === "string" && data.sender_display_name.trim()
             ? data.sender_display_name.trim()
             : "";
-  const title = senderName || suppliedTitle;
+  const suppliedSenderAvatarUrl =
+    typeof body?.senderAvatarUrl === "string" && body.senderAvatarUrl.trim()
+      ? body.senderAvatarUrl.trim()
+      : typeof data.senderAvatarUrl === "string" && data.senderAvatarUrl.trim()
+        ? data.senderAvatarUrl.trim()
+        : "";
   const messageBody =
     typeof body?.body === "string"
       ? body.body.trim()
@@ -68,20 +79,53 @@ Deno.serve(async (req) => {
         : typeof data.messageBody === "string"
           ? data.messageBody.trim()
           : "";
+  const attachmentUrl =
+    typeof body?.attachmentUrl === "string" && body.attachmentUrl.trim()
+      ? body.attachmentUrl.trim()
+      : typeof data.attachmentUrl === "string" && data.attachmentUrl.trim()
+        ? data.attachmentUrl.trim()
+        : "";
+  const attachmentType =
+    typeof body?.attachmentType === "string"
+      ? body.attachmentType
+      : typeof data.attachmentType === "string"
+        ? data.attachmentType
+        : "";
   const categoryId = typeof body?.categoryId === "string" ? body.categoryId : "message";
   const chatId = typeof body?.chatId === "string" ? body.chatId : "";
   const messageId = typeof body?.messageId === "string" ? body.messageId : "";
+  const resolvedSenderId = senderId || suppliedSenderId;
   const notificationData = {
     ...data,
+    ...(resolvedSenderId ? { senderId: resolvedSenderId } : {}),
+    ...(suppliedSenderAvatarUrl ? { senderAvatarUrl: suppliedSenderAvatarUrl } : {}),
+    ...(attachmentUrl ? { attachmentUrl } : {}),
+    ...(attachmentType ? { attachmentType } : {}),
     ...(chatId ? { chatId } : {}),
     ...(messageId ? { messageId } : {}),
   };
 
-  if (!userId || !title || !messageBody) {
-    return json({ error: "userId, title, and body are required." }, 400);
-  }
-
   const admin = createClient(supabaseUrl, serviceRoleKey);
+  let senderName = suppliedSenderName;
+  let senderAvatarUrl = suppliedSenderAvatarUrl;
+  if (resolvedSenderId) {
+    const { data: senderProfile } = await admin
+      .from("profiles")
+      .select("display_name, avatar_url")
+      .eq("id", resolvedSenderId)
+      .maybeSingle();
+    senderName = senderProfile?.display_name?.trim() || senderName;
+    senderAvatarUrl = senderProfile?.avatar_url?.trim() || senderAvatarUrl;
+  }
+  const title = senderName || suppliedTitle;
+  const finalNotificationData = {
+    ...notificationData,
+    ...(senderName ? { senderName } : {}),
+    ...(senderAvatarUrl ? { senderAvatarUrl } : {}),
+  };
+  if (!userId || (!title && !suppliedSenderName) || !messageBody) {
+    return json({ error: "userId, sender name/title, and body are required." }, 400);
+  }
   if (!isServiceRequest) {
     const chatId = typeof body?.chatId === "string" ? body.chatId : "";
     if (!chatId || !senderId || userId === senderId) {
@@ -114,10 +158,13 @@ Deno.serve(async (req) => {
     to: device.token,
     title,
     body: messageBody,
-    data: notificationData,
+    data: finalNotificationData,
     categoryId,
     channelId: "messages",
     sound: "default",
+    ...(attachmentUrl || senderAvatarUrl
+      ? { richContent: { image: attachmentUrl || senderAvatarUrl } }
+      : {}),
   }));
 
   const response = await fetch(EXPO_PUSH_URL, {
