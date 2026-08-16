@@ -23,6 +23,9 @@ import {
 const _PagerView: any = (() => {
   try { return require("react-native-pager-view").default; } catch { return null; }
 })();
+// Animated.event with useNativeDriver requires the VirtualizedList itself to
+// be wrapped, not just the scroll handler passed to a plain FlatList.
+const AnimatedFlatList: any = Animated.createAnimatedComponent(FlatList);
 import { TabSwipeContext } from "@/context/TabSwipeContext";
 import { Image as ExpoImage } from "expo-image";
 import { showAlert } from "@/lib/alert";
@@ -1179,7 +1182,7 @@ export default function DiscoverScreen() {
   const throwbackExhaustedRef = useRef(false);
   const midOffsetRef = useRef(0);
   const midExhaustedRef = useRef(false);
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<any>(null);
   const recordedViewsRef = useRef<Set<string>>(new Set());
   const pagerRef = useRef<any>(null);
   const discoverPillX = useRef(new Animated.Value(0)).current;
@@ -2680,10 +2683,10 @@ export default function DiscoverScreen() {
                   {[1,2,3,4,5,6,7,8].map(i => <PostSkeleton key={i} />)}
                 </View>
               ) : (
-                <FlatList
+                <AnimatedFlatList
                   ref={flatListRef}
                   data={augmentedFeed}
-                  keyExtractor={(entry) => entry._kind === "post" ? entry.item.id : entry.id}
+                  keyExtractor={(entry: FeedEntry) => entry._kind === "post" ? entry.item.id : entry.id}
                   renderItem={renderFeedItem}
                   ListHeaderComponent={<StoriesRow userId={user?.id ?? null} avatarUrl={profile?.avatar_url ?? null} displayName={profile?.display_name ?? null} />}
                   contentContainerStyle={{ gap: 8, paddingTop: headerHeight + 8, paddingBottom: insets.bottom + 100 }}
@@ -2746,10 +2749,10 @@ export default function DiscoverScreen() {
                   {[1,2,3,4,5,6,7,8].map(i => <PostSkeleton key={i} />)}
                 </View>
               ) : (
-                <FlatList
+                <AnimatedFlatList
                   ref={flatListRef}
                   data={augmentedFeed}
-                  keyExtractor={(entry) => entry._kind === "post" ? entry.item.id : entry.id}
+                  keyExtractor={(entry: FeedEntry) => entry._kind === "post" ? entry.item.id : entry.id}
                    renderItem={renderFeedItem}
                   contentContainerStyle={{ gap: 8, paddingTop: headerHeight + 8, paddingBottom: insets.bottom + 100 }}
                   showsVerticalScrollIndicator={false}
@@ -2810,10 +2813,10 @@ export default function DiscoverScreen() {
         ) : loading ? (
           <View style={{ padding: 8, paddingTop: headerHeight + 8, gap: 8 }}>{[1,2,3,4,5,6,7,8].map(i => <PostSkeleton key={i} />)}</View>
         ) : (
-          <FlatList
+          <AnimatedFlatList
             ref={flatListRef}
             data={augmentedFeed}
-            keyExtractor={(entry) => entry._kind === "post" ? entry.item.id : entry.id}
+            keyExtractor={(entry: FeedEntry) => entry._kind === "post" ? entry.item.id : entry.id}
             renderItem={renderFeedItem}
             ListHeaderComponent={<StoriesRow userId={user?.id ?? null} avatarUrl={profile?.avatar_url ?? null} displayName={profile?.display_name ?? null} />}
             contentContainerStyle={{ gap: 8, paddingTop: headerHeight + 8, paddingBottom: insets.bottom + 100 }}
