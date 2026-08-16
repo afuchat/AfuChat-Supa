@@ -1,0 +1,573 @@
+# AfuChat — Emergency Notification System Investigation
+
+## CRITICAL DISCOVERY
+
+AfuChat was performing normally before the notification system was introduced.
+
+The severe production performance problem **started immediately after the notification system was added yesterday**.
+
+Current behavior:
+
+* Offline → AfuChat is fast.
+* Online before notification processing begins → initially fast.
+* As online data/notification-related activity starts → performance deteriorates.
+* Eventually normal user commands can take nearly one minute.
+* Navigation becomes slow.
+* Back buttons become slow.
+* Opening chats becomes slow.
+* Opening pages becomes slow.
+* Saving and other commands become slow.
+* The problem affects the entire application.
+
+This strongly suggests that the newly introduced notification architecture may be creating excessive:
+
+* Realtime subscriptions
+* Database events
+* Database triggers
+* Edge Function invocations
+* Push-token processing
+* State updates
+* React rerenders
+* API requests
+* Notification polling
+* Listeners
+* Memory usage
+
+## PRIMARY OBJECTIVE
+
+**Find exactly what the notification system introduced that is causing the application's performance to collapse when online.**
+
+Do not randomly optimize unrelated screens.
+
+Do not remove functionality without identifying the cause.
+
+---
+
+# 1. FIRST TEST — DISABLE NOTIFICATIONS COMPLETELY
+
+Create a diagnostic build where the new notification system is disabled.
+
+Disable only the notification-related components:
+
+* Notification Realtime channels
+* Notification listeners
+* Notification database subscriptions
+* Notification state providers
+* Notification polling
+* Push-token registration
+* Notification-related client effects
+* Notification-related database triggers where safe for testing
+* Notification-related Edge Function calls
+
+Do NOT disable normal messaging, chat, feed, or unrelated application functionality.
+
+Then test:
+
+```text id="s1f9wi"
+Internet ON
+↓
+Normal AfuChat usage
+↓
+Realtime messaging enabled
+↓
+Navigation
+↓
+Chat
+↓
+Saving
+```
+
+### Result A
+
+If performance immediately returns to normal:
+
+**The notification system is confirmed as the primary cause.**
+
+### Result B
+
+If the application remains slow:
+
+Continue investigating other systems, but still inspect notification-related database triggers/functions because they may be affecting backend transactions globally.
+
+---
+
+# 2. CHECK NOTIFICATION REALTIME SUBSCRIPTIONS
+
+Inspect every notification-related subscription.
+
+Determine:
+
+* How many channels are created?
+* When are they created?
+* How often are they created?
+* Are they recreated on every render?
+* Are they recreated on navigation?
+* Are they recreated when notification state changes?
+* Are they cleaned up?
+
+Look for patterns like:
+
+```text id="9fs6jh"
+Render
+↓
+Create notification subscription
+↓
+State update
+↓
+Render again
+↓
+Create another subscription
+↓
+State update
+↓
+Another subscription
+```
+
+This can destroy performance.
+
+Every subscription must have proper lifecycle cleanup.
+
+---
+
+# 3. CHECK FOR DUPLICATE NOTIFICATION LISTENERS
+
+Search for:
+
+```text id="cz4e89"
+onMessage
+addNotificationReceivedListener
+addNotificationResponseReceivedListener
+AppState
+useEffect
+useFocusEffect
+navigation listeners
+```
+
+Ensure listeners are registered exactly when required and removed when no longer needed.
+
+A listener must not be registered repeatedly because a component rerendered.
+
+---
+
+# 4. CHECK NOTIFICATION STATE UPDATES
+
+Determine whether receiving one notification causes:
+
+```text id="rj25v8"
+Notification event
+↓
+Notification state update
+↓
+Global Context update
+↓
+Entire application rerender
+```
+
+If yes, this is a major architectural problem.
+
+Notification state must be isolated.
+
+Receiving a notification should not cause:
+
+* Home to rerender unnecessarily
+* Discover to rerender
+* Chat lists to rerender
+* Navigation tree to rerender
+* Profile to rerender
+* Other unrelated screens to rerender
+
+---
+
+# 5. CHECK NOTIFICATION BADGE/UNREAD COUNT
+
+Be especially careful with unread notification counts.
+
+Look for logic like:
+
+```text id="6kt4el"
+Notification arrives
+↓
+Fetch notification count
+↓
+Update state
+↓
+Notification arrives
+↓
+Fetch notification count
+↓
+Update state
+```
+
+or:
+
+```text id="lqm2pr"
+Notification state changes
+↓
+Fetch notifications
+↓
+State changes
+↓
+Fetch notifications again
+```
+
+This can create an endless loop.
+
+The unread count should be updated efficiently and predictably.
+
+---
+
+# 6. CHECK DATABASE TRIGGERS
+
+Inspect every database trigger introduced for notifications.
+
+Especially:
+
+```text id="q7h0lm"
+INSERT → notification trigger
+INSERT → push trigger
+UPDATE → notification trigger
+messages → notification trigger
+calls → notification trigger
+```
+
+Determine whether triggers:
+
+* Call Edge Functions
+* Make network requests
+* Call `pg_net`
+* Perform additional database queries
+* Create additional notification rows
+* Trigger other triggers
+* Cause recursive operations
+
+A user command must not become a chain of expensive synchronous database operations.
+
+---
+
+# 7. CHECK FOR TRIGGER RECURSION
+
+Look for:
+
+```text id="u2l8v7"
+Message INSERT
+↓
+Notification trigger
+↓
+Notification INSERT
+↓
+Another trigger
+↓
+Notification processing
+↓
+Another INSERT
+↓
+Another trigger
+```
+
+Make sure notification creation cannot recursively trigger itself or other notification workflows indefinitely.
+
+---
+
+# 8. CHECK pg_net / EDGE FUNCTION INVOCATIONS
+
+If notifications use `pg_net` or Supabase Edge Functions, inspect:
+
+* Invocation frequency
+* Failed requests
+* Retries
+* Timeouts
+* Duplicate invocations
+* Function execution time
+* Requests generated per user action
+
+A single message should not accidentally invoke the notification function multiple times.
+
+Example:
+
+```text id="e9c9fb"
+1 message
+Expected:
+1 notification job
+
+Actual:
+10 notification function calls
+```
+
+That must be fixed.
+
+---
+
+# 9. CHECK PUSH TOKEN REGISTRATION
+
+Push token registration should NOT happen continuously.
+
+It should not execute on:
+
+* Every render
+* Every navigation
+* Every app focus
+* Every message
+* Every notification
+* Every realtime event
+
+Registration should be controlled and idempotent.
+
+If the same device/token is already registered, do not repeatedly insert/update it unnecessarily.
+
+---
+
+# 10. CHECK NOTIFICATION POLLING
+
+Search the entire notification system for:
+
+```text id="umfwwh"
+setInterval
+setTimeout
+poll
+fetchNotifications
+refreshNotifications
+```
+
+If notifications are being polled continuously, determine:
+
+* Frequency
+* Response size
+* Number of users/devices affected
+* Whether polling overlaps
+* Whether requests continue after screen unmount
+
+Avoid unnecessary polling when Realtime is already providing the required event stream.
+
+---
+
+# 11. CHECK NETWORK REQUEST LOOPS
+
+Trace notification requests.
+
+A notification event should not create a feedback loop:
+
+```text id="8kw5jy"
+Notification arrives
+↓
+Fetch notifications
+↓
+State update
+↓
+Realtime event
+↓
+Fetch notifications
+↓
+State update
+↓
+Realtime event
+↓
+...
+```
+
+If such a loop exists, stop it.
+
+---
+
+# 12. CHECK DATABASE PERFORMANCE
+
+The notification system must not make normal user transactions slow.
+
+Measure:
+
+```text id="8z4qxp"
+Message insert time
+Notification insert time
+Trigger execution time
+Edge Function invocation time
+Push provider request time
+```
+
+If sending a message takes 60 seconds because the database is waiting for notification processing, redesign the workflow.
+
+The user-facing transaction should complete independently from non-critical push processing.
+
+---
+
+# 13. CHECK ONLINE/OFFLINE STATE
+
+The notification system currently appears to incorrectly classify active users as offline.
+
+Do not use a single Realtime Presence value as the notification decision.
+
+Track meaningful application/session state separately:
+
+```text id="6h8xkw"
+active
+background
+offline
+```
+
+Also account for:
+
+* reconnects
+* network changes
+* multiple devices
+* app lifecycle
+* expired sessions
+
+---
+
+# 14. NOTIFICATION DECISION LOGIC
+
+The correct concept is:
+
+```text id="jqfl6q"
+New message
+↓
+Determine recipient
+↓
+Check notification settings
+↓
+Determine recipient's active session/device
+↓
+Is recipient actively viewing THIS conversation?
+       ↓
+YES → update chat UI, no unnecessary push
+       ↓
+NO → send notification to eligible device(s)
+```
+
+Do not simply use:
+
+```text id="t2k8pn"
+online = true → never push
+```
+
+or:
+
+```text id="f0v3pd"
+online = false → always push
+```
+
+---
+
+# 15. LOW-END ANDROID REQUIREMENT
+
+The notification system must be extremely lightweight on the client.
+
+Do not:
+
+* Continuously poll
+* Process large notification arrays
+* Re-render the entire application
+* Create duplicate listeners
+* Maintain huge notification state
+* Perform expensive processing for every notification
+* Block the JS thread
+* Perform unnecessary network requests
+
+A low-end Android device must remain responsive while notifications are active.
+
+---
+
+# 16. PRODUCTION DIAGNOSTIC BUILD
+
+Create a diagnostic build with:
+
+```text id="d6y8c2"
+Active notification listeners
+Active Realtime channels
+Notification events/sec
+Notification API requests/min
+Push-token registrations
+Notification state updates/sec
+React render count
+JS FPS
+Memory
+```
+
+Run it online for 20–30 minutes.
+
+Compare:
+
+### Notification system disabled
+
+versus
+
+### Notification system enabled
+
+The difference should identify the culprit.
+
+---
+
+# 17. IMPORTANT — DO NOT JUST REMOVE NOTIFICATIONS
+
+The goal is not:
+
+> "Remove notifications so the app becomes fast."
+
+The goal is:
+
+> **Keep notifications while making them lightweight, reliable, and independent from the application's main UI workload.**
+
+Notifications are a core AfuChat feature and must work correctly without degrading the rest of the application.
+
+---
+
+# 18. FINAL ACCEPTANCE CRITERIA
+
+The fix is complete only when:
+
+### Performance
+
+* AfuChat remains fast online.
+* Performance does not deteriorate as notifications arrive.
+* Navigation remains responsive.
+* Back buttons remain responsive.
+* Chats open quickly.
+* User commands do not take seconds or minutes.
+* Low-end Android devices remain usable.
+
+### Notifications
+
+* Push tokens register correctly.
+* Active devices are recognized correctly.
+* Background devices receive notifications.
+* Terminated apps receive notifications where supported.
+* Active users are not incorrectly treated as offline.
+* Notification listeners do not multiply.
+* Realtime channels do not multiply.
+* Notification state does not cause global rerenders.
+
+### Backend
+
+* Notification triggers do not recursively fire.
+* Edge Functions are not invoked unnecessarily.
+* `pg_net` calls are controlled.
+* Notification processing does not block user transactions.
+* Normal message/database operations remain fast.
+
+---
+
+# FINAL INSTRUCTION
+
+The performance regression started **immediately after the notification system was introduced**.
+
+Treat the notification system as the primary suspect.
+
+First isolate it.
+
+Then measure:
+
+**notification disabled vs notification enabled.**
+
+Find exactly what changes.
+
+Do not guess.
+
+Do not rewrite the entire application.
+
+Do not optimize unrelated screens.
+
+**Identify the notification-related operation that causes the JS thread, React rendering, Realtime layer, database, or network pipeline to become overloaded.**
+
+Then fix that root cause and verify the final production build on an older, low-performance Android device.
+
+The required final behavior is:
+
+**Fast offline → Fast online → Notifications working → Realtime working → No progressive slowdown → Responsive even on low-end Android.**
