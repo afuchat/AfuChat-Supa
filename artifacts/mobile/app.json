@@ -8,6 +8,7 @@
     "scheme": "afuchat",
     "userInterfaceStyle": "automatic",
     "jsEngine": "hermes",
+    "newArchEnabled": true,
     "backgroundColor": "#000000",
     "android": {
       "package": "com.afuchat.afuapp",

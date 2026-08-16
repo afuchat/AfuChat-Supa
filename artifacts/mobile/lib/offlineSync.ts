@@ -14,6 +14,7 @@ import {
 } from "./storage/localMessages";
 
 let syncing = false;
+const MAX_ITEMS_PER_SYNC = 10;
 
 export async function syncPendingMessages(): Promise<void> {
   if (syncing || !isOnline()) return;
@@ -22,7 +23,7 @@ export async function syncPendingMessages(): Promise<void> {
   try {
     // 1. Sync legacy AsyncStorage pending messages
     const pending = await getPendingMessages();
-    for (const msg of pending) {
+    for (const msg of pending.slice(0, MAX_ITEMS_PER_SYNC)) {
       // Deduplication: check if a message with the same content+chat+sender
       // was already inserted (e.g., sent on a previous retry before the ack
       // arrived). If found, just remove from queue without re-inserting.
@@ -52,7 +53,7 @@ export async function syncPendingMessages(): Promise<void> {
 
     // 2. Sync SQLite pending messages (primary path)
     const localPending = await getPendingLocalMessages();
-    for (const msg of localPending) {
+    for (const msg of localPending.slice(0, MAX_ITEMS_PER_SYNC)) {
       // Deduplication: same guard as above
       const { data: existing } = await supabase
         .from("messages")
@@ -83,7 +84,10 @@ export async function syncPendingMessages(): Promise<void> {
     }
 
     // 3. Drain offline action queue (likes, bookmarks, follows, etc.)
-    await drainQueue();
+    // Drain only a bounded amount per pass. The queue retries on the next
+    // connectivity event or interval instead of monopolising the JS bridge
+    // after a long offline period.
+    await drainQueue(MAX_ITEMS_PER_SYNC);
   } catch {}
 
   syncing = false;
@@ -155,14 +159,14 @@ export function startOfflineSync(): void {
 
   unsubscribe = onConnectivityChange((online) => {
     if (online) {
-      syncPendingMessages();
+      void syncPendingMessages();
       reconnectRealtime();
       onlineListeners.forEach((fn) => { try { fn(); } catch {} });
     }
   });
 
   if (isOnline()) {
-    syncPendingMessages();
+    void syncPendingMessages();
   }
 
   startRetryInterval();

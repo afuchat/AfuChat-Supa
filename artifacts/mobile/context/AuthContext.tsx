@@ -611,13 +611,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let offlineSyncTask: { cancel?: () => void } | null = null;
     const scheduleOfflineSync = () => {
       if (offlineSyncTimer) return;
+      // Let the first authenticated route render before opening the offline
+      // queue and its realtime/network listeners on a release build.
       offlineSyncTimer = setTimeout(() => {
         offlineSyncTimer = null;
         if (!isCurrentBootstrap()) return;
         offlineSyncTask = InteractionManager.runAfterInteractions(() => {
           if (isCurrentBootstrap()) startOfflineSync();
         });
-      }, 1200);
+      }, 5000);
     };
 
     const fastCachedId = getCachedUserId();

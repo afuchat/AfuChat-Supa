@@ -49,14 +49,17 @@ export async function enqueue(
 
 let _draining = false;
 
-export async function drainQueue(): Promise<void> {
+export async function drainQueue(maxItems = 50): Promise<void> {
   if (_draining || !isOnline()) return;
   _draining = true;
 
   try {
     const db = await getDB();
+    const limit = Number.isFinite(maxItems)
+      ? Math.max(1, Math.min(50, Math.floor(maxItems)))
+      : 50;
     const items = await db.getAllAsync<QueueItem>(
-      "SELECT * FROM offline_queue ORDER BY created_at ASC LIMIT 50",
+      `SELECT * FROM offline_queue ORDER BY created_at ASC LIMIT ${limit}`,
     );
 
     for (const item of items) {

@@ -21,7 +21,7 @@ let screensEnabled = false;
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { AppState, Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
+import { AppState, InteractionManager, Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
 import { Stack, usePathname, useRootNavigationState } from "expo-router";
 import { setCurrentPage, resolvePageInfo } from "@/lib/pageTracker";
 import { StatusBar } from "expo-status-bar";
@@ -326,35 +326,41 @@ export default function RootLayout() {
   }, [rootNavigationState?.key]);
 
   useEffect(() => {
+    if (!rootNavigationState?.key) return;
     // Do not compete with the first route for the JS/native bridge. Auth starts
     // sync only after identity restoration, while storage maintenance is delayed
     // until the first screen has had time to settle.
     let purgeTimer: ReturnType<typeof setTimeout> | null = null;
-    const storageTimer = setTimeout(() => {
-      if (AppState.currentState !== "active") return;
-      // Keep maintenance modules out of the critical startup bundle. These
-      // imports are intentionally lazy because storage/index re-exports many
-      // SQLite/cache modules.
-      const storageReady = import("@/lib/storage")
-        .then(({ initDeviceStorage }) => initDeviceStorage())
-        .catch(() => undefined);
-
-      // Video cleanup can open the same SQLite database and touch the file
-      // system. Let the first storage pass settle before doing that work.
-      purgeTimer = setTimeout(() => {
+    let storageTimer: ReturnType<typeof setTimeout> | null = null;
+    const interactionTask = InteractionManager.runAfterInteractions(() => {
+      // Keep maintenance out of the first route's data and interaction window.
+      storageTimer = setTimeout(() => {
         if (AppState.currentState !== "active") return;
-        storageReady
-          .then(() => import("@/lib/videoCache"))
-          .then(({ runScheduledVideoPurge }) => runScheduledVideoPurge())
-          .catch(() => {});
-      }, 5000);
-    }, 2000);
+        // Keep maintenance modules out of the critical startup bundle. These
+        // imports are intentionally lazy because storage/index re-exports many
+        // SQLite/cache modules.
+        const storageReady = import("@/lib/storage")
+          .then(({ initDeviceStorage }) => initDeviceStorage())
+          .catch(() => undefined);
+
+        // Video cleanup can open the same SQLite database and touch the file
+        // system. Let the first storage pass settle before doing that work.
+        purgeTimer = setTimeout(() => {
+          if (AppState.currentState !== "active") return;
+          storageReady
+            .then(() => import("@/lib/videoCache"))
+            .then(({ runScheduledVideoPurge }) => runScheduledVideoPurge())
+            .catch(() => {});
+        }, 7000);
+      }, 4500);
+    });
 
     return () => {
-      clearTimeout(storageTimer);
+      interactionTask.cancel();
+      if (storageTimer) clearTimeout(storageTimer);
       if (purgeTimer) clearTimeout(purgeTimer);
     };
-  }, []);
+  }, [rootNavigationState?.key]);
 
 
   return (

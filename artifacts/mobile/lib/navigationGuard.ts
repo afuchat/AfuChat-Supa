@@ -44,7 +44,7 @@ export function release(): void {
   _lastActionAt = 0;
 }
 
-function keyFor(kind: "push" | "replace" | "back", args: unknown[] = []): string {
+function keyFor(kind: "push" | "replace" | "navigate" | "back", args: unknown[] = []): string {
   try {
     return `${kind}:${JSON.stringify(args)}`;
   } catch {
@@ -57,6 +57,7 @@ function keyFor(kind: "push" | "replace" | "back", args: unknown[] = []): string
 const _origPush    = router.push.bind(router);
 const _origReplace = router.replace.bind(router);
 const _origBack    = router.back.bind(router);
+const _origNavigate = router.navigate.bind(router);
 const _origCanGoBack = router.canGoBack.bind(router);
 
 function runWithMountRetry(action: () => void, attempt = 0): void {
@@ -94,4 +95,9 @@ function runWithMountRetry(action: () => void, attempt = 0): void {
     if (_origCanGoBack()) _origBack();
     else _origReplace("/(tabs)/chats" as any);
   });
+};
+
+(router as any).navigate = (...args: Parameters<typeof router.navigate>) => {
+  if (!acquire(keyFor("navigate", args))) return;
+  runWithMountRetry(() => _origNavigate(...args));
 };

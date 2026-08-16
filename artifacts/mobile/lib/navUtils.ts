@@ -7,12 +7,12 @@
  * lands on an unintended deep stack or sees a flickering screen.
  *
  * HOW:
- * - A module-level action key records the most recent navigation and blocks
- *   only an immediate duplicate of that same action.
- * - Different destinations can be selected without waiting for a cooldown.
- * - `SafePressable` / `SafeTouchableOpacity` (in components/ui) also
- *   check the lock so even button presses that trigger navigation
- *   indirectly (like openApp()) are protected.
+ * - SafePressable / SafeTouchableOpacity use a module-level action key to
+ *   block immediate duplicate presses, including presses that navigate
+ *   indirectly (like openApp()).
+ * - Direct router calls are deduplicated by navigationGuard, which is mounted
+ *   once by the root layout. Keeping the router lock in one place prevents a
+ *   valid action from being dropped by two independent cooldowns.
  */
 
 import { router } from "expo-router";
@@ -100,20 +100,19 @@ function runNavigation(action: () => void): void {
 
 /**
  * Drop-in replacements for `router.push / replace / navigate / back`.
- * All calls are silently ignored while the lock is held.
+ * Duplicate protection for direct router calls lives in navigationGuard.
+ * SafePressable still uses the local press lock before invoking callbacks.
  *
  * @example
  *   import { safeRouter } from "@/lib/navUtils";
  *   safeRouter.push("/profile");
  */
 export const safeRouter = {
-  push    (href: any, cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("push", href))) runNavigation(() => router.push(href)); },
-  replace (href: any, cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("replace", href))) runNavigation(() => router.replace(href)); },
-  navigate(href: any, cooldown = NAV_COOLDOWN_MS): void { if (acquireNavLock(cooldown, navigationKey("navigate", href))) runNavigation(() => router.navigate(href)); },
-  back    (fallback: string = "/(tabs)/chats", cooldown = NAV_COOLDOWN_MS): void {
-    if (acquireNavLock(cooldown, navigationKey("back", fallback))) {
-      runNavigation(() => { if (router.canGoBack()) router.back(); else router.replace(fallback as any); });
-    }
+  push    (href: any, _cooldown = NAV_COOLDOWN_MS): void { runNavigation(() => router.push(href)); },
+  replace (href: any, _cooldown = NAV_COOLDOWN_MS): void { runNavigation(() => router.replace(href)); },
+  navigate(href: any, _cooldown = NAV_COOLDOWN_MS): void { runNavigation(() => router.navigate(href)); },
+  back    (fallback: string = "/(tabs)/chats", _cooldown = NAV_COOLDOWN_MS): void {
+    runNavigation(() => { if (router.canGoBack()) router.back(); else router.replace(fallback as any); });
   },
 };
 

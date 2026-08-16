@@ -53,11 +53,15 @@ export default function PushNotificationManager() {
       handledResponseIds.add(responseKey);
 
       try {
-        await handleNotificationResponse(response, user.id);
         const { chatId } = getNotificationTarget(response);
         if (response.actionIdentifier !== PUSH_ACTION_MARK_READ && chatId) {
+          // Route first. Mark-read/reply writes must never hold navigation
+          // hostage when the device is offline or Supabase is slow.
           safeRouter.push({ pathname: "/chat/[id]", params: { id: chatId } } as any);
         }
+        void handleNotificationResponse(response, user.id).catch((error) => {
+          if (__DEV__) console.warn("[push] notification action failed:", error);
+        });
       } catch (error) {
         if (__DEV__) console.warn("[push] notification action failed:", error);
       } finally {
