@@ -28,10 +28,13 @@ function ensureSubscribed() {
   });
 }
 
-ensureSubscribed();
-
 /** Current network type (synchronous, cached). */
 export function getNetworkType(): NetworkType {
+  // Do not touch NetInfo during module evaluation. Release Android can import
+  // this helper as part of the startup bundle before the native bridge is
+  // ready; lazy subscription keeps cold boot cheap and avoids a second
+  // eager NetInfo listener competing with offlineStore.
+  ensureSubscribed();
   return _type;
 }
 

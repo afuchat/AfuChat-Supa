@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { InteractionManager } from "react-native";
+import { AppState, InteractionManager } from "react-native";
 import { useAuth } from "@/context/AuthContext";
 import { safeRouter } from "@/lib/navUtils";
 import {
@@ -17,14 +17,19 @@ import {
 } from "@/lib/pushNotifications";
 import { getNotificationPreferences } from "@/lib/notificationPreferences";
 import { KEYS, storage } from "@/lib/storage/mmkv";
+import { onConnectivityChange } from "@/lib/offlineStore";
 
 const handledResponseIds = new Set<string>();
 
 export default function PushNotificationManager() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
 
   useEffect(() => {
-    if (!user?.id) return;
+    // AuthContext can briefly expose a cached/synthetic user while Android
+    // restores the real Supabase session. Do not register a push token during
+    // that window: the edge function needs a verified bearer session, and a
+    // failed registration previously left returning users with no device row.
+    if (!user?.id || !session?.user?.id || session.user.id !== user.id) return;
 
     let disposed = false;
     let registeredToken: string | null = null;
@@ -75,6 +80,20 @@ export default function PushNotificationManager() {
       register();
     });
 
+    const appStateSubscription = AppState.addEventListener("change", (state) => {
+      if (state === "active" && getNotificationPreferences().enabled) {
+        retryCount = 0;
+        if (retryTimer) clearTimeout(retryTimer);
+        retryTimer = setTimeout(register, 250);
+      }
+    });
+    const connectivityCleanup = onConnectivityChange((online) => {
+      if (!online || disposed || !getNotificationPreferences().enabled) return;
+      retryCount = 0;
+      if (retryTimer) clearTimeout(retryTimer);
+      retryTimer = setTimeout(register, 250);
+    });
+
     const responseListener = addNotificationResponseListener((response) => {
       void handleResponse(response);
     });
@@ -100,12 +119,14 @@ export default function PushNotificationManager() {
       if (retryTimer) clearTimeout(retryTimer);
       tokenListener?.remove();
       responseListener?.remove();
+      appStateSubscription.remove();
+      connectivityCleanup();
       if (registeredToken) {
         disablePushToken(registeredToken).catch(() => {});
         storage.delete(KEYS.PUSH_TOKEN);
       }
     };
-  }, [user?.id]);
+  }, [user?.id, session?.user?.id]);
 
   return null;
 }

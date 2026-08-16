@@ -67,7 +67,12 @@ function initNetInfo() {
     // call to isOnline() after boot reflects reality rather than the optimistic
     // "true" default. This matters on cold start when the phone is offline.
     NetInfo.fetch().then((state: any) => {
-      const initialOnline = state.isConnected === true && state.isInternetReachable !== false;
+      // Android's internet-reachability probe is frequently stale or blocked
+      // by carrier DNS/captive-portal checks even while normal HTTPS requests
+      // work. Use the transport connection as the offline signal; request
+      // failures still fall back to the local cache without misclassifying a
+      // connected user as offline.
+      const initialOnline = state.isConnected !== false;
       // Always publish the first result, including an online result. This
       // makes the initial unknown -> online transition available to reconnect
       // listeners that mounted during auth restoration.
@@ -75,7 +80,7 @@ function initNetInfo() {
     }).catch(() => {});
 
     NetInfo.addEventListener((state: any) => {
-      const newOnline = state.isConnected === true && state.isInternetReachable !== false;
+      const newOnline = state.isConnected !== false;
       if (newOnline !== _isOnline || !_netInfoReported) _fireConnectivity(newOnline);
     });
   } catch {}
