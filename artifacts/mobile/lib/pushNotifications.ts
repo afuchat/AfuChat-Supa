@@ -19,10 +19,44 @@ const recentDeliveryKeys = new Map<string, number>();
 const PUSH_REGISTRATION_TTL_MS = 24 * 60 * 60 * 1000;
 const PUSH_DELIVERY_DEBOUNCE_MS = 350;
 const PUSH_DELIVERY_DEDUPE_MS = 30_000;
+const PUSH_NATIVE_TIMEOUT_MS = 30_000;
+const PUSH_NETWORK_TIMEOUT_MS = 15_000;
 export const PUSH_NOTIFICATIONS_DISABLED =
   typeof process !== "undefined" && process.env.EXPO_PUBLIC_DISABLE_PUSH_NOTIFICATIONS === "1";
 export const PUSH_DIAGNOSTICS_ENABLED =
   typeof process !== "undefined" && process.env.EXPO_PUBLIC_NOTIFICATION_DIAGNOSTICS === "1";
+
+function withTimeout<T>(
+  task: () => Promise<T>,
+  timeoutMs: number,
+  label: string,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    Promise.resolve()
+      .then(task)
+      .then(
+        (value) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          resolve(value);
+        },
+        (error) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          reject(error);
+        },
+      );
+  });
+}
 
 type PushDiagnostics = {
   registrationAttempts: number;
@@ -338,10 +372,18 @@ export async function registerPushToken(): Promise<string | null> {
 
   configurePushNotifications();
 
-  const existing = await notifications.getPermissionsAsync();
+   const existing = await withTimeout(
+     () => notifications.getPermissionsAsync(),
+     PUSH_NATIVE_TIMEOUT_MS,
+     "notification permission check",
+   );
   let status = existing.status;
   if (status !== "granted") {
-    const requested = await notifications.requestPermissionsAsync();
+     const requested = await withTimeout(
+       () => notifications.requestPermissionsAsync(),
+       PUSH_NATIVE_TIMEOUT_MS,
+       "notification permission request",
+     );
     status = requested.status;
   }
   if (status !== "granted") return null;
@@ -351,7 +393,13 @@ export async function registerPushToken(): Promise<string | null> {
     throw new Error("Expo EAS project ID is required for push registration.");
   }
 
-  const token = (await notifications.getExpoPushTokenAsync({ projectId })).data;
+   const token = (
+     await withTimeout(
+       () => notifications.getExpoPushTokenAsync({ projectId }),
+       PUSH_NATIVE_TIMEOUT_MS,
+       "Expo push token request",
+     )
+   ).data;
   if (!token) return null;
 
   const previousToken = storage.getString(KEYS.PUSH_TOKEN);
@@ -366,9 +414,14 @@ export async function registerPushToken(): Promise<string | null> {
   }
 
   recordPushDiagnostic("registrationNetworkRequests");
-  const { error } = await supabase.functions.invoke("register-push-token", {
-    body: { token, platform: Platform.OS },
-  });
+   const { error } = await withTimeout(
+     () =>
+       supabase.functions.invoke("register-push-token", {
+         body: { token, platform: Platform.OS },
+       }),
+     PUSH_NETWORK_TIMEOUT_MS,
+     "push token registration",
+   );
   if (error) throw error;
 
   storage.setString(KEYS.PUSH_TOKEN, token);
@@ -387,9 +440,14 @@ export async function registerPushToken(): Promise<string | null> {
 export async function disablePushToken(token: string): Promise<void> {
   if (PUSH_NOTIFICATIONS_DISABLED) return;
   if (!token) return;
-  await supabase.functions.invoke("register-push-token", {
-    body: { token, platform: Platform.OS, enabled: false },
-  });
+  await withTimeout(
+    () =>
+      supabase.functions.invoke("register-push-token", {
+        body: { token, platform: Platform.OS, enabled: false },
+      }),
+    PUSH_NETWORK_TIMEOUT_MS,
+    "push token disable",
+  );
 }
 
 export function addPushTokenListener(
@@ -423,30 +481,35 @@ async function deliverChatNotification(
   recordPushDiagnostic("deliveryRecipientRequests", recipientIds.length);
 
   try {
-    const { error } = await supabase.functions.invoke("send-push-notification", {
-      body: {
-        recipientUserIds: recipientIds,
-        senderId: params.senderId,
-        senderName: params.senderName,
-        senderAvatarUrl: params.senderAvatarUrl ?? undefined,
-        body: params.body,
-        chatId: params.chatId,
-        messageId: params.messageId,
-        attachmentUrl: params.attachmentUrl ?? undefined,
-        attachmentType: params.attachmentType ?? undefined,
-        categoryId: PUSH_CATEGORY_MESSAGE,
-        data: {
-          chatId: params.chatId,
-          messageId: params.messageId,
-          senderId: params.senderId ?? null,
-          senderName: params.senderName,
-          senderAvatarUrl: params.senderAvatarUrl ?? null,
-          attachmentUrl: params.attachmentUrl ?? null,
-          attachmentType: params.attachmentType ?? null,
-          categoryId: PUSH_CATEGORY_MESSAGE,
-        },
-      },
-    });
+     const { error } = await withTimeout(
+       () =>
+         supabase.functions.invoke("send-push-notification", {
+           body: {
+             recipientUserIds: recipientIds,
+             senderId: params.senderId,
+             senderName: params.senderName,
+             senderAvatarUrl: params.senderAvatarUrl ?? undefined,
+             body: params.body,
+             chatId: params.chatId,
+             messageId: params.messageId,
+             attachmentUrl: params.attachmentUrl ?? undefined,
+             attachmentType: params.attachmentType ?? undefined,
+             categoryId: PUSH_CATEGORY_MESSAGE,
+             data: {
+               chatId: params.chatId,
+               messageId: params.messageId,
+               senderId: params.senderId ?? null,
+               senderName: params.senderName,
+               senderAvatarUrl: params.senderAvatarUrl ?? null,
+               attachmentUrl: params.attachmentUrl ?? null,
+               attachmentType: params.attachmentType ?? null,
+               categoryId: PUSH_CATEGORY_MESSAGE,
+             },
+           },
+         }),
+       PUSH_NETWORK_TIMEOUT_MS,
+       "push notification delivery",
+     );
     if (__DEV__ && error) console.warn("[push] message notification rejected:", error);
   } catch (error) {
     if (__DEV__) console.warn("[push] message notification failed:", error);

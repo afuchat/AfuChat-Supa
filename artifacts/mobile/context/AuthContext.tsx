@@ -650,7 +650,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession()
       .then(async ({ data: { session } }) => {
         if (!isCurrentBootstrap()) return;
-        clearTimeout(safetyTimer);
         if (session?.user) {
           setSession(session);
           setUser(session.user);
@@ -659,6 +658,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // so the UI renders from cache while the fresh profile loads in bg.
           const cachedSync = getCachedProfileSync();
           if (cachedSync) setProfile(cachedSync as Profile);
+           clearTimeout(safetyTimer);
           setLoading(false);
           // Refresh profile from Supabase in the background (non-blocking)
            fetchProfile(session.user.id, isCurrentBootstrap)
@@ -726,6 +726,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (!isCurrentBootstrap()) return;
             setUser(syntheticUser);
             // Release loading NOW — home renders before refresh completes.
+             clearTimeout(safetyTimer);
             setLoading(false);
 
             if (isOnline()) {
@@ -773,6 +774,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const cached = await getCachedProfile();
             if (!isCurrentBootstrap()) return;
             if (cached) setProfile(cached as Profile);
+             clearTimeout(safetyTimer);
             setLoading(false);
           }
         }

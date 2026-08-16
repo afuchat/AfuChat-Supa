@@ -58,13 +58,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!user) return;
-    fetchSettings(user.id);
+    fetchSettings(user.id).catch(() => {});
   }, [user]);
 
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state) => {
       if (state === "active" && userRef.current) {
-        fetchSettings(userRef.current.id);
+        fetchSettings(userRef.current.id).catch(() => {});
       }
     });
     return () => sub.remove();

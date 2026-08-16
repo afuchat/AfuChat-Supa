@@ -20,6 +20,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { emitIncomingMessage, IncomingMessage } from "@/lib/globalMessageEvents";
+import { isOnline, onConnectivityChange } from "@/lib/offlineStore";
 
 export function GlobalInboxListener() {
   const { user } = useAuth();
@@ -54,6 +55,7 @@ export function GlobalInboxListener() {
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     let retryCount = 0;
     let currentChannel: ReturnType<typeof supabase.channel> | null = null;
+    let online = isOnline();
 
     // React effects can be re-entered during auth transitions or dev Strict
     // Mode. Evict a channel left behind by the previous effect before adding
@@ -66,7 +68,7 @@ export function GlobalInboxListener() {
     }
 
     const connect = () => {
-      if (destroyed) return;
+      if (destroyed || !online || currentChannel) return;
 
       const ch = supabase
         .channel(`user-inbox:${user.id}`, {
@@ -95,21 +97,44 @@ export function GlobalInboxListener() {
             if (!destroyed) {
               const delay = Math.min(500 * Math.pow(2, retryCount), 15_000);
               retryCount = Math.min(retryCount + 1, 6);
-              reconnectTimer = setTimeout(connect, delay);
+              scheduleConnect(delay);
             }
           }
         });
     };
 
+    const scheduleConnect = (delay: number) => {
+      if (destroyed || !online || reconnectTimer || currentChannel) return;
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        connect();
+      }, delay);
+    };
+
     const interactionTask = InteractionManager.runAfterInteractions(() => {
       // Let the initial route and its primary data requests settle before
       // opening another realtime channel on release Android builds.
-      reconnectTimer = setTimeout(connect, 2000);
+      scheduleConnect(2000);
+    });
+    const connectivityCleanup = onConnectivityChange((nextOnline) => {
+      online = nextOnline;
+      if (!online) {
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+        if (currentChannel) {
+          supabase.removeChannel(currentChannel).catch(() => {});
+          currentChannel = null;
+        }
+        return;
+      }
+      retryCount = 0;
+      scheduleConnect(250);
     });
 
     return () => {
       destroyed = true;
       interactionTask.cancel();
+      connectivityCleanup();
       if (reconnectTimer) clearTimeout(reconnectTimer);
       if (currentChannel) supabase.removeChannel(currentChannel).catch(() => {});
       recentIds.current.clear();

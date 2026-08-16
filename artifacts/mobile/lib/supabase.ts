@@ -45,6 +45,20 @@ if (typeof console !== "undefined" && typeof console.error === "function") {
 
 const isWeb = Platform.OS === "web";
 
+const SUPABASE_REQUEST_TIMEOUT_MS = 15_000;
+const fetchWithTimeout: typeof fetch = async (input, init) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SUPABASE_REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: init?.signal ?? controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 // AsyncStorage is the correct durable store for native builds. On web, use the
 // browser's localStorage directly so Supabase can persist the PKCE verifier and
 // restore the session after the OAuth provider redirects back to the site.
@@ -66,6 +80,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: isWeb,
     flowType: "pkce",
+  },
+  global: {
+    fetch: fetchWithTimeout,
   },
   realtime: {
     heartbeatIntervalMs: 15_000,

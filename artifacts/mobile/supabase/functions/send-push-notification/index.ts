@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
+const EXPO_PUSH_TIMEOUT_MS = 12_000;
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -204,11 +205,21 @@ Deno.serve(async (req) => {
       : {}),
   }));
 
-  const response = await fetch(EXPO_PUSH_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(messages),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), EXPO_PUSH_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch(EXPO_PUSH_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(messages),
+      signal: controller.signal,
+    });
+  } catch {
+    return json({ error: "Push provider timed out or was unreachable." }, 504);
+  } finally {
+    clearTimeout(timeout);
+  }
   const payload = await response.json().catch(() => null);
   if (!response.ok) return json({ error: "Push provider rejected the request." }, 502);
 

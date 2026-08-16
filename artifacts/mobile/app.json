@@ -98,7 +98,8 @@
         "expo-notifications",
         {
           "icon": "./assets/images/notification-icon.png",
-          "color": "#1f95ff"
+          "color": "#1f95ff",
+          "defaultChannel": "messages"
         }
       ],
       "expo-font",
@@ -137,14 +138,6 @@
         "expo-video",
         {
           "supportsPictureInPicture": true
-        }
-      ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/icon.png",
-          "color": "#1f95ff",
-          "defaultChannel": "messages"
         }
       ],
       [

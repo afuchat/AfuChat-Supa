@@ -108,7 +108,6 @@ export default function PushNotificationManager() {
 
     const appStateSubscription = AppState.addEventListener("change", (state) => {
       if (state === "active" && getNotificationPreferences().enabled && isPushTokenRegistrationDue()) {
-        retryCount = 0;
         if (retryTimer) clearTimeout(retryTimer);
         retryTimer = null;
         scheduleRegister(250);
@@ -116,7 +115,6 @@ export default function PushNotificationManager() {
     });
     const connectivityCleanup = onConnectivityChange((online) => {
       if (!online || disposed || !getNotificationPreferences().enabled || !isPushTokenRegistrationDue()) return;
-      retryCount = 0;
       if (retryTimer) clearTimeout(retryTimer);
       retryTimer = null;
       scheduleRegister(250);
