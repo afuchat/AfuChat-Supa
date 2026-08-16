@@ -456,6 +456,40 @@ const uploadBannerStyles = StyleSheet.create({
 
 type ChatTabKey = "all" | "unread" | "personal" | "groups" | "channels";
 
+const LOCAL_CHAT_HYDRATION_TIMEOUT_MS = 1500;
+const CHAT_REQUEST_TIMEOUT_MS = 15000;
+
+function waitForRequest<T>(
+  request: Promise<T>,
+  timeoutMs: number,
+  onTimeout: () => void,
+): Promise<T | undefined> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      onTimeout();
+      resolve(undefined);
+    }, timeoutMs);
+
+    request.then(
+      (value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      },
+      () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(undefined);
+      },
+    );
+  });
+}
+
 /**
  * The chats screen. By default this renders as a full-page route (chats tab).
  * When mounted with `panelMode`, it renders as a fixed-width 360px column
@@ -549,13 +583,19 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
 
   const loadChatsImpl = useCallback(async (background = false) => {
     if (!user) return;
-    const localNotes = await getLocalNotesConversation(user.id);
+    // Native SQLite can be delayed by migrations on a release first launch.
+    // Cache hydration is an enhancement, never a reason to block Supabase.
+    const localNotes = await waitForRequest(
+      getLocalNotesConversation(user.id),
+      LOCAL_CHAT_HYDRATION_TIMEOUT_MS,
+      () => {},
+    );
 
     if (!background) {
       const cacheStartedAt = Date.now();
       const cached = hasPreloadedConversations()
         ? getPreloadedConversations()
-        : await getLocalConversations();
+        : await waitForRequest(getLocalConversations(), LOCAL_CHAT_HYDRATION_TIMEOUT_MS, () => {}) ?? [];
       const cachedItems = cached
         .filter((item: any) =>
           (localNotes || !isLocalNotesId(item.id)) &&
@@ -819,7 +859,14 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     }
     lastChatLoadAtRef.current = now;
     const refreshStartedAt = Date.now();
-    const request = loadChatsImpl(background).finally(() => {
+    const request = waitForRequest(
+      loadChatsImpl(background),
+      CHAT_REQUEST_TIMEOUT_MS,
+      () => {
+        setLoading(false);
+        setRefreshing(false);
+      },
+    ).finally(() => {
       if (__DEV__) {
         console.log("[ChatPerf] total refresh", Date.now() - refreshStartedAt, "ms");
       }

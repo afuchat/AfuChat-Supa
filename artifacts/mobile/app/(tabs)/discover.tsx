@@ -108,6 +108,40 @@ type PostItem = {
   showThreadLine?: boolean;
 };
 
+const LOCAL_FEED_HYDRATION_TIMEOUT_MS = 1500;
+const FEED_REQUEST_TIMEOUT_MS = 15000;
+
+function waitForRequest<T>(
+  request: Promise<T>,
+  timeoutMs: number,
+  onTimeout: () => void,
+): Promise<T | undefined> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      onTimeout();
+      resolve(undefined);
+    }, timeoutMs);
+
+    request.then(
+      (value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      },
+      () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(undefined);
+      },
+    );
+  });
+}
+
 function formatNum(n: number): string {
   if (!n || n < 0) return "0";
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(n < 10_000_000 ? 1 : 0).replace(/\.0$/, "") + "M";
@@ -2020,7 +2054,19 @@ export default function DiscoverScreen() {
   }, [user, profile]);
 
   const loadPosts = useCallback(
-    (tab?: "for_you" | "following", background?: boolean) => fetchPosts(0, true, tab, background),
+    (tab?: "for_you" | "following", background?: boolean) =>
+      waitForRequest(
+        fetchPosts(0, true, tab, background),
+        FEED_REQUEST_TIMEOUT_MS,
+        () => {
+          setBgRefreshing(false);
+          if (!background) {
+            setLoading(false);
+            setRefreshing(false);
+            setLoadingMore(false);
+          }
+        },
+      ).then(() => undefined),
     [fetchPosts]
   );
 
@@ -2075,9 +2121,18 @@ export default function DiscoverScreen() {
   // then background-refresh For You from the network.
   useEffect(() => {
     (async () => {
-      const [fyLocal, flLocal] = await Promise.all([
+      const localHydration = Promise.all([
         getLocalFeedPosts("for_you", 30),
         getLocalFeedPosts("following", 30),
+      ]);
+      // SQLite migrations and the native bridge can be much slower on a
+      // standalone first launch than in Expo Go. Never block the live feed
+      // behind a cache read that does not settle.
+      const [fyLocal, flLocal] = await Promise.race([
+        localHydration,
+        new Promise<[any[], any[]]>((resolve) =>
+          setTimeout(() => resolve([[], []]), LOCAL_FEED_HYDRATION_TIMEOUT_MS),
+        ),
       ]);
       if (fyLocal.length > 0) {
         const toItem = (r: any) => ({ ...r, likeCount: r.like_count, replyCount: r.reply_count, is_organization_verified: r.is_org_verified, profile: { display_name: r.author_name ?? "User", handle: r.author_handle ?? "user", avatar_url: r.author_avatar ?? null, bio: null }, article_body: null, duration_seconds: null, isFollowing: false }) as unknown as PostItem;
