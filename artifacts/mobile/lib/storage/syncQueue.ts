@@ -140,10 +140,10 @@ async function executeAction(
         return !error;
       }
       case "mark_read": {
-        await supabase
+        const { error } = await supabase
           .from("chat_read_receipts")
           .upsert({ chat_id: payload.chat_id, user_id: payload.user_id, read_at: new Date().toISOString() });
-        return true;
+        return !error;
       }
       case "add_reaction": {
         const { error } = await supabase.from("message_reactions").insert({
@@ -159,7 +159,15 @@ async function executeAction(
         // lands in the offline queue, look up the SQLite row and send it now.
         const { getPendingLocalMessages, markMessageSynced } = await import("./localMessages");
         const pending = await getPendingLocalMessages();
-        const msg = pending.find((m) => m.id === payload.local_id || m.conversation_id === payload.conversation_id);
+        // Prefer the exact local row. Falling back to the first message in a
+        // conversation can send the wrong pending message when two sends are
+        // queued together.
+        const msg = payload.local_id
+          ? pending.find((m) => m.id === payload.local_id)
+          : pending.find((m) =>
+              m.conversation_id === payload.conversation_id &&
+              (payload.content == null || m.content === payload.content),
+            );
         if (!msg) return true; // already sent or not found — remove from queue
         const { data, error } = await supabase
           .from("messages")
@@ -199,13 +207,21 @@ export async function getQueueSize(): Promise<number> {
 // ─── Auto-drain when network returns ──────────────────────────────────────────
 
 let _listenerRegistered = false;
+let _queueUnsubscribe: (() => void) | null = null;
+
 export function startSyncQueue(): void {
   if (_listenerRegistered) return;
   _listenerRegistered = true;
 
-  onConnectivityChange((online) => {
+  _queueUnsubscribe = onConnectivityChange((online) => {
     if (online) drainQueue();
   });
 
   if (isOnline()) drainQueue();
+}
+
+export function stopSyncQueue(): void {
+  _queueUnsubscribe?.();
+  _queueUnsubscribe = null;
+  _listenerRegistered = false;
 }

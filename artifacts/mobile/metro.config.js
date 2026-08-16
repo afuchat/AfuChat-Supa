@@ -83,11 +83,14 @@ config.transformer = {
   minifierConfig: {
     ...(config.transformer?.minifierConfig || {}),
   },
-  // Defer module evaluation until first use — faster startup, less memory
+  // Keep evaluation order deterministic in production. This app has a large
+  // provider/storage/navigation graph with intentional side effects; global
+  // inlineRequires changes cycle timing and can surface Hermes-only TDZ crashes
+  // that Expo Go does not reproduce.
   getTransformOptions: async () => ({
     transform: {
       experimentalImportSupport: false,
-      inlineRequires: true,
+      inlineRequires: false,
     },
   }),
 };

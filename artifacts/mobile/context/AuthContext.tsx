@@ -28,7 +28,7 @@ import { invalidateConversationsPreload } from "@/lib/conversationsPreload";
 import { saveLocalProfile, deleteLocalProfile, getLocalProfile } from "@/lib/storage/localProfile";
 import { saveLocalSettings, deleteLocalSettings } from "@/lib/storage/localSettings";
 import { clearProfileCache } from "@/lib/profileCache";
-import { startOfflineSync } from "@/lib/offlineSync";
+import { startOfflineSync, stopOfflineSync } from "@/lib/offlineSync";
 import { registerDeviceSession } from "@/lib/deviceSession";
 import { ensureAfuAiChat } from "@/lib/afuAiBot";
 import { safeRouter } from "@/lib/navUtils";
@@ -155,6 +155,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Invalidates async bootstrap/account-switch work when auth identity changes.
   // Late completions must never restore an old user or navigate over a newer flow.
   const authGenerationRef = useRef(0);
+  // Supabase may emit several SIGNED_OUT events while a refresh token is being
+  // rejected. Keep fallback restoration single-flight to avoid a network and
+  // Keystore storm racing the navigation state.
+  const sessionRestoreRef = useRef<Promise<void> | null>(null);
   const switchOperationRef = useRef(0);
   const linkedAccountsRequestRef = useRef(0);
 
@@ -569,11 +573,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setEquippedGoods(new Set());
       clearProfileCache();
       invalidateConversationsPreload();
+      stopOfflineSync();
 
-      // ── Nuclear wipe: clears MMKV + AsyncStorage + all SQLite tables ─────
-      // This runs BEFORE supabase.auth.signOut() so data is gone even if the
-      // network call fails. wipeAllLocalData() swallows its own errors.
-      await wipeAllLocalData();
+      // ── Nuclear wipe: clear local stores without blocking navigation ─────
+      // SQLite/AsyncStorage cleanup can be slow on a large account and must
+      // never hold the user on a dead screen. It runs after auth state is
+      // invalidated and is independently guarded inside wipeAllLocalData().
+      void wipeAllLocalData();
 
       // Remove this account's SecureStore token so background session-restore
       // in onAuthStateChange cannot silently re-login the user.
@@ -582,9 +588,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Sign out from Supabase (best-effort — works offline too via local clear).
-      await supabase.auth.signOut().catch(() => {});
+      void supabase.auth.signOut().catch(() => {});
 
-       safeRouter.replace("/welcome");
+      // Route immediately. The local wipe and remote sign-out are deliberately
+      // fire-and-forget so a hung native store/network cannot freeze navigation.
+      safeRouter.replace("/welcome");
     } finally {
       isSwitchingRef.current = false;
       // Keep isUserSigningOut=true for 3 s after the call so the async
@@ -833,25 +841,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Attempt a silent background restore from SecureStore.
           // CRITICAL: we do NOT clear any user state here regardless of outcome.
           // A user who has ever logged in must NEVER be involuntarily signed out.
-          getStoredAccounts()
-            .then(async (accts) => {
-              if (
-                authGenerationRef.current !== eventGeneration ||
-                isUserSigningOut.current ||
-                isSwitchingRef.current
-              ) return;
-              const stored = accts[0] ?? null;
-              if (!stored) return;
+          if (!sessionRestoreRef.current) {
+            const restorePromise = getStoredAccounts()
+              .then(async (accts) => {
+                if (
+                  authGenerationRef.current !== eventGeneration ||
+                  isUserSigningOut.current ||
+                  isSwitchingRef.current
+                ) return;
+                const stored = accts[0] ?? null;
+                if (!stored) return;
 
-              await supabase.auth.setSession({
-                access_token: stored.accessToken,
-                refresh_token: stored.refreshToken,
-              });
-              // On success: TOKEN_REFRESHED fires and updates session state.
-              // On failure: user keeps their current (synthetic) session and
-              // cached data — they stay logged in and can continue using the app.
-            })
-            .catch(() => {});
+                await supabase.auth.setSession({
+                  access_token: stored.accessToken,
+                  refresh_token: stored.refreshToken,
+                });
+                // On success: TOKEN_REFRESHED fires and updates session state.
+                // On failure: user keeps their current (synthetic) session and
+                // cached data — they stay logged in and can continue using the app.
+              })
+              .catch(() => {});
+            sessionRestoreRef.current = restorePromise;
+            void restorePromise
+              .finally(() => {
+                if (sessionRestoreRef.current === restorePromise) {
+                  sessionRestoreRef.current = null;
+                }
+              })
+              .catch(() => {});
+          }
           return; // Never fall through to state-clearing code below
         }
         // Intentional sign-out — clear everything and stop.

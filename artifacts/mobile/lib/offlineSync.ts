@@ -5,7 +5,7 @@ import {
   onConnectivityChange,
   isOnline,
 } from "./offlineStore";
-import { drainQueue, startSyncQueue } from "./storage/syncQueue";
+import { drainQueue, startSyncQueue, stopSyncQueue } from "./storage/syncQueue";
 import {
   getPendingLocalMessages,
   markMessageSynced,
@@ -24,62 +24,71 @@ export async function syncPendingMessages(): Promise<void> {
     // 1. Sync legacy AsyncStorage pending messages
     const pending = await getPendingMessages();
     for (const msg of pending.slice(0, MAX_ITEMS_PER_SYNC)) {
-      // Deduplication: check if a message with the same content+chat+sender
-      // was already inserted (e.g., sent on a previous retry before the ack
-      // arrived). If found, just remove from queue without re-inserting.
-      const { data: existing } = await supabase
-        .from("messages")
-        .select("id")
-        .eq("chat_id", msg.chat_id)
-        .eq("sender_id", msg.sender_id)
-        .eq("encrypted_content", msg.encrypted_content)
-        .gte("sent_at", new Date(Date.now() - 60_000).toISOString())
-        .maybeSingle();
+      try {
+        // Deduplication: check if a message with the same content+chat+sender
+        // was already inserted (e.g., sent on a previous retry before the ack
+        // arrived). If found, just remove from queue without re-inserting.
+        const { data: existing } = await supabase
+          .from("messages")
+          .select("id")
+          .eq("chat_id", msg.chat_id)
+          .eq("sender_id", msg.sender_id)
+          .eq("encrypted_content", msg.encrypted_content)
+          .gte("sent_at", new Date(Date.now() - 60_000).toISOString())
+          .maybeSingle();
 
-      if (existing) {
-        await removePendingMessage(msg.id);
-        continue;
-      }
+        if (existing) {
+          await removePendingMessage(msg.id);
+          continue;
+        }
 
-      const { error } = await supabase.from("messages").insert({
-        chat_id: msg.chat_id,
-        sender_id: msg.sender_id,
-        encrypted_content: msg.encrypted_content,
-      });
-      if (!error) {
-        await removePendingMessage(msg.id);
+        const { error } = await supabase.from("messages").insert({
+          chat_id: msg.chat_id,
+          sender_id: msg.sender_id,
+          encrypted_content: msg.encrypted_content,
+        });
+        if (!error) {
+          await removePendingMessage(msg.id);
+        }
+      } catch {
+        // Keep this item for the next bounded pass. A single malformed row or
+        // transient native/HTTP error must not abort the remaining queue.
       }
     }
 
     // 2. Sync SQLite pending messages (primary path)
     const localPending = await getPendingLocalMessages();
     for (const msg of localPending.slice(0, MAX_ITEMS_PER_SYNC)) {
-      // Deduplication: same guard as above
-      const { data: existing } = await supabase
-        .from("messages")
-        .select("id")
-        .eq("chat_id", msg.conversation_id)
-        .eq("sender_id", msg.sender_id)
-        .eq("encrypted_content", msg.content)
-        .gte("sent_at", new Date(Date.now() - 60_000).toISOString())
-        .maybeSingle();
+      try {
+        // Deduplication: same guard as above
+        const { data: existing } = await supabase
+          .from("messages")
+          .select("id")
+          .eq("chat_id", msg.conversation_id)
+          .eq("sender_id", msg.sender_id)
+          .eq("encrypted_content", msg.content)
+          .gte("sent_at", new Date(Date.now() - 60_000).toISOString())
+          .maybeSingle();
 
-      if (existing) {
-        await markMessageSynced(msg.id, existing.id);
-        continue;
-      }
+        if (existing) {
+          await markMessageSynced(msg.id, existing.id);
+          continue;
+        }
 
-      const { data, error } = await supabase
-        .from("messages")
-        .insert({
-          chat_id: msg.conversation_id,
-          sender_id: msg.sender_id,
-          encrypted_content: msg.content,
-        })
-        .select("id")
-        .single();
-      if (!error && data?.id) {
-        await markMessageSynced(msg.id, data.id);
+        const { data, error } = await supabase
+          .from("messages")
+          .insert({
+            chat_id: msg.conversation_id,
+            sender_id: msg.sender_id,
+            encrypted_content: msg.content,
+          })
+          .select("id")
+          .single();
+        if (!error && data?.id) {
+          await markMessageSynced(msg.id, data.id);
+        }
+      } catch {
+        // Leave the row pending. The next connectivity/interval pass can retry.
       }
     }
 
@@ -88,9 +97,12 @@ export async function syncPendingMessages(): Promise<void> {
     // connectivity event or interval instead of monopolising the JS bridge
     // after a long offline period.
     await drainQueue(MAX_ITEMS_PER_SYNC);
-  } catch {}
-
-  syncing = false;
+  } catch {
+    // A failed pass must remain recoverable through the next retry trigger.
+  } finally {
+    // Never leave the global lock held after a SQLite or network exception.
+    syncing = false;
+  }
 }
 
 let realtimeReconnecting = false;
@@ -101,8 +113,11 @@ async function reconnectRealtime(): Promise<void> {
   try {
     await supabase.realtime.disconnect();
     await supabase.realtime.connect();
-  } catch {}
-  realtimeReconnecting = false;
+  } catch {
+    // A later connectivity event or the next app foreground can retry.
+  } finally {
+    realtimeReconnecting = false;
+  }
 }
 
 let unsubscribe: (() => void) | null = null;
@@ -178,6 +193,7 @@ export function stopOfflineSync(): void {
     unsubscribe = null;
   }
   stopRetryInterval();
+  stopSyncQueue();
 }
 
 /**
@@ -191,7 +207,10 @@ export async function preloadConversationMessages(
   chatIds: string[],
 ): Promise<void> {
   if (!isOnline() || chatIds.length === 0) return;
-  for (const chatId of chatIds) {
+  // This is background warm-up, not a requirement for opening chat. Keep it
+  // bounded so a large contact list cannot monopolise the bridge/network.
+  for (const chatId of chatIds.slice(0, 20)) {
+    if (!isOnline()) break;
     try {
       const count = await getLocalMessageCount(chatId);
       if (count > 0) continue;
