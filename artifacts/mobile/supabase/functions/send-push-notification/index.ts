@@ -47,9 +47,27 @@ Deno.serve(async (req) => {
   const userId = isServiceRequest
     ? (typeof body?.userId === "string" ? body.userId : "")
     : (typeof body?.recipientUserId === "string" ? body.recipientUserId : "");
-  const title = typeof body?.title === "string" ? body.title.trim() : "";
-  const messageBody = typeof body?.body === "string" ? body.body.trim() : "";
   const data = body?.data && typeof body.data === "object" ? body.data : {};
+  const suppliedTitle = typeof body?.title === "string" ? body.title.trim() : "";
+  const senderName =
+    typeof body?.senderName === "string" && body.senderName.trim()
+      ? body.senderName.trim()
+      : typeof body?.sender_display_name === "string" && body.sender_display_name.trim()
+        ? body.sender_display_name.trim()
+        : typeof data.senderName === "string" && data.senderName.trim()
+          ? data.senderName.trim()
+          : typeof data.sender_display_name === "string" && data.sender_display_name.trim()
+            ? data.sender_display_name.trim()
+            : "";
+  const title = senderName || suppliedTitle;
+  const messageBody =
+    typeof body?.body === "string"
+      ? body.body.trim()
+      : typeof body?.messageBody === "string"
+        ? body.messageBody.trim()
+        : typeof data.messageBody === "string"
+          ? data.messageBody.trim()
+          : "";
   const categoryId = typeof body?.categoryId === "string" ? body.categoryId : "message";
   const chatId = typeof body?.chatId === "string" ? body.chatId : "";
   const messageId = typeof body?.messageId === "string" ? body.messageId : "";

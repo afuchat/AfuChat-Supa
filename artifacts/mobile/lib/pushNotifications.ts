@@ -258,3 +258,45 @@ export function addPushTokenListener(
     }
   });
 }
+
+export async function notifyChatRecipients(params: {
+  recipientIds: string[];
+  senderName: string;
+  body: string;
+  chatId: string;
+  messageId: string;
+  senderId?: string;
+}): Promise<void> {
+  if (Platform.OS === "web" || params.recipientIds.length === 0) return;
+
+  const results = await Promise.allSettled(
+    params.recipientIds.map((recipientUserId) =>
+      supabase.functions.invoke("send-push-notification", {
+        body: {
+          recipientUserId,
+          senderName: params.senderName,
+          body: params.body,
+          chatId: params.chatId,
+          messageId: params.messageId,
+          categoryId: PUSH_CATEGORY_MESSAGE,
+          data: {
+            chatId: params.chatId,
+            messageId: params.messageId,
+            senderId: params.senderId ?? null,
+            senderName: params.senderName,
+          },
+        },
+      }),
+    ),
+  );
+
+  if (__DEV__) {
+    results.forEach((result) => {
+      if (result.status === "rejected") {
+        console.warn("[push] message notification failed:", result.reason);
+      } else if (result.value.error) {
+        console.warn("[push] message notification rejected:", result.value.error);
+      }
+    });
+  }
+}

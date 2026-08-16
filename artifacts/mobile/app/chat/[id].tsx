@@ -70,6 +70,7 @@ import Colors from "@/constants/colors";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { showAlert } from "@/lib/alert";
 import { setChatScreenshotProtection } from "@/lib/appLock";
+import { notifyChatRecipients } from "@/lib/pushNotifications";
 import { generateGroupInviteLink } from "@/lib/groupInvite";
 import { showToast as globalShowToast } from "@/lib/toast";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
@@ -5052,6 +5053,14 @@ STRICT RULES:
           sender_handle: profile?.handle ?? "",
         };
         recipientIds.forEach((rid: string) => broadcastToUserInbox(rid, broadcastPayload));
+         void notifyChatRecipients({
+           recipientIds,
+           senderId: user.id,
+           senderName: profile?.display_name || "Someone",
+           body: text,
+           chatId: activeChatId,
+           messageId: inserted.id,
+         });
       }
     }
 
