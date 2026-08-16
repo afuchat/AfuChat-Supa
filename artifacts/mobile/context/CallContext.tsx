@@ -130,20 +130,46 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       setWebrtcAvailable(false);
       return;
     }
-    const t = setTimeout(() => setWebrtcAvailable(getWebRTCAvailable()), 500);
-    return () => clearTimeout(t);
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const interactionTask = InteractionManager.runAfterInteractions(() => {
+      timer = setTimeout(() => {
+        if (!cancelled) setWebrtcAvailable(getWebRTCAvailable());
+      }, 1200);
+    });
+    return () => {
+      cancelled = true;
+      interactionTask.cancel();
+      if (timer) clearTimeout(timer);
+    };
   }, [user?.id]);
 
   // ── Init / tear-down engine when auth changes ─────────────────────────────
   useEffect(() => {
     if (user?.id) {
-      initCallEngine(user.id);
+      let cancelled = false;
+      let timer: ReturnType<typeof setTimeout> | null = null;
+      const interactionTask = InteractionManager.runAfterInteractions(() => {
+        timer = setTimeout(() => {
+          if (!cancelled) initCallEngine(user.id);
+        }, 700);
+      });
+      return () => {
+        cancelled = true;
+        interactionTask.cancel();
+        if (timer) clearTimeout(timer);
+        teardownCallEngine();
+        setStatus("idle");
+        setCallInfo(null);
+        setIncomingNotice(null);
+      };
     } else {
       teardownCallEngine();
       setStatus("idle");
       setCallInfo(null);
       setIncomingNotice(null);
     }
+    return undefined;
   }, [user?.id]);
 
   // ── Mic permission — check once on mount; re-check when app foregrounds ────

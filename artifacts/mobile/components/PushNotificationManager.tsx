@@ -86,10 +86,10 @@ export default function PushNotificationManager() {
       .catch(() => {});
 
     if (getNotificationPreferences().enabled) {
-      configurePushNotifications();
-      // Push registration can invoke a permission prompt and network request.
-      // Keep both out of the first interaction frame after login.
+      // Notification channel setup, permission checks, and token registration
+      // are all native work. Keep them out of the first release-build frame.
       interactionTask = InteractionManager.runAfterInteractions(() => {
+        configurePushNotifications();
         retryTimer = setTimeout(register, 1200);
       });
     }

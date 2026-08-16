@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { AppState } from "react-native";
+import { AppState, InteractionManager } from "react-native";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import {
@@ -608,13 +608,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // screen even when the network is down or getSession() is slow.
     // getSession() still runs below and silently upgrades to a real session.
     let offlineSyncTimer: ReturnType<typeof setTimeout> | null = null;
+    let offlineSyncTask: { cancel?: () => void } | null = null;
     const scheduleOfflineSync = () => {
       if (offlineSyncTimer) return;
       offlineSyncTimer = setTimeout(() => {
         offlineSyncTimer = null;
         if (!isCurrentBootstrap()) return;
-        startOfflineSync();
-      }, 350);
+        offlineSyncTask = InteractionManager.runAfterInteractions(() => {
+          if (isCurrentBootstrap()) startOfflineSync();
+        });
+      }, 1200);
     };
 
     const fastCachedId = getCachedUserId();
@@ -892,6 +895,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       authGenerationRef.current += 1;
       if (offlineSyncTimer) clearTimeout(offlineSyncTimer);
+      offlineSyncTask?.cancel?.();
       clearTimeout(linkedAccountsTimer);
       listener.subscription.unsubscribe();
     };
@@ -911,12 +915,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const updateLastSeen = () => {
       if (isOnline()) supabase.rpc("update_last_seen").then(null, () => {});
     };
-    updateLastSeen();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const interactionTask = InteractionManager.runAfterInteractions(() => {
+      timer = setTimeout(updateLastSeen, 1200);
+    });
     const sub = AppState.addEventListener("change", (state) => {
-      if (state === "active") updateLastSeen();
+      if (state === "active") {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(updateLastSeen, 300);
+      }
     });
     const interval = setInterval(updateLastSeen, 60_000);
-    return () => { sub.remove(); clearInterval(interval); };
+    return () => {
+      interactionTask.cancel();
+      if (timer) clearTimeout(timer);
+      sub.remove();
+      clearInterval(interval);
+    };
   }, [user]);
 
   // Reconnect: re-fetch profile + refresh JWT when network comes back.

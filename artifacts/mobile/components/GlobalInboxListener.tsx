@@ -15,6 +15,7 @@
  * The listener only delivers messages to the in-app event bus.
  */
 
+import { InteractionManager } from "react-native";
 import { useCallback, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -100,10 +101,13 @@ export function GlobalInboxListener() {
         });
     };
 
-    connect();
+    const interactionTask = InteractionManager.runAfterInteractions(() => {
+      reconnectTimer = setTimeout(connect, 700);
+    });
 
     return () => {
       destroyed = true;
+      interactionTask.cancel();
       if (reconnectTimer) clearTimeout(reconnectTimer);
       if (currentChannel) supabase.removeChannel(currentChannel).catch(() => {});
       recentIds.current.clear();
