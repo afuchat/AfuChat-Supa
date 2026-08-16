@@ -113,7 +113,14 @@ Deno.serve(async (req) => {
       : typeof data.attachmentType === "string"
         ? data.attachmentType
         : "";
-  const categoryId = typeof body?.categoryId === "string" ? body.categoryId : "message";
+  const categoryId =
+    typeof body?.categoryId === "string"
+      ? body.categoryId
+      : typeof data.categoryId === "string"
+        ? data.categoryId
+        : typeof data.category_id === "string"
+          ? data.category_id
+          : "message";
   const chatId = typeof body?.chatId === "string" ? body.chatId : "";
   const messageId = typeof body?.messageId === "string" ? body.messageId : "";
   const resolvedSenderId = senderId || suppliedSenderId;

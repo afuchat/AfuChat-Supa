@@ -9,8 +9,16 @@ let cachedNotifications: NotificationsModule | null | undefined;
 let handlerConfigured = false;
 let registrationInFlight: Promise<string | null> | null = null;
 const inFlightDeliveryKeys = new Set<string>();
+const pendingChatDeliveries = new Map<string, {
+  params: NotifyChatRecipientsParams;
+  messageIds: Set<string>;
+  timer: ReturnType<typeof setTimeout>;
+}>();
+const recentDeliveryKeys = new Map<string, number>();
 
 const PUSH_REGISTRATION_TTL_MS = 24 * 60 * 60 * 1000;
+const PUSH_DELIVERY_DEBOUNCE_MS = 350;
+const PUSH_DELIVERY_DEDUPE_MS = 30_000;
 export const PUSH_NOTIFICATIONS_DISABLED =
   typeof process !== "undefined" && process.env.EXPO_PUBLIC_DISABLE_PUSH_NOTIFICATIONS === "1";
 export const PUSH_DIAGNOSTICS_ENABLED =
@@ -57,9 +65,11 @@ export function isPushTokenRegistrationDue(): boolean {
 }
 
 export const PUSH_CATEGORY_MESSAGE = "message";
+export const PUSH_CATEGORY_CALL = "call";
 export const PUSH_ACTION_REPLY = "reply";
 export const PUSH_ACTION_MARK_READ = "mark_read";
 export const PUSH_ACTION_OPEN = "open";
+export const PUSH_ACTION_CALL_BACK = "call_back";
 export const PUSH_ACTION_DEFAULT = "expo.modules.notifications.actions.DEFAULT";
 
 export type PushNotificationResponse = {
@@ -73,6 +83,18 @@ export type PushNotificationResponse = {
       };
     };
   };
+};
+
+type NotifyChatRecipientsParams = {
+  recipientIds: string[];
+  senderName: string;
+  senderAvatarUrl?: string | null;
+  body: string;
+  chatId: string;
+  messageId: string;
+  senderId?: string;
+  attachmentUrl?: string | null;
+  attachmentType?: string | null;
 };
 
 function getNotifications(): NotificationsModule | null {
@@ -150,6 +172,26 @@ export function configurePushNotifications(): void {
     ])
     .catch(() => {});
 
+  notifications
+    .setNotificationCategoryAsync(PUSH_CATEGORY_CALL, [
+      {
+        identifier: PUSH_ACTION_OPEN,
+        buttonTitle: "Open call",
+        options: { opensAppToForeground: true },
+      },
+      {
+        identifier: PUSH_ACTION_CALL_BACK,
+        buttonTitle: "Call back",
+        options: { opensAppToForeground: true },
+      },
+      {
+        identifier: PUSH_ACTION_MARK_READ,
+        buttonTitle: "Dismiss",
+        options: { opensAppToForeground: true },
+      },
+    ])
+    .catch(() => {});
+
   handlerConfigured = true;
   pushDiagnostics.configured = true;
 }
@@ -186,6 +228,13 @@ export async function getLastNotificationResponse(): Promise<PushNotificationRes
 export function clearLastNotificationResponse(): void {
   const notifications = getNotifications();
   notifications?.clearLastNotificationResponse?.();
+}
+
+export async function dismissNotification(response: PushNotificationResponse): Promise<void> {
+  const notifications = getNotifications();
+  const identifier = response.notification?.request?.identifier;
+  if (!notifications || !identifier) return;
+  await notifications.dismissNotificationAsync(identifier);
 }
 
 export function getNotificationTarget(response: PushNotificationResponse): {
@@ -364,25 +413,11 @@ export function addPushTokenListener(
   };
 }
 
-export async function notifyChatRecipients(params: {
-  recipientIds: string[];
-  senderName: string;
-  senderAvatarUrl?: string | null;
-  body: string;
-  chatId: string;
-  messageId: string;
-  senderId?: string;
-  attachmentUrl?: string | null;
-  attachmentType?: string | null;
-}): Promise<void> {
-  if (PUSH_NOTIFICATIONS_DISABLED || Platform.OS === "web" || params.recipientIds.length === 0) return;
-  const recipientIds = [...new Set(params.recipientIds)].filter((id) => id && id !== params.senderId);
-  if (recipientIds.length === 0) return;
-
-  // A message can be observed by more than one optimistic/send path. Keep one
-  // delivery job per message and recipient set, rather than creating a burst
-  // of identical Edge Function requests.
-  const deliveryKey = `${params.messageId}:${[...recipientIds].sort().join(",")}`;
+async function deliverChatNotification(
+  params: NotifyChatRecipientsParams,
+  recipientIds: string[],
+  deliveryKey: string,
+): Promise<void> {
   if (inFlightDeliveryKeys.has(deliveryKey)) return;
   inFlightDeliveryKeys.add(deliveryKey);
   recordPushDiagnostic("deliveryRecipientRequests", recipientIds.length);
@@ -408,6 +443,7 @@ export async function notifyChatRecipients(params: {
           senderAvatarUrl: params.senderAvatarUrl ?? null,
           attachmentUrl: params.attachmentUrl ?? null,
           attachmentType: params.attachmentType ?? null,
+          categoryId: PUSH_CATEGORY_MESSAGE,
         },
       },
     });
@@ -416,5 +452,53 @@ export async function notifyChatRecipients(params: {
     if (__DEV__) console.warn("[push] message notification failed:", error);
   } finally {
     inFlightDeliveryKeys.delete(deliveryKey);
+  }
+}
+
+export function notifyChatRecipients(params: NotifyChatRecipientsParams): void {
+  if (PUSH_NOTIFICATIONS_DISABLED || Platform.OS === "web" || params.recipientIds.length === 0) return;
+  const recipientIds = [...new Set(params.recipientIds)].filter((id) => id && id !== params.senderId);
+  if (recipientIds.length === 0) return;
+
+  const sortedRecipients = [...recipientIds].sort();
+  const messageKey = `${params.messageId}:${sortedRecipients.join(",")}`;
+  const previousDeliveryAt = recentDeliveryKeys.get(messageKey);
+  if (previousDeliveryAt && Date.now() - previousDeliveryAt < PUSH_DELIVERY_DEDUPE_MS) return;
+  recentDeliveryKeys.set(messageKey, Date.now());
+
+  // Several send paths can observe the same message, and rapid message bursts
+  // should not create one Edge Function request per message. Debounce by chat
+  // and recipient set, retaining the newest message for reply/read actions.
+  const batchKey = `${params.chatId}:${sortedRecipients.join(",")}`;
+  const pending = pendingChatDeliveries.get(batchKey);
+  if (pending) {
+    if (pending.messageIds.has(params.messageId)) return;
+    pending.messageIds.add(params.messageId);
+    pending.params = {
+      ...params,
+      body: `${params.senderName || "Someone"} sent ${pending.messageIds.size} new messages`,
+      messageId: params.messageId,
+    };
+    return;
+  }
+
+  const timer = setTimeout(() => {
+    const job = pendingChatDeliveries.get(batchKey);
+    if (!job) return;
+    pendingChatDeliveries.delete(batchKey);
+    void deliverChatNotification(job.params, sortedRecipients, messageKey);
+  }, PUSH_DELIVERY_DEBOUNCE_MS);
+  pendingChatDeliveries.set(batchKey, {
+    params,
+    messageIds: new Set([params.messageId]),
+    timer,
+  });
+
+  // Keep the client-side dedupe cache bounded on long-lived sessions.
+  if (recentDeliveryKeys.size > 500) {
+    const cutoff = Date.now() - PUSH_DELIVERY_DEDUPE_MS;
+    for (const [key, timestamp] of recentDeliveryKeys) {
+      if (timestamp < cutoff) recentDeliveryKeys.delete(key);
+    }
   }
 }

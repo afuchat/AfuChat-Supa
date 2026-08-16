@@ -7,6 +7,7 @@ import {
   addPushTokenListener,
   clearLastNotificationResponse,
   configurePushNotifications,
+  dismissNotification,
   getLastNotificationResponse,
   getNotificationTarget,
   handleNotificationResponse,
@@ -60,6 +61,7 @@ export default function PushNotificationManager() {
       } catch (error) {
         if (__DEV__) console.warn("[push] notification action failed:", error);
       } finally {
+        await dismissNotification(response).catch(() => {});
         clearLastNotificationResponse();
       }
     };
