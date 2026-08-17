@@ -109,6 +109,10 @@ export function isPushTokenRegistrationDue(): boolean {
 
 export const PUSH_CATEGORY_MESSAGE = "message";
 export const PUSH_CATEGORY_CALL = "call";
+// Android notification channels are immutable after creation. A fresh ID is
+// required so devices that created the old channel with low/blocked visibility
+// receive the corrected high-importance public channel settings.
+export const PUSH_ANDROID_CHANNEL_ID = "messages_v2";
 export const PUSH_ACTION_REPLY = "reply";
 export const PUSH_ACTION_MARK_READ = "mark_read";
 export const PUSH_ACTION_OPEN = "open";
@@ -188,7 +192,7 @@ export function configurePushNotifications(): void {
 
   if (Platform.OS === "android") {
     notifications
-      .setNotificationChannelAsync("messages", {
+      .setNotificationChannelAsync(PUSH_ANDROID_CHANNEL_ID, {
         name: "Messages",
         importance: notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],

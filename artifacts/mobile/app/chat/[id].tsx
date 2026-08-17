@@ -4850,24 +4850,40 @@ STRICT RULES:
     }
   }
 
-  function notifyInsertedChatMessage(params: {
+  async function notifyInsertedChatMessage(params: {
     chatId: string;
     messageId?: string | null;
     body: string;
     attachmentUrl?: string | null;
     attachmentType?: string | null;
   }) {
-    if (!user || !chatInfo || !params.messageId) return;
-    const recipientIds = (
-      chatInfo.member_ids.length > 0
+    if (!user || !params.messageId || isLocalNotesId(params.chatId)) return;
+    let recipientIds = (
+      chatInfo?.member_ids?.length
         ? chatInfo.member_ids
-        : chatInfo.other_id
+        : chatInfo?.other_id
           ? [chatInfo.other_id]
           : []
     ).filter((recipientId: string) => recipientId !== user.id);
+
+    // Chat metadata can still be loading when the first message is sent.
+    // Resolve members from Supabase rather than silently dropping delivery.
+    if (recipientIds.length === 0) {
+      const { data: members, error } = await supabase
+        .from("chat_members")
+        .select("user_id")
+        .eq("chat_id", params.chatId);
+      if (error) {
+        console.warn("[push] recipient lookup failed:", error.message);
+        return;
+      }
+      recipientIds = (members ?? [])
+        .map((member) => member.user_id)
+        .filter((recipientId): recipientId is string => Boolean(recipientId) && recipientId !== user.id);
+    }
     if (recipientIds.length === 0) return;
 
-    void notifyChatRecipients({
+    notifyChatRecipients({
       recipientIds,
       senderId: user.id,
       senderName: profile?.display_name || "Someone",
@@ -5067,9 +5083,9 @@ STRICT RULES:
       );
     }
 
-    if (!error && chatInfo && inserted) {
+    if (!error && inserted) {
       const recipientIds = (
-        chatInfo.member_ids.length > 0 ? chatInfo.member_ids : chatInfo.other_id ? [chatInfo.other_id] : []
+        chatInfo?.member_ids?.length ? chatInfo.member_ids : chatInfo?.other_id ? [chatInfo.other_id] : []
       ).filter((rid: string) => rid !== user.id);
 
       if (recipientIds.length > 0) {

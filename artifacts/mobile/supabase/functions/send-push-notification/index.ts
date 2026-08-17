@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 const EXPO_PUSH_TIMEOUT_MS = 12_000;
+const ANDROID_CHANNEL_ID = "messages_v2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -294,7 +295,7 @@ Deno.serve(async (req) => {
     body: messageBody,
     data: finalNotificationData,
     categoryId,
-    channelId: "messages",
+    channelId: ANDROID_CHANNEL_ID,
     sound: "default",
     priority: "high",
     ...(richImage
