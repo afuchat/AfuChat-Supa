@@ -2,7 +2,7 @@
   "expo": {
     "name": "AfuChat",
     "slug": "afuchat",
-    "version": "2.2.18",
+    "version": "2.2.19",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "afuchat",
@@ -76,7 +76,7 @@
           ]
         }
       ],
-      "versionCode": 2223
+      "versionCode": 2225
     },
     "plugins": [
       [

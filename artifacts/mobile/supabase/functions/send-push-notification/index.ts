@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
   const chatId = typeof body?.chatId === "string" ? body.chatId : "";
   const messageId = typeof body?.messageId === "string" ? body.messageId : "";
   const resolvedSenderId = senderId || suppliedSenderId;
-  const safeSenderAvatarUrl = validRemoteUrl(senderAvatarUrl);
+  const safeSenderAvatarUrl = validRemoteUrl(suppliedSenderAvatarUrl);
   const safeAttachmentUrl = validRemoteUrl(attachmentUrl);
   const notificationData = {
     ...data,
