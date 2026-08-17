@@ -36,3 +36,11 @@ If a newly registered token from a clean/current install still returns `SENDER_I
 **Why:** A fresh registration can preserve the same failure when the APK was built from a different Firebase config or an older EAS credential/build artifact.
 
 **How to apply:** Treat fresh-token `SENDER_ID_MISMATCH` as an APK/EAS credential alignment problem; do not purge working Supabase rows or rewrite client token registration first.
+
+## Direct FCM provider
+
+The app's push pipeline uses native FCM tokens and Firebase HTTP v1 only. It must not request Expo push tokens, call the Expo push gateway, or preserve legacy Expo device rows as enabled delivery targets.
+
+**Why:** The product requires provider-independent direct Firebase delivery; an Expo fallback can hide a broken native FCM setup and route notifications through a different service than intended.
+
+**How to apply:** Register `getDevicePushTokenAsync()` values only when the native token type is `fcm`, send through the Firebase HTTP v1 endpoint, disable legacy Expo rows, and ship a new Firebase-enabled native build after changing registration behavior. Expo Go cannot validate this path.

@@ -1,7 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
-const EXPO_PUSH_TIMEOUT_MS = 12_000;
 const FCM_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const FCM_TIMEOUT_MS = 12_000;
 const ANDROID_CHANNEL_ID = "messages_v2";
@@ -37,6 +35,14 @@ function isExpoPushToken(value: unknown): value is string {
     typeof value === "string" &&
     /^(?:Expo|Exponent)PushToken\[[^\]]+\]$/.test(value.trim())
   );
+}
+
+function isDevicePushToken(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length >= 20 && value.length <= 4096;
+}
+
+function isDirectFcmToken(value: unknown): value is string {
+  return isDevicePushToken(value) && !isExpoPushToken(value);
 }
 
 type FcmServiceAccount = {
@@ -450,6 +456,7 @@ Deno.serve(async (req) => {
     : finalSenderAvatarUrl;
   const finalNotificationData = {
     ...notificationData,
+    categoryId,
     ...(senderName ? { senderName } : {}),
     ...(finalSenderAvatarUrl ? { senderAvatarUrl: finalSenderAvatarUrl } : {}),
     ...(finalAttachmentUrl ? { attachmentUrl: finalAttachmentUrl } : {}),
@@ -511,16 +518,15 @@ Deno.serve(async (req) => {
     return json({ ok: true, sent: 0, requestId });
   }
 
-  // Expo tokens remain supported for Expo Go, legacy devices, and iOS.
-  // Android standalone builds store native FCM tokens and are sent directly
-  // through Firebase HTTP v1 below.
-  const validDevices = devices.filter((device) => isExpoPushToken(device.token));
+  // Direct FCM is the only supported provider. Legacy Expo/APNs-only rows
+  // are disabled instead of silently routing through another gateway.
   const fcmDevices = devices.filter(
-    (device) => !isExpoPushToken(device.token) && device.platform === "android",
+    (device) =>
+      (device.platform === "android" || device.platform === "ios") &&
+      isDirectFcmToken(device.token),
   );
-  const unsupportedDevices = devices.filter(
-    (device) => !isExpoPushToken(device.token) && device.platform !== "android",
-  );
+  const fcmDeviceIds = new Set(fcmDevices.map((device) => device.id));
+  const unsupportedDevices = devices.filter((device) => !fcmDeviceIds.has(device.id));
   const malformedIds = unsupportedDevices
     .map((device) => device.id)
     .filter(Boolean);
@@ -539,153 +545,9 @@ Deno.serve(async (req) => {
   if (malformedIds.length) {
     await admin.from("push_devices").update({ enabled: false }).in("id", malformedIds);
   }
-  if (!validDevices.length && !fcmDevices.length) {
+  if (!fcmDevices.length) {
     return json({ ok: true, sent: 0, disabled: malformedIds.length, requestId });
   }
-
-  let expoSent = 0;
-  let expoFailed = 0;
-  let expoStale = 0;
-  const expoErrors: Array<Record<string, unknown>> = [];
-
-  if (validDevices.length) {
-  const messages = validDevices.map((device) => ({
-    to: device.token,
-    title,
-    body: messageBody,
-    data: finalNotificationData,
-    categoryId,
-    channelId: ANDROID_CHANNEL_ID,
-    sound: "default",
-    priority: "high",
-    ...(richImage
-      ? { mutableContent: true, richContent: { image: richImage } }
-      : {}),
-  }));
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), EXPO_PUSH_TIMEOUT_MS);
-  let response: Response;
-  try {
-    response = await fetch(EXPO_PUSH_URL, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(messages),
-      signal: controller.signal,
-    });
-  } catch (error) {
-    await writePushAudit(admin, validDevices.map((device) => ({
-      ...auditContext,
-      status: "failed" as const,
-      stage: "provider_request",
-      recipient_user_id: device.user_id,
-      device_id: device.id,
-      platform: device.platform,
-      error_code: "PROVIDER_UNREACHABLE",
-      error_message: auditText(error instanceof Error ? error.message : "Provider request failed."),
-    })));
-    return json({ error: "Push provider timed out or was unreachable.", requestId }, 504);
-  } finally {
-    clearTimeout(timeout);
-  }
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    await writePushAudit(admin, validDevices.map((device) => ({
-      ...auditContext,
-      status: "failed" as const,
-      stage: "provider_request",
-      recipient_user_id: device.user_id,
-      device_id: device.id,
-      platform: device.platform,
-      provider_http_status: response.status,
-      error_code: "PROVIDER_HTTP_ERROR",
-      error_message: "Expo rejected the push request.",
-    })));
-    return json({ error: "Push provider rejected the request.", requestId }, 502);
-  }
-
-  if (!Array.isArray(payload?.data) || payload.data.length !== validDevices.length) {
-    console.error("[send-push-notification] Unexpected Expo ticket response", JSON.stringify({
-      expected: validDevices.length,
-      received: Array.isArray(payload?.data) ? payload.data.length : 0,
-    }));
-    await writePushAudit(admin, validDevices.map((device) => ({
-      ...auditContext,
-      status: "failed" as const,
-      stage: "provider_response",
-      recipient_user_id: device.user_id,
-      device_id: device.id,
-      platform: device.platform,
-      provider_http_status: response.status,
-      error_code: "INCOMPLETE_TICKET_RESPONSE",
-      error_message: "Expo returned a different number of tickets than devices.",
-      details: {
-        expected: validDevices.length,
-        received: Array.isArray(payload?.data) ? payload.data.length : 0,
-      },
-    })));
-    return json({ error: "Push provider returned an incomplete response.", requestId }, 502);
-  }
-
-  const tickets = payload.data;
-  const staleIds = tickets
-    .map((ticket: any, index: number) =>
-      ticket?.status === "error" && ticket?.details?.error === "DeviceNotRegistered"
-        ? validDevices[index]?.id
-        : null,
-    )
-    .filter(Boolean);
-
-  if (staleIds.length) {
-    await admin.from("push_devices").update({ enabled: false }).in("id", staleIds);
-  }
-  expoStale = staleIds.length;
-
-  const failedTickets = tickets
-    .map((ticket: any, index: number) => ({
-      index,
-      status: ticket?.status ?? "unknown",
-      error: ticket?.message ?? ticket?.details?.error ?? "Unknown provider error",
-    }))
-    .filter((ticket) => ticket.status !== "ok");
-  const sent = tickets.filter((ticket: any) => ticket?.status === "ok").length;
-  expoSent = sent;
-  expoFailed = failedTickets.length;
-  expoErrors.push(...failedTickets);
-
-  if (failedTickets.length) {
-    console.error("[send-push-notification] Expo ticket errors", JSON.stringify({
-      sent,
-      failed: failedTickets,
-      stale: staleIds.length,
-    }));
-  }
-
-  await writePushAudit(admin, tickets.map((ticket: any, index: number) => {
-    const device = validDevices[index];
-    const providerErrorCode = auditText(ticket?.details?.error);
-    const sent = ticket?.status === "ok";
-    return {
-      ...auditContext,
-      status: sent ? "sent" as const : "failed" as const,
-      stage: "provider_ticket",
-      recipient_user_id: device?.user_id ?? null,
-      device_id: device?.id ?? null,
-      platform: device?.platform ?? null,
-      provider_http_status: response.status,
-      provider_status: auditText(ticket?.status),
-      provider_ticket_id: auditText(ticket?.id),
-      error_code: providerErrorCode,
-      error_message: sent ? null : auditText(ticket?.message ?? providerErrorCode ?? "Expo ticket failed."),
-      details: sent ? {} : { ticketIndex: index },
-    };
-  }));
-
-  }
-
   let fcmSent = 0;
   let fcmFailed = 0;
   let fcmStale = 0;
@@ -728,6 +590,14 @@ Deno.serve(async (req) => {
                 channel_id: ANDROID_CHANNEL_ID,
                 sound: "default",
                 ...(richImage ? { image: richImage } : {}),
+              },
+            },
+            apns: {
+              payload: {
+                aps: {
+                  sound: "default",
+                  category: categoryId,
+                },
               },
             },
           });
@@ -785,10 +655,10 @@ Deno.serve(async (req) => {
     }
   }
 
-  const sent = expoSent + fcmSent;
-  const failed = expoFailed + fcmFailed;
-  const stale = expoStale + fcmStale;
-  const errors = [...expoErrors, ...fcmErrors];
+  const sent = fcmSent;
+  const failed = fcmFailed;
+  const stale = fcmStale;
+  const errors = fcmErrors;
   return json(
     {
       ok: failed === 0,

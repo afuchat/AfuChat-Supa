@@ -12,13 +12,6 @@ function json(body: unknown, status = 200) {
   });
 }
 
-function isExpoPushToken(value: unknown): value is string {
-  return (
-    typeof value === "string" &&
-    /^(?:Expo|Exponent)PushToken\[[^\]]+\]$/.test(value.trim())
-  );
-}
-
 function isDevicePushToken(value: unknown): value is string {
   return typeof value === "string" && value.trim().length >= 20 && value.length <= 4096;
 }
@@ -67,24 +60,16 @@ Deno.serve(async (req) => {
   const body = await req.json().catch(() => null);
   const token = typeof body?.token === "string" ? body.token.trim() : "";
   const platform = body?.platform === "ios" ? "ios" : body?.platform === "android" ? "android" : null;
-  const provider =
-    body?.provider === "expo"
-      ? "expo"
-      : body?.provider === "fcm"
-        ? "fcm"
-        : isExpoPushToken(token)
-          ? "expo"
-          : platform === "android"
-            ? "fcm"
-            : "apns";
+  const provider = body?.provider === "fcm" ? "fcm" : null;
   const enabled = body?.enabled !== false;
 
-  // Android standalone builds register the native FCM token. Expo tokens are
-  // still accepted for Expo Go, legacy devices, and the existing iOS path.
+  // This registry is intentionally direct-FCM only. Expo push tokens and
+  // APNs-only tokens cannot be sent through the Firebase HTTP v1 endpoint.
   if (
     !isDevicePushToken(token) ||
     !platform ||
-    (platform === "android" && provider !== "fcm" && !isExpoPushToken(token))
+    provider !== "fcm" ||
+    (platform !== "android" && platform !== "ios")
   ) {
     await writeRegistrationAudit(admin, {
       request_id: requestId,
@@ -96,7 +81,7 @@ Deno.serve(async (req) => {
       error_code: "INVALID_DEVICE_TOKEN",
       error_message: "Client submitted an invalid push token.",
     });
-    return json({ error: "A valid token and platform are required." }, 400);
+    return json({ error: "A valid FCM token, platform, and provider are required." }, 400);
   }
 
   const update = {

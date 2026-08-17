@@ -110,8 +110,8 @@ export default function PushNotificationManager() {
       const previousNativeToken = storage.getString(KEYS.PUSH_NATIVE_TOKEN);
       const nativeTokenChanged = previousNativeToken !== nativeToken;
       storage.setString(KEYS.PUSH_NATIVE_TOKEN, nativeToken);
-      // Expo can emit the native token more than once during startup. Only
-      // invalidate the cached Expo token when the native token actually changes.
+      // The native device token can be emitted more than once during startup.
+      // Only invalidate registration when the token actually changes.
       if (!nativeTokenChanged && !isPushTokenRegistrationDue()) return;
       if (nativeTokenChanged) storage.delete(KEYS.PUSH_TOKEN_REGISTERED_AT);
       scheduleRegister(0, true);

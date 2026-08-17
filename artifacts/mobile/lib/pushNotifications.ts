@@ -1,5 +1,4 @@
 import { Platform } from "react-native";
-import Constants from "expo-constants";
 import { supabase } from "@/lib/supabase";
 import { KEYS, storage } from "@/lib/storage/mmkv";
 
@@ -158,29 +157,15 @@ function getNotifications(): NotificationsModule | null {
   return cachedNotifications;
 }
 
-function getProjectId(): string | null {
-  const projectId =
-    Constants.expoConfig?.extra?.eas?.projectId ??
-    (Constants as any).easConfig?.projectId;
-  return typeof projectId === "string" && projectId.length > 0 ? projectId : null;
-}
-
-function isExpoPushToken(value: unknown): value is string {
-  return (
-    typeof value === "string" &&
-    /^(?:Expo|Exponent)PushToken\[[^\]]+\]$/.test(value.trim())
-  );
-}
-
-function isExpoGoRuntime(): boolean {
-  return (
-    Constants.appOwnership === "expo" ||
-    (Constants as any).executionEnvironment === "storeClient"
-  );
-}
-
 function isNativePushToken(value: unknown): value is string {
   return typeof value === "string" && value.trim().length >= 20 && value.length <= 4096;
+}
+
+function isDirectFcmToken(value: unknown): value is string {
+  return (
+    isNativePushToken(value) &&
+    !/^(?:Expo|Exponent)PushToken\[[^\]]+\]$/.test(value.trim())
+  );
 }
 
 export function configurePushNotifications(): void {
@@ -395,93 +380,68 @@ export async function registerPushToken(): Promise<string | null> {
 
   const registration = (async (): Promise<string | null> => {
     recordPushDiagnostic("registrationAttempts");
-  const notifications = getNotifications();
-  if (!notifications || Platform.OS === "web") return null;
+    const notifications = getNotifications();
+    if (!notifications || Platform.OS === "web") return null;
 
-  const device = require("expo-device") as typeof import("expo-device");
-  if (!device.isDevice) return null;
+    const device = require("expo-device") as typeof import("expo-device");
+    if (!device.isDevice) return null;
 
-  configurePushNotifications();
+    configurePushNotifications();
 
-   const existing = await withTimeout(
-     () => notifications.getPermissionsAsync(),
-     PUSH_NATIVE_TIMEOUT_MS,
-     "notification permission check",
-   );
-  let status = existing.status;
-  if (status !== "granted") {
-     const requested = await withTimeout(
-       () => notifications.requestPermissionsAsync(),
-       PUSH_NATIVE_TIMEOUT_MS,
-       "notification permission request",
-     );
-    status = requested.status;
-  }
-  if (status !== "granted") return null;
-
-    let token: string;
-    let provider: "fcm" | "expo";
-
-    // Standalone Android builds have Firebase configured through
-    // google-services.json. Register the device's FCM token directly so
-    // delivery does not depend on Expo's push gateway.
-    if (Platform.OS === "android" && !isExpoGoRuntime()) {
-      const deviceToken = await withTimeout(
-        () => notifications.getDevicePushTokenAsync(),
+    const existing = await withTimeout(
+      () => notifications.getPermissionsAsync(),
+      PUSH_NATIVE_TIMEOUT_MS,
+      "notification permission check",
+    );
+    let status = existing.status;
+    if (status !== "granted") {
+      const requested = await withTimeout(
+        () => notifications.requestPermissionsAsync(),
         PUSH_NATIVE_TIMEOUT_MS,
-        "FCM device token request",
+        "notification permission request",
       );
-      if (deviceToken.type !== "fcm" || !isNativePushToken(deviceToken.data)) {
-        throw new Error("Android did not return a valid FCM device token.");
-      }
-      token = deviceToken.data.trim();
-      provider = "fcm";
-    } else {
-      // Expo Go cannot expose this app's Firebase credentials. Keep the
-      // development client and the existing iOS path on Expo tokens.
-      const projectId = getProjectId();
-      if (!projectId) {
-        throw new Error("Expo EAS project ID is required for Expo push registration.");
-      }
-      const expoToken = (
-        await withTimeout(
-          () => notifications.getExpoPushTokenAsync({ projectId }),
-          PUSH_NATIVE_TIMEOUT_MS,
-          "Expo push token request",
-        )
-      ).data;
-      if (!isExpoPushToken(expoToken)) {
-        throw new Error("Expo returned an invalid push token.");
-      }
-      token = expoToken;
-      provider = "expo";
+      status = requested.status;
+    }
+    if (status !== "granted") return null;
+
+    // Always register the native FCM token. ExpoPushToken values are
+    // intentionally not requested because delivery is handled directly by
+    // Firebase HTTP v1.
+    const deviceToken = await withTimeout(
+      () => notifications.getDevicePushTokenAsync(),
+      PUSH_NATIVE_TIMEOUT_MS,
+      "FCM device token request",
+    );
+    if (deviceToken.type !== "fcm" || !isNativePushToken(deviceToken.data)) {
+      throw new Error("The native build did not return a valid FCM device token.");
+    }
+    const token = deviceToken.data.trim();
+
+    const previousToken = storage.getString(KEYS.PUSH_TOKEN);
+    const previousRegistrationAt = storage.getNumber(KEYS.PUSH_TOKEN_REGISTERED_AT) ?? 0;
+    if (
+      previousToken === token &&
+      previousRegistrationAt > 0 &&
+      Date.now() - previousRegistrationAt < PUSH_REGISTRATION_TTL_MS
+    ) {
+      recordPushDiagnostic("registrationCacheHits");
+      return token;
     }
 
-  const previousToken = storage.getString(KEYS.PUSH_TOKEN);
-  const previousRegistrationAt = storage.getNumber(KEYS.PUSH_TOKEN_REGISTERED_AT) ?? 0;
-  if (
-    previousToken === token &&
-    previousRegistrationAt > 0 &&
-    Date.now() - previousRegistrationAt < PUSH_REGISTRATION_TTL_MS
-  ) {
-    recordPushDiagnostic("registrationCacheHits");
+    recordPushDiagnostic("registrationNetworkRequests");
+    const { error } = await withTimeout(
+      () =>
+        supabase.functions.invoke("register-push-token", {
+          body: { token, platform: Platform.OS, provider: "fcm" },
+        }),
+      PUSH_NETWORK_TIMEOUT_MS,
+      "push token registration",
+    );
+    if (error) throw error;
+
+    storage.setString(KEYS.PUSH_TOKEN, token);
+    storage.setNumber(KEYS.PUSH_TOKEN_REGISTERED_AT, Date.now());
     return token;
-  }
-
-  recordPushDiagnostic("registrationNetworkRequests");
-   const { error } = await withTimeout(
-     () =>
-       supabase.functions.invoke("register-push-token", {
-          body: { token, platform: Platform.OS, provider },
-       }),
-     PUSH_NETWORK_TIMEOUT_MS,
-     "push token registration",
-   );
-  if (error) throw error;
-
-  storage.setString(KEYS.PUSH_TOKEN, token);
-  storage.setNumber(KEYS.PUSH_TOKEN_REGISTERED_AT, Date.now());
-  return token;
   })();
 
   registrationInFlight = registration;
@@ -494,14 +454,14 @@ export async function registerPushToken(): Promise<string | null> {
 
 export async function disablePushToken(token: string): Promise<void> {
   if (PUSH_NOTIFICATIONS_DISABLED) return;
-  if (!isNativePushToken(token)) return;
+  if (!isDirectFcmToken(token)) return;
   await withTimeout(
     () =>
       supabase.functions.invoke("register-push-token", {
         body: {
           token,
           platform: Platform.OS,
-          provider: isExpoPushToken(token) ? "expo" : "fcm",
+          provider: "fcm",
           enabled: false,
         },
       }),
@@ -517,10 +477,9 @@ export function addPushTokenListener(
   const notifications = getNotifications();
   if (!notifications) return null;
   const subscription = notifications.addPushTokenListener((event) => {
-    // expo-notifications emits a native device token here, not an
-    // ExpoPushToken. Force a fresh getExpoPushTokenAsync() instead of
-    // persisting this value as a server-deliverable token.
-    if (typeof event.data === "string" && event.data.length > 0) onTokenChanged(event.data);
+    // expo-notifications emits a native device token here. The registration
+    // request revalidates it as an FCM token before persisting it.
+    if (isNativePushToken(event.data)) onTokenChanged(event.data.trim());
   });
   if (PUSH_DIAGNOSTICS_ENABLED) pushDiagnostics.activeTokenListeners += 1;
   let removed = false;
