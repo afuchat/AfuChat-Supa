@@ -44,3 +44,9 @@ The app's push pipeline uses native FCM tokens and Firebase HTTP v1 only. It mus
 **Why:** The product requires provider-independent direct Firebase delivery; an Expo fallback can hide a broken native FCM setup and route notifications through a different service than intended.
 
 **How to apply:** Register `getDevicePushTokenAsync()` values only when the native token type is `fcm`, send through the Firebase HTTP v1 endpoint, disable legacy Expo rows, and ship a new Firebase-enabled native build after changing registration behavior. Expo Go cannot validate this path.
+
+Important API detail: `expo-notifications.getDevicePushTokenAsync()` labels the native token type by platform (`"android"`/`"ios"`), not provider (`"fcm"`). On Android, `type === "android"` with string `data` is the FCM token.
+
+**Why:** Requiring `type === "fcm"` rejects every valid Android token before it reaches the registration Edge Function, leaving the production device registry empty.
+
+**How to apply:** Compare the returned type with `Platform.OS`, validate the token data as a direct FCM token, and test only with a Firebase-enabled native build—not Expo Go.

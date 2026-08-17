@@ -412,8 +412,15 @@ export async function registerPushToken(): Promise<string | null> {
       PUSH_NATIVE_TIMEOUT_MS,
       "FCM device token request",
     );
-    if (deviceToken.type !== "fcm" || !isNativePushToken(deviceToken.data)) {
-      throw new Error("The native build did not return a valid FCM device token.");
+    // expo-notifications labels native tokens by platform ("android"/"ios"),
+    // not by provider ("fcm"). On Android, the token data is the FCM token.
+    if (
+      deviceToken.type !== Platform.OS ||
+      !isDirectFcmToken(deviceToken.data)
+    ) {
+      throw new Error(
+        `The native build did not return a valid direct FCM token (type=${String(deviceToken.type)}).`,
+      );
     }
     const token = deviceToken.data.trim();
 

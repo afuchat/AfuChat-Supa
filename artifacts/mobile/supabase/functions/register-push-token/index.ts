@@ -16,6 +16,17 @@ function isDevicePushToken(value: unknown): value is string {
   return typeof value === "string" && value.trim().length >= 20 && value.length <= 4096;
 }
 
+function isExpoPushToken(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^(?:Expo|Exponent)PushToken\[[^\]]+\]$/.test(value.trim())
+  );
+}
+
+function isDirectFcmToken(value: unknown): value is string {
+  return isDevicePushToken(value) && !isExpoPushToken(value);
+}
+
 async function writeRegistrationAudit(
   admin: any,
   row: {
@@ -66,7 +77,7 @@ Deno.serve(async (req) => {
   // This registry is intentionally direct-FCM only. Expo push tokens and
   // APNs-only tokens cannot be sent through the Firebase HTTP v1 endpoint.
   if (
-    !isDevicePushToken(token) ||
+    !isDirectFcmToken(token) ||
     !platform ||
     provider !== "fcm" ||
     (platform !== "android" && platform !== "ios")
