@@ -24,3 +24,9 @@ An Expo ticket with `status: "ok"` only means Expo accepted the request; Android
 **Why:** Android receipts can report FCM `SenderId mismatch` or `DeviceNotRegistered` for every request even when Supabase rows are enabled and the initial provider response is successful.
 
 **How to apply:** Keep the Firebase sender/project and EAS Android FCM service-account credentials aligned before changing client registration code. If the credentials already match, assume tokens from an older APK/sender until a clean reinstall proves otherwise; disable stale tokens after receipt errors and never label provider tickets as final delivery.
+
+If a newly registered token from a clean/current install still returns `SENDER_ID_MISMATCH`, the dashboard credential alone is not proof that the installed artifact uses the same Firebase sender. Re-download `google-services.json`, rebuild with an incremented version, and verify the artifact/build project before debugging Supabase.
+
+**Why:** A fresh registration can preserve the same failure when the APK was built from a different Firebase config or an older EAS credential/build artifact.
+
+**How to apply:** Treat fresh-token `SENDER_ID_MISMATCH` as an APK/EAS credential alignment problem; do not purge working Supabase rows or rewrite client token registration first.
