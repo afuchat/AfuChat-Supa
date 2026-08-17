@@ -49,13 +49,17 @@ const SUPABASE_REQUEST_TIMEOUT_MS = 15_000;
 const fetchWithTimeout: typeof fetch = async (input, init) => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), SUPABASE_REQUEST_TIMEOUT_MS);
+  const callerSignal = init?.signal;
+  const abortFromCaller = () => controller.abort();
+  callerSignal?.addEventListener("abort", abortFromCaller, { once: true });
   try {
     return await fetch(input, {
       ...init,
-      signal: init?.signal ?? controller.signal,
+      signal: controller.signal,
     });
   } finally {
     clearTimeout(timer);
+    callerSignal?.removeEventListener("abort", abortFromCaller);
   }
 };
 

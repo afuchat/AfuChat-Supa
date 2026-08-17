@@ -48,6 +48,16 @@ export async function enqueue(
 // ─── Drain ─────────────────────────────────────────────────────────────────────
 
 let _draining = false;
+let _retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleRetry(retryCount: number): void {
+  if (!_listenerRegistered || _retryTimer) return;
+  const delay = Math.min(15 * 60_000, 5_000 * 2 ** Math.min(retryCount, 7));
+  _retryTimer = setTimeout(() => {
+    _retryTimer = null;
+    void drainQueue();
+  }, delay);
+}
 
 export async function drainQueue(maxItems = 50): Promise<void> {
   if (_draining || !isOnline()) return;
@@ -71,15 +81,17 @@ export async function drainQueue(maxItems = 50): Promise<void> {
         await db.runAsync("DELETE FROM offline_queue WHERE id = ?", [item.id]);
       } else {
         const retries = (item.retry_count ?? 0) + 1;
-        if (retries >= 5) {
-          // Give up after 5 retries
-          await db.runAsync("DELETE FROM offline_queue WHERE id = ?", [item.id]);
-        } else {
-          await db.runAsync(
-            "UPDATE offline_queue SET retry_count = ?, last_error = ? WHERE id = ?",
-            [retries, "retry", item.id],
-          );
-        }
+        // Network outages, expired tokens, and temporary RLS failures are not
+        // safe reasons to delete a user's action. Keep it durable and retry
+        // with backoff; only a confirmed success removes the item.
+        await db.runAsync(
+          "UPDATE offline_queue SET retry_count = ?, last_error = ? WHERE id = ?",
+          [retries, "retry", item.id],
+        );
+        scheduleRetry(retries);
+        // Do not hammer the bridge/network or process later actions out of
+        // order while the oldest item is failing.
+        break;
       }
     }
   } catch {
@@ -223,5 +235,9 @@ export function startSyncQueue(): void {
 export function stopSyncQueue(): void {
   _queueUnsubscribe?.();
   _queueUnsubscribe = null;
+  if (_retryTimer) {
+    clearTimeout(_retryTimer);
+    _retryTimer = null;
+  }
   _listenerRegistered = false;
 }

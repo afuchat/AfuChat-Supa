@@ -8,7 +8,6 @@ import { AppState, type AppStateStatus } from "react-native";
 import {
   getLocalConversations,
   saveConversations,
-  hasLocalConversations,
   type LocalConversation,
 } from "@/lib/storage/localConversations";
 import { isOnline, onConnectivityChange } from "@/lib/offlineStore";
@@ -21,33 +20,48 @@ export function useLocalConversations(userId: string | undefined) {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const lastSyncRef = useRef<number>(0);
+  const generationRef = useRef(0);
+  const syncingRef = useRef(false);
 
   // Step 1: Render from device instantly — zero network
-  const loadLocal = useCallback(async () => {
-    const local = await getLocalConversations();
-    if (local.length > 0) {
-      setConversations(local);
-      setLoading(false);
+  const loadLocal = useCallback(async (generation: number) => {
+    try {
+      const local = await getLocalConversations();
+      if (generation !== generationRef.current) return;
+      if (local.length > 0) setConversations(local);
+    } finally {
+      // An empty cache is a valid state. Never leave a first-time or offline
+      // user behind an infinite spinner while waiting for the network.
+      if (generation === generationRef.current) setLoading(false);
     }
   }, []);
 
   // Step 2: Background sync from Supabase
-  const syncFromServer = useCallback(async (force = false) => {
-    if (!userId || !isOnline() || syncing) return;
+  const syncFromServer = useCallback(async (
+    force = false,
+    expectedUserId = userId,
+    expectedGeneration = generationRef.current,
+  ) => {
+    if (
+      !expectedUserId ||
+      !isOnline() ||
+      syncingRef.current ||
+      expectedGeneration !== generationRef.current
+    ) return;
     // Debounce: don't sync more than once every 30s unless forced
     const now = Date.now();
     if (!force && now - lastSyncRef.current < 30_000) return;
     lastSyncRef.current = now;
+    syncingRef.current = true;
     setSyncing(true);
     try {
       const { data: memberRows } = await supabase
         .from("chat_members")
         .select("chat_id")
-        .eq("user_id", userId);
+        .eq("user_id", expectedUserId);
 
       if (!memberRows?.length) {
-        setLoading(false);
-        setSyncing(false);
+        if (expectedGeneration === generationRef.current) setLoading(false);
         return;
       }
 
@@ -63,7 +77,7 @@ export function useLocalConversations(userId: string | undefined) {
         .eq("is_archived", false)
         .order("updated_at", { ascending: false });
 
-      if (!chatRows) { setSyncing(false); return; }
+      if (!chatRows || expectedGeneration !== generationRef.current) return;
 
       const { data: lastMsgs } = await supabase
         .from("messages")
@@ -83,13 +97,13 @@ export function useLocalConversations(userId: string | undefined) {
           lastMsgMap[m.chat_id] = {
             last_message: preview,
             last_message_at: m.sent_at,
-            last_message_is_mine: m.sender_id === userId,
+          last_message_is_mine: m.sender_id === expectedUserId,
           };
         }
       }
 
       const items: LocalConversation[] = chatRows.map((c: any) => {
-        const others = (c.chat_members ?? []).filter((m: any) => m.user_id !== userId);
+        const others = (c.chat_members ?? []).filter((m: any) => m.user_id !== expectedUserId);
         const other = others[0]?.profiles;
         const lm = lastMsgMap[c.id] ?? {};
         return {
@@ -122,32 +136,52 @@ export function useLocalConversations(userId: string | undefined) {
         return new Date(b.last_message_at ?? 0).getTime() - new Date(a.last_message_at ?? 0).getTime();
       });
 
+      if (expectedGeneration !== generationRef.current) return;
       setConversations(items);
       setLoading(false);
       // Persist permanently (INSERT OR REPLACE — updates metadata like last_message)
       await saveConversations(items);
     } catch {
     } finally {
-      setSyncing(false);
+      syncingRef.current = false;
+      if (expectedGeneration === generationRef.current) setSyncing(false);
     }
-  }, [userId, syncing]);
-
-  useEffect(() => {
-    if (!userId) return;
-    loadLocal().then(() => syncFromServer(true));
   }, [userId]);
 
   useEffect(() => {
+    const generation = ++generationRef.current;
+    lastSyncRef.current = 0;
+    if (!userId) {
+      setConversations([]);
+      setLoading(false);
+      setSyncing(false);
+      return;
+    }
+
+    syncingRef.current = false;
+    setConversations([]);
+    setLoading(true);
+    void (async () => {
+      await loadLocal(generation);
+      if (generation === generationRef.current) {
+        await syncFromServer(true, userId, generation);
+      }
+    })();
+  }, [userId, loadLocal, syncFromServer]);
+
+  useEffect(() => {
     if (!userId) return;
+    const generation = generationRef.current;
     return onConnectivityChange((online) => {
-      if (online) syncFromServer(true);
+      if (online) void syncFromServer(true, userId, generation);
     });
   }, [userId, syncFromServer]);
 
   useEffect(() => {
     if (!userId) return;
+    const generation = generationRef.current;
     const sub = AppState.addEventListener("change", (state: AppStateStatus) => {
-      if (state === "active") syncFromServer();
+      if (state === "active") void syncFromServer(false, userId, generation);
     });
     return () => sub.remove();
   }, [userId, syncFromServer]);

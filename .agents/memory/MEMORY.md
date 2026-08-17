@@ -62,3 +62,4 @@
 - [Push notification actions](push-notification-actions.md) — categories must be registered in the native client and categoryId/chatId/messageId sent in Expo payloads; response listeners handle warm and cold starts.
 - [EAS project migration](eas-project-migration.md) — replacement EAS projects require synchronized profile IDs and fresh Expo push-token registration.
 - [Production connectivity unknown state](production-connectivity-unknown.md) — standalone Android can mount before NetInfo; unknown must be network-usable, not offline/low-data, and noncritical services should start after first render.
+- [Expo workflow port detection](expo-workflow-port-detection.md) — managed Expo web preview needs waitForPort 5000; without it Metro can run while the workflow remains unattached.

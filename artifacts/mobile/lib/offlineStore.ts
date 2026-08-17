@@ -409,6 +409,10 @@ export function clearCachedUserId(): void {
  */
 export async function clearAccountCache(): Promise<void> {
   try {
+    await import("./storage/localConversations")
+      .then(({ invalidateConversationWrites }) => invalidateConversationWrites())
+      .catch(() => {});
+
     // ── MMKV (synchronous, zero I/O) ──────────────────────────────────────────
     storage.delete(KEYS.USER_PROFILE);
     storage.delete(KEYS.USER_ID);
@@ -427,12 +431,23 @@ export async function clearAccountCache(): Promise<void> {
     // account switch so they never leak from one account to another.
     // (Messages, conversations, contacts, feed, settings are cleared separately
     //  by their own delete* helpers or are the new user's data anyway.)
-    import("./storage/chatFolders")
-      .then(({ clearAllFolders }) => clearAllFolders())
-      .catch(() => {});
-    import("./videoProgress")
-      .then(({ clearAllVideoProgress }) => clearAllVideoProgress())
-      .catch(() => {});
+    await Promise.all([
+      import("./storage/chatFolders")
+        .then(({ clearAllFolders }) => clearAllFolders())
+        .catch(() => {}),
+      import("./videoProgress")
+        .then(({ clearAllVideoProgress }) => clearAllVideoProgress())
+        .catch(() => {}),
+      // The queue has no authenticated owner column in older databases.
+      // Clear it during account transitions rather than risk replaying an
+      // old account's actions under a new session.
+      import("./storage/db")
+        .then(async ({ getDB }) => {
+          const db = await getDB();
+          await db.runAsync("DELETE FROM offline_queue");
+        })
+        .catch(() => {}),
+    ]);
 
     // ── AsyncStorage (async batch) ────────────────────────────────────────────
     const allKeys = await AsyncStorage.getAllKeys();
@@ -512,7 +527,25 @@ const DEVICE_ASYNC_KEYS: string[] = [
  * Safe to call even if individual stores fail — each store is wrapped
  * in its own try/catch so one failure never blocks the others.
  */
-export async function wipeAllLocalData(): Promise<void> {
+let wipeInFlight: Promise<void> | null = null;
+
+export function waitForLocalDataWipe(): Promise<void> {
+  return wipeInFlight ?? Promise.resolve();
+}
+
+export function wipeAllLocalData(): Promise<void> {
+  if (wipeInFlight) return wipeInFlight;
+  wipeInFlight = performWipeAllLocalData().finally(() => {
+    wipeInFlight = null;
+  });
+  return wipeInFlight;
+}
+
+async function performWipeAllLocalData(): Promise<void> {
+  await import("./storage/localConversations")
+    .then(({ invalidateConversationWrites }) => invalidateConversationWrites())
+    .catch(() => {});
+
   // ── 1. MMKV: snapshot device prefs → clearAll → restore ───────────────────
   try {
     // Build the full list of keys to preserve:

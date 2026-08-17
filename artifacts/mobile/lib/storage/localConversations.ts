@@ -58,6 +58,14 @@ export function mapConversation(item: any): LocalConversation {
 
 // ─── Reads ──────────────────────────────────────────────────────────────────────
 
+// Async reads can finish after an account switch. The generation invalidates
+// pending writes so stale rows cannot repopulate the next account's cache.
+let conversationGeneration = 0;
+
+export function invalidateConversationWrites(): void {
+  conversationGeneration += 1;
+}
+
 export async function getLocalConversations(includeArchived = false): Promise<LocalConversation[]> {
   try {
     const db = await getDB();
@@ -121,8 +129,10 @@ export async function saveConversations(items: any[]): Promise<void> {
   if (!items.length) return;
   try {
     const db = await getDB();
+    const generation = conversationGeneration;
     const now = Date.now();
     for (const item of items) {
+      if (generation !== conversationGeneration) return;
       const c = mapConversation(item);
       await db.runAsync(
         `INSERT OR REPLACE INTO conversations
@@ -239,6 +249,7 @@ export async function pruneConversations(keepIds: string[]): Promise<void> {
  * Called during account switch / sign-out to prevent data leakage.
  */
 export async function clearAllConversations(): Promise<void> {
+  invalidateConversationWrites();
   try {
     const db = await getDB();
     await db.runAsync("DELETE FROM conversations");

@@ -1,3 +1,4 @@
+import { InteractionManager } from "react-native";
 import { supabase } from "./supabase";
 import {
   getPendingMessages,
@@ -207,9 +208,13 @@ export async function preloadConversationMessages(
   chatIds: string[],
 ): Promise<void> {
   if (!isOnline() || chatIds.length === 0) return;
-  // This is background warm-up, not a requirement for opening chat. Keep it
-  // bounded so a large contact list cannot monopolise the bridge/network.
-  for (const chatId of chatIds.slice(0, 20)) {
+  // This is background warm-up, not a requirement for opening chat. Start
+  // after current interactions and keep it small so a large chat list cannot
+  // monopolise the JS/native bridge or saturate the network.
+  await new Promise<void>((resolve) => {
+    InteractionManager.runAfterInteractions(() => resolve());
+  });
+  for (const chatId of chatIds.slice(0, 5)) {
     if (!isOnline()) break;
     try {
       const count = await getLocalMessageCount(chatId);
@@ -222,7 +227,7 @@ export async function preloadConversationMessages(
         )
         .eq("chat_id", chatId)
         .order("sent_at", { ascending: false })
-        .limit(100);
+        .limit(30);
 
       if (data && data.length > 0) {
         await saveMessages(chatId, data);
