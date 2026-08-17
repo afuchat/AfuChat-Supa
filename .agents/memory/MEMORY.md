@@ -63,3 +63,4 @@
 - [EAS project migration](eas-project-migration.md) — replacement EAS projects require synchronized profile IDs and fresh Expo push-token registration.
 - [Production connectivity unknown state](production-connectivity-unknown.md) — standalone Android can mount before NetInfo; unknown must be network-usable, not offline/low-data, and noncritical services should start after first render.
 - [Expo workflow port detection](expo-workflow-port-detection.md) — managed Expo web preview needs waitForPort 5000; without it Metro can run while the workflow remains unattached.
+- [EAS prebuild asset and lockfile checks](eas-prebuild-assets-lockfile.md) — EAS validates notification assets during prebuild and uses frozen pnpm installs, so manifests and lockfile must be synchronized.
