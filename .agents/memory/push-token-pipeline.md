@@ -16,3 +16,11 @@ Keep all values used by the push sender derived from explicitly named request fi
 **Why:** The live registry had enabled Android devices and successful registrations, but zero delivery records because the sender referenced an undeclared avatar variable before its audit block.
 
 **How to apply:** Treat “registered devices but no delivery rows” as a sender invocation/runtime failure first; inspect deployed Edge Function code and redeploy it before changing client token or Android channel logic.
+
+## Expo receipt verification
+
+An Expo ticket with `status: "ok"` only means Expo accepted the request; Android delivery can still fail later. Poll Expo receipts and treat `SENDER_ID_MISMATCH` as an EAS/FCM credential project mismatch with the app's `google-services.json`, while `DeviceNotRegistered` means the stored device row is stale.
+
+**Why:** Android receipts can report FCM `SenderId mismatch` or `DeviceNotRegistered` for every request even when Supabase rows are enabled and the initial provider response is successful.
+
+**How to apply:** Keep the Firebase sender/project and EAS Android FCM service-account credentials aligned before changing client registration code; disable stale tokens after receipt errors and never label provider tickets as final delivery.
