@@ -19,6 +19,10 @@ function isExpoPushToken(value: unknown): value is string {
   );
 }
 
+function isDevicePushToken(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length >= 20 && value.length <= 4096;
+}
+
 async function writeRegistrationAudit(
   admin: any,
   row: {
@@ -63,9 +67,25 @@ Deno.serve(async (req) => {
   const body = await req.json().catch(() => null);
   const token = typeof body?.token === "string" ? body.token.trim() : "";
   const platform = body?.platform === "ios" ? "ios" : body?.platform === "android" ? "android" : null;
+  const provider =
+    body?.provider === "expo"
+      ? "expo"
+      : body?.provider === "fcm"
+        ? "fcm"
+        : isExpoPushToken(token)
+          ? "expo"
+          : platform === "android"
+            ? "fcm"
+            : "apns";
   const enabled = body?.enabled !== false;
 
-  if (!isExpoPushToken(token) || token.length > 4096 || !platform) {
+  // Android standalone builds register the native FCM token. Expo tokens are
+  // still accepted for Expo Go, legacy devices, and the existing iOS path.
+  if (
+    !isDevicePushToken(token) ||
+    !platform ||
+    (platform === "android" && provider !== "fcm" && !isExpoPushToken(token))
+  ) {
     await writeRegistrationAudit(admin, {
       request_id: requestId,
       operation: "registration",
@@ -73,8 +93,8 @@ Deno.serve(async (req) => {
       stage: "token_validation",
       recipient_user_id: userData.user.id,
       platform,
-      error_code: "INVALID_EXPO_TOKEN",
-      error_message: "Client submitted a token that is not an Expo push token.",
+      error_code: "INVALID_DEVICE_TOKEN",
+      error_message: "Client submitted an invalid push token.",
     });
     return json({ error: "A valid token and platform are required." }, 400);
   }

@@ -172,6 +172,17 @@ function isExpoPushToken(value: unknown): value is string {
   );
 }
 
+function isExpoGoRuntime(): boolean {
+  return (
+    Constants.appOwnership === "expo" ||
+    (Constants as any).executionEnvironment === "storeClient"
+  );
+}
+
+function isNativePushToken(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length >= 20 && value.length <= 4096;
+}
+
 export function configurePushNotifications(): void {
   if (PUSH_NOTIFICATIONS_DISABLED) return;
   const notifications = getNotifications();
@@ -408,21 +419,43 @@ export async function registerPushToken(): Promise<string | null> {
   }
   if (status !== "granted") return null;
 
-  const projectId = getProjectId();
-  if (!projectId) {
-    throw new Error("Expo EAS project ID is required for push registration.");
-  }
+    let token: string;
+    let provider: "fcm" | "expo";
 
-    const token = (
-     await withTimeout(
-       () => notifications.getExpoPushTokenAsync({ projectId }),
-       PUSH_NATIVE_TIMEOUT_MS,
-       "Expo push token request",
-     )
-   ).data;
-   if (!isExpoPushToken(token)) {
-     throw new Error("Expo returned an invalid push token.");
-   }
+    // Standalone Android builds have Firebase configured through
+    // google-services.json. Register the device's FCM token directly so
+    // delivery does not depend on Expo's push gateway.
+    if (Platform.OS === "android" && !isExpoGoRuntime()) {
+      const deviceToken = await withTimeout(
+        () => notifications.getDevicePushTokenAsync(),
+        PUSH_NATIVE_TIMEOUT_MS,
+        "FCM device token request",
+      );
+      if (deviceToken.type !== "fcm" || !isNativePushToken(deviceToken.data)) {
+        throw new Error("Android did not return a valid FCM device token.");
+      }
+      token = deviceToken.data.trim();
+      provider = "fcm";
+    } else {
+      // Expo Go cannot expose this app's Firebase credentials. Keep the
+      // development client and the existing iOS path on Expo tokens.
+      const projectId = getProjectId();
+      if (!projectId) {
+        throw new Error("Expo EAS project ID is required for Expo push registration.");
+      }
+      const expoToken = (
+        await withTimeout(
+          () => notifications.getExpoPushTokenAsync({ projectId }),
+          PUSH_NATIVE_TIMEOUT_MS,
+          "Expo push token request",
+        )
+      ).data;
+      if (!isExpoPushToken(expoToken)) {
+        throw new Error("Expo returned an invalid push token.");
+      }
+      token = expoToken;
+      provider = "expo";
+    }
 
   const previousToken = storage.getString(KEYS.PUSH_TOKEN);
   const previousRegistrationAt = storage.getNumber(KEYS.PUSH_TOKEN_REGISTERED_AT) ?? 0;
@@ -439,7 +472,7 @@ export async function registerPushToken(): Promise<string | null> {
    const { error } = await withTimeout(
      () =>
        supabase.functions.invoke("register-push-token", {
-         body: { token, platform: Platform.OS },
+          body: { token, platform: Platform.OS, provider },
        }),
      PUSH_NETWORK_TIMEOUT_MS,
      "push token registration",
@@ -461,14 +494,16 @@ export async function registerPushToken(): Promise<string | null> {
 
 export async function disablePushToken(token: string): Promise<void> {
   if (PUSH_NOTIFICATIONS_DISABLED) return;
-  // Older builds briefly persisted the native APNs/FCM token from
-  // addPushTokenListener. It is not accepted by the Expo push service, so
-  // never send it to the registry endpoint.
-  if (!isExpoPushToken(token)) return;
+  if (!isNativePushToken(token)) return;
   await withTimeout(
     () =>
       supabase.functions.invoke("register-push-token", {
-        body: { token, platform: Platform.OS, enabled: false },
+        body: {
+          token,
+          platform: Platform.OS,
+          provider: isExpoPushToken(token) ? "expo" : "fcm",
+          enabled: false,
+        },
       }),
     PUSH_NETWORK_TIMEOUT_MS,
     "push token disable",
