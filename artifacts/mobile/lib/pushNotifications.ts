@@ -87,6 +87,15 @@ function recordPushDiagnostic(key: keyof Omit<PushDiagnostics, "activeResponseLi
   pushDiagnostics[key] += amount;
 }
 
+function logPushDiagnostic(message: string, details?: unknown): void {
+  if (!__DEV__ && !PUSH_DIAGNOSTICS_ENABLED) return;
+  if (details === undefined) {
+    console.warn(`[push] ${message}`);
+  } else {
+    console.warn(`[push] ${message}`, details);
+  }
+}
+
 export function getPushDiagnostics(): PushDiagnostics {
   return { ...pushDiagnostics };
 }
@@ -496,7 +505,7 @@ async function deliverChatNotification(
   recordPushDiagnostic("deliveryRecipientRequests", recipientIds.length);
 
   try {
-     const { error } = await withTimeout(
+     const { data, error } = await withTimeout(
        () =>
          supabase.functions.invoke("send-push-notification", {
            body: {
@@ -525,9 +534,18 @@ async function deliverChatNotification(
        PUSH_NETWORK_TIMEOUT_MS,
        "push notification delivery",
      );
-    if (__DEV__ && error) console.warn("[push] message notification rejected:", error);
+     if (error) {
+       logPushDiagnostic("message notification rejected", error);
+     } else if (data && typeof data === "object" && "ok" in data && data.ok === false) {
+       logPushDiagnostic("message notification provider failure", {
+         requestId: "requestId" in data ? data.requestId : undefined,
+         response: data,
+       });
+     } else if (PUSH_DIAGNOSTICS_ENABLED && data && typeof data === "object") {
+       console.info("[push] message notification result", data);
+     }
   } catch (error) {
-    if (__DEV__) console.warn("[push] message notification failed:", error);
+     logPushDiagnostic("message notification failed", error);
   } finally {
     inFlightDeliveryKeys.delete(deliveryKey);
   }

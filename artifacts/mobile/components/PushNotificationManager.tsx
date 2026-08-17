@@ -81,7 +81,9 @@ export default function PushNotificationManager() {
           retryCount = 0;
         })
         .catch((error) => {
-          if (__DEV__) console.warn("[push] token registration failed:", error);
+          if (__DEV__ || PUSH_DIAGNOSTICS_ENABLED) {
+            console.warn("[push] token registration failed:", error);
+          }
           if (disposed || retryCount >= 3) return;
           const delay = Math.min(1000 * 2 ** retryCount, 15_000);
           retryCount += 1;

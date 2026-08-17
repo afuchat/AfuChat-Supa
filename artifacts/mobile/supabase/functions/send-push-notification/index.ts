@@ -36,6 +36,39 @@ function isExpoPushToken(value: unknown): value is string {
   );
 }
 
+type PushAuditRow = {
+  request_id: string;
+  operation: "delivery";
+  status: "sent" | "failed" | "skipped";
+  stage: string;
+  sender_id: string | null;
+  recipient_user_id: string | null;
+  device_id?: string | null;
+  message_id: string | null;
+  chat_id: string | null;
+  platform?: "android" | "ios" | null;
+  provider_http_status?: number | null;
+  provider_status?: string | null;
+  provider_ticket_id?: string | null;
+  error_code?: string | null;
+  error_message?: string | null;
+  details?: Record<string, unknown>;
+};
+
+function auditText(value: unknown, maxLength = 1000): string | null {
+  if (typeof value !== "string" || !value) return null;
+  return value.slice(0, maxLength);
+}
+
+async function writePushAudit(admin: any, rows: PushAuditRow[]): Promise<void> {
+  if (!rows.length) return;
+  const { error } = await admin.from("push_delivery_logs").insert(rows);
+  if (error) {
+    // Diagnostics must never turn a valid push into a failed delivery.
+    console.error("[push-audit] Could not write delivery logs:", error.message);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -50,6 +83,7 @@ Deno.serve(async (req) => {
 
   const body = await req.json().catch(() => null);
   const isServiceRequest = Boolean(serviceRoleKey && authorization === `Bearer ${serviceRoleKey}`);
+  const requestId = crypto.randomUUID();
   let senderId: string | null = null;
 
   // The trusted server path can target any user. Client calls must use a
@@ -190,14 +224,40 @@ Deno.serve(async (req) => {
     }
   }
 
+  const auditContext = {
+    request_id: requestId,
+    operation: "delivery" as const,
+    sender_id: resolvedSenderId || null,
+    message_id: messageId || null,
+    chat_id: chatId || null,
+  };
   const { data: devices, error: deviceError } = await admin
     .from("push_devices")
-    .select("id, token")
+    .select("id, user_id, token, platform")
     .in("user_id", recipientUserIds)
     .eq("enabled", true);
 
-  if (deviceError) return json({ error: "Could not load push devices." }, 500);
-  if (!devices?.length) return json({ ok: true, sent: 0 });
+  if (deviceError) {
+    await writePushAudit(admin, [{
+      ...auditContext,
+      status: "failed",
+      stage: "device_lookup",
+      error_code: "DEVICE_LOOKUP_FAILED",
+      error_message: auditText(deviceError.message),
+    }]);
+    return json({ error: "Could not load push devices.", requestId }, 500);
+  }
+  if (!devices?.length) {
+    await writePushAudit(admin, recipientUserIds.map((recipientUserId) => ({
+      ...auditContext,
+      status: "skipped" as const,
+      stage: "device_lookup",
+      recipient_user_id: recipientUserId,
+      error_code: "NO_ENABLED_DEVICE",
+      error_message: "Recipient has no enabled push device.",
+    })));
+    return json({ ok: true, sent: 0, requestId });
+  }
 
   // A previous client version could save the native FCM/APNs token from
   // addPushTokenListener. Disable those rows instead of sending a mixed
@@ -208,10 +268,24 @@ Deno.serve(async (req) => {
     .map((device) => device.id)
     .filter(Boolean);
   if (malformedIds.length) {
+    await writePushAudit(admin, devices
+      .filter((device) => !isExpoPushToken(device.token))
+      .map((device) => ({
+        ...auditContext,
+        status: "failed" as const,
+        stage: "token_validation",
+        recipient_user_id: device.user_id,
+        device_id: device.id,
+        platform: device.platform,
+        error_code: "INVALID_EXPO_TOKEN",
+        error_message: "Stored token is not an Expo push token.",
+      })));
+  }
+  if (malformedIds.length) {
     await admin.from("push_devices").update({ enabled: false }).in("id", malformedIds);
   }
   if (!validDevices.length) {
-    return json({ ok: true, sent: 0, disabled: malformedIds.length });
+    return json({ ok: true, sent: 0, disabled: malformedIds.length, requestId });
   }
 
   const messages = validDevices.map((device) => ({
@@ -241,20 +315,58 @@ Deno.serve(async (req) => {
       body: JSON.stringify(messages),
       signal: controller.signal,
     });
-  } catch {
-    return json({ error: "Push provider timed out or was unreachable." }, 504);
+  } catch (error) {
+    await writePushAudit(admin, validDevices.map((device) => ({
+      ...auditContext,
+      status: "failed" as const,
+      stage: "provider_request",
+      recipient_user_id: device.user_id,
+      device_id: device.id,
+      platform: device.platform,
+      error_code: "PROVIDER_UNREACHABLE",
+      error_message: auditText(error instanceof Error ? error.message : "Provider request failed."),
+    })));
+    return json({ error: "Push provider timed out or was unreachable.", requestId }, 504);
   } finally {
     clearTimeout(timeout);
   }
   const payload = await response.json().catch(() => null);
-  if (!response.ok) return json({ error: "Push provider rejected the request." }, 502);
+  if (!response.ok) {
+    await writePushAudit(admin, validDevices.map((device) => ({
+      ...auditContext,
+      status: "failed" as const,
+      stage: "provider_request",
+      recipient_user_id: device.user_id,
+      device_id: device.id,
+      platform: device.platform,
+      provider_http_status: response.status,
+      error_code: "PROVIDER_HTTP_ERROR",
+      error_message: "Expo rejected the push request.",
+    })));
+    return json({ error: "Push provider rejected the request.", requestId }, 502);
+  }
 
   if (!Array.isArray(payload?.data) || payload.data.length !== validDevices.length) {
     console.error("[send-push-notification] Unexpected Expo ticket response", JSON.stringify({
       expected: validDevices.length,
       received: Array.isArray(payload?.data) ? payload.data.length : 0,
     }));
-    return json({ error: "Push provider returned an incomplete response." }, 502);
+    await writePushAudit(admin, validDevices.map((device) => ({
+      ...auditContext,
+      status: "failed" as const,
+      stage: "provider_response",
+      recipient_user_id: device.user_id,
+      device_id: device.id,
+      platform: device.platform,
+      provider_http_status: response.status,
+      error_code: "INCOMPLETE_TICKET_RESPONSE",
+      error_message: "Expo returned a different number of tickets than devices.",
+      details: {
+        expected: validDevices.length,
+        received: Array.isArray(payload?.data) ? payload.data.length : 0,
+      },
+    })));
+    return json({ error: "Push provider returned an incomplete response.", requestId }, 502);
   }
 
   const tickets = payload.data;
@@ -287,6 +399,26 @@ Deno.serve(async (req) => {
     }));
   }
 
+  await writePushAudit(admin, tickets.map((ticket: any, index: number) => {
+    const device = validDevices[index];
+    const providerErrorCode = auditText(ticket?.details?.error);
+    const sent = ticket?.status === "ok";
+    return {
+      ...auditContext,
+      status: sent ? "sent" as const : "failed" as const,
+      stage: "provider_ticket",
+      recipient_user_id: device?.user_id ?? null,
+      device_id: device?.id ?? null,
+      platform: device?.platform ?? null,
+      provider_http_status: response.status,
+      provider_status: auditText(ticket?.status),
+      provider_ticket_id: auditText(ticket?.id),
+      error_code: providerErrorCode,
+      error_message: sent ? null : auditText(ticket?.message ?? providerErrorCode ?? "Expo ticket failed."),
+      details: sent ? {} : { ticketIndex: index },
+    };
+  }));
+
   return json(
     {
       ok: failedTickets.length === 0,
@@ -294,6 +426,7 @@ Deno.serve(async (req) => {
       failed: failedTickets.length,
       errors: failedTickets,
       stale: staleIds.length,
+      requestId,
     },
     failedTickets.length === tickets.length ? 502 : 200,
   );

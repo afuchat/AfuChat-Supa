@@ -19,6 +19,23 @@ function isExpoPushToken(value: unknown): value is string {
   );
 }
 
+async function writeRegistrationAudit(
+  admin: any,
+  row: {
+    request_id: string;
+    operation: "registration";
+    status: "registered" | "failed";
+    stage: string;
+    recipient_user_id: string;
+    platform?: "android" | "ios" | null;
+    error_code?: string | null;
+    error_message?: string | null;
+  },
+): Promise<void> {
+  const { error } = await admin.from("push_delivery_logs").insert(row);
+  if (error) console.error("[push-audit] Could not write registration log:", error.message);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -41,16 +58,27 @@ Deno.serve(async (req) => {
   const { data: userData, error: userError } = await authClient.auth.getUser();
   if (userError || !userData.user) return json({ error: "Invalid session" }, 401);
 
+  const requestId = crypto.randomUUID();
+  const admin = createClient(supabaseUrl, serviceRoleKey);
   const body = await req.json().catch(() => null);
   const token = typeof body?.token === "string" ? body.token.trim() : "";
   const platform = body?.platform === "ios" ? "ios" : body?.platform === "android" ? "android" : null;
   const enabled = body?.enabled !== false;
 
   if (!isExpoPushToken(token) || token.length > 4096 || !platform) {
+    await writeRegistrationAudit(admin, {
+      request_id: requestId,
+      operation: "registration",
+      status: "failed",
+      stage: "token_validation",
+      recipient_user_id: userData.user.id,
+      platform,
+      error_code: "INVALID_EXPO_TOKEN",
+      error_message: "Client submitted a token that is not an Expo push token.",
+    });
     return json({ error: "A valid token and platform are required." }, 400);
   }
 
-  const admin = createClient(supabaseUrl, serviceRoleKey);
   const update = {
     user_id: userData.user.id,
     token,
@@ -65,8 +93,27 @@ Deno.serve(async (req) => {
 
   if (error) {
     console.error("[register-push-token]", error.message);
+    await writeRegistrationAudit(admin, {
+      request_id: requestId,
+      operation: "registration",
+      status: "failed",
+      stage: "registry_write",
+      recipient_user_id: userData.user.id,
+      platform,
+      error_code: "REGISTRY_WRITE_FAILED",
+      error_message: error.message.slice(0, 1000),
+    });
     return json({ error: "Could not save push token." }, 500);
   }
 
-  return json({ ok: true });
+  await writeRegistrationAudit(admin, {
+    request_id: requestId,
+    operation: "registration",
+    status: "registered",
+    stage: "registry_write",
+    recipient_user_id: userData.user.id,
+    platform,
+  });
+
+  return json({ ok: true, requestId });
 });
