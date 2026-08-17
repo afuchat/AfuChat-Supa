@@ -97,6 +97,7 @@ async function loadFcmConfig(admin: any): Promise<FcmServiceAccount | null> {
     const envKeys = [
       "FCM_SERVICE_ACCOUNT_JSON",
       "FIREBASE_SERVICE_ACCOUNT_JSON",
+      "FIREBASE_SERVICE_ACCOUNT_KEY",
       "GOOGLE_APPLICATION_CREDENTIALS_JSON",
     ];
     for (const key of envKeys) {
