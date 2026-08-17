@@ -61,6 +61,7 @@
 - [Web OAuth callback](web-oauth-callback.md) — web OAuth must use window.origin + browser redirect, localStorage PKCE persistence, and detectSessionInUrl; Expo deep links remain native-only.
 - [Push notification actions](push-notification-actions.md) — categories must be registered in the native client and categoryId/chatId/messageId sent in Expo payloads; response listeners handle warm and cold starts.
 - [Push token pipeline](push-token-pipeline.md) — direct FCM is the sole delivery path; native FCM tokens require a Firebase-enabled build, never Expo Go.
+- [Push deployment drift](push-deployment-drift.md) — live Edge Functions can remain on the old Expo protocol after the repository moves to direct FCM; redeploy and verify source markers.
 - [EAS project migration](eas-project-migration.md) — replacement EAS projects require synchronized profile IDs and fresh Expo push-token registration.
 - [Production connectivity unknown state](production-connectivity-unknown.md) — standalone Android can mount before NetInfo; unknown must be network-usable, not offline/low-data, and noncritical services should start after first render.
 - [Expo workflow port detection](expo-workflow-port-detection.md) — managed Expo web preview needs waitForPort 5000; without it Metro can run while the workflow remains unattached.
