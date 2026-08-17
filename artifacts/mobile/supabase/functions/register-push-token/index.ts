@@ -87,6 +87,31 @@ Deno.serve(async (req) => {
     last_seen_at: new Date().toISOString(),
   };
 
+  const { data: existingDevice, error: existingDeviceError } = await admin
+    .from("push_devices")
+    .select("id, user_id, platform, enabled, last_seen_at")
+    .eq("token", token)
+    .maybeSingle();
+  if (existingDeviceError) {
+    console.error("[register-push-token] lookup failed:", existingDeviceError.message);
+    return json({ error: "Could not verify existing push token." }, 500);
+  }
+
+  const lastSeenMs = existingDevice?.last_seen_at
+    ? Date.parse(existingDevice.last_seen_at)
+    : Number.NaN;
+  const isRecentDuplicate =
+    existingDevice &&
+    existingDevice.user_id === userData.user.id &&
+    existingDevice.platform === platform &&
+    existingDevice.enabled === enabled &&
+    Number.isFinite(lastSeenMs) &&
+    Date.now() - lastSeenMs < 60_000;
+
+  if (isRecentDuplicate) {
+    return json({ ok: true, deduplicated: true });
+  }
+
   const { error } = await admin
     .from("push_devices")
     .upsert(update, { onConflict: "token" });

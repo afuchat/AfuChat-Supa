@@ -9,6 +9,12 @@ The value emitted by `addPushTokenListener` is a native APNs/FCM device token, n
 
 **How to apply:** Validate `ExpoPushToken[...]`/`ExponentPushToken[...]` at registration and send time, disable malformed rows, inspect every Expo ticket, and ship a new native build when client registration behavior changes.
 
+Repeated native-token events must be change-detected before invalidating the Expo-token registration cache; otherwise startup events can create a registration request loop even when the device token is unchanged.
+
+**Why:** A live Android client produced thousands of successful registration audit rows while only one device row existed, because every native-token listener event forced another registration.
+
+**How to apply:** Persist the last native token, invalidate the Expo registration timestamp only when that native token changes, and deduplicate recent identical registrations server-side before writing audit rows.
+
 ## Edge-function auditability
 
 Keep all values used by the push sender derived from explicitly named request fields, and run a deployed-function smoke check after every push-function change. A runtime symbol error before the audit write can make notifications disappear while leaving no delivery log.

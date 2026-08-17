@@ -105,9 +105,15 @@ export default function PushNotificationManager() {
       }, delay);
     };
 
-    const tokenListener = addPushTokenListener(() => {
+    const tokenListener = addPushTokenListener((nativeToken) => {
       if (disposed) return;
-      storage.delete(KEYS.PUSH_TOKEN_REGISTERED_AT);
+      const previousNativeToken = storage.getString(KEYS.PUSH_NATIVE_TOKEN);
+      const nativeTokenChanged = previousNativeToken !== nativeToken;
+      storage.setString(KEYS.PUSH_NATIVE_TOKEN, nativeToken);
+      // Expo can emit the native token more than once during startup. Only
+      // invalidate the cached Expo token when the native token actually changes.
+      if (!nativeTokenChanged && !isPushTokenRegistrationDue()) return;
+      if (nativeTokenChanged) storage.delete(KEYS.PUSH_TOKEN_REGISTERED_AT);
       scheduleRegister(0, true);
     });
 

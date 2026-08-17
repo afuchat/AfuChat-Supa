@@ -476,7 +476,7 @@ export async function disablePushToken(token: string): Promise<void> {
 }
 
 export function addPushTokenListener(
-  onTokenChanged: () => void,
+  onTokenChanged: (nativeToken: string) => void,
 ): { remove: () => void } | null {
   if (PUSH_NOTIFICATIONS_DISABLED) return null;
   const notifications = getNotifications();
@@ -485,7 +485,7 @@ export function addPushTokenListener(
     // expo-notifications emits a native device token here, not an
     // ExpoPushToken. Force a fresh getExpoPushTokenAsync() instead of
     // persisting this value as a server-deliverable token.
-    if (typeof event.data === "string" && event.data.length > 0) onTokenChanged();
+    if (typeof event.data === "string" && event.data.length > 0) onTokenChanged(event.data);
   });
   if (PUSH_DIAGNOSTICS_ENABLED) pushDiagnostics.activeTokenListeners += 1;
   let removed = false;
