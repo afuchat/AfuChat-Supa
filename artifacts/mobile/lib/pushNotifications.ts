@@ -152,6 +152,13 @@ function getProjectId(): string | null {
   return typeof projectId === "string" && projectId.length > 0 ? projectId : null;
 }
 
+function isExpoPushToken(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^(?:Expo|Exponent)PushToken\[[^\]]+\]$/.test(value.trim())
+  );
+}
+
 export function configurePushNotifications(): void {
   if (PUSH_NOTIFICATIONS_DISABLED) return;
   const notifications = getNotifications();
@@ -393,14 +400,16 @@ export async function registerPushToken(): Promise<string | null> {
     throw new Error("Expo EAS project ID is required for push registration.");
   }
 
-   const token = (
+    const token = (
      await withTimeout(
        () => notifications.getExpoPushTokenAsync({ projectId }),
        PUSH_NATIVE_TIMEOUT_MS,
        "Expo push token request",
      )
    ).data;
-  if (!token) return null;
+   if (!isExpoPushToken(token)) {
+     throw new Error("Expo returned an invalid push token.");
+   }
 
   const previousToken = storage.getString(KEYS.PUSH_TOKEN);
   const previousRegistrationAt = storage.getNumber(KEYS.PUSH_TOKEN_REGISTERED_AT) ?? 0;
@@ -439,7 +448,10 @@ export async function registerPushToken(): Promise<string | null> {
 
 export async function disablePushToken(token: string): Promise<void> {
   if (PUSH_NOTIFICATIONS_DISABLED) return;
-  if (!token) return;
+  // Older builds briefly persisted the native APNs/FCM token from
+  // addPushTokenListener. It is not accepted by the Expo push service, so
+  // never send it to the registry endpoint.
+  if (!isExpoPushToken(token)) return;
   await withTimeout(
     () =>
       supabase.functions.invoke("register-push-token", {
@@ -451,13 +463,16 @@ export async function disablePushToken(token: string): Promise<void> {
 }
 
 export function addPushTokenListener(
-  onToken: (token: string) => void,
+  onTokenChanged: () => void,
 ): { remove: () => void } | null {
   if (PUSH_NOTIFICATIONS_DISABLED) return null;
   const notifications = getNotifications();
   if (!notifications) return null;
   const subscription = notifications.addPushTokenListener((event) => {
-    if (typeof event.data === "string" && event.data.length > 0) onToken(event.data);
+    // expo-notifications emits a native device token here, not an
+    // ExpoPushToken. Force a fresh getExpoPushTokenAsync() instead of
+    // persisting this value as a server-deliverable token.
+    if (typeof event.data === "string" && event.data.length > 0) onTokenChanged();
   });
   if (PUSH_DIAGNOSTICS_ENABLED) pushDiagnostics.activeTokenListeners += 1;
   let removed = false;

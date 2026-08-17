@@ -103,9 +103,8 @@ export default function PushNotificationManager() {
       }, delay);
     };
 
-    const tokenListener = addPushTokenListener((token) => {
+    const tokenListener = addPushTokenListener(() => {
       if (disposed) return;
-      storage.setString(KEYS.PUSH_TOKEN, token);
       storage.delete(KEYS.PUSH_TOKEN_REGISTERED_AT);
       scheduleRegister(0, true);
     });

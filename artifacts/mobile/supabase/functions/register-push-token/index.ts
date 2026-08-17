@@ -12,6 +12,13 @@ function json(body: unknown, status = 200) {
   });
 }
 
+function isExpoPushToken(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^(?:Expo|Exponent)PushToken\[[^\]]+\]$/.test(value.trim())
+  );
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -39,7 +46,7 @@ Deno.serve(async (req) => {
   const platform = body?.platform === "ios" ? "ios" : body?.platform === "android" ? "android" : null;
   const enabled = body?.enabled !== false;
 
-  if (!token || token.length > 4096 || !platform) {
+  if (!isExpoPushToken(token) || token.length > 4096 || !platform) {
     return json({ error: "A valid token and platform are required." }, 400);
   }
 

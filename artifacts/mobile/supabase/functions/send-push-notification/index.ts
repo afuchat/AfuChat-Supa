@@ -29,6 +29,13 @@ function isImageAttachment(type: string, url: string): boolean {
   return /\.(?:png|jpe?g|gif|webp)(?:$|[?#])/i.test(url);
 }
 
+function isExpoPushToken(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^(?:Expo|Exponent)PushToken\[[^\]]+\]$/.test(value.trim())
+  );
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -192,7 +199,22 @@ Deno.serve(async (req) => {
   if (deviceError) return json({ error: "Could not load push devices." }, 500);
   if (!devices?.length) return json({ ok: true, sent: 0 });
 
-  const messages = devices.map((device) => ({
+  // A previous client version could save the native FCM/APNs token from
+  // addPushTokenListener. Disable those rows instead of sending a mixed
+  // batch that the Expo provider will reject.
+  const validDevices = devices.filter((device) => isExpoPushToken(device.token));
+  const malformedIds = devices
+    .filter((device) => !isExpoPushToken(device.token))
+    .map((device) => device.id)
+    .filter(Boolean);
+  if (malformedIds.length) {
+    await admin.from("push_devices").update({ enabled: false }).in("id", malformedIds);
+  }
+  if (!validDevices.length) {
+    return json({ ok: true, sent: 0, disabled: malformedIds.length });
+  }
+
+  const messages = validDevices.map((device) => ({
     to: device.token,
     title,
     body: messageBody,
@@ -200,6 +222,7 @@ Deno.serve(async (req) => {
     categoryId,
     channelId: "messages",
     sound: "default",
+    priority: "high",
     ...(richImage
       ? { mutableContent: true, richContent: { image: richImage } }
       : {}),
@@ -211,7 +234,10 @@ Deno.serve(async (req) => {
   try {
     response = await fetch(EXPO_PUSH_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(messages),
       signal: controller.signal,
     });
@@ -223,11 +249,19 @@ Deno.serve(async (req) => {
   const payload = await response.json().catch(() => null);
   if (!response.ok) return json({ error: "Push provider rejected the request." }, 502);
 
-  const tickets = Array.isArray(payload?.data) ? payload.data : [];
+  if (!Array.isArray(payload?.data) || payload.data.length !== validDevices.length) {
+    console.error("[send-push-notification] Unexpected Expo ticket response", JSON.stringify({
+      expected: validDevices.length,
+      received: Array.isArray(payload?.data) ? payload.data.length : 0,
+    }));
+    return json({ error: "Push provider returned an incomplete response." }, 502);
+  }
+
+  const tickets = payload.data;
   const staleIds = tickets
     .map((ticket: any, index: number) =>
       ticket?.status === "error" && ticket?.details?.error === "DeviceNotRegistered"
-        ? devices[index]?.id
+        ? validDevices[index]?.id
         : null,
     )
     .filter(Boolean);
@@ -236,9 +270,31 @@ Deno.serve(async (req) => {
     await admin.from("push_devices").update({ enabled: false }).in("id", staleIds);
   }
 
-  return json({
-    ok: true,
-    sent: tickets.filter((ticket: any) => ticket?.status === "ok").length,
-    stale: staleIds.length,
-  });
+  const failedTickets = tickets
+    .map((ticket: any, index: number) => ({
+      index,
+      status: ticket?.status ?? "unknown",
+      error: ticket?.message ?? ticket?.details?.error ?? "Unknown provider error",
+    }))
+    .filter((ticket) => ticket.status !== "ok");
+  const sent = tickets.filter((ticket: any) => ticket?.status === "ok").length;
+
+  if (failedTickets.length) {
+    console.error("[send-push-notification] Expo ticket errors", JSON.stringify({
+      sent,
+      failed: failedTickets,
+      stale: staleIds.length,
+    }));
+  }
+
+  return json(
+    {
+      ok: failedTickets.length === 0,
+      sent,
+      failed: failedTickets.length,
+      errors: failedTickets,
+      stale: staleIds.length,
+    },
+    failedTickets.length === tickets.length ? 502 : 200,
+  );
 });
