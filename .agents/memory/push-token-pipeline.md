@@ -23,4 +23,4 @@ An Expo ticket with `status: "ok"` only means Expo accepted the request; Android
 
 **Why:** Android receipts can report FCM `SenderId mismatch` or `DeviceNotRegistered` for every request even when Supabase rows are enabled and the initial provider response is successful.
 
-**How to apply:** Keep the Firebase sender/project and EAS Android FCM service-account credentials aligned before changing client registration code; disable stale tokens after receipt errors and never label provider tickets as final delivery.
+**How to apply:** Keep the Firebase sender/project and EAS Android FCM service-account credentials aligned before changing client registration code. If the credentials already match, assume tokens from an older APK/sender until a clean reinstall proves otherwise; disable stale tokens after receipt errors and never label provider tickets as final delivery.
