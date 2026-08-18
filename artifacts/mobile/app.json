@@ -76,7 +76,7 @@
           ]
         }
       ],
-      "versionCode": 2227
+      "versionCode": 2228
     },
     "plugins": [
       [
@@ -184,7 +184,7 @@
     "experiments": {
       "typedRoutes": true
     },
-    "owner": "afuchat",
+    "owner": "amkaweesi1",
     "web": {
       "bundler": "metro",
       "output": "single",
