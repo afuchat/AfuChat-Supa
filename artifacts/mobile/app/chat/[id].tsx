@@ -2031,8 +2031,20 @@ function ChatScreen() {
     };
     refreshPolicy();
 
+    const policyChannelName = `chat-screenshot-policy:${chatId}:${user.id}`;
+    // React can rerun this effect before a previous cleanup has removed its
+    // subscribed channel (Strict Mode and rapid chat transitions both do this).
+    // Supabase returns the existing channel by topic, and .on() then throws
+    // because callbacks cannot be added after subscribe().
+    const stalePolicyChannel = supabase
+      .getChannels()
+      .find((channel) => channel.topic === `realtime:${policyChannelName}`);
+    if (stalePolicyChannel) {
+      void supabase.removeChannel(stalePolicyChannel);
+    }
+
     const policyChannel = supabase
-      .channel(`chat-screenshot-policy:${chatId}:${user.id}`)
+      .channel(policyChannelName)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "chat_preferences" },
