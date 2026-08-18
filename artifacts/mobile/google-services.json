@@ -12,7 +12,19 @@
           "package_name": "com.afuchat.afuapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "249391999620-o9cgvn31f32r9lr310001enap6mnpbev.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.afuchat.afuapp"
+          }
+        },
+        {
+          "client_id": "249391999620-8frki1cqjtc34d4ae37cncopncmt2rbc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD6j1MkU2CKL79gG2ELRIUlbWVzf7cj9Os"
@@ -20,7 +32,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "249391999620-8frki1cqjtc34d4ae37cncopncmt2rbc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

@@ -1,10 +1,10 @@
 import Constants from "expo-constants";
 import { supabase } from "./supabase";
 
-// Web/installed OAuth client from GCP project afuchat-479416.
+// Web OAuth client from the AfuChat Firebase/GCP project.
 // Must match the Client ID set in Supabase Dashboard → Authentication → Providers → Google.
 const WEB_CLIENT_ID =
-  "830762767270-kigq05c5h8vibid972s5jsm6es8t62gs.apps.googleusercontent.com";
+  "249391999620-8frki1cqjtc34d4ae37cncopncmt2rbc.apps.googleusercontent.com";
 
 let _GoogleSignin: any = null;
 let _isErrorWithCode: any = null;
@@ -31,8 +31,8 @@ function isExpoGo(): boolean {
  *
  * Works on full EAS/APK builds where:
  *  - The APK's SHA-1 fingerprint is registered as an Android OAuth client
- *    (client_type 1) in Google Cloud Console project 148957999957
- *  - google-services.json is bundled with package com.afuchat.app
+ *    (client_type 1) in Google Cloud Console project 249391999620
+ *  - google-services.json is bundled with package com.afuchat.afuapp
  *
  * Returns specific error codes so callers can show the right message:
  *  - "EXPO_GO"       → running in Expo Go, native SDK won't work
