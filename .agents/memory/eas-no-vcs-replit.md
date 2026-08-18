@@ -36,6 +36,14 @@ When switching Expo accounts:
 
 ## Build history (most recent first)
 
+## Account quota gate
+
+EAS can upload and fingerprint the project successfully, then reject an Android build before compilation when the account has exhausted its monthly free-plan build allowance.
+
+**Why:** Retrying the same profile does not create an APK and only repeats the upload/quota failure.
+
+**How to apply:** Treat the explicit free-plan quota message as an account gate; wait for the reset or change the EAS plan/account before retrying. Verify local Expo export and config separately while blocked.
+
 ### 2026-06-07 — v2.2.2 (compileSdkVersion bumped 35→36 to fix checkReleaseAarMetadata)
 - Build ID: 8622057e-4317-40cd-8a92-575685ac2b6c
 - Build URL: https://expo.dev/accounts/amkaweesi1/projects/afuchat/builds/8622057e-4317-40cd-8a92-575685ac2b6c

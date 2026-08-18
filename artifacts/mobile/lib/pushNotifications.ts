@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { KEYS, storage } from "@/lib/storage/mmkv";
+import { isExpoGo } from "@/lib/expoEnvironment";
 
 type NotificationsModule = typeof import("expo-notifications");
 
@@ -382,6 +383,10 @@ export async function registerPushToken(): Promise<string | null> {
     recordPushDiagnostic("registrationAttempts");
     const notifications = getNotifications();
     if (!notifications || Platform.OS === "web") return null;
+    // Expo Go cannot expose the Firebase-backed native token required by the
+    // direct-FCM registry. Avoid sending its Expo token-shaped value to the
+    // server, where it is correctly rejected as invalid.
+    if (isExpoGo()) return null;
 
     const device = require("expo-device") as typeof import("expo-device");
     if (!device.isDevice) return null;
@@ -461,6 +466,7 @@ export async function registerPushToken(): Promise<string | null> {
 
 export async function disablePushToken(token: string): Promise<void> {
   if (PUSH_NOTIFICATIONS_DISABLED) return;
+  if (isExpoGo()) return;
   if (!isDirectFcmToken(token)) return;
   await withTimeout(
     () =>
