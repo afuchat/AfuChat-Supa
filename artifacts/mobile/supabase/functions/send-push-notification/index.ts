@@ -60,6 +60,8 @@ type FcmSendResult = {
   messageName: string | null;
 };
 
+const EXPECTED_FCM_PROJECT_ID = "afuchat-c3630";
+
 let fcmConfigPromise: Promise<FcmServiceAccount | null> | null = null;
 let fcmAccessToken: { value: string; expiresAt: number } | null = null;
 
@@ -94,6 +96,13 @@ function parseServiceAccount(value: unknown): FcmServiceAccount | null {
 async function loadFcmConfig(admin: any): Promise<FcmServiceAccount | null> {
   if (fcmConfigPromise) return fcmConfigPromise;
   fcmConfigPromise = (async () => {
+    // Keep the send target independent from a copied service-account JSON's
+    // project_id. The Android client gets its sender ID from
+    // google-services.json, so the server must use this same Firebase project.
+    const configuredProjectId =
+      Deno.env.get("FCM_PROJECT_ID") ??
+      Deno.env.get("FIREBASE_PROJECT_ID") ??
+      EXPECTED_FCM_PROJECT_ID;
     const envKeys = [
       "FCM_SERVICE_ACCOUNT_JSON",
       "FIREBASE_SERVICE_ACCOUNT_JSON",
@@ -102,7 +111,7 @@ async function loadFcmConfig(admin: any): Promise<FcmServiceAccount | null> {
     ];
     for (const key of envKeys) {
       const config = parseServiceAccount(Deno.env.get(key));
-      if (config) return config;
+      if (config) return { ...config, project_id: configuredProjectId };
     }
 
     // Some deployments keep server-only settings in the existing app_settings
@@ -118,13 +127,10 @@ async function loadFcmConfig(admin: any): Promise<FcmServiceAccount | null> {
       ]);
     for (const row of data ?? []) {
       const config = parseServiceAccount(row?.value);
-      if (config) return config;
+      if (config) return { ...config, project_id: configuredProjectId };
     }
 
-    const projectId =
-      Deno.env.get("FCM_PROJECT_ID") ??
-      Deno.env.get("FIREBASE_PROJECT_ID") ??
-      Deno.env.get("GOOGLE_CLOUD_PROJECT");
+    const projectId = configuredProjectId;
     const clientEmail =
       Deno.env.get("FCM_CLIENT_EMAIL") ??
       Deno.env.get("FIREBASE_CLIENT_EMAIL");
