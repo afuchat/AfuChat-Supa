@@ -7,4 +7,4 @@ The Firebase project used by the direct-FCM sender must be explicitly aligned wi
 
 **Why:** Preview delivery can work while a Play-installed AAB reports `SenderId mismatch` when server credentials and the installed build resolve to different Firebase projects.
 
-**How to apply:** Verify the Android package and sender ID, set the matching Firebase project in the server environment, keep the service account authorized for that project, redeploy the sender, and retest with a clean install so an old token is not reused.
+**How to apply:** Verify the Android package and sender ID, set the matching Firebase project in the server environment, keep the service account authorized for that project, redeploy the sender, disable `SENDER_ID_MISMATCH`/`UNREGISTERED` rows, and retest with a clean install so an old token is not reused.

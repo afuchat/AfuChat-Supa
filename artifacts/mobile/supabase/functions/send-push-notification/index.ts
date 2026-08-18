@@ -608,7 +608,12 @@ Deno.serve(async (req) => {
               },
             },
           });
-          const isStale = result.errorCode === "UNREGISTERED";
+          // A token that belongs to another Firebase sender cannot recover by
+          // retrying. Disable it just like an unregistered token so a broken
+          // production token does not remain enabled indefinitely.
+          const isStale =
+            result.errorCode === "UNREGISTERED" ||
+            result.errorCode === "SENDER_ID_MISMATCH";
           if (isStale) {
             fcmStale += 1;
             await admin.from("push_devices").update({ enabled: false }).eq("id", device.id);
