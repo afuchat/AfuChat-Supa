@@ -50,3 +50,11 @@ Important API detail: `expo-notifications.getDevicePushTokenAsync()` labels the 
 **Why:** Requiring `type === "fcm"` rejects every valid Android token before it reaches the registration Edge Function, leaving the production device registry empty.
 
 **How to apply:** Compare the returned type with `Platform.OS`, validate the token data as a direct FCM token, and test only with a Firebase-enabled native build—not Expo Go.
+
+## Production diagnostic
+
+Production registration failures with `INVALID_DEVICE_TOKEN` and no `push_devices` rows indicate an Expo Go or legacy APK is still calling the endpoint with an Expo-formatted token; this is expected under direct FCM.
+
+**Why:** Expo Go can exercise the JavaScript registration path but cannot produce the Firebase-backed native token required by the direct FCM sender.
+
+**How to apply:** Test registration with the current Firebase-enabled standalone APK/AAB after a clean reinstall; do not loosen server validation to make Expo Go appear registered.
