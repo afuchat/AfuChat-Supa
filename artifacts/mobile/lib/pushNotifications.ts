@@ -563,7 +563,10 @@ async function deliverChatNotification(
 }
 
 export function notifyChatRecipients(params: NotifyChatRecipientsParams): void {
-  if (PUSH_NOTIFICATIONS_DISABLED || Platform.OS === "web" || params.recipientIds.length === 0) return;
+  // Web senders still need to notify native recipients. The browser does not
+  // register a device token, but it can invoke the authenticated Edge Function
+  // which delivers directly to the recipient's Android/iOS FCM device.
+  if (PUSH_NOTIFICATIONS_DISABLED || params.recipientIds.length === 0) return;
   const recipientIds = [...new Set(params.recipientIds)].filter((id) => id && id !== params.senderId);
   if (recipientIds.length === 0) return;
 

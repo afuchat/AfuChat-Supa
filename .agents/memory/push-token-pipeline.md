@@ -45,6 +45,12 @@ The app's push pipeline uses native FCM tokens and Firebase HTTP v1 only. It mus
 
 **How to apply:** Register `getDevicePushTokenAsync()` values only when the native token type is `fcm`, send through the Firebase HTTP v1 endpoint, disable legacy Expo rows, and ship a new Firebase-enabled native build after changing registration behavior. Expo Go cannot validate this path.
 
+Web chat senders must still invoke the authenticated direct-FCM sender for native recipients; web should skip token registration, not message delivery.
+
+**Why:** The browser has no native device token, but a browser-sent message can target an Android recipient that does. Returning early from the shared delivery helper on web caused those messages to produce no delivery audit row at all.
+
+**How to apply:** Keep the `Platform.OS === "web"` guard out of `notifyChatRecipients`; let the Edge Function filter recipients by enabled native devices.
+
 Important API detail: `expo-notifications.getDevicePushTokenAsync()` labels the native token type by platform (`"android"`/`"ios"`), not provider (`"fcm"`). On Android, `type === "android"` with string `data` is the FCM token.
 
 **Why:** Requiring `type === "fcm"` rejects every valid Android token before it reaches the registration Edge Function, leaving the production device registry empty.
