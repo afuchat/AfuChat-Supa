@@ -17,7 +17,9 @@ const pendingChatDeliveries = new Map<string, {
 const recentDeliveryKeys = new Map<string, number>();
 
 const PUSH_REGISTRATION_TTL_MS = 24 * 60 * 60 * 1000;
-const PUSH_DELIVERY_DEBOUNCE_MS = 350;
+// Keep burst coalescing short enough that a single chat message feels
+// immediate. The Edge Function already batches the actual device sends.
+const PUSH_DELIVERY_DEBOUNCE_MS = 100;
 const PUSH_DELIVERY_DEDUPE_MS = 30_000;
 const PUSH_NATIVE_TIMEOUT_MS = 30_000;
 const PUSH_NETWORK_TIMEOUT_MS = 15_000;
