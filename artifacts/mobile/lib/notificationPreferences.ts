@@ -1,5 +1,9 @@
 import { Platform } from "react-native";
-import { disablePushToken, registerPushToken } from "@/lib/pushNotifications";
+import {
+  disablePushToken,
+  registerPushToken,
+  type PushPreferenceSnapshot,
+} from "@/lib/pushNotifications";
 import { KEYS, storage } from "@/lib/storage/mmkv";
 
 export type NotificationPreferences = {
@@ -41,6 +45,24 @@ export function saveNotificationPreferences(
   return next;
 }
 
+export function getPushPreferenceSnapshot(
+  preferences: NotificationPreferences = getNotificationPreferences(),
+): PushPreferenceSnapshot {
+  return {
+    enabled: preferences.enabled,
+    messages: preferences.messages,
+    calls: preferences.calls,
+    social: preferences.social,
+    marketplace: preferences.marketplace,
+    sounds: preferences.sounds,
+    previews: preferences.previews,
+    quietHours: preferences.quietHours,
+    quietStart: preferences.quietStart,
+    quietEnd: preferences.quietEnd,
+    timezoneOffsetMinutes: -new Date().getTimezoneOffset(),
+  };
+}
+
 /**
  * Notification permission and token work is intentionally fire-and-forget from
  * the settings UI. A slow permission prompt or network request must never
@@ -68,4 +90,12 @@ export async function setNotificationsEnabled(enabled: boolean): Promise<void> {
     // The local setting is still authoritative for this device.
   }
   storage.delete(KEYS.PUSH_TOKEN);
+}
+
+export function syncNotificationPreferences(preferences: NotificationPreferences): void {
+  if (Platform.OS === "web" || !preferences.enabled) return;
+  void registerPushToken({
+    force: true,
+    preferences: getPushPreferenceSnapshot(preferences),
+  }).catch(() => {});
 }

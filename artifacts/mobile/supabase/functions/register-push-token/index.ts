@@ -73,6 +73,10 @@ Deno.serve(async (req) => {
   const platform = body?.platform === "ios" ? "ios" : body?.platform === "android" ? "android" : null;
   const provider = body?.provider === "fcm" ? "fcm" : null;
   const enabled = body?.enabled !== false;
+  const preferences =
+    body?.preferences && typeof body.preferences === "object"
+      ? body.preferences
+      : null;
 
   // This registry is intentionally direct-FCM only. Expo push tokens and
   // APNs-only tokens cannot be sent through the Firebase HTTP v1 endpoint.
@@ -101,11 +105,12 @@ Deno.serve(async (req) => {
     platform,
     enabled,
     last_seen_at: new Date().toISOString(),
+    ...(preferences ? { notification_preferences: preferences } : {}),
   };
 
   const { data: existingDevice, error: existingDeviceError } = await admin
     .from("push_devices")
-    .select("id, user_id, platform, enabled, last_seen_at")
+    .select("id, user_id, platform, enabled, last_seen_at, notification_preferences")
     .eq("token", token)
     .maybeSingle();
   if (existingDeviceError) {
@@ -116,11 +121,15 @@ Deno.serve(async (req) => {
   const lastSeenMs = existingDevice?.last_seen_at
     ? Date.parse(existingDevice.last_seen_at)
     : Number.NaN;
+  const preferencesUnchanged =
+    !preferences ||
+    JSON.stringify(existingDevice?.notification_preferences ?? {}) === JSON.stringify(preferences);
   const isRecentDuplicate =
     existingDevice &&
     existingDevice.user_id === userData.user.id &&
     existingDevice.platform === platform &&
     existingDevice.enabled === enabled &&
+    preferencesUnchanged &&
     Number.isFinite(lastSeenMs) &&
     Date.now() - lastSeenMs < 60_000;
 

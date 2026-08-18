@@ -17,6 +17,7 @@ import {
   PUSH_DIAGNOSTICS_ENABLED,
   PUSH_NOTIFICATIONS_DISABLED,
   PUSH_ACTION_MARK_READ,
+  PUSH_ACTION_REPLY,
   type PushNotificationResponse,
 } from "@/lib/pushNotifications";
 import { getNotificationPreferences } from "@/lib/notificationPreferences";
@@ -54,12 +55,15 @@ export default function PushNotificationManager() {
 
       try {
         const { chatId } = getNotificationTarget(response);
-        if (response.actionIdentifier !== PUSH_ACTION_MARK_READ && chatId) {
-          // Route first. Mark-read/reply writes must never hold navigation
-          // hostage when the device is offline or Supabase is slow.
+        const isBackgroundAction =
+          response.actionIdentifier === PUSH_ACTION_REPLY ||
+          response.actionIdentifier === PUSH_ACTION_MARK_READ;
+        if (!isBackgroundAction && chatId) {
+          // Only explicit Open-style actions navigate. Reply and mark-read
+          // complete in the background and must not launch the app.
           safeRouter.push({ pathname: "/chat/[id]", params: { id: chatId } } as any);
         }
-        void handleNotificationResponse(response, user.id).catch((error) => {
+        await handleNotificationResponse(response, user.id).catch((error) => {
           if (__DEV__) console.warn("[push] notification action failed:", error);
         });
       } catch (error) {

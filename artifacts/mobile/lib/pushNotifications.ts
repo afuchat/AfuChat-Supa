@@ -111,10 +111,26 @@ export function isPushTokenRegistrationDue(): boolean {
 
 export const PUSH_CATEGORY_MESSAGE = "message";
 export const PUSH_CATEGORY_CALL = "call";
+export const PUSH_CATEGORY_SOCIAL = "social";
+export const PUSH_CATEGORY_MARKETPLACE = "marketplace";
+export const PUSH_CATEGORY_SUPPORT = "support";
+export const PUSH_CATEGORY_SYSTEM = "system";
+export const PUSH_CATEGORY_UNIVERSAL = "universal";
+export const PUSH_REPLY_CATEGORIES = [
+  PUSH_CATEGORY_MESSAGE,
+  PUSH_CATEGORY_CALL,
+  PUSH_CATEGORY_SOCIAL,
+  PUSH_CATEGORY_MARKETPLACE,
+  PUSH_CATEGORY_SUPPORT,
+  PUSH_CATEGORY_SYSTEM,
+  PUSH_CATEGORY_UNIVERSAL,
+] as const;
+export const PUSH_BACKGROUND_NOTIFICATION_TASK = "AFUCHAT_NOTIFICATION_ACTION_TASK";
 // Android notification channels are immutable after creation. A fresh ID is
 // required so devices that created the old channel with low/blocked visibility
 // receive the corrected high-importance public channel settings.
 export const PUSH_ANDROID_CHANNEL_ID = "messages_v2";
+export const PUSH_ANDROID_SILENT_CHANNEL_ID = "messages_silent_v1";
 export const PUSH_ACTION_REPLY = "reply";
 export const PUSH_ACTION_MARK_READ = "mark_read";
 export const PUSH_ACTION_OPEN = "open";
@@ -134,6 +150,20 @@ export type PushNotificationResponse = {
   };
 };
 
+export type PushPreferenceSnapshot = {
+  enabled?: boolean;
+  messages?: boolean;
+  calls?: boolean;
+  social?: boolean;
+  marketplace?: boolean;
+  sounds?: boolean;
+  previews?: boolean;
+  quietHours?: boolean;
+  quietStart?: string;
+  quietEnd?: string;
+  timezoneOffsetMinutes?: number;
+};
+
 type NotifyChatRecipientsParams = {
   recipientIds: string[];
   senderName: string;
@@ -144,6 +174,7 @@ type NotifyChatRecipientsParams = {
   senderId?: string;
   attachmentUrl?: string | null;
   attachmentType?: string | null;
+  categoryId?: string;
 };
 
 function getNotifications(): NotificationsModule | null {
@@ -170,6 +201,36 @@ function isDirectFcmToken(value: unknown): value is string {
     !/^(?:Expo|Exponent)PushToken\[[^\]]+\]$/.test(value.trim())
   );
 }
+
+let backgroundTaskDefined = false;
+let backgroundTaskRegistration: Promise<void> | null = null;
+
+/**
+ * Android can execute notification action tasks while the app is backgrounded
+ * or terminated. Defining this at module scope is required by expo-task-manager:
+ * the headless JS bundle loads this module before it invokes the task.
+ */
+function defineBackgroundNotificationTask(): void {
+  if (backgroundTaskDefined || Platform.OS === "web") return;
+  try {
+    const TaskManager = require("expo-task-manager") as typeof import("expo-task-manager");
+    TaskManager.defineTask(PUSH_BACKGROUND_NOTIFICATION_TASK, async ({ data, error }: any) => {
+      if (error || !data || typeof data.actionIdentifier !== "string") return;
+      if (data.actionIdentifier !== PUSH_ACTION_REPLY && data.actionIdentifier !== PUSH_ACTION_MARK_READ) return;
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id;
+      if (!userId) return;
+
+      await handleNotificationResponse(data as PushNotificationResponse, userId);
+    });
+    backgroundTaskDefined = true;
+  } catch (error) {
+    logPushDiagnostic("background notification task unavailable", error);
+  }
+}
+
+defineBackgroundNotificationTask();
 
 export function configurePushNotifications(): void {
   if (PUSH_NOTIFICATIONS_DISABLED) return;
@@ -199,51 +260,57 @@ export function configurePushNotifications(): void {
         lockscreenVisibility: notifications.AndroidNotificationVisibility.PUBLIC,
       })
       .catch(() => {});
+    notifications
+      .setNotificationChannelAsync(PUSH_ANDROID_SILENT_CHANNEL_ID, {
+        name: "Messages (silent)",
+        importance: notifications.AndroidImportance.LOW,
+        vibrationPattern: [0, 0],
+        sound: null,
+        lockscreenVisibility: notifications.AndroidNotificationVisibility.PUBLIC,
+      })
+      .catch(() => {});
   }
 
-  notifications
-    .setNotificationCategoryAsync(PUSH_CATEGORY_MESSAGE, [
-      {
-        identifier: PUSH_ACTION_REPLY,
-        buttonTitle: "Reply",
-        textInput: {
-          submitButtonTitle: "Send",
-          placeholder: "Write a reply…",
+  // Register the same reply/read/open contract for every notification source.
+  // Reply and mark-read deliberately stay in the background; only Open is
+  // allowed to foreground the app.
+  for (const categoryId of PUSH_REPLY_CATEGORIES) {
+    notifications
+      .setNotificationCategoryAsync(categoryId, [
+        {
+          identifier: PUSH_ACTION_REPLY,
+          buttonTitle: "Reply",
+          textInput: {
+            submitButtonTitle: "Send",
+            placeholder: "Write a reply…",
+          },
+          options: { opensAppToForeground: false },
         },
-        options: { opensAppToForeground: true },
-      },
-      {
-        identifier: PUSH_ACTION_MARK_READ,
-        buttonTitle: "Mark as read",
-        options: { opensAppToForeground: true },
-      },
-      {
-        identifier: PUSH_ACTION_OPEN,
-        buttonTitle: "Open",
-        options: { opensAppToForeground: true },
-      },
-    ])
-    .catch(() => {});
+        {
+          identifier: PUSH_ACTION_MARK_READ,
+          buttonTitle: "Mark as read",
+          options: { opensAppToForeground: false },
+        },
+        {
+          identifier: PUSH_ACTION_OPEN,
+          buttonTitle: "Open",
+          options: { opensAppToForeground: true },
+        },
+      ])
+      .catch(() => {});
+  }
 
-  notifications
-    .setNotificationCategoryAsync(PUSH_CATEGORY_CALL, [
-      {
-        identifier: PUSH_ACTION_OPEN,
-        buttonTitle: "Open call",
-        options: { opensAppToForeground: true },
-      },
-      {
-        identifier: PUSH_ACTION_CALL_BACK,
-        buttonTitle: "Call back",
-        options: { opensAppToForeground: true },
-      },
-      {
-        identifier: PUSH_ACTION_MARK_READ,
-        buttonTitle: "Dismiss",
-        options: { opensAppToForeground: true },
-      },
-    ])
-    .catch(() => {});
+  // The callback must be registered after defineTask, but does not need to
+  // block the first frame or notification permission flow.
+  if (Platform.OS !== "web" && !backgroundTaskRegistration) {
+    const notificationsModule = notifications;
+    backgroundTaskRegistration = notificationsModule
+      .registerTaskAsync(PUSH_BACKGROUND_NOTIFICATION_TASK)
+      .then(() => undefined)
+      .catch((error) => {
+        logPushDiagnostic("background notification task registration failed", error);
+      });
+  }
 
   handlerConfigured = true;
   pushDiagnostics.configured = true;
@@ -306,7 +373,9 @@ export function getNotificationTarget(response: PushNotificationResponse): {
       ? data.messageId
       : typeof data.message_id === "string"
         ? data.message_id
-        : null;
+        : typeof data.replyToMessageId === "string"
+          ? data.replyToMessageId
+          : null;
   return { chatId, messageId };
 }
 
@@ -374,7 +443,10 @@ export async function handleNotificationResponse(
   await markNotificationRead(response, userId);
 }
 
-export async function registerPushToken(): Promise<string | null> {
+export async function registerPushToken(options?: {
+  force?: boolean;
+  preferences?: PushPreferenceSnapshot;
+}): Promise<string | null> {
   if (PUSH_NOTIFICATIONS_DISABLED) return null;
   if (registrationInFlight) {
     recordPushDiagnostic("registrationDedupeHits");
@@ -434,6 +506,7 @@ export async function registerPushToken(): Promise<string | null> {
     const previousToken = storage.getString(KEYS.PUSH_TOKEN);
     const previousRegistrationAt = storage.getNumber(KEYS.PUSH_TOKEN_REGISTERED_AT) ?? 0;
     if (
+      !options?.force &&
       previousToken === token &&
       previousRegistrationAt > 0 &&
       Date.now() - previousRegistrationAt < PUSH_REGISTRATION_TTL_MS
@@ -446,7 +519,12 @@ export async function registerPushToken(): Promise<string | null> {
     const { error } = await withTimeout(
       () =>
         supabase.functions.invoke("register-push-token", {
-          body: { token, platform: Platform.OS, provider: "fcm" },
+          body: {
+            token,
+            platform: Platform.OS,
+            provider: "fcm",
+            preferences: options?.preferences,
+          },
         }),
       PUSH_NETWORK_TIMEOUT_MS,
       "push token registration",
@@ -531,7 +609,7 @@ async function deliverChatNotification(
              messageId: params.messageId,
              attachmentUrl: params.attachmentUrl ?? undefined,
              attachmentType: params.attachmentType ?? undefined,
-             categoryId: PUSH_CATEGORY_MESSAGE,
+              categoryId: params.categoryId ?? PUSH_CATEGORY_MESSAGE,
              data: {
                chatId: params.chatId,
                messageId: params.messageId,
@@ -540,7 +618,8 @@ async function deliverChatNotification(
                senderAvatarUrl: params.senderAvatarUrl ?? null,
                attachmentUrl: params.attachmentUrl ?? null,
                attachmentType: params.attachmentType ?? null,
-               categoryId: PUSH_CATEGORY_MESSAGE,
+                categoryId: params.categoryId ?? PUSH_CATEGORY_MESSAGE,
+                groupKey: `sender:${params.senderId ?? params.chatId}`,
              },
            },
          }),

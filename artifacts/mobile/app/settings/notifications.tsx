@@ -21,6 +21,7 @@ import {
   getNotificationPreferences,
   saveNotificationPreferences,
   setNotificationsEnabled,
+  syncNotificationPreferences,
   type NotificationPreferences,
 } from "@/lib/notificationPreferences";
 
@@ -76,6 +77,7 @@ export default function NotificationSettingsScreen() {
   const update = useCallback((patch: Partial<NotificationPreferences>) => {
     const next = saveNotificationPreferences(patch);
     setPreferences(next);
+    syncNotificationPreferences(next);
   }, []);
 
   const toggleEnabled = useCallback(async (enabled: boolean) => {

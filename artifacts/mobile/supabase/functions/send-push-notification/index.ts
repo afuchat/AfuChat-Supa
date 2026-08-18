@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const FCM_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const FCM_TIMEOUT_MS = 12_000;
 const ANDROID_CHANNEL_ID = "messages_v2";
+const ANDROID_SILENT_CHANNEL_ID = "messages_silent_v1";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -43,6 +44,99 @@ function isDevicePushToken(value: unknown): value is string {
 
 function isDirectFcmToken(value: unknown): value is string {
   return isDevicePushToken(value) && !isExpoPushToken(value);
+}
+
+type DeviceNotificationPreferences = {
+  enabled: boolean;
+  messages: boolean;
+  calls: boolean;
+  social: boolean;
+  marketplace: boolean;
+  sounds: boolean;
+  previews: boolean;
+  quietHours: boolean;
+  quietStart: string;
+  quietEnd: string;
+  timezoneOffsetMinutes: number;
+};
+
+const DEFAULT_DEVICE_PREFERENCES: DeviceNotificationPreferences = {
+  enabled: true,
+  messages: true,
+  calls: true,
+  social: true,
+  marketplace: true,
+  sounds: true,
+  previews: true,
+  quietHours: false,
+  quietStart: "22:00",
+  quietEnd: "07:00",
+  timezoneOffsetMinutes: 0,
+};
+
+function readDevicePreferences(value: unknown): DeviceNotificationPreferences {
+  const source = value && typeof value === "object" ? value as Record<string, unknown> : {};
+  const booleanValue = (key: keyof DeviceNotificationPreferences, fallback: boolean) =>
+    typeof source[key] === "boolean" ? source[key] as boolean : fallback;
+  const stringValue = (key: keyof DeviceNotificationPreferences, fallback: string) =>
+    typeof source[key] === "string" && /^\d{2}:\d{2}$/.test(source[key] as string)
+      ? source[key] as string
+      : fallback;
+  const offset = Number(source.timezoneOffsetMinutes);
+  return {
+    enabled: booleanValue("enabled", true),
+    messages: booleanValue("messages", true),
+    calls: booleanValue("calls", true),
+    social: booleanValue("social", true),
+    marketplace: booleanValue("marketplace", true),
+    sounds: booleanValue("sounds", true),
+    previews: booleanValue("previews", true),
+    quietHours: booleanValue("quietHours", false),
+    quietStart: stringValue("quietStart", DEFAULT_DEVICE_PREFERENCES.quietStart),
+    quietEnd: stringValue("quietEnd", DEFAULT_DEVICE_PREFERENCES.quietEnd),
+    timezoneOffsetMinutes: Number.isFinite(offset)
+      ? Math.max(-840, Math.min(840, offset))
+      : 0,
+  };
+}
+
+function minutesFromClock(value: string): number {
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function isWithinQuietHours(preferences: DeviceNotificationPreferences): boolean {
+  if (!preferences.quietHours) return false;
+  const localDate = new Date(Date.now() + preferences.timezoneOffsetMinutes * 60_000);
+  const currentMinutes = localDate.getUTCHours() * 60 + localDate.getUTCMinutes();
+  const start = minutesFromClock(preferences.quietStart);
+  const end = minutesFromClock(preferences.quietEnd);
+  return start === end
+    ? true
+    : start < end
+      ? currentMinutes >= start && currentMinutes < end
+      : currentMinutes >= start || currentMinutes < end;
+}
+
+function categoryPreferenceKey(categoryId: string): keyof DeviceNotificationPreferences | null {
+  if (categoryId === "message" || categoryId === "chat") return "messages";
+  if (categoryId === "call") return "calls";
+  if (categoryId === "social" || categoryId === "follow" || categoryId === "mention") return "social";
+  if (categoryId === "marketplace" || categoryId === "order" || categoryId === "payment") return "marketplace";
+  return null;
+}
+
+function shouldDeliverToDevice(
+  categoryId: string,
+  preferences: DeviceNotificationPreferences,
+): { deliver: boolean; quiet: boolean } {
+  if (!preferences.enabled) return { deliver: false, quiet: false };
+  const categoryKey = categoryPreferenceKey(categoryId);
+  if (categoryKey && !preferences[categoryKey]) return { deliver: false, quiet: false };
+  const quiet = isWithinQuietHours(preferences);
+  // Calls remain visible during quiet hours, matching the settings screen.
+  if (quiet && categoryId !== "call") return { deliver: false, quiet: true };
+  return { deliver: true, quiet };
 }
 
 type FcmServiceAccount = {
@@ -460,10 +554,15 @@ Deno.serve(async (req) => {
   const finalAttachmentUrl = validRemoteUrl(attachmentUrl);
   const richImage = isImageAttachment(attachmentType, finalAttachmentUrl)
     ? finalAttachmentUrl
-    : finalSenderAvatarUrl;
+    : "";
+  // `tag`/`thread-id` keeps a sender's burst in one notification conversation.
+  // The avatar remains data for a client renderer and is never used as the
+  // large notification image.
+  const groupKey = `sender:${resolvedSenderId || chatId || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 50)}`;
   const finalNotificationData = {
     ...notificationData,
     categoryId,
+    groupKey,
     ...(senderName ? { senderName } : {}),
     ...(finalSenderAvatarUrl ? { senderAvatarUrl: finalSenderAvatarUrl } : {}),
     ...(finalAttachmentUrl ? { attachmentUrl: finalAttachmentUrl } : {}),
@@ -499,7 +598,7 @@ Deno.serve(async (req) => {
   };
   const { data: devices, error: deviceError } = await admin
     .from("push_devices")
-    .select("id, user_id, token, platform")
+    .select("id, user_id, token, platform, notification_preferences")
     .in("user_id", recipientUserIds)
     .eq("enabled", true);
 
@@ -525,15 +624,54 @@ Deno.serve(async (req) => {
     return json({ ok: true, sent: 0, requestId });
   }
 
+  const deliverableDevices: Array<{
+    id: string;
+    user_id: string;
+    token: string;
+    platform: "android" | "ios";
+    preferences: DeviceNotificationPreferences;
+    quiet: boolean;
+  }> = [];
+  const preferenceSkippedAudits: PushAuditRow[] = [];
+  const filteredDevices = devices.filter((device) => {
+    const preferences = readDevicePreferences(device.notification_preferences);
+    const decision = shouldDeliverToDevice(categoryId, preferences);
+    if (!decision.deliver) {
+      preferenceSkippedAudits.push({
+        ...auditContext,
+        status: "skipped" as const,
+        stage: "preference_filter",
+        recipient_user_id: device.user_id,
+        device_id: device.id,
+        platform: device.platform,
+        error_code: decision.quiet ? "QUIET_HOURS" : "NOTIFICATION_TYPE_DISABLED",
+        error_message: decision.quiet
+          ? "Notification suppressed during quiet hours."
+          : "Notification type is disabled for this device.",
+      });
+      return false;
+    }
+    deliverableDevices.push({
+      ...device,
+      preferences,
+      quiet: decision.quiet,
+    });
+    return true;
+  });
+  await writePushAudit(admin, preferenceSkippedAudits);
+  if (!filteredDevices.length) {
+    return json({ ok: true, sent: 0, skipped: devices.length, requestId });
+  }
+
   // Direct FCM is the only supported provider. Legacy Expo/APNs-only rows
   // are disabled instead of silently routing through another gateway.
-  const fcmDevices = devices.filter(
+  const fcmDevices = deliverableDevices.filter(
     (device) =>
       (device.platform === "android" || device.platform === "ios") &&
       isDirectFcmToken(device.token),
   );
   const fcmDeviceIds = new Set(fcmDevices.map((device) => device.id));
-  const unsupportedDevices = devices.filter((device) => !fcmDeviceIds.has(device.id));
+  const unsupportedDevices = deliverableDevices.filter((device) => !fcmDeviceIds.has(device.id));
   const malformedIds = unsupportedDevices
     .map((device) => device.id)
     .filter(Boolean);
@@ -583,27 +721,36 @@ Deno.serve(async (req) => {
     } else {
       for (const device of fcmDevices) {
         try {
+          const playSound = device.preferences.sounds && !device.quiet;
+          const displayBody = device.preferences.previews
+            ? messageBody
+            : categoryId === "call"
+              ? "You have an incoming call."
+              : "You have a new AfuChat notification.";
           const result = await sendFcmMessage(fcmConfig, {
             token: device.token,
             notification: {
               title,
-              body: messageBody,
+              body: displayBody,
               ...(richImage ? { image: richImage } : {}),
             },
             data: fcmData(finalNotificationData),
             android: {
               priority: "HIGH",
+              collapse_key: groupKey,
               notification: {
-                channel_id: ANDROID_CHANNEL_ID,
-                sound: "default",
+                channel_id: playSound ? ANDROID_CHANNEL_ID : ANDROID_SILENT_CHANNEL_ID,
+                ...(playSound ? { sound: "default" } : {}),
+                tag: groupKey,
                 ...(richImage ? { image: richImage } : {}),
               },
             },
             apns: {
               payload: {
                 aps: {
-                  sound: "default",
+                  ...(playSound ? { sound: "default" } : {}),
                   category: categoryId,
+                  "thread-id": groupKey,
                 },
               },
             },
