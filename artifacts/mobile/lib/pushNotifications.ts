@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 import { supabase } from "@/lib/supabase";
 import { KEYS, storage } from "@/lib/storage/mmkv";
 import { isExpoGo } from "@/lib/expoEnvironment";
@@ -106,7 +107,18 @@ export function isPushTokenRegistrationDue(): boolean {
   if (PUSH_NOTIFICATIONS_DISABLED) return false;
   const token = storage.getString(KEYS.PUSH_TOKEN);
   const registeredAt = storage.getNumber(KEYS.PUSH_TOKEN_REGISTERED_AT) ?? 0;
-  return !token || !registeredAt || Date.now() - registeredAt >= PUSH_REGISTRATION_TTL_MS;
+  const registeredBuild = storage.getString(KEYS.PUSH_TOKEN_REGISTERED_BUILD);
+  const currentBuild =
+    Constants.expoConfig?.version ??
+    Constants.manifest2?.extra?.expoClient?.version ??
+    "";
+  return (
+    !token ||
+    !registeredAt ||
+    !registeredBuild ||
+    (!!currentBuild && registeredBuild !== currentBuild) ||
+    Date.now() - registeredAt >= PUSH_REGISTRATION_TTL_MS
+  );
 }
 
 export const PUSH_CATEGORY_MESSAGE = "message";
@@ -505,10 +517,16 @@ export async function registerPushToken(options?: {
 
     const previousToken = storage.getString(KEYS.PUSH_TOKEN);
     const previousRegistrationAt = storage.getNumber(KEYS.PUSH_TOKEN_REGISTERED_AT) ?? 0;
+    const currentBuild =
+      Constants.expoConfig?.version ??
+      Constants.manifest2?.extra?.expoClient?.version ??
+      "";
+    const previousBuild = storage.getString(KEYS.PUSH_TOKEN_REGISTERED_BUILD);
     if (
       !options?.force &&
       previousToken === token &&
       previousRegistrationAt > 0 &&
+      previousBuild === currentBuild &&
       Date.now() - previousRegistrationAt < PUSH_REGISTRATION_TTL_MS
     ) {
       recordPushDiagnostic("registrationCacheHits");
@@ -533,6 +551,7 @@ export async function registerPushToken(options?: {
 
     storage.setString(KEYS.PUSH_TOKEN, token);
     storage.setNumber(KEYS.PUSH_TOKEN_REGISTERED_AT, Date.now());
+    if (currentBuild) storage.setString(KEYS.PUSH_TOKEN_REGISTERED_BUILD, currentBuild);
     return token;
   })();
 

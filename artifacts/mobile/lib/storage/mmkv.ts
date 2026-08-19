@@ -193,4 +193,5 @@ export const KEYS = {
   PUSH_TOKEN: "push_token",
   PUSH_NATIVE_TOKEN: "push_native_token",
   PUSH_TOKEN_REGISTERED_AT: "push_token_registered_at",
+  PUSH_TOKEN_REGISTERED_BUILD: "push_token_registered_build",
 } as const;
