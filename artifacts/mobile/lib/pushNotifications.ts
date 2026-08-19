@@ -130,9 +130,14 @@ export const PUSH_CATEGORY_SYSTEM = "system";
 export const PUSH_CATEGORY_UNIVERSAL = "universal";
 export const PUSH_REPLY_CATEGORIES = [
   PUSH_CATEGORY_MESSAGE,
+  "chat",
   PUSH_CATEGORY_CALL,
   PUSH_CATEGORY_SOCIAL,
+  "follow",
+  "mention",
   PUSH_CATEGORY_MARKETPLACE,
+  "order",
+  "payment",
   PUSH_CATEGORY_SUPPORT,
   PUSH_CATEGORY_SYSTEM,
   PUSH_CATEGORY_UNIVERSAL,

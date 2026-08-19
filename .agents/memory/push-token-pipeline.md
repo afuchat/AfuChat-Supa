@@ -51,6 +51,14 @@ Web chat senders must still invoke the authenticated direct-FCM sender for nativ
 
 **How to apply:** Keep the `Platform.OS === "web"` guard out of `notifyChatRecipients`; let the Edge Function filter recipients by enabled native devices.
 
+## Android notification media
+
+For direct FCM notifications handled by Expo's Android builder, use the sender avatar as the FCM `notification.image` large icon and keep message attachments in `data` only.
+
+**Why:** Sending an attachment URL as the FCM image makes the media dominate the notification instead of showing the sender identity.
+
+**How to apply:** Preserve `senderAvatarUrl` in stringified FCM data for the app, and never promote `attachmentUrl` to the FCM image field.
+
 Important API detail: `expo-notifications.getDevicePushTokenAsync()` labels the native token type by platform (`"android"`/`"ios"`), not provider (`"fcm"`). On Android, `type === "android"` with string `data` is the FCM token.
 
 **Why:** Requiring `type === "fcm"` rejects every valid Android token before it reaches the registration Edge Function, leaving the production device registry empty.

@@ -25,12 +25,6 @@ function validRemoteUrl(value: string): string {
   }
 }
 
-function isImageAttachment(type: string, url: string): boolean {
-  if (type === "image" || type === "gif") return true;
-  if (type) return false;
-  return /\.(?:png|jpe?g|gif|webp)(?:$|[?#])/i.test(url);
-}
-
 function isExpoPushToken(value: unknown): value is string {
   return (
     typeof value === "string" &&
@@ -552,12 +546,11 @@ Deno.serve(async (req) => {
   const title = senderName || suppliedTitle;
   const finalSenderAvatarUrl = validRemoteUrl(senderAvatarUrl);
   const finalAttachmentUrl = validRemoteUrl(attachmentUrl);
-  const richImage = isImageAttachment(attachmentType, finalAttachmentUrl)
-    ? finalAttachmentUrl
-    : "";
+  // Expo's Android notification builder consumes FCM's image field as the
+  // notification large icon. Always use the sender avatar there; an attached
+  // photo must stay in data so it cannot dominate the notification.
+  const notificationAvatar = finalSenderAvatarUrl;
   // `tag`/`thread-id` keeps a sender's burst in one notification conversation.
-  // The avatar remains data for a client renderer and is never used as the
-  // large notification image.
   const groupKey = `sender:${resolvedSenderId || chatId || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 50)}`;
   const finalNotificationData = {
     ...notificationData,
@@ -732,7 +725,7 @@ Deno.serve(async (req) => {
             notification: {
               title,
               body: displayBody,
-              ...(richImage ? { image: richImage } : {}),
+              ...(notificationAvatar ? { image: notificationAvatar } : {}),
             },
             data: fcmData(finalNotificationData),
             android: {
@@ -742,7 +735,7 @@ Deno.serve(async (req) => {
                 channel_id: playSound ? ANDROID_CHANNEL_ID : ANDROID_SILENT_CHANNEL_ID,
                 ...(playSound ? { sound: "default" } : {}),
                 tag: groupKey,
-                ...(richImage ? { image: richImage } : {}),
+                ...(notificationAvatar ? { image: notificationAvatar } : {}),
               },
             },
             apns: {
