@@ -23,6 +23,8 @@ const PUSH_REGISTRATION_TTL_MS = 24 * 60 * 60 * 1000;
 const PUSH_DELIVERY_DEBOUNCE_MS = 100;
 const PUSH_DELIVERY_DEDUPE_MS = 30_000;
 const PUSH_NATIVE_TIMEOUT_MS = 30_000;
+const PUSH_NATIVE_TOKEN_RETRIES = 3;
+const PUSH_NATIVE_TOKEN_RETRY_DELAY_MS = 1_500;
 const PUSH_NETWORK_TIMEOUT_MS = 15_000;
 export const PUSH_NOTIFICATIONS_DISABLED =
   typeof process !== "undefined" && process.env.EXPO_PUBLIC_DISABLE_PUSH_NOTIFICATIONS === "1";
@@ -59,6 +61,44 @@ function withTimeout<T>(
         },
       );
   });
+}
+
+async function getDirectFcmDeviceToken(
+  notifications: NotificationsModule,
+): Promise<string> {
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt < PUSH_NATIVE_TOKEN_RETRIES; attempt += 1) {
+    try {
+      const deviceToken = await withTimeout(
+        () => notifications.getDevicePushTokenAsync(),
+        PUSH_NATIVE_TIMEOUT_MS,
+        "FCM device token request",
+      );
+      // expo-notifications labels native tokens by platform ("android"/"ios"),
+      // not by provider ("fcm"). On Android, the token data is the FCM token.
+      if (
+        deviceToken.type !== Platform.OS ||
+        !isDirectFcmToken(deviceToken.data)
+      ) {
+        throw new Error(
+          `The native build did not return a valid direct FCM token (type=${String(deviceToken.type)}).`,
+        );
+      }
+      return deviceToken.data.trim();
+    } catch (error) {
+      lastError = error;
+      if (attempt < PUSH_NATIVE_TOKEN_RETRIES - 1) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, PUSH_NATIVE_TOKEN_RETRY_DELAY_MS * (attempt + 1)),
+        );
+      }
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Unable to obtain a direct FCM device token.");
 }
 
 type PushDiagnostics = {
@@ -502,23 +542,9 @@ export async function registerPushToken(options?: {
 
     // Always register the native FCM token. ExpoPushToken values are
     // intentionally not requested because delivery is handled directly by
-    // Firebase HTTP v1.
-    const deviceToken = await withTimeout(
-      () => notifications.getDevicePushTokenAsync(),
-      PUSH_NATIVE_TIMEOUT_MS,
-      "FCM device token request",
-    );
-    // expo-notifications labels native tokens by platform ("android"/"ios"),
-    // not by provider ("fcm"). On Android, the token data is the FCM token.
-    if (
-      deviceToken.type !== Platform.OS ||
-      !isDirectFcmToken(deviceToken.data)
-    ) {
-      throw new Error(
-        `The native build did not return a valid direct FCM token (type=${String(deviceToken.type)}).`,
-      );
-    }
-    const token = deviceToken.data.trim();
+    // Firebase HTTP v1. A Play-installed release can initialize Firebase
+    // after the first JS frame, so retry token acquisition before failing.
+    const token = await getDirectFcmDeviceToken(notifications);
 
     const previousToken = storage.getString(KEYS.PUSH_TOKEN);
     const previousRegistrationAt = storage.getNumber(KEYS.PUSH_TOKEN_REGISTERED_AT) ?? 0;

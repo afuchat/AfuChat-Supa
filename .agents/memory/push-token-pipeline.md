@@ -65,6 +65,18 @@ Important API detail: `expo-notifications.getDevicePushTokenAsync()` labels the 
 
 **How to apply:** Compare the returned type with `Platform.OS`, validate the token data as a direct FCM token, and test only with a Firebase-enabled native build—not Expo Go.
 
+Release builds should retry native FCM token acquisition before giving up because Firebase initialization can lag behind the first JavaScript frame on a Play-installed AAB.
+
+**Why:** A one-shot token request can fail on a cold release install even when the same code works in an internal APK.
+
+**How to apply:** Retry `getDevicePushTokenAsync()` with bounded delays, then retry registration on a later foreground/connectivity event.
+
+Internal APK and Play AAB builds can share the same Firebase project and EAS keystore while still being signed by different certificates after Play re-signing.
+
+**Why:** Firebase/Google API restrictions can allow FCM registration for the internal APK certificate but reject the Play App Signing certificate.
+
+**How to apply:** Register both the EAS upload-key fingerprints and the Google Play App Signing SHA-1/SHA-256 fingerprints for `com.afuchat.afuapp` in the Firebase Android app.
+
 ## Production diagnostic
 
 Production registration failures with `INVALID_DEVICE_TOKEN` and no `push_devices` rows indicate an Expo Go or legacy APK is still calling the endpoint with an Expo-formatted token; this is expected under direct FCM.
