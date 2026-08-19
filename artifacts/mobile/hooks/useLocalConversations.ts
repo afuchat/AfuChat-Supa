@@ -102,11 +102,15 @@ export function useLocalConversations(userId: string | undefined) {
         }
       }
 
-      const items: LocalConversation[] = chatRows.map((c: any) => {
+      const items: LocalConversation[] = chatRows
+        .filter((c: any) => {
+          const others = (c.chat_members ?? []).filter((m: any) => m.user_id !== expectedUserId);
+          // A direct chat without a resolvable other profile is an orphan.
+          // Do not persist it as "Unknown"; it cannot open a real chat.
+          return c.is_group || c.is_channel || Boolean(others[0]?.profiles?.id);
+        })
+        .map((c: any) => {
         const others = (c.chat_members ?? []).filter((m: any) => m.user_id !== expectedUserId);
-        // A direct chat without a resolvable other profile is an orphan. Do
-        // not persist it as "Unknown"; it can never open a real conversation.
-        if (!c.is_group && !c.is_channel && !others[0]?.profiles?.id) continue;
         const other = others[0]?.profiles;
         const lm = lastMsgMap[c.id] ?? {};
         return {

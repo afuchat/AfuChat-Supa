@@ -673,7 +673,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     // The RPC includes chat membership, profile metadata, latest message,
     // delivery/read state, unread count, mute state, and subscribed channel
     // broadcasts in one server query.
-    const items: ChatItem[] = (chatRows as any[]).map((row: any) => {
+    const items: ChatItem[] = (chatRows as any[]).map((row: any): ChatItem => {
       if (row.kind === "channel_broadcast") {
         return {
           id: row.chat_id,

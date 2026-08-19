@@ -67,3 +67,4 @@
 - [Production connectivity unknown state](production-connectivity-unknown.md) — standalone Android can mount before NetInfo; unknown must be network-usable, not offline/low-data, and noncritical services should start after first render.
 - [Expo workflow port detection](expo-workflow-port-detection.md) — managed Expo web preview needs waitForPort 5000; without it Metro can run while the workflow remains unattached.
 - [EAS prebuild asset and lockfile checks](eas-prebuild-assets-lockfile.md) — EAS validates notification assets during prebuild and uses frozen pnpm installs, so manifests and lockfile must be synchronized.
+- [Direct chat orphan cleanup](direct-chat-orphan-cleanup.md) — nameless non-group chats with fewer than two members cannot resolve an other profile and should be filtered and cleaned.
