@@ -193,10 +193,10 @@ async function loadFcmConfig(admin: any): Promise<FcmServiceAccount | null> {
     // Keep the send target independent from a copied service-account JSON's
     // project_id. The Android client gets its sender ID from
     // google-services.json, so the server must use this same Firebase project.
-    const configuredProjectId =
-      Deno.env.get("FCM_PROJECT_ID") ??
-      Deno.env.get("FIREBASE_PROJECT_ID") ??
-      EXPECTED_FCM_PROJECT_ID;
+    // Never allow a stale deployment variable to select a different Firebase
+    // sender project. The mobile binary's sender ID comes from
+    // google-services.json and is fixed to EXPECTED_FCM_PROJECT_ID.
+    const configuredProjectId = EXPECTED_FCM_PROJECT_ID;
     const envKeys = [
       "FCM_SERVICE_ACCOUNT_JSON",
       "FIREBASE_SERVICE_ACCOUNT_JSON",
