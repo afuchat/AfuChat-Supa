@@ -729,7 +729,12 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         other_show_online: isSelfChat ? false : row.other_show_online !== false,
         muted_until: row.is_muted ? (row.muted_until || null) : undefined,
       };
-    });
+    }).filter((item) =>
+      item.kind === "channel_broadcast" ||
+      item.is_group ||
+      item.is_channel ||
+      Boolean(item.other_id)
+    );
 
     // My Notes is a local-only conversation. Hide any legacy server self-chat
     // instead of resurfacing the old auto-created version.
