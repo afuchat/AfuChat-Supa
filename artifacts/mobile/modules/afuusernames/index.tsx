@@ -9,7 +9,6 @@ import {
   Text,
   TextInput,
   View,
-  useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -148,7 +147,7 @@ function BidSheet({ item, visible, onClose, onDone, colors }: { item: Listing | 
     onClose(); onDone(); showAlert("Bid placed", `You're now bidding ${money(value)} ACoin for @${item.username}.`);
   };
   return (
-    <SmartSheet visible={visible} onClose={onClose} fullScreen backgroundColor={colors.surface}>
+    <SmartSheet visible={visible} onClose={onClose} peekFraction={0.56} backgroundColor={colors.surface}>
       <View style={styles.sheet}>
         <View style={[styles.sheetIcon, { backgroundColor: Colors.gold + "18" }]}><Ionicons name="hammer-outline" size={25} color={Colors.gold} /></View>
         <Text style={[styles.sheetTitle, { color: colors.text }]}>Place a serious bid</Text>
@@ -269,7 +268,7 @@ function ListHandleSheet({
   };
 
   return (
-    <SmartSheet visible={visible} onClose={onClose} fullScreen backgroundColor={colors.surface}>
+    <SmartSheet visible={visible} onClose={onClose} peekFraction={0.62} backgroundColor={colors.surface}>
       <View style={styles.sheet}>
         <View style={[styles.sheetIcon, { backgroundColor: colors.accent + "18" }]}>
           <Ionicons name="pricetag-outline" size={25} color={colors.accent} />
@@ -376,7 +375,7 @@ function PurchaseSheet({
   };
 
   return (
-    <SmartSheet visible={visible} onClose={onClose} fullScreen backgroundColor={colors.surface}>
+    <SmartSheet visible={visible} onClose={onClose} peekFraction={0.66} backgroundColor={colors.surface}>
       <View style={styles.sheet}>
         <View style={[styles.sheetIcon, { backgroundColor: Colors.gold + "18" }]}>
           <Ionicons name="shield-checkmark-outline" size={25} color={Colors.gold} />
@@ -429,7 +428,6 @@ function PurchaseSheet({
 export default function AfuUsernamesApp() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
   const { user, profile, refreshProfile } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
   const [owned, setOwned] = useState<OwnedUsername[]>([]);
@@ -532,7 +530,7 @@ export default function AfuUsernamesApp() {
   const sellerListingCount = listings.filter((item) => item.seller_id === user?.id).length;
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background, minHeight: height }]}>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View style={styles.headerTitle}>
           <Text style={[styles.eyebrow, { color: colors.accent }]}>USERNAME MARKET</Text>

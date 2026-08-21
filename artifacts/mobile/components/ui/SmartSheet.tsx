@@ -34,8 +34,6 @@ type Props = {
   children: React.ReactNode;
   /** Fraction of screen height shown in peek mode. Default 0.58 */
   peekFraction?: number;
-  /** Open directly at the full available screen height instead of peek mode. */
-  fullScreen?: boolean;
   backgroundColor?: string;
   handleColor?: string;
 };
@@ -45,7 +43,6 @@ export function SmartSheet({
   onClose,
   children,
   peekFraction = 0.58,
-  fullScreen = false,
   backgroundColor,
   handleColor,
 }: Props) {
@@ -56,7 +53,7 @@ export function SmartSheet({
   const insets = useSafeAreaInsets();
 
   const peekH = screenH * peekFraction;
-  const fullH = fullScreen ? screenH : screenH - insets.top - 16;
+  const fullH = screenH - insets.top - 16;
 
   // Keep fresh values accessible inside the PanResponder closure (created once)
   const peekHRef = useRef(peekH);
@@ -119,17 +116,17 @@ export function SmartSheet({
 
   useEffect(() => {
     if (visible) {
-       isFullRef.current = fullScreen;
-       setIsFull(fullScreen);
+       isFullRef.current = false;
+       setIsFull(false);
       sheetH.setValue(0);
       Animated.timing(sheetH, {
-         toValue: fullScreen ? fullHRef.current : peekHRef.current,
+         toValue: peekHRef.current,
         duration: 320,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: false,
       }).start();
     }
-  }, [visible, fullScreen]);
+  }, [visible]);
 
   // ─── PanResponder ─────────────────────────────────────────────────────────
 
@@ -233,11 +230,11 @@ export function SmartSheet({
 
       {/* The sheet itself — panHandlers on the whole view */}
       <Animated.View
-        style={[styles.sheet, fullScreen && styles.sheetFull, { height: sheetH, backgroundColor: resolvedBg, paddingBottom: insets.bottom }]}
+        style={[styles.sheet, { height: sheetH, backgroundColor: resolvedBg, paddingBottom: insets.bottom }]}
         {...panResponder.panHandlers}
       >
         {/* Drag handle indicator */}
-        <View style={[styles.handleBar, fullScreen && styles.handleBarFull]}>
+        <View style={styles.handleBar}>
           <View style={[styles.handle, { backgroundColor: resolvedHandle }]} />
         </View>
 
@@ -285,18 +282,10 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  sheetFull: {
-    top: 0,
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-  },
   handleBar: {
     alignItems: "center",
     paddingTop: 12,
     paddingBottom: 8,
-  },
-  handleBarFull: {
-    paddingTop: 6,
   },
   handle: {
     width: 36,
