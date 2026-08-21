@@ -262,4 +262,32 @@ async function runMigrations(db: DB) {
     }
     await db.runAsync("UPDATE schema_version SET version = 15");
   }
+
+  // ── v16: exact device phonebook cache for offline contact picking ─────────
+  if (currentVersion < 16) {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS phonebook_contacts (
+        contact_key TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        normalized_phone TEXT NOT NULL,
+        position INTEGER NOT NULL,
+        phone_index INTEGER NOT NULL,
+        matched_user_id TEXT,
+        matched_display_name TEXT,
+        matched_handle TEXT,
+        matched_avatar_url TEXT,
+        matched_bio TEXT,
+        matched_acoin INTEGER NOT NULL DEFAULT 0,
+        matched_is_verified INTEGER NOT NULL DEFAULT 0,
+        matched_is_organization_verified INTEGER NOT NULL DEFAULT 0,
+        stored_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_phonebook_contacts_order
+        ON phonebook_contacts(position, phone_index);
+      CREATE INDEX IF NOT EXISTS idx_phonebook_contacts_normalized
+        ON phonebook_contacts(normalized_phone);
+    `);
+    await db.runAsync("UPDATE schema_version SET version = 16");
+  }
 }
