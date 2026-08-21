@@ -41,7 +41,7 @@ type Listing = {
   seller: Seller;
 };
 
-type FilterTab = "all" | "fixed" | "auction";
+type FilterTab = "all" | "fixed";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -256,11 +256,16 @@ function ListSheet({
 }) {
   const [username, setUsername] = useState("");
   const [price, setPrice]       = useState("");
-  const [isAuction, setIsAuction] = useState(false);
-  const [hoursLeft, setHoursLeft] = useState("24");
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => { if (!visible) { setUsername(""); setPrice(""); setIsAuction(false); setHoursLeft("24"); } }, [visible]);
+  useEffect(() => {
+    if (!visible) {
+      setUsername("");
+      setPrice("");
+    } else {
+      setUsername(userHandle || "");
+    }
+  }, [visible, userHandle]);
 
   async function submit() {
     if (!userId) { showAlert("Sign In Required", "Please sign in to list a username."); return; }
@@ -272,23 +277,12 @@ function ListSheet({
 
     setSubmitting(true);
 
-    const row: Record<string, any> = {
-      username:    uname,
-      price:       priceVal,
-      seller_id:   userId,
-      is_active:   true,
-      is_auction:  isAuction,
-    };
-
-    if (isAuction) {
-      const hrs = parseInt(hoursLeft, 10) || 24;
-      const endAt = new Date(Date.now() + hrs * 3_600_000).toISOString();
-      row.auction_end_at  = endAt;
-      row.reserve_price   = priceVal;
-      row.current_bid     = 0;
-    }
-
-    const { error } = await supabase.from("username_listings").insert(row);
+    const { error } = await supabase.rpc("create_username_listing", {
+      p_username: uname,
+      p_price: priceVal,
+      p_is_auction: false,
+      p_duration_hours: null,
+    });
     if (error) {
       showAlert("Error", error.message || "Could not list username.");
     } else {
@@ -303,8 +297,8 @@ function ListSheet({
     <SmartSheet visible={visible} onClose={onClose} peekFraction={0.75} backgroundColor={colors.surface}>
       <View style={s.sheetContent}>
         <Text style={[s.sheetTitle, { color: colors.text }]}>List a Username</Text>
-        <Text style={[s.sheetSub, { color: colors.textMuted }]}>
-          Sell an @handle you own or that's unclaimed
+          <Text style={[s.sheetSub, { color: colors.textMuted }]}>
+           Your current username is held securely until it is purchased
         </Text>
 
         <Text style={[s.fieldLabel, { color: colors.textSecondary }]}>Username</Text>
@@ -317,12 +311,12 @@ function ListSheet({
             autoCapitalize="none"
             autoCorrect={false}
             value={username}
-            onChangeText={t => setUsername(t.replace(/[^a-zA-Z0-9_]/g, ""))}
+            editable={false}
           />
         </View>
 
         <Text style={[s.fieldLabel, { color: colors.textSecondary, marginTop: 14 }]}>
-          {isAuction ? "Reserve Price (ACoin)" : "Price (ACoin)"}
+          Price (ACoin)
         </Text>
         <View style={[s.inputRow, { borderColor: colors.border, backgroundColor: colors.inputBg }]}>
           <Text style={[s.inputPrefix, { color: Colors.brand }]}>⚡</Text>
@@ -336,37 +330,6 @@ function ListSheet({
           />
           <Text style={[s.inputSuffix, { color: colors.textMuted }]}>ACoin</Text>
         </View>
-
-        <View style={[s.switchRow, { borderColor: colors.border }]}>
-          <View style={{ flex: 1 }}>
-            <Text style={[s.switchLabel, { color: colors.text }]}>Auction mode</Text>
-            <Text style={[s.switchSub, { color: colors.textMuted }]}>Bidders compete for the handle</Text>
-          </View>
-          <Switch
-            value={isAuction}
-            onValueChange={setIsAuction}
-            trackColor={{ false: colors.border, true: "#FF9F0A66" }}
-            thumbColor={isAuction ? "#FF9F0A" : colors.textMuted}
-          />
-        </View>
-
-        {isAuction && (
-          <>
-            <Text style={[s.fieldLabel, { color: colors.textSecondary, marginTop: 14 }]}>Auction Duration (hours)</Text>
-            <View style={[s.inputRow, { borderColor: colors.border, backgroundColor: colors.inputBg }]}>
-              <Ionicons name="time-outline" size={16} color={colors.textMuted} />
-              <TextInput
-                style={[s.sheetInput, { color: colors.text }]}
-                placeholder="24"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="number-pad"
-                value={hoursLeft}
-                onChangeText={setHoursLeft}
-              />
-              <Text style={[s.inputSuffix, { color: colors.textMuted }]}>hours</Text>
-            </View>
-          </>
-        )}
 
         <TouchableOpacity
           style={[s.sheetBtn, { backgroundColor: Colors.brand, marginTop: 20, opacity: submitting ? 0.65 : 1 }]}
@@ -397,6 +360,7 @@ export default function AfuUsernamesApp() {
   const [filter,      setFilter]      = useState<FilterTab>("all");
   const [bidTarget,   setBidTarget]   = useState<Listing | null>(null);
   const [showList,    setShowList]    = useState(false);
+  const [purchasingId, setPurchasingId] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Data loading ──────────────────────────────────────────────────────────
@@ -413,7 +377,7 @@ export default function AfuUsernamesApp() {
 
     if (search.trim()) query = query.ilike("username", `%${search.trim()}%`);
     if (filter === "fixed")   query = query.eq("is_auction", false);
-    if (filter === "auction") query = query.eq("is_auction", true);
+    query = query.eq("is_auction", false);
 
     const { data, error } = await query;
     if (!error) setListings((data as unknown as Listing[]) || []);
@@ -429,10 +393,25 @@ export default function AfuUsernamesApp() {
   // ── Derived stats ─────────────────────────────────────────────────────────
 
   const allListings    = listings;
-  const auctionCount   = allListings.filter(l => l.is_auction).length;
   const fixedCount     = allListings.filter(l => !l.is_auction).length;
 
   // ── Handlers ─────────────────────────────────────────────────────────────
+
+  async function purchaseListing(item: Listing) {
+    if (!user || purchasingId) return;
+    setPurchasingId(item.id);
+    const { error } = await supabase.rpc("purchase_username", {
+      p_listing_id: item.id,
+    });
+    setPurchasingId(null);
+    if (error) {
+      showAlert("Purchase not completed", error.message || "This listing may have just been sold.");
+      await load();
+      return;
+    }
+    setListings(prev => prev.filter(l => l.id !== item.id));
+    showAlert("Username secured", `@${item.username} now belongs to your profile.`);
+  }
 
   function handleCardPress(item: Listing) {
     // Increment view count in background
@@ -442,9 +421,17 @@ export default function AfuUsernamesApp() {
       if (!user) { showAlert("Sign In Required", "Sign in to place a bid."); return; }
       setBidTarget(item);
     } else {
-      showAlert(
-        `Buy @${item.username}`,
-        `Price: ${formatPrice(item.price)} ACoin\nSeller: @${item.seller?.handle || "seller"}\n\nIn-app purchase coming soon!`,
+      if (!user) {
+        showAlert("Sign In Required", "Sign in to buy a username.");
+        return;
+      }
+      Alert.alert(
+        `Buy @${item.username}?`,
+        `${formatPrice(item.price)} ACoin\nSeller: @${item.seller?.handle || "seller"}\n\nThe username will be transferred to your profile after the payment succeeds. This cannot be undone.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Buy securely", onPress: () => { void purchaseListing(item); } },
+        ],
       );
     }
   }
@@ -486,7 +473,9 @@ export default function AfuUsernamesApp() {
           <View style={[s.buyBadge, { backgroundColor: Colors.brand + "18" }]}>
             <Text style={[s.buyBadgeText, { color: Colors.brand }]}>BUY NOW</Text>
           </View>
-          <Text style={[s.price, { color: Colors.brand }]}>{formatPrice(item.price)}</Text>
+            <Text style={[s.price, { color: Colors.brand }]}>
+              {purchasingId === item.id ? "…" : formatPrice(item.price)}
+            </Text>
           <Text style={[s.currency, { color: colors.textMuted }]}>ACoin</Text>
         </View>
       </TouchableOpacity>
@@ -498,17 +487,12 @@ export default function AfuUsernamesApp() {
   const ListHeader = (
     <>
       {/* Stats row */}
-      <View style={[s.statsRow, { borderBottomColor: colors.border }]}>
+        <View style={[s.statsRow, { backgroundColor: colors.surface }]}>
         <View style={s.statItem}>
           <Text style={[s.statNum, { color: colors.text }]}>{allListings.length}</Text>
           <Text style={[s.statLabel, { color: colors.textMuted }]}>Listings</Text>
         </View>
-        <View style={[s.statDivider, { backgroundColor: colors.border }]} />
-        <View style={s.statItem}>
-          <Text style={[s.statNum, { color: "#FF9F0A" }]}>{auctionCount}</Text>
-          <Text style={[s.statLabel, { color: colors.textMuted }]}>Auctions</Text>
-        </View>
-        <View style={[s.statDivider, { backgroundColor: colors.border }]} />
+        <View style={[s.statDivider, { backgroundColor: colors.backgroundSecondary }]} />
         <View style={s.statItem}>
           <Text style={[s.statNum, { color: Colors.brand }]}>{fixedCount}</Text>
           <Text style={[s.statLabel, { color: colors.textMuted }]}>Fixed Price</Text>
@@ -516,15 +500,15 @@ export default function AfuUsernamesApp() {
       </View>
 
       {/* Filter tabs */}
-      <View style={[s.filterRow, { borderBottomColor: colors.border }]}>
-        {(["all", "fixed", "auction"] as FilterTab[]).map(tab => {
+       <View style={[s.filterRow, { backgroundColor: colors.background }]}>
+        {(["all", "fixed"] as FilterTab[]).map(tab => {
           const active = filter === tab;
-          const label  = tab === "all" ? "All" : tab === "fixed" ? "Fixed Price" : "Auction";
-          const accent = tab === "auction" ? "#FF9F0A" : Colors.brand;
+          const label  = tab === "all" ? "All usernames" : "Fixed price";
+          const accent = Colors.brand;
           return (
             <TouchableOpacity
               key={tab}
-              style={[s.filterTab, active && { borderBottomWidth: 2, borderBottomColor: accent }]}
+               style={[s.filterTab, { backgroundColor: active ? Colors.brand + "18" : colors.surface }]}
               onPress={() => setFilter(tab)}
             >
               <Text style={[s.filterTabText, { color: active ? accent : colors.textMuted }]}>
@@ -644,7 +628,7 @@ const s = StyleSheet.create({
   listBtnText:   { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#fff" },
 
   searchWrap:    { paddingHorizontal: 14, paddingVertical: 10 },
-  searchBar:     { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 9 },
+  searchBar:     { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10 },
   searchInput:   { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular" },
 
   statsRow:      { flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 4, marginTop: 6 },
@@ -653,11 +637,11 @@ const s = StyleSheet.create({
   statLabel:     { fontSize: 11, fontFamily: "Inter_400Regular" },
   statDivider:   { width: 0.5, height: 32 },
 
-  filterRow:     { flexDirection: "row", marginBottom: 4 },
-  filterTab:     { flex: 1, alignItems: "center", paddingVertical: 10 },
+  filterRow:     { flexDirection: "row", gap: 8, marginBottom: 8, paddingHorizontal: 14 },
+  filterTab:     { alignItems: "center", paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999 },
   filterTabText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
 
-  card:          { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 14, borderWidth: 1, padding: 14 },
+  card:          { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 16, padding: 15 },
   usernameIcon:  { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
   atSign:        { fontSize: 22, fontFamily: "Inter_700Bold" },
   username:      { fontSize: 16, fontFamily: "Inter_600SemiBold" },
@@ -680,7 +664,7 @@ const s = StyleSheet.create({
   sheetTitle:    { fontSize: 18, fontFamily: "Inter_700Bold" },
   sheetSub:      { fontSize: 13, fontFamily: "Inter_400Regular", marginBottom: 12, textAlign: "center" },
   fieldLabel:    { fontSize: 12, fontFamily: "Inter_500Medium", marginBottom: 6, alignSelf: "flex-start" },
-  inputRow:      { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 11, width: "100%" },
+  inputRow:      { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 11, width: "100%" },
   inputPrefix:   { fontSize: 16, fontFamily: "Inter_700Bold" },
   sheetInput:    { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular" },
   inputSuffix:   { fontSize: 13, fontFamily: "Inter_400Regular" },
