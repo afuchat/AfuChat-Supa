@@ -16,7 +16,7 @@ import {
 import { Image as ExpoImage } from "expo-image";
 import { usePathname } from "expo-router";
 import { safeRouter } from "@/lib/navUtils";
-import type { Session } from "@supabase/supabase-js";
+import type { RealtimeChannel, Session } from "@supabase/supabase-js";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
@@ -69,17 +69,76 @@ function useTotalUnread(userId: string | undefined): number {
       }, 250);
     };
     const chName = `tab-bar-unread-${userId}`;
-    const ch = supabase
-      .channel(chName)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "message_status", filter: `user_id=eq.${userId}` }, fallbackRefresh)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "message_status", filter: `user_id=eq.${userId}` }, fallbackRefresh)
-      .subscribe();
+    const channelTopic = `realtime:${chName}`;
+    let ch: RealtimeChannel | null = null;
+
+    // Web Strict Mode and fast auth transitions can run this effect again
+    // before the previous channel has finished unsubscribing. Realtime rejects
+    // callbacks added to a channel after subscribe(), so remove every stale
+    // same-topic channel before constructing and configuring the replacement.
+    const setupChannel = async () => {
+      const staleChannels = supabase
+        .getChannels()
+        .filter((existing) => existing.topic === channelTopic);
+      await Promise.all(
+        staleChannels.map((staleChannel) =>
+          supabase.removeChannel(staleChannel).catch(() => "error"),
+        ),
+      );
+      if (cancelled) return;
+
+      ch = supabase
+        .channel(chName)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "message_status",
+            filter: `user_id=eq.${userId}`,
+          },
+          fallbackRefresh,
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "message_status",
+            filter: `user_id=eq.${userId}`,
+          },
+          fallbackRefresh,
+        );
+
+      if (cancelled) {
+        await supabase.removeChannel(ch).catch(() => {});
+        ch = null;
+        return;
+      }
+
+      ch.subscribe((status) => {
+        if (
+          status === "CHANNEL_ERROR" &&
+          !cancelled &&
+          (__DEV__ || process.env.EXPO_PUBLIC_NOTIFICATION_DIAGNOSTICS === "1")
+        ) {
+          console.warn("[tab-bar-unread] Realtime channel error", {
+            channel: chName,
+            userId,
+          });
+        }
+      });
+    };
+    void setupChannel();
 
     return () => {
       cancelled = true;
       if (refreshTimer) clearTimeout(refreshTimer);
       unsubStore();
-      supabase.removeChannel(ch).catch(() => {});
+      if (ch) {
+        void supabase.removeChannel(ch).catch(() => {});
+        ch = null;
+      }
     };
   }, [userId]);
 

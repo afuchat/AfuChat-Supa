@@ -7,9 +7,9 @@ Configure all `postgres_changes` and broadcast handlers on a Supabase channel be
 
 **Why:** Supabase caches channels by name. If a previous effect run left one subscribed (React Strict Mode double-invoke, or dep change before cleanup fires), `supabase.channel(name)` returns the already-subscribed instance and calling `.on()` on it throws "cannot add postgres_changes callbacks after subscribe()".
 
-**How to apply:** At the top of any effect that creates a named channel, evict any stale instance first:
+**How to apply:** At the top of any effect that creates a named channel, evict every stale same-topic instance and await removal before configuring the replacement:
 ```ts
-const stale = supabase.getChannels().find(ch => ch.topic === `realtime:${channelName}`);
-if (stale) supabase.removeChannel(stale);
+const stale = supabase.getChannels().filter(ch => ch.topic === `realtime:${channelName}`);
+await Promise.all(stale.map(ch => supabase.removeChannel(ch)));
 ```
-Then create and configure the channel as normal. This pattern is used in `chat:${activeChatId}` in `app/chat/[id].tsx`.
+Check the effect cancellation flag after the await, then create/configure the channel and call `subscribe()` exactly once. This is especially important for web Strict Mode and fast auth transitions.

@@ -1,0 +1,42 @@
+════════════════════════════════════════════
+AfuChat Crash Report
+Time        : 2026-08-21T08:57:27.776Z
+
+App         : AfuChat 2.2.17 (build ?)
+Platform    : web 0.0.0
+OS          : Windows 10
+Dev mode    : true
+
+────────────────  Error  ───────────────────
+cannot add `postgres_changes` callbacks for realtime:tab-bar-unread-13d0d0f1-2f88-4b70-ac31-f6824a41aad5 after `subscribe()`.
+
+────────────  JS Stack Trace  ──────────────
+at TabLayout (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:173845:72)
+    at WrappedScreenComponent (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:68581:47)
+    at BaseRoute (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:68653:56)
+    at SceneView (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33252:88)
+    at render (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33053:54)
+    at https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33085:23
+    at Array.reduce (<anonymous>)
+    at useDescriptors (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33082:32)
+    at useNavigationBuilder (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:32785:44)
+    at NativeStackNavigator (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:86006:43)
+    at https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:64341:52
+    at Object.assign.Screen (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:64109:45)
+    at AppNavigationStack (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:324578:51)
+    at RootLayout (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:324899:78)
+    at WrappedScreenComponent (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:68581:47)
+    at BaseRoute (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:68653:56)
+    at SceneView (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33252:88)
+    at render (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33053:54)
+    at https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33085:23
+    at Array.reduce (<anonymous>)
+    at useDescriptors (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33082:32)
+    at useNavigationBuilder (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:32785:44)
+    at Content (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:89045:43)
+    at ContextNavigator (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:88986:56)
+    at ExpoRoot (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:88904:45)
+    at App (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:24236:50)
+    at WithDevTools (https://b16fdaa6-d979-4341-8047-b433e44093f2-00-2sjw6jkl5gu4d.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:79945:59)
+
+════════════════════════════════════════════
