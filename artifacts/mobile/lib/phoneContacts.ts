@@ -170,3 +170,32 @@ export async function sendPhoneInvite(normalizedPhone: string): Promise<void> {
     // Keep the invite action quiet when no SMS app is configured.
   }
 }
+
+/**
+ * Opens WhatsApp for the exact international phone number. WhatsApp itself
+ * decides whether that number has an account; the number is never replaced
+ * with a generic share destination.
+ */
+export async function sendWhatsAppInvite(normalizedPhone: string): Promise<void> {
+  if (!isValidInternationalPhoneNumber(normalizedPhone)) {
+    return;
+  }
+
+  const digits = normalizedPhone.replace(/\D/g, "");
+  const encodedMessage = encodeURIComponent(AFUCHAT_INVITE_MESSAGE);
+  const appUrl = `whatsapp://send?phone=${digits}&text=${encodedMessage}`;
+  const webUrl = `https://wa.me/${digits}?text=${encodedMessage}`;
+
+  try {
+    if (await Linking.canOpenURL(appUrl)) {
+      await Linking.openURL(appUrl);
+      return;
+    }
+  } catch {}
+
+  try {
+    await Linking.openURL(webUrl);
+  } catch {
+    // Keep the invite action quiet when WhatsApp is not installed.
+  }
+}

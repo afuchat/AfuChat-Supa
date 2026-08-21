@@ -379,7 +379,7 @@ function InviteContactsSection({ referralLink, accent, colors }: { referralLink:
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[invS.cardTitle, { color: colors.text }]}>Invite Your Contacts</Text>
-          <Text style={[invS.cardSub, { color: colors.textMuted }]}>Send via WhatsApp, SMS, or Email</Text>
+          <Text style={[invS.cardSub, { color: colors.textMuted }]}>Invite by WhatsApp or SMS using the contact's number</Text>
         </View>
       </View>
 
@@ -422,18 +422,27 @@ function InviteContactsSection({ referralLink, accent, colors }: { referralLink:
                 <Text style={[invS.contactName, { color: colors.text }]} numberOfLines={1}>{c.name}</Text>
                 <Text style={[invS.contactPhone, { color: colors.textMuted }]}>{c.rawPhone}</Text>
               </View>
-              <View style={invS.actionBtns}>
-                <TouchableOpacity style={[invS.actionBtn, { backgroundColor: "#25D36620" }]}
-                  onPress={() => { const n = c.phone.replace(/\D/g, ""); Linking.openURL(`https://wa.me/${n}?text=${encodeURIComponent(inviteMsg)}`).catch(() => Linking.openURL(`whatsapp://send?phone=${n}&text=${encodeURIComponent(inviteMsg)}`)); }}>
-                  <Ionicons name="logo-whatsapp" size={18} color="#25D366" />
+              <View style={invS.inviteActions}>
+                <TouchableOpacity
+                  style={[invS.inviteBtn, { backgroundColor: "#25D366" }]}
+                  onPress={() => {
+                    const n = c.phone.replace(/\D/g, "");
+                    const message = encodeURIComponent(inviteMsg);
+                    Linking.openURL(`whatsapp://send?phone=${n}&text=${message}`)
+                      .catch(() => Linking.openURL(`https://wa.me/${n}?text=${message}`).catch(() => {}));
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="logo-whatsapp" size={15} color="#fff" />
+                  <Text style={invS.inviteBtnText}>WhatsApp</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[invS.actionBtn, { backgroundColor: "#007AFF20" }]}
-                  onPress={() => Linking.openURL(smsUrl(c.phone, inviteMsg)).catch(() => {})}>
-                  <Ionicons name="chatbubble-ellipses-outline" size={16} color="#007AFF" />
-                </TouchableOpacity>
-                <TouchableOpacity style={[invS.actionBtn, { backgroundColor: "#FF9F0A20" }]}
-                  onPress={() => Share.share({ message: inviteMsg, url: referralLink })}>
-                  <Ionicons name="ellipsis-horizontal" size={16} color="#FF9F0A" />
+                <TouchableOpacity
+                  style={[invS.inviteBtn, { backgroundColor: "#007AFF" }]}
+                  onPress={() => Linking.openURL(smsUrl(c.phone, inviteMsg)).catch(() => {})}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="chatbubble-ellipses-outline" size={15} color="#fff" />
+                  <Text style={invS.inviteBtnText}>SMS</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1114,8 +1123,9 @@ const invS = StyleSheet.create({
   avatarText: { fontSize: 13, fontFamily: "Inter_700Bold" },
   contactName: { fontSize: 14, fontFamily: "Inter_500Medium" },
   contactPhone: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 1 },
-  actionBtns: { flexDirection: "row", gap: 6 },
-  actionBtn: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  inviteActions: { flexDirection: "row", alignItems: "center", gap: 6 },
+  inviteBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 9 },
+  inviteBtnText: { color: "#fff", fontSize: 12, fontFamily: "Inter_700Bold" },
 });
 
 const claimModalS = StyleSheet.create({
