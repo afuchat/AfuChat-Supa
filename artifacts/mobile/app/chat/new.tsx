@@ -185,11 +185,15 @@ export default function NewChatScreen() {
     const applyCached = (rows: LocalPhoneContact[]) => {
       const onAfu: Contact[] = [];
       const notAfu: NonAfuContact[] = [];
+      const seenUsers = new Set<string>();
+      const seenInvitePhones = new Set<string>();
       for (const row of rows) {
         if (row.matched_user_id && row.matched_user_id !== user.id) {
+          if (seenUsers.has(row.matched_user_id)) continue;
+          seenUsers.add(row.matched_user_id);
           onAfu.push({
             id: row.matched_user_id,
-            display_name: phonebookNames.get(row.matched_user_id) || row.name,
+            display_name: row.name || phonebookNames.get(row.matched_user_id) || "",
             handle: row.matched_handle || "",
             avatar_url: row.matched_avatar_url,
             is_verified: row.matched_is_verified,
@@ -197,6 +201,8 @@ export default function NewChatScreen() {
             bio: row.matched_bio,
           });
         } else if (!row.matched_user_id) {
+          if (seenInvitePhones.has(row.normalized_phone)) continue;
+          seenInvitePhones.add(row.normalized_phone);
           notAfu.push({ key: row.key, name: row.name, phone: row.phone });
         }
       }
@@ -221,7 +227,9 @@ export default function NewChatScreen() {
     }
 
     const q = query.trim().toLowerCase();
-    const inContacts = contacts.filter(
+    const phoneUserIds = new Set(phoneOnAfu.map((contact) => contact.id));
+    const visibleContacts = contacts.filter((contact) => !phoneUserIds.has(contact.id));
+    const inContacts = visibleContacts.filter(
       (c) =>
         c.display_name.toLowerCase().includes(q) ||
         c.handle.toLowerCase().includes(q)
@@ -252,7 +260,7 @@ export default function NewChatScreen() {
         setSearching(false);
       }, 400);
     }
-  }, [query, contacts, user?.id]);
+  }, [query, contacts, phoneOnAfu, user?.id]);
 
   const toggleSelect = useCallback((contact: Contact) => {
     Haptics.selectionAsync();
@@ -474,7 +482,7 @@ export default function NewChatScreen() {
         ) : (
           /* ── Normal (non-search) view ── */
           <FlatList
-            data={loading ? [] : contacts}
+            data={loading ? [] : contacts.filter((contact) => !phoneOnAfu.some((phone) => phone.id === contact.id))}
             keyExtractor={(item) => item.id}
             style={{ flex: 1 }}
             keyboardShouldPersistTaps="handled"
@@ -505,7 +513,7 @@ export default function NewChatScreen() {
                   }
                 }}
                 phonebookNames={phonebookNames}
-                contactCount={contacts.length}
+                contactCount={contacts.filter((contact) => !phoneOnAfu.some((phone) => phone.id === contact.id)).length}
                 groups={groups}
                 channels={channels}
                 onGroupPress={(g) => router.push({ pathname: "/chat/[id]", params: { id: g.id } } as any)}

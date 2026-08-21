@@ -55,11 +55,15 @@ export default function PhoneContactsScreen() {
   useEffect(() => {
     const found: AfuContact[] = [];
     const notFound: NonAfuContact[] = [];
+    const seenUsers = new Set<string>();
+    const seenInvitePhones = new Set<string>();
     for (const row of cachedContacts) {
       if (row.matched_user_id && row.matched_user_id !== user?.id) {
+        if (seenUsers.has(row.matched_user_id)) continue;
+        seenUsers.add(row.matched_user_id);
         found.push({
           id: row.matched_user_id,
-          display_name: row.matched_display_name || row.name,
+          display_name: row.name || row.matched_display_name || "",
           handle: row.matched_handle || "",
           avatar_url: row.matched_avatar_url,
           acoin: row.matched_acoin,
@@ -67,6 +71,8 @@ export default function PhoneContactsScreen() {
           phonebook_name: row.name,
         });
       } else if (!row.matched_user_id) {
+        if (seenInvitePhones.has(row.normalized_phone)) continue;
+        seenInvitePhones.add(row.normalized_phone);
         notFound.push({ key: row.key, name: row.name, phone: row.phone });
       }
     }
@@ -149,9 +155,6 @@ export default function PhoneContactsScreen() {
                           <PrestigeBadge acoin={item.acoin} size="sm" />
                         </View>
                         <Text style={[styles.handle, { color: colors.textMuted }]}>@{item.handle}</Text>
-                        <Text style={[styles.phonebookName, { color: colors.textSecondary }]}>
-                          Saved as "{item.phonebook_name}"
-                        </Text>
                       </View>
                       <TouchableOpacity
                         style={[styles.actionBtn, { backgroundColor: colors.accent }]}
