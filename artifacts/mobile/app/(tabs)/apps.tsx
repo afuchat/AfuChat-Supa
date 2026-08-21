@@ -197,7 +197,7 @@ const CATEGORIES: Category[] = [
       },
       {
         id: "afuusernames",
-        label: "Usernames",
+        label: "Handles",
         icon: "at",
         gradient: ["#007AFF", "#5AC8FA"],
         route: "/username-market",

@@ -1,13 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+  ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView,
+  StyleSheet, Text, TextInput, View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SmartSheet } from "@/components/ui/SmartSheet";
@@ -21,144 +15,141 @@ import Colors from "@/constants/colors";
 type Seller = { display_name: string; handle: string; avatar_url?: string } | null;
 type Listing = {
   id: string; username: string; price: number; description: string | null;
-  is_active: boolean; created_at: string; views: number; seller_id: string; seller: Seller;
+  is_active: boolean; is_auction: boolean; auction_end_at: string | null;
+  reserve_price: number | null; current_bid: number; current_bidder_id: string | null;
+  created_at: string; views: number; seller_id: string; seller: Seller;
 };
-type Tab = "discover" | "yours";
+type Owned = { handle: string; owner_id: string };
+type Tab = "featured" | "explore" | "owned";
 
 const HANDLE_RE = /^[a-z0-9_]{1,30}$/;
 const money = (n: number) => n >= 1000000 ? `${(n / 1000000).toFixed(1)}M` : n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
-const ago = (iso: string) => {
-  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
-  return days < 1 ? "Today" : days === 1 ? "Yesterday" : `${days}d ago`;
+const when = (iso: string) => {
+  const ms = new Date(iso).getTime() - Date.now();
+  if (ms <= 0) return "Ended";
+  const h = Math.floor(ms / 3600000);
+  return h > 48 ? `${Math.floor(h / 24)}d left` : h > 0 ? `${h}h left` : `${Math.max(1, Math.floor(ms / 60000))}m left`;
 };
 
-function TransferSheet({ item, visible, onClose, onConfirm, busy, colors }: {
-  item: Listing | null; visible: boolean; onClose: () => void; onConfirm: () => void; busy: boolean; colors: any;
-}) {
-  if (!item) return null;
-  return (
-    <SmartSheet visible={visible} onClose={onClose} peekFraction={0.72} backgroundColor={colors.surface}>
-      <View style={s.sheet}>
-        <View style={[s.sheetIcon, { backgroundColor: colors.accent + "18" }]}>
-          <Ionicons name="swap-horizontal" size={26} color={colors.accent} />
-        </View>
-        <Text style={[s.sheetTitle, { color: colors.text }]}>Secure transfer</Text>
-        <Text style={[s.sheetCopy, { color: colors.textMuted }]}>
-          You are buying a permanent handle, not a seller’s profile. Payment and ownership transfer happen together.
-        </Text>
-        <View style={[s.receipt, { borderColor: colors.border }]}>
-          <View style={s.receiptRow}><Text style={[s.receiptLabel, { color: colors.textMuted }]}>Username</Text><Text style={[s.receiptValue, { color: colors.text }]}>@{item.username}</Text></View>
-          <View style={s.receiptRow}><Text style={[s.receiptLabel, { color: colors.textMuted }]}>Seller</Text><Text style={[s.receiptValue, { color: colors.text }]}>@{item.seller?.handle || "seller"}</Text></View>
-          <View style={s.receiptRow}><Text style={[s.receiptLabel, { color: colors.textMuted }]}>Total</Text><Text style={[s.receiptValue, { color: colors.accent }]}>{money(item.price)} ACoin</Text></View>
-        </View>
-        <View style={s.trustLine}><Ionicons name="shield-checkmark" size={17} color={colors.success} /><Text style={[s.trustText, { color: colors.textSecondary }]}>The listing closes immediately and the handle routes to your profile.</Text></View>
-        <Pressable testID="confirm-username-purchase" onPress={onConfirm} disabled={busy} style={[s.primaryButton, { backgroundColor: colors.accent, opacity: busy ? 0.6 : 1 }]}>
-          {busy ? <ActivityIndicator color="#fff" /> : <Text style={s.primaryButtonText}>Buy & secure @{item.username}</Text>}
-        </Pressable>
-        <Pressable onPress={onClose} disabled={busy} style={s.cancelButton}><Text style={[s.cancelText, { color: colors.textMuted }]}>Not now</Text></Pressable>
-      </View>
-    </SmartSheet>
-  );
+function SheetButton({ children, onPress, colors, disabled = false }: any) {
+  return <Pressable onPress={onPress} disabled={disabled} style={[s.primary, { backgroundColor: colors.accent, opacity: disabled ? 0.55 : 1 }]}>{disabled ? <ActivityIndicator color="#fff" /> : <Text style={s.primaryText}>{children}</Text>}</Pressable>;
 }
 
-function ListSheet({ visible, onClose, onListed, userId, handle, colors }: {
-  visible: boolean; onClose: () => void; onListed: () => void; userId?: string; handle?: string; colors: any;
+function ListingSheet({ visible, onClose, onDone, userId, handle, colors }: {
+  visible: boolean; onClose: () => void; onDone: () => void; userId?: string; handle?: string; colors: any;
 }) {
-  const [price, setPrice] = useState("");
-  const [busy, setBusy] = useState(false);
-  useEffect(() => { if (visible) setPrice(""); }, [visible]);
+  const [price, setPrice] = useState(""); const [auction, setAuction] = useState(false); const [duration, setDuration] = useState("48"); const [busy, setBusy] = useState(false);
+  useEffect(() => { if (visible) { setPrice(""); setAuction(false); setDuration("48"); } }, [visible]);
   const submit = async () => {
-    if (!userId) { showAlert("Sign in required", "Sign in before listing your username."); return; }
-    const username = (handle || "").trim().replace(/^@/, "").toLowerCase();
-    const value = Number.parseInt(price, 10);
-    if (!HANDLE_RE.test(username)) { showAlert("Unavailable", "Only your current username can be listed."); return; }
+    if (!userId) { showAlert("Sign in required", "Sign in before listing a handle."); return; }
+    const username = (handle || "").replace(/^@/, "").trim().toLowerCase(); const value = Number.parseInt(price, 10);
+    const hours = Number.parseInt(duration, 10);
+    if (!HANDLE_RE.test(username)) { showAlert("Unavailable", "Only your current handle can be listed."); return; }
     if (!Number.isFinite(value) || value < 1) { showAlert("Set a price", "Enter at least 1 ACoin."); return; }
+    if (auction && (!Number.isFinite(hours) || hours < 1 || hours > 720)) { showAlert("Invalid duration", "Choose between 1 and 720 hours."); return; }
     setBusy(true);
-    const { error } = await supabase.rpc("create_username_listing", { p_username: username, p_price: value, p_is_auction: false, p_duration_hours: null });
+    const { error } = await supabase.rpc("create_username_listing", { p_username: username, p_price: value, p_is_auction: auction, p_duration_hours: auction ? hours : null });
     setBusy(false);
     if (error) { showAlert("Could not list", error.message); return; }
-    onClose(); onListed(); showAlert("Listing is live", `@${username} is now available for a one-time transfer.`);
+    onClose(); onDone(); showAlert("Listing is live", auction ? `Bidding is open for @${username}.` : `@${username} is available for a fixed-price transfer.`);
   };
-  return (
-    <SmartSheet visible={visible} onClose={onClose} peekFraction={0.73} backgroundColor={colors.surface}>
-      <View style={s.sheet}>
-        <Text style={[s.sheetTitle, { color: colors.text }]}>List your username</Text>
-        <Text style={[s.sheetCopy, { color: colors.textMuted }]}>Your profile stays protected until a buyer completes payment. There are no bids or duplicate listings.</Text>
-        <Text style={[s.label, { color: colors.textSecondary }]}>Your handle</Text>
-        <View style={[s.field, { backgroundColor: colors.inputBg }]}><Text style={[s.prefix, { color: colors.accent }]}>@</Text><Text style={[s.lockedHandle, { color: colors.text }]}>{handle || "username"}</Text><Ionicons name="lock-closed" size={15} color={colors.textMuted} /></View>
-        <Text style={[s.label, { color: colors.textSecondary }]}>Fixed price</Text>
-        <View style={[s.field, { backgroundColor: colors.inputBg }]}><Ionicons name="flash" size={17} color={Colors.gold} /><TextInput testID="username-list-price" style={[s.input, { color: colors.text }]} value={price} onChangeText={setPrice} placeholder="Amount in ACoin" placeholderTextColor={colors.textMuted} keyboardType="number-pad" /><Text style={[s.suffix, { color: colors.textMuted }]}>ACoin</Text></View>
-        <Pressable testID="list-username" onPress={submit} disabled={busy} style={[s.primaryButton, { backgroundColor: colors.accent, opacity: busy ? 0.6 : 1 }]}>{busy ? <ActivityIndicator color="#fff" /> : <Text style={s.primaryButtonText}>Publish fixed-price listing</Text>}</Pressable>
+  return <SmartSheet visible={visible} onClose={onClose} peekFraction={0.78} backgroundColor={colors.surface}>
+    <View style={s.sheet}>
+      <Text style={[s.sheetTitle, { color: colors.text }]}>List a handle</Text>
+      <Text style={[s.sheetCopy, { color: colors.textMuted }]}>Your identity stays protected. The handle moves only after a verified sale completes.</Text>
+      <View style={[s.lockedField, { backgroundColor: colors.inputBg }]}><Text style={[s.at, { color: colors.accent }]}>@</Text><Text style={[s.lockedText, { color: colors.text }]}>{handle || "your handle"}</Text><Ionicons name="lock-closed" size={15} color={colors.textMuted} /></View>
+      <View style={[s.modeRow, { borderColor: colors.border }]}>
+        <Pressable onPress={() => setAuction(false)} style={[s.mode, !auction && { backgroundColor: colors.accent + "18" }]}><Ionicons name="flash" size={16} color={!auction ? colors.accent : colors.textMuted} /><Text style={[s.modeText, { color: !auction ? colors.accent : colors.textMuted }]}>Fixed price</Text></Pressable>
+        <Pressable onPress={() => setAuction(true)} style={[s.mode, auction && { backgroundColor: Colors.gold + "18" }]}><Ionicons name="hammer-outline" size={16} color={auction ? Colors.gold : colors.textMuted} /><Text style={[s.modeText, { color: auction ? Colors.gold : colors.textMuted }]}>Auction</Text></Pressable>
       </View>
-    </SmartSheet>
-  );
+      <Text style={[s.label, { color: colors.textSecondary }]}>{auction ? "Starting bid" : "Price"}</Text>
+      <View style={[s.lockedField, { backgroundColor: colors.inputBg }]}><Ionicons name="flash" size={17} color={Colors.gold} /><TextInput style={[s.input, { color: colors.text }]} value={price} onChangeText={setPrice} placeholder="Amount in ACoin" placeholderTextColor={colors.textMuted} keyboardType="number-pad" /><Text style={[s.suffix, { color: colors.textMuted }]}>ACoin</Text></View>
+      {auction ? <><Text style={[s.label, { color: colors.textSecondary }]}>Auction duration</Text><View style={[s.lockedField, { backgroundColor: colors.inputBg }]}><Ionicons name="time-outline" size={17} color={Colors.gold} /><TextInput style={[s.input, { color: colors.text }]} value={duration} onChangeText={setDuration} keyboardType="number-pad" /><Text style={[s.suffix, { color: colors.textMuted }]}>hours</Text></View></> : null}
+      <SheetButton onPress={submit} colors={colors} disabled={busy}>{auction ? "Open auction" : "Publish listing"}</SheetButton>
+    </View>
+  </SmartSheet>;
+}
+
+function ActionSheet({ item, visible, onClose, onDone, userId, colors }: {
+  item: Listing | null; visible: boolean; onClose: () => void; onDone: () => void; userId?: string; colors: any;
+}) {
+  const [amount, setAmount] = useState(""); const [busy, setBusy] = useState(false);
+  useEffect(() => { if (visible) setAmount(""); }, [visible]);
+  if (!item) return null;
+  const auction = item.is_auction;
+  const ended = auction && !!item.auction_end_at && new Date(item.auction_end_at).getTime() <= Date.now();
+  const minimum = Math.max((item.current_bid || 0) + 1, item.reserve_price || 1);
+  const act = async () => {
+    if (!userId) { showAlert("Sign in required", "Sign in to continue."); return; }
+    setBusy(true);
+    if (auction) {
+      if (ended) {
+        const { error } = await supabase.rpc("settle_username_auction", { p_listing_id: item.id });
+        setBusy(false);
+        if (error) { showAlert("Auction could not close", error.message); return; }
+        onClose(); onDone();
+        showAlert(item.current_bidder_id === userId ? "Handle secured" : "Auction closed", item.current_bidder_id === userId ? `@${item.username} now routes to your profile.` : `The auction for @${item.username} has closed.`);
+        return;
+      }
+      const value = Number.parseInt(amount, 10);
+      if (!Number.isFinite(value) || value < minimum) { setBusy(false); showAlert("Bid is too low", `The minimum bid is ${minimum} ACoin.`); return; }
+      const { error } = await supabase.rpc("place_username_bid", { p_listing_id: item.id, p_amount: value });
+      setBusy(false); if (error) { showAlert("Bid not placed", error.message); return; }
+      onClose(); onDone(); showAlert("Bid placed", `Your ${value} ACoin bid is held securely until you are outbid or the auction ends.`);
+    } else {
+      const { error } = await supabase.rpc("purchase_username", { p_listing_id: item.id });
+      setBusy(false); if (error) { showAlert("Transfer not completed", error.message); onClose(); await onDone(); return; }
+      onClose(); onDone(); showAlert("Handle secured", `@${item.username} now routes to your profile.`);
+    }
+  };
+  return <SmartSheet visible={visible} onClose={onClose} peekFraction={0.7} backgroundColor={colors.surface}>
+    <View style={s.sheet}>
+      <View style={[s.sheetIcon, { backgroundColor: auction ? Colors.gold + "18" : colors.accent + "18" }]}><Ionicons name={auction ? "hammer-outline" : "swap-horizontal"} size={26} color={auction ? Colors.gold : colors.accent} /></View>
+      <Text style={[s.sheetTitle, { color: colors.text }]}>{auction ? "Place a bid" : "Secure transfer"}</Text>
+      <Text style={[s.sheetCopy, { color: colors.textMuted }]}>{auction ? (ended ? "The bidding period has ended. Close the auction to complete the protected transfer or return the held bid." : `Bidding closes ${item.auction_end_at ? when(item.auction_end_at) : "soon"}. Funds are held safely and returned if you are outbid.`) : "Payment, listing closure, and ownership update happen together."}</Text>
+      <View style={[s.receipt, { borderColor: colors.border }]}><View style={s.receiptRow}><Text style={[s.receiptLabel, { color: colors.textMuted }]}>Handle</Text><Text style={[s.receiptValue, { color: colors.text }]}>@{item.username}</Text></View><View style={s.receiptRow}><Text style={[s.receiptLabel, { color: colors.textMuted }]}>{auction ? "Current bid" : "Total"}</Text><Text style={[s.receiptValue, { color: auction ? Colors.gold : colors.accent }]}>{money(auction ? item.current_bid || item.price : item.price)} ACoin</Text></View></View>
+      {auction && !ended ? <View style={[s.lockedField, { backgroundColor: colors.inputBg }]}><Ionicons name="flash" size={17} color={Colors.gold} /><TextInput style={[s.input, { color: colors.text }]} value={amount} onChangeText={setAmount} placeholder={`Minimum ${minimum}`} placeholderTextColor={colors.textMuted} keyboardType="number-pad" /><Text style={[s.suffix, { color: colors.textMuted }]}>ACoin</Text></View> : null}
+      <View style={s.trustLine}><Ionicons name="shield-checkmark" size={17} color={colors.success} /><Text style={[s.trustText, { color: colors.textSecondary }]}>{auction ? "Every bid is protected by escrow logic." : "The seller cannot keep the handle after a successful transfer."}</Text></View>
+      <SheetButton onPress={act} colors={colors} disabled={busy}>{auction ? (ended ? "Close auction" : "Submit bid") : `Buy for ${money(item.price)} ACoin`}</SheetButton>
+      <Pressable onPress={onClose} style={s.cancel}><Text style={[s.cancelText, { color: colors.textMuted }]}>Not now</Text></Pressable>
+    </View>
+  </SmartSheet>;
 }
 
 export default function AfuUsernamesApp() {
-  const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-  const { user, profile } = useAuth();
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [tab, setTab] = useState<Tab>("discover");
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [sellOpen, setSellOpen] = useState(false);
-  const [selected, setSelected] = useState<Listing | null>(null);
-  const [buying, setBuying] = useState(false);
-
+  const { colors } = useTheme(); const insets = useSafeAreaInsets(); const { user, profile } = useAuth();
+  const [listings, setListings] = useState<Listing[]>([]); const [owned, setOwned] = useState<Owned[]>([]);
+  const [tab, setTab] = useState<Tab>("featured"); const [search, setSearch] = useState(""); const [loading, setLoading] = useState(true); const [refreshing, setRefreshing] = useState(false);
+  const [listOpen, setListOpen] = useState(false); const [selected, setSelected] = useState<Listing | null>(null);
   const load = useCallback(async (pull = false) => {
     if (pull) setRefreshing(true); else setLoading(true);
-    let q = supabase.from("username_listings")
-      .select("id,username,price,description,is_active,created_at,views,seller_id,seller:seller_id(display_name,handle,avatar_url)")
-      .eq("is_active", true).eq("is_auction", false).order("created_at", { ascending: false }).limit(80);
-    if (search.trim()) q = q.ilike("username", `%${search.trim().replace(/^@/, "")}%`);
-    const { data, error } = await q;
-    if (!error) setListings((data || []) as unknown as Listing[]);
+    let query = supabase.from("username_listings").select("id,username,price,description,is_active,is_auction,auction_end_at,reserve_price,current_bid,current_bidder_id,created_at,views,seller_id,seller:seller_id(display_name,handle,avatar_url)").eq("is_active", true).order("views", { ascending: false }).limit(100);
+    if (search.trim()) query = query.ilike("username", `%${search.trim().replace(/^@/, "")}%`);
+    const [result, aliases] = await Promise.all([query, user ? supabase.from("owned_usernames").select("handle,owner_id").eq("owner_id", user.id).order("handle") : Promise.resolve({ data: [], error: null })]);
+    if (!result.error) setListings((result.data || []) as unknown as Listing[]); if (!aliases.error) setOwned((aliases.data || []) as Owned[]);
     setLoading(false); setRefreshing(false);
-  }, [search]);
+  }, [search, user?.id]);
   useEffect(() => { const t = setTimeout(() => void load(), 250); return () => clearTimeout(t); }, [load]);
-
-  const mine = useMemo(() => listings.filter(x => x.seller_id === user?.id), [listings, user?.id]);
-  const visible = tab === "yours" ? mine : listings;
-  const buy = async () => {
-    if (!selected || !user) { showAlert("Sign in required", "Sign in to secure a username."); return; }
-    setBuying(true);
-    const { error } = await supabase.rpc("purchase_username", { p_listing_id: selected.id });
-    setBuying(false);
-    if (error) { setSelected(null); showAlert("Transfer not completed", error.message || "This listing may have just been secured."); await load(); return; }
-    const name = selected.username; setSelected(null); setListings(prev => prev.filter(x => x.id !== selected.id));
-    showAlert("Username secured", `@${name} now routes to your profile.`);
-  };
-
-  return (
-    <View style={[s.root, { backgroundColor: colors.background }]}>
-      <View style={[s.header, { paddingTop: insets.top + 12 }]}>
-        <View style={s.headerTitleRow}><View style={[s.brandMark, { backgroundColor: colors.accent }]}><Text style={s.brandAt}>@</Text></View><View><Text style={[s.title, { color: colors.text }]}>Username Market</Text><Text style={[s.subtitle, { color: colors.textMuted }]}>Find a handle worth owning</Text></View></View>
-        <Pressable testID="open-list-username" onPress={() => user ? setSellOpen(true) : showAlert("Sign in required", "Sign in to list your username.")} style={[s.sellButton, { borderColor: colors.border }]}><Ionicons name="add" size={18} color={colors.accent} /><Text style={[s.sellText, { color: colors.accent }]}>Sell</Text></Pressable>
-      </View>
-      <View style={[s.searchField, { backgroundColor: colors.inputBg }]}><Ionicons name="search" size={17} color={colors.textMuted} /><TextInput testID="username-market-search" style={[s.searchInput, { color: colors.text }]} value={search} onChangeText={setSearch} placeholder="Search a username" placeholderTextColor={colors.textMuted} autoCapitalize="none" autoCorrect={false} /><Ionicons name="shield-checkmark" size={16} color={colors.success} /></View>
-      <View style={[s.notice, { backgroundColor: colors.accent + "12" }]}><Ionicons name="shield-checkmark-outline" size={18} color={colors.accent} /><Text style={[s.noticeText, { color: colors.textSecondary }]}><Text style={{ fontFamily: "Inter_600SemiBold", color: colors.text }}>Verified transfer. </Text>Payment, listing closure, and ownership update happen together.</Text></View>
-      <View style={[s.tabs, { borderBottomColor: colors.border }]}>{(["discover", "yours"] as Tab[]).map(x => <Pressable key={x} onPress={() => setTab(x)} style={[s.tab, tab === x && { borderBottomColor: colors.accent }]}><Text style={[s.tabText, { color: tab === x ? colors.accent : colors.textMuted }]}>{x === "discover" ? "Discover" : "Your listing"}</Text>{x === "yours" && mine.length > 0 ? <View style={[s.count, { backgroundColor: colors.accent }]}><Text style={s.countText}>{mine.length}</Text></View> : null}</Pressable>)}</View>
-      {loading ? <ActivityIndicator color={colors.accent} style={{ marginTop: 50 }} /> : <FlatList data={visible} keyExtractor={x => x.id} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load(true)} tintColor={colors.accent} />} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: insets.bottom + 30, flexGrow: visible.length ? 0 : 1 }} renderItem={({ item }) => (
-        <Pressable testID={`username-listing-${item.id}`} onPress={() => { if (item.seller_id === user?.id) return; void supabase.from("username_listings").update({ views: (item.views || 0) + 1 }).eq("id", item.id); setSelected(item); }} style={({ pressed }) => [s.listing, { borderBottomColor: colors.border, opacity: pressed ? 0.7 : 1 }]}>
-          <View style={[s.handleIcon, { backgroundColor: colors.accent + "16" }]}><Text style={[s.handleAt, { color: colors.accent }]}>@</Text></View><View style={s.listingBody}><Text style={[s.handle, { color: colors.text }]}>@{item.username}</Text><Text style={[s.seller, { color: colors.textMuted }]}>by @{item.seller?.handle || "seller"} · {ago(item.created_at)}</Text>{item.description ? <Text style={[s.description, { color: colors.textMuted }]} numberOfLines={1}>{item.description}</Text> : null}</View><View style={s.priceBox}><Text style={[s.price, { color: colors.text }]}>{money(item.price)}</Text><Text style={[s.coin, { color: colors.textMuted }]}>ACoin</Text><Text style={[s.buyLabel, { color: item.seller_id === user?.id ? colors.textMuted : colors.accent }]}>{item.seller_id === user?.id ? "Your listing" : "Secure"}</Text></View>
-        </Pressable>
-      )} ListEmptyComponent={<View style={s.empty}><View style={[s.emptyIcon, { backgroundColor: colors.inputBg }]}><Text style={[s.handleAt, { color: colors.accent }]}>@</Text></View><Text style={[s.emptyTitle, { color: colors.text }]}>{tab === "yours" ? "Nothing listed yet" : search ? "No matching usernames" : "The market is quiet"}</Text><Text style={[s.emptyCopy, { color: colors.textMuted }]}>{tab === "yours" ? "List your current handle when you are ready to transfer it." : "Try another search or check back for new handles."}</Text></View>} />}
-      <TransferSheet item={selected} visible={!!selected} onClose={() => setSelected(null)} onConfirm={() => void buy()} busy={buying} colors={colors} />
-      <ListSheet visible={sellOpen} onClose={() => setSellOpen(false)} onListed={() => void load()} userId={user?.id} handle={profile?.handle} colors={colors} />
+  const featured = useMemo(() => listings.filter(x => x.views > 0 || x.is_auction).slice(0, 6), [listings]);
+  const visible = tab === "featured" ? featured : tab === "explore" ? listings : [];
+  const renderOwned = () => <View style={s.ownedGrid}>{owned.length ? owned.map(x => <View key={x.handle} style={[s.ownedCard, { backgroundColor: colors.inputBg }]}><View style={[s.ownedIcon, { backgroundColor: colors.accent + "18" }]}><Text style={[s.ownedAt, { color: colors.accent }]}>@</Text></View><Text style={[s.ownedHandle, { color: colors.text }]} numberOfLines={1}>@{x.handle}</Text><Text style={[s.ownedCaption, { color: colors.textMuted }]}>Owned by you</Text></View>) : <View style={s.empty}><View style={[s.emptyIcon, { backgroundColor: colors.inputBg }]}><Ionicons name="bookmark-outline" size={27} color={colors.accent} /></View><Text style={[s.emptyTitle, { color: colors.text }]}>Nothing owned yet</Text><Text style={[s.emptyCopy, { color: colors.textMuted }]}>Handles you secure from the market will appear here.</Text></View>}</View>;
+  return <View style={[s.root, { backgroundColor: colors.background }]}>
+    <View style={[s.top, { paddingTop: insets.top + 10 }]}>
+      <View><Text style={[s.kicker, { color: colors.accent }]}>HANDLE MARKET</Text><Text style={[s.hero, { color: colors.text }]}>Find your next identity.</Text><Text style={[s.sub, { color: colors.textMuted }]}>Rare handles, verified transfers.</Text></View>
+      <Pressable testID="open-list-username" onPress={() => user ? setListOpen(true) : showAlert("Sign in required", "Sign in before listing a handle.")} style={[s.sell, { borderColor: colors.border }]}><Ionicons name="add" size={18} color={colors.accent} /><Text style={[s.sellText, { color: colors.accent }]}>List</Text></Pressable>
     </View>
-  );
+    <View style={[s.search, { backgroundColor: colors.inputBg }]}><Ionicons name="search" size={17} color={colors.textMuted} /><TextInput testID="username-market-search" style={[s.searchInput, { color: colors.text }]} value={search} onChangeText={setSearch} placeholder="Search handles" placeholderTextColor={colors.textMuted} autoCapitalize="none" autoCorrect={false} /><Ionicons name="shield-checkmark" size={16} color={colors.success} /></View>
+    <View style={[s.tabs, { borderBottomColor: colors.border }]}>{(["featured", "explore", "owned"] as Tab[]).map(x => <Pressable key={x} onPress={() => setTab(x)} style={[s.tab, tab === x && { borderBottomColor: colors.accent }]}><Text style={[s.tabText, { color: tab === x ? colors.accent : colors.textMuted }]}>{x === "featured" ? "Featured" : x === "explore" ? "Explore" : "Owned"}</Text>{x === "owned" && owned.length ? <View style={[s.count, { backgroundColor: colors.accent }]}><Text style={s.countText}>{owned.length}</Text></View> : null}</Pressable>)}</View>
+    {loading ? <ActivityIndicator color={colors.accent} style={{ marginTop: 50 }} /> : tab === "owned" ? <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 30 }} showsVerticalScrollIndicator={false}>{renderOwned()}</ScrollView> : <FlatList data={visible} keyExtractor={x => x.id} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load(true)} tintColor={colors.accent} />} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: insets.bottom + 30, flexGrow: visible.length ? 0 : 1 }} ListHeaderComponent={tab === "featured" ? <View style={[s.featuredIntro, { backgroundColor: colors.accent + "12" }]}><Ionicons name="sparkles-outline" size={18} color={colors.accent} /><Text style={[s.featuredText, { color: colors.textSecondary }]}><Text style={{ color: colors.text, fontFamily: "Inter_700Bold" }}>Handpicked for you. </Text>Popular handles and live auctions with protected transfers.</Text></View> : null} renderItem={({ item }) => <Pressable testID={`username-listing-${item.id}`} onPress={() => { if (item.seller_id === user?.id) return; void supabase.from("username_listings").update({ views: (item.views || 0) + 1 }).eq("id", item.id); setSelected(item); }} style={({ pressed }) => [s.row, { borderBottomColor: colors.border, opacity: pressed ? 0.7 : 1 }]}><View style={[s.handleIcon, { backgroundColor: item.is_auction ? Colors.gold + "18" : colors.accent + "16" }]}><Text style={[s.handleAt, { color: item.is_auction ? Colors.gold : colors.accent }]}>@</Text></View><View style={s.rowBody}><View style={s.handleLine}><Text style={[s.handle, { color: colors.text }]}>@{item.username}</Text>{item.is_auction ? <View style={[s.auctionTag, { backgroundColor: Colors.gold + "18" }]}><Text style={[s.auctionTagText, { color: Colors.gold }]}>AUCTION</Text></View> : null}</View><Text style={[s.seller, { color: colors.textMuted }]}>by @{item.seller?.handle || "seller"} · {item.is_auction && item.auction_end_at ? when(item.auction_end_at) : "Verified seller"}</Text>{item.description ? <Text style={[s.description, { color: colors.textMuted }]} numberOfLines={1}>{item.description}</Text> : null}</View><View style={s.priceBox}><Text style={[s.price, { color: item.is_auction ? Colors.gold : colors.text }]}>{money(item.is_auction ? item.current_bid || item.price : item.price)}</Text><Text style={[s.coin, { color: colors.textMuted }]}>{item.is_auction ? "ACoin bid" : "ACoin"}</Text><Text style={[s.buyLabel, { color: item.seller_id === user?.id ? colors.textMuted : item.is_auction ? Colors.gold : colors.accent }]}>{item.seller_id === user?.id ? "Your listing" : item.is_auction ? "Bid now" : "Secure"}</Text></View></Pressable>} ListEmptyComponent={<View style={s.empty}><View style={[s.emptyIcon, { backgroundColor: colors.inputBg }]}><Text style={[s.handleAt, { color: colors.accent }]}>@</Text></View><Text style={[s.emptyTitle, { color: colors.text }]}>{search ? "No matching handles" : "The market is quiet"}</Text><Text style={[s.emptyCopy, { color: colors.textMuted }]}>Try another search or check back soon.</Text></View>} />}
+    <ActionSheet item={selected} visible={!!selected} onClose={() => setSelected(null)} onDone={() => void load()} userId={user?.id} colors={colors} />
+    <ListingSheet visible={listOpen} onClose={() => setListOpen(false)} onDone={() => void load()} userId={user?.id} handle={profile?.handle} colors={colors} />
+  </View>;
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1 }, header: { paddingHorizontal: 18, paddingBottom: 15, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  headerTitleRow: { flexDirection: "row", alignItems: "center", gap: 11 }, brandMark: { width: 38, height: 38, borderRadius: 11, alignItems: "center", justifyContent: "center" }, brandAt: { color: "#fff", fontSize: 22, fontFamily: "Inter_700Bold" },
-  title: { fontSize: 20, fontFamily: "Inter_700Bold" }, subtitle: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 }, sellButton: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 11, paddingVertical: 8, borderRadius: 10, borderWidth: 1 }, sellText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
-  searchField: { marginHorizontal: 16, borderRadius: 12, paddingHorizontal: 13, paddingVertical: 11, flexDirection: "row", alignItems: "center", gap: 9 }, searchInput: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular" },
-  notice: { margin: 16, marginBottom: 11, padding: 12, borderRadius: 10, flexDirection: "row", gap: 9, alignItems: "flex-start" }, noticeText: { flex: 1, fontSize: 12, lineHeight: 18, fontFamily: "Inter_400Regular" },
-  tabs: { flexDirection: "row", paddingHorizontal: 16, borderBottomWidth: 1 }, tab: { paddingHorizontal: 4, marginRight: 24, paddingBottom: 11, borderBottomWidth: 2, borderBottomColor: "transparent", flexDirection: "row", alignItems: "center", gap: 6 }, tabText: { fontSize: 14, fontFamily: "Inter_600SemiBold" }, count: { minWidth: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center" }, countText: { color: "#fff", fontSize: 10, fontFamily: "Inter_700Bold" },
-  listing: { paddingVertical: 14, flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: StyleSheet.hairlineWidth }, handleIcon: { width: 46, height: 46, borderRadius: 12, alignItems: "center", justifyContent: "center" }, handleAt: { fontSize: 22, fontFamily: "Inter_700Bold" }, listingBody: { flex: 1, gap: 2 }, handle: { fontSize: 16, fontFamily: "Inter_600SemiBold" }, seller: { fontSize: 12, fontFamily: "Inter_400Regular" }, description: { fontSize: 11, fontFamily: "Inter_400Regular" }, priceBox: { alignItems: "flex-end", gap: 1 }, price: { fontSize: 16, fontFamily: "Inter_700Bold" }, coin: { fontSize: 10, fontFamily: "Inter_400Regular" }, buyLabel: { fontSize: 10, fontFamily: "Inter_600SemiBold", marginTop: 3 },
-  empty: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 40, gap: 9 }, emptyIcon: { width: 58, height: 58, borderRadius: 17, alignItems: "center", justifyContent: "center", marginBottom: 4 }, emptyTitle: { fontSize: 17, fontFamily: "Inter_600SemiBold", textAlign: "center" }, emptyCopy: { fontSize: 13, lineHeight: 19, fontFamily: "Inter_400Regular", textAlign: "center" },
-  sheet: { width: "100%", paddingHorizontal: 20, paddingTop: 2, paddingBottom: 10, gap: 10 }, sheetIcon: { width: 52, height: 52, borderRadius: 16, alignItems: "center", justifyContent: "center", alignSelf: "center", marginBottom: 2 }, sheetTitle: { fontSize: 20, fontFamily: "Inter_700Bold", textAlign: "center" }, sheetCopy: { fontSize: 13, lineHeight: 19, fontFamily: "Inter_400Regular", textAlign: "center", marginBottom: 4 }, receipt: { borderWidth: 1, borderRadius: 12, padding: 13, gap: 11 }, receiptRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }, receiptLabel: { fontSize: 13, fontFamily: "Inter_400Regular" }, receiptValue: { fontSize: 14, fontFamily: "Inter_600SemiBold" }, trustLine: { flexDirection: "row", alignItems: "flex-start", gap: 8, paddingVertical: 3 }, trustText: { flex: 1, fontSize: 12, lineHeight: 17, fontFamily: "Inter_400Regular" }, primaryButton: { minHeight: 48, borderRadius: 12, alignItems: "center", justifyContent: "center", paddingHorizontal: 16, marginTop: 3 }, primaryButtonText: { color: "#fff", fontSize: 14, fontFamily: "Inter_700Bold" }, cancelButton: { alignItems: "center", paddingVertical: 7 }, cancelText: { fontSize: 13, fontFamily: "Inter_500Medium" }, label: { fontSize: 12, fontFamily: "Inter_500Medium", marginTop: 3 }, field: { minHeight: 48, borderRadius: 12, paddingHorizontal: 13, flexDirection: "row", alignItems: "center", gap: 9 }, prefix: { fontSize: 17, fontFamily: "Inter_700Bold" }, lockedHandle: { flex: 1, fontSize: 15, fontFamily: "Inter_500Medium" }, input: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular" }, suffix: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  root: { flex: 1 }, top: { paddingHorizontal: 18, paddingBottom: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }, kicker: { fontSize: 10, letterSpacing: 1.5, fontFamily: "Inter_700Bold", marginBottom: 5 }, hero: { fontSize: 25, fontFamily: "Inter_700Bold", letterSpacing: -0.5 }, sub: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 4 }, sell: { flexDirection: "row", alignItems: "center", gap: 4, borderWidth: 1, borderRadius: 10, paddingHorizontal: 11, paddingVertical: 8 }, sellText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  search: { marginHorizontal: 16, borderRadius: 12, paddingHorizontal: 13, paddingVertical: 11, flexDirection: "row", alignItems: "center", gap: 9 }, searchInput: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular" }, tabs: { flexDirection: "row", paddingHorizontal: 16, borderBottomWidth: 1, marginTop: 13 }, tab: { paddingHorizontal: 4, marginRight: 24, paddingBottom: 11, borderBottomWidth: 2, borderBottomColor: "transparent", flexDirection: "row", alignItems: "center", gap: 6 }, tabText: { fontSize: 14, fontFamily: "Inter_600SemiBold" }, count: { minWidth: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center" }, countText: { color: "#fff", fontSize: 10, fontFamily: "Inter_700Bold" },
+  featuredIntro: { padding: 12, borderRadius: 11, flexDirection: "row", gap: 9, marginBottom: 2, alignItems: "flex-start" }, featuredText: { flex: 1, fontSize: 12, lineHeight: 18, fontFamily: "Inter_400Regular" }, row: { paddingVertical: 14, flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: StyleSheet.hairlineWidth }, handleIcon: { width: 46, height: 46, borderRadius: 13, alignItems: "center", justifyContent: "center" }, handleAt: { fontSize: 22, fontFamily: "Inter_700Bold" }, rowBody: { flex: 1, gap: 2 }, handleLine: { flexDirection: "row", alignItems: "center", gap: 6 }, handle: { fontSize: 16, fontFamily: "Inter_600SemiBold" }, auctionTag: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5 }, auctionTagText: { fontSize: 8, fontFamily: "Inter_700Bold", letterSpacing: 0.4 }, seller: { fontSize: 12, fontFamily: "Inter_400Regular" }, description: { fontSize: 11, fontFamily: "Inter_400Regular" }, priceBox: { alignItems: "flex-end", gap: 1 }, price: { fontSize: 16, fontFamily: "Inter_700Bold" }, coin: { fontSize: 10, fontFamily: "Inter_400Regular" }, buyLabel: { fontSize: 10, fontFamily: "Inter_600SemiBold", marginTop: 3 },
+  ownedGrid: { padding: 16, flexDirection: "row", flexWrap: "wrap", gap: 10 }, ownedCard: { width: "47%", minHeight: 116, borderRadius: 14, padding: 14, justifyContent: "space-between" }, ownedIcon: { width: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center" }, ownedAt: { fontSize: 18, fontFamily: "Inter_700Bold" }, ownedHandle: { fontSize: 14, fontFamily: "Inter_600SemiBold", marginTop: 8 }, ownedCaption: { fontSize: 10, fontFamily: "Inter_400Regular", marginTop: 2 }, empty: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 40, gap: 9 }, emptyIcon: { width: 58, height: 58, borderRadius: 17, alignItems: "center", justifyContent: "center", marginBottom: 4 }, emptyTitle: { fontSize: 17, fontFamily: "Inter_600SemiBold", textAlign: "center" }, emptyCopy: { fontSize: 13, lineHeight: 19, fontFamily: "Inter_400Regular", textAlign: "center" },
+  sheet: { width: "100%", paddingHorizontal: 20, paddingTop: 2, paddingBottom: 10, gap: 10 }, sheetIcon: { width: 52, height: 52, borderRadius: 16, alignItems: "center", justifyContent: "center", alignSelf: "center" }, sheetTitle: { fontSize: 20, fontFamily: "Inter_700Bold", textAlign: "center" }, sheetCopy: { fontSize: 13, lineHeight: 19, fontFamily: "Inter_400Regular", textAlign: "center", marginBottom: 3 }, lockedField: { minHeight: 48, borderRadius: 12, paddingHorizontal: 13, flexDirection: "row", alignItems: "center", gap: 9 }, at: { fontSize: 17, fontFamily: "Inter_700Bold" }, lockedText: { flex: 1, fontSize: 15, fontFamily: "Inter_500Medium" }, input: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular" }, suffix: { fontSize: 12, fontFamily: "Inter_400Regular" }, label: { fontSize: 12, fontFamily: "Inter_500Medium", marginTop: 2 }, modeRow: { flexDirection: "row", borderWidth: 1, borderRadius: 12, padding: 3, gap: 3 }, mode: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 9, borderRadius: 9 }, modeText: { fontSize: 12, fontFamily: "Inter_600SemiBold" }, receipt: { borderWidth: 1, borderRadius: 12, padding: 13, gap: 11 }, receiptRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }, receiptLabel: { fontSize: 13, fontFamily: "Inter_400Regular" }, receiptValue: { fontSize: 14, fontFamily: "Inter_600SemiBold" }, trustLine: { flexDirection: "row", alignItems: "flex-start", gap: 8, paddingVertical: 3 }, trustText: { flex: 1, fontSize: 12, lineHeight: 17, fontFamily: "Inter_400Regular" }, primary: { minHeight: 48, borderRadius: 12, alignItems: "center", justifyContent: "center", paddingHorizontal: 16, marginTop: 3 }, primaryText: { color: "#fff", fontSize: 14, fontFamily: "Inter_700Bold" }, cancel: { alignItems: "center", paddingVertical: 6 }, cancelText: { fontSize: 13, fontFamily: "Inter_500Medium" },
 });

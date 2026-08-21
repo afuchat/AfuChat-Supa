@@ -162,7 +162,7 @@ export const SUPER_APP_REGISTRY: ModuleManifest[] = [
   },
   {
     id: "afuusernames",
-    name: "Usernames",
+    name: "Handle Market",
     description: "Buy and sell premium @handles.",
     version: "1.0.0",
     icon: "at",
