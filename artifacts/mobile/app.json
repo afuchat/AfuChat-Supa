@@ -3,7 +3,6 @@
     "name": "AfuChat",
     "slug": "afuchat",
     "version": "2.2.20",
-    "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "afuchat",
     "userInterfaceStyle": "automatic",
@@ -12,6 +11,7 @@
     "backgroundColor": "#000000",
     "android": {
       "package": "com.afuchat.afuapp",
+      "resizeableActivity": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#1f95ff"
