@@ -15,7 +15,7 @@ AS $$
 DECLARE
   v_username text := lower(trim(p_username));
   v_listing public.username_listings;
-  v_hours integer := greatest(1, least(coalesce(p_duration_hours, 168), 168));
+  v_hours integer := 168;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'You must be signed in'; END IF;
   IF v_username !~ '^[a-z0-9_]{1,30}$' THEN RAISE EXCEPTION 'Invalid username'; END IF;
