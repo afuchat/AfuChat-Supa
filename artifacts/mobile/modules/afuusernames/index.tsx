@@ -49,7 +49,18 @@ type OwnedUsername = {
 };
 
 const HANDLE_RE = /^[a-z0-9_]{1,30}$/;
-const money = (value: number) => new Intl.NumberFormat().format(Math.max(0, value));
+function money(value: number): string {
+  const amount = Math.max(0, Number(value) || 0);
+  if (amount >= 1000000) {
+    const compact = amount / 1000000;
+    return `${Number.isInteger(compact) ? compact : compact.toFixed(1).replace(/\.0$/, "")}M`;
+  }
+  if (amount >= 1000) {
+    const compact = amount / 1000;
+    return `${Number.isInteger(compact) ? compact : compact.toFixed(1).replace(/\.0$/, "")}K`;
+  }
+  return new Intl.NumberFormat().format(amount);
+}
 const timeLeft = (end: string | null) => {
   if (!end) return "";
   const hours = Math.max(0, Math.ceil((new Date(end).getTime() - Date.now()) / 3600000));
