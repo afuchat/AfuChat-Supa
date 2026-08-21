@@ -2380,12 +2380,14 @@ function ChatScreen() {
   const [recLocked, setRecLocked] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [recordingTenths, setRecordingTenths] = useState(0);
+  const [isRecordingPaused, setIsRecordingPaused] = useState(false);
   const [recAmplitudes, setRecAmplitudes] = useState<number[]>([]);
   const recorderRef = useRef<AudioRecording | null>(null);
   const webMediaRecorderRef = useRef<MediaRecorder | null>(null);
   const webChunksRef = useRef<Blob[]>([]);
   const webStreamRef = useRef<MediaStream | null>(null);
   const recordingActiveRef = useRef(false);
+  const recordingStartingRef = useRef(false);
   const recordingTimer = useRef<any>(null);
   const meterInterval = useRef<any>(null);
 
@@ -2503,7 +2505,9 @@ function ChatScreen() {
       slideY.value = 0;
       if (recCancelledSV.value || recLockedSV.value) return;
       if (recStartedSV.value) {
-        runOnJS(onRecSend)();
+        // A single tap starts and locks recording. Sending is explicit via the
+        // now-visible send button, while swipe gestures retain cancel support.
+        runOnJS(onRecLock)();
       }
     })
     .onFinalize(() => {
@@ -5491,8 +5495,33 @@ STRICT RULES:
     }
   }
 
+  function startRecordingClock() {
+    clearInterval(recordingTimer.current);
+    recordingTimer.current = setInterval(() => {
+      setRecordingTenths((t) => {
+        if (t >= 9) {
+          setRecordingDuration((d) => {
+            const next = d + 1;
+            recordingDurationRef.current = next;
+            return next;
+          });
+          return 0;
+        }
+        return t + 1;
+      });
+    }, 100);
+  }
+
   async function startVoiceRecordingHold() {
     if (recordingActiveRef.current) return;
+    recordingStartingRef.current = true;
+    recLockedSV.value = true;
+    setIsRecordingPaused(false);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    // Show the recording surface immediately. Permission and recorder setup
+    // continue underneath it, so the send control never appears late.
+    setIsRecording(true);
+    setRecLocked(true);
     // Guard: Audio is null on web (lazy import) — delegate to web recorder path.
     if (!Audio) { startVoiceRecordingWeb(); return; }
     const safetyTimer = setTimeout(() => {
@@ -5502,6 +5531,7 @@ STRICT RULES:
         recLockedSV.value = false;
         setIsRecording(false);
         setRecLocked(false);
+        recordingStartingRef.current = false;
       }
     }, 5000);
     try {
@@ -5529,6 +5559,7 @@ STRICT RULES:
         isMeteringEnabled: true,
       });
       recorderRef.current = _rec;
+      recordingStartingRef.current = false;
       // Seed history with silence so bars render immediately at min height
       recAmpHistoryRef.current = new Array(20).fill(0);
       setRecAmplitudes([...recAmpHistoryRef.current]);
@@ -5555,24 +5586,12 @@ STRICT RULES:
       }
 
       setIsRecording(true);
-      setRecLocked(false);
+      setRecLocked(true);
       setRecordingDuration(0);
       setRecordingTenths(0);
       recordingDurationRef.current = 0;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      recordingTimer.current = setInterval(() => {
-        setRecordingTenths((t) => {
-          if (t >= 9) {
-            setRecordingDuration((d) => {
-              const next = d + 1;
-              recordingDurationRef.current = next;
-              return next;
-            });
-            return 0;
-          }
-          return t + 1;
-        });
-      }, 100);
+      startRecordingClock();
     } catch (err) {
       clearTimeout(safetyTimer);
       recPressActiveSV.value = false;
@@ -5580,6 +5599,7 @@ STRICT RULES:
       recCancelledSV.value = false;
       recLockedSV.value = false;
       recordingActiveRef.current = false;
+      recordingStartingRef.current = false;
       setIsRecording(false);
       setRecLocked(false);
       showAlert("Error", "Could not start recording.");
@@ -5630,6 +5650,7 @@ STRICT RULES:
         }, 80);
       } catch (_) {}
       recordingActiveRef.current = true;
+      recordingStartingRef.current = false;
       recStartedSV.value = true;
       recLockedSV.value = true;
       setIsRecording(true);
@@ -5637,31 +5658,48 @@ STRICT RULES:
       setRecordingDuration(0);
       setRecordingTenths(0);
       recordingDurationRef.current = 0;
-      recordingTimer.current = setInterval(() => {
-        setRecordingTenths((t) => {
-          if (t >= 9) {
-            setRecordingDuration((d) => {
-              const next = d + 1;
-              recordingDurationRef.current = next;
-              return next;
-            });
-            return 0;
-          }
-          return t + 1;
-        });
-      }, 100);
+      startRecordingClock();
     } catch {
       recStartedSV.value = false;
       recLockedSV.value = false;
       recordingActiveRef.current = false;
+      recordingStartingRef.current = false;
       setIsRecording(false);
       setRecLocked(false);
       showAlert("Microphone permission needed", "Please allow microphone access in your browser settings, then try again.");
     }
   }
 
+  async function toggleRecordingPause() {
+    if (!recordingActiveRef.current || recordingStartingRef.current) return;
+    try {
+      if (isRecordingPaused) {
+        if (webMediaRecorderRef.current) {
+          webMediaRecorderRef.current.resume();
+        } else {
+          await (recorderRef.current as any)?.startAsync();
+        }
+        setIsRecordingPaused(false);
+        startRecordingClock();
+      } else {
+        if (webMediaRecorderRef.current) {
+          webMediaRecorderRef.current.pause();
+        } else {
+          await (recorderRef.current as any)?.pauseAsync();
+        }
+        clearInterval(recordingTimer.current);
+        setIsRecordingPaused(true);
+      }
+    } catch {
+      showAlert("Recording unavailable", "Could not change the recording state. Please try again.");
+    }
+  }
+
   async function stopVoiceRecording() {
-    if (!recordingActiveRef.current) return;
+    if (!recordingActiveRef.current) {
+      if (recordingStartingRef.current) await cancelVoiceRecording();
+      return;
+    }
     const capturedDuration = recordingDurationRef.current;
     clearInterval(recordingTimer.current);
     clearInterval(meterInterval.current);
@@ -5672,6 +5710,7 @@ STRICT RULES:
     webAudioCtxRef.current = null;
     setIsRecording(false);
     setRecLocked(false);
+    setIsRecordingPaused(false);
     recLockedSV.value = false;
     recStartedSV.value = false;
     recPressActiveSV.value = false;
@@ -5697,6 +5736,7 @@ STRICT RULES:
       try { await recorderRef.current?.stopAndUnloadAsync(); } catch (_) {}
       recorderRef.current = null;
       recordingActiveRef.current = false;
+    recordingStartingRef.current = false;
       Audio?.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: false }).catch(() => {});
       return;
     }
@@ -5900,6 +5940,7 @@ STRICT RULES:
     webAudioCtxRef.current = null;
     setIsRecording(false);
     setRecLocked(false);
+    setIsRecordingPaused(false);
     recLockedSV.value = false;
     recStartedSV.value = false;
     recPressActiveSV.value = false;
@@ -5931,6 +5972,7 @@ STRICT RULES:
       // Restore audio session to playback mode after cancellation.
       Audio?.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: false }).catch(() => {});
       recordingActiveRef.current = false;
+      recordingStartingRef.current = false;
     }
   }
 
@@ -6751,8 +6793,16 @@ STRICT RULES:
                 <TouchableOpacity onPress={cancelVoiceRecording} hitSlop={12} style={st.recLockedTrash}>
                   <Ionicons name="trash" size={20} color="#FF3B30" />
                 </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={toggleRecordingPause}
+                  hitSlop={10}
+                  style={[st.recPauseBtn, { backgroundColor: isRecordingPaused ? BRAND + "20" : colors.inputBg }]}
+                >
+                  <Ionicons name={isRecordingPaused ? "play" : "pause"} size={17} color={isRecordingPaused ? BRAND : colors.textSecondary} />
+                </TouchableOpacity>
                 <VoiceWaveform active={isRecording} color={BRAND} amplitudes={recAmplitudes} />
                 <Text style={[st.recordingText, { color: colors.text, marginLeft: 8, flex: 1 }]}>
+                  {isRecordingPaused ? "Paused · " : ""}
                   {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, "0")}
                 </Text>
                 <TouchableOpacity onPress={stopVoiceRecording} style={[st.sendBtn, { backgroundColor: BRAND }]}>
@@ -6956,7 +7006,7 @@ STRICT RULES:
                       ) : (
                         <Pressable
                           onPressIn={onRecStart}
-                          onPressOut={() => { if (recStartedSV.value) onRecSend(); else onRecCancel(); }}
+                          onPressOut={() => { if (recStartedSV.value) onRecLock(); else onRecCancel(); }}
                           style={isRecording && !recLocked ? [st.recMicBtn, { backgroundColor: BRAND }] : [st.sendBtn, { backgroundColor: BRAND }]}
                         >
                           <Ionicons name="mic" size={isRecording ? 24 : 20} color="#fff" />
@@ -8919,6 +8969,7 @@ const st = StyleSheet.create({
   recMicBtn: { width: 52, height: 52, borderRadius: 26, backgroundColor: BRAND_FALLBACK, alignItems: "center", justifyContent: "center" },
   recLockedInner: { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 8, gap: 8, minHeight: 56 },
   recLockedTrash: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,59,48,0.12)", alignItems: "center", justifyContent: "center" },
+  recPauseBtn: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
   recordingText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
 
   sheetOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.4)" },

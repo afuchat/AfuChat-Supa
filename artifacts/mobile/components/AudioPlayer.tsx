@@ -50,6 +50,40 @@ function buildWaveBars(bars: number): number[] {
 
 const WAVE_SHAPE = buildWaveBars(BARS);
 
+type VoicePlaybackController = {
+  activate: () => void;
+  deactivate: () => void;
+};
+
+let voicePlayerSequence = 0;
+let activeVoicePlayerId: string | null = null;
+const voicePlayers = new Map<string, VoicePlaybackController>();
+
+const voicePlaybackCoordinator = {
+  register(controller: VoicePlaybackController): string {
+    const id = `voice-player-${++voicePlayerSequence}`;
+    voicePlayers.set(id, controller);
+    return id;
+  },
+  unregister(id: string) {
+    voicePlayers.delete(id);
+    if (activeVoicePlayerId === id) activeVoicePlayerId = null;
+  },
+  play(id: string) {
+    if (activeVoicePlayerId === id) return;
+    if (activeVoicePlayerId) voicePlayers.get(activeVoicePlayerId)?.deactivate();
+    activeVoicePlayerId = id;
+    voicePlayers.get(id)?.activate();
+  },
+  finished(id: string) {
+    if (activeVoicePlayerId !== id) return;
+    activeVoicePlayerId = null;
+    const ids = Array.from(voicePlayers.keys());
+    const nextId = ids.slice(ids.indexOf(id) + 1).find((candidate) => voicePlayers.has(candidate));
+    if (nextId) this.play(nextId);
+  },
+};
+
 function AudioPlayerIdle({
   onPlay,
   tintColor,
@@ -79,7 +113,13 @@ function AudioPlayerIdle({
   );
 }
 
-function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor, onError }: AudioPlayerProps) {
+function AudioPlayerActive({
+  uri,
+  playerId,
+  tintColor = "#FFFFFF",
+  waveColor,
+  onError,
+}: AudioPlayerProps & { playerId: string }) {
   const soundRef = useRef<AudioSound | null>(null);
   const mountedRef = useRef(true);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -87,8 +127,8 @@ function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor, onError }: A
   const [isPlaying, setIsPlaying] = useState(false);
   const [positionMs, setPositionMs] = useState(0);
   const [durationMs, setDurationMs] = useState(0);
-  const [didJustFinish, setDidJustFinish] = useState(false);
   const [speed, setSpeed] = useState<Speed>(1);
+  const finishedRef = useRef(false);
   const trackWidth = useRef(0);
   const barColor = waveColor || tintColor;
 
@@ -121,7 +161,12 @@ function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor, onError }: A
               setPositionMs(status.positionMillis ?? 0);
               setDurationMs(status.durationMillis ?? 0);
               if (status.didJustFinish) {
-                setDidJustFinish(true);
+                 if (!finishedRef.current) {
+                   finishedRef.current = true;
+                   setIsPlaying(false);
+                   setPositionMs(status.durationMillis ?? status.positionMillis ?? 0);
+                   voicePlaybackCoordinator.finished(playerId);
+                 }
               }
             }
           }
@@ -142,13 +187,6 @@ function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor, onError }: A
       soundRef.current?.unloadAsync().catch(() => {});
     };
   }, [uri]);
-
-  useEffect(() => {
-    if (didJustFinish && soundRef.current) {
-      soundRef.current.setPositionAsync(0).catch(() => {});
-      setDidJustFinish(false);
-    }
-  }, [didJustFinish]);
 
   // Pause playback the moment a call takes over the mic / speaker.
   // Track whether we auto-paused so we can auto-resume on release.
@@ -182,6 +220,7 @@ function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor, onError }: A
       } else {
         if (positionMs >= durationMs && durationMs > 0) {
           await soundRef.current.setPositionAsync(0);
+          finishedRef.current = false;
         }
         await soundRef.current.playAsync();
       }
@@ -264,11 +303,25 @@ function AudioPlayerActive({ uri, tintColor = "#FFFFFF", waveColor, onError }: A
 
 export default function AudioPlayer({ uri, tintColor = "#FFFFFF", waveColor }: AudioPlayerProps) {
   const [active, setActive] = useState(false);
+  const playerIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const id = voicePlaybackCoordinator.register({
+      activate: () => setActive(true),
+      deactivate: () => setActive(false),
+    });
+    playerIdRef.current = id;
+    return () => {
+      voicePlaybackCoordinator.unregister(id);
+    };
+  }, []);
 
   if (!active) {
     return (
       <AudioPlayerIdle
-        onPlay={() => setActive(true)}
+        onPlay={() => {
+          if (playerIdRef.current) voicePlaybackCoordinator.play(playerIdRef.current);
+        }}
         tintColor={tintColor}
         waveColor={waveColor}
       />
@@ -279,6 +332,7 @@ export default function AudioPlayer({ uri, tintColor = "#FFFFFF", waveColor }: A
   return (
     <AudioPlayerActive
       uri={uri}
+      playerId={playerIdRef.current ?? ""}
       tintColor={tintColor}
       waveColor={waveColor}
       onError={() => setActive(false)}
