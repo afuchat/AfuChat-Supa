@@ -42,6 +42,7 @@ type Listing = {
   description: string | null;
   seller: Seller | null;
 };
+type FeaturedPlacement = { id: string; listing_id: string; amount: number; ends_at: string; listing: Listing };
 
 type OwnedUsername = {
   handle: string;
@@ -138,6 +139,46 @@ function ListingCard({
         <Text style={[styles.priceAction, { color: own ? colors.textMuted : auction ? Colors.gold : colors.accent }]}>{own ? "Listed" : auction ? "Bid" : "Buy"}</Text>
       </View>
     </Pressable>
+  );
+}
+
+function FeaturedCard({ item, colors, onPress }: { item: FeaturedPlacement; colors: any; onPress: () => void }) {
+  const listing = item.listing;
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.featuredCard, { backgroundColor: colors.surface, opacity: pressed ? 0.82 : 1 }]}>
+      <View style={styles.featuredTop}><View style={[styles.featuredBadge, { backgroundColor: Colors.gold + "22" }]}><Ionicons name="sparkles" size={12} color={Colors.gold} /><Text style={[styles.featuredBadgeText, { color: Colors.gold }]}>FEATURED</Text></View><Text style={[styles.featuredTime, { color: colors.textMuted }]}>{timeLeft(item.ends_at)}</Text></View>
+      <Text style={[styles.featuredHandle, { color: colors.text }]} numberOfLines={1}>@{listing.username}</Text>
+      <Text style={[styles.featuredDescription, { color: colors.textMuted }]} numberOfLines={2}>{listing.description || "A premium handle ready for its next owner."}</Text>
+      <View style={styles.featuredBottom}><Text style={[styles.featuredPrice, { color: listing.is_auction ? Colors.gold : colors.accent }]}>{money(listing.is_auction ? Math.max(listing.current_bid, listing.reserve_price || 0) : listing.price)} {listing.is_auction ? "current bid" : "ACoin"}</Text><Ionicons name="arrow-forward-circle" size={22} color={colors.accent} /></View>
+    </Pressable>
+  );
+}
+
+function FeatureSheet({ item, visible, onClose, onDone, colors }: { item: Listing | null; visible: boolean; onClose: () => void; onDone: () => void; colors: any }) {
+  const [duration, setDuration] = useState("24");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (visible) { setDuration("24"); setBusy(false); } }, [visible]);
+  if (!item) return null;
+  const cost = duration === "24" ? 250 : duration === "72" ? 600 : 1200;
+  const feature = async () => {
+    setBusy(true);
+    const { error } = await supabase.rpc("feature_username_listing", { p_listing_id: item.id, p_duration_hours: Number(duration) });
+    setBusy(false);
+    if (error) { showAlert("Could not feature listing", friendlyError(error.message)); return; }
+    onClose(); onDone(); showAlert("Listing featured", `@${item.username} is now featured for ${duration === "168" ? "7 days" : `${duration} hours`}.`);
+  };
+  return (
+    <SmartSheet visible={visible} onClose={onClose} peekFraction={0.6} backgroundColor={colors.surface}>
+      <View style={styles.sheet}>
+        <View style={[styles.sheetIcon, { backgroundColor: Colors.gold + "20" }]}><Ionicons name="sparkles" size={25} color={Colors.gold} /></View>
+        <Text style={[styles.sheetTitle, { color: colors.text }]}>Feature @{item.username}</Text>
+        <Text style={[styles.sheetCopy, { color: colors.textMuted }]}>Put your listing in front of serious buyers in the featured rail. Promotion is paid from your ACoin wallet.</Text>
+        <View style={styles.featureOptions}>
+          {[["24", "24 hours", "250 ACoin"], ["72", "3 days", "600 ACoin"], ["168", "7 days", "1.2K ACoin"]].map(([value, label, price]) => <Pressable key={value} onPress={() => setDuration(value)} style={[styles.featureOption, { backgroundColor: duration === value ? Colors.gold + "20" : colors.inputBg, borderColor: duration === value ? Colors.gold : "transparent" }]}><Text style={[styles.featureOptionLabel, { color: duration === value ? Colors.gold : colors.text }]}>{label}</Text><Text style={[styles.featureOptionPrice, { color: colors.textMuted }]}>{price}</Text></Pressable>)}
+        </View>
+        <Pressable onPress={() => void feature()} disabled={busy} style={[styles.primaryButton, { backgroundColor: Colors.gold, opacity: busy ? 0.65 : 1 }]}>{busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>Feature for {duration === "168" ? "1.2K" : money(cost)} ACoin</Text>}</Pressable>
+      </View>
+    </SmartSheet>
   );
 }
 
@@ -446,6 +487,7 @@ export default function AfuUsernamesApp() {
   const insets = useSafeAreaInsets();
   const { user, profile, refreshProfile } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
+  const [featured, setFeatured] = useState<FeaturedPlacement[]>([]);
   const [owned, setOwned] = useState<OwnedUsername[]>([]);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"market" | "auctions" | "listings" | "owned">("market");
@@ -456,6 +498,7 @@ export default function AfuUsernamesApp() {
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [selected, setSelected] = useState<Listing | null>(null);
   const [selectedBid, setSelectedBid] = useState<Listing | null>(null);
+  const [selectedFeature, setSelectedFeature] = useState<Listing | null>(null);
   const [listVisible, setListVisible] = useState(false);
 
   useEffect(() => {
@@ -488,11 +531,12 @@ export default function AfuUsernamesApp() {
       const term = search.trim().replace(/^@/, "").toLowerCase();
       if (term) query = query.ilike("username", `%${term}%`);
 
-      const [listingResult, ownedResult] = await Promise.all([
+      const [listingResult, ownedResult, featuredResult] = await Promise.all([
         query,
         user?.id
           ? supabase.from("owned_usernames").select("handle, owner_id").eq("owner_id", user.id).order("handle")
           : Promise.resolve({ data: [], error: null }),
+        supabase.from("username_featured_listings").select("id, listing_id, amount, ends_at").gt("ends_at", new Date().toISOString()).order("ends_at", { ascending: false }).limit(12),
       ]);
       if (listingResult.error) throw listingResult.error;
 
@@ -507,7 +551,14 @@ export default function AfuUsernamesApp() {
         if (!sellerResult.error) sellers = (sellerResult.data || []) as Seller[];
       }
       const sellerMap = new Map(sellers.map((seller) => [seller.id, seller]));
-      setListings(rawListings.map((item) => ({ ...item, seller: sellerMap.get(item.seller_id) || null })));
+      const enriched = rawListings.map((item) => ({ ...item, seller: sellerMap.get(item.seller_id) || null }));
+      setListings(enriched);
+      if (!featuredResult.error) {
+        const byId = new Map(enriched.map((item) => [item.id, item]));
+        setFeatured((featuredResult.data || []).map((placement: any) => ({ ...placement, listing: byId.get(placement.listing_id) })).filter((placement: any) => placement.listing));
+      } else {
+        setFeatured([]);
+      }
       if (!ownedResult.error) setOwned((ownedResult.data || []) as OwnedUsername[]);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "Could not load the username marketplace.");
@@ -595,6 +646,13 @@ export default function AfuUsernamesApp() {
         ) : null}
       </View>
 
+      {featured.length > 0 && tab === "market" ? (
+        <View style={styles.featuredSection}>
+          <View style={styles.featuredHeading}><View><Text style={[styles.sectionEyebrow, { color: Colors.gold }]}>CURATED PLACEMENTS</Text><Text style={[styles.featuredTitle, { color: colors.text }]}>Featured usernames</Text></View><Text style={[styles.featuredSwipe, { color: colors.textMuted }]}>Swipe to explore</Text></View>
+          <FlatList horizontal showsHorizontalScrollIndicator={false} data={featured} keyExtractor={(item) => item.id} contentContainerStyle={styles.featuredList} renderItem={({ item }) => <FeaturedCard item={item} colors={colors} onPress={() => item.listing.is_auction ? setSelectedBid(item.listing) : setSelected(item.listing)} />} />
+        </View>
+      ) : null}
+
       <View style={[styles.tabs, { borderBottomColor: colors.border }]}>
         <Pressable onPress={() => setTab("market")} style={[styles.tab, tab === "market" && { borderBottomColor: colors.accent }]}>
           <Text style={[styles.tabText, { color: tab === "market" ? colors.accent : colors.textMuted }]}>Buy now</Text>
@@ -655,7 +713,7 @@ export default function AfuUsernamesApp() {
               colors={colors}
               onPress={() => {
                  if (ownListingIds.has(item.id)) {
-                   showAlert("Your listing", `${item.views || 0} views · ${item.is_auction ? `${money(item.current_bid)} ACoin current bid` : `${money(item.price)} ACoin asking price`}.`);
+                   setSelectedFeature(item);
                    return;
                  }
                  if (item.is_auction) { setSelectedBid(item); return; }
@@ -700,6 +758,7 @@ export default function AfuUsernamesApp() {
         suggestedPrice={suggestedPrice}
       />
       <BidSheet item={selectedBid} visible={!!selectedBid} onClose={() => setSelectedBid(null)} onDone={() => void load(true)} colors={colors} />
+      <FeatureSheet item={selectedFeature} visible={!!selectedFeature} onClose={() => setSelectedFeature(null)} onDone={() => void load(true)} colors={colors} />
     </View>
   );
 }
@@ -741,6 +800,25 @@ const styles = StyleSheet.create({
   avatar: { width: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center" },
   sellerText: { flexShrink: 1, fontSize: 10, fontFamily: "Inter_500Medium" },
   cardNote: { fontSize: 10, fontFamily: "Inter_400Regular" },
+  featuredSection: { marginTop: 14, marginBottom: 6 },
+  featuredHeading: { paddingHorizontal: 16, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 9 },
+  sectionEyebrow: { fontSize: 9, letterSpacing: 1.4, fontFamily: "Inter_700Bold" },
+  featuredTitle: { fontSize: 18, fontFamily: "Inter_700Bold", marginTop: 2 },
+  featuredSwipe: { fontSize: 10, fontFamily: "Inter_500Medium", paddingBottom: 2 },
+  featuredList: { paddingHorizontal: 16, gap: 10 },
+  featuredCard: { width: 252, minHeight: 142, borderRadius: 18, padding: 14, justifyContent: "space-between" },
+  featuredTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  featuredBadge: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 4 },
+  featuredBadgeText: { fontSize: 8, letterSpacing: 0.6, fontFamily: "Inter_700Bold" },
+  featuredTime: { fontSize: 10, fontFamily: "Inter_500Medium" },
+  featuredHandle: { fontSize: 21, fontFamily: "Inter_700Bold", marginTop: 11 },
+  featuredDescription: { fontSize: 11, lineHeight: 16, fontFamily: "Inter_400Regular", marginTop: 4 },
+  featuredBottom: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 },
+  featuredPrice: { fontSize: 12, fontFamily: "Inter_700Bold" },
+  featureOptions: { flexDirection: "row", gap: 8 },
+  featureOption: { flex: 1, minHeight: 58, borderRadius: 13, borderWidth: 1, padding: 9, justifyContent: "center" },
+  featureOptionLabel: { fontSize: 12, fontFamily: "Inter_700Bold" },
+  featureOptionPrice: { fontSize: 10, fontFamily: "Inter_500Medium", marginTop: 3 },
   price: { alignItems: "flex-end", gap: 1 },
   priceValue: { fontSize: 15, fontFamily: "Inter_700Bold" },
   priceUnit: { fontSize: 9, fontFamily: "Inter_400Regular" },
