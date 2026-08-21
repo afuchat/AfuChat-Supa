@@ -1,6 +1,21 @@
 {
-  "buildCommand": "npx expo export -p web",
+  "buildCommand": "npx expo export -p web && mkdir -p dist/.well-known && cp well-known/assetlinks.json dist/.well-known/assetlinks.json",
   "outputDirectory": "dist",
+  "headers": [
+    {
+      "source": "/.well-known/assetlinks.json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",

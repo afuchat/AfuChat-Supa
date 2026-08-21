@@ -1,11 +1,14 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.afuchat.afuapp",
       "sha256_cert_fingerprints": [
-        "REPLACE_WITH_YOUR_SHA256_FINGERPRINT"
+        "7E:DC:5D:B8:00:4C:6B:65:BA:D0:3D:4B:6E:05:0D:D0:A8:AE:D0:D1:C6:A1:5C:75:77:A2:1E:7D:9A:76:BC:6D"
       ]
     }
   }
