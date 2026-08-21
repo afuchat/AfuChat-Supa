@@ -540,7 +540,11 @@ export default function AfuUsernamesApp() {
     const own = tab === "listings";
     return listings
       .filter((item) => own ? item.seller_id === user?.id : tab === "auctions" ? item.is_auction : tab === "market" ? !item.is_auction : true)
-      .sort((a, b) => (tab === "auctions" ? (b.current_bid - a.current_bid) : b.created_at.localeCompare(a.created_at)));
+      .sort((a, b) => {
+        const aAmount = a.is_auction ? Math.max(a.current_bid || 0, a.reserve_price || 0) : a.price;
+        const bAmount = b.is_auction ? Math.max(b.current_bid || 0, b.reserve_price || 0) : b.price;
+        return aAmount - bAmount || a.created_at.localeCompare(b.created_at);
+      });
   }, [listings, tab, user?.id]);
   const auctionCount = listings.filter((item) => item.is_auction).length;
   const sellerListingCount = listings.filter((item) => item.seller_id === user?.id).length;
