@@ -38,7 +38,6 @@ import {
 } from "@/lib/storage/localContacts";
 import {
   isValidInternationalPhoneNumber,
-  sendPhoneInvite,
   sendWhatsAppInvite,
   syncPhoneContacts,
 } from "@/lib/phoneContacts";
@@ -601,24 +600,14 @@ export default function NewChatScreen() {
                           <Text style={[styles.contactName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
                           <Text style={[styles.contactHandle, { color: colors.textMuted }]} numberOfLines={1}>{item.phone}</Text>
                         </View>
-                        <View style={styles.inviteActions}>
-                          <TouchableOpacity
-                            style={[styles.inviteButton, { backgroundColor: "#25D366" }]}
-                            onPress={() => { void sendWhatsAppInvite(item.normalized_phone); }}
-                            activeOpacity={0.7}
-                          >
-                            <Ionicons name="logo-whatsapp" size={14} color="#fff" />
-                            <Text style={styles.inviteButtonText}>WhatsApp</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={[styles.inviteButton, { backgroundColor: accent }]}
-                            onPress={() => { void sendPhoneInvite(item.normalized_phone); }}
-                            activeOpacity={0.7}
-                          >
-                            <Ionicons name="chatbubble" size={14} color="#fff" />
-                            <Text style={styles.inviteButtonText}>SMS</Text>
-                          </TouchableOpacity>
-                        </View>
+                        <TouchableOpacity
+                          style={[styles.inviteButton, { backgroundColor: "#25D366" }]}
+                          onPress={() => { void sendWhatsAppInvite(item.normalized_phone); }}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="paper-plane" size={14} color="#fff" />
+                          <Text style={styles.inviteButtonText}>Invite</Text>
+                        </TouchableOpacity>
                       </View>
                     ))}
                 </View>
@@ -1133,7 +1122,6 @@ const styles = StyleSheet.create({
     borderRadius: 13,
   },
   inviteButtonText: { color: "#fff", fontSize: 11, fontFamily: "Inter_700Bold" },
-  inviteActions: { flexDirection: "row", alignItems: "center", gap: 5 },
 
   scrubber: {
     width: 18,

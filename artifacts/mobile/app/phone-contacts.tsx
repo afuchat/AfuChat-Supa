@@ -17,7 +17,7 @@ import { supabase } from "@/lib/supabase";
 import { Avatar } from "@/components/ui/Avatar";
 import { PrestigeBadge } from "@/components/ui/PrestigeBadge";
 import { usePhoneContacts } from "@/lib/usePhoneContacts";
-import { isValidInternationalPhoneNumber, sendPhoneInvite, sendWhatsAppInvite } from "@/lib/phoneContacts";
+import { isValidInternationalPhoneNumber, sendWhatsAppInvite } from "@/lib/phoneContacts";
 import { isOnline } from "@/lib/offlineStore";
 import { getLocalConversations } from "@/lib/storage/localConversations";
 import { showAlert } from "@/lib/alert";
@@ -222,22 +222,13 @@ export default function PhoneContactsScreen() {
                         <Text style={[styles.displayName, { color: colors.text }]}>{item.name}</Text>
                         <Text style={[styles.handle, { color: colors.textMuted }]}>{item.phone}</Text>
                       </View>
-                      <View style={styles.inviteActions}>
-                        <TouchableOpacity
-                          style={[styles.inviteButton, { backgroundColor: "#25D366" }]}
-                          onPress={() => { void sendWhatsAppInvite(item.normalized_phone); }}
-                        >
-                          <Ionicons name="logo-whatsapp" size={15} color="#fff" />
-                          <Text style={styles.inviteButtonText}>WhatsApp</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={[styles.inviteButton, { backgroundColor: colors.accent }]}
-                          onPress={() => { void sendPhoneInvite(item.normalized_phone); }}
-                        >
-                          <Ionicons name="chatbubble" size={15} color="#fff" />
-                          <Text style={styles.inviteButtonText}>SMS</Text>
-                        </TouchableOpacity>
-                      </View>
+                      <TouchableOpacity
+                        style={[styles.inviteButton, { backgroundColor: "#25D366" }]}
+                        onPress={() => { void sendWhatsAppInvite(item.normalized_phone); }}
+                      >
+                        <Ionicons name="paper-plane" size={15} color="#fff" />
+                        <Text style={styles.inviteButtonText}>Invite</Text>
+                      </TouchableOpacity>
                     </View>
                   ))}
                 </>
@@ -310,7 +301,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 14,
   },
-  inviteActions: { flexDirection: "row", alignItems: "center", gap: 6 },
   inviteButtonText: { color: "#fff", fontSize: 12, fontFamily: "Inter_700Bold" },
   avatarPlaceholder: {
     width: 48,

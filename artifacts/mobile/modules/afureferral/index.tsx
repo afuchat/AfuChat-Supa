@@ -379,7 +379,7 @@ function InviteContactsSection({ referralLink, accent, colors }: { referralLink:
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[invS.cardTitle, { color: colors.text }]}>Invite Your Contacts</Text>
-          <Text style={[invS.cardSub, { color: colors.textMuted }]}>Invite by WhatsApp or SMS using the contact's number</Text>
+          <Text style={[invS.cardSub, { color: colors.textMuted }]}>Invite this contact directly using their phone number</Text>
         </View>
       </View>
 
@@ -422,29 +422,19 @@ function InviteContactsSection({ referralLink, accent, colors }: { referralLink:
                 <Text style={[invS.contactName, { color: colors.text }]} numberOfLines={1}>{c.name}</Text>
                 <Text style={[invS.contactPhone, { color: colors.textMuted }]}>{c.rawPhone}</Text>
               </View>
-              <View style={invS.inviteActions}>
-                <TouchableOpacity
-                  style={[invS.inviteBtn, { backgroundColor: "#25D366" }]}
-                  onPress={() => {
-                    const n = c.phone.replace(/\D/g, "");
-                    const message = encodeURIComponent(inviteMsg);
-                    Linking.openURL(`whatsapp://send?phone=${n}&text=${message}`)
-                      .catch(() => Linking.openURL(`https://wa.me/${n}?text=${message}`).catch(() => {}));
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="logo-whatsapp" size={15} color="#fff" />
-                  <Text style={invS.inviteBtnText}>WhatsApp</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[invS.inviteBtn, { backgroundColor: "#007AFF" }]}
-                  onPress={() => Linking.openURL(smsUrl(c.phone, inviteMsg)).catch(() => {})}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="chatbubble-ellipses-outline" size={15} color="#fff" />
-                  <Text style={invS.inviteBtnText}>SMS</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={[invS.inviteBtn, { backgroundColor: "#25D366" }]}
+                onPress={() => {
+                  const n = c.phone.replace(/\D/g, "");
+                  const message = encodeURIComponent(inviteMsg);
+                  Linking.openURL(`whatsapp://send?phone=${n}&text=${message}`)
+                    .catch(() => Linking.openURL(`https://wa.me/${n}?text=${message}`).catch(() => {}));
+                }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="paper-plane" size={15} color="#fff" />
+                <Text style={invS.inviteBtnText}>Invite</Text>
+              </TouchableOpacity>
             </View>
           ))}
           {filtered.length > 50 && <Text style={[invS.countLabel, { color: colors.textMuted, textAlign: "center", paddingVertical: 8 }]}>Showing first 50 — search to narrow down</Text>}
@@ -1123,7 +1113,6 @@ const invS = StyleSheet.create({
   avatarText: { fontSize: 13, fontFamily: "Inter_700Bold" },
   contactName: { fontSize: 14, fontFamily: "Inter_500Medium" },
   contactPhone: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 1 },
-  inviteActions: { flexDirection: "row", alignItems: "center", gap: 6 },
   inviteBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 9 },
   inviteBtnText: { color: "#fff", fontSize: 12, fontFamily: "Inter_700Bold" },
 });
