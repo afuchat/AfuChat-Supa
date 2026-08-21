@@ -70,8 +70,9 @@ async function readDevicePhoneContacts(): Promise<{
         contacts.push({
           key: `${contact.id ?? position}:${phoneIndex}`,
           name,
-          // Always show a country-coded value when it can be derived.
-          phone: normalized,
+          // Keep the device's exact display value. Only normalized_phone is
+          // used for matching, so local contacts never get reformatted.
+          phone: raw,
           normalized_phone: normalized,
           position,
           phone_index: phoneIndex,
@@ -103,33 +104,38 @@ export async function syncPhoneContacts(
   onDeviceContacts?.(local);
   if (!userId || !isOnline()) return "granted";
 
-  const phones = [...new Set(result.contacts.map((contact) => contact.normalized_phone))];
-  const matches = [];
-  for (let index = 0; index < phones.length; index += 100) {
-    const { data } = await supabase
-      .from("profiles")
-      .select(
-        "id, display_name, handle, avatar_url, bio, acoin, is_verified, is_organization_verified, phone_number",
-      )
-      .in("phone_number", phones.slice(index, index + 100))
-      .neq("id", userId);
-    if (data) matches.push(...data);
-  }
+  try {
+    const phones = [...new Set(result.contacts.map((contact) => contact.normalized_phone))];
+    const matches = [];
+    for (let index = 0; index < phones.length; index += 100) {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(
+          "id, display_name, handle, avatar_url, bio, acoin, is_verified, is_organization_verified, phone_number",
+        )
+        .in("phone_number", phones.slice(index, index + 100))
+        .neq("id", userId);
+      if (error) return "granted";
+      if (data) matches.push(...data);
+    }
 
-  await replacePhoneContactMatches(
-    matches.map((profile: any) => ({
-      normalized_phone: normalizePhoneNumber(profile.phone_number),
-      user_id: profile.id,
-      display_name: profile.display_name ?? "",
-      handle: profile.handle ?? "",
-      avatar_url: profile.avatar_url ?? null,
-      bio: profile.bio ?? null,
-      acoin: Number(profile.acoin ?? 0),
-      is_verified: !!profile.is_verified,
-      is_organization_verified: !!profile.is_organization_verified,
-    })),
-  );
-  onUpdatedContacts?.(await getLocalPhoneContacts());
+    await replacePhoneContactMatches(
+      matches.map((profile: any) => ({
+        normalized_phone: normalizePhoneNumber(profile.phone_number),
+        user_id: profile.id,
+        display_name: profile.display_name ?? "",
+        handle: profile.handle ?? "",
+        avatar_url: profile.avatar_url ?? null,
+        bio: profile.bio ?? null,
+        acoin: Number(profile.acoin ?? 0),
+        is_verified: !!profile.is_verified,
+        is_organization_verified: !!profile.is_organization_verified,
+      })),
+    );
+    onUpdatedContacts?.(await getLocalPhoneContacts());
+  } catch {
+    // The device scan is already cached; matching is best-effort.
+  }
   return "granted";
 }
 

@@ -69,3 +69,4 @@
 - [EAS prebuild asset and lockfile checks](eas-prebuild-assets-lockfile.md) — EAS validates notification assets during prebuild and uses frozen pnpm installs, so manifests and lockfile must be synchronized.
 - [Direct chat orphan cleanup](direct-chat-orphan-cleanup.md) — nameless non-group chats with fewer than two members cannot resolve an other profile and should be filtered and cleaned.
 - [Production FCM requires a new native build](production-fcm-native-build.md) — server-side sender fixes cannot repair tokens created by an older Play AAB; a completed new AAB must be installed before production delivery can recover.
+- [Phone contact display and matching](phone-contact-display-order.md) — preserve raw device rows for display/order; normalize only the separate value used for account matching.

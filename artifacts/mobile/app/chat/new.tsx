@@ -8,25 +8,15 @@ import {
   ActivityIndicator,
   FlatList,
   Keyboard,
-  Linking,
   Platform,
   Pressable,
   RefreshControl,
-  Share,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-// expo-contacts: lazy-loaded to avoid bundler issues on web
-let Contacts: typeof import("expo-contacts") | null = null;
-if (typeof navigator === "undefined" || !("userAgent" in navigator)) {
-  // native only
-  try { Contacts = require("expo-contacts"); } catch {}
-} else if (!/Mozilla/.test(navigator.userAgent)) {
-  try { Contacts = require("expo-contacts"); } catch {}
-}
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -46,7 +36,16 @@ import {
   saveLocalContacts,
   getAllPhonebookNames,
 } from "@/lib/storage/localContacts";
+import {
+  sendPhoneInvite,
+  syncPhoneContacts,
+} from "@/lib/phoneContacts";
+import {
+  getLocalPhoneContacts,
+  type LocalPhoneContact,
+} from "@/lib/storage/localPhoneContacts";
 import { createLocalNotesConversation, LOCAL_NOTES_NAME } from "@/lib/storage/localNotes";
+import { getLocalConversations } from "@/lib/storage/localConversations";
 
 type Contact = {
   id: string;
@@ -58,31 +57,7 @@ type Contact = {
   bio: string | null;
 };
 
-type NonAfuContact = {
-  name: string;
-  phone: string;
-};
-
-function normalizePhone(raw: string): string {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.startsWith("00")) return "+" + digits.slice(2);
-  if (digits.length === 10) return "+1" + digits;
-  return "+" + digits;
-}
-
-const INVITE_MSG =
-  "Hey! I'm using AfuChat — the social super app for chatting, discovering content, and connecting with people. Join me here: https://afuchat.com";
-
-async function sendInvite(name: string, phone: string) {
-  try {
-    const smsUrl = `sms:${phone}?body=${encodeURIComponent(INVITE_MSG)}`;
-    if (await Linking.canOpenURL(smsUrl)) {
-      await Linking.openURL(smsUrl);
-      return;
-    }
-  } catch {}
-  await Share.share({ message: INVITE_MSG, title: "Join AfuChat" });
-}
+type NonAfuContact = Pick<LocalPhoneContact, "key" | "name" | "phone">;
 
 
 type SearchResult = Contact & { _searching?: boolean };
@@ -205,63 +180,32 @@ export default function NewChatScreen() {
     setChannels([...subChannels, ...ownedChannels]);
   }, [user]);
 
-  // IMPORTANT: loadPhoneContacts must be declared BEFORE the useEffect that
-  // lists it as a dependency, otherwise the minifier sees a TDZ (const used
-  // before initialization) and the production bundle crashes with
-  // "Cannot access '…' before initialization".
   const loadPhoneContacts = useCallback(async () => {
-    if (!Contacts) return;
-    try {
-      const { status } = await Contacts.requestPermissionsAsync();
-      if (status !== "granted") return;
-
-      const { data } = await Contacts.getContactsAsync({ fields: [Contacts.Fields.PhoneNumbers, Contacts.Fields.Name] });
-      const phoneMap = new Map<string, string>();
-      for (const c of data) {
-        const name = c.name || "Unknown";
-        for (const pn of c.phoneNumbers || []) {
-          if (pn.number) {
-            const n = normalizePhone(pn.number);
-            if (n.length >= 8) phoneMap.set(n, name);
-          }
-        }
-      }
-      const phones = Array.from(phoneMap.keys());
-      if (phones.length === 0) return;
-
-      const foundProfiles: Contact[] = [];
-      const foundPhones = new Set<string>();
-      for (let i = 0; i < phones.length; i += 100) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, display_name, handle, avatar_url, is_verified, is_organization_verified, bio, phone_number")
-          .in("phone_number", phones.slice(i, i + 100))
-          .neq("id", user?.id || "");
-        if (profiles) {
-          profiles.forEach((p: any) => {
-            foundPhones.add(p.phone_number);
-            foundProfiles.push({
-              id: p.id,
-              display_name: phonebookNames.get(p.id) || phoneMap.get(p.phone_number) || p.display_name,
-              handle: p.handle,
-              avatar_url: p.avatar_url,
-              is_verified: !!p.is_verified,
-              is_organization_verified: !!p.is_organization_verified,
-              bio: p.bio ?? null,
-            });
+    if (!user) return;
+    const applyCached = (rows: LocalPhoneContact[]) => {
+      const onAfu: Contact[] = [];
+      const notAfu: NonAfuContact[] = [];
+      for (const row of rows) {
+        if (row.matched_user_id && row.matched_user_id !== user.id) {
+          onAfu.push({
+            id: row.matched_user_id,
+            display_name: phonebookNames.get(row.matched_user_id) || row.name,
+            handle: row.matched_handle || "",
+            avatar_url: row.matched_avatar_url,
+            is_verified: row.matched_is_verified,
+            is_organization_verified: row.matched_is_organization_verified,
+            bio: row.matched_bio,
           });
+        } else if (!row.matched_user_id) {
+          notAfu.push({ key: row.key, name: row.name, phone: row.phone });
         }
       }
-      foundProfiles.sort((a, b) => a.display_name.localeCompare(b.display_name));
-      setPhoneOnAfu(foundProfiles);
-
-      const notFound: NonAfuContact[] = [];
-      for (const [phone, name] of phoneMap.entries()) {
-        if (!foundPhones.has(phone)) notFound.push({ name, phone });
-      }
-      setPhoneNotAfu(notFound.slice(0, 200));
-    } catch {}
-  }, [user]);
+      setPhoneOnAfu(onAfu);
+      setPhoneNotAfu(notAfu);
+    };
+    applyCached(await getLocalPhoneContacts());
+    void syncPhoneContacts(user.id, applyCached, applyCached);
+  }, [user, phonebookNames]);
 
   useEffect(() => {
     loadContacts();
@@ -325,6 +269,17 @@ export default function NewChatScreen() {
 
   async function openChat(contactId: string) {
     if (!user) return;
+    if (!isOnline()) {
+      const cached = (await getLocalConversations()).find(
+        (conversation) => conversation.other_id === contactId,
+      );
+      if (cached) {
+        router.push({ pathname: "/chat/[id]", params: { id: cached.id } });
+      } else {
+        showAlert("You're offline", "This conversation will be available after you reconnect.");
+      }
+      return;
+    }
     setStarting(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const { data: chatId, error } = await supabase.rpc(
@@ -601,11 +556,8 @@ export default function NewChatScreen() {
                       INVITE FRIENDS — {phoneNotAfu.length}
                     </Text>
                   </View>
-                  {phoneNotAfu
-                    .slice()
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                    .map((item) => (
-                      <View key={item.phone} style={[styles.contactRow, { backgroundColor: colors.surface }]}>
+                  {phoneNotAfu.map((item) => (
+                      <View key={item.key} style={[styles.contactRow, { backgroundColor: colors.surface }]}>
                         <View style={[styles.avatarWrap, { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.backgroundSecondary, alignItems: "center", justifyContent: "center" }]}>
                           <Ionicons name="person" size={22} color={colors.textMuted} />
                         </View>
@@ -615,7 +567,7 @@ export default function NewChatScreen() {
                         </View>
                         <TouchableOpacity
                           style={[styles.inviteBtn, { borderColor: accent }]}
-                          onPress={() => sendInvite(item.name, item.phone)}
+                          onPress={() => sendPhoneInvite(item.name, item.phone)}
                           activeOpacity={0.7}
                         >
                           <Text style={[styles.inviteBtnText, { color: accent }]}>Invite</Text>
@@ -744,8 +696,8 @@ function ListHeader({
           <View style={[styles.sectionHeader, { backgroundColor: colors.backgroundSecondary }]}>
             <Text style={[styles.sectionTitle, { color: accent }]}>FROM YOUR CONTACTS</Text>
           </View>
-          {phoneOnAfu.map((c, i) => (
-            <View key={c.id}>
+            {phoneOnAfu.map((c, i) => (
+            <View key={`${c.id}:${i}`}>
               <TouchableOpacity
                 style={[styles.contactRow, { backgroundColor: colors.surface }]}
                 onPress={() => onPhoneContactPress(c)}
