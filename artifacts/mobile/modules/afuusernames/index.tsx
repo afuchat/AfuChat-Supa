@@ -211,6 +211,7 @@ function ListHandleSheet({
   onClose,
   onDone,
   colors,
+  suggestedPrice,
 }: {
   visible: boolean;
   handle?: string | null;
@@ -218,6 +219,7 @@ function ListHandleSheet({
   onClose: () => void;
   onDone: () => void;
   colors: any;
+  suggestedPrice: number;
 }) {
   const [price, setPrice] = useState("");
   const [auction, setAuction] = useState(false);
@@ -226,12 +228,12 @@ function ListHandleSheet({
 
   useEffect(() => {
     if (visible) {
-      setPrice("");
+      setPrice(String(suggestedPrice));
       setAuction(false);
       setDuration("168");
       setBusy(false);
     }
-  }, [visible]);
+  }, [visible, suggestedPrice]);
 
   const submit = async () => {
     if (!userId) {
@@ -297,6 +299,9 @@ function ListHandleSheet({
           />
           <Text style={[styles.suffix, { color: colors.textMuted }]}>ACoin</Text>
         </View>
+        <Text style={[styles.priceHint, { color: colors.textMuted }]}>
+          Suggested from handle rarity and current market prices: <Text style={{ color: colors.accent, fontFamily: "Inter_700Bold" }}>{money(suggestedPrice)} ACoin</Text>
+        </Text>
         <View style={styles.saleModeRow}>
           <Pressable onPress={() => setAuction(false)} style={[styles.saleMode, { backgroundColor: !auction ? colors.accent : colors.inputBg }]}><Ionicons name="flash-outline" size={15} color={!auction ? "#fff" : colors.textMuted} /><Text style={[styles.saleModeText, { color: !auction ? "#fff" : colors.textMuted }]}>Buy now</Text></Pressable>
           <Pressable onPress={() => setAuction(true)} style={[styles.saleMode, { backgroundColor: auction ? Colors.gold : colors.inputBg }]}><Ionicons name="hammer-outline" size={15} color={auction ? "#fff" : colors.textMuted} /><Text style={[styles.saleModeText, { color: auction ? "#fff" : colors.textMuted }]}>Auction</Text></Pressable>
@@ -528,6 +533,13 @@ export default function AfuUsernamesApp() {
   }, [listings, tab, user?.id]);
   const auctionCount = listings.filter((item) => item.is_auction).length;
   const sellerListingCount = listings.filter((item) => item.seller_id === user?.id).length;
+  const suggestedPrice = useMemo(() => {
+    const comparable = listings.filter((item) => !item.is_auction && item.seller_id !== user?.id).map((item) => item.price).filter((value) => Number.isFinite(value) && value > 0);
+    const median = comparable.length ? [...comparable].sort((a, b) => a - b)[Math.floor(comparable.length / 2)] : 100;
+    const handle = (profile?.handle || "").replace(/^@/, "").toLowerCase();
+    const rarityMultiplier = handle.length <= 4 ? 2.5 : handle.length <= 6 ? 1.6 : handle.includes("_") ? 0.8 : 1;
+    return Math.max(10, Math.round((median * rarityMultiplier) / 10) * 10);
+  }, [listings, profile?.handle, user?.id]);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -670,6 +682,7 @@ export default function AfuUsernamesApp() {
         onClose={() => setListVisible(false)}
         onDone={() => void load(true)}
         colors={colors}
+        suggestedPrice={suggestedPrice}
       />
       <BidSheet item={selectedBid} visible={!!selectedBid} onClose={() => setSelectedBid(null)} onDone={() => void load(true)} colors={colors} />
     </View>
@@ -742,6 +755,7 @@ const styles = StyleSheet.create({
   inputField: { minHeight: 48, borderRadius: 12, paddingHorizontal: 13, flexDirection: "row", alignItems: "center", gap: 9 },
   input: { flex: 1, minHeight: 48, fontSize: 15, fontFamily: "Inter_400Regular" },
   suffix: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  priceHint: { fontSize: 11, lineHeight: 16, fontFamily: "Inter_400Regular" },
   saleModeRow: { flexDirection: "row", gap: 8, marginTop: 2 },
   saleMode: { flex: 1, minHeight: 42, borderRadius: 11, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
   saleModeText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
