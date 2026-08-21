@@ -37,6 +37,7 @@ import {
   getAllPhonebookNames,
 } from "@/lib/storage/localContacts";
 import {
+  isValidInternationalPhoneNumber,
   sendPhoneInvite,
   syncPhoneContacts,
 } from "@/lib/phoneContacts";
@@ -46,6 +47,7 @@ import {
 } from "@/lib/storage/localPhoneContacts";
 import { createLocalNotesConversation, LOCAL_NOTES_NAME } from "@/lib/storage/localNotes";
 import { getLocalConversations } from "@/lib/storage/localConversations";
+import InviteOptionsSheet from "@/components/InviteOptionsSheet";
 
 type Contact = {
   id: string;
@@ -57,7 +59,7 @@ type Contact = {
   bio: string | null;
 };
 
-type NonAfuContact = Pick<LocalPhoneContact, "key" | "name" | "phone">;
+type NonAfuContact = Pick<LocalPhoneContact, "key" | "name" | "phone" | "normalized_phone">;
 
 
 type SearchResult = Contact & { _searching?: boolean };
@@ -85,6 +87,7 @@ export default function NewChatScreen() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [phoneNotAfu, setPhoneNotAfu] = useState<NonAfuContact[]>([]);
+  const [inviteTarget, setInviteTarget] = useState<NonAfuContact | null>(null);
   const [selected, setSelected] = useState<Map<string, Contact>>(new Map());
   const [starting, setStarting] = useState(false);
   const [groups, setGroups] = useState<GroupItem[]>([]);
@@ -104,7 +107,13 @@ export default function NewChatScreen() {
       if (!background) {
         const local = await getLocalContacts();
         if (local.length > 0) {
-          setContacts(local);
+          setContacts(
+            local
+              .filter((contact) => contact.id !== user.id)
+              .sort((a, b) =>
+              a.display_name.localeCompare(b.display_name, undefined, { sensitivity: "base" }),
+              ),
+          );
           setLoading(false);
         }
       }
@@ -126,9 +135,9 @@ export default function NewChatScreen() {
         if (followRows) {
           const list = followRows
             .map((f: any) => f.profiles)
-            .filter(Boolean)
+            .filter((profile: Contact | null): profile is Contact => !!profile && profile.id !== user.id)
             .sort((a: Contact, b: Contact) =>
-              a.display_name.localeCompare(b.display_name)
+              a.display_name.localeCompare(b.display_name, undefined, { sensitivity: "base" }),
             );
           setContacts(list);
           saveLocalContacts(list).catch(() => {});
@@ -188,6 +197,8 @@ export default function NewChatScreen() {
       const seenUsers = new Set<string>();
       const seenInvitePhones = new Set<string>();
       for (const row of rows) {
+        // Do not render stale or incomplete cached phonebook rows.
+        if (!isValidInternationalPhoneNumber(row.normalized_phone)) continue;
         if (row.matched_user_id && row.matched_user_id !== user.id) {
           if (seenUsers.has(row.matched_user_id)) continue;
           seenUsers.add(row.matched_user_id);
@@ -203,11 +214,24 @@ export default function NewChatScreen() {
         } else if (!row.matched_user_id) {
           if (seenInvitePhones.has(row.normalized_phone)) continue;
           seenInvitePhones.add(row.normalized_phone);
-          notAfu.push({ key: row.key, name: row.name, phone: row.phone });
+          notAfu.push({
+            key: row.key,
+            name: row.name,
+            phone: row.phone,
+            normalized_phone: row.normalized_phone,
+          });
         }
       }
-      setPhoneOnAfu(onAfu);
-      setPhoneNotAfu(notAfu);
+       setPhoneOnAfu(
+         onAfu.sort((a, b) =>
+           a.display_name.localeCompare(b.display_name, undefined, { sensitivity: "base" }),
+         ),
+       );
+       setPhoneNotAfu(
+         notAfu.sort((a, b) =>
+           a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+         ),
+       );
     };
     applyCached(await getLocalPhoneContacts());
     void syncPhoneContacts(user.id, applyCached, applyCached);
@@ -228,7 +252,9 @@ export default function NewChatScreen() {
 
     const q = query.trim().toLowerCase();
     const phoneUserIds = new Set(phoneOnAfu.map((contact) => contact.id));
-    const visibleContacts = contacts.filter((contact) => !phoneUserIds.has(contact.id));
+    const visibleContacts = contacts.filter(
+      (contact) => contact.id !== user?.id && !phoneUserIds.has(contact.id),
+    );
     const inContacts = visibleContacts.filter(
       (c) =>
         c.display_name.toLowerCase().includes(q) ||
@@ -277,6 +303,12 @@ export default function NewChatScreen() {
 
   async function openChat(contactId: string) {
     if (!user) return;
+    // The user's own profile is not a regular contact. Keep self-chat logic
+    // entirely in the device-only My Notes conversation.
+    if (contactId === user.id) {
+      await openMyNotes();
+      return;
+    }
     if (!isOnline()) {
       const cached = (await getLocalConversations()).find(
         (conversation) => conversation.other_id === contactId,
@@ -299,12 +331,9 @@ export default function NewChatScreen() {
       showAlert("Error", "Could not start conversation. Please try again.");
       return;
     }
-    const isSelfChat = contactId === user.id;
     router.push({
       pathname: "/chat/[id]",
-      params: isSelfChat
-        ? { id: chatId, otherId: user.id, otherName: "My Notes" }
-        : { id: chatId },
+      params: { id: chatId },
     });
   }
 
@@ -482,7 +511,7 @@ export default function NewChatScreen() {
         ) : (
           /* ── Normal (non-search) view ── */
           <FlatList
-            data={loading ? [] : contacts.filter((contact) => !phoneOnAfu.some((phone) => phone.id === contact.id))}
+            data={loading ? [] : contacts.filter((contact) => contact.id !== user?.id && !phoneOnAfu.some((phone) => phone.id === contact.id))}
             keyExtractor={(item) => item.id}
             style={{ flex: 1 }}
             keyboardShouldPersistTaps="handled"
@@ -513,7 +542,7 @@ export default function NewChatScreen() {
                   }
                 }}
                 phonebookNames={phonebookNames}
-                contactCount={contacts.filter((contact) => !phoneOnAfu.some((phone) => phone.id === contact.id)).length}
+                contactCount={contacts.filter((contact) => contact.id !== user?.id && !phoneOnAfu.some((phone) => phone.id === contact.id)).length}
                 groups={groups}
                 channels={channels}
                 onGroupPress={(g) => router.push({ pathname: "/chat/[id]", params: { id: g.id } } as any)}
@@ -574,11 +603,12 @@ export default function NewChatScreen() {
                           <Text style={[styles.contactHandle, { color: colors.textMuted }]} numberOfLines={1}>{item.phone}</Text>
                         </View>
                         <TouchableOpacity
-                          style={[styles.inviteBtn, { borderColor: accent }]}
-                          onPress={() => sendPhoneInvite(item.name, item.phone)}
+                          style={[styles.inviteButton, { backgroundColor: accent }]}
+                          onPress={() => setInviteTarget(item)}
                           activeOpacity={0.7}
                         >
-                          <Text style={[styles.inviteBtnText, { color: accent }]}>Invite</Text>
+                          <Ionicons name="paper-plane" size={14} color="#fff" />
+                          <Text style={styles.inviteButtonText}>Invite</Text>
                         </TouchableOpacity>
                       </View>
                     ))}
@@ -627,6 +657,19 @@ export default function NewChatScreen() {
             <ActivityIndicator color={accent} size="large" />
           </View>
         )}
+        <InviteOptionsSheet
+          visible={!!inviteTarget}
+          onClose={() => setInviteTarget(null)}
+          onWhatsApp={() => {
+            if (inviteTarget) void sendPhoneInvite(inviteTarget.normalized_phone, "whatsapp");
+          }}
+          onTelegram={() => {
+            if (inviteTarget) void sendPhoneInvite(inviteTarget.normalized_phone, "telegram");
+          }}
+          onSms={() => {
+            if (inviteTarget) void sendPhoneInvite(inviteTarget.normalized_phone, "sms");
+          }}
+        />
       </View>
     </View>
   );
@@ -1084,6 +1127,17 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   inviteBtnText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  inviteButton: {
+    minWidth: 78,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 13,
+  },
+  inviteButtonText: { color: "#fff", fontSize: 11, fontFamily: "Inter_700Bold" },
 
   scrubber: {
     width: 18,

@@ -1,4 +1,4 @@
-import { Platform, Linking, Share } from "react-native";
+import { Linking, Platform, Share } from "react-native";
 import { parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
 import { supabase } from "@/lib/supabase";
 import { isOnline } from "@/lib/offlineStore";
@@ -13,8 +13,8 @@ import {
 export const AFUCHAT_DOWNLOAD_URL =
   "https://play.google.com/store/apps/details?id=com.afuchat.afuapp";
 
-export const AFUCHAT_INVITE_MESSAGE = (name: string) =>
-  `Hi ${name}, join me on AfuChat: ${AFUCHAT_DOWNLOAD_URL}`;
+export const AFUCHAT_INVITE_MESSAGE =
+  `Hey! I’m using AfuChat to stay connected through messaging, calls, and sharing. Join me there so we can connect on AfuChat: ${AFUCHAT_DOWNLOAD_URL}`;
 
 function countryRegion(value: unknown): CountryCode | undefined {
   if (typeof value !== "string") return undefined;
@@ -32,13 +32,16 @@ export function normalizePhoneNumber(raw: string, region?: unknown): string {
   if (!value) return "";
 
   const parsed = parsePhoneNumberFromString(value, countryRegion(region));
-  if (parsed?.number) return parsed.number;
+  // Never invent a country code for a local or malformed number. A guessed
+  // "+digits" value can point WhatsApp at a completely different person.
+  if (!parsed || !parsed.isPossible() || !parsed.isValid()) return "";
+  return parsed.number;
+}
 
-  const digits = value.replace(/\D/g, "");
-  if (!digits) return "";
-  if (digits.startsWith("00")) return `+${digits.slice(2)}`;
-  if (value.startsWith("+")) return `+${digits}`;
-  return `+${digits}`;
+export function isValidInternationalPhoneNumber(value: string): boolean {
+  const normalized = value.trim();
+  return normalized.startsWith("+")
+    && normalizePhoneNumber(normalized) === normalized;
 }
 
 async function readDevicePhoneContacts(): Promise<{
@@ -139,14 +142,28 @@ export async function syncPhoneContacts(
   return "granted";
 }
 
-export async function sendPhoneInvite(name: string, phone: string): Promise<void> {
-  const message = AFUCHAT_INVITE_MESSAGE(name);
+export async function sendPhoneInvite(
+  normalizedPhone: string,
+  method: "whatsapp" | "telegram" | "sms",
+): Promise<void> {
+  const digits = normalizedPhone.replace(/\D/g, "").replace(/^00/, "");
+  const encodedMessage = encodeURIComponent(AFUCHAT_INVITE_MESSAGE);
+  const urls = {
+    whatsapp: `whatsapp://send?phone=${digits}&text=${encodedMessage}`,
+    telegram: `tg://msg_url?url=${encodeURIComponent(AFUCHAT_DOWNLOAD_URL)}&text=${encodedMessage}`,
+    sms: `sms:${normalizedPhone}?body=${encodedMessage}`,
+  };
+
   try {
-    const smsUrl = `sms:${phone}?body=${encodeURIComponent(message)}`;
-    if (await Linking.canOpenURL(smsUrl)) {
-      await Linking.openURL(smsUrl);
+    if (await Linking.canOpenURL(urls[method])) {
+      await Linking.openURL(urls[method]);
       return;
     }
   } catch {}
-  await Share.share({ message, title: "Join AfuChat" });
+
+  // Web and devices without the selected app still get a native fallback.
+  await Share.share(
+    { message: AFUCHAT_INVITE_MESSAGE },
+    { dialogTitle: "Invite someone to AfuChat", subject: "Join me on AfuChat" },
+  );
 }

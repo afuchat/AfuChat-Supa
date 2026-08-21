@@ -17,10 +17,11 @@ import { supabase } from "@/lib/supabase";
 import { Avatar } from "@/components/ui/Avatar";
 import { PrestigeBadge } from "@/components/ui/PrestigeBadge";
 import { usePhoneContacts } from "@/lib/usePhoneContacts";
-import { sendPhoneInvite } from "@/lib/phoneContacts";
+import { isValidInternationalPhoneNumber, sendPhoneInvite } from "@/lib/phoneContacts";
 import { isOnline } from "@/lib/offlineStore";
 import { getLocalConversations } from "@/lib/storage/localConversations";
 import { showAlert } from "@/lib/alert";
+import InviteOptionsSheet from "@/components/InviteOptionsSheet";
 
 type AfuContact = {
   id: string;
@@ -36,6 +37,7 @@ type NonAfuContact = {
   key: string;
   name: string;
   phone: string;
+  normalized_phone: string;
 };
 
 export default function PhoneContactsScreen() {
@@ -46,6 +48,7 @@ export default function PhoneContactsScreen() {
   const [state, setState] = useState<"idle" | "loading" | "done" | "denied">("idle");
   const [onAfuChat, setOnAfuChat] = useState<AfuContact[]>([]);
   const [notOnAfuChat, setNotOnAfuChat] = useState<NonAfuContact[]>([]);
+  const [inviteTarget, setInviteTarget] = useState<NonAfuContact | null>(null);
 
   const findContacts = useCallback(async () => {
     setState(permission === "denied" ? "denied" : "done");
@@ -58,6 +61,9 @@ export default function PhoneContactsScreen() {
     const seenUsers = new Set<string>();
     const seenInvitePhones = new Set<string>();
     for (const row of cachedContacts) {
+      // Cached data can predate the strict scanner. Never show rows without
+      // a valid full international number, even during refresh.
+      if (!isValidInternationalPhoneNumber(row.normalized_phone)) continue;
       if (row.matched_user_id && row.matched_user_id !== user?.id) {
         if (seenUsers.has(row.matched_user_id)) continue;
         seenUsers.add(row.matched_user_id);
@@ -73,11 +79,24 @@ export default function PhoneContactsScreen() {
       } else if (!row.matched_user_id) {
         if (seenInvitePhones.has(row.normalized_phone)) continue;
         seenInvitePhones.add(row.normalized_phone);
-        notFound.push({ key: row.key, name: row.name, phone: row.phone });
+        notFound.push({
+          key: row.key,
+          name: row.name,
+          phone: row.phone,
+          normalized_phone: row.normalized_phone,
+        });
       }
     }
-    setOnAfuChat(found);
-    setNotOnAfuChat(notFound);
+    setOnAfuChat(
+      found.sort((a, b) =>
+        a.display_name.localeCompare(b.display_name, undefined, { sensitivity: "base" }),
+      ),
+    );
+    setNotOnAfuChat(
+      notFound.sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+      ),
+    );
     if (cachedContacts.length > 0 || permission !== "idle") {
       setState(permission === "denied" ? "denied" : "done");
     }
@@ -206,10 +225,11 @@ export default function PhoneContactsScreen() {
                         <Text style={[styles.handle, { color: colors.textMuted }]}>{item.phone}</Text>
                       </View>
                       <TouchableOpacity
-                        style={[styles.actionBtn, { backgroundColor: colors.backgroundSecondary, borderWidth: 1.5, borderColor: colors.accent }]}
-                        onPress={() => sendPhoneInvite(item.name, item.phone)}
+                        style={[styles.inviteButton, { backgroundColor: colors.accent }]}
+                        onPress={() => setInviteTarget(item)}
                       >
-                        <Ionicons name="share" size={16} color={colors.accent} />
+                        <Ionicons name="paper-plane" size={15} color="#fff" />
+                        <Text style={styles.inviteButtonText}>Invite</Text>
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -223,6 +243,19 @@ export default function PhoneContactsScreen() {
           contentContainerStyle={{ paddingBottom: 40 }}
         />
       )}
+      <InviteOptionsSheet
+        visible={!!inviteTarget}
+        onClose={() => setInviteTarget(null)}
+        onWhatsApp={() => {
+          if (inviteTarget) void sendPhoneInvite(inviteTarget.normalized_phone, "whatsapp");
+        }}
+        onTelegram={() => {
+          if (inviteTarget) void sendPhoneInvite(inviteTarget.normalized_phone, "telegram");
+        }}
+        onSms={() => {
+          if (inviteTarget) void sendPhoneInvite(inviteTarget.normalized_phone, "sms");
+        }}
+      />
     </View>
   );
 }
@@ -274,6 +307,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  inviteButton: {
+    minWidth: 82,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  inviteButtonText: { color: "#fff", fontSize: 12, fontFamily: "Inter_700Bold" },
   avatarPlaceholder: {
     width: 48,
     height: 48,
