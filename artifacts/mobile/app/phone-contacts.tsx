@@ -21,7 +21,6 @@ import { isValidInternationalPhoneNumber, sendPhoneInvite } from "@/lib/phoneCon
 import { isOnline } from "@/lib/offlineStore";
 import { getLocalConversations } from "@/lib/storage/localConversations";
 import { showAlert } from "@/lib/alert";
-import InviteOptionsSheet from "@/components/InviteOptionsSheet";
 
 type AfuContact = {
   id: string;
@@ -48,7 +47,6 @@ export default function PhoneContactsScreen() {
   const [state, setState] = useState<"idle" | "loading" | "done" | "denied">("idle");
   const [onAfuChat, setOnAfuChat] = useState<AfuContact[]>([]);
   const [notOnAfuChat, setNotOnAfuChat] = useState<NonAfuContact[]>([]);
-  const [inviteTarget, setInviteTarget] = useState<NonAfuContact | null>(null);
 
   const findContacts = useCallback(async () => {
     setState(permission === "denied" ? "denied" : "done");
@@ -108,7 +106,7 @@ export default function PhoneContactsScreen() {
         <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Phone Contacts</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Invite Contacts</Text>
         <TouchableOpacity onPress={findContacts} hitSlop={12}>
           <Ionicons name="refresh" size={22} color={colors.accent} />
         </TouchableOpacity>
@@ -226,7 +224,9 @@ export default function PhoneContactsScreen() {
                       </View>
                       <TouchableOpacity
                         style={[styles.inviteButton, { backgroundColor: colors.accent }]}
-                        onPress={() => setInviteTarget(item)}
+                        onPress={() => {
+                          void sendPhoneInvite(item.normalized_phone);
+                        }}
                       >
                         <Ionicons name="paper-plane" size={15} color="#fff" />
                         <Text style={styles.inviteButtonText}>Invite</Text>
@@ -243,19 +243,6 @@ export default function PhoneContactsScreen() {
           contentContainerStyle={{ paddingBottom: 40 }}
         />
       )}
-      <InviteOptionsSheet
-        visible={!!inviteTarget}
-        onClose={() => setInviteTarget(null)}
-        onWhatsApp={() => {
-          if (inviteTarget) void sendPhoneInvite(inviteTarget.normalized_phone, "whatsapp");
-        }}
-        onTelegram={() => {
-          if (inviteTarget) void sendPhoneInvite(inviteTarget.normalized_phone, "telegram");
-        }}
-        onSms={() => {
-          if (inviteTarget) void sendPhoneInvite(inviteTarget.normalized_phone, "sms");
-        }}
-      />
     </View>
   );
 }

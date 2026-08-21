@@ -1,4 +1,4 @@
-import { Linking, Platform, Share } from "react-native";
+import { Linking, Platform } from "react-native";
 import { parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
 import { supabase } from "@/lib/supabase";
 import { isOnline } from "@/lib/offlineStore";
@@ -142,28 +142,31 @@ export async function syncPhoneContacts(
   return "granted";
 }
 
-export async function sendPhoneInvite(
-  normalizedPhone: string,
-  method: "whatsapp" | "telegram" | "sms",
-): Promise<void> {
-  const digits = normalizedPhone.replace(/\D/g, "").replace(/^00/, "");
+/**
+ * Opens the native SMS composer addressed directly to a validated phone
+ * number. Invites intentionally do not use share sheets or app-specific
+ * deep links: the Invite action is always a direct-number invite.
+ */
+export async function sendPhoneInvite(normalizedPhone: string): Promise<void> {
+  if (!isValidInternationalPhoneNumber(normalizedPhone)) {
+    return;
+  }
+
   const encodedMessage = encodeURIComponent(AFUCHAT_INVITE_MESSAGE);
-  const urls = {
-    whatsapp: `whatsapp://send?phone=${digits}&text=${encodedMessage}`,
-    telegram: `tg://msg_url?url=${encodeURIComponent(AFUCHAT_DOWNLOAD_URL)}&text=${encodedMessage}`,
-    sms: `sms:${normalizedPhone}?body=${encodedMessage}`,
-  };
+  const smsUrl = `sms:${normalizedPhone}?body=${encodedMessage}`;
 
   try {
-    if (await Linking.canOpenURL(urls[method])) {
-      await Linking.openURL(urls[method]);
+    if (await Linking.canOpenURL(smsUrl)) {
+      await Linking.openURL(smsUrl);
       return;
     }
   } catch {}
 
-  // Web and devices without the selected app still get a native fallback.
-  await Share.share(
-    { message: AFUCHAT_INVITE_MESSAGE },
-    { dialogTitle: "Invite someone to AfuChat", subject: "Join me on AfuChat" },
-  );
+  // Some Android builds reject canOpenURL for SMS even when the composer is
+  // available, so try the direct URI once more before reporting the failure.
+  try {
+    await Linking.openURL(smsUrl);
+  } catch {
+    // Keep the invite action quiet when no SMS app is configured.
+  }
 }
