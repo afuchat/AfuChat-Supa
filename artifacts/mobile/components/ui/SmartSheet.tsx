@@ -16,6 +16,7 @@ import React, {
 import {
   Animated,
   Easing,
+  KeyboardAvoidingView,
   Modal,
   PanResponder,
   Platform,
@@ -239,22 +240,29 @@ export function SmartSheet({
         </View>
 
         {/* Scrollable content area */}
-        <ScrollView
-          ref={scrollRef}
+        <KeyboardAvoidingView
           style={{ flex: 1 }}
-          contentContainerStyle={{ flexGrow: 1 }}
-          scrollEnabled={isFull}
-          bounces={false}
-          showsVerticalScrollIndicator={false}
-          onScroll={(e) => {
-            scrollYRef.current = e.nativeEvent.contentOffset.y;
-          }}
-          onScrollEndDrag={handleScrollEndDrag}
-          scrollEventThrottle={16}
-          keyboardShouldPersistTaps="handled"
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
         >
-          {children}
-        </ScrollView>
+          <ScrollView
+            ref={scrollRef}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }}
+            scrollEnabled={isFull}
+            bounces={false}
+            showsVerticalScrollIndicator={false}
+            onScroll={(e) => {
+              scrollYRef.current = e.nativeEvent.contentOffset.y;
+            }}
+            onScrollEndDrag={handleScrollEndDrag}
+            scrollEventThrottle={16}
+            keyboardShouldPersistTaps="handled"
+            automaticallyAdjustKeyboardInsets
+          >
+            {children}
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Animated.View>
     </Modal>
   );
