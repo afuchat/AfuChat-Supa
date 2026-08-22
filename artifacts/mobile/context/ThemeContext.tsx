@@ -13,14 +13,14 @@ type ThemeContextType = {
 };
 
 const ThemeContext = createContext<ThemeContextType>({
-  themeMode: "dark",
-  isDark: true,
+  themeMode: "system",
+  isDark: Appearance.getColorScheme() === "dark",
   setThemeMode: () => {},
   setForceDark: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themeMode, setThemeModeState] = useState<ThemeMode>("dark");
+  const [themeMode, setThemeModeState] = useState<ThemeMode>("system");
   const [systemScheme, setSystemScheme] = useState<ColorSchemeName>(Appearance.getColorScheme());
   const [forceDark, setForceDarkState] = useState(false);
 
@@ -46,7 +46,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setForceDarkState(v);
   }, []);
 
-  const isDark = forceDark || (themeMode === "system" ? systemScheme !== "light" : themeMode === "dark");
+  // System is the default: an unknown scheme follows the safer light palette
+  // instead of making the app appear dark on devices without a reported scheme.
+  const isDark = forceDark || (themeMode === "system" ? systemScheme === "dark" : themeMode === "dark");
 
   return (
     <ThemeContext.Provider value={{ themeMode, isDark, setThemeMode, setForceDark }}>
