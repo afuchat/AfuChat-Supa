@@ -3,7 +3,7 @@
  *
  * JS-side splash overlay shown while fonts and assets load.
  *
- * Dark theme  → logo_white.webp  on black  (#000000)
+ * Dark theme  → notification-icon.png  on black  (#000000)
  * Light theme → logo_black.webp  on cream  (#F5F0E8)
  *
  * Fades out quickly once `ready` becomes true, then calls `onDone`
@@ -23,7 +23,7 @@ import {
 import { Image } from "expo-image";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const LOGO_WHITE = require("@/assets/images/logo_white.webp");
+const LOGO_WHITE = require("@/assets/images/notification-icon.png");
 const LOGO_BLACK = require("@/assets/images/logo_black.webp");
 
 const { width } = Dimensions.get("window");
