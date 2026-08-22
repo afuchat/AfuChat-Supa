@@ -22,8 +22,9 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { parseInviteCode, generateGroupInviteLink } from "@/lib/groupInvite";
+import Colors from "@/constants/colors";
 
-const BRAND = "#1f95ff";
+const BRAND = Colors.brand;
 
 type GroupInfo = {
   id: string;

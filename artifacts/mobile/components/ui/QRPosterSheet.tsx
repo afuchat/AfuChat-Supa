@@ -23,6 +23,7 @@ import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import AfuLogo from "@/components/ui/AfuLogo";
 import { useTheme } from "@/hooks/useTheme";
 import { SmartSheet } from "@/components/ui/SmartSheet";
+import Colors from "@/constants/colors";
 
 let ViewShot: any = ({ children, style, ...rest }: any) => <View style={style} {...rest}>{children}</View>;
 let captureRef: ((ref: any, opts?: any) => Promise<string>) | null = null;
@@ -35,7 +36,7 @@ try {
 let MediaLibrary: any = null;
 try { MediaLibrary = require("expo-media-library"); } catch (_) {}
 
-const BRAND = "#1f95ff";
+const BRAND = Colors.brand;
 
 type Props = {
   visible: boolean;

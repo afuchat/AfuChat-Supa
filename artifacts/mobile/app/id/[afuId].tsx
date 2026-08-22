@@ -2,9 +2,10 @@ import React, { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { supabase } from "@/lib/supabase";
+import Colors from "@/constants/colors";
 
 const DARK_BG = "#0a0f1a";
-const BRAND = "#1f95ff";
+const BRAND = Colors.brand;
 
 export default function IdLandingPage() {
   const { afuId } = useLocalSearchParams<{ afuId: string }>();

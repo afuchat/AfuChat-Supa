@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/hooks/useTheme";
 import { showAlert } from "@/lib/alert";
+import Colors from "@/constants/colors";
 
 type Step = "email" | "code";
 
@@ -72,7 +73,7 @@ export default function ResetPasswordNative() {
     }
   }
 
-  const accent = "#1f95ff";
+  const accent = Colors.brand;
 
   return (
     <KeyboardAvoidingView

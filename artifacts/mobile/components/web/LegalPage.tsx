@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Colors from "@/constants/colors";
 
 type LegalPageKind = "terms" | "privacy" | "account-deletion";
 
@@ -19,7 +20,7 @@ type Section = {
   bullets?: string[];
 };
 
-const BRAND = "#1f95ff";
+const BRAND = Colors.brand;
 const INK = "#102033";
 const MUTED = "#607086";
 const BORDER = "#e5ebf2";

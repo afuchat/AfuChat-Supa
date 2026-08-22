@@ -25,8 +25,9 @@ import * as Haptics from "@/lib/haptics";
 import { queryCacheReadSync, queryCacheFetch, queryCacheWrite, queryCacheInvalidate } from "@/lib/storage/queryCache";
 import { useThrottledFocusEffect } from "@/lib/hooks/useThrottledFocusEffect";
 import { prefetchAvatars } from "@/lib/storage/imagePrefetcher";
+import Colors from "@/constants/colors";
 
-const BRAND = "#1f95ff";
+const BRAND = Colors.brand;
 const PURPLE = "#8B5CF6";
 
 // 3-minute stale window — communities don't change that fast

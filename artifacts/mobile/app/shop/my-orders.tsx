@@ -20,7 +20,8 @@ import { useTheme } from "@/hooks/useTheme";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { supabase } from "@/lib/supabase";
 import { ShopOrder, ORDER_STATUS_LABELS, ESCROW_STATUS_LABELS, getBuyerOrders, formatShopAcoin } from "@/lib/shop";
-const BRAND = "#1f95ff";
+import Colors from "@/constants/colors";
+const BRAND = Colors.brand;
 const GOLD = "#D4A853";
 
 type OrderFilter = "all" | "active" | "delivered" | "disputed" | "refunded";

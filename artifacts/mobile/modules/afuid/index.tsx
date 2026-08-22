@@ -28,7 +28,7 @@ let ViewShot: any = ({ children, style, ...rest }: any) => (
 );
 try { ViewShot = require("react-native-view-shot").default; } catch (_) {}
 
-const BRAND = "#1f95ff";
+const BRAND = Colors.brand;
 const CEO_HANDLE = "amkaweesi";
 
 type MemberRole = "ceo" | "staff" | "member";

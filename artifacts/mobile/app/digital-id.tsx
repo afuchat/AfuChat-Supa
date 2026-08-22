@@ -28,7 +28,7 @@ import AfuLogo from "@/components/ui/AfuLogo";
 let ViewShot: any = ({ children, style, ...rest }: any) => <View style={style} {...rest}>{children}</View>;
 try { ViewShot = require("react-native-view-shot").default; } catch (_) {}
 
-const BRAND = "#1f95ff";
+const BRAND = Colors.brand;
 const CEO_HANDLE = "amkaweesi";
 
 type MemberRole = "ceo" | "staff" | "member";

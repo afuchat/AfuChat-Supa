@@ -3,9 +3,10 @@
 // Import `Colors` (default) for raw palette values.
 // Import `useTheme()` for the live, resolved theme object inside components.
 
-const BRAND        = "#1f95ff";   // primary brand — all interactive elements
-const BRAND_DARK   = "#1a7fd4";   // pressed / darker variant of brand
-const BRAND_BLUE   = "#1677FF";   // alternate blue (legacy alias)
+// Sampled from the dominant blue in the supplied AfuChat app icon.
+const BRAND        = "#0115D6";   // primary brand — all interactive elements
+const BRAND_DARK   = "#0003B6";   // pressed / darker variant of brand
+const BRAND_BLUE   = "#0115D6";   // compatibility alias for the icon blue
 const GOLD         = "#D4A853";   // prestige / premium / ACoin
 
 // ─── Semantic status palette (theme-independent) ──────────────────────────────
