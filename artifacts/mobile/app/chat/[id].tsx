@@ -7125,7 +7125,11 @@ STRICT RULES:
                   flex: 1,
                   backgroundColor: isDark ? "rgba(255,255,255,0.12)" : colors.inputBg,
                   borderColor: isDark ? "rgba(255,255,255,0.22)" : colors.border,
-                }, isRecording && !recLocked ? st.recHoldGlass : undefined]}>
+                 }, showAttachPanel && !attachmentPreview && selectedImages.length === 0 ? {
+                   borderTopLeftRadius: 0,
+                   borderTopRightRadius: 0,
+                   borderTopWidth: 0,
+                 } : undefined, isRecording && !recLocked ? st.recHoldGlass : undefined]}>
                   <View style={st.inputBarRow}>
                     {isRecording && !recLocked ? (
                       <>
