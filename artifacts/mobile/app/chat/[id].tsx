@@ -8802,7 +8802,7 @@ const st = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
   },
 
-  msgRow: { flexDirection: "row", paddingHorizontal: 10, marginVertical: 0 },
+  msgRow: { flexDirection: "row", paddingHorizontal: 10, marginVertical: 2 },
   msgRowMe: { justifyContent: "flex-end" },
   msgRowOther: { justifyContent: "flex-start" },
 
