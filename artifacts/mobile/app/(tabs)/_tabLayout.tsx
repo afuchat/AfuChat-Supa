@@ -163,10 +163,10 @@ function CompactTabBar({
   const [showCreatePicker, setShowCreatePicker] = useState(false);
 
   const CREATE_OPTIONS = [
-    { icon: "camera",        route: "/stories/camera" },
-    { icon: "create",        route: "/moments/create" },
-    { icon: "videocam",      route: "/moments/create-video" },
-    { icon: "document-text", route: "/moments/create-article" },
+    { icon: "camera",        label: "Story",   description: "Photo or video", route: "/stories/camera" },
+    { icon: "create",        label: "Post",    description: "Share an update", route: "/moments/create" },
+    { icon: "videocam",      label: "Video",   description: "Create a video", route: "/moments/create-video" },
+    { icon: "document-text", label: "Article", description: "Write an article", route: "/moments/create-article" },
   ];
 
   const INACTIVE_ICON  = isDark ? "rgba(255,255,255,0.50)" : "rgba(0,0,0,0.38)";
@@ -337,11 +337,17 @@ function CompactTabBar({
                   }}
                   activeOpacity={0.8}
                   accessibilityRole="button"
-                  accessibilityLabel={opt.icon}
+                  accessibilityLabel={`${opt.label}: ${opt.description}`}
                 >
                   <View style={[sheet.iconBox, { backgroundColor: colors.accent + "20" }]}>
                     <Ionicons name={opt.icon as any} size={30} color={colors.accent} />
                   </View>
+                  <Text style={[sheet.optionLabel, { color: isDark ? "#FFFFFF" : "#000000" }]}>
+                    {opt.label}
+                  </Text>
+                  <Text style={[sheet.optionDescription, { color: isDark ? "#A9A9AF" : "#6B6B73" }]}>
+                    {opt.description}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -450,7 +456,8 @@ const sheet = StyleSheet.create({
     minWidth: 64,
     alignItems: "center",
     justifyContent: "center",
-    padding: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
     borderRadius: 16,
   },
   optionsGrid: {
@@ -464,6 +471,20 @@ const sheet = StyleSheet.create({
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
+  },
+  optionLabel: {
+    marginTop: 7,
+    fontSize: 13,
+    lineHeight: 16,
+    fontFamily: "Inter_600SemiBold",
+    textAlign: "center",
+  },
+  optionDescription: {
+    marginTop: 2,
+    fontSize: 10,
+    lineHeight: 13,
+    fontFamily: "Inter_400Regular",
+    textAlign: "center",
   },
 });
 

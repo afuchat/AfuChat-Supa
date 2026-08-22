@@ -913,10 +913,10 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                 <Ionicons
                   name={item.liked ? "heart" : "heart"}
                   size={21}
-                  color={item.liked ? "#FF9500" : colors.textMuted}
+                  color={item.liked ? "#FF3B30" : colors.textMuted}
                 />
               </Animated.View>
-              <Text style={[styles.footerStatNum, { color: item.liked ? "#FF9500" : colors.textMuted }]}>
+              <Text style={[styles.footerStatNum, { color: item.liked ? "#FF3B30" : colors.textMuted }]}>
                 {formatNum(item.likeCount)}
               </Text>
             </TouchableOpacity>
