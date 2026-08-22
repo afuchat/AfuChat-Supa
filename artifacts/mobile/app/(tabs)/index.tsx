@@ -1587,17 +1587,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               </View>
             )}
           </TouchableOpacity>
-           ) : !panelMode ? (
-             <TouchableOpacity
-               onPress={openChatSearch}
-               hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-               style={styles.headerSearchButton}
-               activeOpacity={0.7}
-               accessibilityRole="button"
-               accessibilityLabel="Search chats"
-             >
-               <Ionicons name="search" size={20} color={colors.text} />
-             </TouchableOpacity>
            ) : null}
 
         {/* Title — absolutely centered so it stays in the middle
@@ -1627,7 +1616,18 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                 All
               </Text>
             </TouchableOpacity>
-          ) : null}
+           ) : (
+             <TouchableOpacity
+               onPress={openChatSearch}
+               hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+               style={styles.headerSearchButton}
+               activeOpacity={0.7}
+               accessibilityRole="button"
+               accessibilityLabel="Search chats"
+             >
+               <Ionicons name="search" size={20} color={colors.text} />
+             </TouchableOpacity>
+           )}
         </View>
       </View>
       )}
