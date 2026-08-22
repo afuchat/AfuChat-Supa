@@ -1608,11 +1608,13 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                   const _fontSize  = _perChatFont;
                   const _lineH     = _fontSize + 5;
                   const _timeStr   = formatMsgTime(msg.sent_at);
-                  const _tsWidth = (msg.edited_at ? 38 : 0) + (isMe ? 72 : 52);
+                   // Keep short messages genuinely compact. The old reservation
+                   // made "hi" and "ok" look like wide empty cards.
+                   const _tsWidth = (msg.edited_at ? 34 : 0) + (isMe ? 56 : 40);
                   // Ghost: same color as bubble background → visually invisible on all platforms.
                   // Content mirrors the real timestamp exactly plus a leading gap ("   ")
                   // so the last line of text never crowds or overlaps the timestamp.
-                  const _iconPad = isMe ? "      " : "  "; // space for checkmark icon + margins
+                   const _iconPad = isMe ? "   " : " "; // space for checkmark icon + margins
                   const ghost = (
                     <Text style={{ color: bubbleColor, fontSize: 11, fontFamily: "Inter_400Regular", includeFontPadding: false }}>
                       {"   "}{msg.edited_at ? "edited  " : ""}{_timeStr}{_iconPad}
@@ -1637,7 +1639,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                          )}
                       </TouchableOpacity>
                       {/* Real timestamp floats at bottom-right, over the invisible ghost */}
-                      <View style={[st.metaRow, { position: "absolute", bottom: 4, right: 10 }]}>
+                       <View style={[st.metaRow, { position: "absolute", bottom: 3, right: 8 }]}>
                         {msg.edited_at && (
                           <Text style={[st.msgTime, { color: isMe ? myTimeColor : colors.textMuted, marginRight: 3 }]}>edited</Text>
                         )}
@@ -8809,11 +8811,11 @@ const st = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
   },
 
-  msgRow: { flexDirection: "row", paddingHorizontal: 12, marginVertical: 0 },
+  msgRow: { flexDirection: "row", paddingHorizontal: 10, marginVertical: 0 },
   msgRowMe: { justifyContent: "flex-end" },
   msgRowOther: { justifyContent: "flex-start" },
 
-  bubbleContainer: { maxWidth: "72%", position: "relative", flexShrink: 1, minWidth: 0 },
+  bubbleContainer: { maxWidth: "78%", position: "relative", flexShrink: 1, minWidth: 0, alignSelf: "flex-start" },
   bubbleContainerMe: { alignItems: "flex-end" },
   bubbleContainerOther: { alignItems: "flex-start" },
 
@@ -8823,11 +8825,11 @@ const st = StyleSheet.create({
   tailOther: { position: "absolute", left: -12, bottom: 0, zIndex: 1 },
 
   bubble: {
-    paddingHorizontal: 10,
-    paddingTop: 6,
-    paddingBottom: 4,
+    paddingHorizontal: 8,
+    paddingTop: 5,
+    paddingBottom: 3,
     borderRadius: 18,
-    minWidth: 48,
+    minWidth: 42,
     overflow: "hidden",
     flexShrink: 1,
   },
@@ -8853,10 +8855,10 @@ const st = StyleSheet.create({
   replyTextWrap: { flex: 1, minWidth: 0, paddingHorizontal: 8, paddingVertical: 6, justifyContent: "center" },
   replyPreviewText: { fontSize: 12.5, fontFamily: "Inter_500Medium", flexShrink: 1, minWidth: 0 },
 
-  bubbleText: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 19 },
+  bubbleText: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 18 },
 
   metaRow: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", marginTop: 1, gap: 3 },
-  msgTime: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  msgTime: { fontSize: 10, fontFamily: "Inter_400Regular" },
 
   reactionsRow: {
     flexDirection: "row",
