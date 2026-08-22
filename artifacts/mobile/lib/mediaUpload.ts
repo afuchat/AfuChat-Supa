@@ -124,9 +124,15 @@ export async function prepareMediaForUpload(
     const info = await FileSystem.getInfoAsync(destination);
     if (!info.exists) throw new Error("The selected file could not be copied.");
     return destination;
-  } catch {
+  } catch (copyError: any) {
     await FileSystem.deleteAsync(destination, { idempotent: true }).catch(() => {});
-    throw new Error("Could not read the selected photo or video. Please choose it again.");
+    // Android pickers can return content:// or Expo host-cache URIs that
+    // copyAsync cannot access even though FileSystem.uploadAsync can stream
+    // them directly through the native provider. Do not reject the media at
+    // selection time; return the original URI and let uploadToStorage use its
+    // direct-stream/proxy fallbacks.
+    console.warn("[Media] Stable copy skipped; using original URI:", copyError?.message || copyError);
+    return fileUri;
   }
 }
 
