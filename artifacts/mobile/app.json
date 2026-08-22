@@ -13,8 +13,8 @@
       "package": "com.afuchat.afuapp",
       "resizeableActivity": true,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon.png",
-        "backgroundColor": "#1f95ff"
+        "foregroundImage": "./assets/images/app-icon-foreground.png",
+        "backgroundColor": "#0719D6"
       },
       "googleServicesFile": "./google-services.json",
       "permissions": [
@@ -82,12 +82,12 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#F5F0E8",
-          "image": "./assets/images/black-logo.png",
-          "imageWidth": 200,
+          "backgroundColor": "#0719D6",
+          "image": "./assets/images/icon.png",
+          "imageWidth": 180,
           "dark": {
-            "backgroundColor": "#000000",
-            "image": "./assets/images/notification-icon.png"
+            "backgroundColor": "#0719D6",
+            "image": "./assets/images/icon.png"
           }
         }
       ],

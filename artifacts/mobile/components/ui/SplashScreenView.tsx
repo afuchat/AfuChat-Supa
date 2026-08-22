@@ -3,8 +3,7 @@
  *
  * JS-side splash overlay shown while fonts and assets load.
  *
- * Dark theme  → notification-icon.png  on black  (#000000)
- * Light theme → black-logo.png  on cream  (#F5F0E8)
+ * Both themes use the protected app icon artwork on its blue background.
  *
  * Fades out quickly once `ready` becomes true, then calls `onDone`
  * so the parent can call SplashScreen.hideAsync().
@@ -23,8 +22,7 @@ import {
 import { Image } from "expo-image";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const LOGO_WHITE = require("@/assets/images/notification-icon.png");
-const LOGO_BLACK = require("@/assets/images/black-logo.png");
+const APP_ICON = require("@/assets/images/icon.png");
 
 const { width } = Dimensions.get("window");
 const LOGO_SIZE = Math.min(width * 0.32, 130);
@@ -75,12 +73,10 @@ export function SplashScreenView({ ready, onDone }: Props) {
     ]).start(() => onDoneRef.current());
   }, [ready, opacity, scale]);
 
-  // Dark  → black BG, white logo
-  // Light → cream BG, black logo
-  const bg            = isDark ? "#000000" : "#F5F0E8";
-  const wordmarkColor = isDark ? "#FFFFFF"  : "#0A0A0A";
-  const taglineColor  = isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.38)";
-  const logoSource    = isDark ? LOGO_WHITE : LOGO_BLACK;
+  const bg            = "#0719D6";
+  const wordmarkColor = "#FFFFFF";
+  const taglineColor  = "rgba(255,255,255,0.62)";
+  const logoSource    = APP_ICON;
 
   return (
     <Animated.View

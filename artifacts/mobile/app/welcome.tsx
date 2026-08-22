@@ -16,7 +16,7 @@ const IL_MESSAGING  = require("@/assets/illustrations/messaging.webp");
 const IL_COMMUNITY  = require("@/assets/illustrations/community.webp");
 const IL_AI         = require("@/assets/illustrations/ai.webp");
 const IL_WALLET     = require("@/assets/illustrations/wallet.webp");
-const LOGO_WHITE    = require("@/assets/images/notification-icon.png");
+const LOGO_WHITE    = require("@/assets/images/icon.png");
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
