@@ -1199,6 +1199,16 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     ]);
   }, [selectedIds, exitSelectMode, chats, user]);
 
+  // The confirmation alert lives in the app root, while the selection menu is
+  // a native Modal. Close the native Modal before opening the alert, otherwise
+  // the alert is mounted underneath it and the user cannot reach its buttons.
+  const handleDeleteFromSelectionMenu = useCallback(() => {
+    setSelectionMenuVisible(false);
+    requestAnimationFrame(() => {
+      handleBulkDelete();
+    });
+  }, [handleBulkDelete]);
+
   useEffect(() => {
     if (!user) return;
     import("../../lib/rewardXp").then(({ rewardXp }) => rewardXp("daily_login")).catch(() => {});
@@ -1994,7 +2004,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
             {selectedIds.size > 0 ? (
               <TouchableOpacity
                 style={selStyles.menuAction}
-                onPress={handleBulkDelete}
+                onPress={handleDeleteFromSelectionMenu}
                 activeOpacity={0.75}
                 accessibilityRole="button"
                 accessibilityLabel="Delete selected chats"
