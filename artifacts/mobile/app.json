@@ -183,7 +183,7 @@
     "experiments": {
       "typedRoutes": true
     },
-    "owner": "amkaweesi1",
+    "owner": "mindsetradio",
     "web": {
       "bundler": "metro",
       "output": "single",
