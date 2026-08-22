@@ -33,6 +33,7 @@ const STORY_REPLY_H = Math.round(STORY_REPLY_W * 0.65);
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { CHAT_FAST_DURATION } from "@/lib/chatMotion";
 import * as Haptics from "@/lib/haptics";
 import { ImageViewer, useImageViewer } from "@/components/ImageViewer";
 import * as ImagePicker from "expo-image-picker";
@@ -2204,6 +2205,7 @@ function ChatScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchCursor, setSearchCursor] = useState(0);
   const searchInputRef = useRef<any>(null);
+  const chatSearchAnim = useRef(new Animated.Value(0)).current;
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
   const [editHistoryMsg, setEditHistoryMsg] = useState<Message | null>(null);
   const [editHistoryItems, setEditHistoryItems] = useState<{ id: string; previous_content: string; edited_at: string }[]>([]);
@@ -2264,6 +2266,7 @@ function ChatScreen() {
   // chat input's onFocus handler can distinguish intentional taps from Android focus routing.
   const emojiSearchFocusedRef = useRef(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const keyboardOffsetAnim = useRef(new Animated.Value(0)).current;
   // Reset the guard ref whenever the picker is dismissed so the next real tap on the
   // chat input works normally.
   useEffect(() => { if (!showEmojiStickerPicker) emojiSearchFocusedRef.current = false; }, [showEmojiStickerPicker]);
@@ -2342,26 +2345,31 @@ function ChatScreen() {
     const hideEvent = "keyboardDidHide";
     const onShow = Keyboard.addListener(showEvent, (e) => {
       const h = e.endCoordinates.height;
-      if (Platform.OS === "android") {
-        LayoutAnimation.configureNext({
-          duration: 180,
-          update: { type: LayoutAnimation.Types.easeInEaseOut },
-        });
-      }
+      Animated.timing(keyboardOffsetAnim, {
+        toValue: h,
+        duration: Platform.OS === "ios" ? (e.duration ?? CHAT_FAST_DURATION) : CHAT_FAST_DURATION,
+        useNativeDriver: false,
+      }).start();
       setKeyboardHeight(h);
       if (h > 100) setEmojiKeyboardHeight(h);
     });
-    const onHide = Keyboard.addListener(hideEvent, () => {
-      if (Platform.OS === "android") {
-        LayoutAnimation.configureNext({
-          duration: 180,
-          update: { type: LayoutAnimation.Types.easeInEaseOut },
-        });
-      }
+    const onHide = Keyboard.addListener(hideEvent, (e) => {
+      Animated.timing(keyboardOffsetAnim, {
+        toValue: 0,
+        duration: Platform.OS === "ios" ? (e?.duration ?? CHAT_FAST_DURATION) : CHAT_FAST_DURATION,
+        useNativeDriver: false,
+      }).start();
       setKeyboardHeight(0);
     });
     return () => { onShow.remove(); onHide.remove(); };
-  }, []);
+  }, [keyboardOffsetAnim]);
+  useEffect(() => {
+    Animated.timing(chatSearchAnim, {
+      toValue: searchActive ? 1 : 0,
+      duration: CHAT_FAST_DURATION,
+      useNativeDriver: true,
+    }).start();
+  }, [chatSearchAnim, searchActive]);
   const [showChatOptions, setShowChatOptions] = useState(false);
   const [showAppearanceSheet, setShowAppearanceSheet] = useState(false);
   const [muteUntil, setMuteUntil] = useState<string | null | undefined>(undefined);
@@ -6524,7 +6532,12 @@ STRICT RULES:
 
       {/* ── In-chat search bar ─────────────────────────────────────────────── */}
       {searchActive && (
-        <View style={[st.searchBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <Animated.View style={[st.searchBar, {
+          backgroundColor: colors.surface,
+          borderBottomColor: colors.border,
+          opacity: chatSearchAnim,
+          transform: [{ translateY: chatSearchAnim.interpolate({ inputRange: [0, 1], outputRange: [-8, 0] }) }],
+        }]}>
           <Ionicons name="search" size={16} color={colors.textMuted} />
           <TextInput
             ref={searchInputRef}
@@ -6565,7 +6578,7 @@ STRICT RULES:
           >
             <Ionicons name="close" size={22} color={colors.text} />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       )}
 
       {/* ── Stranger message-request banner ── */}
@@ -6733,8 +6746,11 @@ STRICT RULES:
       </View>
 
       {/* ── Floating input container ── absolutely positioned, rises with keyboard ── */}
-      <View
-        style={[st.floatingInputContainer, { bottom: effectiveBottom, pointerEvents: "box-none" }]}
+      <Animated.View
+        style={[st.floatingInputContainer, {
+          bottom: showEmojiStickerPicker && !keyboardHeight ? effectiveBottom : keyboardOffsetAnim,
+          pointerEvents: "box-none",
+        }]}
         onLayout={(e) => setFloatingInputHeight(e.nativeEvent.layout.height)}
       >
 
@@ -7079,7 +7095,7 @@ STRICT RULES:
           </>
         )}
 
-      </View>
+      </Animated.View>
 
       {/* ── Emoji / sticker keyboard — anchored to screen bottom, same position as system keyboard ── */}
       {/* NOTE: always keep this mounted while showEmojiStickerPicker=true so the

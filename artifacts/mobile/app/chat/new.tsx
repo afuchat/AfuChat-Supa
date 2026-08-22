@@ -6,6 +6,7 @@ import React, {
 } from "react";
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
   Keyboard,
   Platform,
@@ -19,6 +20,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { CHAT_FAST_DURATION } from "@/lib/chatMotion";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "@/lib/haptics";
 import { supabase } from "@/lib/supabase";
@@ -72,11 +74,19 @@ export default function NewChatScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const keyboardOffsetAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    const show = Keyboard.addListener("keyboardDidShow", (e) => setKeyboardHeight(e.endCoordinates.height));
-    const hide = Keyboard.addListener("keyboardDidHide", () => setKeyboardHeight(0));
+    const show = Keyboard.addListener("keyboardDidShow", (e) => {
+      const height = e.endCoordinates.height;
+      Animated.timing(keyboardOffsetAnim, { toValue: height, duration: CHAT_FAST_DURATION, useNativeDriver: false }).start();
+      setKeyboardHeight(height);
+    });
+    const hide = Keyboard.addListener("keyboardDidHide", () => {
+      Animated.timing(keyboardOffsetAnim, { toValue: 0, duration: CHAT_FAST_DURATION, useNativeDriver: false }).start();
+      setKeyboardHeight(0);
+    });
     return () => { show.remove(); hide.remove(); };
-  }, []);
+  }, [keyboardOffsetAnim]);
 
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
@@ -371,7 +381,7 @@ export default function NewChatScreen() {
   const isSearchMode = query.trim().length > 0;
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background, paddingBottom: keyboardHeight }]}>
+    <Animated.View style={[styles.root, { backgroundColor: colors.background, paddingBottom: keyboardOffsetAnim }]}>
       <OfflineBanner />
 
       {/* ── Header ── */}
@@ -665,7 +675,7 @@ export default function NewChatScreen() {
           }}
         />
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

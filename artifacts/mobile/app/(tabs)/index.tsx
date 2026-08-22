@@ -27,6 +27,7 @@ const SafeFlashList: any =
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { Redirect, useFocusEffect, useNavigation, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { CHAT_FAST_SPRING } from "@/lib/chatMotion";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "@/lib/haptics";
 import { supabase } from "@/lib/supabase";
@@ -605,10 +606,10 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
 
     if (dy > 6 && y > 60 && !fabHidden.current) {
       fabHidden.current = true;
-      Animated.spring(fabAnim, { toValue: 0, useNativeDriver: true, speed: 24, bounciness: 0 }).start();
+      Animated.spring(fabAnim, { toValue: 0, ...CHAT_FAST_SPRING }).start();
     } else if (dy < -4 && fabHidden.current) {
       fabHidden.current = false;
-      Animated.spring(fabAnim, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 6 }).start();
+      Animated.spring(fabAnim, { toValue: 1, ...CHAT_FAST_SPRING }).start();
     }
   }, [fabAnim]);
 

@@ -15,6 +15,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
+import { CHAT_FAST_DURATION, CHAT_FAST_SPRING } from "@/lib/chatMotion";
 import type { ChatFolder, FolderFilter } from "@/lib/storage/chatFolders";
 
 const ICONS = [
@@ -57,14 +58,12 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
       setFilter(initial?.filter ?? "personal");
       Animated.spring(slideAnim, {
         toValue: 0,
-        useNativeDriver: true,
-        speed: 22,
-        bounciness: 3,
+        ...CHAT_FAST_SPRING,
       }).start();
     } else {
       Animated.timing(slideAnim, {
         toValue: 500,
-        duration: 200,
+        duration: CHAT_FAST_DURATION,
         useNativeDriver: true,
       }).start();
     }
@@ -82,7 +81,7 @@ export function FolderModal({ visible, initial, onSave, onDelete, onClose }: Pro
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <Pressable style={st.backdrop} onPress={onClose}>
         <KeyboardAvoidingView
-          behavior={undefined}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={st.kav}
         >
           <Animated.View
