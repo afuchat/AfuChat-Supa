@@ -2787,7 +2787,22 @@ function ChatScreen() {
         if (mapped.length === 0) return prev;
         const serverIds = new Set(mapped.map((m: any) => m.id));
         const notInServer = prev.filter((m) => !serverIds.has(m.id));
-        return [...mapped, ...notInServer].sort(
+        const previousById = new Map(prev.map((m) => [m.id, m]));
+        // A status write can be in flight while this refresh is running. Keep
+        // the locally visible receipt until the server response catches up;
+        // otherwise the fast server payload briefly downgrades read → sent.
+        const merged = mapped.map((m: any) => {
+          const previous = previousById.get(m.id);
+          return previous
+            ? {
+                ...m,
+                status: previous.status ?? m.status,
+                read_at: previous.read_at ?? m.read_at,
+                delivered_at: previous.delivered_at ?? m.delivered_at,
+              }
+            : m;
+        });
+        return [...merged, ...notInServer].sort(
           (a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime()
         );
       });
@@ -2841,8 +2856,10 @@ function ChatScreen() {
                 status: m.sender_id === user.id
                   ? (sInfo?.read_at ? "read" : sInfo?.delivered_at ? "delivered" : (m.status || "sent"))
                   : m.status,
-                read_at: m.sender_id === user.id ? (sInfo?.read_at || null) : m.read_at,
-                delivered_at: m.sender_id === user.id ? (sInfo?.delivered_at || null) : m.delivered_at,
+                // Never erase a receipt because this refresh raced the
+                // recipient's upsert or the realtime event.
+                read_at: m.sender_id === user.id ? (sInfo?.read_at || m.read_at || null) : m.read_at,
+                delivered_at: m.sender_id === user.id ? (sInfo?.delivered_at || m.delivered_at || null) : m.delivered_at,
               };
             })
           );
