@@ -379,20 +379,6 @@ export function AdminSkeleton() {
   );
 }
 
-export function ReferralSkeleton() {
-  return (
-    <View style={{ padding: 16, gap: 16 }}>
-      <Skeleton width="100%" height={140} borderRadius={20} />
-      <Skeleton width="100%" height={100} borderRadius={14} />
-      <View style={{ flexDirection: "row", gap: 12 }}>
-        <Skeleton width="48%" height={80} borderRadius={14} />
-        <Skeleton width="48%" height={80} borderRadius={14} />
-      </View>
-      <Skeleton width="100%" height={140} borderRadius={14} />
-    </View>
-  );
-}
-
 export function MarketplaceCardSkeleton() {
   const { colors } = useTheme();
   return (

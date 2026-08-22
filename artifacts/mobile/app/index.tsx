@@ -53,7 +53,7 @@ export default function IndexScreen() {
     }
   }
 
-  // Handle ?handle= query param (referral / handle deep links via web)
+  // Handle ?handle= query param for web profile deep links
   useEffect(() => {
     if (!handle || redirected.current || loading) return;
     redirected.current = true;

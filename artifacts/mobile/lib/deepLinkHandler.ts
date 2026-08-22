@@ -1,7 +1,7 @@
 /**
  * deepLinkHandler.ts
  *
- * Parses incoming URLs and dispatches navigation actions or referral signals.
+ * Parses incoming URLs and dispatches navigation actions.
  *
  * Supported URL formats:
  *   afuchat://settings              -> open Settings screen
@@ -25,27 +25,21 @@
  *   https://afuchat.com/red-envelope/:id -> red envelope
  *   https://afuchat.com/id/:afuId   -> profile by AfuID
  *   https://afuchat.com/@handle     -> user profile (with @ prefix)
- *   https://afuchat.com/john        -> referral code "JOHN" / user profile
- *   https://afuchat.com/john?ref=JOHN -> referral code "JOHN" (explicit param)
- *   afuchat://john                  -> referral code "JOHN"
- *   afuchat://ref/JOHN              -> referral code "JOHN" (dedicated path)
  */
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { decodeId } from "./shortId";
 
-export const REFERRER_KEY    = "referrer_handle";
 export const PENDING_JOIN_KEY = "pending_join_group_id";
 
 export type DeepLinkAction =
-  | { type: "referral"; code: string }
   | { type: "join_group"; groupId: string; code: string }
   | { type: "navigate"; path: string; params?: Record<string, string> }
   | null;
 
 /**
  * Direct navigation routes — single-segment afuchat:// paths that map to
- * app screens. Checked BEFORE referral logic so system paths are never
+ * app screens. Checked before catch-all profile handling so system paths are never
  * misidentified as user handles.
  */
 const NAV_ROUTES: Record<string, string> = {
@@ -68,7 +62,6 @@ const NAV_ROUTES: Record<string, string> = {
   ai:                 "/ai",
   premium:            "/premium",
   prestige:           "/prestige",
-  referral:           "/referral",
   store:              "/store",
   support:            "/support",
   about:              "/about",
@@ -96,11 +89,11 @@ const NAV_ROUTES: Record<string, string> = {
 
 /**
  * These path segments are NOT user handles — they are app routes.
- * Any single-segment URL that matches one of these is not treated as a referral.
+ * Any single-segment URL that matches one of these is not treated as a user handle.
  */
 const SYSTEM_ROUTES = new Set([
   ...Object.keys(NAV_ROUTES),
-  "wallet", "settings", "chat", "premium", "referral", "onboarding",
+  "wallet", "settings", "chat", "premium", "onboarding",
   "login", "register", "search", "discover", "communities", "contacts",
   "apps", "moments", "shorts", "stories", "post", "video", "article",
   "shop", "freelance", "company", "mini-programs", "prestige",
@@ -142,12 +135,9 @@ function isShortCode(s: string): boolean {
  *  1. /join/:code  — group/channel invite
  *  2. /chat/:id    — direct chat open (two-segment)
  *  3. Navigation routes (afuchat://settings, etc.)
- *  4. ?ref= query param  — explicit referral
- *  5. /ref/:handle path  — dedicated referral path
- *  6. /:handle  — profile / implicit referral
+ *  4. /:handle  — profile navigation
  *
  * Side-effects:
- *  - Persists referral codes to AsyncStorage (REFERRER_KEY).
  *  - Persists pending group-join codes to AsyncStorage (PENDING_JOIN_KEY).
  */
 export async function handleIncomingUrl(url: string | null | undefined): Promise<DeepLinkAction> {
@@ -280,7 +270,7 @@ export async function handleIncomingUrl(url: string | null | undefined): Promise
     if (segments.length === 1 && segments[0].startsWith("@")) {
       const handle = segments[0].slice(1).toLowerCase();
       if (isValidHandle(handle)) {
-        // Treat as a profile navigation, not just a referral
+    // Treat as a profile navigation
         return { type: "navigate", path: "/[handle]", params: { handle } };
       }
     }
@@ -294,33 +284,11 @@ export async function handleIncomingUrl(url: string | null | undefined): Promise
       }
     }
 
-    // 4. Explicit ?ref=HANDLE query param -- highest priority for referrals
-    const refParam = parsed.searchParams.get("ref");
-    if (refParam) {
-      const code = refParam.trim().toUpperCase();
-      if (code.length >= 2) {
-        await AsyncStorage.setItem(REFERRER_KEY, code);
-        return { type: "referral", code };
-      }
-    }
-
-    // 5. Dedicated /ref/HANDLE path (e.g. afuchat://ref/JOHN)
-    if (segments.length === 2 && segments[0] === "ref") {
-      const handle = segments[1].toLowerCase();
-      if (isValidHandle(handle)) {
-        const code = handle.toUpperCase();
-        await AsyncStorage.setItem(REFERRER_KEY, code);
-        return { type: "referral", code };
-      }
-    }
-
-    // 6. Profile-style link: https://afuchat.com/handle
+    // 4. Profile-style link: https://afuchat.com/handle
     if (segments.length === 1) {
       const handle = segments[0].toLowerCase();
       if (!SYSTEM_ROUTES.has(handle) && isValidHandle(handle)) {
-        const code = handle.toUpperCase();
-        await AsyncStorage.setItem(REFERRER_KEY, code);
-        return { type: "referral", code };
+        return { type: "navigate", path: "/[handle]", params: { handle } };
       }
     }
   } catch {
@@ -341,12 +309,5 @@ export async function consumePendingJoin(): Promise<string | null> {
   }
 }
 
-/**
- * Clear the stored referrer after it has been consumed by onboarding.
- * Call this after successfully submitting the referral, not before.
- */
-export async function clearStoredReferrer(): Promise<void> {
-  try {
-    await AsyncStorage.removeItem(REFERRER_KEY);
-  } catch {}
-}
+// End of deep-link handling.
+

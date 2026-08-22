@@ -2228,17 +2228,7 @@ function ChatScreen() {
         }
       }, () => {});
 
-    const referralPlatinumPromise = supabase
-      .from("profiles")
-      .select("id, platinum_until")
-      .in("id", senderIds)
-      .then(({ data }) => {
-        for (const p of (data || []) as { id: string; platinum_until: string | null }[]) {
-          if (p.platinum_until && new Date(p.platinum_until) > new Date()) platinumIds.add(p.id);
-        }
-      }, () => {});
-
-    Promise.allSettled([goodsPromise, subPromise, referralPlatinumPromise]).then(() => {
+    Promise.allSettled([goodsPromise, subPromise]).then(() => {
       for (const userId of crownCandidates) {
         if (platinumIds.has(userId) && !rings.has(userId)) rings.set(userId, 'crown');
       }

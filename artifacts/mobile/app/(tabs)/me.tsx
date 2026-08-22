@@ -588,15 +588,6 @@ export default function MeScreen() {
               colors={colors}
             />
             <MenuItem
-              icon="gift"
-              iconColor={accent}
-              label="Referral Program"
-              badge="Earn ACoin"
-              onPress={() => router.push("/referral" as any)}
-              showSeparator
-              colors={colors}
-            />
-            <MenuItem
               icon="trophy"
               iconColor={accent}
               label="Prestige & Rewards"

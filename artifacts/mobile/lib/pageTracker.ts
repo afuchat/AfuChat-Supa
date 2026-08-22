@@ -96,7 +96,6 @@ const ROUTE_MAP: Array<{ match: RegExp; name: string; summary: string }> = [
 
   // Premium & monetisation
   { match: /^\/premium/, name: "Premium Plans", summary: "View AfuChat Gold and Platinum subscription plans and subscribe." },
-  { match: /^\/referral/, name: "Referral Program", summary: "Invite friends and earn Nexa — 2,000 Nexa per successful invite." },
   { match: /^\/monetize/, name: "Monetisation", summary: "Creator monetisation options — how to earn money from your content on AfuChat." },
 
   // Company

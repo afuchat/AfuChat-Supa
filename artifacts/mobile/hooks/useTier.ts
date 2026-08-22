@@ -24,15 +24,10 @@ export const TIER_LABELS: Record<Tier, string> = {
 };
 
 export function useTier() {
-  const { isPremium, subscription, profile } = useAuth();
-
-  // Users with an active referral platinum period get "platinum" tier
-  // even if they have no paid subscription.
-  const hasActivePlatinumUntil =
-    !!(profile?.platinum_until && new Date(profile.platinum_until) > new Date());
+  const { isPremium, subscription } = useAuth();
 
   const rawTier = isPremium
-    ? (subscription?.plan_tier ?? (hasActivePlatinumUntil ? "platinum" : "free")).toLowerCase()
+    ? (subscription?.plan_tier ?? "free").toLowerCase()
     : "free";
 
   const tierLevel = TIER_ORDER[rawTier] ?? 0;

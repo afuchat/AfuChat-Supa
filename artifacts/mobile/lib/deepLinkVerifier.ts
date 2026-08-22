@@ -11,7 +11,7 @@
  *
  * 2. ROUTE COVERAGE tests — every top-level route segment that is a valid
  *    handle pattern (a-z0-9_, 1-30 chars) must be in RESERVED_ROUTES inside
- *    [handle].tsx, AND must NOT be misclassified as a referral/handle by
+ *    [handle].tsx and must not be misclassified as an internal route by
  *    deepLinkHandler. This is the belt-and-suspenders guard that ensures
  *    no internal app path ever leaks into the catch-all [handle] screen.
  *
@@ -26,7 +26,7 @@ import { handleIncomingUrl } from "./deepLinkHandler";
 
 type NavTest = {
   url: string;
-  expectedType: "navigate" | "join_group" | "referral" | "null";
+  expectedType: "navigate" | "join_group" | "null";
   expectedPath?: string;
   description: string;
 };
@@ -46,7 +46,7 @@ const WORD_ROUTES = [
   "help", "id", "join", "lab", "login",
   // m–r
   "match", "moments", "onboarding", "p", "post", "premium", "prestige",
-  "privacy", "profile", "referral", "register", "report",
+  "privacy", "profile", "register", "report",
   // s–w
   "settings", "shop", "shorts", "status", "store", "stories",
   "support", "terms", "video", "wallet", "welcome",
@@ -83,7 +83,6 @@ const NAV_TESTS: NavTest[] = [
   { url: "afuchat://ai",           expectedType: "navigate", expectedPath: "/ai",                description: "AfuAI" },
   { url: "afuchat://premium",      expectedType: "navigate", expectedPath: "/premium",           description: "Premium" },
   { url: "afuchat://prestige",     expectedType: "navigate", expectedPath: "/prestige",          description: "Prestige" },
-  { url: "afuchat://referral",     expectedType: "navigate", expectedPath: "/referral",          description: "Referral" },
   { url: "afuchat://store",        expectedType: "navigate", expectedPath: "/store",             description: "Store" },
   { url: "afuchat://support",      expectedType: "navigate", expectedPath: "/support",           description: "Support" },
   { url: "afuchat://about",        expectedType: "navigate", expectedPath: "/about",             description: "About" },
@@ -124,22 +123,17 @@ const NAV_TESTS: NavTest[] = [
     expectedType: "join_group",
     description: "Group join via https:// link",
   },
-  // ── Referral ─────────────────────────────────────────────────────────────
-  {
-    url: "afuchat://ref/john",
-    expectedType: "referral",
-    description: "Referral /ref/handle path",
-  },
   {
     url: "https://afuchat.com/someuser",
-    expectedType: "referral",
-    description: "Profile/referral https:// link",
+    expectedType: "navigate",
+    expectedPath: "/[handle]",
+    description: "Profile https:// link",
   },
 ];
 
 // ─── Route coverage tests — word routes (could be handles) ───────────────────
-// Every word route must NOT be classified as a referral by deepLinkHandler.
-// If any returns { type: "referral" }, it means the SYSTEM_ROUTES set in
+// Every word route must resolve as navigation, not the catch-all [handle] screen.
+// If any returns the wrong action, it means the SYSTEM_ROUTES set in
 // deepLinkHandler.ts is missing that entry → runtime leak risk.
 
 async function runRouteCoverageTests() {
@@ -150,9 +144,8 @@ async function runRouteCoverageTests() {
     try {
       const action = await handleIncomingUrl(url);
       // Acceptable outcomes: navigate (explicit nav route) or null (blocked by SYSTEM_ROUTES).
-      // NOT acceptable: referral — that means the handler misidentified it as a user handle.
-      if (action?.type === "referral") {
-        failures.push(`"${seg}" → classified as REFERRAL (missing from SYSTEM_ROUTES!)`);
+      if (action && action.type !== "navigate") {
+        failures.push(`"${seg}" → did not resolve as navigation`);
       }
     } catch {
       failures.push(`"${seg}" → threw an error`);
@@ -164,8 +157,8 @@ async function runRouteCoverageTests() {
     const url = `afuchat://${seg}`;
     try {
       const action = await handleIncomingUrl(url);
-      if (action?.type === "referral") {
-        failures.push(`"${seg}" → classified as REFERRAL (should be impossible — has hyphen)`);
+      if (action && action.type !== "navigate") {
+        failures.push(`"${seg}" → unexpectedly resolved as ${action?.type ?? "null"}`);
       }
     } catch {
       failures.push(`"${seg}" → threw an error`);

@@ -22,7 +22,7 @@ import { supabase } from "@/lib/supabase";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Rarity = "common" | "rare" | "epic" | "legendary";
-type Category = "All" | "Social" | "Creator" | "Messenger" | "Wallet" | "Referral" | "Elite" | "Community";
+type Category = "All" | "Social" | "Creator" | "Messenger" | "Wallet" | "Elite" | "Community";
 
 type Achievement = {
   id: string;
@@ -40,7 +40,7 @@ type Achievement = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CATEGORIES: Category[] = ["All", "Social", "Creator", "Messenger", "Wallet", "Referral", "Elite", "Community"];
+const CATEGORIES: Category[] = ["All", "Social", "Creator", "Messenger", "Wallet", "Elite", "Community"];
 
 const RARITY_GRADIENT: Record<Rarity, [string, string]> = {
   common:    ["#636366", "#48484A"],
@@ -77,7 +77,6 @@ type Stats = {
   posts: number;
   stories: number;
   messages: number;
-  referrals: number;
 };
 
 async function fetchStats(userId: string): Promise<Stats> {
@@ -85,7 +84,7 @@ async function fetchStats(userId: string): Promise<Stats> {
     try { return await p; } catch { return fallback; }
   };
 
-  const [posts, stories, messages, referrals] = await Promise.all([
+  const [posts, stories, messages] = await Promise.all([
     safe(
       supabase.from("posts").select("id", { count: "exact", head: true }).eq("user_id", userId)
         .then(r => r.count ?? 0), 0),
@@ -95,12 +94,9 @@ async function fetchStats(userId: string): Promise<Stats> {
     safe(
       supabase.from("messages").select("id", { count: "exact", head: true }).eq("sender_id", userId)
         .then(r => r.count ?? 0), 0),
-    safe(
-      supabase.from("referrals").select("id", { count: "exact", head: true }).eq("referrer_id", userId).eq("reward_given", true)
-        .then(r => r.count ?? 0), 0),
   ]);
 
-  return { posts, stories, messages, referrals };
+  return { posts, stories, messages };
 }
 
 // ─── Achievement definitions ──────────────────────────────────────────────────
@@ -109,7 +105,7 @@ function buildAchievements(profile: any, isPremium: boolean, stats: Stats): Achi
   const xp       = profile?.xp      ?? 0;
   const acoin    = profile?.acoin    ?? 0;
   const level    = Math.floor(Math.sqrt(xp / 100)) + 1;
-  const { posts, stories, messages, referrals } = stats;
+  const { posts, stories, messages } = stats;
 
   const mk = (
     id: string, title: string, desc: string, howTo: string,
@@ -157,21 +153,15 @@ function buildAchievements(profile: any, isPremium: boolean, stats: Stats): Achi
     mk("coins_1",    "First Coins",       "Earned your first ACoins",           "Complete any action that rewards ACoins","cash",          "Wallet", "common",    50,     acoin >= 1,      Math.min(acoin, 1),      1),
     mk("coins_500",  "Saver",             "Accumulated 500 ACoins",             "Keep earning ACoins through activity",   "save",          "Wallet", "common",    100,    acoin >= 500,    Math.min(acoin, 500),    500),
     mk("coins_1k",   "Coin Collector",    "Accumulated 1,000 ACoins",           "Earn ACoins by being active daily",      "wallet",        "Wallet", "rare",      300,    acoin >= 1_000,  Math.min(acoin, 1_000),  1_000),
-    mk("coins_5k",   "Gold Stash",        "Accumulated 5,000 ACoins",           "Refer friends & stay active",            "cube",          "Wallet", "rare",      500,    acoin >= 5_000,  Math.min(acoin, 5_000),  5_000),
+    mk("coins_5k",   "Gold Stash",        "Accumulated 5,000 ACoins",           "Keep saving ACoins through activity",   "cube",          "Wallet", "rare",      500,    acoin >= 5_000,  Math.min(acoin, 5_000),  5_000),
     mk("coins_10k",  "Big Spender",       "Accumulated 10,000 ACoins",          "A true AfuChat economist",               "diamond",       "Wallet", "epic",      1_000,  acoin >= 10_000, Math.min(acoin, 10_000), 10_000),
     mk("coins_50k",  "Crypto Whale",      "Accumulated 50,000 ACoins",          "One of the wealthiest users on AfuChat", "logo-bitcoin",  "Wallet", "legendary", 3_000,  acoin >= 50_000, Math.min(acoin, 50_000), 50_000),
 
-    // ── Referral ─────────────────────────────────────────────────────────────
-    mk("ref_1",  "Connector",        "Referred 1 friend to AfuChat",      "Share your referral link",            "person-add",     "Referral", "common",    100,    referrals >= 1,  Math.min(referrals, 1),  1),
-    mk("ref_5",  "Recruiter",        "Referred 5 friends to AfuChat",     "Keep sharing your referral link",     "people-circle", "Referral", "rare",      500,    referrals >= 5,  Math.min(referrals, 5),  5),
-    mk("ref_10", "Referral King",    "Referred 10 friends to AfuChat",    "Your network is growing fast!",       "git-merge",     "Referral", "epic",      1_000,  referrals >= 10, Math.min(referrals, 10), 10),
-    mk("ref_25", "Ambassador",       "Referred 25 friends to AfuChat",    "You are the ultimate AfuChat advocate","flag",          "Referral", "legendary", 3_000,  referrals >= 25, Math.min(referrals, 25), 25),
 
     // ── Community ────────────────────────────────────────────────────────────
     mk("premium",    "Premium Member",    "Subscribed to AfuChat Premium",      "Upgrade your plan in the store",      "star",           "Community", "rare",      1_000,  isPremium),
     mk("grade_gold", "Gold Status",       "Reached Gold subscription tier",     "Upgrade to Gold or Platinum plan",    "ribbon",         "Community", "epic",      2_000,  ["gold","platinum"].includes(profile?.current_grade ?? "")),
     mk("platinum",   "Platinum Status",   "Reached Platinum subscription tier", "Upgrade to the Platinum plan",        "diamond",        "Community", "legendary", 5_000,  profile?.current_grade === "platinum"),
-    mk("plat_time",  "Platinum Holder",   "Earned 7-day Platinum via referral", "Get someone to sign up with your link","timer",          "Community", "rare",      500,    !!profile?.platinum_until),
 
     // ── Elite ────────────────────────────────────────────────────────────────
     mk("verified",    "Verified Identity",    "Got the blue verified badge",         "Apply for verification in Settings",  "checkmark-circle","Elite", "rare",      500,    profile?.is_verified ?? false),
@@ -559,7 +549,7 @@ export default function AchievementsScreen() {
 
   const [selectedCategory, setSelectedCategory] = useState<Category>("All");
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
-  const [stats, setStats] = useState<Stats>({ posts: 0, stories: 0, messages: 0, referrals: 0 });
+  const [stats, setStats] = useState<Stats>({ posts: 0, stories: 0, messages: 0 });
   const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {

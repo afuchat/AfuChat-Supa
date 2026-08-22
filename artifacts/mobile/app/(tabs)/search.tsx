@@ -181,8 +181,8 @@ AfuChat search categories (for content search):
 - jobs: job and internship listings by companies
 
 IMPORTANT — detect the query type:
-1. If the query is a NAVIGATION request ("go to wallet", "open settings", "how do I top up", "where is the referral page") → set navigateTo to the exact route path and navigateLabel to a short name, and set directAnswer to a 1-2 sentence how-to.
-2. If the query is a FEATURE QUESTION ("how do I send money", "what is Nexa", "how do referrals work") → set directAnswer to a concise 2-3 sentence answer using platform knowledge, and set navigateTo if relevant.
+1. If the query is a NAVIGATION request ("go to wallet", "open settings", "how do I top up") → set navigateTo to the exact route path and navigateLabel to a short name, and set directAnswer to a 1-2 sentence how-to.
+2. If the query is a FEATURE QUESTION ("how do I send money", "what is Nexa") → set directAnswer to a concise 2-3 sentence answer using platform knowledge, and set navigateTo if relevant.
 3. If the query is a CONTENT SEARCH (looking for users/posts/videos) → set bestCategory and leave navigateTo empty.
 
 Reply ONLY with a single JSON object — no markdown, no code fences, no explanation outside JSON:

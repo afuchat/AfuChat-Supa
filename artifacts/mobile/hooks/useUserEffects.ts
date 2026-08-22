@@ -56,16 +56,9 @@ function fetchEffects(userId: string): Promise<void> {
       return (data ?? []).some((s: any) => s.subscription_plans?.tier === "platinum");
     }, () => false);
 
-  const referralPlatinumPromise = supabase
-    .from("profiles")
-    .select("platinum_until")
-    .eq("id", userId)
-    .maybeSingle()
-    .then(({ data }) => !!(data?.platinum_until && new Date(data.platinum_until) > new Date()), () => false);
-
-  const promise = Promise.all([goodsPromise, subPromise, referralPlatinumPromise]).then(([goodsData, hasPlatinumSubscription, hasReferralPlatinum]) => {
+  const promise = Promise.all([goodsPromise, subPromise]).then(([goodsData, hasPlatinumSubscription]) => {
     const ids = new Set((goodsData as any[]).map((d: any) => d.good_id as string));
-    const isPlatinum = hasPlatinumSubscription || hasReferralPlatinum;
+    const isPlatinum = hasPlatinumSubscription;
     cache.set(userId, {
       goldNameplate: ids.has("sg4") || isPlatinum,
       verifiedStar: ids.has("sg5"),

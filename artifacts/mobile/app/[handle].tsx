@@ -3,7 +3,7 @@
  *
  * Rules:
  *  • /@username  (unauthenticated) → public profile page
- *  • /username   (unauthenticated) → referral link: saves referrer_handle → sends to /register
+ *  • /username   (unauthenticated) → public profile page
  *  • Any handle + logged-in user  → navigate to /contact/[id] (full in-app profile)
  *
  * Route-leak guard: logs a warning in __DEV__ whenever a reserved app path
@@ -31,7 +31,6 @@ import UserName from "@/components/ui/UserName";
 import RoyaltyBadge from "@/components/ui/RoyaltyBadge";
 import { ProfileNotFoundView } from "@/app/profile-not-found";
 import { ProfilePrivateView } from "@/app/profile-private";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import Colors from "@/constants/colors";
 import { T } from "@/constants/theme";
 import { ContactProfileSkeleton } from "@/components/ui/Skeleton";
@@ -263,7 +262,7 @@ const RESERVED_ROUTES = new Set([
   "login", "reset-password", "404", "not-found",
   // Additional routes guarded below
   "about", "lab", "achievements", "watch-history",
-  "referral", "prestige", "store", "premium", "status", "digital-id",
+  "prestige", "store", "premium", "status", "digital-id",
   "qr-scanner", "create-post", "followers", "saved-posts", "collections",
   "language-settings", "linked-accounts", "device-security",
   "phone-contacts", "user-discovery", "username-market",
@@ -353,18 +352,14 @@ export default function HandleScreen() {
     }
 
     if (profileNotFound || !cleanHandle || !isValidHandle) return;
-    // /@username without session → shown as public profile, no redirect needed
-    if (isAtHandle && !session) return;
+    // Unauthenticated users see the public profile.
+    if (!session) return;
 
     hasNavigated.current = true;
 
     if (session) {
       // Logged-in: go to full contact/profile screen
       if (profileId) safeNavigate("/contact/[id]", { id: profileId });
-    } else {
-      // Plain /username (referral link): save referrer_handle then send to register
-      AsyncStorage.setItem("referrer_handle", cleanHandle).catch(() => {});
-      safeNavigate("/(auth)/register");
     }
   }, [dataReady, authLoading, navigationState?.key, cleanHandle, isValidHandle, profileId, profileNotFound, session, isAtHandle]);
 
@@ -387,10 +382,7 @@ export default function HandleScreen() {
     );
   }
 
-  // Plain /username referral link — render nothing while the redirect fires
-  if (!isAtHandle) return null;
-
-  // /@username — public profile
+  // Public profile for unauthenticated users.
   if (!isValidHandle || (dataReady && profileNotFound)) return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
       <ProfileNotFoundView handle={cleanHandle} />

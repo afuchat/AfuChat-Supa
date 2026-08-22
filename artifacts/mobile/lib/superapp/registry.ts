@@ -133,15 +133,6 @@ export const SUPER_APP_REGISTRY: ModuleManifest[] = [
     keepAlive: false,
   },
   {
-    id: "afureferral",
-    name: "Referral",
-    description: "Invite friends and earn Nexa rewards.",
-    version: "1.0.0",
-    icon: "people",
-    gradient: ["#34C759", "#00C781"] as const,
-    keepAlive: false,
-  },
-  {
     id: "afuusernames",
     name: "Handle Market",
     description: "Buy and sell premium @handles.",

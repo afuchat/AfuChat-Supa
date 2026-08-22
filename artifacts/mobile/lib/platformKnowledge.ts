@@ -108,7 +108,6 @@ export const PLATFORM_NAV_MAP = `
 | Route | What it does |
 |---|---|
 | /premium | View Gold and Platinum subscription plans and subscribe |
-| /referral | Invite friends and earn Nexa (2,000 Nexa per successful invite) |
 | /monetize | Creator monetisation options |
 
 ### SETTINGS
@@ -181,16 +180,10 @@ export const PLATFORM_FEATURES_GUIDE = `
 - **Matching** — algorithm-based social discovery to find compatible people
 - **QR Scanner** — scan any AfuChat profile QR, payment QR, or external link
 
-### Referral Program
-- Your referral code = your username in UPPERCASE (e.g. username "john" → code "JOHN")
-- Your referral link = https://afuchat.com/[yourhandle]
-- When someone signs up using your code, you earn **2,000 Nexa** and they get **7 days of Platinum free**
-
 ### How to Use Key Features
 - **To send money**: Go to Wallet → Transfer, or ask AfuAI "send [amount] ACoin to @[handle]"
 - **To top up**: Go to Wallet → Top Up and choose an amount
 - **To upgrade to Platinum**: Go to Premium and select Platinum plan
-- **To invite friends**: Go to Referral and share your link or code
 - **To create a post**: Tap the + icon or go to Moments → Create
 - **To find people**: Go to Search → People tab and type a name or @handle
 - **To send a gift**: Visit someone's profile or post and tap the gift icon
@@ -300,7 +293,7 @@ export function buildNavigationContext(): string {
 export const ACTION_ROUTES_GUIDE = `
 Valid routes for [ACTION:Button label:/route] tags:
 /wallet | /wallet/topup | /wallet/requests | /wallet/gift-vault
-/premium | /referral | /monetize | /prestige | /username-market
+/premium | /monetize | /prestige | /username-market
 /profile/edit | /settings | /settings/security | /settings/privacy | /settings/blocked | /settings/two-factor
 /moments/create | /moments/create-video | /moments/create-article | /shorts | /saved-posts | /my-posts
 /search | /discover | /contacts | /communities | /me | /user-discovery
@@ -336,7 +329,6 @@ export const NAV_INTENT_MAP: { patterns: RegExp; route: string; label: string }[
   { patterns: /\b(payment\s+requests?|money\s+requests?)\b/i, route: "/wallet/requests", label: "Payment Requests" },
   { patterns: /\bgift\s+vault\b/i, route: "/wallet/gift-vault", label: "Gift Vault" },
   { patterns: /\b(premium|upgrade|subscription|platinum|gold\s+plan)\b/i, route: "/premium", label: "Premium Plans" },
-  { patterns: /\b(referral|invite\s+friends?|earn\s+nexa|refer)\b/i, route: "/referral", label: "Referral Program" },
   { patterns: /\b(settings|account\s+settings)\b/i, route: "/settings", label: "Settings" },
   { patterns: /\bsecurity\b/i, route: "/settings/security", label: "Security Settings" },
   { patterns: /\b(privacy\s+settings?|my\s+privacy)\b/i, route: "/settings/privacy", label: "Privacy Settings" },
@@ -405,7 +397,7 @@ const VOICE_NAV_VERB = /\b(open|go\s+to|take\s+me\s+to|navigate\s+to|show\s+me\s
  * Prevents casual feature mentions from triggering unwanted screen changes.
  *
  * Examples that WILL match:
- *   "take me to wallet"  "open settings"  "go to airtime"  "show me the referral page"
+ *   "take me to wallet"  "open settings"  "go to airtime"
  * Examples that will NOT match (no verb):
  *   "wallet balance?"  "what is Nexa?"  "premium features"
  */

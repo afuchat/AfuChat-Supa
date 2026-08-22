@@ -27,7 +27,6 @@ import { uploadAvatar as uploadAvatarMedia } from "@/lib/mediaUpload";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import Colors from "@/constants/colors";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { showAlert } from "@/lib/alert";
 import type { Country } from "@/constants/countries";
 const getCountries = () => (require("@/constants/countries").COUNTRIES as Country[]);
@@ -38,7 +37,6 @@ import {
 } from "libphonenumber-js";
 import { Avatar } from "@/components/ui/Avatar";
 import { ensureAfuAiChat } from "@/lib/afuAiBot";
-import { ReferralRewardModal } from "@/components/referral/ReferralRewardModal";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { CHAT_THEME_COLORS, type ChatTheme } from "@/context/ChatPreferencesContext";
 
@@ -138,26 +136,6 @@ export default function OnboardingScreen() {
 
   const [selectedInterests, setSelectedInterests] = useState<Set<string>>(new Set());
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
-  const [referralCode, setReferralCode] = useState("");
-  const [referralAutoFilled, setReferralAutoFilled] = useState(false);
-  const [referralModal, setReferralModal] = useState<{
-    referrerName: string;
-    referrerHandle: string;
-    referrerAvatar: string | null;
-  } | null>(null);
-
-  // Pre-fill referral code from deep-link if the user arrived via a referral URL
-  useEffect(() => {
-    AsyncStorage.getItem("referrer_handle")
-      .then((stored) => {
-        if (stored && stored.trim()) {
-          setReferralCode(stored.trim());
-          setReferralAutoFilled(true);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
   const userId = params.userId || user?.id;
 
   // ── Pager — native horizontal ScrollView with pagingEnabled ──────────────────
@@ -447,50 +425,6 @@ export default function OnboardingScreen() {
       return;
     }
 
-    try {
-      const stored = await AsyncStorage.getItem("referrer_handle");
-      if (stored) await AsyncStorage.removeItem("referrer_handle");
-      // Prefer typed referral code; fall back to code captured from deep link
-      const rawRef = referralCode.trim() || (stored?.trim() ?? "");
-      const refHandle = rawRef.toLowerCase();
-      // Call the SECURITY DEFINER SQL function — it runs as postgres,
-      // bypasses RLS so it can update the referrer's XP from the invitee's
-      // session, uses the correct column names, and is fully atomic.
-      if (refHandle && refHandle !== cleanHandle) {
-        const { data: rpcResult, error: rpcError } = await supabase.rpc(
-          "handle_referral_reward",
-          { p_referrer_handle: refHandle, p_referred_id: userId },
-        );
-        if (rpcError) {
-          console.warn("[referral] rpc error:", rpcError.message);
-        } else if (rpcResult && !rpcResult.ok) {
-          console.warn("[referral] not rewarded:", rpcResult.reason);
-        } else if (rpcResult?.ok) {
-          // Fetch referrer's profile so we can personalise the modal
-          let referrerName = "Your friend";
-          let referrerHandle = refHandle;
-          let referrerAvatar: string | null = null;
-          try {
-            const { data: rp } = await supabase
-              .from("profiles")
-              .select("display_name, handle, avatar_url")
-              .eq("id", rpcResult.referrer_id)
-              .single();
-            if (rp) {
-              referrerName   = rp.display_name  || "Your friend";
-              referrerHandle = rp.handle        || refHandle;
-              referrerAvatar = rp.avatar_url    || null;
-            }
-          } catch {}
-
-          // Queue the success modal — navigation happens on dismiss
-          setReferralModal({ referrerName, referrerHandle, referrerAvatar });
-        }
-      }
-    } catch (referralErr) {
-      console.warn("[referral] unexpected error:", referralErr);
-    }
-
     try { const { rewardXp } = await import("../../lib/rewardXp"); await rewardXp("profile_completed"); } catch (_) {}
     try { await supabase.from("chat_preferences").upsert({ user_id: userId, chat_theme: selectedTheme }, { onConflict: "user_id" }); } catch (_) {}
 
@@ -498,16 +432,7 @@ export default function OnboardingScreen() {
     ensureAfuAiChat(userId, displayName.trim()).catch(() => {});
     setLoading(false);
 
-    // If a referral was found we show the celebration modal first;
-    // the modal's onDismiss handler navigates to /(tabs).
-    // Use a short timeout so state update & profile refresh settle first.
-    setTimeout(() => {
-      setReferralModal(prev => {
-        if (prev) return prev; // modal pending — navigation deferred to onDismiss
-        router.replace("/(tabs)/discover");
-        return null;
-      });
-    }, 60);
+    router.replace("/(tabs)/discover");
   }
 
   // ── Derived display data ─────────────────────────────────────────────────────
@@ -837,50 +762,6 @@ export default function OnboardingScreen() {
           ))}
         </View>
 
-        {/* ── Referral code (optional) ── */}
-        <View style={st.fieldWrap}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 }}>
-            <Text style={[st.fieldLabel, { color: colors.textSecondary, marginBottom: 0 }]}>
-              Referral Code <Text style={{ fontFamily: "Inter_400Regular", fontSize: 12 }}>(optional)</Text>
-            </Text>
-            {referralAutoFilled && (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: colors.accent + "20", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 }}>
-                <Ionicons name="link" size={10} color={colors.accent} />
-                <Text style={{ color: colors.accent, fontSize: 10, fontFamily: "Inter_600SemiBold" }}>Auto-filled</Text>
-              </View>
-            )}
-          </View>
-          <View style={[st.field, { backgroundColor: colors.inputBg }]}>
-            <Ionicons
-              name="gift"
-              size={18}
-              color={referralCode.trim() ? colors.accent : colors.textMuted}
-              style={st.fieldIcon}
-            />
-            <TextInput
-              style={[st.input, { color: colors.text }]}
-              placeholder="e.g. JOHNDOE"
-              placeholderTextColor={colors.textMuted}
-              value={referralCode}
-              onChangeText={(t) => {
-                setReferralCode(t.replace(/\s/g, ""));
-                if (referralAutoFilled) setReferralAutoFilled(false);
-              }}
-              autoCapitalize="characters"
-              autoCorrect={false}
-            />
-            {referralCode.trim().length > 0 && (
-              <TouchableOpacity onPress={() => { setReferralCode(""); setReferralAutoFilled(false); }} style={{ padding: 4 }}>
-                <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-              </TouchableOpacity>
-            )}
-          </View>
-          <Text style={[st.fieldHint, { color: colors.textMuted }]}>
-            {referralAutoFilled
-              ? "We detected an invite link — your referrer's code has been filled in automatically."
-              : "Got invited? Enter the username of the person who referred you."}
-          </Text>
-        </View>
       </View>
     );
   }
@@ -1051,19 +932,6 @@ export default function OnboardingScreen() {
       {renderDobPicker()}
     </KeyboardAvoidingView>
 
-    {/* ── Referral reward celebration modal (shown after onboarding completes) ── */}
-    {referralModal && (
-      <ReferralRewardModal
-        visible={!!referralModal}
-        referrerName={referralModal.referrerName}
-        referrerHandle={referralModal.referrerHandle}
-        referrerAvatar={referralModal.referrerAvatar}
-        onDismiss={() => {
-          setReferralModal(null);
-          router.replace("/(tabs)/discover");
-        }}
-      />
-    )}
     </React.Fragment>
   );
 }

@@ -34,7 +34,6 @@ function getMiniAppComponent(id: string): React.ComponentType | null {
       case "afuid":          mod = require("@/modules/afuid"); break;
       case "afuqr":          mod = require("@/modules/afuqr"); break;
       case "afusaved":       mod = require("@/modules/afusaved"); break;
-      case "afureferral":    mod = require("@/modules/afureferral"); break;
       case "afuservices":    mod = require("@/modules/afuservices"); break;
       case "afufreelance":   mod = require("@/modules/afufreelance"); break;
       case "afucollections": mod = require("@/modules/afucollections"); break;

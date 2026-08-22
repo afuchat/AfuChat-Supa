@@ -2,7 +2,6 @@ import { supabase } from "./supabase";
 
 const REWARDS: Record<string, { xp: number; cooldown: number }> = {
   profile_completed: { xp: 1000, cooldown: 0 },
-  referral: { xp: 2000, cooldown: 0 },
   daily_login: { xp: 20, cooldown: 82800 },
   post_created: { xp: 50, cooldown: 30 },
   post_reply: { xp: 20, cooldown: 10 },

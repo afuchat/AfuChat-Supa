@@ -1016,12 +1016,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => { supabase.removeChannel(channel); };
   }, [user?.id]);
 
-  // isPremium: true only when the user has an active paid subscription OR
-  // an active referral-granted platinum period (platinum_until in the future).
-  const isPremium = !!(
-    subscription !== null ||
-    (profile?.platinum_until && new Date(profile.platinum_until) > new Date())
-  );
+  // Premium status is based only on an active paid subscription.
+  const isPremium = subscription !== null;
 
   const contextValue = useMemo(
     () => ({
