@@ -2846,6 +2846,12 @@ function ChatScreen() {
             statusMap.set(s.message_id, { read_at: s.read_at || null, delivered_at: s.delivered_at || null });
           }
           const msgIdSet = new Set(msgIds);
+          const readIds = (statuses || [])
+            .filter((status: any) => status.read_at)
+            .map((status: any) => status.message_id);
+          if (readIds.length > 0) {
+            void Promise.all(readIds.map((messageId: string) => markMessageRead(messageId)));
+          }
           setMessages((prev) =>
             prev.map((m) => {
               if (!msgIdSet.has(m.id)) return m;
@@ -3336,6 +3342,7 @@ function ChatScreen() {
             : m
         )
       );
+      void Promise.all(message_ids.map((messageId) => markMessageRead(messageId)));
     };
 
     let receiveChannel: ReturnType<typeof supabase.channel>;
@@ -3416,6 +3423,7 @@ function ChatScreen() {
               return { ...m, status: nextStatus, delivered_at: delivered_at || m.delivered_at, read_at: read_at || m.read_at };
             })
           );
+          if (read_at) void markMessageRead(message_id);
         }
       )
       .on(
@@ -3432,6 +3440,7 @@ function ChatScreen() {
               return { ...m, status: nextStatus, delivered_at: delivered_at || m.delivered_at, read_at: read_at || m.read_at };
             })
           );
+          if (read_at) void markMessageRead(message_id);
         }
       )
       .subscribe();
