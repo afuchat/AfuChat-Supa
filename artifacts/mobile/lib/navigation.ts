@@ -125,10 +125,6 @@ export const Navigate = {
     safeRouter.push("/settings/privacy" as any);
   },
 
-  toStorageSettings() {
-    safeRouter.push("/settings/storage" as any);
-  },
-
   // ── Wallet / payments ─────────────────────────────────────────────────────────
 
   toWallet() {

@@ -125,7 +125,6 @@ const ROUTE_MAP: Array<{ match: RegExp; name: string; summary: string }> = [
   { match: /^\/settings\/security/, name: "Security Settings", summary: "Password, two-factor authentication, and linked accounts." },
   { match: /^\/settings\/blocked/, name: "Blocked Users", summary: "View and manage the accounts you've blocked." },
   { match: /^\/settings\/chat/, name: "Chat Settings", summary: "Chat appearance and message preferences." },
-  { match: /^\/settings\/storage/, name: "Storage Settings", summary: "Manage downloaded content and free up app storage." },
   { match: /^\/settings/, name: "Settings", summary: "AfuChat account, privacy, and app settings." },
 
   // Lab / AI

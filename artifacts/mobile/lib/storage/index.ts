@@ -1,7 +1,6 @@
 // ─── Device Storage — permanent on-device store ────────────────────────────────
 // Data is stored once, lives forever, never auto-expired.
-// Only removed when the user explicitly clears it via Settings → Storage,
-// or when the app is uninstalled.
+// Only removed by internal cache maintenance or when the app is uninstalled.
 //
 // Storage tiers:
 //   SecureStore   → auth tokens (Android Keystore / iOS Keychain)

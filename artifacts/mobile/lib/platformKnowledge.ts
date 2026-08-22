@@ -127,7 +127,6 @@ export const PLATFORM_NAV_MAP = `
 | /settings/privacy-restricted | Restricted accounts |
 | /settings/blocked | Manage blocked accounts |
 | /settings/chat | Chat appearance and preferences |
-| /settings/storage | Manage downloaded content and storage |
 | /language-settings | Change the app display language |
 
 ### SUPPORT & ADMIN

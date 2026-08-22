@@ -410,16 +410,8 @@ export default function SettingsScreen() {
           />
         </Section>
 
-        {/* ── Storage & Data ────────────────────────────────────────────── */}
-        <Section title="STORAGE & DATA" colors={colors}>
-          <Row
-            icon="server"
-            label="Storage & Cache"
-            sublabel="Manage local files and cached media"
-            onPress={() => router.push("/settings/storage")}
-            colors={colors}
-            accent={accent}
-          />
+        {/* ── Content & Cache ───────────────────────────────────────────── */}
+        <Section title="CONTENT & CACHE" colors={colors}>
           {(
             <Row
               icon="download"
