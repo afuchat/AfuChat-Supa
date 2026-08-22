@@ -2,16 +2,6 @@ import type { ModuleManifest } from "./types";
 
 export const SUPER_APP_REGISTRY: ModuleManifest[] = [
   {
-    id: "afuai",
-    name: "AfuAI",
-    description: "Your intelligent AI assistant. Ask anything, do everything.",
-    version: "1.0.0",
-    icon: "sparkles",
-    gradient: ["#1018D8", "#0B10A8"] as const,
-    keepAlive: true,
-    badge: "AI",
-  },
-  {
     id: "afupay",
     name: "AfuPay",
     description: "Send, receive, top up, and manage your ACoins & Nexa.",

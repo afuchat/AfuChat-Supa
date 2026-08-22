@@ -52,16 +52,6 @@ const CATEGORIES: Category[] = [
     title: "Super Apps",
     apps: [
       {
-        id: "afuai",
-        label: "AfuAI",
-        icon: "sparkles",
-        gradient: ["#1018D8", "#0B10A8"],
-        route: "/ai",
-        badge: "AI",
-        miniApp: true,
-        featuredSub: "Your intelligent AI assistant. Ask anything, do everything.",
-      },
-      {
         id: "afupay",
         label: "AfuPay",
         icon: "wallet",
@@ -209,14 +199,14 @@ const CATEGORIES: Category[] = [
 ];
 
 const ALL_APPS = CATEGORIES.flatMap((c) => c.apps);
-const FEATURED_IDS = ["afuai", "afupay", "afumarket", "afugames", "afumatch", "afufreelance"];
+const FEATURED_IDS = ["afupay", "afumarket", "afugames", "afumatch", "afufreelance"];
 
 function resolveGradient(gradient: [string, string], accent: string): [string, string] {
   return gradient.map((c) => (c === "#1018D8" ? accent : c)) as [string, string];
 }
 
 function openAppItem(app: AppItem, openApp: (id: string) => void) {
-  const needsNetwork = app.miniApp && app.id !== "afuai";
+  const needsNetwork = app.miniApp;
   if (needsNetwork && !isOnline()) {
     showToast(`${app.label} requires an internet connection`, { type: "info", icon: "wifi" });
   }

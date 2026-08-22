@@ -26,7 +26,6 @@ function getMiniAppComponent(id: string): React.ComponentType | null {
   try {
     let mod: any;
     switch (id) {
-      case "afuai":          mod = require("@/modules/afuai"); break;
       case "afupay":         mod = require("@/modules/afupay"); break;
       case "afumarket":      mod = require("@/modules/afumarket"); break;
       case "afugames":       mod = require("@/modules/afugames"); break;
