@@ -2262,23 +2262,12 @@ function ChatScreen() {
   const [envelopeMsg, setEnvelopeMsg] = useState("");
   const [envelopeCount, setEnvelopeCount] = useState("1");
   const [showEmojiStickerPicker, setShowEmojiStickerPicker] = useState(false);
-  const [emojiSearchActive,      setEmojiSearchActive]      = useState(false);
-  // Ref set synchronously when the emoji/sticker search TextInput gains focus so the
-  // chat input's onFocus handler can distinguish intentional taps from Android focus routing.
-  const emojiSearchFocusedRef = useRef(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const keyboardOffsetAnim = useRef(new Animated.Value(0)).current;
-  // Reset the guard ref whenever the picker is dismissed so the next real tap on the
-  // chat input works normally.
-  useEffect(() => { if (!showEmojiStickerPicker) emojiSearchFocusedRef.current = false; }, [showEmojiStickerPicker]);
-  // If the system keyboard opens for any reason OTHER than the emoji/sticker search
-  // bar (e.g. user taps the chat input while the picker is open), close the picker.
-  // We use the ref — not emojiSearchActive state — to avoid a race: emojiSearchActive
-  // is async state that may not have settled yet when keyboardDidShow fires.
+  // If the system keyboard opens while the emoji/sticker picker is open, close it.
   useEffect(() => {
-    if (showEmojiStickerPicker && keyboardHeight > 0 && !emojiSearchFocusedRef.current) {
+    if (showEmojiStickerPicker && keyboardHeight > 0) {
       setShowEmojiStickerPicker(false);
-      setEmojiSearchActive(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keyboardHeight]);
@@ -6968,12 +6957,6 @@ STRICT RULES:
                             }
                           }}
                           onFocus={() => {
-                            // If the emoji/sticker search bar just grabbed focus, Android may
-                            // route it here. Reject the focus silently so the picker stays open.
-                            if (emojiSearchFocusedRef.current) {
-                              chatInputRef.current?.blur();
-                              return;
-                            }
                             if (showEmojiStickerPicker) setShowEmojiStickerPicker(false);
                             if (showAttachPanel) setShowAttachPanel(false);
                           }}
@@ -7029,15 +7012,7 @@ STRICT RULES:
                       <Ionicons name="chevron-up" size={14} color={colors.textMuted} />
                     </View>
                   )}
-                  {emojiSearchActive && !isRecording && !(input.trim() || attachmentPreview) ? (
-                    <TouchableOpacity
-                      onPress={() => { Keyboard.dismiss(); }}
-                      activeOpacity={0.75}
-                      style={[st.sendBtn, { backgroundColor: BRAND }]}
-                    >
-                      <Ionicons name="chevron-down" size={22} color="#fff" />
-                    </TouchableOpacity>
-                  ) : (input.trim() || attachmentPreview) && !isRecording ? (
+                  {(input.trim() || attachmentPreview) && !isRecording ? (
                     <View style={st.sendBtnCol}>
                       {input.trim().length > 50 && !editingMessage && !attachmentPreview
                         ? (
@@ -7119,14 +7094,8 @@ STRICT RULES:
             height={emojiKeyboardHeight}
             onEmojiSelected={(emoji) => setInput((prev) => prev + emoji)}
             onSendSticker={sendStickerMessage}
-            onSearchModeChange={(active) => setEmojiSearchActive(active)}
-            onSearchFocus={() => {
-              emojiSearchFocusedRef.current = true;
-              chatInputRef.current?.blur();
-            }}
             onSendGif={async (url) => {
               setShowEmojiStickerPicker(false);
-              setEmojiSearchActive(false);
               if (!user) return;
               if (isLocalNotes) {
                 showAlert("My Notes", "GIFs are available only in online chats.");
@@ -7166,7 +7135,7 @@ STRICT RULES:
                 return prev.replace(/[\s\S]$/u, "");
               }
             })}
-            onClose={() => { setShowEmojiStickerPicker(false); setEmojiSearchActive(false); }}
+             onClose={() => { setShowEmojiStickerPicker(false); }}
           />
           {insets.bottom > 0 && (
             <View style={{ height: insets.bottom, backgroundColor: colors.surface }} />
