@@ -276,8 +276,13 @@ function ChatRow({
     <View>
     <TouchableOpacity
       style={[styles.row, { backgroundColor: isSelected ? colors.accent + "18" : isActive ? colors.backgroundSecondary : colors.surface }]}
+      // Match the New Chat selector:
+      // - regular tap opens until a selection exists
+      // - regular tap toggles while selecting
+      // - long-press always toggles the row, including other rows after the
+      //   first one has been selected
       onPress={selectMode ? onToggleSelect : onPress}
-      onLongPress={selectMode ? undefined : onEnterSelectMode}
+      onLongPress={selectMode ? onToggleSelect : onEnterSelectMode}
       delayLongPress={320}
       activeOpacity={0.7}
     >
@@ -1141,6 +1146,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.size === 0) setSelectMode(false);
       return next;
     });
   }, []);
