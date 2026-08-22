@@ -2615,7 +2615,7 @@ export default function DiscoverScreen() {
           const nextHeight = Math.round(e.nativeEvent.layout.height);
           setHeaderHeight((current) => current === nextHeight ? current : nextHeight);
         }}
-        style={[styles.headerBlock, { transform: [{ translateY: headerOffset }] }]}
+        style={[styles.headerBlock]}
       >
         {/* Flat header background — unified BG, no separate surface colour */}
         <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 0 }]} />
@@ -2733,7 +2733,7 @@ export default function DiscoverScreen() {
           <View key="for_you" style={{ flex: 1 }}>
             {feedTab === "for_you" ? (
               loading ? (
-                <View style={{ padding: 8, paddingTop: headerHeight + 8, gap: 8 }}>
+                  <View style={{ padding: 8, paddingTop: headerHeight, gap: 8 }}>
                   {[1,2,3,4,5,6,7,8].map(i => <PostSkeleton key={i} />)}
                 </View>
               ) : (
@@ -2743,7 +2743,7 @@ export default function DiscoverScreen() {
                   keyExtractor={(entry: FeedEntry) => entry._kind === "post" ? entry.item.id : entry.id}
                   renderItem={renderFeedItem}
                   ListHeaderComponent={<StoriesRow userId={user?.id ?? null} avatarUrl={profile?.avatar_url ?? null} displayName={profile?.display_name ?? null} />}
-                  contentContainerStyle={{ gap: 8, paddingTop: headerHeight + 8, paddingBottom: insets.bottom + 100 }}
+                  contentContainerStyle={{ gap: 8, paddingTop: headerHeight, paddingBottom: insets.bottom + 100 }}
                   showsVerticalScrollIndicator={false}
                   onScroll={onFeedScroll}
                   scrollEventThrottle={32}
@@ -2799,7 +2799,7 @@ export default function DiscoverScreen() {
                   </TouchableOpacity>
                 </View>
               ) : loading ? (
-                <View style={{ padding: 8, paddingTop: headerHeight + 8, gap: 8 }}>
+                <View style={{ padding: 8, paddingTop: headerHeight, gap: 8 }}>
                   {[1,2,3,4,5,6,7,8].map(i => <PostSkeleton key={i} />)}
                 </View>
               ) : (
@@ -2808,7 +2808,7 @@ export default function DiscoverScreen() {
                   data={augmentedFeed}
                   keyExtractor={(entry: FeedEntry) => entry._kind === "post" ? entry.item.id : entry.id}
                    renderItem={renderFeedItem}
-                  contentContainerStyle={{ gap: 8, paddingTop: headerHeight + 8, paddingBottom: insets.bottom + 100 }}
+                  contentContainerStyle={{ gap: 8, paddingTop: headerHeight, paddingBottom: insets.bottom + 100 }}
                   showsVerticalScrollIndicator={false}
                   onScroll={onFeedScroll}
                   scrollEventThrottle={32}
@@ -2839,7 +2839,7 @@ export default function DiscoverScreen() {
                 />
               )
             ) : (
-              <View style={{ padding: 8, paddingTop: headerHeight + 8, gap: 8 }}>
+              <View style={{ padding: 8, paddingTop: headerHeight, gap: 8 }}>
                 {[1,2,3,4,5,6,7,8].map(i => <PostSkeleton key={i} />)}
               </View>
             )}
@@ -2865,7 +2865,7 @@ export default function DiscoverScreen() {
             </TouchableOpacity>
           </View>
         ) : loading ? (
-          <View style={{ padding: 8, paddingTop: headerHeight + 8, gap: 8 }}>{[1,2,3,4,5,6,7,8].map(i => <PostSkeleton key={i} />)}</View>
+          <View style={{ padding: 8, paddingTop: headerHeight, gap: 8 }}>{[1,2,3,4,5,6,7,8].map(i => <PostSkeleton key={i} />)}</View>
         ) : (
           <AnimatedFlatList
             ref={flatListRef}
@@ -2873,7 +2873,7 @@ export default function DiscoverScreen() {
             keyExtractor={(entry: FeedEntry) => entry._kind === "post" ? entry.item.id : entry.id}
             renderItem={renderFeedItem}
             ListHeaderComponent={<StoriesRow userId={user?.id ?? null} avatarUrl={profile?.avatar_url ?? null} displayName={profile?.display_name ?? null} />}
-            contentContainerStyle={{ gap: 8, paddingTop: headerHeight + 8, paddingBottom: insets.bottom + 100 }}
+            contentContainerStyle={{ gap: 8, paddingTop: headerHeight, paddingBottom: insets.bottom + 100 }}
             showsVerticalScrollIndicator={false}
             onScroll={onFeedScroll}
               scrollEventThrottle={32}
@@ -3017,7 +3017,7 @@ export default function DiscoverScreen() {
           {
             // Keep the pill directly below the complete header, including the
             // For You / Following tabs, on every safe-area size.
-            top: headerHeight + 6,
+            top: headerHeight + 2,
             transform: [{ translateY: popupSlide }],
             opacity: popupOpacity,
             pointerEvents: popupSnapshot.length > 0 ? "auto" : "none",
@@ -3048,7 +3048,7 @@ export default function DiscoverScreen() {
             borderWidth: 0.75,
             borderColor: pillGlass.border,
           }]} />
-          <Ionicons name="arrow-up" size={14} color={colors.text} />
+          <Ionicons name="arrow-up" size={12} color={colors.text} />
           {/* Up to 3 plain avatar circles — no Avatar component, no rings */}
           <View style={styles.newPostsAvatars}>
             {popupSnapshot.slice(0, 3).map((a, i) => (
@@ -3067,7 +3067,7 @@ export default function DiscoverScreen() {
                   <CachedImage
                     uri={a.avatar_url}
                     cacheType="avatar"
-                    style={{ width: 28, height: 28, borderRadius: 14 }}
+                    style={{ width: 22, height: 22, borderRadius: 11 }}
                     contentFit="cover"
                   />
                 ) : (
@@ -3515,7 +3515,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    paddingVertical: 5,
+    height: 0,
+    paddingVertical: 0,
+    overflow: "hidden",
   },
   bgRefreshText: { fontSize: 11, fontFamily: "Inter_500Medium" },
   newPostsPill: {
@@ -3546,35 +3548,35 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 999,
     overflow: "hidden",
-    paddingVertical: 8,
-    paddingLeft: 12,
-    paddingRight: 16,
-    gap: 7,
+    paddingVertical: 5,
+    paddingLeft: 9,
+    paddingRight: 12,
+    gap: 5,
   },
   newPostsAvatars: {
     flexDirection: "row",
     alignItems: "center",
   },
   newPostsAvatarCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
     borderColor: "#fff",
     overflow: "hidden",
     backgroundColor: "rgba(255,255,255,0.25)",
   },
   newPostsAvatarFallback: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: "rgba(255,255,255,0.3)",
     alignItems: "center",
     justifyContent: "center",
   },
   newPostsAvatarInitial: {
     color: "#fff",
-    fontSize: 11,
+    fontSize: 9,
     fontFamily: "Inter_700Bold",
   },
   newPostsAvatarWrap: {
