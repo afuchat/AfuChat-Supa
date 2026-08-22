@@ -33,7 +33,7 @@ type Props = {
   visible: boolean;
   onClose: () => void;
   children: React.ReactNode;
-  /** Fraction of screen height shown in peek mode. Default 0.58 */
+  /** Legacy fallback fraction used only before content measurement completes. */
   peekFraction?: number;
   backgroundColor?: string;
   handleColor?: string;
@@ -43,7 +43,7 @@ export function SmartSheet({
   visible,
   onClose,
   children,
-  peekFraction = 0.58,
+  peekFraction = 0.28,
   backgroundColor,
   handleColor,
 }: Props) {
@@ -53,13 +53,19 @@ export function SmartSheet({
   const { height: screenH } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
-  const peekH = screenH * peekFraction;
   const fullH = screenH - insets.top - 16;
+  const [contentH, setContentH] = useState(0);
+  const contentPeekH = Math.min(
+    fullH,
+    contentH > 0
+      ? Math.max(120, contentH + 48 + insets.bottom)
+      : Math.max(160, screenH * peekFraction),
+  );
 
   // Keep fresh values accessible inside the PanResponder closure (created once)
-  const peekHRef = useRef(peekH);
+  const peekHRef = useRef(contentPeekH);
   const fullHRef = useRef(fullH);
-  peekHRef.current = peekH;
+  peekHRef.current = contentPeekH;
   fullHRef.current = fullH;
 
   const sheetH = useRef(new Animated.Value(0)).current;
@@ -116,9 +122,26 @@ export function SmartSheet({
   // ─── Open/close animation ──────────────────────────────────────────────────
 
   useEffect(() => {
+    if (!visible || contentH <= 0) return;
+    // Long content has no useful collapsed state: open to the available
+    // viewport and let the inner scroll view handle the rest.
+    if (contentPeekH >= fullH && !isFullRef.current) {
+      isFullRef.current = true;
+      setIsFull(true);
+    }
+    Animated.timing(sheetH, {
+      toValue: contentPeekH,
+      duration: 180,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [contentH, contentPeekH, fullH, visible]);
+
+  useEffect(() => {
     if (visible) {
        isFullRef.current = false;
        setIsFull(false);
+       setContentH(0);
       sheetH.setValue(0);
       Animated.timing(sheetH, {
          toValue: peekHRef.current,
@@ -248,7 +271,7 @@ export function SmartSheet({
           <ScrollView
             ref={scrollRef}
             style={{ flex: 1 }}
-            contentContainerStyle={{ flexGrow: 1 }}
+            contentContainerStyle={{ flexGrow: 0, paddingBottom: 8 }}
             scrollEnabled={isFull}
             bounces={false}
             showsVerticalScrollIndicator={false}
@@ -259,6 +282,9 @@ export function SmartSheet({
             scrollEventThrottle={16}
             keyboardShouldPersistTaps="handled"
             automaticallyAdjustKeyboardInsets
+            onContentSizeChange={(_, height) => {
+              if (height > 0) setContentH(height);
+            }}
           >
             {children}
           </ScrollView>

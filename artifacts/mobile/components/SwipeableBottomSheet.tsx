@@ -32,9 +32,10 @@ interface Props {
   children: React.ReactNode;
   backgroundColor?: string;
   /**
-   * Peek height as a percentage string ("72%", "85%") or a number (pixels).
-   * Defaults to "62%". When fully expanded the sheet fills the screen minus the
-   * status-bar inset.
+   * Maximum collapsed height as a percentage string ("72%", "85%") or pixels.
+   * The sheet now opens at measured content height and uses this value only as
+   * a cap for unusually tall content. When fully expanded it fills the screen
+   * minus the status-bar inset.
    */
   maxHeight?: string | number;
   overlayColor?: string;
@@ -45,7 +46,7 @@ export default function SwipeableBottomSheet({
   onClose,
   children,
   backgroundColor,
-  maxHeight = "62%",
+  maxHeight = "92%",
   overlayColor,
 }: Props) {
   return (
@@ -80,23 +81,30 @@ function MobileSheet({ visible, onClose, children, backgroundColor, maxHeight = 
   const mobileBg = backgroundColor ?? colors.surface;
   const mobileOverlay = overlayColor ?? "rgba(0,0,0,0.5)";
 
-  // Resolve peek height from maxHeight prop
-  function resolvePeekH(sh: number): number {
+  // Resolve the maximum collapsed height from maxHeight. The actual opening
+  // height is calculated from content once the ScrollView reports its size.
+  function resolveMaxH(sh: number): number {
     if (typeof maxHeight === "string" && maxHeight.endsWith("%")) {
       const pct = parseFloat(maxHeight) / 100;
       return sh * Math.min(Math.max(pct, 0.3), 0.92);
     }
     if (typeof maxHeight === "number") return Math.min(maxHeight, sh * 0.92);
-    return sh * 0.62;
+    return sh * 0.92;
   }
 
-  const peekH = resolvePeekH(screenH);
   const fullH = screenH - insets.top - 16;
+  const [contentH, setContentH] = useState(0);
+  const maxCollapsedH = resolveMaxH(screenH);
+  const contentPeekH = Math.min(
+    fullH,
+    maxCollapsedH,
+    contentH > 0 ? Math.max(120, contentH + 44 + insets.bottom) : Math.max(160, screenH * 0.28),
+  );
 
   // Keep fresh values inside PanResponder closure
-  const peekHRef = useRef(peekH);
+  const peekHRef = useRef(contentPeekH);
   const fullHRef = useRef(fullH);
-  peekHRef.current = peekH;
+  peekHRef.current = contentPeekH;
   fullHRef.current = fullH;
 
   const sheetH = useRef(new Animated.Value(0)).current;
@@ -134,9 +142,24 @@ function MobileSheet({ visible, onClose, children, backgroundColor, maxHeight = 
 
   // ── Open/close animation ──────────────────────────────────────────────────
   useEffect(() => {
+    if (!visible || contentH <= 0) return;
+    if (contentPeekH >= fullH && !isFullRef.current) {
+      isFullRef.current = true;
+      setIsFull(true);
+    }
+    Animated.timing(sheetH, {
+      toValue: contentPeekH,
+      duration: 180,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [contentH, contentPeekH, fullH, visible]);
+
+  useEffect(() => {
     if (visible) {
       isFullRef.current = false;
       setIsFull(false);
+      setContentH(0);
       sheetH.setValue(0);
       Animated.timing(sheetH, { toValue: peekHRef.current, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
     }
@@ -227,7 +250,7 @@ function MobileSheet({ visible, onClose, children, backgroundColor, maxHeight = 
         <ScrollView
           ref={scrollRef}
           style={{ flex: 1 }}
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerStyle={{ flexGrow: 0, paddingBottom: 8 }}
           scrollEnabled={isFull}
           bounces={false}
           showsVerticalScrollIndicator={false}
@@ -235,6 +258,9 @@ function MobileSheet({ visible, onClose, children, backgroundColor, maxHeight = 
           onScrollEndDrag={handleScrollEndDrag}
           scrollEventThrottle={16}
           keyboardShouldPersistTaps="handled"
+          onContentSizeChange={(_, height) => {
+            if (height > 0) setContentH(height);
+          }}
         >
           {children}
         </ScrollView>
