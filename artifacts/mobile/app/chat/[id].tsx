@@ -7143,20 +7143,11 @@ STRICT RULES:
         </View>
       )}
 
-      {/* ── Attachment bottom sheet ───────────────────────────────────────── */}
-      <Modal
-        visible={showAttachPanel}
-        transparent
-        animationType="none"
-        onRequestClose={() => setShowAttachPanel(false)}
-      >
-        {(() => {
-          const SW2 = Dimensions.get("window").width;
-          const SH2 = Dimensions.get("window").height;
-          const SHEET_H = Math.round(SH2 * 0.55);
-          const TAB_PILL_H = 58;
-          const TAB_PILL_MARGIN_BOTTOM = 10;
-          const contentH = SHEET_H - TAB_PILL_H - TAB_PILL_MARGIN_BOTTOM - 28; // 28 = handle area
+      {/* ── Attachment actions — compact popover above the input ─────────── */}
+      {showAttachPanel && (
+        (() => {
+          const TAB_PILL_H = 50;
+          const contentH = attachTab === "Gallery" ? 154 : 330;
 
           const isDM = !!chatInfo && !chatInfo.is_group && !chatInfo.is_channel;
           const TABS: { key: typeof attachTab; icon: string; label: string }[] = [
@@ -7487,37 +7478,39 @@ STRICT RULES:
           };
 
           return (
-            <View style={{ flex: 1, justifyContent: "flex-end" }}>
-              {/* Dim backdrop — tap to dismiss */}
+            <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
               <TouchableOpacity
-                style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.45)" }]}
+                style={StyleSheet.absoluteFill}
                 activeOpacity={1}
                 onPress={() => setShowAttachPanel(false)}
               />
-
-              {/* Sheet */}
               <View style={{
-                height: SHEET_H,
+                position: "absolute",
+                left: 12,
+                right: 12,
+                bottom: effectiveBottom + floatingInputHeight + 8,
+                maxHeight: 400,
                 backgroundColor: colors.surface,
-                borderTopLeftRadius: 24,
-                borderTopRightRadius: 24,
-                overflow: "visible",
+                borderRadius: 18,
+                overflow: "hidden",
+                ...Platform.select({
+                  web: { boxShadow: "0px 5px 14px rgba(0,0,0,0.16)" } as any,
+                  default: {
+                    shadowColor: "#000",
+                    shadowOpacity: 0.16,
+                    shadowRadius: 14,
+                    shadowOffset: { width: 0, height: 5 },
+                  },
+                }),
+                elevation: 10,
               }}>
-                {/* Drag handle */}
-                <View style={{ alignItems: "center", paddingTop: 10, paddingBottom: 6 }}>
-                  <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border }} />
-                </View>
-
-                {/* Content area — clipped so thumbnails don't overflow the sheet corners */}
-                <View style={{ height: contentH, overflow: "hidden", borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
+                <View style={{ height: contentH, overflow: "hidden" }}>
                   {renderContent()}
                 </View>
-
-                {/* Floating glass pill tab bar */}
                 <View style={{
-                  marginHorizontal: 20,
+                  marginHorizontal: 10,
                   marginTop: 8,
-                  marginBottom: TAB_PILL_MARGIN_BOTTOM,
+                  marginBottom: 10,
                   height: TAB_PILL_H,
                   borderRadius: TAB_PILL_H / 2,
                   overflow: "hidden",
@@ -7572,8 +7565,8 @@ STRICT RULES:
               </View>
             </View>
           );
-        })()}
-      </Modal>
+        })()
+      )}
 
       <MiniProfilePopup
         userId={miniProfileUserId}
