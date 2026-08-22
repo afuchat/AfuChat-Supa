@@ -323,14 +323,12 @@ function CompactTabBar({
           activeOpacity={1}
           onPress={() => setShowCreatePicker(false)}
         >
-          <View style={[sheet.container, { backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF", paddingBottom: insets.bottom + 20 }]}>
-            <View style={[sheet.handle, { backgroundColor: isDark ? "#48484A" : "#C7C7CC" }]} />
-            <Text style={[sheet.title, { color: isDark ? "#FFFFFF" : "#000000" }]}>What would you like to create?</Text>
+          <View style={[sheet.container, { backgroundColor: isDark ? "rgba(28,28,30,0.96)" : "rgba(255,255,255,0.96)", borderColor: isDark ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.10)", marginBottom: Math.max(insets.bottom, 8) + 8 }]}>
             <View style={sheet.optionsGrid}>
               {CREATE_OPTIONS.map((opt) => (
                 <TouchableOpacity
                   key={opt.route}
-                  style={[sheet.option, { backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7" }]}
+                  style={sheet.option}
                   onPress={() => {
                     setShowCreatePicker(false);
                     setTimeout(() => safeRouter.push(opt.route as any), 200);
@@ -430,49 +428,45 @@ const pill = StyleSheet.create({
 
 const sheet = StyleSheet.create({
   container: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 12,
-    paddingHorizontal: 16,
-    gap: 10,
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    alignSelf: "center",
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 16,
-    fontFamily: "Inter_600SemiBold",
-    marginBottom: 4,
+    marginHorizontal: 14,
+    borderRadius: 30,
+    borderWidth: 1,
+    paddingVertical: 7,
+    paddingHorizontal: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.18,
+        shadowRadius: 12,
+      },
+      android: { elevation: 8 },
+      web: { boxShadow: "0 4px 18px rgba(0,0,0,0.18)" } as any,
+    }),
   },
   option: {
     flex: 1,
-    minWidth: 64,
+    minWidth: 0,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    borderRadius: 16,
+    paddingVertical: 2,
+    paddingHorizontal: 1,
   },
   optionsGrid: {
     flexDirection: "row",
-    gap: 10,
     width: "100%",
   },
   iconBox: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   optionLabel: {
-    marginTop: 7,
-    fontSize: 13,
-    lineHeight: 16,
+    marginTop: 3,
+    fontSize: 10,
+    lineHeight: 12,
     fontFamily: "Inter_600SemiBold",
     textAlign: "center",
   },
