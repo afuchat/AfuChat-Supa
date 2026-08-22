@@ -26,6 +26,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Colors from "@/constants/colors";
 
 type GlassInputProps = {
   /** Ionicons icon shown on the left */
@@ -64,7 +65,7 @@ export function GlassInput({
   onSubmitEditing,
   rightElement,
   hint,
-  accent = "#1f95ff",
+  accent = Colors.brand,
   style,
   inputRef,
   autoFocus,

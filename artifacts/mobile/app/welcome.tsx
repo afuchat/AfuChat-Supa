@@ -24,20 +24,21 @@ import { LinearGradient } from "@/components/ui/SafeGradient";
 import { useAuth } from "@/context/AuthContext";
 import { storage, KEYS } from "@/lib/storage/mmkv";
 import * as Haptics from "@/lib/haptics";
+import Colors from "@/constants/colors";
 
 // ─── Slide data ────────────────────────────────────────────────────────────────
 const SLIDES = [
   {
-    accent: "#1f95ff",
+    accent: Colors.brand,
     accentAlt: "#7B5EA7",
     title: "Chat like\nnever before",
     subtitle:
       "Real-time messages, voice notes & encrypted video calls — with read receipts that actually work.",
     action: "Explore messaging",
     illustration: "messaging",
-    orb1: { x: 0.15, y: 0.12, size: 280, color: "#1f95ff", opacity: 0.18 },
+    orb1: { x: 0.15, y: 0.12, size: 280, color: Colors.brand, opacity: 0.18 },
     orb2: { x: 0.85, y: 0.35, size: 220, color: "#7B5EA7", opacity: 0.14 },
-    orb3: { x: 0.5, y: 0.58, size: 160, color: "#1f95ff", opacity: 0.08 },
+    orb3: { x: 0.5, y: 0.58, size: 160, color: Colors.brand, opacity: 0.08 },
   },
   {
     accent: "#AF52DE",

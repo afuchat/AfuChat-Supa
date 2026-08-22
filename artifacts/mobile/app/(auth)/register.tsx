@@ -31,6 +31,7 @@ import { showAlert } from "@/lib/alert";
 import { googleSignIn } from "@/lib/googleAuth";
 import AfuLogo from "@/components/ui/AfuLogo";
 import { GoogleLogo, GitHubLogo } from "@/components/ui/OAuthLogos";
+import Colors from "@/constants/colors";
 
 const BG = "#000000";
 
@@ -168,7 +169,7 @@ function EmailVerifyModal({ visible, email, onClose, onVerified, isDark, accent 
         <View style={{ gap: 12 }}>
           <AuthInput icon="keypad" placeholder="6-digit code" value={code} onChangeText={setCode} keyboardType="number-pad" returnKeyType="go" onSubmitEditing={verify} accent={accent} />
           <TouchableOpacity style={[sc.primaryBtn, (loading || sending) && { opacity: 0.6 }]} onPress={verify} disabled={loading || sending} activeOpacity={0.85}>
-            <LinearGradient colors={[accent, "#1a7fd4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
+            <LinearGradient colors={[accent, Colors.brandDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
               {(loading || sending) ? <ActivityIndicator color="#fff" size="small" /> : <Text style={sc.primaryText}>Verify email</Text>}
             </LinearGradient>
           </TouchableOpacity>
@@ -388,7 +389,7 @@ export default function SignUpScreen() {
       {/* ── Background orbs ── */}
       <View style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}>
         <SoftOrb cx={SW * 0.15} cy={SH * 0.10} size={260} color="#AF52DE" />
-        <SoftOrb cx={SW * 0.88} cy={SH * 0.50} size={220} color="#1f95ff" />
+        <SoftOrb cx={SW * 0.88} cy={SH * 0.50} size={220} color={Colors.brand} />
         <SoftOrb cx={SW * 0.40} cy={SH * 0.88} size={180} color="#AF52DE" />
       </View>
 
@@ -400,7 +401,7 @@ export default function SignUpScreen() {
           <View style={{ alignItems: "center", marginBottom: 48 }}>
             <View style={sc.logoRing}>
               <LinearGradient
-                colors={["#AF52DE40", "#1f95ff20"]}
+                colors={["#AF52DE40", Colors.brand + "20"]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 style={StyleSheet.absoluteFill}
               />

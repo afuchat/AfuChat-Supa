@@ -1,6 +1,7 @@
 import React from "react";
 import { View } from "react-native";
 import type { ViewStyle } from "react-native";
+import Colors from "@/constants/colors";
 
 // ─── Expo Go detection ────────────────────────────────────────────────────────
 // expo-linear-gradient's JS module loads fine in Expo Go, but its native view
@@ -35,7 +36,7 @@ type Props = {
 };
 
 export function LinearGradient({ colors, style, children, ...rest }: Props) {
-  const fallback = typeof colors[0] === "string" ? (colors[0] as string) : "#1f95ff";
+  const fallback = typeof colors[0] === "string" ? (colors[0] as string) : Colors.brand;
 
   if (!NativeLinearGradient) {
     return (

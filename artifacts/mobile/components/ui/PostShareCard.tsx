@@ -13,6 +13,7 @@ import {
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { timeAgo as fmtRel } from "@/lib/timeAgo";
+import Colors from "@/constants/colors";
 
 export type ShareablePost = {
   id: string;
@@ -32,7 +33,7 @@ export type ShareablePost = {
   accent?: string;
 };
 
-const DEFAULT_ACCENT = "#1f95ff";
+const DEFAULT_ACCENT = Colors.brand;
 
 function fmtNum(n: number): string {
   if (!n) return "0";

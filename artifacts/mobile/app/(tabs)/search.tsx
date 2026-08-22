@@ -41,17 +41,18 @@ import { trackEvent } from "@/lib/activityTracker";
 import { Avatar } from "@/components/ui/Avatar";
 import UserName from "@/components/ui/UserName";
 import { getPersonalizedTags, getSearchSuggestions } from "@/lib/personalization";
+import Colors from "@/constants/colors";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const BRAND   = "#1f95ff";
+const BRAND   = Colors.brand;
 const PURPLE  = "#8B5CF6";
 const GOLD    = "#D4A853";
 const SUCCESS = "#34C759";
 const WARN    = "#FF9500";
 const RED     = "#FF3B30";
 const INDIGO  = "#5856D6";
-const BLUE    = "#007AFF";
+const BLUE    = Colors.brand;
 
 const RARITY_COLORS: Record<string, string> = {
   common: "#9E9E9E", uncommon: BRAND, rare: "#2979FF",
@@ -280,8 +281,8 @@ export default function SearchScreen() {
   const BRAND = colors.accent;
 
   const CATEGORIES = [
-    { id: "people",   label: "People",   icon: "people",        gradient: [BRAND,  "#1a7fd4"]   as [string,string] },
-    { id: "posts",    label: "Posts",    icon: "document-text", gradient: ["#007AFF","#5AC8FA"] as [string,string] },
+    { id: "people",   label: "People",   icon: "people",        gradient: [BRAND,  Colors.brandDark]   as [string,string] },
+    { id: "posts",    label: "Posts",    icon: "document-text", gradient: [BRAND, Colors.status.info] as [string,string] },
     { id: "videos",   label: "Videos",   icon: "play-circle",   gradient: [RED,    "#FF6B6B"]   as [string,string] },
     { id: "channels", label: "Channels", icon: "megaphone",     gradient: [PURPLE, "#A855F7"]   as [string,string] },
     { id: "events",   label: "Events",   icon: "calendar",      gradient: [WARN,   "#FFCC00"]   as [string,string] },
@@ -925,7 +926,7 @@ export default function SearchScreen() {
           <View style={{ width: 48, height: 48, borderRadius: 14, overflow: "hidden" }}>
             {gr.avatar_url
               ? <ExpoImage source={{ uri: gr.avatar_url }} style={{ width: 48, height: 48 }} contentFit="cover" cachePolicy="memory-disk" />
-              : <LinearGradient colors={[BRAND, "#1a7fd4"]} style={{ width: 48, height: 48, alignItems: "center", justifyContent: "center" }}><Ionicons name="people" size={22} color="#fff" /></LinearGradient>}
+              : <LinearGradient colors={[BRAND, Colors.brandDark]} style={{ width: 48, height: 48, alignItems: "center", justifyContent: "center" }}><Ionicons name="people" size={22} color="#fff" /></LinearGradient>}
           </View>
           <View style={{ flex: 1, gap: 3 }}>
             <Text style={[ss.rowTitle, { color: colors.text }]} numberOfLines={1}>{gr.name}</Text>
@@ -1057,7 +1058,7 @@ export default function SearchScreen() {
   function JobCard({ j, i }: { j: JobResult; i: number }) {
     const openLink = useOpenLink();
     const tc = j.job_type?.toLowerCase().includes("remote") ? SUCCESS
-      : j.job_type?.toLowerCase().includes("full") ? "#007AFF"
+      : j.job_type?.toLowerCase().includes("full") ? Colors.brand
       : j.job_type?.toLowerCase().includes("part") ? WARN : BRAND;
     return (
       <View >

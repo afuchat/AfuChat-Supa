@@ -34,6 +34,7 @@ import { showAlert } from "@/lib/alert";
 import { googleSignIn } from "@/lib/googleAuth";
 import AfuLogo from "@/components/ui/AfuLogo";
 import { GoogleLogo, GitHubLogo } from "@/components/ui/OAuthLogos";
+import Colors from "@/constants/colors";
 
 const BG = "#000000";
 const BIO_REFRESH_KEY = "afu_bio_refresh_token";
@@ -173,7 +174,7 @@ function ForgotPasswordModal({ visible, onClose, accent }: { visible: boolean; o
             <>
               <AuthInput icon="mail" placeholder="Email address" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" returnKeyType="go" onSubmitEditing={sendCode} accent={accent} />
               <TouchableOpacity style={[sc.primaryBtn, loading && { opacity: 0.6 }]} onPress={sendCode} disabled={loading} activeOpacity={0.85}>
-                <LinearGradient colors={[accent, "#1a7fd4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
+                <LinearGradient colors={[accent, Colors.brandDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
                   {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={sc.primaryText}>Send reset code</Text>}
                 </LinearGradient>
               </TouchableOpacity>
@@ -186,7 +187,7 @@ function ForgotPasswordModal({ visible, onClose, accent }: { visible: boolean; o
               />
               <AuthInput icon="lock-closed" placeholder="Confirm password" value={confirmPwd} onChangeText={setConfirmPwd} secureTextEntry={!showPwd} returnKeyType="go" onSubmitEditing={doReset} accent={accent} />
               <TouchableOpacity style={[sc.primaryBtn, loading && { opacity: 0.6 }]} onPress={doReset} disabled={loading} activeOpacity={0.85}>
-                <LinearGradient colors={[accent, "#1a7fd4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
+                <LinearGradient colors={[accent, Colors.brandDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
                   {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={sc.primaryText}>Update password</Text>}
                 </LinearGradient>
               </TouchableOpacity>
@@ -241,7 +242,7 @@ function EmailVerifyModal({ visible, email, onClose, onVerified, isDark, accent 
         <View style={{ gap: 12 }}>
           <AuthInput icon="keypad" placeholder="6-digit code" value={code} onChangeText={setCode} keyboardType="number-pad" returnKeyType="go" onSubmitEditing={verify} accent={accent} />
           <TouchableOpacity style={[sc.primaryBtn, (loading || sending) && { opacity: 0.6 }]} onPress={verify} disabled={loading || sending} activeOpacity={0.85}>
-            <LinearGradient colors={[accent, "#1a7fd4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
+            <LinearGradient colors={[accent, Colors.brandDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
               {(loading || sending) ? <ActivityIndicator color="#fff" size="small" /> : <Text style={sc.primaryText}>Verify email</Text>}
             </LinearGradient>
           </TouchableOpacity>
@@ -737,7 +738,7 @@ export default function SignInScreen() {
               disabled={loading}
               activeOpacity={0.85}
             >
-              <LinearGradient colors={[accent, "#1a7fd4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
+              <LinearGradient colors={[accent, Colors.brandDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
                 {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={sc.primaryText}>Sign in</Text>}
               </LinearGradient>
             </TouchableOpacity>

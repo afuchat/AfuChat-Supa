@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
 import { Ionicons } from "@expo/vector-icons";
+import Colors from "@/constants/colors";
 
 export default function UpdatePasswordNative() {
   const { colors } = useTheme();
@@ -14,7 +15,7 @@ export default function UpdatePasswordNative() {
         To reset your password, please use the AfuChat mobile app — tap "Forgot password?" on the sign-in screen.
       </Text>
       <TouchableOpacity
-        style={[s.btn, { backgroundColor: "#1f95ff" }]}
+        style={[s.btn, { backgroundColor: Colors.brand }]}
         onPress={() => router.replace("/(auth)/login" as any)}
         activeOpacity={0.85}
       >

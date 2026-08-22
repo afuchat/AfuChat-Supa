@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text } from "react-native";
+import Colors from "@/constants/colors";
 
 // ─── Safe react-native-svg loader ─────────────────────────────────────────────
 // react-native-svg's native ViewManager can fail to initialize on first render
@@ -102,7 +103,7 @@ export function FacebookLogo({ size = 20 }: { size?: number }) {
 }
 
 // ─── Phone Logo ────────────────────────────────────────────────────────────────
-export function PhoneLogo({ size = 20, color = "#1f95ff" }: { size?: number; color?: string }) {
+export function PhoneLogo({ size = 20, color = Colors.brand }: { size?: number; color?: string }) {
   const { Svg, Path } = getSvgComponents();
   if (!Svg || !Path) {
     return <LetterBadge letter="☏" color={color} size={size} />;

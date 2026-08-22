@@ -694,7 +694,7 @@ function AiInlineText({ text, color }: { text: string; color: string }) {
     if (m[2]) parts.push(<Text key={k++} style={{ color, fontWeight: "700", fontStyle: "italic" }}>{m[2]}</Text>);
     else if (m[3]) parts.push(<Text key={k++} style={{ color, fontWeight: "700" }}>{m[3]}</Text>);
     else if (m[4]) parts.push(<Text key={k++} style={{ color, fontStyle: "italic" }}>{m[4]}</Text>);
-    else if (m[5]) parts.push(<Text key={k++} style={{ color: "#1f95ff", fontFamily: "monospace", fontSize: 13 }}>{` ${m[5]} `}</Text>);
+    else if (m[5]) parts.push(<Text key={k++} style={{ color: Colors.brand, fontFamily: "monospace", fontSize: 13 }}>{` ${m[5]} `}</Text>);
     last = m.index + m[0].length;
   }
   if (last < text.length) parts.push(<Text key={k++} style={{ color }}>{stripMd(text.slice(last))}</Text>);
@@ -719,14 +719,14 @@ function AiRichContent({ content, colors: c, isUser }: { content: string; colors
         if (seg.type === "codeblock") {
           return (
             <ScrollView key={i} horizontal showsHorizontalScrollIndicator={false} style={{ backgroundColor: c.inputBg || "#1e1e1e", borderRadius: 8, padding: 8, marginTop: 6, marginBottom: 2 }}>
-              <Text style={{ fontFamily: "monospace", fontSize: 12, color: "#1f95ff" }}>{seg.text}</Text>
+              <Text style={{ fontFamily: "monospace", fontSize: 12, color: Colors.brand }}>{seg.text}</Text>
             </ScrollView>
           );
         }
         if (seg.type === "bullet") {
           return (
             <View key={i} style={{ flexDirection: "row", gap: 7, paddingLeft: (seg.indent || 0) * 12, marginTop: prev === "text" || prev === "heading" ? 6 : 3 }}>
-              <Text style={{ color: "#1f95ff", fontSize: 11, lineHeight: 20, marginTop: 1 }}>●</Text>
+              <Text style={{ color: Colors.brand, fontSize: 11, lineHeight: 20, marginTop: 1 }}>●</Text>
               <Text style={{ color: textColor, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20, flex: 1 }}>
                 <AiInlineText text={seg.text} color={textColor} />
               </Text>
@@ -736,7 +736,7 @@ function AiRichContent({ content, colors: c, isUser }: { content: string; colors
         if (seg.type === "numbered") {
           return (
             <View key={i} style={{ flexDirection: "row", gap: 7, marginTop: prev === "text" || prev === "heading" ? 6 : 4 }}>
-              <Text style={{ color: "#1f95ff", fontSize: 12, fontFamily: "Inter_600SemiBold", lineHeight: 20, minWidth: 18 }}>{seg.num}.</Text>
+              <Text style={{ color: Colors.brand, fontSize: 12, fontFamily: "Inter_600SemiBold", lineHeight: 20, minWidth: 18 }}>{seg.num}.</Text>
               <Text style={{ color: textColor, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20, flex: 1 }}>
                 <AiInlineText text={seg.text} color={textColor} />
               </Text>
@@ -767,8 +767,8 @@ function AiInvoiceCard({ invoice, colors: c }: { invoice: AiInvoiceData; colors:
   return (
     <View style={{ backgroundColor: c.inputBg, borderRadius: 12, borderWidth: 1, borderColor: c.border, padding: 12, marginTop: 8 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
-        <Ionicons name="receipt" size={14} color="#1f95ff" />
-        <Text style={{ fontSize: 12, fontFamily: "Inter_600SemiBold", color: "#1f95ff", textTransform: "uppercase", letterSpacing: 0.5 }}>Invoice</Text>
+        <Ionicons name="receipt" size={14} color={Colors.brand} />
+        <Text style={{ fontSize: 12, fontFamily: "Inter_600SemiBold", color: Colors.brand, textTransform: "uppercase", letterSpacing: 0.5 }}>Invoice</Text>
       </View>
       {rows.map((r, i) => <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 3 }}><Text style={{ fontSize: 13, color: c.textMuted, fontFamily: "Inter_400Regular" }}>{r.label}</Text><Text style={{ fontSize: 13, color: r.highlight ? "#1f95ff" : c.text, fontFamily: "Inter_600SemiBold" }}>{r.value}</Text></View>)}
       <View style={{ height: 1, backgroundColor: c.border, marginVertical: 6 }} />
@@ -785,9 +785,9 @@ function AiInvoiceCard({ invoice, colors: c }: { invoice: AiInvoiceData; colors:
   );
 }
 function AiConfirmationCard({ exec: ea, colors: c, onConfirm, onCancel }: { exec: AiExecAction; colors: any; onConfirm: () => void; onCancel: () => void }) {
-  const colorMap: Record<string, string> = { send_nexa: "#FF9500", send_acoin: "#34C759", follow: "#1f95ff", unfollow: "#FF3B30", subscribe: "#D4A853", cancel_subscription: "#FF3B30", convert_nexa: "#007AFF" };
+  const colorMap: Record<string, string> = { send_nexa: "#FF9500", send_acoin: "#34C759", follow: Colors.brand, unfollow: "#FF3B30", subscribe: "#D4A853", cancel_subscription: "#FF3B30", convert_nexa: Colors.brand };
   const iconMap: Record<string, string> = { send_nexa: "flash", send_acoin: "cash", follow: "person-add", unfollow: "person-remove", subscribe: "diamond", cancel_subscription: "close-circle", convert_nexa: "swap-horizontal" };
-  const accent = colorMap[ea.actionType] || "#1f95ff";
+  const accent = colorMap[ea.actionType] || Colors.brand;
   if (ea.status === "executing") return <View style={{ backgroundColor: c.inputBg, borderRadius: 12, borderWidth: 1, borderColor: accent + "40", padding: 14, marginTop: 8, alignItems: "center" }}><ActivityIndicator color={accent} size="small" /></View>;
   if (ea.status === "success" || ea.status === "failed") {
     const ok = ea.status === "success";
@@ -7835,7 +7835,7 @@ STRICT RULES:
       <BottomSheet visible={showAfuAiMenu} onClose={() => setShowAfuAiMenu(false)}>
         <View style={{ paddingHorizontal: 16, paddingBottom: 8, paddingTop: 4 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingBottom: 12, borderBottomColor: colors.border }}>
-            <Ionicons name="sparkles" size={18} color="#1f95ff" />
+            <Ionicons name="sparkles" size={18} color={Colors.brand} />
             <Text style={{ fontSize: 16, fontFamily: "Inter_700Bold", color: colors.text }}>AfuAI Options</Text>
           </View>
           <TouchableOpacity
@@ -8732,7 +8732,7 @@ const st = StyleSheet.create({
     minWidth: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: "#1f95ff",
+    backgroundColor: Colors.brand,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 5,
