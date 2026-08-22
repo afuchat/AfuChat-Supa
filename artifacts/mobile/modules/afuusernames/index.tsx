@@ -778,6 +778,7 @@ const styles = StyleSheet.create({
   tabs: { flexDirection: "row", paddingHorizontal: 16, borderBottomWidth: 1, marginTop: 12 },
   tab: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 3, paddingBottom: 10, marginRight: 18, borderBottomWidth: 2, borderBottomColor: "transparent" },
   tabText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  fabText: { color: "#fff", fontSize: 14, fontFamily: "Inter_700Bold" },
   count: { minWidth: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center" },
   countText: { color: "#fff", fontSize: 10, fontFamily: "Inter_700Bold" },
   list: { paddingHorizontal: 16, paddingTop: 7, gap: 1 },
