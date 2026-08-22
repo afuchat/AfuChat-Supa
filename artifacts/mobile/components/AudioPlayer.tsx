@@ -348,6 +348,8 @@ export default function AudioPlayer({ uri, tintColor = "#FFFFFF", waveColor, bac
 
 const s = StyleSheet.create({
   row: {
+    position: "relative",
+    zIndex: 2,
     flexDirection: "row",
     alignItems: "center",
     gap: 8,

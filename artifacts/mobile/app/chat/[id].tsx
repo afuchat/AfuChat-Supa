@@ -1773,8 +1773,15 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
               Plain text messages render their timestamp inline in the text flow above.
               hideTimestamp suppresses the time text but keeps the read-receipt icon
               so the user still gets delivery confirmation in regular chats. */}
-          {!useInlineTimestamp && (
-            <View style={[st.metaRow, { marginTop: 3 }]}>
+           {!useInlineTimestamp && (
+             <View
+               style={[
+                 st.metaRow,
+                 hasAudio
+                   ? { marginTop: -2, zIndex: 0, opacity: 0.7 }
+                   : { marginTop: 3 },
+               ]}
+             >
               {!hideTimestamp && msg.edited_at && (
                 <Text style={[st.msgTime, { color: isMe ? myTimeColor : colors.textMuted, marginRight: 4 }]}>edited</Text>
               )}
