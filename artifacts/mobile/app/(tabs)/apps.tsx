@@ -100,7 +100,6 @@ const CATEGORIES: Category[] = [
         icon: "search",
         gradient: ["#5856D6", "#6E6CD3"],
         route: "/search",
-        miniApp: true,
         featuredSub: "Find people, posts, channels, events and more.",
       },
       {

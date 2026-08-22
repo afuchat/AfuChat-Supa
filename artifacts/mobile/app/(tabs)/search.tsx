@@ -26,7 +26,6 @@ import { useOpenLink } from "@/lib/useOpenLink";
 import { supabase } from "@/lib/supabase";
 import { getEdgeFnBase, edgeHeaders } from "@/lib/aiHelper";
 import { getEngagera } from "@/lib/engagera";
-import { useSuperApp } from "@/lib/superapp/MiniAppRuntime";
 import { detectNavIntent, PLATFORM_NAV_MAP, PLATFORM_FEATURES_GUIDE } from "@/lib/platformKnowledge";
 import {
   getSearchHistory,
@@ -273,7 +272,6 @@ function RowSkeleton({ bg }: { bg: string }) {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function SearchScreen() {
-  const { openApp } = useSuperApp();
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
   // Shadow the module-level BRAND constant so every reference inside this
