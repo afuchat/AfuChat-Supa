@@ -73,3 +73,4 @@
 - [Phone contact display and matching](phone-contact-display-order.md) — preserve raw device rows for display/order; normalize only the separate value used for account matching.
 - [Concurrent media upload keys](concurrent-media-upload-keys.md) — parallel uploads must use unique object names; timestamp-only names collide and duplicate/overwrite grouped images.
 - [TypeScript typecheck heap](typescript-typecheck-heap.md) — full mobile typechecks need a larger Node heap than the default in this workspace.
+- [Conservative dead-code audits](cleanup-audit.md) — trace indirect runtime imports and registries before deleting modules that look unreferenced.
