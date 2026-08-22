@@ -118,7 +118,6 @@ import { streamAiChat } from "@/lib/sseStream";
 import { buildNavigationContext, ACTION_ROUTES_GUIDE, detectVoiceNavCommand, pickNavConfirmation } from "@/lib/platformKnowledge";
 import { AFUAI_BOT_ID } from "@/lib/afuAiBot";
 import { GIPHY_API_KEY } from "@/lib/env";
-import { useCall } from "@/context/CallContext";
 import { BlurView } from "expo-blur";
 import WallpaperOverlay from "@/components/chat/WallpaperOverlay";
 import { getDailyUsage, recordDailyUsage } from "@/lib/featureUsage";
@@ -2125,7 +2124,6 @@ function ChatScreen() {
   const isDraft = id === "new";
   const { user, profile, isPremium, subscription, refreshProfile, equippedGoods } = useAuth();
   const { openApp } = useSuperApp();
-  const { startCall: callStart, status: callStatus, isAvailable: callAvailable, micBlocked, showMicPermModal } = useCall();
   const { colors, isDark } = useTheme();
   const { appearance: chatAppearance, updateAppearance: updateChatAppearance } = useChatAppearance(id as string | undefined);
   const BRAND = colors.accent;
@@ -2518,37 +2516,6 @@ function ChatScreen() {
   const recordingStartingRef = useRef(false);
   const recordingTimer = useRef<any>(null);
   const meterInterval = useRef<any>(null);
-
-  // ── Cancel voice recording when a call takes over the mic ─────────────────
-  // Runs when callStatus transitions to outgoing_ringing / incoming_ringing so
-  // the mic is free before the call engine calls getUserMedia. All refs are
-  // stable (created at component-mount time) so the effect deps array is safe.
-  useEffect(() => {
-    if (callStatus !== "outgoing_ringing" && callStatus !== "incoming_ringing") return;
-    // Stop timers
-    recordingActiveRef.current = false;
-    clearInterval(recordingTimer.current);
-    clearInterval(meterInterval.current);
-    // Native recorder
-    if (recorderRef.current) {
-      recorderRef.current.stopAndUnloadAsync().catch(() => {});
-      recorderRef.current = null;
-    }
-    // Web MediaRecorder / stream
-    if (webMediaRecorderRef.current) {
-      try { webMediaRecorderRef.current.stop(); } catch {}
-      webMediaRecorderRef.current = null;
-    }
-    if (webStreamRef.current) {
-      webStreamRef.current.getTracks().forEach((t) => t.stop());
-      webStreamRef.current = null;
-    }
-    // Reset UI state
-    setIsRecording(false);
-    setRecLocked(false);
-    setRecordingDuration(0);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [callStatus]);
 
   const recordingDurationRef = useRef(0);
   const recAmpHistoryRef = useRef<number[]>([]);
@@ -6683,7 +6650,7 @@ STRICT RULES:
               <Ionicons name="person-add" size={20} color={colors.text} />
             </TouchableOpacity>
           )}
-          {/* Voice call — glass pill, 1-on-1 DMs only */}
+          {/* Calls are currently unavailable, but keep the icon visible. */}
           {chatInfo &&
             !chatInfo.is_group &&
             !chatInfo.is_channel &&
@@ -6691,18 +6658,11 @@ STRICT RULES:
             !isSelfChat &&
             !isAfuAiDirectChat &&
             chatInfo.other_id &&
-            callStatus === "idle" && (
+            (
             <TouchableOpacity
               hitSlop={12}
               activeOpacity={0.5}
-              onPress={() => {
-                callStart({
-                  calleeId: chatInfo.other_id!,
-                  calleeName: chatInfo.other_name ?? "Unknown",
-                  calleeAvatar: chatInfo.other_avatar ?? null,
-                  chatId: (isDraft ? realChatId : id as string) ?? null,
-                });
-              }}
+              onPress={() => showAlert("Calls", "Coming soon")}
             >
               <Ionicons
                 name="call-outline"

@@ -134,12 +134,6 @@ export const Navigate = {
     safeRouter.push("/wallet" as any);
   },
 
-  // ── Calls ─────────────────────────────────────────────────────────────────────
-
-  toIncomingCall(params: { callId: string; callerId: string; callerName?: string }) {
-    safeRouter.push({ pathname: "/call/incoming" as any, params });
-  },
-
   // ── Utilities ─────────────────────────────────────────────────────────────────
 
   /**

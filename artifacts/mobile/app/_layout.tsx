@@ -51,8 +51,6 @@ import {
 } from "@expo-google-fonts/inter";
 
 import { AuthProvider, useAuth } from "@/context/AuthContext";
-import { CallProvider } from "@/context/CallContext";
-import { IncomingCallModal } from "@/components/IncomingCallModal";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AppAccentProvider } from "@/context/AppAccentContext";
 import { LanguageProvider } from "@/context/LanguageContext";
@@ -378,16 +376,13 @@ export default function RootLayout() {
               <AnimationGuardInit />
               <DataModeProvider>
                 <AuthProvider>
-                  <CallProvider>
-                    <ActivityTrackerSync />
+                  <ActivityTrackerSync />
                     <CrashReporterUserSync />
                     <CrashSupportHandler />
                     <PushNotificationManager />
                     <PageWatcher />
                     <GlobalInboxListener />
                     <UpdatePrompt />
-                    {/* Incoming call overlay — renders above every screen */}
-                    <IncomingCallModal />
                     <LanguageProvider>
                       <AdvancedFeaturesProvider>
                         <ChatPreferencesProvider>
@@ -400,7 +395,6 @@ export default function RootLayout() {
                         </ChatPreferencesProvider>
                       </AdvancedFeaturesProvider>
                     </LanguageProvider>
-                  </CallProvider>
                 </AuthProvider>
               </DataModeProvider>
             </AppAccentProvider>

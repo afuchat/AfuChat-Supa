@@ -23,7 +23,6 @@ export * from "./localMessages";
 export * from "./localConversations";
 export * from "./localFeed";
 export * from "./localContacts";
-export * from "./localCallHistory";
 export * from "./localProfile";
 export * from "./localSettings";
 export * from "./mediaDownloader";

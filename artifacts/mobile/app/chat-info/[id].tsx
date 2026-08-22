@@ -17,7 +17,6 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { supabase } from "@/lib/supabase";
-import { useCall } from "@/context/CallContext";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
@@ -220,7 +219,6 @@ export default function ChatInfoScreen() {
 
   const { colors, accent, isDark } = useTheme();
   const { user } = useAuth();
-  const { startCall } = useCall();
   const insets = useSafeAreaInsets();
   const BRAND = accent ?? Colors.brand;
 
@@ -408,29 +406,9 @@ export default function ChatInfoScreen() {
     router.back();
   }
 
-  // Use useCallback so the action buttons memo always captures the latest meta
-  // values (other_name, other_avatar) even when otherId doesn't change between
-  // the initial render (from URL param) and the async load completing.
-  const openCall = useCallback(() => {
-    if (!otherId) return;
-    startCall({
-      calleeId: otherId,
-      calleeName: meta?.other_name ?? displayName,
-      calleeAvatar: meta?.other_avatar ?? null,
-      chatId: id,
-    });
-  }, [otherId, meta, displayName, id, startCall]);
-
-  const openVideoCall = useCallback(() => {
-    // Video calls use the same voice engine for now
-    if (!otherId) return;
-    startCall({
-      calleeId: otherId,
-      calleeName: meta?.other_name ?? displayName,
-      calleeAvatar: meta?.other_avatar ?? null,
-      chatId: id,
-    });
-  }, [otherId, meta, displayName, id, startCall]);
+  const showCallsComingSoon = useCallback(() => {
+    showAlert("Calls", "Coming soon");
+  }, []);
 
   // ── Subtitle ─────────────────────────────────────────────────────────────────
 
@@ -473,10 +451,10 @@ export default function ChatInfoScreen() {
       { icon: "chatbubble",       label: "Message",  action: openChat },
       { icon: isMuted ? "notifications" : "notifications-off", label: isMuted ? "Unmute" : "Mute",
         action: () => { if (isMuted) handleUnmute(); else setShowMutePicker(v => !v); } },
-      { icon: "call",             label: "Call",     action: openCall },
-      { icon: "videocam",         label: "Video",    action: openVideoCall },
+      { icon: "call",             label: "Call",     action: showCallsComingSoon },
+      { icon: "videocam",         label: "Video",    action: showCallsComingSoon },
     ];
-  }, [isChannel, isGroup, isMuted, openCall, openVideoCall, handleLeaveGroup]);
+  }, [isChannel, isGroup, isMuted, showCallsComingSoon, handleLeaveGroup]);
 
   // ── List data (members or posts for FlatList) ────────────────────────────────
 

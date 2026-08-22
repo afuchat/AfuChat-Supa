@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { subscribeCallAudio } from "@/lib/callAudioBus";
 import {
   View,
   TouchableOpacity,
@@ -191,30 +190,6 @@ function AudioPlayerActive({
       soundRef.current?.unloadAsync().catch(() => {});
     };
   }, [uri]);
-
-  // Pause playback the moment a call takes over the mic / speaker.
-  // Track whether we auto-paused so we can auto-resume on release.
-  // Guard release with mountedRef so a component unmounted during a call
-  // never tries to resume after teardown.
-  const pausedByCallRef = useRef(false);
-  useEffect(() => {
-    return subscribeCallAudio((event) => {
-      if (event === "takeover") {
-        if (soundRef.current && isPlaying) {
-          pausedByCallRef.current = true;
-          soundRef.current.pauseAsync().catch(() => {});
-        }
-      } else if (event === "release") {
-        if (soundRef.current && pausedByCallRef.current && mountedRef.current) {
-          pausedByCallRef.current = false;
-          soundRef.current.playAsync().catch(() => {});
-        } else {
-          // Component gone or user already stopped — just clear the flag
-          pausedByCallRef.current = false;
-        }
-      }
-    });
-  }, [isPlaying]);
 
   const togglePlay = useCallback(async () => {
     if (!isLoaded || !soundRef.current) return;

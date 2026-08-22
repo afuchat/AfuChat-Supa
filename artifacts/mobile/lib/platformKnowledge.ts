@@ -21,13 +21,11 @@ export const PLATFORM_NAV_MAP = `
 | /search | Search | Find people, posts, videos, jobs, events, gifts, market items |
 | /me | My Profile | Your personal profile and stats |
 
-### MESSAGING & CALLS
+### MESSAGING
 | Route | What it does |
 |---|---|
 | /chat/[id] | Open a specific conversation |
 | /chat/new | Start a new direct message conversation |
-| /call/[id] | Active voice or video call screen |
-| /call-history | History of past calls |
 | /contact/[id] | View a specific contact's profile |
 
 ### CONTENT CREATION & VIEWING
@@ -309,7 +307,7 @@ Valid routes for [ACTION:Button label:/route] tags:
 /shop/cart | /shop/my-orders | /shop/manage | /shop/apply | /gifts/marketplace | /gifts
 /company | /company/manage | /freelance
 /mini-programs/airtime | /mini-programs/bills | /mini-programs/data-bundles | /mini-programs/hotels | /mini-programs/tickets | /mini-programs/transfer
-/support | /chat/new | /call-history | /qr-scanner | /digital-id | /language-settings
+/support | /chat/new | /qr-scanner | /digital-id | /language-settings
 
 SEARCH WITH PRE-FILLED QUERY — open the search screen with text already entered:
   Syntax: [ACTION:Search for X:/search?q=X]
@@ -358,7 +356,6 @@ export const NAV_INTENT_MAP: { patterns: RegExp; route: string; label: string }[
   { patterns: /\b(contacts|friends?\s+list)\b/i, route: "/contacts", label: "Contacts" },
   { patterns: /\b(my\s+profile|view\s+profile|my\s+page)\b/i, route: "/me", label: "My Profile" },
   { patterns: /\b(new\s+chat|start\s+chat|send\s+(a\s+)?message)\b/i, route: "/chat/new", label: "New Chat" },
-  { patterns: /\bcall\s+history\b/i, route: "/call-history", label: "Call History" },
   { patterns: /\b(my\s+orders?|order\s+history|purchases?)\b/i, route: "/shop/my-orders", label: "My Orders" },
   { patterns: /\b(my\s+shop|manage\s+shop)\b/i, route: "/shop/manage", label: "Manage Shop" },
   { patterns: /\b(sell|become\s+(a\s+)?seller|seller\s+application)\b/i, route: "/shop/apply", label: "Apply as Seller" },

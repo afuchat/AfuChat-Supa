@@ -35,7 +35,6 @@ const ROUTE_MAP: Array<{ match: RegExp; name: string; summary: string }> = [
   // Messaging
   { match: /^\/chat\/new/, name: "New Chat", summary: "Start a new direct message conversation." },
   { match: /^\/chat\//, name: "Chat", summary: "A direct message conversation." },
-  { match: /^\/call-history/, name: "Call History", summary: "Your past voice and video calls." },
   { match: /^\/contact\//, name: "User Profile", summary: "A user's AfuChat profile page." },
 
   // Content creation
