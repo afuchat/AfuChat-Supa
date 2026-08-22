@@ -276,25 +276,21 @@ function ChatRow({
     <View>
     <TouchableOpacity
       style={[styles.row, { backgroundColor: isSelected ? colors.accent + "18" : isActive ? colors.backgroundSecondary : colors.surface }]}
-      // Match the New Chat selector:
-      // - regular tap opens until a selection exists
-      // - regular tap toggles while selecting
-      // - long-press always toggles the row, including other rows after the
-      //   first one has been selected
-      onPress={selectMode ? onToggleSelect : onPress}
-      onLongPress={selectMode ? onToggleSelect : onEnterSelectMode}
+      // Selection is intentionally avatar-only. The row itself always keeps
+      // its normal navigation behavior, matching the New Chat contact picker.
+      onPress={onPress}
+      onLongPress={selectMode ? undefined : onEnterSelectMode}
       delayLongPress={320}
       activeOpacity={0.7}
     >
-      {selectMode && (
-        <View style={[
-          selStyles.circle,
-          { borderColor: isSelected ? colors.accent : colors.textMuted + "66" },
-          isSelected && { backgroundColor: colors.accent },
-        ]}>
-          {isSelected && <Ionicons name="checkmark" size={13} color="#fff" />}
-        </View>
-      )}
+      <TouchableOpacity
+        disabled={!selectMode}
+        onPress={onToggleSelect}
+        activeOpacity={0.8}
+        accessibilityRole={selectMode ? "checkbox" : undefined}
+        accessibilityState={selectMode ? { checked: isSelected } : undefined}
+        accessibilityLabel={selectMode ? `Select ${displayName || "chat"}` : undefined}
+      >
       <View style={{ position: "relative" }}>
         {item.kind === "notes" ? (
           <LinearGradient
@@ -311,7 +307,17 @@ function ChatRow({
         {isOnlineDot && (
           <View style={[styles.onlineDot, { borderColor: colors.surface }]} />
         )}
+        {selectMode && (
+          <View style={[
+            selStyles.avatarRing,
+            { borderColor: isSelected ? colors.accent : colors.surface },
+            isSelected && { backgroundColor: colors.accent },
+          ]}>
+            {isSelected && <Ionicons name="checkmark" size={12} color="#fff" />}
+          </View>
+        )}
       </View>
+      </TouchableOpacity>
       <View style={[styles.rowContent, item.is_archived && { opacity: 0.65 }]}>
         <View style={styles.rowTop}>
           <View style={styles.nameRow}>
@@ -2005,10 +2011,13 @@ export function ChatsListPanel() {
 }
 
 const selStyles = StyleSheet.create({
-  circle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  avatarRing: {
+    position: "absolute",
+    right: -2,
+    bottom: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
