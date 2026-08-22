@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
   useWindowDimensions,
+  ActivityIndicator,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,8 +26,11 @@ import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import { shareStory } from "@/lib/share";
 import { markStoriesViewed } from "@/lib/storyViewedStore";
 import { safePause, safePlay } from "@/lib/safeMedia";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getCachedStoryMedia } from "@/lib/storyMediaCache";
 
 const STORY_DURATION = 5000;
+const STORY_LIST_CACHE_PREFIX = "@afuchat:story_list:";
 
 type Story = {
   id: string;
@@ -66,6 +70,10 @@ export default function ViewStoryScreen() {
   const [storiesLoaded, setStoriesLoaded] = useState(false);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [mediaUri, setMediaUri] = useState<string | null>(null);
+  const [mediaReady, setMediaReady] = useState(false);
+  const [mediaDownloading, setMediaDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
   const storyVideoPlayer = useVideoPlayer(null, (p) => { p.loop = false; p.muted = false; });
   const storyVideoRef = useRef<VideoView>(null);
   const [inPip, setInPip] = useState(false);
@@ -124,34 +132,45 @@ export default function ViewStoryScreen() {
   useEffect(() => {
     if (!userId) return;
     setStoriesLoaded(false);
+    let cancelled = false;
+    const applyStories = (rows: any[]) => {
+      if (cancelled) return;
+      const visible = rows.filter((s: any) => {
+        const p = s.privacy || "everyone";
+        if (p === "only_me" && s.user_id !== user?.id) return false;
+        if (p === "close_friends" && s.user_id !== user?.id) return false;
+        return true;
+      });
+      const mapped = visible.map((s: any) => ({ ...s, profile: s.profiles ?? s.profile, like_count: 0 }));
+      setStories(mapped);
+      const storyIds = mapped.map((s: any) => s.id);
+      if (storyIds.length > 0) loadLikeState(storyIds);
+    };
     supabase
       .from("stories")
       .select("id, media_url, media_type, caption, privacy, created_at, view_count, user_id, profiles!stories_user_id_fkey(display_name, avatar_url, handle, is_verified, is_organization_verified)")
       .eq("user_id", userId)
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: true })
-      .then(({ data }) => {
-        if (data) {
-          const visible = data.filter((s: any) => {
-            const p = s.privacy || "everyone";
-            if (p === "only_me" && s.user_id !== user?.id) return false;
-            if (p === "close_friends" && s.user_id !== user?.id) return false;
-            return true;
-          });
-          const mapped = visible.map((s: any) => ({
-            ...s,
-            profile: s.profiles,
-            like_count: 0,
-          }));
-          setStories(mapped);
-
-          // Initialise like state for each story
-          const storyIds = mapped.map((s: any) => s.id);
-          if (storyIds.length > 0) loadLikeState(storyIds);
+      .then(async ({ data }) => {
+        if (data && data.length > 0) {
+          applyStories(data);
+          AsyncStorage.setItem(`${STORY_LIST_CACHE_PREFIX}${userId}`, JSON.stringify(data)).catch(() => {});
+        } else {
+          const cached = await AsyncStorage.getItem(`${STORY_LIST_CACHE_PREFIX}${userId}`);
+          if (cached) applyStories(JSON.parse(cached));
         }
         // Mark fetch complete regardless of result so the empty-state guard fires
-        setStoriesLoaded(true);
+        if (!cancelled) setStoriesLoaded(true);
+      })
+      .then(undefined, async () => {
+        const cached = await AsyncStorage.getItem(`${STORY_LIST_CACHE_PREFIX}${userId}`).catch(() => null);
+        if (cached) {
+          try { applyStories(JSON.parse(cached)); } catch {}
+        }
+        if (!cancelled) setStoriesLoaded(true);
       });
+    return () => { cancelled = true; };
   }, [userId]);
 
   // ── Fetch like counts + my likes for all stories ────────────────────────────
@@ -269,6 +288,34 @@ export default function ViewStoryScreen() {
   const story = stories[index];
   const isVideoStory = story?.media_type === "video";
 
+  // Resolve every story to permanent local storage before starting playback.
+  // A cached file is reused immediately, including when the device is offline.
+  useEffect(() => {
+    if (!story?.id || !story.media_url) return;
+    let cancelled = false;
+    setMediaUri(null);
+    setMediaReady(false);
+    setMediaDownloading(true);
+    setDownloadProgress(0);
+    getCachedStoryMedia(story.id, story.media_url, story.media_type, (p) => {
+      if (!cancelled) setDownloadProgress(p);
+    })
+      .then((uri) => {
+        if (!cancelled) {
+          setMediaUri(uri);
+          setMediaDownloading(false);
+        }
+      })
+      .catch(() => {
+        // A remote fallback still allows already-cached platform media to play.
+        if (!cancelled) {
+          setMediaUri(story.media_url);
+          setMediaDownloading(false);
+        }
+      });
+    return () => { cancelled = true; };
+  }, [story?.id, story?.media_url, story?.media_type]);
+
   const goNext = useCallback(() => {
     if (index < stories.length - 1) {
       setIndex((i) => i + 1);
@@ -285,20 +332,23 @@ export default function ViewStoryScreen() {
   // ── Video player: update source + play/pause when story changes ──────────────
   useEffect(() => {
     videoFinishedRef.current = false;
-    if (!isVideoStory || !story?.media_url) { safePause(storyVideoPlayer); return; }
-    storyVideoPlayer.replaceAsync({ uri: story.media_url }).catch(() => {});
-    if (!paused) safePlay(storyVideoPlayer);
+    if (!isVideoStory || !mediaUri) { safePause(storyVideoPlayer); return; }
+    let cancelled = false;
+    storyVideoPlayer.replaceAsync({ uri: mediaUri })
+      .then(() => { if (!paused) safePlay(storyVideoPlayer); if (!cancelled) setMediaReady(true); })
+      .catch(() => {});
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [story?.media_url, isVideoStory]);
+  }, [mediaUri, isVideoStory]);
 
   useEffect(() => {
-    if (!isVideoStory) return;
+    if (!isVideoStory || !mediaReady) return;
     if (paused) safePause(storyVideoPlayer); else safePlay(storyVideoPlayer);
   }, [paused, isVideoStory]);
 
   // ── Video progress + finish detection (100 ms poll) ──────────────────────────
   useEffect(() => {
-    if (!isVideoStory) return;
+    if (!isVideoStory || !mediaReady) return;
     const timer = setInterval(() => {
       const dur = storyVideoPlayer.duration;
       const pos = storyVideoPlayer.currentTime;
@@ -310,11 +360,11 @@ export default function ViewStoryScreen() {
     }, 100);
     return () => clearInterval(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isVideoStory, goNext]);
+  }, [isVideoStory, mediaReady, goNext]);
 
   // ── Progress bar animation ───────────────────────────────────────────────────
   useEffect(() => {
-    if (stories.length === 0 || paused || isVideoStory || showViewers) return;
+    if (stories.length === 0 || paused || isVideoStory || showViewers || !mediaReady || mediaDownloading) return;
 
     progressAnim.setValue(0);
     const anim = Animated.timing(progressAnim, {
@@ -326,7 +376,7 @@ export default function ViewStoryScreen() {
       if (finished) goNext();
     });
     return () => anim.stop();
-  }, [index, stories.length, paused, isVideoStory, showViewers, goNext, progressAnim]);
+  }, [index, stories.length, paused, isVideoStory, showViewers, mediaReady, mediaDownloading, goNext, progressAnim]);
 
   // ── Record view ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -566,7 +616,24 @@ export default function ViewStoryScreen() {
           onPictureInPictureStop={() => setInPip(false)}
         />
       ) : (
-        <Image source={{ uri: story.media_url }} style={styles.media} resizeMode="contain" />
+        <Image
+          source={mediaUri ? { uri: mediaUri } : undefined}
+          style={styles.media}
+          resizeMode="contain"
+          onLoad={() => setMediaReady(true)}
+        />
+      )}
+
+      {/* Never advance the story while its media is still downloading/loading. */}
+      {(!mediaReady || mediaDownloading) && (
+        <View style={styles.downloadOverlay} pointerEvents="none">
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={styles.downloadText}>
+            {mediaDownloading
+              ? `Downloading${downloadProgress > 0 ? ` ${Math.round(downloadProgress * 100)}%` : "…"}`
+              : "Loading media…"}
+          </Text>
+        </View>
       )}
 
       {/* ── Progress segments ────────────────────────────────────────────── */}
@@ -880,6 +947,18 @@ export default function ViewStoryScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   media: { ...StyleSheet.absoluteFillObject },
+  downloadOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    backgroundColor: "rgba(13,13,13,0.42)",
+  },
+  downloadText: {
+    color: "#fff",
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
 
   // Progress
   progressBar: {
