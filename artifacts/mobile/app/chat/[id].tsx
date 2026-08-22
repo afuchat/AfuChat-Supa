@@ -7352,24 +7352,6 @@ STRICT RULES:
               // Native: clean picker cards — opens the device's native gallery/file picker
               const NATIVE_PICKS = [
                 {
-                  label: "Wallet",
-                  icon: "wallet" as const,
-                  color: "#34C759",
-                  bg: ["#34C759", "#00A86B"],
-                  onPress: () => {
-                    if (!chatInfo?.other_id || chatInfo.is_group || chatInfo.is_channel) {
-                      showAlert("Wallet", "Payments are available only in direct chats.");
-                      return;
-                    }
-                    setShowAttachPanel(false);
-                    Keyboard.dismiss();
-                    openApp("afupay", {
-                      initialRecipientId: chatInfo.other_id,
-                      paymentReference: `Payment to ${chatInfo.other_name || "this user"}`,
-                    });
-                  },
-                },
-                {
                   label: "Photos (up to 6)",
                   icon: "images" as const,
                   color: "#007AFF",
@@ -7430,6 +7412,24 @@ STRICT RULES:
                         setAttachmentPreview({ uri: d.uri, type: "file", name: d.name, mimeType: d.mimeType ?? "application/octet-stream" });
                       }
                     } catch { /* ignore */ }
+                  },
+                },
+                {
+                  label: "Wallet",
+                  icon: "wallet" as const,
+                  color: "#34C759",
+                  bg: ["#34C759", "#00A86B"],
+                  onPress: () => {
+                    if (!chatInfo?.other_id || chatInfo.is_group || chatInfo.is_channel) {
+                      showAlert("Wallet", "Payments are available only in direct chats.");
+                      return;
+                    }
+                    setShowAttachPanel(false);
+                    Keyboard.dismiss();
+                    openApp("afupay", {
+                      initialRecipientId: chatInfo.other_id,
+                      paymentReference: `Payment to ${chatInfo.other_name || "this user"}`,
+                    });
                   },
                 },
               ];
