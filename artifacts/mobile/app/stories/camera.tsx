@@ -46,14 +46,14 @@ function NativeCameraScreen() {
     if (!cameraRef.current || processing) return;
     setProcessing(true);
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.85, base64: true });
-      if (photo?.base64) {
-        const stableUri = `data:image/jpeg;base64,${photo.base64}`;
+      // Keep camera photos as native files. Converting them to base64 sends
+      // them through the small in-memory upload path and can fail on Android;
+      // the working Stories picker uses native streaming instead.
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.85 });
+      if (photo?.uri) {
+        const stableUri = await prepareMediaForUpload(photo.uri, "jpg");
         setStoryMediaDraft({ uri: stableUri, mediaType: "image", mimeType: "image/jpeg" });
         router.push("/stories/create");
-      } else if (photo?.uri) {
-        const stableUri = await prepareMediaForUpload(photo.uri, "jpg");
-        router.push({ pathname: "/stories/create", params: { mediaUri: stableUri, mediaType: "image" } });
       } else {
         showAlert("Error", "Could not capture photo. Please try again.");
         setProcessing(false);
@@ -98,26 +98,17 @@ function NativeCameraScreen() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images", "videos"],
         quality: 0.85,
-        base64: true,
       });
       if (!result.canceled && result.assets[0]) {
         const asset = result.assets[0];
-        const stableUri = asset.type !== "video" && asset.base64
-          ? `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`
-          : await prepareMediaForUpload(asset.uri, asset.type === "video" ? "mp4" : "jpg");
-        if (stableUri.startsWith("data:")) {
-          setStoryMediaDraft({
-            uri: stableUri,
-            mediaType: "image",
-            mimeType: asset.mimeType || "image/jpeg",
-          });
-          router.push("/stories/create");
-          return;
-        }
-        router.push({
-          pathname: "/stories/create",
-          params: { mediaUri: stableUri, mediaType: asset.type === "video" ? "video" : "image" },
+        const isVideo = asset.type === "video";
+        const stableUri = await prepareMediaForUpload(asset.uri, isVideo ? "mp4" : "jpg");
+        setStoryMediaDraft({
+          uri: stableUri,
+          mediaType: isVideo ? "video" : "image",
+          mimeType: asset.mimeType || (isVideo ? "video/mp4" : "image/jpeg"),
         });
+        router.push("/stories/create");
       }
     } catch {
       showAlert("Error", "Could not open gallery.");
