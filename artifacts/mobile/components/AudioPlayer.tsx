@@ -26,6 +26,7 @@ interface AudioPlayerProps {
   uri: string;
   tintColor?: string;
   waveColor?: string;
+  backgroundColor?: string;
   onError?: () => void;
 }
 
@@ -88,16 +89,18 @@ function AudioPlayerIdle({
   onPlay,
   tintColor,
   waveColor,
+  backgroundColor,
 }: {
   onPlay: () => void;
   tintColor: string;
   waveColor?: string;
+  backgroundColor?: string;
 }) {
   const barColor = waveColor || tintColor;
   return (
-    <View style={s.row}>
+    <View style={[s.row, backgroundColor && { backgroundColor }]}>
       <TouchableOpacity onPress={onPlay} hitSlop={8}>
-        <Ionicons name="play" size={24} color={tintColor} />
+        <Ionicons name="play" size={18} color={tintColor} />
       </TouchableOpacity>
       <View style={s.waveContainer}>
         {WAVE_SHAPE.map((h, i) => (
@@ -118,6 +121,7 @@ function AudioPlayerActive({
   playerId,
   tintColor = "#FFFFFF",
   waveColor,
+  backgroundColor,
   onError,
 }: AudioPlayerProps & { playerId: string }) {
   const soundRef = useRef<AudioSound | null>(null);
@@ -259,14 +263,14 @@ function AudioPlayerActive({
     isPlaying || positionMs > 0 ? formatTime(positionMs) : formatTime(durationMs);
 
   return (
-    <View style={s.row}>
+    <View style={[s.row, backgroundColor && { backgroundColor }]}>
       <TouchableOpacity onPress={hasError ? () => setHasError(false) : togglePlay} hitSlop={8} disabled={isLoaded ? false : !hasError}>
         {hasError ? (
-          <Ionicons name="refresh" size={24} color={tintColor} />
+          <Ionicons name="refresh" size={18} color={tintColor} />
         ) : !isLoaded ? (
-          <Ionicons name="ellipsis-horizontal" size={24} color={tintColor} style={{ opacity: 0.5 }} />
+          <Ionicons name="ellipsis-horizontal" size={18} color={tintColor} style={{ opacity: 0.5 }} />
         ) : (
-          <Ionicons name={isPlaying ? "pause" : "play"} size={24} color={tintColor} />
+          <Ionicons name={isPlaying ? "pause" : "play"} size={18} color={tintColor} />
         )}
       </TouchableOpacity>
 
@@ -301,7 +305,7 @@ function AudioPlayerActive({
   );
 }
 
-export default function AudioPlayer({ uri, tintColor = "#FFFFFF", waveColor }: AudioPlayerProps) {
+export default function AudioPlayer({ uri, tintColor = "#FFFFFF", waveColor, backgroundColor }: AudioPlayerProps) {
   const [active, setActive] = useState(false);
   const playerIdRef = useRef<string | null>(null);
 
@@ -324,6 +328,7 @@ export default function AudioPlayer({ uri, tintColor = "#FFFFFF", waveColor }: A
         }}
         tintColor={tintColor}
         waveColor={waveColor}
+        backgroundColor={backgroundColor}
       />
     );
   }
@@ -335,6 +340,7 @@ export default function AudioPlayer({ uri, tintColor = "#FFFFFF", waveColor }: A
       playerId={playerIdRef.current ?? ""}
       tintColor={tintColor}
       waveColor={waveColor}
+      backgroundColor={backgroundColor}
       onError={() => setActive(false)}
     />
   );
@@ -345,16 +351,18 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    minWidth: 200,
-    paddingVertical: 4,
+    minWidth: 164,
+    height: 36,
+    paddingHorizontal: 10,
+    borderRadius: 18,
   },
   waveContainer: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    height: 30,
-    paddingVertical: 2,
+    height: 22,
+    paddingVertical: 1,
   },
   bar: {
     flex: 1,
@@ -363,15 +371,15 @@ const s = StyleSheet.create({
     minWidth: 2,
   },
   speed: {
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: "Inter_700Bold",
-    minWidth: 24,
+    minWidth: 20,
     textAlign: "center",
   },
   time: {
-    fontSize: 12,
+    fontSize: 10,
     fontVariant: ["tabular-nums"],
-    minWidth: 34,
+    minWidth: 30,
     textAlign: "right",
   },
 });

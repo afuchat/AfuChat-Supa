@@ -1317,7 +1317,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
         isMe ? st.bubbleContainerMe : st.bubbleContainerOther,
         flatSurface && { maxWidth: "100%" },
       ]}>
-        {showTail && !flatSurface && <BubbleTail isMe={isMe} color={bubbleColor} />}
+        {showTail && !flatSurface && !hasAudio && <BubbleTail isMe={isMe} color={bubbleColor} />}
 
         <Pressable
           onLongPress={messageLongPress}
@@ -1326,9 +1326,11 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
             st.bubble,
             flatSurface
               ? { backgroundColor: "transparent", borderRadius: 0, paddingHorizontal: 4, paddingTop: 2, paddingBottom: 0 }
+              : hasAudio
+              ? { backgroundColor: "transparent", borderRadius: 0, paddingHorizontal: 0, paddingTop: 0, paddingBottom: 0 }
               : { backgroundColor: bubbleColor, borderRadius: chatRadius ?? 18 },
             isMe ? st.bubbleMe : st.bubbleOther,
-            !flatSurface && showTail ? (isMe ? st.bubbleTailMe : st.bubbleTailOther) : null,
+            !flatSurface && !hasAudio && showTail ? (isMe ? st.bubbleTailMe : st.bubbleTailOther) : null,
             replyPreview ? st.bubbleWithReply : null,
             isPending && { opacity: 0.6 },
             !flatSurface && chatPrefsLocal.compact_mode && { paddingVertical: 5 },
@@ -1419,7 +1421,12 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
             </TouchableOpacity>
           ) : hasAudio ? (
             <TouchableOpacity onLongPress={messageLongPress} delayLongPress={300} activeOpacity={1}>
-              <AudioPlayer uri={attachUri || msg.attachment_url!} tintColor={textColor} waveColor={isMe ? "#FFFFFF" : BRAND} />
+              <AudioPlayer
+                uri={attachUri || msg.attachment_url!}
+                tintColor={textColor}
+                waveColor={isMe ? "#FFFFFF" : BRAND}
+                backgroundColor={isMe ? "rgba(255,255,255,0.14)" : isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}
+              />
               {canTranscribe && (
                 <TouchableOpacity
                   onPress={handleTranscribe}
