@@ -2127,6 +2127,7 @@ function ChatScreen() {
     otherName,
     otherAvatar,
     otherId,
+  otherHandle,
     isGroup,
     isChannel,
     chatName,
@@ -2141,6 +2142,7 @@ function ChatScreen() {
     otherName?: string;
     otherAvatar?: string;
     otherId?: string;
+    otherHandle?: string;
     isGroup?: string;
     isChannel?: string;
     chatName?: string;
@@ -2280,6 +2282,7 @@ function ChatScreen() {
         other_name: otherName || chatName || "Unknown",
         other_avatar: otherAvatar || chatAvatar || null,
         other_id: otherId || "",
+        other_handle: otherHandle || null,
         member_ids: otherId ? [otherId] : [],
         avatar_url: chatAvatar || null,
       };
@@ -2303,7 +2306,8 @@ function ChatScreen() {
   const chatInfoStateRef = useRef(chatInfo);
   chatInfoStateRef.current = chatInfo;
   const isAfuAiDirectChat = chatInfo?.other_id === AFUAI_BOT_ID;
-  const isNotificationsChat = chatInfo?.other_handle?.trim().toLowerCase() === "notifications";
+  const isNotificationsChat = [chatInfo?.other_handle, otherHandle, chatInfo?.other_name, chatInfo?.name]
+    .some((value) => value?.trim().toLowerCase() === "notifications");
   const isSelfChat = !chatInfo?.is_group && !chatInfo?.is_channel && !!chatInfo?.other_id && chatInfo?.other_id === user?.id;
   const isLocalNotes = isLocalNotesId(id);
   const [phonebookName, setPhonebookName] = useState<string | null>(null);
@@ -2736,6 +2740,10 @@ function ChatScreen() {
   const loadMessages = useCallback(async () => {
     const chatId = isDraft ? realChatId : id;
     if (!chatId || !user) return;
+    if (isNotificationsChat) {
+      setLoading(false);
+      return;
+    }
 
     // My Notes is intentionally device-only. Do not query Supabase, subscribe
     // to realtime, or attempt any server sync for this conversation.
@@ -2988,6 +2996,7 @@ function ChatScreen() {
     chatPrefs.auto_download,
     chatPrefs.save_to_gallery,
     chatPrefs.read_receipts,
+    isNotificationsChat,
   ]);
 
   const loadMoreMessages = useCallback(async () => {
@@ -3183,6 +3192,10 @@ function ChatScreen() {
     if (!activeChatId) return;
 
     loadChatInfo();
+    if (isNotificationsChat) {
+      setLoading(false);
+      return;
+    }
     loadMessages();
 
     if (isLocalNotesId(activeChatId)) {
@@ -3365,11 +3378,11 @@ function ChatScreen() {
       clearActiveChatId();
       supabase.removeChannel(msgSub);
     };
-  }, [id, isDraft, realChatId, loadChatInfo, loadMessages]);
+  }, [id, isDraft, realChatId, loadChatInfo, loadMessages, isNotificationsChat]);
 
   // ── Realtime: typing indicators + read receipts (user-scoped for DMs) ─────
   useEffect(() => {
-    if (!user || !id || isLocalNotesId(id)) return;
+    if (!user || !id || isLocalNotesId(id) || isNotificationsChat) return;
     const isDM = !!chatInfo && !chatInfo.is_group && !chatInfo.is_channel && !!chatInfo.other_id;
     const otherId = chatInfo?.other_id;
 
@@ -3471,6 +3484,7 @@ function ChatScreen() {
     chatInfo?.is_group,
     chatInfo?.is_channel,
     chatPrefs.read_receipts,
+    isNotificationsChat,
   ]);
 
   // ── Realtime: message_status DB changes → update sender's tick colour ────────
@@ -3479,7 +3493,7 @@ function ChatScreen() {
   // We subscribe without a row filter (no IN support in Supabase realtime)
   // and do a lightweight client-side check inside setMessages.
   useEffect(() => {
-    if (!user || !id || isLocalNotes) return;
+    if (!user || !id || isLocalNotes || isNotificationsChat) return;
     // Evict stale channel — double-tap can mount this effect twice for the same
     // chat before the first cleanup fires, leaving an already-subscribed channel.
     const _staleStatus = supabase.getChannels().find(
@@ -3524,12 +3538,12 @@ function ChatScreen() {
       )
       .subscribe();
     return () => { supabase.removeChannel(statusSub); };
-  }, [user, id, isLocalNotes]);
+  }, [user, id, isLocalNotes, isNotificationsChat]);
 
   // ── Realtime: online status (1-on-1 chats only) ───────────────────────────
   useEffect(() => {
     const otherId = chatInfo?.other_id;
-    if (!otherId || chatInfo?.is_group || chatInfo?.is_channel || isDraft || isLocalNotesId(id)) return;
+    if (!otherId || chatInfo?.is_group || chatInfo?.is_channel || isDraft || isLocalNotesId(id) || isNotificationsChat) return;
 
     const _stalePresence = supabase.getChannels().find(
       (ch) => ch.topic === `realtime:presence-watch:${id}:${otherId}`
@@ -3553,7 +3567,7 @@ function ChatScreen() {
     return () => {
       supabase.removeChannel(presenceSub);
     };
-  }, [chatInfo?.other_id, chatInfo?.is_group, chatInfo?.is_channel, id, isDraft]);
+  }, [chatInfo?.other_id, chatInfo?.is_group, chatInfo?.is_channel, id, isDraft, isNotificationsChat]);
 
   function handleTyping() {
     if (!user || !id || isDraft || isLocalNotesId(id)) return;

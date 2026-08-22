@@ -1,0 +1,43 @@
+════════════════════════════════════════════
+AfuChat Crash Report
+Time        : 2026-08-22T19:20:46.324Z
+
+App         : AfuChat 2.2.21 (build ?)
+Platform    : web 0.0.0
+OS          : Windows 10
+Dev mode    : true
+
+────────────────  Error  ───────────────────
+cannot add `postgres_changes` callbacks for realtime:notifications-feed:54dfbcea-2b4b-4f25-bcff-d09084b5b65a after `subscribe()`.
+
+────────────  JS Stack Trace  ──────────────
+at ChatScreen (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:348048:82)
+    at ChatScreenRoute (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:342039:56)
+    at WrappedScreenComponent (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:68533:47)
+    at BaseRoute (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:68605:56)
+    at SceneView (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33204:88)
+    at render (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33005:54)
+    at https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33037:23
+    at Array.reduce (<anonymous>)
+    at useDescriptors (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33034:32)
+    at useNavigationBuilder (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:32737:44)
+    at NativeStackNavigator (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:85958:43)
+    at https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:64293:52
+    at Object.assign.Screen (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:64061:45)
+    at AppNavigationStack (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:317018:51)
+    at RootLayout (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:317334:76)
+    at WrappedScreenComponent (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:68533:47)
+    at BaseRoute (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:68605:56)
+    at SceneView (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33204:88)
+    at render (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33005:54)
+    at https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33037:23
+    at Array.reduce (<anonymous>)
+    at useDescriptors (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33034:32)
+    at useNavigationBuilder (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:32737:44)
+    at Content (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:88997:43)
+    at ContextNavigator (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:88938:56)
+    at ExpoRoot (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:88856:45)
+    at App (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:24236:50)
+    at WithDevTools (https://ce9ff3f7-0a59-468a-a8cb-011d02801eb0-00-xbtu4hqrozt6.worf.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:79897:59)
+
+════════════════════════════════════════════

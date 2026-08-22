@@ -70,8 +70,16 @@ export default function NotificationChatPanel({ userId, colors, bottomInset = 0 
 
   useEffect(() => {
     void loadEvents();
+    const channelName = `notifications-feed:${userId}`;
+    // React Strict Mode and fast route changes can leave the previous channel
+    // registered briefly. Supabase does not allow adding callbacks after that
+    // channel has subscribed, so remove the stale owner before configuring the
+    // replacement.
+    const staleChannel = supabase.getChannels().find((item) => item.topic === `realtime:${channelName}`);
+    if (staleChannel) void supabase.removeChannel(staleChannel);
+
     const channel = supabase
-      .channel(`notifications-feed:${userId}`)
+      .channel(channelName)
       .on("postgres_changes", {
         event: "INSERT",
         schema: "public",

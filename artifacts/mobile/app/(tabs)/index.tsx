@@ -136,6 +136,8 @@ type ChatItem = {
   kind?: "notes" | "channel_broadcast";
   /** For kind === "channel_broadcast": the real ID in the `channels` table */
   channel_id?: string;
+  /** Profile handle for stable route classification before chat metadata loads. */
+  other_handle?: string | null;
   other_display_name: string;
   other_avatar: string | null;
   other_id: string;
@@ -156,6 +158,11 @@ type ChatItem = {
   /** null = muted forever; ISO string = muted until that time; undefined = not muted */
   muted_until?: string | null;
 };
+
+function isNotificationsChatItem(item: ChatItem): boolean {
+  return [item.other_handle, item.other_display_name, item.name]
+    .some((value) => value?.trim().toLowerCase() === "notifications");
+}
 
 function localNotesToChatItem(local: any): ChatItem {
   return {
@@ -752,6 +759,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         is_group: !!row.is_group,
         is_channel: !!row.is_channel,
         other_display_name: isSelfChat ? "My Notes" : (row.other_display_name || "Unknown"),
+        other_handle: isSelfChat ? null : (row.other_handle || null),
         other_avatar: isSelfChat ? null : (row.other_avatar || null),
         other_id: isSelfChat ? user.id : (row.other_id || ""),
         last_message: row.last_message
@@ -958,6 +966,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
             otherName: item.kind === "notes" ? "My Notes" : (item.other_display_name || ""),
             otherAvatar: item.other_avatar || "",
             otherId: item.other_id || "",
+            otherHandle: isNotificationsChatItem(item) ? "notifications" : (item.other_handle || ""),
             isGroup: item.is_group ? "true" : "false",
             isChannel: item.is_channel ? "true" : "false",
             chatName: item.name || "",
@@ -1134,6 +1143,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         otherName: ((!item.is_group && !item.is_channel && phonebookNames.get(item.other_id)) || item.other_display_name || ""),
         otherAvatar: item.other_avatar || "",
         otherId: item.other_id || "",
+        otherHandle: isNotificationsChatItem(item) ? "notifications" : (item.other_handle || ""),
         isGroup: item.is_group ? "true" : "false",
         isChannel: item.is_channel ? "true" : "false",
         chatName: item.name || "",
