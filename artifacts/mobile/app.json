@@ -14,7 +14,7 @@
       "resizeableActivity": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
-        "backgroundColor": "#0719D6"
+        "backgroundColor": "#1018D8"
       },
       "googleServicesFile": "./google-services.json",
       "permissions": [
@@ -82,11 +82,11 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0719D6",
+          "backgroundColor": "#1018D8",
           "image": "./assets/images/icon.png",
           "imageWidth": 180,
           "dark": {
-            "backgroundColor": "#0719D6",
+            "backgroundColor": "#1018D8",
             "image": "./assets/images/icon.png"
           }
         }
