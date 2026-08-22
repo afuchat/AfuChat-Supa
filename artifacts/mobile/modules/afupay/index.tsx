@@ -146,7 +146,13 @@ function SubHeader({ title, onBack, colors }: { title: string; onBack: () => voi
   );
 }
 
-export default function AfuPayApp({ initialRecipientId }: { initialRecipientId?: string }) {
+export default function AfuPayApp({
+  initialRecipientId,
+  paymentReference,
+}: {
+  initialRecipientId?: string;
+  paymentReference?: string;
+}) {
   const { colors } = useTheme();
   const { user, profile, refreshProfile } = useAuth();
   const insets = useSafeAreaInsets();
@@ -246,7 +252,7 @@ export default function AfuPayApp({ initialRecipientId }: { initialRecipientId?:
 
   if (view === "history") return <HistoryView colors={colors} insets={insets} txs={filteredTx} loading={txLoading} filter={txFilter} setFilter={setTxFilter} refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadTransactions(); }} onBack={() => setView("home")} />;
   if (view === "topup") return <TopUpView colors={colors} insets={insets} profile={profile} onBack={() => setView("home")} onSuccess={() => { loadTransactions(); refreshProfile?.(); }} />;
-  if (view === "send") return <SendView initialRecipientId={initialRecipientId} colors={colors} insets={insets} user={user} profile={profile} onBack={() => setView("home")} onSuccess={() => { loadTransactions(); refreshProfile?.(); setView("home"); }} />;
+  if (view === "send") return <SendView initialRecipientId={initialRecipientId} paymentReference={paymentReference} colors={colors} insets={insets} user={user} profile={profile} onBack={() => setView("home")} onSuccess={() => { loadTransactions(); refreshProfile?.(); setView("home"); }} />;
   if (view === "receive") return <ReceiveView colors={colors} insets={insets} profile={profile} onBack={() => setView("home")} />;
   if (view === "exchange") return <ExchangeView colors={colors} insets={insets} user={user} profile={profile} currSettings={currSettings} onBack={() => setView("home")} onSuccess={() => { loadTransactions(); refreshProfile?.(); setView("home"); }} />;
   if (view === "requests") return <RequestsView colors={colors} insets={insets} user={user} onBack={() => setView("home")} />;
@@ -617,7 +623,7 @@ function TopUpView({ colors, insets, profile, onBack, onSuccess }: any) {
   );
 }
 
-function SendView({ initialRecipientId, colors, insets, user, profile, onBack, onSuccess }: any) {
+function SendView({ initialRecipientId, paymentReference, colors, insets, user, profile, onBack, onSuccess }: any) {
   const [currency, setCurrency] = useState<"acoin" | "nexa">("acoin");
   const [handle, setHandle] = useState("");
   const [amount, setAmount] = useState("");
@@ -712,6 +718,14 @@ function SendView({ initialRecipientId, colors, insets, user, profile, onBack, o
           <Text style={{ color: colors.textMuted, fontSize: 16, marginRight: 4 }}>@</Text>
           <TextInput style={[s.input, { color: colors.text, flex: 1 }]} placeholder="username" placeholderTextColor={colors.textMuted} value={handle} onChangeText={setHandle} editable={!initialRecipientId} autoCapitalize="none" autoCorrect={false} />
         </View>
+        {paymentReference ? (
+          <View style={[s.paymentReference, { backgroundColor: Colors.brand + "12", borderColor: Colors.brand + "35" }]}>
+            <Ionicons name="chatbubble-ellipses-outline" size={16} color={Colors.brand} />
+            <Text style={[s.paymentReferenceText, { color: colors.text }]} numberOfLines={1}>
+              {paymentReference}
+            </Text>
+          </View>
+        ) : null}
         <Text style={[s.fieldLabel, { color: colors.textMuted }]}>AMOUNT</Text>
         <View style={[s.inputRow, { backgroundColor: colors.inputBg, borderColor: colors.border, marginBottom: 16 }]}>
           <Ionicons name={currIcon} size={18} color={currColor} style={{ marginRight: 8 }} />
@@ -964,6 +978,8 @@ const s = StyleSheet.create({
   balancePill2Text: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
   fieldLabel: { fontSize: 11, fontFamily: "Inter_600SemiBold", letterSpacing: 0.5, marginBottom: 8 },
   inputRow: { flexDirection: "row", alignItems: "center", borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12 },
+  paymentReference: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16 },
+  paymentReferenceText: { flex: 1, fontSize: 13, fontFamily: "Inter_500Medium" },
   input: { fontSize: 15, fontFamily: "Inter_400Regular" },
   packRow: { flexDirection: "row", alignItems: "center", borderRadius: 14, borderWidth: 1.5, paddingHorizontal: 14, paddingVertical: 13 },
   packIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },

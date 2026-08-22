@@ -2028,6 +2028,7 @@ function ChatScreen() {
   }>();
   const isDraft = id === "new";
   const { user, profile, isPremium, subscription, refreshProfile, equippedGoods } = useAuth();
+  const { openApp } = useSuperApp();
   const { startCall: callStart, status: callStatus, isAvailable: callAvailable, micBlocked, showMicPermModal } = useCall();
   const { colors, isDark } = useTheme();
   const { appearance: chatAppearance, updateAppearance: updateChatAppearance } = useChatAppearance(id as string | undefined);
@@ -7168,7 +7169,10 @@ STRICT RULES:
                     }
                     setShowAttachPanel(false);
                     Keyboard.dismiss();
-                    openApp("afupay", { initialRecipientId: chatInfo.other_id });
+                    openApp("afupay", {
+                      initialRecipientId: chatInfo.other_id,
+                      paymentReference: `Payment to ${chatInfo.other_name || "this user"}`,
+                    });
                   },
                 },
                 {
