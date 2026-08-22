@@ -971,21 +971,19 @@ const styles = StyleSheet.create({
   navBarInner: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 4,
+    paddingHorizontal: 8,
     paddingBottom: 10,
     paddingTop: 6,
   },
   navSideLeft: {
-    width: 52,
+    width: 72,
     alignItems: "flex-start",
     justifyContent: "center",
-    paddingLeft: 4,
   },
   navSideRight: {
-    width: 52,
+    width: 72,
     alignItems: "flex-end",
     justifyContent: "center",
-    paddingRight: 4,
   },
   navTitle: {
     flex: 1,
@@ -994,7 +992,14 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     letterSpacing: -0.2,
   },
-  saveChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, minWidth: 52, alignItems: "center" },
+  saveChip: {
+    minWidth: 64,
+    height: 36,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   saveChipText: { color: "#fff", fontSize: 14, fontFamily: "Inter_600SemiBold" },
 
   body: { gap: 14, paddingHorizontal: 16, paddingTop: 0 },
