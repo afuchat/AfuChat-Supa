@@ -265,6 +265,18 @@ type Message = {
   };
 };
 
+function parseGroupedImageUrls(message: Pick<Message, "attachment_url" | "attachment_type">): string[] {
+  if (message.attachment_type !== "image_group" || !message.attachment_url) return [];
+  try {
+    const parsed = JSON.parse(message.attachment_url);
+    return Array.isArray(parsed)
+      ? parsed.filter((url): url is string => typeof url === "string" && url.length > 0)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 type ChatInfo = {
   is_group: boolean;
   is_channel: boolean;
@@ -1080,7 +1092,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   // Initialise synchronously from the in-memory cache; then resolve in the
   // background so the local file is used on re-renders without any re-download.
   const [attachUri, setAttachUri] = useState<string>(() => {
-    if (!msg.attachment_url) return "";
+    if (!msg.attachment_url || msg.attachment_type === "image_group") return "";
     return getLocalAttachmentUri(msg.attachment_url) ?? msg.attachment_url;
   });
   const [fileDownloading, setFileDownloading] = useState(false);
@@ -1090,7 +1102,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
     const type = msg.attachment_type;
     if (!chatPrefsLocal.auto_download) return;
     // Skip video (stream from URL) and file (user must choose to download)
-    if (!url || !type || type === "video" || type === "file") return;
+    if (!url || !type || type === "image_group" || type === "video" || type === "file") return;
     // Already resolved to a local path — nothing to do
     if (attachUri && !attachUri.startsWith("http")) return;
     ensureChatAttachmentDownloaded(url, type)
@@ -1303,7 +1315,8 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
     );
   }
 
-  const hasImage = msg.attachment_url && (msg.attachment_type === "image" || msg.attachment_type === "gif");
+  const groupedImageUrls = parseGroupedImageUrls(msg);
+  const hasImage = msg.attachment_url && (msg.attachment_type === "image" || msg.attachment_type === "gif" || groupedImageUrls.length > 0);
   const hasVideo = msg.attachment_url && msg.attachment_type === "video";
   const hasAudio = msg.attachment_url && msg.attachment_type === "audio";
   const hasFile = msg.attachment_url && msg.attachment_type === "file";
@@ -1399,22 +1412,38 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
           {hasImage ? (
             <>
               <TouchableOpacity
-                  onPress={() => onImageTap?.([attachUri || msg.attachment_url!], 0)}
-                  onLongPress={messageLongPress}
-                  delayLongPress={300}
-                  activeOpacity={0.9}
-                >
-                  <View>
-              <ExpoImage
-                source={{ uri: attachUri || msg.attachment_url! }}
-                style={st.attachImage}
-                contentFit="cover"
-                cachePolicy="memory-disk"
-                transition={0}
-                autoplay={msg.attachment_type !== "gif" || chatPrefsLocal.autoplay_gifs}
-              />
+                onPress={() => onImageTap?.(
+                  groupedImageUrls.length > 0 ? groupedImageUrls : [attachUri || msg.attachment_url!],
+                  0,
+                )}
+                onLongPress={messageLongPress}
+                delayLongPress={300}
+                activeOpacity={0.9}
+              >
+                {groupedImageUrls.length > 0 ? (
+                  <View style={st.imageGroupGrid}>
+                    {groupedImageUrls.map((url, index) => (
+                      <ExpoImage
+                        key={`${url}-${index}`}
+                        source={{ uri: url }}
+                        style={groupedImageUrls.length === 1 ? st.attachImage : st.imageGroupTile}
+                        contentFit="cover"
+                        cachePolicy="memory-disk"
+                        transition={0}
+                      />
+                    ))}
                   </View>
-                </TouchableOpacity>
+                ) : (
+                  <ExpoImage
+                    source={{ uri: attachUri || msg.attachment_url! }}
+                    style={st.attachImage}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    transition={0}
+                    autoplay={msg.attachment_type !== "gif" || chatPrefsLocal.autoplay_gifs}
+                  />
+                )}
+              </TouchableOpacity>
               {hasTextContent && (
                 isTextSelectionEnabled ? (
                   <AutoSelectMessageText
@@ -5441,71 +5470,72 @@ STRICT RULES:
     const activeChatId = await getOrCreateChatId();
     if (!activeChatId) return;
 
-    // Multiple selected images are sent as separate image messages so existing
-    // message rows, realtime updates, and image viewers remain compatible.
+    // Upload the selected images, then store their URLs in one message row so
+    // the whole selection appears as a single grouped gallery in the chat.
     if (selectedImages.length > 0) {
       const images = selectedImages.slice(0, 6);
       const caption = input.trim();
+      const tempId = `pending-${Date.now()}`;
+      const localUrls = images.map((image) => image.uri);
+      setMessages((prev) => [{
+        id: tempId,
+        chat_id: activeChatId,
+        sender_id: user.id,
+        encrypted_content: caption || "📷 Photo",
+        sent_at: new Date().toISOString(),
+        sender: { display_name: profile?.display_name || "You", avatar_url: profile?.avatar_url || null, handle: profile?.handle || "" },
+        attachment_url: JSON.stringify(localUrls),
+        attachment_type: "image_group",
+        _pending: true,
+        reactions: [],
+      }, ...prev]);
       setSelectedImages([]);
       setInput("");
       saveDraft("");
 
-      for (let index = 0; index < images.length; index += 1) {
-        const image = images[index];
-        const label = index === 0 && caption ? caption : "📷 Photo";
-        const tempId = `pending-${Date.now()}-${index}`;
-        setMessages((prev) => [{
-          id: tempId,
+      try {
+        const uploaded = await Promise.all(images.map(async (image) => {
+          const result = await uploadChatMedia(
+            "chat-attachments", activeChatId, user.id, image.uri, undefined, image.mimeType,
+          );
+          if (result.error || !result.publicUrl) {
+            throw new Error(result.error || "Could not upload image. Please try again.");
+          }
+          return result.publicUrl;
+        }));
+        const label = caption || "📷 Photo";
+        const { data: inserted, error: insertError } = await supabase.from("messages").insert({
           chat_id: activeChatId,
           sender_id: user.id,
           encrypted_content: label,
-          sent_at: new Date().toISOString(),
-          sender: { display_name: profile?.display_name || "You", avatar_url: profile?.avatar_url || null, handle: profile?.handle || "" },
-          attachment_url: image.uri,
-          attachment_type: "image",
-          _pending: true,
-          reactions: [],
-        }, ...prev]);
-
-        try {
-          const { publicUrl, error: uploadErr } = await uploadChatMedia(
-            "chat-attachments", activeChatId, user.id, image.uri, undefined, image.mimeType,
-          );
-          if (uploadErr || !publicUrl) {
-            setMessages((prev) => prev.filter((m) => m.id !== tempId));
-            if (index === 0) showAlert("Upload failed", uploadErr || "Could not upload image. Please try again.");
-            continue;
-          }
-          const { data: inserted } = await supabase.from("messages").insert({
-            chat_id: activeChatId,
-            sender_id: user.id,
-            encrypted_content: label,
-            attachment_url: publicUrl,
-            attachment_type: "image",
-          }).select("id").single();
-          setMessages((prev) => prev.map((m) =>
-            m.id === tempId ? { ...m, id: inserted?.id || tempId, attachment_url: publicUrl, _pending: false } : m
-          ));
-          if (chatInfo && inserted?.id) {
-            const recipientIds = chatInfo.member_ids.length > 0
-              ? chatInfo.member_ids
-              : chatInfo.other_id ? [chatInfo.other_id] : [];
-            void notifyChatRecipients({
-              recipientIds: recipientIds.filter((rid: string) => rid !== user.id),
-              senderId: user.id,
-              senderName: profile?.display_name || "Someone",
-              senderAvatarUrl: profile?.avatar_url ?? null,
-              body: label,
-              chatId: activeChatId,
-              messageId: inserted.id,
-              attachmentUrl: publicUrl,
-              attachmentType: "image",
-            });
-          }
-        } catch {
-          setMessages((prev) => prev.filter((m) => m.id !== tempId));
-          if (index === 0) showAlert("Upload failed", "Could not upload image. Please try again.");
+          attachment_url: JSON.stringify(uploaded),
+          attachment_type: "image_group",
+        }).select("id").single();
+        if (insertError) throw insertError;
+        setMessages((prev) => prev.map((m) =>
+          m.id === tempId
+            ? { ...m, id: inserted?.id || tempId, attachment_url: JSON.stringify(uploaded), _pending: false }
+            : m
+        ));
+        if (chatInfo && inserted?.id) {
+          const recipientIds = chatInfo.member_ids.length > 0
+            ? chatInfo.member_ids
+            : chatInfo.other_id ? [chatInfo.other_id] : [];
+          void notifyChatRecipients({
+            recipientIds: recipientIds.filter((rid: string) => rid !== user.id),
+            senderId: user.id,
+            senderName: profile?.display_name || "Someone",
+            senderAvatarUrl: profile?.avatar_url ?? null,
+            body: label,
+            chatId: activeChatId,
+            messageId: inserted.id,
+            attachmentUrl: JSON.stringify(uploaded),
+            attachmentType: "image_group",
+          });
         }
+      } catch (error: any) {
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        showAlert("Upload failed", error?.message || "Could not upload images. Please try again.");
       }
       return;
     }
@@ -8989,6 +9019,19 @@ const st = StyleSheet.create({
   translateChipText: { fontSize: 10, fontFamily: "Inter_500Medium" },
 
   attachImage: { width: ATTACH_W, height: ATTACH_H, borderRadius: 10 },
+  imageGroupGrid: {
+    width: ATTACH_W,
+    maxWidth: "100%",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 2,
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+  imageGroupTile: {
+    width: (ATTACH_W - 2) / 2,
+    height: (ATTACH_H - 2) / 2,
+  },
   attachVideo: { width: ATTACH_W, height: ATTACH_H, borderRadius: 10, overflow: "hidden", backgroundColor: "#0D0D0D" },
   audioRow: { flexDirection: "row", alignItems: "center", gap: 8, minWidth: 180 },
   fileRow: { flexDirection: "row", alignItems: "center", gap: 10, maxWidth: 260 },
