@@ -1425,7 +1425,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                 uri={attachUri || msg.attachment_url!}
                 tintColor={textColor}
                 waveColor={isMe ? "#FFFFFF" : BRAND}
-                backgroundColor={isMe ? "rgba(255,255,255,0.14)" : isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}
+                backgroundColor={bubbleColor}
               />
               {canTranscribe && (
                 <TouchableOpacity
