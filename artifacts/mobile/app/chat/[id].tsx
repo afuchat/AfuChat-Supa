@@ -37,6 +37,7 @@ import { CHAT_FAST_DURATION } from "@/lib/chatMotion";
 import * as Haptics from "@/lib/haptics";
 import { ImageViewer, useImageViewer } from "@/components/ImageViewer";
 import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
 import { Image as ExpoImage } from "expo-image";
 import * as DocumentPicker from "expo-document-picker";
 import * as Contacts from "expo-contacts";
@@ -2582,7 +2583,9 @@ function ChatScreen() {
     })();
   }, [showAttachPanel, attachTab]);
 
-  const [attachmentPreview, setAttachmentPreview] = useState<{ uri: string; type: string; name?: string; mimeType?: string; trimStart?: number; trimEnd?: number } | null>(null);
+  type AttachmentPreview = { uri: string; type: string; name?: string; mimeType?: string; trimStart?: number; trimEnd?: number };
+  const [attachmentPreview, setAttachmentPreview] = useState<AttachmentPreview | null>(null);
+  const [selectedImages, setSelectedImages] = useState<AttachmentPreview[]>([]);
   const [showVideoTrimmer, setShowVideoTrimmer] = useState(false);
   const [pendingVideoUri, setPendingVideoUri] = useState<{ uri: string; mimeType: string } | null>(null);
   const [networkOnline, setNetworkOnline] = useState(isOnline());
@@ -5354,9 +5357,11 @@ STRICT RULES:
       const asset = result.assets[0];
       const isVideo = asset.type === "video";
       if (isVideo) {
+        setSelectedImages([]);
         setPendingVideoUri({ uri: asset.uri, mimeType: asset.mimeType || "video/mp4" });
         setShowVideoTrimmer(true);
       } else {
+        setSelectedImages([]);
         setAttachmentPreview({ uri: asset.uri, type: "image", mimeType: asset.mimeType || "image/jpeg" });
       }
     }
@@ -5367,19 +5372,18 @@ STRICT RULES:
     const libPerm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (libPerm.status !== "granted") { showAlert("Permission needed", "Gallery access is required to pick photos and videos."); return; }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images", "videos"],
+      mediaTypes: ["images"],
       quality: pickerQuality,
-      allowsMultipleSelection: false,
+      allowsMultipleSelection: true,
+      selectionLimit: 6,
     });
-    if (!result.canceled && result.assets[0]) {
-      const asset = result.assets[0];
-      const isVideo = asset.type === "video";
-      if (isVideo) {
-        setPendingVideoUri({ uri: asset.uri, mimeType: asset.mimeType || "video/mp4" });
-        setShowVideoTrimmer(true);
-      } else {
-        setAttachmentPreview({ uri: asset.uri, type: "image", mimeType: asset.mimeType || "image/jpeg" });
-      }
+    if (!result.canceled && result.assets?.length) {
+      setAttachmentPreview(null);
+      setSelectedImages(result.assets.slice(0, 6).map((asset) => ({
+        uri: asset.uri,
+        type: "image",
+        mimeType: asset.mimeType || "image/jpeg",
+      })));
     }
   }
 
@@ -5393,6 +5397,7 @@ STRICT RULES:
       });
       if (!result.canceled && result.assets && result.assets[0]) {
         const doc = result.assets[0];
+        setSelectedImages([]);
         setAttachmentPreview({ uri: doc.uri, type: "file", name: doc.name, mimeType: doc.mimeType });
       }
     } catch {
@@ -5401,10 +5406,11 @@ STRICT RULES:
   }
 
   async function sendAttachment() {
-    if (!user || !attachmentPreview) return;
+    if (!user || (!attachmentPreview && selectedImages.length === 0)) return;
     if (isLocalNotes) {
       showAlert("My Notes", "Notes stay text-only and fully offline.");
       setAttachmentPreview(null);
+      setSelectedImages([]);
       return;
     }
     if (messageLimited) {
@@ -5416,7 +5422,77 @@ STRICT RULES:
     const activeChatId = await getOrCreateChatId();
     if (!activeChatId) return;
 
+    // Multiple selected images are sent as separate image messages so existing
+    // message rows, realtime updates, and image viewers remain compatible.
+    if (selectedImages.length > 0) {
+      const images = selectedImages.slice(0, 6);
+      const caption = input.trim();
+      setSelectedImages([]);
+      setInput("");
+      saveDraft("");
+
+      for (let index = 0; index < images.length; index += 1) {
+        const image = images[index];
+        const label = index === 0 && caption ? caption : "📷 Photo";
+        const tempId = `pending-${Date.now()}-${index}`;
+        setMessages((prev) => [{
+          id: tempId,
+          chat_id: activeChatId,
+          sender_id: user.id,
+          encrypted_content: label,
+          sent_at: new Date().toISOString(),
+          sender: { display_name: profile?.display_name || "You", avatar_url: profile?.avatar_url || null, handle: profile?.handle || "" },
+          attachment_url: image.uri,
+          attachment_type: "image",
+          _pending: true,
+          reactions: [],
+        }, ...prev]);
+
+        try {
+          const { publicUrl, error: uploadErr } = await uploadChatMedia(
+            "chat-attachments", activeChatId, user.id, image.uri, undefined, image.mimeType,
+          );
+          if (uploadErr || !publicUrl) {
+            setMessages((prev) => prev.filter((m) => m.id !== tempId));
+            if (index === 0) showAlert("Upload failed", uploadErr || "Could not upload image. Please try again.");
+            continue;
+          }
+          const { data: inserted } = await supabase.from("messages").insert({
+            chat_id: activeChatId,
+            sender_id: user.id,
+            encrypted_content: label,
+            attachment_url: publicUrl,
+            attachment_type: "image",
+          }).select("id").single();
+          setMessages((prev) => prev.map((m) =>
+            m.id === tempId ? { ...m, id: inserted?.id || tempId, attachment_url: publicUrl, _pending: false } : m
+          ));
+          if (chatInfo && inserted?.id) {
+            const recipientIds = chatInfo.member_ids.length > 0
+              ? chatInfo.member_ids
+              : chatInfo.other_id ? [chatInfo.other_id] : [];
+            void notifyChatRecipients({
+              recipientIds: recipientIds.filter((rid: string) => rid !== user.id),
+              senderId: user.id,
+              senderName: profile?.display_name || "Someone",
+              senderAvatarUrl: profile?.avatar_url ?? null,
+              body: label,
+              chatId: activeChatId,
+              messageId: inserted.id,
+              attachmentUrl: publicUrl,
+              attachmentType: "image",
+            });
+          }
+        } catch {
+          setMessages((prev) => prev.filter((m) => m.id !== tempId));
+          if (index === 0) showAlert("Upload failed", "Could not upload image. Please try again.");
+        }
+      }
+      return;
+    }
+
     // Capture all values before clearing preview state
+    if (!attachmentPreview) return;
     const { uri, type, name, mimeType } = attachmentPreview;
     const caption = input.trim();
     const label = caption || (type === "image" ? "📷 Photo" : type === "video" ? "🎥 Video" : `📎 ${name || "File"}`);
@@ -6800,11 +6876,46 @@ STRICT RULES:
           </View>
         )}
 
-        {attachmentPreview && (
+        {(attachmentPreview || selectedImages.length > 0) && (
           <View style={[st.attachPreviewBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-            {attachmentPreview.type === "image" ? (
+            {selectedImages.length > 0 ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.multiAttachScroll}>
+                {selectedImages.map((image, index) => (
+                  <View key={`${image.uri}-${index}`} style={st.multiAttachItem}>
+                    <Image source={{ uri: image.uri }} style={st.attachPreviewImg} />
+                    <TouchableOpacity
+                      style={st.multiAttachEdit}
+                      onPress={async () => {
+                        try {
+                          const edited = await ImageManipulator.manipulateAsync(
+                            image.uri,
+                            [{ rotate: 90 }],
+                            { compress: 0.92, format: ImageManipulator.SaveFormat.JPEG },
+                          );
+                          setSelectedImages((prev) => prev.map((item, i) =>
+                            i === index ? { ...item, uri: edited.uri, mimeType: "image/jpeg" } : item
+                          ));
+                        } catch {
+                          showAlert("Edit failed", "Could not edit this image.");
+                        }
+                      }}
+                      hitSlop={6}
+                    >
+                      <Ionicons name="create-outline" size={14} color="#fff" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={st.multiAttachRemove}
+                      onPress={() => setSelectedImages((prev) => prev.filter((_, i) => i !== index))}
+                      hitSlop={6}
+                    >
+                      <Ionicons name="close" size={13} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            ) : attachmentPreview?.type === "image" ? (
               <Image source={{ uri: attachmentPreview.uri }} style={st.attachPreviewImg} />
-            ) : attachmentPreview.type === "video" ? (
+            ) : attachmentPreview?.type === "video" ? (
               <View style={[st.attachPreviewFile, { backgroundColor: colors.inputBg }]}>
                 <Ionicons name="videocam" size={20} color={BRAND} />
                 {attachmentPreview.trimStart != null && attachmentPreview.trimEnd != null && (
@@ -6816,27 +6927,31 @@ STRICT RULES:
             ) : (
               <View style={[st.attachPreviewFile, { backgroundColor: colors.inputBg }]}>
                 <Ionicons name="document" size={20} color={BRAND} />
-                <Text style={[st.attachPreviewName, { color: colors.text }]} numberOfLines={1}>{attachmentPreview.name || "File"}</Text>
+                <Text style={[st.attachPreviewName, { color: colors.text }]} numberOfLines={1}>{attachmentPreview?.name || "File"}</Text>
               </View>
             )}
             <View style={{ flex: 1, paddingHorizontal: 10 }}>
               <Text style={{ color: colors.text, fontSize: 13, fontWeight: "600" }} numberOfLines={1}>
-                {attachmentPreview.type === "image" ? "Photo ready to send"
-                  : attachmentPreview.type === "video" ? (attachmentPreview.trimStart != null ? "Trimmed clip ready" : "Video ready to send")
-                  : attachmentPreview.name || "File ready to send"}
+                {selectedImages.length > 0 ? `${selectedImages.length}/6 photos`
+                  : attachmentPreview?.type === "image" ? "Photo"
+                  : attachmentPreview?.type === "video" ? (attachmentPreview.trimStart != null ? "Trimmed clip" : "Video")
+                  : attachmentPreview?.name || "File"}
               </Text>
-              <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 2 }}>Type a caption below (optional)</Text>
             </View>
-            {attachmentPreview.type === "video" && (
+            {attachmentPreview?.type === "video" && (
               <TouchableOpacity
-                onPress={() => { setPendingVideoUri({ uri: attachmentPreview.uri, mimeType: attachmentPreview.mimeType || "video/mp4" }); setShowVideoTrimmer(true); }}
+                onPress={() => {
+                  if (!attachmentPreview) return;
+                  setPendingVideoUri({ uri: attachmentPreview.uri, mimeType: attachmentPreview.mimeType || "video/mp4" });
+                  setShowVideoTrimmer(true);
+                }}
                 style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: BRAND + "18", marginRight: 4 }}
                 hitSlop={8}
               >
                 <Ionicons name="cut" size={16} color={BRAND} />
               </TouchableOpacity>
             )}
-            <TouchableOpacity onPress={() => setAttachmentPreview(null)} style={st.attachPreviewClose} hitSlop={8}>
+            <TouchableOpacity onPress={() => { setAttachmentPreview(null); setSelectedImages([]); }} style={st.attachPreviewClose} hitSlop={8}>
               <Ionicons name="close-circle" size={22} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
@@ -6941,7 +7056,7 @@ STRICT RULES:
                         <TextInput
                           ref={chatInputRef}
                           style={[st.input, { color: colors.text }]}
-                          placeholder={attachmentPreview ? "Add a caption..." : "Message"}
+                          placeholder="Message"
                           placeholderTextColor={colors.textMuted}
                           value={input}
                           onChangeText={(t) => {
@@ -7015,9 +7130,9 @@ STRICT RULES:
                       <Ionicons name="chevron-up" size={14} color={colors.textMuted} />
                     </View>
                   )}
-                  {(input.trim() || attachmentPreview) && !isRecording ? (
+                  {(input.trim() || attachmentPreview || selectedImages.length > 0) && !isRecording ? (
                     <View style={st.sendBtnCol}>
-                      {input.trim().length > 50 && !editingMessage && !attachmentPreview
+                      {input.trim().length > 50 && !editingMessage && !attachmentPreview && selectedImages.length === 0
                         ? (
                           <TouchableOpacity
                             onPress={() => { Keyboard.dismiss(); setShowAiEditor(true); }}
@@ -7029,7 +7144,7 @@ STRICT RULES:
                           </TouchableOpacity>
                         ) : <View />}
                       <TouchableOpacity
-                        onPress={editingMessage ? saveEditMessage : attachmentPreview ? sendAttachment : () => sendMessage()}
+                        onPress={editingMessage ? saveEditMessage : (attachmentPreview || selectedImages.length > 0) ? sendAttachment : () => sendMessage()}
                         disabled={sending}
                         style={[st.sendBtn, { backgroundColor: editingMessage ? "#FF9500" : BRAND }]}
                       >
@@ -7176,7 +7291,7 @@ STRICT RULES:
                   },
                 },
                 {
-                  label: "Photos & Videos",
+                  label: "Photos (up to 6)",
                   icon: "images" as const,
                   color: "#007AFF",
                   bg: ["#0A52FF", "#007AFF"],
@@ -7185,18 +7300,17 @@ STRICT RULES:
                     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
                     if (!perm.granted) return;
                     const res = await ImagePicker.launchImageLibraryAsync({
-                      mediaTypes: ["images", "videos"] as any,
+                      mediaTypes: ["images"] as any,
                       allowsEditing: false,
+                      allowsMultipleSelection: true,
+                      selectionLimit: 6,
                       quality: pickerQuality,
                     });
-                    if (!res.canceled && res.assets?.[0]) {
-                      const a = res.assets[0];
-                      if (a.type === "video") {
-                        setPendingVideoUri({ uri: a.uri, mimeType: a.mimeType || "video/mp4" });
-                        setShowVideoTrimmer(true);
-                      } else {
-                        setAttachmentPreview({ uri: a.uri, type: "image", mimeType: a.mimeType || "image/jpeg" });
-                      }
+                    if (!res.canceled && res.assets?.length) {
+                      setAttachmentPreview(null);
+                      setSelectedImages(res.assets.slice(0, 6).map((a) => ({
+                        uri: a.uri, type: "image", mimeType: a.mimeType || "image/jpeg",
+                      })));
                     }
                   },
                 },
@@ -8843,6 +8957,10 @@ const st = StyleSheet.create({
   replyBannerText: { fontSize: 13, fontFamily: "Inter_400Regular" },
 
   attachPreviewBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 8, gap: 10 },
+  multiAttachScroll: { gap: 8, paddingRight: 4 },
+  multiAttachItem: { position: "relative" },
+  multiAttachEdit: { position: "absolute", left: 5, bottom: 5, width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.68)" },
+  multiAttachRemove: { position: "absolute", right: -5, top: -5, width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.78)" },
   attachPreviewImg: { width: 68, height: 68, borderRadius: 10 },
   attachPreviewFile: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 },
   attachPreviewName: { fontSize: 13, fontFamily: "Inter_500Medium", maxWidth: 160 },
