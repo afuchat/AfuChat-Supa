@@ -7385,10 +7385,7 @@ STRICT RULES:
       {/* ── Attachment actions — separate surface above the composer ─────── */}
       {showAttachPanel && (
         (() => {
-          const contentH = attachTab === "Gallery" ? 56 : 330;
-           // Attachment options use a neutral, opaque treatment. Keep this
-           // separate from the composer/preview styling after a file is picked.
-           const pickerIconColor = isDark ? "#FFFFFF" : "#000000";
+          const contentH = attachTab === "Gallery" ? 126 : 330;
 
           const isDM = !!chatInfo && !chatInfo.is_group && !chatInfo.is_channel;
           const renderContent = () => {
@@ -7477,28 +7474,59 @@ STRICT RULES:
                   },
                 },
               ];
-               return (
-                 <View style={{ flex: 1, flexDirection: "row", alignItems: "center", paddingHorizontal: 5, backgroundColor: colors.surface }}>
-                  {NATIVE_PICKS.map((pick) => (
-                    <TouchableOpacity
-                      key={pick.label}
-                      activeOpacity={0.6}
-                      onPress={pick.onPress}
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        paddingVertical: 4,
-                        paddingHorizontal: 1,
-                        alignItems: "center",
-                      }}
-                    >
-                       <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: isDark ? "#FFFFFF18" : "#0000000D" }}>
-                        <Ionicons name={pick.icon} size={19} color={pickerIconColor} />
+                return (
+                  <View style={{ flex: 1, backgroundColor: colors.surface }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 11, paddingBottom: 7 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+                        <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: BRAND }} />
+                        <Text style={{ color: colors.text, fontSize: 12, fontFamily: "Inter_700Bold", letterSpacing: 0.5 }}>
+                          ATTACHMENTS
+                        </Text>
                       </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              );
+                      <Text style={{ color: colors.textMuted, fontSize: 11, fontFamily: "Inter_400Regular" }}>
+                        Choose an option
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1, flexDirection: "row", alignItems: "stretch", gap: 7, paddingHorizontal: 10, paddingBottom: 10 }}>
+                      {NATIVE_PICKS.map((pick) => (
+                        <TouchableOpacity
+                          key={pick.label}
+                          activeOpacity={0.78}
+                          onPress={pick.onPress}
+                          style={{
+                            flex: 1,
+                            minWidth: 0,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            paddingHorizontal: 2,
+                            borderRadius: 14,
+                            backgroundColor: isDark ? `${pick.color}20` : `${pick.color}12`,
+                            borderWidth: 1,
+                            borderColor: isDark ? `${pick.color}70` : `${pick.color}45`,
+                          }}
+                        >
+                          <LinearGradient
+                            colors={pick.bg as [string, string]}
+                            style={{ width: 42, height: 42, borderRadius: 13, alignItems: "center", justifyContent: "center", marginBottom: 5 }}
+                          >
+                            <Ionicons name={pick.icon} size={22} color="#FFFFFF" />
+                          </LinearGradient>
+                          <Text
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                            minimumFontScale={0.75}
+                            style={{ color: colors.text, fontSize: 10.5, lineHeight: 13, fontFamily: "Inter_600SemiBold", textAlign: "center" }}
+                          >
+                            {pick.label === "Photos (up to 6)" ? "Photos" : pick.label}
+                          </Text>
+                          {pick.label === "Photos (up to 6)" && (
+                            <Text style={{ color: colors.textMuted, fontSize: 8.5, lineHeight: 11, fontFamily: "Inter_400Regular" }}>Up to 6</Text>
+                          )}
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                );
             }
 
 
