@@ -2586,6 +2586,7 @@ function ChatScreen() {
   type AttachmentPreview = { uri: string; type: string; name?: string; mimeType?: string; trimStart?: number; trimEnd?: number };
   const [attachmentPreview, setAttachmentPreview] = useState<AttachmentPreview | null>(null);
   const [selectedImages, setSelectedImages] = useState<AttachmentPreview[]>([]);
+  const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null);
   const [showVideoTrimmer, setShowVideoTrimmer] = useState(false);
   const [pendingVideoUri, setPendingVideoUri] = useState<{ uri: string; mimeType: string } | null>(null);
   const [networkOnline, setNetworkOnline] = useState(isOnline());
@@ -5405,6 +5406,24 @@ STRICT RULES:
     }
   }
 
+  async function applyImageEdit(action: "rotate" | "flip") {
+    if (editingImageIndex == null) return;
+    const image = selectedImages[editingImageIndex];
+    if (!image) return;
+    try {
+      const edited = await ImageManipulator.manipulateAsync(
+        image.uri,
+        action === "rotate" ? [{ rotate: 90 }] : [{ flip: ImageManipulator.FlipType.Horizontal }],
+        { compress: 0.92, format: ImageManipulator.SaveFormat.JPEG },
+      );
+      setSelectedImages((prev) => prev.map((item, index) =>
+        index === editingImageIndex ? { ...item, uri: edited.uri, mimeType: "image/jpeg" } : item
+      ));
+    } catch {
+      showAlert("Edit failed", "Could not edit this image.");
+    }
+  }
+
   async function sendAttachment() {
     if (!user || (!attachmentPreview && selectedImages.length === 0)) return;
     if (isLocalNotes) {
@@ -6881,36 +6900,24 @@ STRICT RULES:
             {selectedImages.length > 0 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.multiAttachScroll}>
                 {selectedImages.map((image, index) => (
-                  <View key={`${image.uri}-${index}`} style={st.multiAttachItem}>
+                  <TouchableOpacity
+                    key={`${image.uri}-${index}`}
+                    style={st.multiAttachItem}
+                    activeOpacity={0.85}
+                    onPress={() => setEditingImageIndex(index)}
+                  >
                     <Image source={{ uri: image.uri }} style={st.attachPreviewImg} />
                     <TouchableOpacity
-                      style={st.multiAttachEdit}
-                      onPress={async () => {
-                        try {
-                          const edited = await ImageManipulator.manipulateAsync(
-                            image.uri,
-                            [{ rotate: 90 }],
-                            { compress: 0.92, format: ImageManipulator.SaveFormat.JPEG },
-                          );
-                          setSelectedImages((prev) => prev.map((item, i) =>
-                            i === index ? { ...item, uri: edited.uri, mimeType: "image/jpeg" } : item
-                          ));
-                        } catch {
-                          showAlert("Edit failed", "Could not edit this image.");
-                        }
-                      }}
-                      hitSlop={6}
-                    >
-                      <Ionicons name="create-outline" size={14} color="#fff" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
                       style={st.multiAttachRemove}
-                      onPress={() => setSelectedImages((prev) => prev.filter((_, i) => i !== index))}
+                      onPress={(event) => {
+                        event.stopPropagation();
+                        setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+                      }}
                       hitSlop={6}
                     >
                       <Ionicons name="close" size={13} color="#fff" />
                     </TouchableOpacity>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </ScrollView>
             ) : attachmentPreview?.type === "image" ? (
@@ -6930,14 +6937,13 @@ STRICT RULES:
                 <Text style={[st.attachPreviewName, { color: colors.text }]} numberOfLines={1}>{attachmentPreview?.name || "File"}</Text>
               </View>
             )}
-            <View style={{ flex: 1, paddingHorizontal: 10 }}>
+            {selectedImages.length === 0 && <View style={{ flex: 1, paddingHorizontal: 10 }}>
               <Text style={{ color: colors.text, fontSize: 13, fontWeight: "600" }} numberOfLines={1}>
-                {selectedImages.length > 0 ? `${selectedImages.length}/6 photos`
-                  : attachmentPreview?.type === "image" ? "Photo"
+                {attachmentPreview?.type === "image" ? "Photo"
                   : attachmentPreview?.type === "video" ? (attachmentPreview.trimStart != null ? "Trimmed clip" : "Video")
                   : attachmentPreview?.name || "File"}
               </Text>
-            </View>
+            </View>}
             {attachmentPreview?.type === "video" && (
               <TouchableOpacity
                 onPress={() => {
@@ -6951,11 +6957,54 @@ STRICT RULES:
                 <Ionicons name="cut" size={16} color={BRAND} />
               </TouchableOpacity>
             )}
-            <TouchableOpacity onPress={() => { setAttachmentPreview(null); setSelectedImages([]); }} style={st.attachPreviewClose} hitSlop={8}>
-              <Ionicons name="close-circle" size={22} color={colors.textMuted} />
-            </TouchableOpacity>
+            {selectedImages.length === 0 && (
+              <TouchableOpacity onPress={() => setAttachmentPreview(null)} style={st.attachPreviewClose} hitSlop={8}>
+                <Ionicons name="close-circle" size={22} color={colors.textMuted} />
+              </TouchableOpacity>
+            )}
           </View>
         )}
+
+        <Modal
+          visible={editingImageIndex !== null}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setEditingImageIndex(null)}
+        >
+          <View style={st.imageEditorBackdrop}>
+            {editingImageIndex !== null && selectedImages[editingImageIndex] && (
+              <Image
+                source={{ uri: selectedImages[editingImageIndex].uri }}
+                style={st.imageEditorImage}
+                resizeMode="contain"
+              />
+            )}
+            <View style={st.imageEditorTools}>
+              <TouchableOpacity
+                onPress={() => applyImageEdit("rotate")}
+                style={st.imageEditorTool}
+                accessibilityLabel="Rotate image"
+              >
+                <Ionicons name="refresh" size={22} color="#fff" />
+                <Text style={st.imageEditorToolText}>Rotate</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => applyImageEdit("flip")}
+                style={st.imageEditorTool}
+                accessibilityLabel="Flip image"
+              >
+                <Ionicons name="swap-horizontal" size={22} color="#fff" />
+                <Text style={st.imageEditorToolText}>Flip</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setEditingImageIndex(null)}
+                style={[st.imageEditorTool, st.imageEditorDone]}
+              >
+                <Text style={st.imageEditorDoneText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
 
         {messageLimited ? (
           <View style={[st.inputFloatOuter, { paddingBottom: Math.max(insets.bottom, 8) }]}>
@@ -8961,6 +9010,13 @@ const st = StyleSheet.create({
   multiAttachItem: { position: "relative" },
   multiAttachEdit: { position: "absolute", left: 5, bottom: 5, width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.68)" },
   multiAttachRemove: { position: "absolute", right: -5, top: -5, width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.78)" },
+  imageEditorBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.94)", alignItems: "center", justifyContent: "center", padding: 20 },
+  imageEditorImage: { width: "100%", height: "72%" },
+  imageEditorTools: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 18, marginTop: 24 },
+  imageEditorTool: { minWidth: 68, alignItems: "center", justifyContent: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 9, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.14)" },
+  imageEditorToolText: { color: "#fff", fontSize: 12, fontFamily: "Inter_500Medium" },
+  imageEditorDone: { backgroundColor: "#007AFF" },
+  imageEditorDoneText: { color: "#fff", fontSize: 13, fontFamily: "Inter_600SemiBold" },
   attachPreviewImg: { width: 68, height: 68, borderRadius: 10 },
   attachPreviewFile: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 },
   attachPreviewName: { fontSize: 13, fontFamily: "Inter_500Medium", maxWidth: 160 },
