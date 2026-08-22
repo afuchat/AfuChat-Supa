@@ -366,13 +366,14 @@ export default function GiftsScreen() {
     <View style={[styles.root, { backgroundColor: colors.backgroundSecondary }]}>
       <GlassHeader
         title={isOwnProfile ? "My Gifts" : `${viewUserName || "User"}'s Gifts`}
+        sideWidth={isOwnProfile ? 132 : 52}
         right={isOwnProfile ? (
-          <View style={{ flexDirection: "row", gap: 8 }}>
+          <View style={styles.headerActions}>
             <TouchableOpacity onPress={() => router.push("/gifts/marketplace")} style={styles.marketplaceBtn}>
               <Ionicons name="storefront" size={14} color="#FF9500" />
               <Text style={styles.marketplaceBtnText}>Market</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push("/wallet")}>
+            <TouchableOpacity onPress={() => router.push("/wallet")} style={styles.walletButton}>
               <View style={styles.acoinBadge}>
                 <Ionicons name="diamond" size={14} color="#fff" />
                 <Text style={styles.acoinText}>{profile?.acoin || 0}</Text>
@@ -771,7 +772,9 @@ const styles = StyleSheet.create({
   confirmCancelText: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
   confirmOk: { flex: 1, borderRadius: 12, paddingVertical: 12, alignItems: "center", backgroundColor: Colors.gold },
   confirmOkText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: "#fff" },
-  marketplaceBtn: { flexDirection: "row", alignItems: "center", gap: 4, borderWidth: 1, borderColor: "#FF9500", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 16 },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 7 },
+  walletButton: { flexShrink: 0 },
+  marketplaceBtn: { flexDirection: "row", alignItems: "center", gap: 4, borderWidth: 1, borderColor: "#FF9500", paddingHorizontal: 9, paddingVertical: 5, borderRadius: 16 },
   marketplaceBtnText: { color: "#FF9500", fontSize: 13, fontFamily: "Inter_600SemiBold" },
   sellRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 4 },
   sellLink: { fontSize: 14, fontFamily: "Inter_600SemiBold" },

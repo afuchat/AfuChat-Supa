@@ -22,6 +22,7 @@ export interface GlassHeaderProps {
   extraBottom?: number;
   subtitle?: string;
   largeTitle?: boolean;
+  sideWidth?: number;
 }
 
 export function GlassHeader({
@@ -33,6 +34,7 @@ export function GlassHeader({
   extraBottom = 0,
   subtitle,
   largeTitle = false,
+  sideWidth = 52,
 }: GlassHeaderProps) {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
@@ -65,7 +67,7 @@ export function GlassHeader({
       <View style={[styles.inner, { paddingBottom: T.space.sm + 2 + extraBottom }]}>
 
         {/* Left — back button */}
-        <View style={styles.side}>
+        <View style={[styles.side, { width: sideWidth }]}>
           {showBack && (
             <View style={styles.backBtnClip}>
               <Pressable
@@ -107,7 +109,7 @@ export function GlassHeader({
         </View>
 
         {/* Right slot — keeps title centered */}
-        <View style={[styles.side, styles.sideRight]}>
+        <View style={[styles.side, styles.sideRight, { width: sideWidth }]}>
           {right ?? null}
         </View>
       </View>

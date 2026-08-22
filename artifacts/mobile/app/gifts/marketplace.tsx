@@ -326,8 +326,9 @@ export default function GiftMarketplaceScreen() {
     <View style={[styles.root, { backgroundColor: colors.backgroundSecondary }]}>
       <GlassHeader
         title="Gift Marketplace"
+        sideWidth={76}
         right={
-          <TouchableOpacity onPress={() => router.push("/wallet")}>
+          <TouchableOpacity onPress={() => router.push("/wallet")} style={styles.walletButton}>
             <View style={styles.acoinBadge}>
               <Ionicons name="diamond" size={14} color="#fff" />
               <Text style={styles.acoinText}>{profile?.acoin || 0}</Text>
@@ -504,6 +505,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 17, fontFamily: "Inter_700Bold" },
   acoinBadge: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: Colors.gold, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 16 },
   acoinText: { color: "#fff", fontSize: 13, fontFamily: "Inter_700Bold" },
+  walletButton: { flexShrink: 0 },
   infoBanner: { flexDirection: "row", alignItems: "center", gap: 8, margin: 16, marginBottom: 0, padding: 12, borderRadius: 12 },
   infoText: { flex: 1, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
   filterRow: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
