@@ -147,27 +147,36 @@ export async function syncPhoneContacts(
  * number. Invites intentionally do not use share sheets or app-specific
  * deep links: the Invite action is always a direct-number invite.
  */
-export async function sendPhoneInvite(normalizedPhone: string): Promise<void> {
+export async function sendPhoneInvite(
+  normalizedPhone: string,
+  method: "whatsapp" | "telegram" | "sms" = "sms",
+): Promise<void> {
   if (!isValidInternationalPhoneNumber(normalizedPhone)) {
     return;
   }
 
   const encodedMessage = encodeURIComponent(AFUCHAT_INVITE_MESSAGE);
-  const smsUrl = `sms:${normalizedPhone}?body=${encodedMessage}`;
+  const digits = normalizedPhone.replace(/\D/g, "");
+  const appUrl =
+    method === "whatsapp"
+      ? `whatsapp://send?phone=${digits}&text=${encodedMessage}`
+      : method === "telegram"
+        ? `tg://msg_url?url=${encodeURIComponent(AFUCHAT_DOWNLOAD_URL)}&text=${encodedMessage}`
+        : `sms:${normalizedPhone}?body=${encodedMessage}`;
 
   try {
-    if (await Linking.canOpenURL(smsUrl)) {
-      await Linking.openURL(smsUrl);
+    if (await Linking.canOpenURL(appUrl)) {
+      await Linking.openURL(appUrl);
       return;
     }
   } catch {}
 
-  // Some Android builds reject canOpenURL for SMS even when the composer is
+  // Some Android builds reject canOpenURL even when the selected app is
   // available, so try the direct URI once more before reporting the failure.
   try {
-    await Linking.openURL(smsUrl);
+    await Linking.openURL(appUrl);
   } catch {
-    // Keep the invite action quiet when no SMS app is configured.
+    // Keep the invite action quiet when the selected app is unavailable.
   }
 }
 

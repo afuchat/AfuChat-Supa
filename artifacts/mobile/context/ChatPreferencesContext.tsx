@@ -58,19 +58,19 @@ export type ChatPrefs = {
 
 export const CHAT_THEME_COLORS: Record<string, { bubble: string; bubbleText: string; accent: string }> = {
   Teal:     { bubble: "#1018D8", bubbleText: "#fff", accent: "#1018D8" },
-  Blue:     { bubble: "#007AFF", bubbleText: "#fff", accent: "#007AFF" },
-  Green:    { bubble: "#30D158", bubbleText: "#fff", accent: "#30D158" },
-  Purple:   { bubble: "#AF52DE", bubbleText: "#fff", accent: "#AF52DE" },
-  Red:      { bubble: "#FF3B30", bubbleText: "#fff", accent: "#FF3B30" },
-  Orange:   { bubble: "#FF9500", bubbleText: "#fff", accent: "#FF9500" },
-  Pink:     { bubble: "#FF375F", bubbleText: "#fff", accent: "#FF375F" },
-  Cyan:     { bubble: "#32ADE6", bubbleText: "#fff", accent: "#32ADE6" },
-  RealTeal: { bubble: "#0DD3BB", bubbleText: "#fff", accent: "#0DD3BB" },
-  Indigo:   { bubble: "#5856D6", bubbleText: "#fff", accent: "#5856D6" },
-  Emerald:  { bubble: "#34C759", bubbleText: "#fff", accent: "#34C759" },
-  Gold:     { bubble: "#D4A853", bubbleText: "#fff", accent: "#D4A853" },
-  Rose:     { bubble: "#FF375F", bubbleText: "#fff", accent: "#FF375F" },
-  Amber:    { bubble: "#FF9500", bubbleText: "#fff", accent: "#FF9500" },
+  Blue:     { bubble: "#005FCC", bubbleText: "#fff", accent: "#005FCC" },
+  Green:    { bubble: "#168A3B", bubbleText: "#fff", accent: "#168A3B" },
+  Purple:   { bubble: "#7B2FBE", bubbleText: "#fff", accent: "#7B2FBE" },
+  Red:      { bubble: "#C62828", bubbleText: "#fff", accent: "#C62828" },
+  Orange:   { bubble: "#C96A00", bubbleText: "#fff", accent: "#C96A00" },
+  Pink:     { bubble: "#C2185B", bubbleText: "#fff", accent: "#C2185B" },
+  Cyan:     { bubble: "#087EA4", bubbleText: "#fff", accent: "#087EA4" },
+  RealTeal: { bubble: "#008F7A", bubbleText: "#fff", accent: "#008F7A" },
+  Indigo:   { bubble: "#3835A3", bubbleText: "#fff", accent: "#3835A3" },
+  Emerald:  { bubble: "#198A3E", bubbleText: "#fff", accent: "#198A3E" },
+  Gold:     { bubble: "#9A6B13", bubbleText: "#fff", accent: "#9A6B13" },
+  Rose:     { bubble: "#C2185B", bubbleText: "#fff", accent: "#C2185B" },
+  Amber:    { bubble: "#C16B00", bubbleText: "#fff", accent: "#C16B00" },
 };
 
 export const ACCENT_SWATCHES: { key: ChatTheme; label: string }[] = [

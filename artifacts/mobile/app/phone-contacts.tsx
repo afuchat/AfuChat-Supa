@@ -17,10 +17,11 @@ import { supabase } from "@/lib/supabase";
 import { Avatar } from "@/components/ui/Avatar";
 import { PrestigeBadge } from "@/components/ui/PrestigeBadge";
 import { usePhoneContacts } from "@/lib/usePhoneContacts";
-import { isValidInternationalPhoneNumber, sendWhatsAppInvite } from "@/lib/phoneContacts";
+import { isValidInternationalPhoneNumber, sendPhoneInvite } from "@/lib/phoneContacts";
 import { isOnline } from "@/lib/offlineStore";
 import { getLocalConversations } from "@/lib/storage/localConversations";
 import { showAlert } from "@/lib/alert";
+import InviteOptionsSheet from "@/components/InviteOptionsSheet";
 
 type AfuContact = {
   id: string;
@@ -47,6 +48,7 @@ export default function PhoneContactsScreen() {
   const [state, setState] = useState<"idle" | "loading" | "done" | "denied">("idle");
   const [onAfuChat, setOnAfuChat] = useState<AfuContact[]>([]);
   const [notOnAfuChat, setNotOnAfuChat] = useState<NonAfuContact[]>([]);
+  const [inviteTarget, setInviteTarget] = useState<NonAfuContact | null>(null);
 
   const findContacts = useCallback(async () => {
     setState(permission === "denied" ? "denied" : "done");
@@ -223,8 +225,8 @@ export default function PhoneContactsScreen() {
                         <Text style={[styles.handle, { color: colors.textMuted }]}>{item.phone}</Text>
                       </View>
                       <TouchableOpacity
-                        style={[styles.inviteButton, { backgroundColor: "#25D366" }]}
-                        onPress={() => { void sendWhatsAppInvite(item.normalized_phone); }}
+                        style={[styles.inviteButton, { backgroundColor: colors.accent }]}
+                        onPress={() => setInviteTarget(item)}
                       >
                         <Ionicons name="paper-plane" size={15} color="#fff" />
                         <Text style={styles.inviteButtonText}>Invite</Text>
@@ -241,6 +243,13 @@ export default function PhoneContactsScreen() {
           contentContainerStyle={{ paddingBottom: 40 }}
         />
       )}
+      <InviteOptionsSheet
+        visible={!!inviteTarget}
+        onClose={() => setInviteTarget(null)}
+        onSelect={(method) => {
+          if (inviteTarget) void sendPhoneInvite(inviteTarget.normalized_phone, method);
+        }}
+      />
     </View>
   );
 }

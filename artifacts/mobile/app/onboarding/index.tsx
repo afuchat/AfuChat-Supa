@@ -1033,7 +1033,7 @@ export default function OnboardingScreen() {
       </View>
 
       {/* ── Bottom action bar — positioned absolute so it floats above keyboard ── */}
-      <View style={[st.bottomBar, { paddingBottom: insets.bottom > 0 ? insets.bottom : 16, backgroundColor: colors.background }]}>
+        <View style={[st.bottomBar, { paddingBottom: insets.bottom > 0 ? insets.bottom : 16, backgroundColor: colors.background }]}>
         <Pressable
           style={[st.nextBtn, { opacity: canProceed() ? 1 : 0.35 }]}
           onPress={step === TOTAL_STEPS ? handleComplete : goNext}

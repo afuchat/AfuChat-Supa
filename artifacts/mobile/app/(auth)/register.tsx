@@ -388,9 +388,9 @@ export default function SignUpScreen() {
 
       {/* ── Background orbs ── */}
       <View style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}>
-        <SoftOrb cx={SW * 0.15} cy={SH * 0.10} size={260} color="#AF52DE" />
-        <SoftOrb cx={SW * 0.88} cy={SH * 0.50} size={220} color={Colors.brand} />
-        <SoftOrb cx={SW * 0.40} cy={SH * 0.88} size={180} color="#AF52DE" />
+        <SoftOrb cx={SW * 0.15} cy={SH * 0.10} size={260} color={accent} />
+        <SoftOrb cx={SW * 0.88} cy={SH * 0.50} size={220} color={accent} />
+        <SoftOrb cx={SW * 0.40} cy={SH * 0.88} size={180} color={accent} />
       </View>
 
       {/* ── LANDING PANEL ── */}
@@ -400,12 +400,7 @@ export default function SignUpScreen() {
           {/* Logo + tagline */}
           <View style={{ alignItems: "center", marginBottom: 48 }}>
             <View style={sc.logoRing}>
-              <LinearGradient
-                colors={["#AF52DE40", Colors.brand + "20"]}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFill}
-              />
-              <AfuLogo size={52} forceTheme="dark" />
+              <AfuLogo size={64} forceTheme="dark" />
             </View>
             <Text style={sc.logoWordmark}>AfuChat</Text>
             <View style={sc.freeBadge}>
@@ -419,7 +414,7 @@ export default function SignUpScreen() {
           <View style={{ gap: 12, marginTop: 28 }}>
             <TouchableOpacity style={sc.glassBtn} onPress={handleGoogle} disabled={oauthLoading} activeOpacity={0.78}>
               {oauthLoading
-                ? <ActivityIndicator size="small" color="#AF52DE" />
+                ? <ActivityIndicator size="small" color={accent} />
                 : (<>
                     <GoogleLogo size={20} />
                     <Text style={sc.glassBtnText}>Continue with Google</Text>
@@ -450,15 +445,15 @@ export default function SignUpScreen() {
             onPress={() => router.replace("/(auth)/login")}
             activeOpacity={0.78}
           >
-            <Text style={[sc.outlineBtnText, { color: "#AF52DE" }]}>Already have an account</Text>
+            <Text style={[sc.outlineBtnText, { color: accent }]}>Already have an account</Text>
           </TouchableOpacity>
 
           <View style={{ marginTop: "auto", paddingTop: 32, alignItems: "center", gap: 6 }}>
             <Text style={{ fontSize: 11, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.25)", textAlign: "center", lineHeight: 17, paddingHorizontal: 8 }}>
               By continuing, you agree to our{" "}
-              <Text style={{ color: "#AF52DE" }} onPress={() => Linking.openURL("https://afuchat.com/terms").catch(() => {})}>Terms</Text>
+              <Text style={{ color: accent }} onPress={() => Linking.openURL("https://afuchat.com/terms").catch(() => {})}>Terms</Text>
               {" "}and{" "}
-              <Text style={{ color: "#AF52DE" }} onPress={() => Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>Privacy Policy</Text>
+              <Text style={{ color: accent }} onPress={() => Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>Privacy Policy</Text>
             </Text>
             <Text style={{ fontSize: 10.5, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.14)" }}>
               © {new Date().getFullYear()} AfuChat Technologies Limited
@@ -493,7 +488,7 @@ export default function SignUpScreen() {
                 keyboardType="email-address" autoComplete="email"
                 returnKeyType="next"
                 onSubmitEditing={() => pwdRef.current?.focus()}
-                accent="#AF52DE"
+                accent={accent}
               />
               <AuthInput
                 inputRef={pwdRef}
@@ -501,7 +496,7 @@ export default function SignUpScreen() {
                 value={password} onChangeText={setPassword}
                 secureTextEntry={!showPwd} autoComplete="new-password"
                 returnKeyType="go" onSubmitEditing={handleSignup}
-                accent="#AF52DE"
+                accent={accent}
                 rightElement={
                   <TouchableOpacity onPress={() => setShowPwd(p => !p)} style={{ padding: 4 }}>
                     <Ionicons name={showPwd ? "eye-off" : "eye"} size={18} color="rgba(255,255,255,0.35)" />
@@ -511,18 +506,18 @@ export default function SignUpScreen() {
             </View>
 
             <View style={{ gap: 14, marginTop: 20, marginBottom: 24 }}>
-              <Checkbox checked={ageOk} onToggle={() => setAgeOk(p => !p)} isDark={isDark} accent="#AF52DE">
+              <Checkbox checked={ageOk} onToggle={() => setAgeOk(p => !p)} isDark={isDark} accent={accent}>
                 <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.50)", lineHeight: 19, flex: 1 }}>
                   I confirm I am{" "}
                   <Text style={{ fontFamily: "Inter_600SemiBold", color: "rgba(255,255,255,0.85)" }}>13 years of age or older</Text>
                 </Text>
               </Checkbox>
-              <Checkbox checked={termsOk} onToggle={() => setTermsOk(p => !p)} isDark={isDark} accent="#AF52DE">
+              <Checkbox checked={termsOk} onToggle={() => setTermsOk(p => !p)} isDark={isDark} accent={accent}>
                 <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.50)", lineHeight: 19, flex: 1 }}>
                   I agree to the{" "}
-                  <Text style={{ color: "#AF52DE", fontFamily: "Inter_500Medium" }} onPress={() => Linking.openURL("https://afuchat.com/terms").catch(() => {})}>Terms of Service</Text>
+                  <Text style={{ color: accent, fontFamily: "Inter_500Medium" }} onPress={() => Linking.openURL("https://afuchat.com/terms").catch(() => {})}>Terms of Service</Text>
                   {" "}and{" "}
-                  <Text style={{ color: "#AF52DE", fontFamily: "Inter_500Medium" }} onPress={() => Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>Privacy Policy</Text>
+                  <Text style={{ color: accent, fontFamily: "Inter_500Medium" }} onPress={() => Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>Privacy Policy</Text>
                 </Text>
               </Checkbox>
             </View>
@@ -533,7 +528,7 @@ export default function SignUpScreen() {
               disabled={loading}
               activeOpacity={0.85}
             >
-              <LinearGradient colors={["#AF52DE", "#7B2FBE"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
+              <LinearGradient colors={[accent, accent]} style={sc.primaryGrad}>
                 {loading
                   ? <ActivityIndicator color="#fff" size="small" />
                   : <Text style={sc.primaryText}>Create account</Text>
@@ -544,7 +539,7 @@ export default function SignUpScreen() {
             <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 4, marginTop: 24 }}>
               <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.40)" }}>Already have an account?</Text>
               <TouchableOpacity onPress={() => router.replace("/(auth)/login")} activeOpacity={0.7}>
-                <Text style={{ fontSize: 14, fontFamily: "Inter_700Bold", color: "#AF52DE" }}>Sign in</Text>
+                <Text style={{ fontSize: 14, fontFamily: "Inter_700Bold", color: accent }}>Sign in</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -559,7 +554,7 @@ export default function SignUpScreen() {
           if (signupUserId) router.replace({ pathname: "/onboarding", params: { userId: signupUserId } } as any);
           else router.replace("/(tabs)/chats");
         }}
-        isDark={isDark} accent="#AF52DE"
+        isDark={isDark} accent={accent}
       />
     </View>
   );
@@ -572,13 +567,9 @@ const sc = StyleSheet.create({
   logoRing: {
     width: 88,
     height: 88,
-    borderRadius: 26,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.12)",
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
-    marginBottom: 10,
+    marginBottom: 12,
   },
   logoWordmark: {
     color: "#fff",
@@ -596,7 +587,7 @@ const sc = StyleSheet.create({
     borderRadius: 999,
   },
   freeBadgeText: {
-    color: "#AF52DE",
+    color: "#FFFFFF",
     fontSize: 11.5,
     fontFamily: "Inter_600SemiBold",
     letterSpacing: 0.2,
@@ -623,10 +614,9 @@ const sc = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
     height: 56,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.07)",
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.12)",
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 0,
   },
   glassBtnText: {
     fontSize: 15,
@@ -636,8 +626,9 @@ const sc = StyleSheet.create({
   },
   outlineBtn: {
     height: 56,
-    borderRadius: 16,
-    borderWidth: 1.5,
+    borderRadius: 999,
+    borderWidth: 0,
+    backgroundColor: "rgba(255,255,255,0.06)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -650,15 +641,14 @@ const sc = StyleSheet.create({
   backBtnInner: {
     width: 42,
     height: 42,
-    borderRadius: 13,
+    borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.07)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
+    borderWidth: 0,
     alignItems: "center",
     justifyContent: "center",
   },
 
-  primaryBtn: { borderRadius: 16, overflow: "hidden", marginTop: 4 },
+  primaryBtn: { borderRadius: 999, overflow: "hidden", marginTop: 4 },
   primaryGrad: { height: 58, alignItems: "center", justifyContent: "center" },
   primaryText: { color: "#fff", fontSize: 16, fontFamily: "Inter_700Bold", letterSpacing: -0.1 },
 });
