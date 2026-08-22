@@ -160,13 +160,16 @@ function CompactTabBar({
   const totalUnread        = useTotalUnread(userId);
   const active             = normalizeTabPath(pathname);
   const [showCreateActions, setShowCreateActions] = useState(false);
-  const ACCENT         = colors.accent;
+  // Keep this binding distinct from older module-level brand constants. A
+  // previous name collided in the transformed web bundle and caused a TDZ
+  // crash while TabLayout was mounting.
+  const accentColor = colors.accent;
 
   const CREATE_OPTIONS = [
-    { icon: "camera",        label: "Story",   route: "/stories/camera",        color: "#FF2D55" },
-    { icon: "create",        label: "Post",    route: "/moments/create",        color: ACCENT },
-    { icon: "videocam",      label: "Video",   route: "/moments/create-video",  color: "#FF3B30" },
-    { icon: "document-text", label: "Article", route: "/moments/create-article", color: "#007AFF" },
+    { icon: "camera",        label: "Story",   route: "/stories/camera",        color: accentColor },
+    { icon: "create",        label: "Post",    route: "/moments/create",        color: accentColor },
+    { icon: "videocam",      label: "Video",   route: "/moments/create-video",  color: accentColor },
+    { icon: "document-text", label: "Article", route: "/moments/create-article", color: accentColor },
   ];
 
   const INACTIVE_ICON  = isDark ? "rgba(255,255,255,0.50)" : "rgba(0,0,0,0.38)";
@@ -250,7 +253,7 @@ function CompactTabBar({
                   )}
                   {/* Unread badge on Chat */}
                   {tab.route === "/(tabs)/chats" && totalUnread > 0 && (
-                    <View style={[pill.badge, { backgroundColor: ACCENT }]}>
+                    <View style={[pill.badge, { backgroundColor: accentColor }]}>
                       <Text style={pill.badgeText} numberOfLines={1}>
                         {totalUnread > 99 ? "99+" : String(totalUnread)}
                       </Text>
@@ -284,17 +287,22 @@ function CompactTabBar({
               style={[
                 pill.actionFab,
                 {
-                  bottom: PILL_BOTTOM + PILL_H + 24 + (CREATE_OPTIONS.length - index - 1) * 54,
+                  bottom: PILL_BOTTOM + PILL_H + 72 + (CREATE_OPTIONS.length - index - 1) * 58,
                   right: 28,
-                  backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
-                  borderColor: opt.color,
+                  backgroundColor: isDark ? colors.surface : colors.card,
+                  borderColor: accentColor,
                 },
               ]}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel={`Create ${opt.label}`}
             >
-              <Ionicons name={opt.icon as any} size={21} color={opt.color ?? ACCENT} />
+              <View style={pill.actionLabel}>
+                <Text style={[pill.actionLabelText, { color: accentColor }]}>{opt.label}</Text>
+              </View>
+              <View style={[pill.actionIcon, { backgroundColor: accentColor }]}>
+                <Ionicons name={opt.icon as any} size={20} color="#fff" />
+              </View>
             </TouchableOpacity>
           ))}
           <TouchableOpacity
@@ -307,7 +315,7 @@ function CompactTabBar({
               {
                 bottom: PILL_BOTTOM + PILL_H + 12,
                 right: 24,
-                backgroundColor: ACCENT,
+                backgroundColor: accentColor,
               },
             ]}
             activeOpacity={0.82}
@@ -332,7 +340,7 @@ function CompactTabBar({
             {
               bottom: PILL_BOTTOM + PILL_H + 12,
               right: 24,
-              backgroundColor: ACCENT,
+              backgroundColor: accentColor,
             },
           ]}
           activeOpacity={0.82}
@@ -400,12 +408,16 @@ const pill = StyleSheet.create({
   },
   actionFab: {
     position: "absolute",
-    width: 44,
+    width: 142,
     height: 44,
     borderRadius: 22,
     borderWidth: 2,
+    flexDirection: "row",
+    paddingLeft: 14,
+    paddingRight: 4,
+    justifyContent: "space-between",
+    overflow: "hidden",
     alignItems: "center",
-    justifyContent: "center",
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -416,6 +428,22 @@ const pill = StyleSheet.create({
       android: { elevation: 5 },
       web: { boxShadow: "0 2px 8px rgba(0,0,0,0.18)" } as any,
     }),
+  },
+  actionLabel: {
+    flex: 1,
+    alignItems: "flex-start",
+    justifyContent: "center",
+  },
+  actionLabelText: {
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
+  actionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
   },
   badge: {
     position: "absolute",

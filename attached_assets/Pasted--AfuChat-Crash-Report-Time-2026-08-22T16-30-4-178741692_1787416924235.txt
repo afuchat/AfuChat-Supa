@@ -1,0 +1,42 @@
+════════════════════════════════════════════
+AfuChat Crash Report
+Time        : 2026-08-22T16:30:48.058Z
+
+App         : AfuChat 2.2.20 (build ?)
+Platform    : web 0.0.0
+OS          : Windows 10
+Dev mode    : true
+
+────────────────  Error  ───────────────────
+Cannot access 'ACCENT' before initialization
+
+────────────  JS Stack Trace  ──────────────
+at TabLayout (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:173418:72)
+    at WrappedScreenComponent (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:68545:47)
+    at BaseRoute (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:68617:56)
+    at SceneView (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33216:88)
+    at render (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33017:54)
+    at https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33049:23
+    at Array.reduce (<anonymous>)
+    at useDescriptors (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33046:32)
+    at useNavigationBuilder (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:32749:44)
+    at NativeStackNavigator (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:85970:43)
+    at https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:64305:52
+    at Object.assign.Screen (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:64073:45)
+    at AppNavigationStack (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:317185:51)
+    at RootLayout (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:317501:76)
+    at WrappedScreenComponent (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:68545:47)
+    at BaseRoute (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:68617:56)
+    at SceneView (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33216:88)
+    at render (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33017:54)
+    at https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33049:23
+    at Array.reduce (<anonymous>)
+    at useDescriptors (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:33046:32)
+    at useNavigationBuilder (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:32749:44)
+    at Content (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:89009:43)
+    at ContextNavigator (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:88950:56)
+    at ExpoRoot (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:88868:45)
+    at App (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:24236:50)
+    at WithDevTools (https://942b36f0-d3b3-49be-b428-8a8021fe3f9b-00-39j4svmf9jnn2.picard.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable:79909:59)
+
+════════════════════════════════════════════
