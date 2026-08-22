@@ -93,18 +93,6 @@ const LINKS = [
 
 const GITHUB_URL = "https://github.com/afuchat1/AfuChat-Supa";
 
-// ─── Tech stack ───────────────────────────────────────────────────────────────
-
-const TECH = [
-  ["React Native + Expo SDK 55", "Cross-platform mobile framework"],
-  ["Supabase",                   "Auth, Realtime & PostgreSQL database"],
-  ["Cloudflare R2",              "Media & file storage CDN"],
-  ["WebRTC (Opus)",              "P2P voice calls — no relay overhead"],
-  ["Engagera AI",                "AfuAI assistant & smart replies"],
-  ["Pesapal",                    "Payment gateway (ACoins top-up)"],
-  ["SQLite + MMKV",              "On-device offline cache & storage"],
-] as const;
-
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function AboutScreen() {
@@ -265,22 +253,6 @@ export default function AboutScreen() {
           ))}
         </View>
 
-        {/* ── Built with ────────────────────────────────────────────────── */}
-        <Text style={[s.sectionTitle, { color: colors.textMuted }]}>BUILT WITH</Text>
-        <View style={[s.techCard, { backgroundColor: colors.card }]}>
-          {TECH.map(([tech, role], i, arr) => (
-            <React.Fragment key={tech}>
-              <View style={s.techRow}>
-                <Text style={[s.techName, { color: colors.text }]}>{tech}</Text>
-                <Text style={[s.techRole, { color: colors.textMuted }]}>{role}</Text>
-              </View>
-              {i < arr.length - 1 && (
-                <View style={[s.companyDivider, { backgroundColor: colors.separator }]} />
-              )}
-            </React.Fragment>
-          ))}
-        </View>
-
         {/* ── Footer ────────────────────────────────────────────────────── */}
         <View style={s.footer}>
           <View style={s.footerLogo}>
@@ -343,11 +315,6 @@ const s = StyleSheet.create({
   linkDivider: { height: 0.5, marginHorizontal: 16 },
   linkIconBox: { width: 32, height: 32, borderRadius: 9, alignItems: "center", justifyContent: "center" },
   linkLabel:   { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular" },
-
-  techCard: { borderRadius: 16, overflow: "hidden", marginBottom: 8 },
-  techRow:  { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12 },
-  techName: { fontSize: 13, fontFamily: "Inter_600SemiBold", flex: 1 },
-  techRole: { fontSize: 12, fontFamily: "Inter_400Regular", textAlign: "right", flex: 1.2, marginLeft: 8 },
 
   // Donate card
   donateCard:    { flexDirection: "row", alignItems: "center", borderRadius: 18, borderWidth: 1.5, padding: 16, gap: 14, overflow: "hidden", marginBottom: 0 },
