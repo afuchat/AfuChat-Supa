@@ -16,6 +16,11 @@ type NotificationEvent = {
   read_at: string | null;
 };
 
+type NotificationRoute = {
+  pathname: string;
+  params?: Record<string, string>;
+};
+
 type Props = {
   userId: string;
   colors: any;
@@ -24,12 +29,32 @@ type Props = {
 
 function formatTime(value: string): string {
   const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function getSafeRoute(event: NotificationEvent): NotificationRoute | null {
+  const route = event.cta_route?.trim();
+  if (!route || !route.startsWith("/") || route.includes("://") || route.includes("..")) return null;
+
+  // Routes are authored by the trusted notification producer. Keep an allowlist
+  // here as a second line of defence because this value is rendered from data.
+  if (route === "/premium" || route === "/settings/notifications" || route === "/(tabs)/discover") {
+    return { pathname: route };
+  }
+  if (route === "/chat/[id]" && event.entity_id) {
+    return { pathname: route, params: { id: event.entity_id } };
+  }
+  if (route === "/contact/[id]" && event.entity_id) {
+    return { pathname: route, params: { id: event.entity_id } };
+  }
+  return null;
 }
 
 export default function NotificationChatPanel({ userId, colors, bottomInset = 0 }: Props) {
   const [events, setEvents] = useState<NotificationEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const unreadCount = events.reduce((count, event) => count + (event.read_at ? 0 : 1), 0);
 
   const loadEvents = useCallback(async () => {
     if (!userId) return;
@@ -63,14 +88,37 @@ export default function NotificationChatPanel({ userId, colors, bottomInset = 0 
     if (event.read_at) return;
     const readAt = new Date().toISOString();
     setEvents((previous) => previous.map((item) => item.id === event.id ? { ...item, read_at: readAt } : item));
-    await supabase.from("notification_events").update({ read_at: readAt }).eq("id", event.id).eq("recipient_id", userId);
+    const { error } = await supabase
+      .from("notification_events")
+      .update({ read_at: readAt })
+      .eq("id", event.id)
+      .eq("recipient_id", userId);
+    if (error) {
+      setEvents((previous) => previous.map((item) => item.id === event.id ? { ...item, read_at: null } : item));
+    }
   }, [userId]);
 
   const openEvent = useCallback(async (event: NotificationEvent) => {
     await markRead(event);
-    if (!event.cta_route) return;
-    router.push(event.cta_route as any);
+    const route = getSafeRoute(event);
+    if (route) router.push(route as any);
   }, [markRead]);
+
+  const markAllRead = useCallback(async () => {
+    if (!unreadCount) return;
+    const readAt = new Date().toISOString();
+    const unreadIds = events.filter((event) => !event.read_at).map((event) => event.id);
+    setEvents((previous) => previous.map((event) => event.read_at ? event : { ...event, read_at: readAt }));
+    const { error } = await supabase
+      .from("notification_events")
+      .update({ read_at: readAt })
+      .eq("recipient_id", userId)
+      .is("read_at", null)
+      .in("id", unreadIds);
+    if (error) {
+      void loadEvents();
+    }
+  }, [events, loadEvents, unreadCount, userId]);
 
   if (loading) {
     return <View style={[styles.center, { backgroundColor: colors.background }]}><ActivityIndicator color={colors.accent} /></View>;
@@ -83,9 +131,17 @@ export default function NotificationChatPanel({ userId, colors, bottomInset = 0 
           <Ionicons name="notifications" size={24} color={colors.accent} />
         </View>
         <View style={styles.introCopy}>
-          <Text style={[styles.introTitle, { color: colors.text }]}>Updates & notifications</Text>
+          <View style={styles.introTitleRow}>
+            <Text style={[styles.introTitle, { color: colors.text }]}>Updates & notifications</Text>
+            {unreadCount > 0 && <View style={[styles.count, { backgroundColor: colors.accent }]}><Text style={styles.countText}>{unreadCount > 99 ? "99+" : unreadCount}</Text></View>}
+          </View>
           <Text style={[styles.introBody, { color: colors.textSecondary }]}>Your important activity and account updates appear here.</Text>
         </View>
+        {unreadCount > 0 && (
+          <TouchableOpacity onPress={() => void markAllRead()} hitSlop={8} activeOpacity={0.7}>
+            <Text style={[styles.markAll, { color: colors.accent }]}>Mark all read</Text>
+          </TouchableOpacity>
+        )}
       </View>
       {events.length === 0 ? (
         <View style={styles.center}>
@@ -102,7 +158,7 @@ export default function NotificationChatPanel({ userId, colors, bottomInset = 0 
           renderItem={({ item }) => (
             <TouchableOpacity
               activeOpacity={item.cta_route ? 0.75 : 1}
-              onPress={() => void openEvent(item)}
+              onPress={item.cta_route ? () => void openEvent(item) : undefined}
               style={[styles.card, { backgroundColor: colors.surface, borderColor: item.read_at ? colors.border : colors.accent + "66" }]}
             >
               <View style={[styles.kindIcon, { backgroundColor: item.read_at ? colors.backgroundSecondary : colors.accent + "18" }]}>
@@ -119,7 +175,7 @@ export default function NotificationChatPanel({ userId, colors, bottomInset = 0 
                 </View>
                 <Text style={[styles.body, { color: colors.textSecondary }]}>{item.body}</Text>
                 <Text style={[styles.date, { color: colors.textMuted }]}>{formatTime(item.created_at)}</Text>
-                {item.cta_label && item.cta_route && (
+                {item.cta_label && getSafeRoute(item) && (
                   <View style={[styles.cta, { backgroundColor: colors.accent }]}>
                     <Text style={styles.ctaText}>{item.cta_label}</Text>
                     <Ionicons name="arrow-forward" size={14} color="#fff" />
@@ -140,7 +196,11 @@ const styles = StyleSheet.create({
   intro: { flexDirection: "row", alignItems: "center", padding: 16, gap: 12 },
   bell: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
   introCopy: { flex: 1, gap: 3 },
+  introTitleRow: { flexDirection: "row", alignItems: "center", gap: 7 },
   introTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
+  count: { minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 5, alignItems: "center", justifyContent: "center" },
+  countText: { color: "#fff", fontSize: 10, fontFamily: "Inter_700Bold" },
+  markAll: { fontSize: 11, fontFamily: "Inter_700Bold" },
   introBody: { fontSize: 13, lineHeight: 18, fontFamily: "Inter_400Regular" },
   emptyTitle: { fontSize: 16, fontFamily: "Inter_700Bold", textAlign: "center" },
   emptyBody: { fontSize: 13, lineHeight: 18, fontFamily: "Inter_400Regular", textAlign: "center" },

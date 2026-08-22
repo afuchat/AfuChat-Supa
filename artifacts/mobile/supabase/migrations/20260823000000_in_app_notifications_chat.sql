@@ -54,9 +54,8 @@ DECLARE
   v_chat_id uuid;
   v_message_id uuid;
   v_event_id uuid;
-  v_me uuid := auth.uid();
 BEGIN
-  IF v_me IS NULL OR p_recipient_id IS NULL THEN
+  IF p_recipient_id IS NULL THEN
     RAISE EXCEPTION 'Notification recipient is required';
   END IF;
 
@@ -112,5 +111,47 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.create_in_app_notification(uuid, text, text, text, text, text, text, jsonb) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.create_in_app_notification(uuid, text, text, text, text, text, text, jsonb) TO authenticated;
+-- Notifications are emitted by trusted database triggers and server-side jobs.
+-- Do not expose this write primitive to clients: otherwise any signed-in user
+-- could manufacture notifications for another account.
+REVOKE ALL ON FUNCTION public.create_in_app_notification(uuid, text, text, text, text, text, text, jsonb) FROM PUBLIC, authenticated;
+GRANT EXECUTE ON FUNCTION public.create_in_app_notification(uuid, text, text, text, text, text, text, jsonb) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.notify_new_follower()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_name text;
+BEGIN
+  IF NEW.follower_id IS NULL OR NEW.following_id IS NULL OR NEW.follower_id = NEW.following_id THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT COALESCE(NULLIF(display_name, ''), NULLIF(handle, ''), 'Someone')
+  INTO v_name
+  FROM public.profiles
+  WHERE id = NEW.follower_id;
+
+  PERFORM public.create_in_app_notification(
+    NEW.following_id,
+    'follow',
+    COALESCE(v_name, 'Someone') || ' followed you',
+    'See their profile and connect with them on AfuChat.',
+    'View profile',
+    '/contact/[id]',
+    NEW.follower_id::text,
+    jsonb_build_object('follower_id', NEW.follower_id, 'follow_id', NEW.id)
+  );
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS follows_create_notification ON public.follows;
+CREATE TRIGGER follows_create_notification
+AFTER INSERT ON public.follows
+FOR EACH ROW
+EXECUTE FUNCTION public.notify_new_follower();

@@ -2278,6 +2278,7 @@ function ChatScreen() {
   const chatInfoStateRef = useRef(chatInfo);
   chatInfoStateRef.current = chatInfo;
   const isAfuAiDirectChat = chatInfo?.other_id === AFUAI_BOT_ID;
+  const isNotificationsChat = chatInfo?.other_handle?.trim().toLowerCase() === "notifications";
   const isSelfChat = !chatInfo?.is_group && !chatInfo?.is_channel && !!chatInfo?.other_id && chatInfo?.other_id === user?.id;
   const isLocalNotes = isLocalNotesId(id);
   const [phonebookName, setPhonebookName] = useState<string | null>(null);
@@ -6478,11 +6479,13 @@ STRICT RULES:
 
   const headerTitle = chatInfo?.is_group || chatInfo?.is_channel
     ? chatInfo.name || "Group"
+    : isNotificationsChat
+      ? "AfuChat Updates"
     : isSelfChat
       ? "My Notes"
       : (phonebookName || chatInfo?.other_name || "Chat");
   const headerAvatar = chatInfo?.is_group || chatInfo?.is_channel ? chatInfo?.avatar_url : isSelfChat ? null : chatInfo?.other_avatar;
-  const canOpenDirectProfile = !!chatInfo?.other_id && !chatInfo.is_group && !chatInfo.is_channel && !isSelfChat;
+  const canOpenDirectProfile = !!chatInfo?.other_id && !chatInfo.is_group && !chatInfo.is_channel && !isSelfChat && !isNotificationsChat;
   const handleOpenDirectProfile = useCallback(() => {
     if (!canOpenDirectProfile || !chatInfo?.other_id) return;
     router.push({
@@ -6621,6 +6624,8 @@ STRICT RULES:
               <Text style={[st.headerSub, { color: BRAND }]}>
                 {`${typingUsers.join(", ")} typing...`}
               </Text>
+            ) : isNotificationsChat ? (
+              <Text style={[st.headerSub, { color: colors.accent }]}>Official · updates & actions</Text>
             ) : isLocalNotes ? (
               <Text style={[st.headerSub, { color: colors.textMuted }]}>Private · stored on this device</Text>
             ) : !networkOnline ? (
@@ -6650,6 +6655,7 @@ STRICT RULES:
              !isLocalNotes &&
             !isSelfChat &&
             !isAfuAiDirectChat &&
+            !isNotificationsChat &&
             chatInfo.other_id &&
             (
             <TouchableOpacity
@@ -6804,7 +6810,13 @@ STRICT RULES:
 
       {/* ── Message list — fills remaining space, padded so content clears the floating input ── */}
       <View style={{ flex: 1, backgroundColor: colors.background }}>
-        {loading ? (
+        {isNotificationsChat ? (
+          <NotificationChatPanel
+            userId={user?.id ?? ""}
+            colors={colors}
+            bottomInset={floatingInputHeight + effectiveBottom}
+          />
+        ) : loading ? (
           <ChatLoadingSkeleton />
         ) : messages.length === 0 ? (
           <View style={[st.emptyState, { paddingBottom: floatingInputHeight + 16 }]}>
@@ -6891,6 +6903,7 @@ STRICT RULES:
       <Animated.View
         style={[st.floatingInputContainer, {
           bottom: showEmojiStickerPicker && !keyboardHeight ? effectiveBottom : keyboardOffsetAnim,
+          display: isNotificationsChat ? "none" : "flex",
           pointerEvents: "box-none",
         }]}
         onLayout={(e) => setFloatingInputHeight(e.nativeEvent.layout.height)}
