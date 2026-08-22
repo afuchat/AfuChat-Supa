@@ -1436,12 +1436,14 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
             </TouchableOpacity>
           ) : hasAudio ? (
             <TouchableOpacity onLongPress={messageLongPress} delayLongPress={300} activeOpacity={1}>
-              <AudioPlayer
-                uri={attachUri || msg.attachment_url!}
-                tintColor={textColor}
-                waveColor={isMe ? "#FFFFFF" : BRAND}
-                backgroundColor={bubbleColor}
-              />
+              <View style={st.audioPlaybackLayer}>
+                <AudioPlayer
+                  uri={attachUri || msg.attachment_url!}
+                  tintColor={textColor}
+                  waveColor={isMe ? "#FFFFFF" : BRAND}
+                  backgroundColor={bubbleColor}
+                />
+              </View>
               {canTranscribe && (
                 <TouchableOpacity
                   onPress={handleTranscribe}
@@ -8845,6 +8847,7 @@ const st = StyleSheet.create({
   // When no tail: all four corners stay at the full radius (set above).
   bubbleMe: {},
   bubbleOther: {},
+  audioPlaybackLayer: { position: "relative", zIndex: 2 },
   // When the tail IS shown: flatten the corner the tail attaches to so the
   // tail and bubble meet seamlessly, matching iMessage style.
   bubbleTailMe: {
