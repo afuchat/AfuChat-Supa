@@ -122,6 +122,7 @@ import WallpaperOverlay from "@/components/chat/WallpaperOverlay";
 import { getDailyUsage, recordDailyUsage } from "@/lib/featureUsage";
 import EmojiStickerPicker from "@/components/chat/EmojiStickerPicker";
 import GiftPickerSheet, { DbGift } from "@/components/gifts/GiftPickerSheet";
+import { formatCompactAmount } from "@/lib/formatCompactAmount";
 import AiEditorSheet from "@/components/ui/AiEditorSheet";
 import FormatToolbar from "@/components/chat/FormatToolbar";
 import MiniProfilePopup from "@/components/chat/MiniProfilePopup";
@@ -5262,7 +5263,7 @@ STRICT RULES:
 
     const { data: senderProfile } = await supabase.from("profiles").select("acoin").eq("id", user.id).single();
     if (!senderProfile || (senderProfile.acoin || 0) < price) {
-      showAlert("Insufficient ACoins", `You need ${price} ACoins to send this gift. Your balance: ${senderProfile?.acoin || 0} ACoins.`);
+      showAlert("Insufficient ACoins", `You need ${formatCompactAmount(price)} ACoins to send this gift. Your balance: ${formatCompactAmount(senderProfile?.acoin)} ACoins.`);
       return;
     }
 

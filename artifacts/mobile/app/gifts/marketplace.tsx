@@ -24,6 +24,7 @@ import { useTheme } from "@/hooks/useTheme";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import Colors from "@/constants/colors";
 import { showAlert } from "@/lib/alert";
+import { formatCompactAmount } from "@/lib/formatCompactAmount";
 import SwipeableBottomSheet from "@/components/SwipeableBottomSheet";
 
 type MarketplaceListing = {
@@ -62,14 +63,6 @@ const rarityBgColors: Record<string, string> = {
 };
 
 const MARKETPLACE_FEE_PERCENT = 5;
-
-function formatWalletBalance(value: number | null | undefined): string {
-  const amount = Number(value) || 0;
-  if (amount >= 1_000_000_000) return `${(amount / 1_000_000_000).toFixed(1).replace(/\.0$/, "")}B`;
-  if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
-  if (amount >= 1_000) return `${(amount / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
-  return String(Math.floor(amount));
-}
 
 function GiftImage({ uri, emoji, size }: { uri: string | null; emoji: string; size: number }) {
   const [failed, setFailed] = useState(false);
@@ -312,7 +305,7 @@ export default function GiftMarketplaceScreen() {
         </View>
         <View style={styles.priceRow}>
           <Ionicons name="diamond" size={14} color={Colors.gold} />
-          <Text style={styles.priceText}>{asking}</Text>
+          <Text style={styles.priceText}>{formatCompactAmount(asking)}</Text>
         </View>
         {pct !== 0 && (
           <View style={[styles.pctBadge, { backgroundColor: pct > 0 ? "#10B98118" : "#EF444418" }]}>
@@ -339,7 +332,7 @@ export default function GiftMarketplaceScreen() {
           <TouchableOpacity onPress={() => router.push("/wallet")} style={styles.walletButton}>
             <View style={styles.acoinBadge}>
               <Ionicons name="diamond" size={14} color="#fff" />
-              <Text style={styles.acoinText}>{formatWalletBalance(profile?.acoin)}</Text>
+              <Text style={styles.acoinText}>{formatCompactAmount(profile?.acoin)}</Text>
             </View>
           </TouchableOpacity>
         }
@@ -442,7 +435,7 @@ export default function GiftMarketplaceScreen() {
                   <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>Asking Price</Text>
                   <View style={styles.priceValueRow}>
                     <Ionicons name="diamond" size={22} color={Colors.gold} />
-                    <Text style={[styles.priceValueText, { color: colors.text }]}>{asking2}</Text>
+                    <Text style={[styles.priceValueText, { color: colors.text }]}>{formatCompactAmount(asking2)}</Text>
                     <Text style={[styles.priceCurrency, { color: colors.textMuted }]}>AC</Text>
                     {pct2 !== 0 && (
                       <View style={[styles.pctBadge, { backgroundColor: pct2 > 0 ? "#10B98118" : "#EF444418", marginLeft: 6 }]}>

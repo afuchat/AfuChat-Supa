@@ -37,6 +37,7 @@ import {
   type SavedSearch,
 } from "@/lib/searchStore";
 import { trackEvent } from "@/lib/activityTracker";
+import { formatCompactAmount } from "@/lib/formatCompactAmount";
 import { Avatar } from "@/components/ui/Avatar";
 import UserName from "@/components/ui/UserName";
 import { getPersonalizedTags, getSearchSuggestions } from "@/lib/personalization";
@@ -1014,7 +1015,7 @@ export default function SearchScreen() {
                 <View style={{ backgroundColor: rc + "1A", borderRadius: 5, paddingHorizontal: 5, paddingVertical: 1 }}>
                   <Text style={{ color: rc, fontSize: 9, fontFamily: "Inter_700Bold", textTransform: "capitalize" }}>{g.rarity}</Text>
                 </View>
-                <Text style={{ color: GOLD, fontSize: 11, fontFamily: "Inter_700Bold" }}>✦ {g.base_xp_cost}</Text>
+                <Text style={{ color: GOLD, fontSize: 11, fontFamily: "Inter_700Bold" }}>✦ {formatCompactAmount(g.base_xp_cost)}</Text>
               </TouchableOpacity>
             </View>
           );

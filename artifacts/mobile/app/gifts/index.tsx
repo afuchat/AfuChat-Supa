@@ -24,6 +24,7 @@ import Colors from "@/constants/colors";
 import { showAlert } from "@/lib/alert";
 import { GiftCardSkeleton } from "@/components/ui/Skeleton";
 import SwipeableBottomSheet from "@/components/SwipeableBottomSheet";
+import { formatCompactAmount } from "@/lib/formatCompactAmount";
 
 type Gift = {
   id: string;
@@ -48,14 +49,6 @@ type OwnedGift = {
 
 const HIDDEN_FEE_PERCENT = 5.99;
 const MARKETPLACE_FEE_PERCENT = 5;
-
-function formatWalletBalance(value: number | null | undefined): string {
-  const amount = Number(value) || 0;
-  if (amount >= 1_000_000_000) return `${(amount / 1_000_000_000).toFixed(1).replace(/\.0$/, "")}B`;
-  if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
-  if (amount >= 1_000) return `${(amount / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
-  return String(Math.floor(amount));
-}
 
 function GiftImage({ uri, emoji, size }: { uri: string | null; emoji: string; size: number }) {
   const [failed, setFailed] = useState(false);
@@ -203,7 +196,7 @@ export default function GiftsScreen() {
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      showAlert("Converted!", `${selectedGift.gift.emoji} ${selectedGift.gift.name} converted to ${acoinAmount} ACoin`);
+      showAlert("Converted!", `${selectedGift.gift.emoji} ${selectedGift.gift.name} converted to ${formatCompactAmount(acoinAmount)} ACoin`);
       setSelectedGift(null);
       setConfirmConvert(false);
       refreshProfile();
@@ -320,7 +313,7 @@ export default function GiftsScreen() {
         showAlert("Error", error.message);
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        showAlert("Listed!", `${selectedGift.gift.emoji} ${selectedGift.gift.name} is now on the marketplace for ${price} ACoin.`);
+        showAlert("Listed!", `${selectedGift.gift.emoji} ${selectedGift.gift.name} is now on the marketplace for ${formatCompactAmount(price)} ACoin.`);
         setSelectedGift(null);
         setShowListModal(false);
         setListPrice("");
@@ -364,7 +357,7 @@ export default function GiftsScreen() {
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginTop: 2 }}>
           <Ionicons name="diamond" size={10} color={Colors.gold} />
-          <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: Colors.gold }}>{livePrice}</Text>
+          <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: Colors.gold }}>{formatCompactAmount(livePrice)}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -384,7 +377,7 @@ export default function GiftsScreen() {
             <TouchableOpacity onPress={() => router.push("/wallet")} style={styles.walletButton}>
               <View style={styles.acoinBadge}>
                 <Ionicons name="diamond" size={14} color="#fff" />
-                <Text style={styles.acoinText}>{formatWalletBalance(profile?.acoin)}</Text>
+                <Text style={styles.acoinText}>{formatCompactAmount(profile?.acoin)}</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -481,7 +474,7 @@ export default function GiftsScreen() {
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                       <Ionicons name="diamond" size={15} color={Colors.gold} />
-                      <Text style={{ fontSize: 18, fontFamily: "Inter_700Bold", color: Colors.gold }}>{current}</Text>
+                      <Text style={{ fontSize: 18, fontFamily: "Inter_700Bold", color: Colors.gold }}>{formatCompactAmount(current)}</Text>
                       <Text style={{ fontSize: 12, fontFamily: "Inter_500Medium", color: colors.textMuted }}>AC</Text>
                     </View>
                     {pct !== 0 && (
@@ -495,14 +488,14 @@ export default function GiftsScreen() {
                   </View>
                   {base !== current && (
                     <Text style={{ fontSize: 11, fontFamily: "Inter_400Regular", color: colors.textMuted, textAlign: "center" }}>
-                      Base price: {base} AC · Current: {current} AC
+                      Base price: {formatCompactAmount(base)} AC · Current: {formatCompactAmount(current)} AC
                     </Text>
                   )}
                   {isMarketDriven && lastSale != null && lastSale > 0 && (
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 4, justifyContent: "center" }}>
                       <Ionicons name="storefront" size={12} color={colors.textMuted} />
                       <Text style={{ fontSize: 11, fontFamily: "Inter_400Regular", color: colors.textMuted }}>
-                        Last sold: <Text style={{ fontFamily: "Inter_600SemiBold", color: colors.text }}>{lastSale} AC</Text>
+                        Last sold: <Text style={{ fontFamily: "Inter_600SemiBold", color: colors.text }}>{formatCompactAmount(lastSale)} AC</Text>
                       </Text>
                     </View>
                   )}
@@ -578,7 +571,7 @@ export default function GiftsScreen() {
             </View>
             <Text style={[styles.confirmTitle, { color: colors.text }]}>Convert Gift?</Text>
             <Text style={[styles.confirmDesc, { color: colors.textSecondary }]}>
-              You will receive <Text style={{ fontFamily: "Inter_700Bold", color: Colors.gold }}>{selectedGift ? getConvertValue(selectedGift.gift) : 0} ACoin</Text> and the gift <Text style={{ fontFamily: "Inter_600SemiBold", color: colors.text }}>{selectedGift?.gift.emoji} {selectedGift?.gift.name}</Text> will be removed from your collection.
+              You will receive <Text style={{ fontFamily: "Inter_700Bold", color: Colors.gold }}>{formatCompactAmount(selectedGift ? getConvertValue(selectedGift.gift) : 0)} ACoin</Text> and the gift <Text style={{ fontFamily: "Inter_600SemiBold", color: colors.text }}>{selectedGift?.gift.emoji} {selectedGift?.gift.name}</Text> will be removed from your collection.
             </Text>
             <Text style={[styles.confirmWarn, { color: colors.textMuted }]}>This action cannot be undone.</Text>
             <View style={styles.confirmBtns}>

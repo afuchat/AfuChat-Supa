@@ -26,6 +26,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useGiftPrices } from "@/hooks/useGiftPrices";
 import { Skeleton } from "@/components/ui/Skeleton";
 import Colors from "@/constants/colors";
+import { formatCompactAmount } from "@/lib/formatCompactAmount";
 
 export type DbGift = {
   id: string;
@@ -171,7 +172,7 @@ function GiftCell({
         <Text style={{ fontSize: 36, lineHeight: 44 }}>{gift.emoji}</Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 2, marginTop: 2 }}>
           <Ionicons name="diamond" size={8} color={Colors.gold} />
-          <Text style={{ fontSize: 9, fontFamily: "Inter_600SemiBold", color: Colors.gold }}>{price}</Text>
+          <Text style={{ fontSize: 9, fontFamily: "Inter_600SemiBold", color: Colors.gold }}>{formatCompactAmount(price)}</Text>
         </View>
       </Animated.View>
     </TouchableOpacity>
@@ -316,7 +317,7 @@ export default function GiftPickerSheet({
                 </View>
                 <View style={styles.balancePill}>
                   <Ionicons name="diamond" size={13} color={Colors.gold} />
-                  <Text style={[styles.balanceText, { color: Colors.gold }]}>{acoinBalance} AC</Text>
+                  <Text style={[styles.balanceText, { color: Colors.gold }]}>{formatCompactAmount(acoinBalance)} AC</Text>
                 </View>
                 <TouchableOpacity onPress={dismissSheet} hitSlop={12} style={{ marginLeft: 8 }}>
                   <Ionicons name="close-circle" size={26} color={colors.textMuted} />
@@ -442,7 +443,7 @@ export default function GiftPickerSheet({
                         <Text style={[styles.confirmName, { color: colors.text }]} numberOfLines={1}>{selected.name}</Text>
                         <View style={styles.confirmPriceRow}>
                           <Ionicons name="diamond" size={11} color={Colors.gold} />
-                          <Text style={[styles.confirmPrice, { color: Colors.gold }]}>{selectedPrice} AC</Text>
+                          <Text style={[styles.confirmPrice, { color: Colors.gold }]}>{formatCompactAmount(selectedPrice)} AC</Text>
                           {priceChange !== 0 && (
                             <View style={[styles.confirmTrend, { backgroundColor: priceChange > 0 ? "#10B98120" : "#EF444420" }]}>
                               <Ionicons name={priceChange > 0 ? "trending-up" : "trending-down"} size={10} color={priceChange > 0 ? "#10B981" : "#EF4444"} />
@@ -476,7 +477,7 @@ export default function GiftPickerSheet({
                     </TouchableOpacity>
                   </View>
                   {acoinBalance < selectedPrice && (
-                    <Text style={styles.insufficientText}>Insufficient ACoins (need {selectedPrice}, have {acoinBalance})</Text>
+                    <Text style={styles.insufficientText}>Insufficient ACoins (need {formatCompactAmount(selectedPrice)}, have {formatCompactAmount(acoinBalance)})</Text>
                   )}
                 </View>
               )}
