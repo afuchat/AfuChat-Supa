@@ -7141,11 +7141,7 @@ STRICT RULES:
                   flex: 1,
                   backgroundColor: isDark ? "rgba(255,255,255,0.12)" : colors.inputBg,
                   borderColor: isDark ? "rgba(255,255,255,0.22)" : colors.border,
-                 }, showAttachPanel && !attachmentPreview && selectedImages.length === 0 ? {
-                   borderTopLeftRadius: 0,
-                   borderTopRightRadius: 0,
-                   borderTopWidth: 0,
-                 } : undefined, isRecording && !recLocked ? st.recHoldGlass : undefined]}>
+                  }, isRecording && !recLocked ? st.recHoldGlass : undefined]}>
                   <View style={st.inputBarRow}>
                     {isRecording && !recLocked ? (
                       <>
@@ -7386,7 +7382,7 @@ STRICT RULES:
         </View>
       )}
 
-      {/* ── Attachment actions — compact popover above the input ─────────── */}
+      {/* ── Attachment actions — separate surface above the composer ─────── */}
       {showAttachPanel && (
         (() => {
           const contentH = attachTab === "Gallery" ? 56 : 330;
@@ -7740,23 +7736,30 @@ STRICT RULES:
                 activeOpacity={1}
                 onPress={() => setShowAttachPanel(false)}
               />
-              <View style={{
+               <View style={{
                 position: "absolute",
-                 // Match the inputGlassPill, not the full composer row:
-                 // the send/mic button stays outside this connected surface.
-                left: Platform.OS === "web" ? 20 : 12,
-                right: Platform.OS === "web" ? 68 : 72,
-                bottom: effectiveBottom + floatingInputHeight - 4,
+                  // This is intentionally an independent card. Keep clear
+                  // space between it and the input so attachment actions do
+                  // not look like part of the text field.
+                 left: 12,
+                 right: 12,
+                 bottom: effectiveBottom + floatingInputHeight + 10,
                  maxHeight: 400,
-                  backgroundColor: colors.inputBg,
-                 borderTopLeftRadius: 26,
-                 borderTopRightRadius: 26,
-                 borderBottomLeftRadius: 0,
-                 borderBottomRightRadius: 0,
+                 backgroundColor: colors.inputBg,
+                 borderRadius: 22,
                  borderWidth: 0.5,
-                 borderBottomWidth: 0,
                  borderColor: isDark ? "rgba(255,255,255,0.22)" : colors.border,
-                overflow: "hidden",
+                 overflow: "hidden",
+                 ...Platform.select({
+                   web: { boxShadow: `0 5px 12px rgba(0,0,0,${isDark ? 0.24 : 0.12})` } as any,
+                   default: {
+                     shadowColor: "#000",
+                     shadowOpacity: isDark ? 0.24 : 0.12,
+                     shadowRadius: 12,
+                     shadowOffset: { width: 0, height: 5 },
+                     elevation: 8,
+                   },
+                 }),
               }}>
                 <View style={{ height: contentH, overflow: "hidden" }}>
                   {renderContent()}
