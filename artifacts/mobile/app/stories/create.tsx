@@ -163,8 +163,12 @@ export default function CreateStoryScreen() {
           }
         } else {
           const rawExt =
-            mediaUri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
-          const stablePath = `${FileSystem.cacheDirectory}story_src_${Date.now()}.${rawExt}`;
+            mediaUri.split(".").pop()?.split("?")[0]?.toLowerCase() || (_mediaType === "video" ? "mp4" : "jpg");
+          // Content URIs can contain query strings or non-path characters.
+          // Sanitize the extension before using it as a native cache filename.
+          const safeExt = rawExt.replace(/[^a-z0-9]/gi, "").slice(0, 8) || (_mediaType === "video" ? "mp4" : "jpg");
+          const uniqueSuffix = Math.random().toString(36).slice(2, 10);
+          const stablePath = `${FileSystem.cacheDirectory}story_src_${Date.now()}_${uniqueSuffix}.${safeExt}`;
           await FileSystem.copyAsync({ from: mediaUri, to: stablePath });
           _mediaUri = stablePath;
         }
@@ -209,7 +213,8 @@ export default function CreateStoryScreen() {
       }
 
       updateStoryProgress(0.3);
-      const fileName = `${_userId}/${Date.now()}.${ext}`;
+      const uniqueSuffix = Math.random().toString(36).slice(2, 10);
+      const fileName = `${_userId}/${Date.now()}_${uniqueSuffix}.${ext}`;
       const { publicUrl, error: uploadErr } = await uploadToStorage("stories", fileName, _mediaUri, mime);
 
       if (uploadErr || !publicUrl) {

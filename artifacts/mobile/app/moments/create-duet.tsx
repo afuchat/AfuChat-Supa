@@ -160,7 +160,8 @@ export default function CreateDuetScreen() {
     try {
       const rawExt = videoUri.split(".").pop()?.split("?")[0]?.toLowerCase() || "";
       const ext = ["mp4", "mov", "avi", "webm", "mkv", "m4v"].includes(rawExt) ? rawExt : "mp4";
-      const filePath = `${user.id}/${Date.now()}_duet.${ext}`;
+      const uniqueSuffix = Math.random().toString(36).slice(2, 10);
+      const filePath = `${user.id}/${Date.now()}_${uniqueSuffix}_duet.${ext}`;
       const resolvedMime = videoMime || (ext === "mov" ? "video/quicktime" : `video/${ext}`);
 
       const compressionMeta = await compressVideoBeforeUpload(
@@ -181,7 +182,7 @@ export default function CreateDuetScreen() {
           thumbLocalUri = await generateNativeThumbnail(videoUri, 1000);
         }
         if (thumbLocalUri) {
-          const thumbPath = `${user.id}/${Date.now()}_duet_thumb.jpg`;
+          const thumbPath = `${user.id}/${Date.now()}_${Math.random().toString(36).slice(2, 10)}_duet_thumb.jpg`;
           const uploaded = await uploadToStorage("videos", thumbPath, thumbLocalUri, "image/jpeg");
           if (uploaded.publicUrl) thumbnailPublicUrl = uploaded.publicUrl;
         }

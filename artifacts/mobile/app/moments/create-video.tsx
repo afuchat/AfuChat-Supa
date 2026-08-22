@@ -1736,7 +1736,8 @@ export default function CreateVideoScreen() {
         updatePostProgress(0.05);
         const rawExt = _uri.split(".").pop()?.split("?")[0]?.toLowerCase() || "";
         const ext = ["mp4", "mov", "avi", "webm", "mkv", "m4v"].includes(rawExt) ? rawExt : "mp4";
-        const filePath = `${user.id}/${Date.now()}.${ext}`;
+        const uniqueSuffix = Math.random().toString(36).slice(2, 10);
+        const filePath = `${user.id}/${Date.now()}_${uniqueSuffix}.${ext}`;
         const resolvedMime = _mime || (ext === "mov" ? "video/quicktime" : `video/${ext}`);
 
         const compressionMeta = await compressVideoBeforeUpload(
@@ -1764,7 +1765,7 @@ export default function CreateVideoScreen() {
             if (!_uri.startsWith("blob:")) localThumb = await genNativeThumb(_uri, _ttime * 1000);
           }
           if (localThumb) {
-            const tp = `${user.id}/${Date.now()}_thumb.jpg`;
+            const tp = `${user.id}/${Date.now()}_${Math.random().toString(36).slice(2, 10)}_thumb.jpg`;
             const tu = await uploadToStorage("videos", tp, localThumb, "image/jpeg");
             if (tu.publicUrl) thumbUrl = tu.publicUrl;
           }
