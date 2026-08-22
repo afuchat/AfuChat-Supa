@@ -7125,11 +7125,6 @@ STRICT RULES:
                   flex: 1,
                   backgroundColor: isDark ? "rgba(255,255,255,0.12)" : colors.inputBg,
                   borderColor: isDark ? "rgba(255,255,255,0.22)" : colors.border,
-                  ...(attachmentPreview || selectedImages.length > 0 ? {
-                    borderTopLeftRadius: 0,
-                    borderTopRightRadius: 0,
-                    borderTopWidth: 0,
-                  } : {}),
                 }, isRecording && !recLocked ? st.recHoldGlass : undefined]}>
                   <View style={st.inputBarRow}>
                     {isRecording && !recLocked ? (
@@ -9091,10 +9086,13 @@ const st = StyleSheet.create({
     paddingVertical: 8,
     gap: 10,
     borderWidth: 0.5,
-    borderBottomWidth: 0,
+    borderBottomWidth: 0.5,
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
+    borderBottomLeftRadius: 26,
+    borderBottomRightRadius: 26,
     overflow: "hidden",
+    marginBottom: 6,
   },
   multiAttachScroll: { gap: 8, paddingRight: 4 },
   multiAttachItem: { position: "relative" },
