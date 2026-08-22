@@ -4,7 +4,7 @@
  * JS-side splash overlay shown while fonts and assets load.
  *
  * Dark theme  → notification-icon.png  on black  (#000000)
- * Light theme → logo_black.webp  on cream  (#F5F0E8)
+ * Light theme → black-logo.png  on cream  (#F5F0E8)
  *
  * Fades out quickly once `ready` becomes true, then calls `onDone`
  * so the parent can call SplashScreen.hideAsync().
@@ -24,7 +24,7 @@ import { Image } from "expo-image";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const LOGO_WHITE = require("@/assets/images/notification-icon.png");
-const LOGO_BLACK = require("@/assets/images/logo_black.webp");
+const LOGO_BLACK = require("@/assets/images/black-logo.png");
 
 const { width } = Dimensions.get("window");
 const LOGO_SIZE = Math.min(width * 0.32, 130);
