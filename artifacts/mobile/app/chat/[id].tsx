@@ -1996,7 +1996,7 @@ function ChatScreen() {
   const { startCall: callStart, status: callStatus, isAvailable: callAvailable, micBlocked, showMicPermModal } = useCall();
   const { colors, isDark } = useTheme();
   const { appearance: chatAppearance, updateAppearance: updateChatAppearance } = useChatAppearance(id as string | undefined);
-  const BRAND = chatAppearance?.bubbleColor ?? colors.accent;
+  const BRAND = colors.accent;
   const { preferredLang, textToSpeech: ttsEnabled } = useLanguage();
   const { prefs: chatPrefs, themeColors: chatThemeColors, bubbleRadius: chatBubbleRadius } = useChatPreferences();
   const effectiveChatFontSize = chatAppearance?.fontSize ?? chatPrefs?.font_size ?? 14;
@@ -6344,14 +6344,14 @@ STRICT RULES:
             onSenderPress={advancedFeatures.mini_profile_popup && !isMe ? (id) => setMiniProfileUserId(id) : undefined}
             onReactionPress={addReaction}
             onStatusPress={isMe ? (m) => setMsgInfoTarget(m) : undefined}
-            brandColor={chatAppearance?.bubbleColor}
+            brandColor={colors.accent}
             hideTimestamp={isAfuAiDirectChat}
             isTextSelectionEnabled={item.id === textSelectionMessageId}
           />
         )}
       </View>
     );
-  }, [listData, messages, user, colors, highlightedMsgId, scrollToMessage, advancedFeatures.mini_profile_popup, chatAppearance?.bubbleColor, textSelectionMessageId]);
+  }, [listData, messages, user, colors, highlightedMsgId, scrollToMessage, advancedFeatures.mini_profile_popup, textSelectionMessageId]);
 
   // Single source of truth for the bottom offset.
   // The floatingInputContainer is position:absolute so it cannot rely on
@@ -6370,7 +6370,7 @@ STRICT RULES:
 
   return (
     <ChatFontSizeCtx.Provider value={effectiveChatFontSize}>
-    <View style={[st.root, { backgroundColor: chatAppearance?.bgColor ?? colors.background }]}>
+    <View style={[st.root, { backgroundColor: colors.background }]}>
       <WallpaperOverlay wallpaper={chatAppearance?.wallpaper} dark={isDark} />
       {<OfflineBanner />}
       <View style={[st.header, { backgroundColor: colors.surface, paddingTop: insets.top + 4, borderBottomColor: colors.border }]}>

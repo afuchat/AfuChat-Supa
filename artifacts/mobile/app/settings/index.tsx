@@ -108,7 +108,7 @@ function Row({
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function SettingsScreen() {
-  const { colors, accent, isDark } = useTheme();
+  const { colors, accent, isDark, themeMode, setThemeMode } = useTheme();
   const { langLabel } = useLanguage();
   const { user, profile, isPremium, linkedAccounts, switchAccount } = useAuth();
   const insets = useSafeAreaInsets();
@@ -299,12 +299,34 @@ export default function SettingsScreen() {
         {/* ── Appearance ────────────────────────────────────────────────── */}
         <Section title="APPEARANCE" colors={colors}>
           <View style={s.themeRow}>
-            <View style={[s.darkModeBadge, { backgroundColor: accent + "18" }]}>
-              <Ionicons name="moon" size={16} color={accent} />
-              <Text style={[s.themeBtnText, { color: accent }]}>Dark chat mode</Text>
-            </View>
-            <Text style={[s.appearanceNote, { color: colors.textMuted }]}>AfuChat keeps the interface deep and focused for comfortable messaging.</Text>
+            {([
+              { key: "system", label: "System", icon: "phone-portrait-outline" },
+              { key: "light", label: "Light", icon: "sunny-outline" },
+              { key: "dark", label: "Dark", icon: "moon-outline" },
+            ] as const).map((option) => {
+              const active = themeMode === option.key;
+              return (
+                <TouchableOpacity
+                  key={option.key}
+                  onPress={() => setThemeMode(option.key)}
+                  style={[
+                    s.themeBtn,
+                    { borderColor: active ? accent : colors.border },
+                    active && { backgroundColor: accent + "18" },
+                  ]}
+                  activeOpacity={0.75}
+                >
+                  <Ionicons name={option.icon} size={16} color={active ? accent : colors.textMuted} />
+                  <Text style={[s.themeBtnText, { color: active ? accent : colors.textMuted }]}>
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
+          <Text style={[s.appearanceNote, { color: colors.textMuted }]}>
+            Choose how AfuChat looks across the app.
+          </Text>
           <View style={[s.divider, { backgroundColor: colors.separator }]} />
           <Row
             icon="language"

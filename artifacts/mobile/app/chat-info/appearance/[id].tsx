@@ -20,22 +20,6 @@ import {
   type ChatAppearance,
 } from "@/lib/chatAppearance";
 
-// ── Palettes ───────────────────────────────────────────────────────────────────
-
-const BUBBLE_COLORS = [
-  { key: "afuchat", label: "AfuChat", value: "#1018D8" },
-  { key: "indigo",  label: "Indigo",  value: "#3835A3" },
-  { key: "emerald", label: "Emerald", value: "#198A3E" },
-  { key: "purple",  label: "Purple",  value: "#7B2FBE" },
-];
-
-const BG_COLORS = [
-  { key: "midnight", label: "Midnight", value: "#000000" },
-  { key: "navy",     label: "Navy",     value: "#0B1026" },
-  { key: "forest",   label: "Forest",   value: "#101C17" },
-  { key: "plum",     label: "Plum",     value: "#21152B" },
-];
-
 const FONT_SIZES = [
   { label: "S",  value: 13, name: "Small"   },
   { label: "M",  value: 15, name: "Normal"  },
@@ -93,24 +77,20 @@ const wm = StyleSheet.create({
 // ── Live preview ───────────────────────────────────────────────────────────────
 
 function LivePreview({
-  bubbleColor,
-  bgColor,
   fontSize,
   wallpaper,
   defaultBubble,
   defaultBg,
   isDark,
 }: {
-  bubbleColor: string | undefined;
-  bgColor:     string | undefined;
   fontSize:    number;
   wallpaper:   string | undefined;
   defaultBubble: string;
   defaultBg:     string;
   isDark: boolean;
 }) {
-  const bg       = bgColor     ?? defaultBg;
-  const outgoing = bubbleColor ?? defaultBubble;
+  const bg       = defaultBg;
+  const outgoing = defaultBubble;
   const incoming = isDark ? "#3A3A3C" : "#E8E8ED";
   const ink      = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
 
@@ -174,35 +154,6 @@ const lp = StyleSheet.create({
   rowOut: { flexDirection: "row", alignSelf: "flex-end",   maxWidth: "75%" },
   bubble: { borderRadius: 18, paddingHorizontal: 12, paddingVertical: 8 },
   text:   { fontFamily: "Inter_400Regular", lineHeight: 20 },
-});
-
-// ── Color swatch ───────────────────────────────────────────────────────────────
-
-function Swatch({
-  color, label, selected, defaultColor, accent, onPress,
-}: {
-  color?: string; label: string; selected: boolean;
-  defaultColor: string; accent: string; onPress: () => void;
-}) {
-  const resolved = color ?? defaultColor;
-  return (
-    <TouchableOpacity style={sw.wrap} onPress={onPress} activeOpacity={0.75}>
-      <View style={[
-        sw.circle, { backgroundColor: resolved },
-        color === undefined && sw.defaultDash,
-        selected && { borderWidth: 2.5, borderColor: accent },
-      ]}>
-        {selected && <Ionicons name="checkmark" size={13} color={color === undefined ? accent : "#fff"} />}
-      </View>
-      <Text style={sw.label} numberOfLines={1}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-const sw = StyleSheet.create({
-  wrap:        { alignItems: "center", gap: 5, width: 58 },
-  circle:      { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
-  defaultDash: { borderWidth: 1.5, borderColor: "#ccc", borderStyle: "dashed" },
-  label:       { fontSize: 10, color: "#888", fontFamily: "Inter_400Regular", textAlign: "center" },
 });
 
 // ── Main screen ────────────────────────────────────────────────────────────────
@@ -282,50 +233,12 @@ export default function ChatAppearanceScreen() {
         {/* ── Live Preview ── */}
         <View style={[s.previewCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <LivePreview
-            bubbleColor={appearance.bubbleColor}
-            bgColor={appearance.bgColor}
             fontSize={effectiveFontSize}
             wallpaper={appearance.wallpaper}
             defaultBubble={accent}
             defaultBg={colors.background}
             isDark={isDark}
           />
-        </View>
-
-        {/* ── Bubble Color ── */}
-        <SectionTitle label="BUBBLE COLOR" colors={colors} />
-        <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={s.swatchGrid}>
-            {BUBBLE_COLORS.map((c) => (
-              <Swatch
-                key={c.key}
-                color={c.value}
-                label={c.label}
-                selected={appearance.bubbleColor === c.value}
-                defaultColor={accent}
-                accent={accent}
-                onPress={() => applyChange({ bubbleColor: c.value })}
-              />
-            ))}
-          </View>
-        </View>
-
-        {/* ── Background ── */}
-        <SectionTitle label="BACKGROUND" colors={colors} />
-        <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={s.swatchGrid}>
-            {BG_COLORS.map((c) => (
-              <Swatch
-                key={c.key}
-                color={c.value}
-                label={c.label}
-                selected={appearance.bgColor === c.value}
-                defaultColor={colors.background}
-                accent={accent}
-                onPress={() => applyChange({ bgColor: c.value })}
-              />
-            ))}
-          </View>
         </View>
 
         {/* ── Text Size ── */}

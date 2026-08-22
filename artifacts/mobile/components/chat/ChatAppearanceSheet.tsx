@@ -10,41 +10,21 @@ import { useTheme } from "@/hooks/useTheme";
 import { ChatAppearance } from "@/lib/chatAppearance";
 import { SmartSheet } from "@/components/ui/SmartSheet";
 
-// ── Palettes ──────────────────────────────────────────────────────────────────
-
-const BUBBLE_COLORS = [
-  { key: "afuchat", label: "AfuChat", value: "#1018D8" },
-  { key: "indigo",  label: "Indigo",  value: "#3835A3" },
-  { key: "emerald", label: "Emerald", value: "#198A3E" },
-  { key: "purple",  label: "Purple",  value: "#7B2FBE" },
-] as const;
-
-const BG_OPTIONS = [
-  { key: "midnight", label: "Midnight", value: "#000000" },
-  { key: "navy",     label: "Navy",     value: "#0B1026" },
-  { key: "forest",   label: "Forest",   value: "#101C17" },
-  { key: "plum",     label: "Plum",     value: "#21152B" },
-] as const;
-
 // ── Preview ───────────────────────────────────────────────────────────────────
 
-function BubblePreview({ bubbleColor, bgColor, defaultBubble, defaultBg }: {
-  bubbleColor: string | undefined;
-  bgColor: string | undefined;
+function BubblePreview({ defaultBubble, defaultBg }: {
   defaultBubble: string;
   defaultBg: string;
 }) {
-  const resolvedBubble = bubbleColor ?? defaultBubble;
-  const resolvedBg = bgColor ?? defaultBg;
   return (
-    <View style={[pv.wrap, { backgroundColor: resolvedBg }]}>
+    <View style={[pv.wrap, { backgroundColor: defaultBg }]}>
       <View style={pv.rowLeft}>
         <View style={[pv.bubble, pv.incoming]}>
           <Text style={pv.incomingText}>Hey, how are you? 👋</Text>
         </View>
       </View>
       <View style={pv.rowRight}>
-        <View style={[pv.bubble, { backgroundColor: resolvedBubble }]}>
+        <View style={[pv.bubble, { backgroundColor: defaultBubble }]}>
           <Text style={pv.outgoingText}>Doing great, thanks! 😊</Text>
         </View>
       </View>
@@ -67,40 +47,6 @@ const pv = StyleSheet.create({
   outgoingText: { fontSize: 13, color: "#FFF", fontFamily: "Inter_400Regular" },
 });
 
-// ── Swatch ────────────────────────────────────────────────────────────────────
-
-function Swatch({ color, label, selected, defaultColor, accent, onPress }: {
-  color: string | undefined;
-  label: string;
-  selected: boolean;
-  defaultColor: string;
-  accent: string;
-  onPress: () => void;
-}) {
-  const resolved = color ?? defaultColor;
-  const isDefaultSlot = color === undefined;
-  return (
-    <TouchableOpacity style={sw.wrap} onPress={onPress} activeOpacity={0.75}>
-      <View style={[
-        sw.circle,
-        { backgroundColor: resolved },
-        isDefaultSlot && sw.defaultDash,
-        selected && { borderWidth: 2.5, borderColor: accent },
-      ]}>
-        {selected && <Ionicons name="checkmark" size={14} color={isDefaultSlot ? accent : "#fff"} />}
-      </View>
-      <Text style={sw.label} numberOfLines={1}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
-const sw = StyleSheet.create({
-  wrap:        { alignItems: "center", gap: 4, width: 58 },
-  circle:      { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
-  defaultDash: { borderWidth: 1.5, borderColor: "#ccc", borderStyle: "dashed" },
-  label:       { fontSize: 10, color: "#888", fontFamily: "Inter_400Regular", textAlign: "center" },
-});
-
 // ── Main Sheet ────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -114,26 +60,9 @@ interface Props {
 export default function ChatAppearanceSheet({ visible, chatId: _chatId, appearance, onUpdate, onClose }: Props) {
   const { colors } = useTheme();
 
-  const currentBubble = appearance?.bubbleColor;
-  const currentBg     = appearance?.bgColor;
-
-  const setBubble = useCallback((val: string | undefined) => {
-    const next: ChatAppearance = { ...appearance, bubbleColor: val };
-    if (!next.bubbleColor && !next.bgColor) { onUpdate(null); return; }
-    if (!next.bubbleColor) delete next.bubbleColor;
-    onUpdate(next);
-  }, [appearance, onUpdate]);
-
-  const setBg = useCallback((val: string | undefined) => {
-    const next: ChatAppearance = { ...appearance, bgColor: val };
-    if (!next.bubbleColor && !next.bgColor) { onUpdate(null); return; }
-    if (!next.bgColor) delete next.bgColor;
-    onUpdate(next);
-  }, [appearance, onUpdate]);
-
   const resetAll = useCallback(() => { onUpdate(null); }, [onUpdate]);
 
-  const hasCustom = !!(currentBubble || currentBg);
+  const hasCustom = !!appearance && Object.keys(appearance).length > 0;
 
   return (
     <SmartSheet
@@ -153,43 +82,9 @@ export default function ChatAppearanceSheet({ visible, chatId: _chatId, appearan
       <View style={styles.content}>
         {/* Live preview */}
         <BubblePreview
-          bubbleColor={currentBubble}
-          bgColor={currentBg}
           defaultBubble={colors.accent}
           defaultBg={colors.background}
         />
-
-        {/* Bubble colour */}
-        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>BUBBLE COLOUR</Text>
-        <View style={styles.swatchGrid}>
-          {BUBBLE_COLORS.map((c) => (
-            <Swatch
-              key={c.key}
-              color={c.value}
-              label={c.label}
-              selected={currentBubble === c.value}
-              defaultColor={colors.accent}
-              accent={colors.accent}
-              onPress={() => setBubble(c.value)}
-            />
-          ))}
-        </View>
-
-        {/* Background colour */}
-        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>BACKGROUND</Text>
-        <View style={styles.swatchGrid}>
-          {BG_OPTIONS.map((c) => (
-            <Swatch
-              key={c.key}
-              color={c.value}
-              label={c.label}
-              selected={currentBg === c.value}
-              defaultColor={colors.background}
-              accent={colors.accent}
-              onPress={() => setBg(c.value)}
-            />
-          ))}
-        </View>
 
         {/* Reset */}
         {hasCustom && (
