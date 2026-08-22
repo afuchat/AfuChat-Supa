@@ -293,6 +293,31 @@ type ChatInfo = {
   other_handle?: string | null;
 };
 
+function NativeAttachmentIcon({
+  name,
+  color,
+}: {
+  name: React.ComponentProps<typeof Ionicons>["name"];
+  color: string;
+}) {
+  return (
+    <View
+      accessible
+      accessibilityRole="image"
+      style={{
+        width: 42,
+        height: 42,
+        borderRadius: 13,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: color,
+      }}
+    >
+      <Ionicons name={name} size={22} color="#FFFFFF" />
+    </View>
+  );
+}
+
 // Enable LayoutAnimation on Android — guarded for New Architecture (SDK 55+).
 // RN$Bridgeless is present in bridgeless (New Arch) mode, so this call is
 // skipped entirely on SDK 55 where New Arch handles layout transitions natively.
@@ -7396,7 +7421,6 @@ STRICT RULES:
                   label: "Photos (up to 6)",
                   icon: "images" as const,
                   color: "#007AFF",
-                  bg: ["#0A52FF", "#007AFF"],
                   onPress: async () => {
                     setShowAttachPanel(false);
                     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -7420,14 +7444,12 @@ STRICT RULES:
                   label: "Camera",
                   icon: "camera" as const,
                   color: "#FF3B30",
-                  bg: ["#FF3B30", "#C0392B"],
                   onPress: () => { setShowAttachPanel(false); pickFromCamera(); },
                 },
                 {
                   label: "Audio File",
                   icon: "musical-notes" as const,
                   color: "#30D158",
-                  bg: ["#30D158", "#25A245"],
                   onPress: async () => {
                     setShowAttachPanel(false);
                     try {
@@ -7443,7 +7465,6 @@ STRICT RULES:
                   label: "Document",
                   icon: "document-text" as const,
                   color: "#5E5CE6",
-                  bg: ["#5E5CE6", "#3634A3"],
                   onPress: async () => {
                     setShowAttachPanel(false);
                     try {
@@ -7459,7 +7480,6 @@ STRICT RULES:
                   label: "Wallet",
                   icon: "wallet" as const,
                   color: "#34C759",
-                  bg: ["#34C759", "#00A86B"],
                   onPress: () => {
                     if (!chatInfo?.other_id || chatInfo.is_group || chatInfo.is_channel) {
                       showAlert("Wallet", "Payments are available only in direct chats.");
@@ -7505,12 +7525,9 @@ STRICT RULES:
                             borderColor: isDark ? `${pick.color}70` : `${pick.color}45`,
                           }}
                         >
-                          <LinearGradient
-                            colors={pick.bg as [string, string]}
-                            style={{ width: 42, height: 42, borderRadius: 13, alignItems: "center", justifyContent: "center", marginBottom: 5 }}
-                          >
-                            <Ionicons name={pick.icon} size={22} color="#FFFFFF" />
-                          </LinearGradient>
+                          <View style={{ marginBottom: 5 }}>
+                            <NativeAttachmentIcon name={pick.icon} color={pick.color} />
+                          </View>
                           <Text
                             numberOfLines={1}
                             adjustsFontSizeToFit
