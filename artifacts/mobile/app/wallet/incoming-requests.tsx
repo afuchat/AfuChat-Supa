@@ -255,8 +255,8 @@ export default function IncomingRequestsScreen() {
       {/* Tabs */}
       <View style={[s.tabs, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         {(["incoming", "sent"] as Tab[]).map((t) => (
-          <TouchableOpacity key={t} style={[s.tab, tab === t && { borderBottomColor: Colors.brand, borderBottomWidth: 2 }]} onPress={() => setTab(t)}>
-            <Text style={[s.tabText, { color: tab === t ? Colors.brand : colors.textMuted }]}>
+          <TouchableOpacity key={t} style={[s.tab, tab === t && { borderBottomColor: colors.accent, borderBottomWidth: 2 }]} onPress={() => setTab(t)}>
+            <Text style={[s.tabText, { color: tab === t ? colors.accent : colors.textMuted }]}>
               {t === "incoming" ? "Received" : "Sent"}
             </Text>
             {t === "incoming" && pendingCount > 0 && (
@@ -270,11 +270,11 @@ export default function IncomingRequestsScreen() {
 
       {loading ? (
         <View style={s.centered}>
-          <ActivityIndicator color={Colors.brand} size="large" />
+          <ActivityIndicator color={colors.accent} size="large" />
         </View>
       ) : (
         <ScrollView
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); try { await load(); } finally { setRefreshing(false); } }} tintColor={Colors.brand} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); try { await load(); } finally { setRefreshing(false); } }} tintColor={colors.accent} />}
           contentContainerStyle={[s.list, { paddingBottom: insets.bottom + 24 }]}
           keyboardShouldPersistTaps="handled"
         >

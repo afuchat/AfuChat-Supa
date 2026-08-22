@@ -1081,7 +1081,6 @@ export default function DiscoverScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [showCreatePicker, setShowCreatePicker] = useState(false);
   const [showSignInPrompt, setShowSignInPrompt] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [followingEmpty, setFollowingEmpty] = useState(false);
@@ -2932,44 +2931,6 @@ export default function DiscoverScreen() {
 
       {/* FAB removed — create button now lives in the bottom tab bar */}
 
-      {/* Create type picker */}
-      <Modal
-        visible={showCreatePicker}
-        transparent
-        animationType="none"
-        onRequestClose={() => setShowCreatePicker(false)}
-      >
-        <TouchableOpacity
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" }}
-          activeOpacity={1}
-          onPress={() => setShowCreatePicker(false)}
-        >
-          <View style={[styles.createPickerSheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 16 }]}>
-            <View style={[styles.createPickerHandle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.createPickerTitle, { color: colors.text }]}>What would you like to create?</Text>
-            {[
-              { icon: "create", label: "Post", desc: "Share a thought, photo, or link", route: "/moments/create", color: colors.accent },
-              { icon: "videocam", label: "Video", desc: "Share a short video clip", route: "/moments/create-video", color: "#FF3B30" },
-              { icon: "document-text", label: "Article", desc: "Write a long-form article", route: "/moments/create-article", color: "#007AFF" },
-            ].map((opt) => (
-              <TouchableOpacity
-                key={opt.label}
-                style={[styles.createPickerOption, { backgroundColor: colors.backgroundTertiary }]}
-                onPress={() => { setShowCreatePicker(false); setTimeout(() => safeRouter.push(opt.route as any), 150); }}
-              >
-                <View style={[styles.createPickerIconBox, { backgroundColor: opt.color + "18" }]}>
-                  <Ionicons name={opt.icon as any} size={24} color={opt.color} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.createPickerLabel, { color: colors.text }]}>{opt.label}</Text>
-                  <Text style={[styles.createPickerDesc, { color: colors.textMuted }]}>{opt.desc}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-              </TouchableOpacity>
-            ))}
-          </View>
-        </TouchableOpacity>
-      </Modal>
       <ImageViewer
         images={imgViewer.images}
         initialIndex={imgViewer.index}
@@ -3489,40 +3450,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   readArticleText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
-  createPickerSheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-    gap: 10,
-  },
-  createPickerHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    alignSelf: "center",
-    marginBottom: 10,
-  },
-  createPickerTitle: {
-    fontSize: 16,
-    fontFamily: "Inter_600SemiBold",
-    marginBottom: 4,
-  },
-  createPickerOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    padding: 14,
-    borderRadius: 14,
-  },
-  createPickerIconBox: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  createPickerLabel: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
-  createPickerDesc: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
   bgRefreshBar: {
     flexDirection: "row",
     alignItems: "center",

@@ -15,7 +15,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { ListRowSkeleton } from "@/components/ui/Skeleton";
 
-const BRAND = "#FF2D55";
 const CITIES_API = "https://countriesnow.space/api/v0.1/countries/cities";
 
 interface Props {
@@ -111,7 +110,7 @@ export default function RegionPickerInput({ value, onChange, country, placeholde
         <Ionicons
           name="location"
           size={18}
-          color={hasValue ? BRAND : colors.textMuted}
+          color={hasValue ? colors.accent : colors.textMuted}
           style={{ marginRight: 10 }}
         />
         <Text
@@ -127,7 +126,7 @@ export default function RegionPickerInput({ value, onChange, country, placeholde
             : (placeholder ?? "Select your city or town")}
         </Text>
         {loading ? (
-          <ActivityIndicator size="small" color={BRAND} />
+          <ActivityIndicator size="small" color={colors.accent} />
         ) : hasValue ? (
           <Pressable onPress={handleClearValue} hitSlop={{ top: 10, left: 10, bottom: 10, right: 10 }}>
             <Ionicons name="close-circle" size={18} color={colors.textMuted} />
@@ -220,7 +219,7 @@ export default function RegionPickerInput({ value, onChange, country, placeholde
                 <Pressable
                   style={({ pressed }) => [
                     styles.resultRow,
-                    pressed && { backgroundColor: BRAND + "12" },
+                    pressed && { backgroundColor: colors.accent + "12" },
                   ]}
                   onPress={() => handleSelect(item)}
                 >
@@ -231,7 +230,7 @@ export default function RegionPickerInput({ value, onChange, country, placeholde
                     {item}
                   </Text>
                   {value === item && (
-                    <Ionicons name="checkmark-circle" size={20} color={BRAND} />
+                    <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
                   )}
                 </Pressable>
               )}

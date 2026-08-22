@@ -503,7 +503,6 @@ const styles = StyleSheet.create({
   addInput: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular" },
   addResultRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   addBtn: {
-    backgroundColor: Colors.brand,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,

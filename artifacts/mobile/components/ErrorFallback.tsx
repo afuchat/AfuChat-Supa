@@ -16,6 +16,7 @@ import {
 import * as Clipboard from "expo-clipboard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useTheme } from "@/hooks/useTheme";
 
 export const CRASH_LOG_KEY = "afuchat_last_crash_log";
 const PREV_CRASH_KEY = "afuchat_prev_crash_log";
@@ -80,15 +81,16 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
 
-  const bg      = isDark ? "#0A0A0A"                  : "#F2F2F7";
-  const surface = isDark ? "#1C1C1E"                  : "#FFFFFF";
-  const text    = isDark ? "#FFFFFF"                  : "#1C1C1E";
-  const muted   = isDark ? "rgba(255,255,255,0.5)"    : "rgba(28,28,30,0.5)";
-  const border  = isDark ? "rgba(255,255,255,0.08)"   : "rgba(0,0,0,0.09)";
-  const danger  = "#FF3B30";
-  const blue    = "#007AFF";
-  const green   = "#34C759";
+  const bg      = colors.background;
+  const surface = colors.surface;
+  const text    = colors.text;
+  const muted   = colors.textMuted;
+  const border  = colors.border;
+  const danger  = colors.error;
+  const blue    = colors.accent;
+  const green   = colors.success;
   const mono    = Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" });
 
   const [crashLog, setCrashLog] = useState("");

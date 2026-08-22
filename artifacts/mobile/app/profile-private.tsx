@@ -124,8 +124,8 @@ export function ProfilePrivateView({
           style={[
             styles.btn,
             {
-              backgroundColor: followed ? colors.surface : Colors.brand,
-              borderColor: followed ? colors.border : Colors.brand,
+              backgroundColor: followed ? colors.surface : colors.accent,
+              borderColor: followed ? colors.border : colors.accent,
             },
           ]}
           onPress={handleFollow}
@@ -149,7 +149,7 @@ export function ProfilePrivateView({
         </TouchableOpacity>
       ) : !user ? (
         <TouchableOpacity
-          style={[styles.btn, { backgroundColor: Colors.brand, borderColor: Colors.brand }]}
+          style={[styles.btn, { backgroundColor: colors.accent, borderColor: colors.accent }]}
           onPress={() => router.push("/(auth)/login" as any)}
           activeOpacity={0.85}
         >
@@ -195,7 +195,7 @@ export default function ProfilePrivateScreen() {
           }}
           hitSlop={{ top: 8, left: 8, right: 12, bottom: 8 }}
         >
-          <Ionicons name="arrow-back" size={24} color={Colors.brand} />
+          <Ionicons name="arrow-back" size={24} color={colors.accent} />
         </TouchableOpacity>
         {params.display_name ? (
           <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>

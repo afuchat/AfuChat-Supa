@@ -117,7 +117,7 @@ function PublicProfileScreen({ handle }: { handle: string }) {
   if (loading) {
     return (
       <View style={[pub.root, pub.centered, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-        <ActivityIndicator color={Colors.brand} size="large" />
+        <ActivityIndicator color={colors.accent} size="large" />
       </View>
     );
   }
@@ -153,7 +153,7 @@ function PublicProfileScreen({ handle }: { handle: string }) {
           }}
           hitSlop={{ top: 8, left: 8, right: 12, bottom: 8 }}
         >
-          <Ionicons name="arrow-back" size={24} color={Colors.brand} />
+          <Ionicons name="arrow-back" size={24} color={colors.accent} />
         </TouchableOpacity>
         <Text style={[pub.headerTitle, { color: colors.text }]} numberOfLines={1}>
           {profile.display_name}
@@ -225,7 +225,7 @@ function PublicProfileScreen({ handle }: { handle: string }) {
         {/* ── Actions ───────────────────────────────────────────────────── */}
         <View style={[pub.actionsBlock, { borderBottomColor: colors.separator }]}>
           <TouchableOpacity
-            style={[pub.btnPrimary, { backgroundColor: Colors.brand }]}
+            style={[pub.btnPrimary, { backgroundColor: colors.accent }]}
             onPress={() => router.push("/(auth)/login" as any)}
             activeOpacity={0.85}
           >

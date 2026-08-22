@@ -160,7 +160,7 @@ export default function WalletScanPage() {
 
       {loading ? (
         <View style={s.centered}>
-          <ActivityIndicator color={Colors.brand} size="large" />
+          <ActivityIndicator color={colors.accent} size="large" />
           <Text style={[s.loadingText, { color: colors.textMuted }]}>Looking up recipient…</Text>
         </View>
       ) : !recipient ? (
@@ -178,8 +178,8 @@ export default function WalletScanPage() {
               <Text style={[s.recipientName, { color: colors.text }]}>{recipient.display_name}</Text>
               <Text style={[s.recipientHandle, { color: colors.textMuted }]}>@{recipient.handle}</Text>
             </View>
-            <View style={[s.verifiedBadge, { backgroundColor: Colors.brand + "18" }]}>
-              <Ionicons name="checkmark-circle" size={16} color={Colors.brand} />
+            <View style={[s.verifiedBadge, { backgroundColor: colors.accent + "18" }]}>
+              <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
             </View>
           </View>
 

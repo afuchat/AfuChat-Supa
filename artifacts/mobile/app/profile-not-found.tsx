@@ -57,7 +57,7 @@ export function ProfileNotFoundView({
       </Text>
 
       <TouchableOpacity
-        style={[styles.btn, { backgroundColor: Colors.brand }]}
+        style={[styles.btn, { backgroundColor: colors.accent }]}
         onPress={() => router.push("/user-discovery" as any)}
         activeOpacity={0.85}
       >
@@ -97,7 +97,7 @@ export default function ProfileNotFoundScreen() {
           }}
           hitSlop={{ top: 8, left: 8, right: 12, bottom: 8 }}
         >
-          <Ionicons name="arrow-back" size={24} color={Colors.brand} />
+          <Ionicons name="arrow-back" size={24} color={colors.accent} />
         </TouchableOpacity>
       </View>
       <ProfileNotFoundView handle={handle} />

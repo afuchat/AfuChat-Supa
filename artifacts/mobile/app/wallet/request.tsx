@@ -114,7 +114,7 @@ export default function MoneyRequestScreen() {
 
       {loading ? (
         <View style={s.centered}>
-          <ActivityIndicator color={Colors.brand} size="large" />
+          <ActivityIndicator color={colors.accent} size="large" />
           <Text style={[s.hint, { color: colors.textMuted }]}>Looking up user…</Text>
         </View>
       ) : !target ? (

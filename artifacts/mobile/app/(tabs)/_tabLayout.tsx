@@ -5,7 +5,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { Security2FABanner } from "@/components/ui/Security2FABanner";
 import {
-  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -160,18 +159,18 @@ function CompactTabBar({
   const { colors, isDark } = useTheme();
   const totalUnread        = useTotalUnread(userId);
   const active             = normalizeTabPath(pathname);
-  const [showCreatePicker, setShowCreatePicker] = useState(false);
+  const [showCreateActions, setShowCreateActions] = useState(false);
+  const ACCENT         = colors.accent;
 
   const CREATE_OPTIONS = [
-    { icon: "camera",        label: "Story",   route: "/stories/camera" },
-    { icon: "create",        label: "Post",    route: "/moments/create" },
-    { icon: "videocam",      label: "Video",   route: "/moments/create-video" },
-    { icon: "document-text", label: "Article", route: "/moments/create-article" },
+    { icon: "camera",        label: "Story",   route: "/stories/camera",        color: "#FF2D55" },
+    { icon: "create",        label: "Post",    route: "/moments/create",        color: ACCENT },
+    { icon: "videocam",      label: "Video",   route: "/moments/create-video",  color: "#FF3B30" },
+    { icon: "document-text", label: "Article", route: "/moments/create-article", color: "#007AFF" },
   ];
 
   const INACTIVE_ICON  = isDark ? "rgba(255,255,255,0.50)" : "rgba(0,0,0,0.38)";
   const ACTIVE_ICON    = colors.accent;
-  const ACCENT         = colors.accent;
   const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 6;
   const PILL_H         = 62;
 
@@ -182,6 +181,12 @@ function CompactTabBar({
   function handleTabPress(route: string) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     safeRouter.navigate(route as any);
+  }
+
+  function handleCreateAction(route: string) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    setShowCreateActions(false);
+    safeRouter.push(route as any);
   }
 
   return (
@@ -269,25 +274,50 @@ function CompactTabBar({
         </View>
       </View>
 
-      {/* FAB — Create, right side, discover tab only */}
+      {/* Create FAB and its expanded action FABs */}
       {active === "/(tabs)/discover" && (
-        <TouchableOpacity
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-            setShowCreatePicker(true);
-          }}
-          style={[
-            pill.fab,
-            {
-              bottom: PILL_BOTTOM + PILL_H + 12,
-              right: 24,
-              backgroundColor: ACCENT,
-            },
-          ]}
-          activeOpacity={0.82}
-        >
-          <Ionicons name="add" size={28} color="#fff" />
-        </TouchableOpacity>
+        <>
+          {showCreateActions && CREATE_OPTIONS.map((opt, index) => (
+            <TouchableOpacity
+              key={opt.route}
+              onPress={() => handleCreateAction(opt.route)}
+              style={[
+                pill.actionFab,
+                {
+                  bottom: PILL_BOTTOM + PILL_H + 24 + (CREATE_OPTIONS.length - index - 1) * 54,
+                  right: 28,
+                  backgroundColor: isDark ? "#2C2C2E" : "#FFFFFF",
+                  borderColor: opt.color,
+                },
+              ]}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`Create ${opt.label}`}
+            >
+              <Ionicons name={opt.icon as any} size={21} color={opt.color ?? ACCENT} />
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+              setShowCreateActions((open) => !open);
+            }}
+            style={[
+              pill.fab,
+              {
+                bottom: PILL_BOTTOM + PILL_H + 12,
+                right: 24,
+                backgroundColor: ACCENT,
+              },
+            ]}
+            activeOpacity={0.82}
+            accessibilityRole="button"
+            accessibilityLabel={showCreateActions ? "Close create options" : "Create"}
+            accessibilityState={{ expanded: showCreateActions }}
+          >
+            <Ionicons name={showCreateActions ? "close" : "add"} size={28} color="#fff" />
+          </TouchableOpacity>
+        </>
       )}
 
       {/* FAB — Compose, right side, chats tab only */}
@@ -311,44 +341,6 @@ function CompactTabBar({
         </TouchableOpacity>
       )}
 
-      {/* Create picker sheet */}
-      <Modal
-        visible={showCreatePicker}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowCreatePicker(false)}
-      >
-        <TouchableOpacity
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" }}
-          activeOpacity={1}
-          onPress={() => setShowCreatePicker(false)}
-        >
-          <View style={[sheet.container, { backgroundColor: isDark ? "rgba(28,28,30,0.96)" : "rgba(255,255,255,0.96)", borderColor: isDark ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.10)", marginBottom: Math.max(insets.bottom, 8) + 8 }]}>
-            <View style={sheet.optionsGrid}>
-              {CREATE_OPTIONS.map((opt) => (
-                <TouchableOpacity
-                  key={opt.route}
-                  style={sheet.option}
-                  onPress={() => {
-                    setShowCreatePicker(false);
-                    setTimeout(() => safeRouter.push(opt.route as any), 200);
-                  }}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel={opt.label}
-                >
-                  <View style={[sheet.iconBox, { backgroundColor: colors.accent + "20" }]}>
-                    <Ionicons name={opt.icon as any} size={30} color={colors.accent} />
-                  </View>
-                  <Text style={[sheet.optionLabel, { color: isDark ? "#FFFFFF" : "#000000" }]}>
-                    {opt.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </>
   );
 }
@@ -406,6 +398,25 @@ const pill = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  actionFab: {
+    position: "absolute",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.18,
+        shadowRadius: 5,
+      },
+      android: { elevation: 5 },
+      web: { boxShadow: "0 2px 8px rgba(0,0,0,0.18)" } as any,
+    }),
+  },
   badge: {
     position: "absolute",
     top: 0,
@@ -423,52 +434,6 @@ const pill = StyleSheet.create({
     fontSize: 9,
     fontFamily: "Inter_700Bold",
     lineHeight: 12,
-  },
-});
-
-const sheet = StyleSheet.create({
-  container: {
-    marginHorizontal: 14,
-    borderRadius: 30,
-    borderWidth: 1,
-    paddingVertical: 7,
-    paddingHorizontal: 8,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.18,
-        shadowRadius: 12,
-      },
-      android: { elevation: 8 },
-      web: { boxShadow: "0 4px 18px rgba(0,0,0,0.18)" } as any,
-    }),
-  },
-  option: {
-    flex: 1,
-    minWidth: 0,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 2,
-    paddingHorizontal: 1,
-  },
-  optionsGrid: {
-    flexDirection: "row",
-    width: "100%",
-  },
-  iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  optionLabel: {
-    marginTop: 3,
-    fontSize: 10,
-    lineHeight: 12,
-    fontFamily: "Inter_600SemiBold",
-    textAlign: "center",
   },
 });
 

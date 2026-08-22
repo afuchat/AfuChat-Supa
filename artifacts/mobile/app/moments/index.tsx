@@ -217,7 +217,7 @@ export default function MomentsScreen() {
           </Text>
         </View>
         {item.hasUnseen && (
-          <View style={[styles.unseenDot, { backgroundColor: Colors.brand }]} />
+          <View style={[styles.unseenDot, { backgroundColor: colors.accent }]} />
         )}
         <Ionicons
           name="chevron-forward"
@@ -256,7 +256,7 @@ export default function MomentsScreen() {
           style={styles.addBtn}
           onPress={() => router.push("/stories/camera")}
         >
-          <Ionicons name="add-circle" size={24} color={Colors.brand} />
+          <Ionicons name="add-circle" size={24} color={colors.accent} />
         </TouchableOpacity>
       </View>
 
@@ -278,7 +278,7 @@ export default function MomentsScreen() {
             Be the first to share a moment with everyone
           </Text>
           <TouchableOpacity
-            style={[styles.createBtn, { backgroundColor: Colors.brand }]}
+            style={[styles.createBtn, { backgroundColor: colors.accent }]}
             onPress={() => router.push("/stories/camera")}
           >
             <Ionicons name="camera" size={18} color="#fff" />
@@ -294,7 +294,7 @@ export default function MomentsScreen() {
           showsVerticalScrollIndicator={false}
           ListFooterComponent={hasMoreStories ? (
             <TouchableOpacity onPress={() => setStoriesLimit(l => l + 50)} style={{ paddingVertical: 16, alignItems: "center" as const }}>
-              <Text style={{ color: Colors.brand, fontSize: 14 }}>Load more moments</Text>
+            <Text style={{ color: colors.accent, fontSize: 14 }}>Load more moments</Text>
             </TouchableOpacity>
           ) : null}
         />

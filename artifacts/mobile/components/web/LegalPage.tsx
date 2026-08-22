@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Colors from "@/constants/colors";
+import { useTheme } from "@/hooks/useTheme";
 
 type LegalPageKind = "terms" | "privacy" | "account-deletion";
 
@@ -20,7 +20,6 @@ type Section = {
   bullets?: string[];
 };
 
-const BRAND = Colors.brand;
 const INK = "#102033";
 const MUTED = "#607086";
 const BORDER = "#e5ebf2";
@@ -218,7 +217,7 @@ function navigateTo(path: string) {
   Linking.openURL(`https://afuchat.com${path}`).catch(() => {});
 }
 
-function LegalSection({ section }: { section: Section }) {
+function LegalSection({ section, accent }: { section: Section; accent: string }) {
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{section.title}</Text>
@@ -231,7 +230,7 @@ function LegalSection({ section }: { section: Section }) {
         <View style={styles.bulletList}>
           {section.bullets.map((bullet) => (
             <View key={bullet} style={styles.bulletRow}>
-              <View style={styles.bullet} />
+              <View style={[styles.bullet, { backgroundColor: accent }]} />
               <Text style={styles.bulletText}>{bullet}</Text>
             </View>
           ))}
@@ -242,6 +241,8 @@ function LegalSection({ section }: { section: Section }) {
 }
 
 export default function LegalPage({ kind }: { kind: LegalPageKind }) {
+  const { colors } = useTheme();
+  const BRAND = colors.accent;
   const page = PAGES[kind];
   const { width } = useWindowDimensions();
   const compact = width < 720;
@@ -256,7 +257,7 @@ export default function LegalPage({ kind }: { kind: LegalPageKind }) {
         <View style={[styles.nav, compact && styles.navCompact]}>
           <Pressable onPress={() => navigateTo("/")} accessibilityRole="link">
             <Text style={styles.logo}>
-              Afu<Text style={styles.logoAccent}>Chat</Text>
+              Afu<Text style={[styles.logoAccent, { color: BRAND }]}>Chat</Text>
             </Text>
           </Pressable>
           {!compact && (
@@ -295,13 +296,13 @@ export default function LegalPage({ kind }: { kind: LegalPageKind }) {
           </Text>
         </View>
         {page.sections.map((section) => (
-          <LegalSection key={section.title} section={section} />
+          <LegalSection key={section.title} section={section} accent={BRAND} />
         ))}
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.footerLogo}>
-          Afu<Text style={styles.logoAccent}>Chat</Text>
+           <Text style={styles.footerLogo}>
+           Afu<Text style={[styles.logoAccent, { color: BRAND }]}>Chat</Text>
         </Text>
         <Text style={styles.footerText}>Connect · Discover · Create</Text>
         <View style={styles.footerLinks}>
@@ -346,7 +347,7 @@ const styles = StyleSheet.create({
   },
   navCompact: { paddingHorizontal: 20, minHeight: 68 },
   logo: { color: "#fff", fontSize: 22, fontFamily: "Inter_700Bold", letterSpacing: -0.8 },
-  logoAccent: { color: BRAND },
+  logoAccent: {},
   navLinks: { flexDirection: "row", alignItems: "center", gap: 26 },
   navLink: { color: "rgba(255,255,255,0.68)", fontSize: 13, fontFamily: "Inter_500Medium" },
   hero: { backgroundColor: "#07111f", paddingHorizontal: 28, paddingBottom: 58 },
@@ -437,7 +438,6 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: BRAND,
     marginTop: 9,
   },
   bulletText: {

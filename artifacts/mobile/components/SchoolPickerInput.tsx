@@ -15,7 +15,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { ListRowSkeleton } from "@/components/ui/Skeleton";
 
-const BRAND = "#FF2D55";
 const API_BASE = "https://universities.hipolabs.com/search";
 
 interface SchoolResult {
@@ -111,7 +110,7 @@ export default function SchoolPickerInput({ value, onChange, country, placeholde
         <Ionicons
           name="school"
           size={18}
-          color={hasValue ? BRAND : colors.textMuted}
+          color={hasValue ? colors.accent : colors.textMuted}
           style={{ marginRight: 10 }}
         />
         <Text
@@ -121,7 +120,7 @@ export default function SchoolPickerInput({ value, onChange, country, placeholde
           {hasValue ? displayText : (placeholder ?? "Select your school or university")}
         </Text>
         {loading ? (
-          <ActivityIndicator size="small" color={BRAND} />
+          <ActivityIndicator size="small" color={colors.accent} />
         ) : hasValue ? (
           <Pressable onPress={handleClearValue} hitSlop={{ top: 10, left: 10, bottom: 10, right: 10 }}>
             <Ionicons name="close-circle" size={18} color={colors.textMuted} />
@@ -213,7 +212,7 @@ export default function SchoolPickerInput({ value, onChange, country, placeholde
                 <Pressable
                   style={({ pressed }) => [
                     styles.resultRow,
-                    pressed && { backgroundColor: BRAND + "12" },
+                    pressed && { backgroundColor: colors.accent + "12" },
                   ]}
                   onPress={() => handleSelect(item)}
                 >
@@ -229,7 +228,7 @@ export default function SchoolPickerInput({ value, onChange, country, placeholde
                     </Text>
                   </View>
                   {value === item.name && (
-                    <Ionicons name="checkmark-circle" size={20} color={BRAND} />
+                    <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
                   )}
                 </Pressable>
               )}
