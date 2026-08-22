@@ -472,13 +472,13 @@ const sheet = StyleSheet.create({
   },
 });
 
-function ClassicTabLayout({ isLoggedIn, bottomPadding }: { isLoggedIn: boolean; bottomPadding: number }) {
+function ClassicTabLayout({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         animation: "none",
-        sceneStyle: { backgroundColor: "transparent", paddingBottom: bottomPadding },
+        sceneStyle: { backgroundColor: "transparent" },
         tabBarStyle: {
           display: "none",
           backgroundColor: "transparent",
@@ -492,7 +492,7 @@ function ClassicTabLayout({ isLoggedIn, bottomPadding }: { isLoggedIn: boolean; 
       <Tabs.Screen name="index"         options={{ href: null }} />
       <Tabs.Screen name="chats"         options={{ href: isLoggedIn ? undefined : null }} />
       <Tabs.Screen name="discover"      options={{ href: isLoggedIn ? undefined : null, lazy: true }} />
-      <Tabs.Screen name="shorts"        options={{ href: isLoggedIn ? undefined : null, lazy: true, sceneStyle: { backgroundColor: "#000", paddingBottom: 0 } }} />
+      <Tabs.Screen name="shorts"        options={{ href: isLoggedIn ? undefined : null, lazy: true, sceneStyle: { backgroundColor: "#000" } }} />
       <Tabs.Screen name="search"        options={{ href: null }} />
       <Tabs.Screen name="contacts"      options={{ href: null }} />
       <Tabs.Screen name="communities"   options={{ href: null }} />
@@ -507,12 +507,6 @@ export default function TabLayout() {
   const isLoggedIn     = !!session || !!user;
   const prevSessionRef = useRef<Session | null>(null);
   const insets         = useSafeAreaInsets();
-  const PILL_H         = 62;
-  const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 8;
-  // The custom pill bar is absolutely positioned over the tab scenes. Reserve
-  // its full occupied height so list content and keyboard/toolbars cannot hide
-  // underneath it on devices with different home-indicator insets.
-  const bottomPadding  = isLoggedIn ? PILL_H + PILL_BOTTOM + 8 : 0;
 
   useEffect(() => {
     if (loading) return;
@@ -543,7 +537,7 @@ export default function TabLayout() {
   return (
     <TabSwipeProvider>
       <View style={{ flex: 1 }}>
-        <ClassicTabLayout isLoggedIn={isLoggedIn} bottomPadding={bottomPadding} />
+        <ClassicTabLayout isLoggedIn={isLoggedIn} />
 
         {isLoggedIn && (
           <CompactTabBar
