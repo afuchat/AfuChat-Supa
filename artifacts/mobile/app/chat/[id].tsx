@@ -7727,16 +7727,20 @@ STRICT RULES:
               />
               <View style={{
                 position: "absolute",
-                // Match the inputGlassPill, not the full composer row:
-                // the send/mic button stays outside this connected surface.
+                 // Match the inputGlassPill, not the full composer row:
+                 // the send/mic button stays outside this connected surface.
                 left: Platform.OS === "web" ? 20 : 12,
                 right: Platform.OS === "web" ? 68 : 72,
                 bottom: effectiveBottom + floatingInputHeight - 4,
                  maxHeight: 400,
-                  backgroundColor: colors.surface,
-                 borderRadius: 999,
-                 borderWidth: 1,
-                 borderColor: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)",
+                  backgroundColor: colors.inputBg,
+                 borderTopLeftRadius: 26,
+                 borderTopRightRadius: 26,
+                 borderBottomLeftRadius: 0,
+                 borderBottomRightRadius: 0,
+                 borderWidth: 0.5,
+                 borderBottomWidth: 0,
+                 borderColor: isDark ? "rgba(255,255,255,0.22)" : colors.border,
                 overflow: "hidden",
               }}>
                 <View style={{ height: contentH, overflow: "hidden" }}>
