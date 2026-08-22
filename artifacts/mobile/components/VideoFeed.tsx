@@ -1579,9 +1579,11 @@ export default function VideoFeed({ tabBarHeight = 52 }: Props) {
         initialNumToRender={1}
         maxToRenderPerBatch={1}
         updateCellsBatchingPeriod={40}
-        removeClippedSubviews={Platform.OS !== "web"}
+        // Keep native video surfaces attached while rows recycle. Android can
+        // crash when SurfaceView-backed VideoViews are clipped mid-swipe.
+        removeClippedSubviews={false}
         onEndReached={onEndReached}
-        onEndReachedThreshold={4}
+        onEndReachedThreshold={0.75}
         style={{ flex: 1, backgroundColor: "#000" }}
         contentContainerStyle={{ backgroundColor: "#000" }}
         ListFooterComponent={null}

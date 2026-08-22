@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import CachedImage from "./CachedImage";
 
 const SEEK_TIME = 1.0;
@@ -82,7 +82,12 @@ function VideoThumbnailNative({
   const [thumbUri, setThumbUri] = useState<string | null>(null);
 
   useEffect(() => {
-    if (lowData) return;
+    // Android's video thumbnail decoder can allocate a full codec surface for
+    // every recycled Discover row. During a fast scroll those decoders overlap
+    // and can take down the process on memory-constrained devices. Prefer the
+    // already-supplied poster on Android; full playback remains available when
+    // the user opens the video.
+    if (lowData || Platform.OS === "android") return;
     if (!videoUrl || videoUrl.startsWith("blob:")) return;
     let cancelled = false;
     (async () => {
