@@ -146,7 +146,7 @@ function SubHeader({ title, onBack, colors }: { title: string; onBack: () => voi
   );
 }
 
-export default function AfuPayApp() {
+export default function AfuPayApp({ initialRecipientId }: { initialRecipientId?: string }) {
   const { colors } = useTheme();
   const { user, profile, refreshProfile } = useAuth();
   const insets = useSafeAreaInsets();
@@ -157,6 +157,10 @@ export default function AfuPayApp() {
   const [txFilter, setTxFilter] = useState<TxFilter>("all");
   const [currSettings, setCurrSettings] = useState<{ nexa_to_acoin_rate: number; conversion_fee_percent: number } | null>(null);
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
+
+  useEffect(() => {
+    if (initialRecipientId) setView("send");
+  }, [initialRecipientId]);
 
   const acoin = profile?.acoin ?? 0;
   const nexa = profile?.xp ?? 0;
@@ -242,7 +246,7 @@ export default function AfuPayApp() {
 
   if (view === "history") return <HistoryView colors={colors} insets={insets} txs={filteredTx} loading={txLoading} filter={txFilter} setFilter={setTxFilter} refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadTransactions(); }} onBack={() => setView("home")} />;
   if (view === "topup") return <TopUpView colors={colors} insets={insets} profile={profile} onBack={() => setView("home")} onSuccess={() => { loadTransactions(); refreshProfile?.(); }} />;
-  if (view === "send") return <SendView colors={colors} insets={insets} user={user} profile={profile} onBack={() => setView("home")} onSuccess={() => { loadTransactions(); refreshProfile?.(); setView("home"); }} />;
+  if (view === "send") return <SendView initialRecipientId={initialRecipientId} colors={colors} insets={insets} user={user} profile={profile} onBack={() => setView("home")} onSuccess={() => { loadTransactions(); refreshProfile?.(); setView("home"); }} />;
   if (view === "receive") return <ReceiveView colors={colors} insets={insets} profile={profile} onBack={() => setView("home")} />;
   if (view === "exchange") return <ExchangeView colors={colors} insets={insets} user={user} profile={profile} currSettings={currSettings} onBack={() => setView("home")} onSuccess={() => { loadTransactions(); refreshProfile?.(); setView("home"); }} />;
   if (view === "requests") return <RequestsView colors={colors} insets={insets} user={user} onBack={() => setView("home")} />;
@@ -613,21 +617,37 @@ function TopUpView({ colors, insets, profile, onBack, onSuccess }: any) {
   );
 }
 
-function SendView({ colors, insets, user, profile, onBack, onSuccess }: any) {
+function SendView({ initialRecipientId, colors, insets, user, profile, onBack, onSuccess }: any) {
   const [currency, setCurrency] = useState<"acoin" | "nexa">("acoin");
   const [handle, setHandle] = useState("");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
 
+  useEffect(() => {
+    if (!initialRecipientId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("handle")
+        .eq("id", initialRecipientId)
+        .maybeSingle();
+      if (!cancelled && data?.handle) setHandle(data.handle);
+    })();
+    return () => { cancelled = true; };
+  }, [initialRecipientId]);
+
   async function send() {
-    if (!handle.trim() || !amount.trim() || !user) return;
+    if ((!initialRecipientId && !handle.trim()) || !amount.trim() || !user) return;
     const amt = parseInt(amount);
     if (isNaN(amt) || amt <= 0) { showAlert("Invalid", "Enter a valid amount."); return; }
     const balance = currency === "acoin" ? (profile?.acoin || 0) : (profile?.xp || 0);
     if (amt > balance) { showAlert("Insufficient", `Not enough ${currency === "acoin" ? "ACoin" : "Nexa"}.`); return; }
     setSending(true);
-    const { data: recipient } = await supabase.from("profiles").select("id,display_name,handle").eq("handle", handle.trim().toLowerCase()).single();
+    const { data: recipient } = initialRecipientId
+      ? await supabase.from("profiles").select("id,display_name,handle").eq("id", initialRecipientId).maybeSingle()
+      : await supabase.from("profiles").select("id,display_name,handle").eq("handle", handle.trim().toLowerCase()).maybeSingle();
     if (!recipient) { showAlert("Not Found", "User not found."); setSending(false); return; }
     if (recipient.id === user.id) { showAlert("Error", "Cannot send to yourself."); setSending(false); return; }
     if (currency === "nexa") {
@@ -690,7 +710,7 @@ function SendView({ colors, insets, user, profile, onBack, onSuccess }: any) {
         <Text style={[s.fieldLabel, { color: colors.textMuted }]}>RECIPIENT</Text>
         <View style={[s.inputRow, { backgroundColor: colors.inputBg, borderColor: colors.border, marginBottom: 16 }]}>
           <Text style={{ color: colors.textMuted, fontSize: 16, marginRight: 4 }}>@</Text>
-          <TextInput style={[s.input, { color: colors.text, flex: 1 }]} placeholder="username" placeholderTextColor={colors.textMuted} value={handle} onChangeText={setHandle} autoCapitalize="none" autoCorrect={false} />
+          <TextInput style={[s.input, { color: colors.text, flex: 1 }]} placeholder="username" placeholderTextColor={colors.textMuted} value={handle} onChangeText={setHandle} editable={!initialRecipientId} autoCapitalize="none" autoCorrect={false} />
         </View>
         <Text style={[s.fieldLabel, { color: colors.textMuted }]}>AMOUNT</Text>
         <View style={[s.inputRow, { backgroundColor: colors.inputBg, borderColor: colors.border, marginBottom: 16 }]}>

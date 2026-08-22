@@ -20,12 +20,13 @@ export type OpenApp = {
   manifest: ModuleManifest;
   state: AppLifecycleState;
   openedAt: number;
+  params?: Record<string, string>;
 };
 
 export type SuperAppContextValue = {
   openApps: OpenApp[];
   activeAppId: string | null;
-  openApp: (id: string) => void;
+  openApp: (id: string, params?: Record<string, string>) => void;
   closeApp: (id: string) => void;
   minimizeApp: (id: string) => void;
   isSuperAppId: (id: string) => boolean;

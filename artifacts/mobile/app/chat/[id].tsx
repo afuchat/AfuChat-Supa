@@ -76,6 +76,7 @@ import { generateGroupInviteLink } from "@/lib/groupInvite";
 import { showToast as globalShowToast } from "@/lib/toast";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import UserName from "@/components/ui/UserName";
+import { useSuperApp } from "@/lib/superapp/SuperAppContext";
 
 import {
   queueMessage,
@@ -1059,6 +1060,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   isTextSelectionEnabled?: boolean;
 }) {
   const { colors, isDark } = useTheme();
+  const { openApp } = useSuperApp();
   const BRAND = brandColor ?? colors.accent;
   const { preferredLang, voiceToText, textToSpeech } = useLanguage();
   const { themeColors: chatTheme, bubbleRadius: chatRadius, prefs: chatPrefsLocal } = useChatPreferences();
@@ -7147,12 +7149,28 @@ STRICT RULES:
       {showAttachPanel && (
         (() => {
           const contentH = attachTab === "Gallery" ? 92 : 330;
+          const pickerIconColor = colors.accent;
 
           const isDM = !!chatInfo && !chatInfo.is_group && !chatInfo.is_channel;
           const renderContent = () => {
             if (attachTab === "Gallery") {
               // Native: clean picker cards — opens the device's native gallery/file picker
               const NATIVE_PICKS = [
+                {
+                  label: "Wallet",
+                  icon: "wallet" as const,
+                  color: "#34C759",
+                  bg: ["#34C759", "#00A86B"],
+                  onPress: () => {
+                    if (!chatInfo?.other_id || chatInfo.is_group || chatInfo.is_channel) {
+                      showAlert("Wallet", "Payments are available only in direct chats.");
+                      return;
+                    }
+                    setShowAttachPanel(false);
+                    Keyboard.dismiss();
+                    openApp("afupay", { initialRecipientId: chatInfo.other_id });
+                  },
+                },
                 {
                   label: "Photos & Videos",
                   icon: "images" as const,
@@ -7226,17 +7244,17 @@ STRICT RULES:
                       activeOpacity={0.6}
                       onPress={pick.onPress}
                       style={{
-                        width: "25%",
+                        flex: 1,
+                        minWidth: 0,
                         paddingVertical: 8,
                         paddingHorizontal: 2,
                         alignItems: "center",
                         gap: 5,
                       }}
                     >
-                      <View style={{ width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: pick.color + "16" }}>
-                        <Ionicons name={pick.icon} size={21} color={pick.color} />
+                      <View style={{ width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: pickerIconColor + "18" }}>
+                        <Ionicons name={pick.icon} size={22} color={pickerIconColor} />
                       </View>
-                      <Text style={{ fontSize: 10, lineHeight: 12, fontFamily: "Inter_500Medium", color: colors.text, textAlign: "center" }} numberOfLines={1}>{pick.label}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>

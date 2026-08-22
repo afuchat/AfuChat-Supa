@@ -59,7 +59,7 @@ export function MiniAppRuntimeProvider({ children }: { children: React.ReactNode
   const [openApps, setOpenApps] = useState<OpenApp[]>([]);
   const [activeAppId, setActiveAppId] = useState<string | null>(null);
 
-  const openApp = useCallback((id: string) => {
+  const openApp = useCallback((id: string, params?: Record<string, string>) => {
     const manifest = findModule(id);
     if (!manifest || manifest.comingSoon) return;
     if (manifest.nativeOnly && false) return;
@@ -69,13 +69,13 @@ export function MiniAppRuntimeProvider({ children }: { children: React.ReactNode
       if (existing) {
         return prev.map((a) =>
           a.manifest.id === id
-            ? { ...a, state: "active" as AppLifecycleState }
+            ? { ...a, state: "active" as AppLifecycleState, params: params ?? a.params }
             : { ...a, state: "background" as AppLifecycleState }
         );
       }
       return [
         ...prev.map((a) => ({ ...a, state: "background" as AppLifecycleState })),
-        { manifest, state: "active" as AppLifecycleState, openedAt: Date.now() },
+        { manifest, state: "active" as AppLifecycleState, openedAt: Date.now(), params },
       ];
     });
     setActiveAppId(id);
@@ -159,7 +159,7 @@ export function MiniAppRuntimeProvider({ children }: { children: React.ReactNode
                   onClose={() => closeApp(app.manifest.id)}
                   onMinimize={() => minimizeApp(app.manifest.id)}
                 >
-                  <AppComponent />
+                  <AppComponent {...(app.params ?? {})} />
                 </MiniAppWindow>
               );
             })}
