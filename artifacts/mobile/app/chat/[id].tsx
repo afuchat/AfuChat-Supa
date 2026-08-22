@@ -1781,8 +1781,8 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                    ? {
                        position: "absolute",
                        right: 12,
-                       bottom: 5,
-                       zIndex: 0,
+                       top: 14,
+                       zIndex: 1,
                        opacity: 0.7,
                      }
                    : { marginTop: 3 },
