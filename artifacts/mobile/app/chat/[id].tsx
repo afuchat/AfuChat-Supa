@@ -7480,8 +7480,10 @@ STRICT RULES:
               />
               <View style={{
                 position: "absolute",
-                left: 12,
-                right: 12,
+                // Match the inputGlassPill, not the full composer row:
+                // the send/mic button stays outside this connected surface.
+                left: Platform.OS === "web" ? 20 : 12,
+                right: Platform.OS === "web" ? 68 : 72,
                 bottom: effectiveBottom + floatingInputHeight - 4,
                 maxHeight: 400,
                 backgroundColor: isDark ? "rgba(255,255,255,0.12)" : colors.inputBg,
