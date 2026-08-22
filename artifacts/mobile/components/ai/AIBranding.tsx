@@ -6,7 +6,7 @@
  * useAIDisclaimerSeen  Hook — AsyncStorage flag; returns {seen, markSeen}
  * AIDisclaimerCard     One-time onboarding card shown at the top of AfuAI chat
  * AIBrandingFooter     Micro-footer above the AfuAI input bar
- * AIBrandingBadge      Compact badge for embedded AI cards (search / post / chat-search)
+ * AIBrandingBadge      Compact badge for embedded AI cards (search / post)
  * AIInlineBrand        Single-line attribution text for tight spaces
  */
 
@@ -251,7 +251,7 @@ interface AIBrandingBadgeProps {
 
 /**
  * Compact attribution pill for embedded AI cards (search insights, post
- * summaries, chat-search AI panel).
+ * summaries and AI-powered search panels).
  */
 export function AIBrandingBadge({ compact = false, style }: AIBrandingBadgeProps) {
   const { isDark } = useTheme();

@@ -1544,15 +1544,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                 All
               </Text>
             </TouchableOpacity>
-          ) : !panelMode ? (
-            <TouchableOpacity
-              onPress={() => safeRouter.push("/chat-search" as any)}
-              hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-              style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.backgroundSecondary, alignItems: "center", justifyContent: "center" }}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="search" size={20} color={colors.text} />
-            </TouchableOpacity>
           ) : null}
         </View>
       </View>

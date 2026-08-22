@@ -116,7 +116,7 @@ const SYSTEM_ROUTES = new Set([
   "business", "collections", "games", "welcome",
   "store", "paid-communities", "phone-contacts", "file-manager",
   "create-post", "username-market", "user-discovery",
-  "chat-search", "profile-not-found", "profile-private",
+  "profile-not-found", "profile-private",
   "id", "report", "register", "reset-password", "chat-info",
 ]);
 

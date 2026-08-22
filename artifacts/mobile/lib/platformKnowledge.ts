@@ -26,7 +26,6 @@ export const PLATFORM_NAV_MAP = `
 |---|---|
 | /chat/[id] | Open a specific conversation |
 | /chat/new | Start a new direct message conversation |
-| /chat-search | Search across all your conversations |
 | /call/[id] | Active voice or video call screen |
 | /call-history | History of past calls |
 | /contact/[id] | View a specific contact's profile |

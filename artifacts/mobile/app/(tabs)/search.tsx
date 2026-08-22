@@ -450,7 +450,7 @@ export default function SearchScreen() {
         fetchAiInsight(trimmed).then((insight) => {
           if (insight && id === searchIdRef.current) {
             setAiInsight(insight);
-            // Auto-switch to the AI-recommended tab (matches chat-search behaviour)
+            // Auto-switch to the AI-recommended tab
             const cat = insight.bestCategory as SearchTab;
             const validTabs: SearchTab[] = ["all","people","posts","videos","channels","events","gifts","market","jobs"];
             if (cat && validTabs.includes(cat) && cat !== "all") {
