@@ -587,8 +587,8 @@ function GifPanel({ onSendGif, onScrollDown, onScrollUp, onSelect }: {
   return (
     <View style={{ flex: 1 }}>
       {/* Search bar — no branding */}
-      <View style={[sb.row, { borderBottomColor: glass.border }]}>
-        <View style={[sb.box, {
+      <View style={[s.gifSearchRow, { borderBottomColor: glass.border }]}>
+        <View style={[s.gifSearchBox, {
           backgroundColor: isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)",
           borderColor: glass.border,
         }]}>
@@ -598,7 +598,7 @@ function GifPanel({ onSendGif, onScrollDown, onScrollUp, onSelect }: {
             onChangeText={onChangeQuery}
             placeholder="Search GIFs…"
             placeholderTextColor={colors.textMuted as string}
-            style={[sb.input, { color: colors.text as string }]}
+            style={[s.gifSearchInput, { color: colors.text as string }]}
             returnKeyType="search"
             autoCorrect={false}
             autoCapitalize="none"
@@ -794,6 +794,30 @@ export default function EmojiStickerPicker({
 
 const s = StyleSheet.create({
   root: { overflow: "hidden", flexDirection: "column" },
+
+  gifSearchRow: {
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 6,
+    borderBottomWidth: 0.5,
+  },
+
+  gifSearchBox: {
+    minHeight: 34,
+    borderRadius: 17,
+    borderWidth: 0.5,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+  },
+
+  gifSearchInput: {
+    flex: 1,
+    minHeight: 32,
+    paddingVertical: 0,
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+  },
 
   pillRow: {
     position: "absolute",
