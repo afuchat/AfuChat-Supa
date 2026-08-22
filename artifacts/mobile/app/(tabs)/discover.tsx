@@ -416,12 +416,11 @@ function BookmarkButton({ bookmarked, onPress }: { bookmarked: boolean; onPress:
   );
 }
 
-// ─── PostImages: swipeable carousel, auto-sized to image orientation ──────────
-// MIN_RATIO = widest landscape (≈16:9). MAX_RATIO = tallest portrait (4:5).
-// The first image in the set drives the container height; all images in the
-// same post share that height so the carousel pages correctly.
+// ─── PostImages: swipeable carousel with stable feed geometry ────────────────
+// Keep one predictable aspect ratio for every feed carousel. Changing a row's
+// height after the image loads makes VirtualizedList recalculate offsets while
+// the user is scrolling, which presents as a shaking/jumping feed.
 const IMG_RATIO_MIN = 9 / 16;   // ~0.5625  (landscape cap)
-const IMG_RATIO_MAX = 5 / 4;    // 1.25     (portrait cap)
 
 function PostImages({
   images,
@@ -437,13 +436,12 @@ function PostImages({
   const { isDark } = useTheme();
   const [currentIdx, setCurrentIdx] = React.useState(0);
   // ratio = height/width of the first detected image; null = not yet loaded
-  const [imgRatio, setImgRatio] = React.useState<number | null>(null);
 
   const L_PAD  = 66;
   const R_PAD  = 16;
   const imgW   = effectiveW - L_PAD - R_PAD;
-  // Fall back to 16:9 until the first image reports its real dimensions
-  const ratio  = imgRatio ?? IMG_RATIO_MIN;
+  // Keep row geometry stable while images load; late resizing makes the feed jump.
+  const ratio  = IMG_RATIO_MIN;
   const imgH   = Math.round(imgW * ratio);
   const CORNER = 12;
   const { colors: imgColors } = useTheme();
@@ -507,13 +505,6 @@ function PostImages({
                 style={{ width: imgW, height: imgH }}
                 contentFit="cover"
                 priority={i === 0 ? "high" : "normal"}
-                onLoad={i === 0 ? (e) => {
-                  const { width: sw, height: sh } = (e as any).source ?? {};
-                  if (sw > 0 && sh > 0) {
-                    const raw = sh / sw;
-                    setImgRatio(Math.min(Math.max(raw, IMG_RATIO_MIN), IMG_RATIO_MAX));
-                  }
-                } : undefined}
               />
             </TouchableOpacity>
           ))}
@@ -2704,17 +2695,25 @@ export default function DiscoverScreen() {
         </View>
 
 
-        {/* Background refresh indicator */}
-        {bgRefreshing && newPostAuthors.length === 0 && (
-          <View style={[styles.bgRefreshBar, { backgroundColor: colors.accent + "18" }]}>
+        {/* Keep this row mounted so showing the indicator never changes the
+            measured header height while the feed is scrolling. */}
+        <View
+          style={[
+            styles.bgRefreshBar,
+            {
+              backgroundColor: colors.accent + "18",
+              opacity: bgRefreshing && newPostAuthors.length === 0 ? 1 : 0,
+            },
+          ]}
+          pointerEvents={bgRefreshing && newPostAuthors.length === 0 ? "auto" : "none"}
+        >
             <View style={{ flexDirection: "row", gap: 4, alignItems: "center" }}>
               {[0, 1, 2].map(i => (
                 <Animated.View key={i} style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.accent }} />
               ))}
             </View>
             <Text style={[styles.bgRefreshText, { color: colors.accent }]}>Updating feed…</Text>
-          </View>
-        )}
+        </View>
       </Animated.View>
       {/* ────────────────────────────────────────────────────────────────── */}
 
