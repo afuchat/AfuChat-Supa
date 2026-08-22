@@ -7375,7 +7375,9 @@ STRICT RULES:
       {showAttachPanel && (
         (() => {
           const contentH = attachTab === "Gallery" ? 56 : 330;
-          const pickerIconColor = colors.accent;
+           // Attachment options use a neutral, opaque treatment. Keep this
+           // separate from the composer/preview styling after a file is picked.
+           const pickerIconColor = isDark ? "#FFFFFF" : "#000000";
 
           const isDM = !!chatInfo && !chatInfo.is_group && !chatInfo.is_channel;
           const renderContent = () => {
@@ -7464,8 +7466,8 @@ STRICT RULES:
                   },
                 },
               ];
-              return (
-                <View style={{ flex: 1, flexDirection: "row", alignItems: "center", paddingHorizontal: 5 }}>
+               return (
+                 <View style={{ flex: 1, flexDirection: "row", alignItems: "center", paddingHorizontal: 5, backgroundColor: colors.surface }}>
                   {NATIVE_PICKS.map((pick) => (
                     <TouchableOpacity
                       key={pick.label}
@@ -7479,7 +7481,7 @@ STRICT RULES:
                         alignItems: "center",
                       }}
                     >
-                      <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: pickerIconColor + "18" }}>
+                       <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: isDark ? "#FFFFFF18" : "#0000000D" }}>
                         <Ionicons name={pick.icon} size={19} color={pickerIconColor} />
                       </View>
                     </TouchableOpacity>
@@ -7731,7 +7733,7 @@ STRICT RULES:
                 right: Platform.OS === "web" ? 68 : 72,
                 bottom: effectiveBottom + floatingInputHeight - 4,
                  maxHeight: 400,
-                 backgroundColor: isDark ? "rgba(255,255,255,0.12)" : colors.inputBg,
+                  backgroundColor: colors.surface,
                  borderRadius: 999,
                  borderWidth: 1,
                  borderColor: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)",
