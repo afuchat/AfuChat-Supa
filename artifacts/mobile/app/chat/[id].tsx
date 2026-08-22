@@ -82,7 +82,8 @@ import {
   getCachedUserId,
   onConnectivityChange,
 } from "@/lib/offlineStore";
-import { getLocalMessages, saveMessages, savePendingMessage, getNewestMessageDate, deleteAllLocalMessages } from "@/lib/storage/localMessages";
+import { getLocalMessages, saveMessages, savePendingMessage, getNewestMessageDate, deleteAllLocalMessages, markMessageRead } from "@/lib/storage/localMessages";
+import { enqueue } from "@/lib/storage/syncQueue";
 import {
   getLocalNotesConversation,
   getLocalNotesMessages,
@@ -127,6 +128,36 @@ import { VoiceWaveform } from "@/components/chat/VoiceWaveform";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 
 const ChatFontSizeCtx = React.createContext<number>(14);
+
+async function persistIncomingStatus(
+  messageIds: string[],
+  chatId: string,
+  userId: string,
+  readReceipts: boolean,
+): Promise<void> {
+  if (messageIds.length === 0) return;
+
+  await Promise.all(messageIds.map((messageId) => markMessageRead(messageId)));
+  const now = new Date().toISOString();
+  const rows = messageIds.map((messageId) => ({
+    message_id: messageId,
+    user_id: userId,
+    delivered_at: now,
+    ...(readReceipts ? { read_at: now } : {}),
+  }));
+
+  if (!isOnline()) {
+    await enqueue("mark_read", { chat_id: chatId, user_id: userId, message_ids: messageIds, read_receipts: readReceipts });
+    return;
+  }
+
+  const { error } = await supabase
+    .from("message_status")
+    .upsert(rows, { onConflict: "message_id,user_id" });
+  if (error) {
+    await enqueue("mark_read", { chat_id: chatId, user_id: userId, message_ids: messageIds, read_receipts: readReceipts });
+  }
+}
 
 // ── Lazy-load Reanimated ──────────────────────────────────────────────────────
 // On Android Expo Go builds the native worklet runtime throws a Java
@@ -2829,15 +2860,12 @@ function ChatScreen() {
             const alreadyRead = new Set((myReadRows || []).map((r: any) => r.message_id));
             const toMark = unreadFromOthers.filter((m: any) => !alreadyRead.has(m.id));
             if (toMark.length > 0) {
-              supabase.from("message_status").upsert(
-                toMark.map((m: any) => ({
-                  message_id: m.id,
-                  user_id: user.id,
-                  delivered_at: now,
-                  ...(chatPrefs.read_receipts ? { read_at: now } : {}),
-                })),
-                { onConflict: "message_id,user_id" }
-              ).then(() => {});
+              void persistIncomingStatus(
+                toMark.map((m: any) => m.id),
+                chatId,
+                user.id,
+                chatPrefs.read_receipts,
+              );
               // Always broadcast "delivered" so the sender gets double-grey ticks.
               // Only broadcast "read" if the user has read receipts enabled (privacy).
               const msgIds = toMark.map((m: any) => m.id);
@@ -3162,7 +3190,12 @@ function ChatScreen() {
 
           if (user) {
             const _rtNow = new Date().toISOString();
-            supabase.from("message_status").upsert({ message_id: newMsg.id, user_id: user.id, delivered_at: _rtNow, ...(chatPrefs.read_receipts ? { read_at: _rtNow } : {}) }, { onConflict: "message_id,user_id" }).then(() => {});
+            void persistIncomingStatus(
+              [newMsg.id],
+              activeChatId,
+              user.id,
+              chatPrefs.read_receipts,
+            );
             // Always tell the sender we received it (double-grey) —
             // only tell them we read it if read receipts are enabled (double-blue).
             typingChannelRef.current?.send({ type: "broadcast", event: "delivered", payload: { reader_id: user.id, message_ids: [newMsg.id], chat_id: activeChatId, delivered_at: _rtNow } });

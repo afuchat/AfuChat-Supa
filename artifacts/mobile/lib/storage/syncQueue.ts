@@ -152,9 +152,20 @@ async function executeAction(
         return !error;
       }
       case "mark_read": {
+        const messageIds = Array.isArray(payload.message_ids)
+          ? payload.message_ids.filter((id: unknown): id is string => typeof id === "string" && id.length > 0)
+          : [];
+        if (messageIds.length === 0) return true;
+        const now = new Date().toISOString();
+        const rows = messageIds.map((messageId) => ({
+          message_id: messageId,
+          user_id: payload.user_id,
+          delivered_at: now,
+          ...(payload.read_receipts !== false ? { read_at: now } : {}),
+        }));
         const { error } = await supabase
-          .from("chat_read_receipts")
-          .upsert({ chat_id: payload.chat_id, user_id: payload.user_id, read_at: new Date().toISOString() });
+          .from("message_status")
+          .upsert(rows, { onConflict: "message_id,user_id" });
         return !error;
       }
       case "add_reaction": {
