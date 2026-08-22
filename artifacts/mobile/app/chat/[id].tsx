@@ -353,31 +353,15 @@ function formatDateHeader(iso: string): string {
 
 
 function BubbleTail({ isMe, color }: { isMe: boolean; color: string }) {
-  if (isMe) {
-    return (
-      <View style={st.tailMe}>
-        <View style={{
-          width: 0, height: 0,
-          borderTopWidth: 14,
-          borderTopColor: color,
-          borderLeftWidth: 10,
-          borderLeftColor: "transparent",
-          backgroundColor: "transparent",
-        }} />
-      </View>
-    );
-  }
   return (
-    <View style={st.tailOther}>
-      <View style={{
-        width: 0, height: 0,
-        borderTopWidth: 14,
-        borderTopColor: color,
-        borderRightWidth: 10,
-        borderRightColor: "transparent",
-        backgroundColor: "transparent",
-      }} />
-    </View>
+    <View
+      pointerEvents="none"
+      style={[
+        st.tailBase,
+        isMe ? st.tailMe : st.tailOther,
+        { backgroundColor: color },
+      ]}
+    />
   );
 }
 
@@ -8821,8 +8805,18 @@ const st = StyleSheet.create({
 
   // Tail sits just outside the bubble corner, overlapping by 2 px so
   // there's no hairline gap between bubble and tail.
-  tailMe: { position: "absolute", right: -12, bottom: 0, zIndex: 1 },
-  tailOther: { position: "absolute", left: -12, bottom: 0, zIndex: 1 },
+  // The tail is tucked behind the bubble so it reads as one continuous shape,
+  // not as a separate triangle attached afterward.
+  tailBase: {
+    position: "absolute",
+    width: 13,
+    height: 13,
+    bottom: 1,
+    zIndex: 0,
+    transform: [{ rotate: "45deg" }],
+  },
+  tailMe: { right: -5, borderBottomLeftRadius: 5 },
+  tailOther: { left: -5, borderBottomRightRadius: 5 },
 
   bubble: {
     paddingHorizontal: 8,
@@ -8843,9 +8837,11 @@ const st = StyleSheet.create({
   // tail and bubble meet seamlessly, matching iMessage style.
   bubbleTailMe: {
     borderBottomRightRadius: 0,
+    zIndex: 1,
   },
   bubbleTailOther: {
     borderBottomLeftRadius: 0,
+    zIndex: 1,
   },
 
   senderName: { fontSize: 12, fontFamily: "Inter_600SemiBold", marginBottom: 2 },
