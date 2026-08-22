@@ -73,7 +73,7 @@ import { LinearGradient } from "@/components/ui/SafeGradient";
 import { BlurView } from "expo-blur";
 import { GLASS, glassTokens } from "@/constants/glass";
 import { useUserEffects } from "@/hooks/useUserEffects";
-import { getViewedUserIds } from "@/lib/storyViewedStore";
+import { getViewedUserIds, subscribeStoryViewed } from "@/lib/storyViewedStore";
 import { prefetchAvatars, prefetchThumbnails, prefetchListImages } from "@/lib/storage/imagePrefetcher";
 import { useThrottledFocusEffect } from "@/lib/hooks/useThrottledFocusEffect";
 
@@ -359,6 +359,19 @@ function StoriesRow({
       .subscribe();
     return () => { supabase.removeChannel(rt); };
   }, [loadDiscoverStories]);
+
+  // Update the ring immediately when the story viewer marks a user as viewed.
+  // Without this subscription, the ring stayed purple until the next refresh.
+  useEffect(() => {
+    return subscribeStoryViewed(() => {
+      const viewed = getViewedUserIds();
+      setStories((prev) => prev.map((entry) => (
+        viewed.has(entry.userId)
+          ? { ...entry, seenCount: entry.storyCount }
+          : entry
+      )));
+    });
+  }, []);
 
   // Return null whenever there are no stories — do not wait for storiesLoaded
   // so the empty horizontal ScrollView (dark placeholder bar) never renders.
