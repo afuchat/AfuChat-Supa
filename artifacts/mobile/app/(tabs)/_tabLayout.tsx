@@ -163,10 +163,10 @@ function CompactTabBar({
   const [showCreatePicker, setShowCreatePicker] = useState(false);
 
   const CREATE_OPTIONS = [
-    { icon: "camera",        label: "Story",   desc: "Share a photo or video story",     route: "/stories/camera",         color: "#FF9F0A"     },
-    { icon: "create",        label: "Post",    desc: "Share a thought, photo, or link",  route: "/moments/create",         color: colors.accent },
-    { icon: "videocam",      label: "Video",   desc: "Share a short video clip",         route: "/moments/create-video",   color: "#FF3B30"     },
-    { icon: "document-text", label: "Article", desc: "Write a long-form article",        route: "/moments/create-article", color: "#007AFF"     },
+    { icon: "camera",        route: "/stories/camera" },
+    { icon: "create",        route: "/moments/create" },
+    { icon: "videocam",      route: "/moments/create-video" },
+    { icon: "document-text", route: "/moments/create-article" },
   ];
 
   const INACTIVE_ICON  = isDark ? "rgba(255,255,255,0.50)" : "rgba(0,0,0,0.38)";
@@ -326,26 +326,25 @@ function CompactTabBar({
           <View style={[sheet.container, { backgroundColor: isDark ? "#1C1C1E" : "#FFFFFF", paddingBottom: insets.bottom + 20 }]}>
             <View style={[sheet.handle, { backgroundColor: isDark ? "#48484A" : "#C7C7CC" }]} />
             <Text style={[sheet.title, { color: isDark ? "#FFFFFF" : "#000000" }]}>What would you like to create?</Text>
-            {CREATE_OPTIONS.map((opt) => (
-              <TouchableOpacity
-                key={opt.label}
-                style={[sheet.option, { backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7" }]}
-                onPress={() => {
-                  setShowCreatePicker(false);
-                  setTimeout(() => safeRouter.push(opt.route as any), 200);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[sheet.iconBox, { backgroundColor: opt.color + "20" }]}>
-                  <Ionicons name={opt.icon as any} size={24} color={opt.color} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[sheet.optionLabel, { color: isDark ? "#FFFFFF" : "#000000" }]}>{opt.label}</Text>
-                  <Text style={[sheet.optionDesc,  { color: isDark ? "#8E8E93" : "#6C6C70" }]}>{opt.desc}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={isDark ? "#48484A" : "#C7C7CC"} />
-              </TouchableOpacity>
-            ))}
+            <View style={sheet.optionsGrid}>
+              {CREATE_OPTIONS.map((opt) => (
+                <TouchableOpacity
+                  key={opt.route}
+                  style={[sheet.option, { backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7" }]}
+                  onPress={() => {
+                    setShowCreatePicker(false);
+                    setTimeout(() => safeRouter.push(opt.route as any), 200);
+                  }}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={opt.icon}
+                >
+                  <View style={[sheet.iconBox, { backgroundColor: colors.accent + "20" }]}>
+                    <Ionicons name={opt.icon as any} size={30} color={colors.accent} />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -447,21 +446,25 @@ const sheet = StyleSheet.create({
     marginBottom: 4,
   },
   option: {
-    flexDirection: "row",
+    flex: 1,
+    minWidth: 64,
     alignItems: "center",
-    gap: 14,
-    padding: 14,
-    borderRadius: 14,
+    justifyContent: "center",
+    padding: 10,
+    borderRadius: 16,
+  },
+  optionsGrid: {
+    flexDirection: "row",
+    gap: 10,
+    width: "100%",
   },
   iconBox: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
+    width: 56,
+    height: 56,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
   },
-  optionLabel: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
-  optionDesc:  { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
 });
 
 function ClassicTabLayout({ isLoggedIn, bottomPadding }: { isLoggedIn: boolean; bottomPadding: number }) {
