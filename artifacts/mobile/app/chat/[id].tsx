@@ -7146,17 +7146,9 @@ STRICT RULES:
       {/* ── Attachment actions — compact popover above the input ─────────── */}
       {showAttachPanel && (
         (() => {
-          const TAB_PILL_H = 50;
           const contentH = attachTab === "Gallery" ? 92 : 330;
 
           const isDM = !!chatInfo && !chatInfo.is_group && !chatInfo.is_channel;
-          const TABS: { key: typeof attachTab; icon: string; label: string }[] = [
-            { key: "Gallery",  icon: "images",        label: "Gallery"  },
-            { key: "Wallet",   icon: "wallet",         label: "Wallet"   },
-            ...(!isDM ? [{ key: "Poll" as const, icon: "bar-chart", label: "Poll" }] : []),
-            ...(Platform.OS !== "web" ? [{ key: "Contact" as const, icon: "person-circle", label: "Contact" }] : []),
-          ];
-
           const renderContent = () => {
             if (attachTab === "Gallery") {
               // Native: clean picker cards — opens the device's native gallery/file picker
@@ -7494,79 +7486,12 @@ STRICT RULES:
                 maxHeight: 400,
                 backgroundColor: isDark ? "rgba(255,255,255,0.12)" : colors.inputBg,
                 borderRadius: 28,
-                borderBottomLeftRadius: 24,
-                borderBottomRightRadius: 24,
+                borderBottomLeftRadius: 28,
+                borderBottomRightRadius: 28,
                 overflow: "hidden",
-                borderWidth: 0.5,
-                borderColor: isDark ? "rgba(255,255,255,0.22)" : colors.border,
-                ...Platform.select({
-                  web: { boxShadow: "0px 5px 14px rgba(0,0,0,0.16)" } as any,
-                  default: {
-                    shadowColor: "#000",
-                    shadowOpacity: 0.16,
-                    shadowRadius: 14,
-                    shadowOffset: { width: 0, height: 5 },
-                  },
-                }),
-                elevation: 10,
               }}>
                 <View style={{ height: contentH, overflow: "hidden" }}>
                   {renderContent()}
-                </View>
-                <View style={{
-                  marginHorizontal: 10,
-                  marginTop: 6,
-                  marginBottom: 6,
-                  height: TAB_PILL_H,
-                  borderRadius: TAB_PILL_H / 2,
-                  overflow: "hidden",
-                  borderWidth: 0.8,
-                  borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
-                }}>
-                  <BlurView
-                    intensity={60}
-                    tint={isDark ? "dark" : "light"}
-                    style={{
-                      flex: 1,
-                      flexDirection: "row",
-                      backgroundColor: isDark ? "rgba(30,30,35,0.55)" : "rgba(245,245,250,0.65)",
-                    }}
-                  >
-                    {TABS.map((tab) => {
-                      const active = attachTab === tab.key;
-                      return (
-                        <TouchableOpacity
-                          key={tab.key}
-                          activeOpacity={0.7}
-                          onPress={() => setAttachTab(tab.key)}
-                          style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 3 }}
-                        >
-                          {active && (
-                            <View style={{
-                              position: "absolute",
-                              top: 7, bottom: 7, left: 5, right: 5,
-                              borderRadius: (TAB_PILL_H - 14) / 2,
-                              backgroundColor: colors.accent,
-                              opacity: 0.18,
-                            }} />
-                          )}
-                          <Ionicons
-                            name={active ? tab.icon.replace("-outline", "") as any : (tab.icon + "-outline").replace("outline-outline", "outline") as any}
-                            size={21}
-                            color={active ? colors.accent : colors.textMuted}
-                          />
-                          <Text style={{
-                            fontSize: 9.5,
-                            fontFamily: active ? "Inter_700Bold" : "Inter_400Regular",
-                            color: active ? colors.accent : colors.textMuted,
-                            letterSpacing: 0.1,
-                          }}>
-                            {tab.label}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </BlurView>
                 </View>
               </View>
             </View>
