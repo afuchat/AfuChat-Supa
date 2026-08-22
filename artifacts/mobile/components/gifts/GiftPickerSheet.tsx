@@ -198,7 +198,7 @@ export default function GiftPickerSheet({
   // Keep the picker stable while the grid and confirmation controls change.
   // The grid itself scrolls inside this fixed-height sheet.
   const sheetHeight = React.useMemo(
-    () => Math.min(620, Math.max(420, Math.floor(screenHeight * 0.78))),
+    () => Math.max(280, Math.floor(screenHeight * 0.25)),
     [screenHeight],
   );
 
@@ -324,57 +324,6 @@ export default function GiftPickerSheet({
                 <TouchableOpacity onPress={dismissSheet} hitSlop={12} style={{ marginLeft: 8 }}>
                   <Ionicons name="close-circle" size={26} color={colors.textMuted} />
                 </TouchableOpacity>
-              </View>
-
-              {/* ── Floating glass pill category strip ── */}
-              <View style={{ marginBottom: 12, paddingHorizontal: 16 }}>
-                <View style={{
-                  borderRadius: 30,
-                  overflow: "hidden",
-                  borderWidth: 0.8,
-                  borderColor: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.07)",
-                }}>
-                  <BlurView
-                    intensity={55}
-                    tint={isDark ? "dark" : "light"}
-                    style={{
-                      backgroundColor: isDark ? "rgba(28,28,32,0.5)" : "rgba(240,240,245,0.6)",
-                    }}
-                  >
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 6, paddingVertical: 6, gap: 4 }}
-                    >
-                      {rarities.map((r) => {
-                        const active = filter === r;
-                        const rColor = r === "all" ? colors.accent : (RARITY_COLORS[r] ?? colors.accent);
-                        return (
-                          <TouchableOpacity
-                            key={r}
-                            onPress={() => setFilter(r)}
-                            activeOpacity={0.7}
-                            style={{
-                              paddingHorizontal: 14,
-                              paddingVertical: 6,
-                              borderRadius: 20,
-                              backgroundColor: active ? rColor : "transparent",
-                            }}
-                          >
-                            <Text style={{
-                              fontSize: 12,
-                              fontFamily: active ? "Inter_700Bold" : "Inter_500Medium",
-                              color: active ? "#fff" : colors.textMuted,
-                              letterSpacing: 0.1,
-                            }}>
-                              {r === "all" ? "All" : r.charAt(0).toUpperCase() + r.slice(1)}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </ScrollView>
-                  </BlurView>
-                </View>
               </View>
 
               {/* ── Gift grid ── */}
