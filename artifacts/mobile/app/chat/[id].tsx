@@ -359,7 +359,7 @@ function BubbleTail({ isMe, color }: { isMe: boolean; color: string }) {
       style={[
         st.tailBase,
         isMe ? st.tailMe : st.tailOther,
-        { backgroundColor: color },
+        { borderTopColor: color },
       ]}
     />
   );
@@ -1332,7 +1332,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
         isMe ? st.bubbleContainerMe : st.bubbleContainerOther,
         flatSurface && { maxWidth: "100%" },
       ]}>
-        {showTail && !flatSurface && !hasAudio && <BubbleTail isMe={isMe} color={bubbleColor} />}
+        {showTail && !flatSurface && <BubbleTail isMe={isMe} color={bubbleColor} />}
 
         <Pressable
           onLongPress={messageLongPress}
@@ -1342,10 +1342,10 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
             flatSurface
               ? { backgroundColor: "transparent", borderRadius: 0, paddingHorizontal: 4, paddingTop: 2, paddingBottom: 0 }
               : hasAudio
-              ? { backgroundColor: "transparent", borderRadius: 0, paddingHorizontal: 0, paddingTop: 0, paddingBottom: 0 }
+              ? { backgroundColor: bubbleColor, borderRadius: chatRadius ?? 18, paddingHorizontal: 10, paddingTop: 7, paddingBottom: 7 }
               : { backgroundColor: bubbleColor, borderRadius: chatRadius ?? 18 },
             isMe ? st.bubbleMe : st.bubbleOther,
-            !flatSurface && !hasAudio && showTail ? (isMe ? st.bubbleTailMe : st.bubbleTailOther) : null,
+            !flatSurface && showTail ? (isMe ? st.bubbleTailMe : st.bubbleTailOther) : null,
             replyPreview ? st.bubbleWithReply : null,
             isPending && { opacity: 0.6 },
             !flatSurface && chatPrefsLocal.compact_mode && { paddingVertical: 5 },
@@ -8803,20 +8803,19 @@ const st = StyleSheet.create({
   bubbleContainerMe: { alignItems: "flex-end" },
   bubbleContainerOther: { alignItems: "flex-start" },
 
-  // Tail sits just outside the bubble corner, overlapping by 2 px so
-  // there's no hairline gap between bubble and tail.
-  // The tail is tucked behind the bubble so it reads as one continuous shape,
-  // not as a separate triangle attached afterward.
+  // A slim triangle keeps the tail visible without the old rotated-square
+  // diamond/spark shape.
   tailBase: {
     position: "absolute",
-    width: 13,
-    height: 13,
-    bottom: 1,
+    width: 0,
+    height: 0,
+    bottom: 0,
     zIndex: 0,
-    transform: [{ rotate: "45deg" }],
+    borderStyle: "solid",
+    borderTopWidth: 10,
   },
-  tailMe: { right: -5, borderBottomLeftRadius: 5 },
-  tailOther: { left: -5, borderBottomRightRadius: 5 },
+  tailMe: { right: -9, borderLeftWidth: 10, borderLeftColor: "transparent" },
+  tailOther: { left: -9, borderRightWidth: 10, borderRightColor: "transparent" },
 
   bubble: {
     paddingHorizontal: 8,
