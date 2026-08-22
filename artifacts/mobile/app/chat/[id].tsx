@@ -3104,6 +3104,10 @@ function ChatScreen() {
 
   const checkMessageGating = useCallback(async () => {
     if (!user) return;
+    if (isNotificationsChat) {
+      setMessageLimited(false);
+      return;
+    }
     if (isLocalNotesId(id)) {
       setMessageLimited(false);
       return;
@@ -3145,10 +3149,15 @@ function ChatScreen() {
       .eq("chat_id", chatId)
       .eq("sender_id", user.id);
     setMessageLimited((count || 0) >= 1);
-  }, [user, chatInfo, isDraft, realChatId, id]);
+  }, [user, chatInfo, isDraft, realChatId, id, isNotificationsChat]);
 
   const checkIfStranger = useCallback(async () => {
     if (!user) return;
+    if (isNotificationsChat) {
+      setIsStranger(false);
+      setStrangerCountry(null);
+      return;
+    }
     if (isLocalNotesId(id)) {
       setIsStranger(false);
       return;
@@ -3179,7 +3188,7 @@ function ChatScreen() {
       .from("profiles").select("country").eq("id", otherId).maybeSingle();
     setStrangerCountry((otherProfile as any)?.country || null);
     setIsStranger(true);
-  }, [user, chatInfo, isDraft, realChatId, id]);
+  }, [user, chatInfo, isDraft, realChatId, id, isNotificationsChat]);
 
   useEffect(() => {
     checkMessageGating();
@@ -6769,7 +6778,7 @@ STRICT RULES:
       )}
 
       {/* ── Stranger message-request banner ── */}
-      {isStranger && chatInfo?.other_id && (
+      {isStranger && chatInfo?.other_id && !isNotificationsChat && (
         <View style={[st.strangerBanner, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 }}>
             <View style={[st.strangerIconWrap, { backgroundColor: "#FF9500" + "18" }]}>

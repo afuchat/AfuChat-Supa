@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
+import { safeRouter } from "@/lib/navUtils";
 
 type NotificationEvent = {
   id: string;
@@ -12,6 +12,7 @@ type NotificationEvent = {
   cta_label: string | null;
   cta_route: string | null;
   entity_id: string | null;
+  metadata: Record<string, unknown> | null;
   created_at: string;
   read_at: string | null;
 };
@@ -39,7 +40,12 @@ function getSafeRoute(event: NotificationEvent): NotificationRoute | null {
 
   // Routes are authored by the trusted notification producer. Keep an allowlist
   // here as a second line of defence because this value is rendered from data.
-  if (route === "/premium" || route === "/settings/notifications" || route === "/(tabs)/discover") {
+  if (
+    route === "/premium" ||
+    route === "/settings/notifications" ||
+    route === "/(tabs)/discover" ||
+    route === "/(tabs)/shorts"
+  ) {
     return { pathname: route };
   }
   if (route === "/chat/[id]" && event.entity_id) {
@@ -47,6 +53,21 @@ function getSafeRoute(event: NotificationEvent): NotificationRoute | null {
   }
   if (route === "/contact/[id]" && event.entity_id) {
     return { pathname: route, params: { id: event.entity_id } };
+  }
+  if (route === "/post/[id]" && event.entity_id) {
+    return { pathname: route, params: { id: event.entity_id } };
+  }
+  if (route === "/video/[id]" && event.entity_id) {
+    return { pathname: route, params: { id: event.entity_id } };
+  }
+  if (route === "/article/[id]" && event.entity_id) {
+    return { pathname: route, params: { id: event.entity_id } };
+  }
+  if (route === "/stories/view" && event.entity_id) {
+    const storyOwnerId = typeof event.metadata?.story_owner_id === "string"
+      ? event.metadata.story_owner_id
+      : event.entity_id;
+    return { pathname: route, params: { userId: storyOwnerId } };
   }
   return null;
 }
@@ -60,7 +81,7 @@ export default function NotificationChatPanel({ userId, colors, bottomInset = 0 
     if (!userId) return;
     const { data, error } = await supabase
       .from("notification_events")
-      .select("id, kind, title, body, cta_label, cta_route, entity_id, created_at, read_at")
+      .select("id, kind, title, body, cta_label, cta_route, entity_id, metadata, created_at, read_at")
       .eq("recipient_id", userId)
       .order("created_at", { ascending: false })
       .limit(100);
@@ -107,9 +128,12 @@ export default function NotificationChatPanel({ userId, colors, bottomInset = 0 
   }, [userId]);
 
   const openEvent = useCallback(async (event: NotificationEvent) => {
-    await markRead(event);
     const route = getSafeRoute(event);
-    if (route) router.push(route as any);
+    if (!route) return;
+    // Navigation is the primary action. A slow read receipt must never leave
+    // the user stuck in the feed or make a valid destination appear lost.
+    void markRead(event);
+    safeRouter.push(route as any);
   }, [markRead]);
 
   const markAllRead = useCallback(async () => {
@@ -165,8 +189,8 @@ export default function NotificationChatPanel({ userId, colors, bottomInset = 0 
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
             <TouchableOpacity
-              activeOpacity={item.cta_route ? 0.75 : 1}
-              onPress={item.cta_route ? () => void openEvent(item) : undefined}
+              activeOpacity={getSafeRoute(item) ? 0.75 : 1}
+              onPress={getSafeRoute(item) ? () => void openEvent(item) : undefined}
               style={[styles.card, { backgroundColor: colors.surface, borderColor: item.read_at ? colors.border : colors.accent + "66" }]}
             >
               <View style={[styles.kindIcon, { backgroundColor: item.read_at ? colors.backgroundSecondary : colors.accent + "18" }]}>

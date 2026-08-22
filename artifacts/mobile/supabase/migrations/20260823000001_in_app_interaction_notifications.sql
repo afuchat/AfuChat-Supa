@@ -78,7 +78,7 @@ BEGIN
       v_name || ' replied to your post',
       LEFT(COALESCE(NEW.content, 'See their reply on your post.'), 180),
       'View post',
-      '/(tabs)/discover',
+      '/post/[id]',
       NEW.post_id::text,
       jsonb_build_object('post_id', NEW.post_id, 'reply_id', NEW.id, 'actor_id', NEW.author_id)
     );
@@ -93,7 +93,7 @@ BEGIN
       v_name || ' replied to your comment',
       LEFT(COALESCE(NEW.content, 'See their reply.'), 180),
       'View post',
-      '/(tabs)/discover',
+      '/post/[id]',
       NEW.post_id::text,
       jsonb_build_object('post_id', NEW.post_id, 'reply_id', NEW.id, 'actor_id', NEW.author_id)
     );
@@ -129,7 +129,7 @@ BEGIN
     v_name || ' liked your reply',
     'Someone liked your conversation on AfuChat.',
     'View post',
-    '/(tabs)/discover',
+    '/post/[id]',
     v_post_id::text,
     jsonb_build_object('post_id', v_post_id, 'reply_id', NEW.reply_id, 'actor_id', NEW.user_id)
   );
@@ -162,9 +162,9 @@ BEGIN
     v_name || ' liked your story',
     'See who reacted to your story.',
     'View story',
-    '/(tabs)/discover',
-    NEW.story_id::text,
-    jsonb_build_object('story_id', NEW.story_id, 'actor_id', NEW.user_id)
+    '/stories/view',
+     v_recipient::text,
+     jsonb_build_object('story_id', NEW.story_id, 'story_owner_id', v_recipient, 'actor_id', NEW.user_id)
   );
   RETURN NEW;
 END;
