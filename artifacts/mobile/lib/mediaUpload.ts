@@ -470,7 +470,13 @@ export async function uploadChatMedia(
   const uriExt = isBlobOrData ? undefined : fileUri.split(".").pop()?.split("?")[0]?.toLowerCase();
   const mimeExt = contentType ? MIME_TO_EXT[contentType.toLowerCase()] : undefined;
   const ext = nameExt || uriExt || mimeExt || "file";
-  const fileName = originalName || `${Date.now()}.${ext}`;
+  // Multiple chat images upload concurrently. A timestamp alone is not unique
+  // when Promise.all starts them in the same millisecond, which caused several
+  // images to share one R2 key and appear as duplicates in the grouped message.
+  // Keep the original name when explicitly provided, otherwise add a random
+  // suffix so every selected image gets its own storage object.
+  const uniqueSuffix = Math.random().toString(36).slice(2, 10);
+  const fileName = originalName || `${Date.now()}_${uniqueSuffix}.${ext}`;
   const filePath =
     bucket === "voice-messages" ? `${userId}/${fileName}` : `${userId}/${chatId}/${fileName}`;
   return uploadToStorage(bucket, filePath, fileUri, contentType || getMime(ext));

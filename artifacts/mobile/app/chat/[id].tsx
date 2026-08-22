@@ -5569,6 +5569,11 @@ STRICT RULES:
           }
           return result.publicUrl;
         }));
+        // Never send a partial or malformed gallery. Promise.all preserves the
+        // selected order; this check guarantees one URL for every selected image.
+        if (uploaded.length !== images.length || uploaded.some((url) => !url)) {
+          throw new Error("One or more images could not be uploaded. Please try again.");
+        }
         const label = caption || "📷 Photo";
         const { data: inserted, error: insertError } = await supabase.from("messages").insert({
           chat_id: activeChatId,
