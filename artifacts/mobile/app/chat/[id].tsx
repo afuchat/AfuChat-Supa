@@ -1045,6 +1045,67 @@ function AutoSelectMessageText({ value, style }: { value: string; style?: any })
   );
 }
 
+function MediaUploadIndicator({ kind, isMe }: { kind: "image" | "video"; isMe: boolean }) {
+  const spin = useRef(new Animated.Value(0)).current;
+  const [phase, setPhase] = useState(0);
+  const phases = ["Preparing", "Uploading", "Securing"];
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.timing(spin, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: true,
+      }),
+    );
+    loop.start();
+    const timer = setInterval(() => setPhase((current) => (current + 1) % phases.length), 1400);
+    return () => {
+      loop.stop();
+      clearInterval(timer);
+    };
+  }, [spin]);
+
+  const rotation = spin.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
+
+  return (
+    <View
+      pointerEvents="none"
+      style={{
+        position: "absolute",
+        left: 8,
+        bottom: 8,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        paddingHorizontal: 8,
+        paddingVertical: 5,
+        borderRadius: 14,
+        backgroundColor: isMe ? "rgba(0,0,0,0.46)" : "rgba(0,0,0,0.58)",
+      }}
+    >
+      <Animated.View
+        style={{
+          width: 14,
+          height: 14,
+          borderRadius: 7,
+          borderWidth: 2,
+          borderColor: "rgba(255,255,255,0.28)",
+          borderTopColor: "#fff",
+          transform: [{ rotate: rotation }],
+        }}
+      />
+      <Ionicons name={kind === "video" ? "videocam" : "image"} size={12} color="#fff" />
+      <Text style={{ color: "#fff", fontSize: 10, fontFamily: "Inter_600SemiBold" }}>
+        {phases[phase]}
+      </Text>
+    </View>
+  );
+}
+
 function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, replyPreview, onTapReply, isHighlighted, onTapEnvelope, onTapGift, onImageTap, onConfirmExec, onCancelExec, onSuggestionTap, onSenderPress, onReactionPress, onStatusPress, brandColor, flatSurface, hideTimestamp, isTextSelectionEnabled }: {
   msg: Message;
   isMe: boolean;
@@ -1411,7 +1472,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
 
           {hasImage ? (
             <>
-              <TouchableOpacity
+                <TouchableOpacity
                 onPress={() => onImageTap?.(
                   groupedImageUrls.length > 0 ? groupedImageUrls : [attachUri || msg.attachment_url!],
                   0,
@@ -1419,6 +1480,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                 onLongPress={messageLongPress}
                 delayLongPress={300}
                 activeOpacity={0.9}
+                  style={{ position: "relative" }}
               >
                 {groupedImageUrls.length > 0 ? (
                   <View style={st.imageGroupGrid}>
@@ -1443,6 +1505,9 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                     autoplay={msg.attachment_type !== "gif" || chatPrefsLocal.autoplay_gifs}
                   />
                 )}
+                  {isPending && msg.attachment_type !== "gif" && (
+                    <MediaUploadIndicator kind="image" isMe={isMe} />
+                  )}
               </TouchableOpacity>
               {hasTextContent && (
                 isTextSelectionEnabled ? (
@@ -1456,7 +1521,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
               )}
             </>
           ) : hasVideo ? (
-            <TouchableOpacity onLongPress={messageLongPress} delayLongPress={300} activeOpacity={0.9}>
+            <TouchableOpacity onLongPress={messageLongPress} delayLongPress={300} activeOpacity={0.9} style={{ position: "relative" }}>
               <View style={st.attachVideo}>
                 <VideoPreview
                   uri={msg.attachment_url!}
@@ -1467,6 +1532,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                   shouldPlay={false}
                 />
               </View>
+              {isPending && <MediaUploadIndicator kind="video" isMe={isMe} />}
             </TouchableOpacity>
           ) : hasAudio ? (
             <TouchableOpacity onLongPress={messageLongPress} delayLongPress={300} activeOpacity={1}>
