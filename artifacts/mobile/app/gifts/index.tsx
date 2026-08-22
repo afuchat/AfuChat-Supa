@@ -49,6 +49,14 @@ type OwnedGift = {
 const HIDDEN_FEE_PERCENT = 5.99;
 const MARKETPLACE_FEE_PERCENT = 5;
 
+function formatWalletBalance(value: number | null | undefined): string {
+  const amount = Number(value) || 0;
+  if (amount >= 1_000_000_000) return `${(amount / 1_000_000_000).toFixed(1).replace(/\.0$/, "")}B`;
+  if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  if (amount >= 1_000) return `${(amount / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
+  return String(Math.floor(amount));
+}
+
 function GiftImage({ uri, emoji, size }: { uri: string | null; emoji: string; size: number }) {
   const [failed, setFailed] = useState(false);
   if (!uri || failed) {
@@ -376,7 +384,7 @@ export default function GiftsScreen() {
             <TouchableOpacity onPress={() => router.push("/wallet")} style={styles.walletButton}>
               <View style={styles.acoinBadge}>
                 <Ionicons name="diamond" size={14} color="#fff" />
-                <Text style={styles.acoinText}>{profile?.acoin || 0}</Text>
+                <Text style={styles.acoinText}>{formatWalletBalance(profile?.acoin)}</Text>
               </View>
             </TouchableOpacity>
           </View>
