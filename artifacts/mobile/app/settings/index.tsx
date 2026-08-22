@@ -21,6 +21,7 @@ import { GlassHeader } from "@/components/ui/GlassHeader";
 import { Avatar } from "@/components/ui/Avatar";
 import { AfuLogo } from "@/components/ui/AfuLogo";
 import Colors from "@/constants/colors";
+import { openAppReview } from "@/lib/appReview";
 
 // ─── Theme toggle options ──────────────────────────────────────────────────────
 // ─── Reusable row primitives ───────────────────────────────────────────────────
@@ -449,6 +450,14 @@ export default function SettingsScreen() {
             label="Help & Support"
             sublabel="FAQs, contact and tickets"
             onPress={() => router.push("/support" as any)}
+            colors={colors}
+            accent={accent}
+          />
+          <Row
+            icon="star"
+            label="Rate AfuChat"
+            sublabel="Enjoying AfuChat? Leave us a review on Google Play"
+            onPress={() => { openAppReview().catch(() => showAlert("Unable to open Google Play", "Please try again later.")); }}
             colors={colors}
             accent={accent}
           />

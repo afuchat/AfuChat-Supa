@@ -17,6 +17,7 @@ import { AfuLogo } from "@/components/ui/AfuLogo";
 import { DonateSheet } from "@/components/DonateSheet";
 import Colors from "@/constants/colors";
 import Constants from "expo-constants";
+import { openAppReview } from "@/lib/appReview";
 
 const VERSION = Constants.expoConfig?.version ?? "2.2.5";
 const BUILD   = (Constants.expoConfig?.android as any)?.versionCode
@@ -85,6 +86,7 @@ const LINKS = [
   { icon: "document-text",   label: "Terms of Service",  onPress: () => Linking.openURL("https://afuchat.com/terms").catch(() => {}) },
   { icon: "shield-checkmark",label: "Privacy Policy",    onPress: () => Linking.openURL("https://afuchat.com/privacy").catch(() => {}) },
   { icon: "help-buoy",       label: "Help & Support",    onPress: () => router.push("/support" as any) },
+  { icon: "star",            label: "Rate AfuChat on Google Play", onPress: () => openAppReview().catch(() => {}) },
   { icon: "globe",           label: "Visit afuchat.com", onPress: () => Linking.openURL("https://afuchat.com").catch(() => {}) },
   { icon: "mail",            label: "Contact Us",        onPress: () => Linking.openURL("mailto:hello@afuchat.com").catch(() => {}) },
 ] as const;
