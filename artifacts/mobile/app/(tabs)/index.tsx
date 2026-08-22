@@ -5,6 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   ActivityIndicator,
   Animated,
+  Easing,
   FlatList,
   InteractionManager,
   Image,
@@ -527,6 +528,9 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   const [loading, setLoading] = useState(() => !hasPreloadedConversations());
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchAnim = useRef(new Animated.Value(0)).current;
+  const searchInputRef = useRef<TextInput>(null);
   const [switchingId, setSwitchingId] = useState<string | null>(null);
   const [tabFilter, setTabFilter] = useState<ChatTabKey>("all");
   const [typingChatIds, setTypingChatIds] = useState<Record<string, boolean>>({});
@@ -546,6 +550,33 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   const { prefs: chatPrefs } = useChatPreferences();
   const { features: advancedFeatures } = useAdvancedFeatures();
   const { width: windowWidth } = useWindowDimensions();
+
+  const openChatSearch = useCallback(() => {
+    setSearchOpen(true);
+    Animated.spring(searchAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      damping: 18,
+      stiffness: 190,
+      mass: 0.75,
+    }).start();
+    setTimeout(() => searchInputRef.current?.focus(), 80);
+  }, [searchAnim]);
+
+  const closeChatSearch = useCallback(() => {
+    searchInputRef.current?.blur();
+    Animated.timing(searchAnim, {
+      toValue: 0,
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) {
+        setSearchOpen(false);
+        setSearch("");
+      }
+    });
+  }, [searchAnim]);
 
   // ── Folder state ────────────────────────────────────────────────────────────
   const [folders, setFolders]           = useState<ChatFolder[]>([]);
@@ -1488,6 +1519,47 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         ]}
       >
         <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 0 }]} />
+         {!selectMode && !panelMode && (
+           <Animated.View
+             pointerEvents={searchOpen ? "auto" : "none"}
+             style={[
+               styles.headerSearchOverlay,
+               {
+                 backgroundColor: colors.backgroundSecondary,
+                 borderColor: colors.border,
+                 opacity: searchAnim,
+                 transform: [
+                   { translateX: searchAnim.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) },
+                   { scaleX: searchAnim.interpolate({ inputRange: [0, 1], outputRange: [0.82, 1] }) },
+                 ],
+               },
+             ]}
+           >
+             <Ionicons name="search" size={18} color={colors.textMuted} />
+             <TextInput
+               ref={searchInputRef}
+               value={search}
+               onChangeText={setSearch}
+               placeholder="Search chats"
+               placeholderTextColor={colors.textMuted}
+               style={[styles.headerSearchInput, { color: colors.text }]}
+               autoCorrect={false}
+               returnKeyType="search"
+             />
+             {search.length > 0 && (
+               <TouchableOpacity
+                 onPress={() => setSearch("")}
+                 hitSlop={8}
+                 style={styles.headerSearchClear}
+               >
+                 <Ionicons name="close-circle" size={17} color={colors.textMuted} />
+               </TouchableOpacity>
+             )}
+             <TouchableOpacity onPress={closeChatSearch} hitSlop={8} style={styles.headerSearchClose}>
+               <Ionicons name="close" size={21} color={colors.text} />
+             </TouchableOpacity>
+           </Animated.View>
+         )}
         {/* Left side: Cancel in select mode, else user profile avatar */}
         {selectMode ? (
           <TouchableOpacity
@@ -1515,7 +1587,18 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               </View>
             )}
           </TouchableOpacity>
-        ) : null}
+           ) : !panelMode ? (
+             <TouchableOpacity
+               onPress={openChatSearch}
+               hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+               style={styles.headerSearchButton}
+               activeOpacity={0.7}
+               accessibilityRole="button"
+               accessibilityLabel="Search chats"
+             >
+               <Ionicons name="search" size={20} color={colors.text} />
+             </TouchableOpacity>
+           ) : null}
 
         {/* Title — absolutely centered so it stays in the middle
             regardless of how wide the left/right elements are */}
@@ -2077,6 +2160,47 @@ const styles = StyleSheet.create({
     lineHeight: 12,
   },
   headerTitle: { fontSize: 22, fontFamily: "Inter_700Bold", fontWeight: "700" },
+  headerSearchOverlay: {
+    position: "absolute",
+    left: 12,
+    right: 12,
+    bottom: 7,
+    height: 42,
+    zIndex: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 21,
+    borderWidth: 1,
+    paddingHorizontal: 13,
+    gap: 8,
+  },
+  headerSearchInput: {
+    flex: 1,
+    height: 40,
+    paddingVertical: 0,
+    fontSize: 15,
+    fontFamily: "Inter_400Regular",
+    letterSpacing: 0.1,
+  },
+  headerSearchButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerSearchClear: {
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerSearchClose: {
+    width: 28,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   panelHeader: {
     flexDirection: "row",
     alignItems: "center",
