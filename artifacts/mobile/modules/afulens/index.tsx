@@ -20,6 +20,7 @@ import {
   KeyboardAvoidingView,
   Linking,
   Pressable,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -391,7 +392,16 @@ export default function AfuLensApp() {
                   backgroundColor: BRAND_BG, borderRadius: 26,
                   borderWidth: 1, borderColor: BRAND + "40",
                   paddingHorizontal: 14, paddingVertical: 6,
-                  shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
+                  ...Platform.select({
+                    web: { boxShadow: "0 2px 8px rgba(0,0,0,0.30)" } as any,
+                    default: {
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 8,
+                      elevation: 4,
+                    },
+                  }),
                 }}>
                   <TextInput
                     ref={moreInputRef}

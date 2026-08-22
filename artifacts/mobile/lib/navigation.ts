@@ -80,7 +80,7 @@ export const Navigate = {
   },
 
   toChatInfo(params: { id: string }) {
-    safeRouter.push({ pathname: "/chat/[id]/info" as any, params });
+    safeRouter.push({ pathname: "/chat-info/[id]" as any, params });
   },
 
   // ── Content ──────────────────────────────────────────────────────────────────
@@ -101,7 +101,8 @@ export const Navigate = {
 
   /** Push a user's public profile page (e.g. "/@alice"). */
   toUserProfile(handle: string) {
-    safeRouter.push(`/${handle}` as any);
+    const normalizedHandle = handle.replace(/^@+/, "");
+    safeRouter.push(`/@${normalizedHandle}` as any);
   },
 
   // ── Search / discovery ───────────────────────────────────────────────────────

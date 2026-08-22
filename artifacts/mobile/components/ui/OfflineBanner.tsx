@@ -25,14 +25,14 @@ const st = StyleSheet.create({
     zIndex: 99999,
     elevation: T.elevation.overlay,
     ...Platform.select({
-      web: {},
+      web: { boxShadow: "0 2px 8px rgba(0,0,0,0.22)" } as any,
       default: {
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.22,
-      shadowRadius: T.space.sm,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.22,
+        shadowRadius: T.space.sm,
       },
-    })
+    }),
   },
   label: {
     color: "#fff",

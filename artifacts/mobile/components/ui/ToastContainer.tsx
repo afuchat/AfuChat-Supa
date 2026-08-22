@@ -229,6 +229,7 @@ const SHADOW = Platform.select({
     shadowOffset: { width: 0, height: 6 },
   },
   android: { elevation: T.elevation.modal },
+  web: { boxShadow: "0 6px 16px rgba(0,0,0,0.28)" } as any,
   default: {},
 });
 

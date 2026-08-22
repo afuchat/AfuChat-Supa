@@ -4,6 +4,7 @@ import {
   Animated,
   Easing,
   Image,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -578,11 +579,16 @@ const r = StyleSheet.create({
 const c = StyleSheet.create({
   card: {
     borderRadius: 16, overflow: "hidden",
-    shadowColor: "#000",
-    shadowOpacity: 0.7,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 16,
+    ...Platform.select({
+      web: { boxShadow: "0 10px 28px rgba(0,0,0,0.70)" } as any,
+      default: {
+        shadowColor: "#000",
+        shadowOpacity: 0.7,
+        shadowRadius: 24,
+        shadowOffset: { width: 0, height: 10 },
+        elevation: 16,
+      },
+    }),
   },
   hdr: { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 7 },
   hdrBrand: { fontSize: 10, fontWeight: "900", color: BRAND, letterSpacing: 2, lineHeight: 13 },
