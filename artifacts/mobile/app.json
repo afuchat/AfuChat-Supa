@@ -13,7 +13,7 @@
       "package": "com.afuchat.afuapp",
       "resizeableActivity": true,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/app-icon-foreground.png",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#0719D6"
       },
       "googleServicesFile": "./google-services.json",
