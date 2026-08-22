@@ -655,7 +655,7 @@ export default function AfuUsernamesApp() {
 
       <View style={[styles.tabs, { borderBottomColor: colors.border }]}>
         <Pressable onPress={() => setTab("market")} style={[styles.tab, tab === "market" && { borderBottomColor: colors.accent }]}>
-          <Text style={[styles.tabText, { color: tab === "market" ? colors.accent : colors.textMuted }]}>Buy now</Text>
+          <Text style={[styles.tabText, { color: tab === "market" ? colors.accent : colors.textMuted }]}>Usernames</Text>
         </Pressable>
         <Pressable onPress={() => setTab("owned")} style={[styles.tab, tab === "owned" && { borderBottomColor: colors.accent }]}>
           <Text style={[styles.tabText, { color: tab === "owned" ? colors.accent : colors.textMuted }]}>Owned</Text>
