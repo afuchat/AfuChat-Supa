@@ -7414,7 +7414,7 @@ STRICT RULES:
       {/* ── Attachment actions — compact popover above the input ─────────── */}
       {showAttachPanel && (
         (() => {
-          const contentH = attachTab === "Gallery" ? 92 : 330;
+          const contentH = attachTab === "Gallery" ? 56 : 330;
           const pickerIconColor = colors.accent;
 
           const isDM = !!chatInfo && !chatInfo.is_group && !chatInfo.is_channel;
@@ -7505,7 +7505,7 @@ STRICT RULES:
                 },
               ];
               return (
-                <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 8, paddingTop: 12 }}>
+                <View style={{ flex: 1, flexDirection: "row", alignItems: "center", paddingHorizontal: 5 }}>
                   {NATIVE_PICKS.map((pick) => (
                     <TouchableOpacity
                       key={pick.label}
@@ -7514,14 +7514,13 @@ STRICT RULES:
                       style={{
                         flex: 1,
                         minWidth: 0,
-                        paddingVertical: 8,
-                        paddingHorizontal: 2,
+                        paddingVertical: 4,
+                        paddingHorizontal: 1,
                         alignItems: "center",
-                        gap: 5,
                       }}
                     >
-                      <View style={{ width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: pickerIconColor + "18" }}>
-                        <Ionicons name={pick.icon} size={22} color={pickerIconColor} />
+                      <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: pickerIconColor + "18" }}>
+                        <Ionicons name={pick.icon} size={19} color={pickerIconColor} />
                       </View>
                     </TouchableOpacity>
                   ))}
@@ -7771,11 +7770,11 @@ STRICT RULES:
                 left: Platform.OS === "web" ? 20 : 12,
                 right: Platform.OS === "web" ? 68 : 72,
                 bottom: effectiveBottom + floatingInputHeight - 4,
-                maxHeight: 400,
-                backgroundColor: isDark ? "rgba(255,255,255,0.12)" : colors.inputBg,
-                borderRadius: 28,
-                borderBottomLeftRadius: 28,
-                borderBottomRightRadius: 28,
+                 maxHeight: 400,
+                 backgroundColor: isDark ? "rgba(255,255,255,0.12)" : colors.inputBg,
+                 borderRadius: 999,
+                 borderWidth: 1,
+                 borderColor: isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)",
                 overflow: "hidden",
               }}>
                 <View style={{ height: contentH, overflow: "hidden" }}>
