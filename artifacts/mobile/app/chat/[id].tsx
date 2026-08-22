@@ -7147,7 +7147,7 @@ STRICT RULES:
       {showAttachPanel && (
         (() => {
           const TAB_PILL_H = 50;
-          const contentH = attachTab === "Gallery" ? 154 : 330;
+          const contentH = attachTab === "Gallery" ? 92 : 330;
 
           const isDM = !!chatInfo && !chatInfo.is_group && !chatInfo.is_channel;
           const TABS: { key: typeof attachTab; icon: string; label: string }[] = [
@@ -7234,15 +7234,17 @@ STRICT RULES:
                       activeOpacity={0.6}
                       onPress={pick.onPress}
                       style={{
-                        width: "50%",
-                        paddingVertical: 22,
-                        paddingHorizontal: 8,
+                        width: "25%",
+                        paddingVertical: 8,
+                        paddingHorizontal: 2,
                         alignItems: "center",
-                        gap: 10,
+                        gap: 5,
                       }}
                     >
-                      <Ionicons name={pick.icon} size={36} color={pick.color} />
-                      <Text style={{ fontSize: 13, fontFamily: "Inter_500Medium", color: colors.text, textAlign: "center" }}>{pick.label}</Text>
+                      <View style={{ width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", backgroundColor: pick.color + "16" }}>
+                        <Ionicons name={pick.icon} size={21} color={pick.color} />
+                      </View>
+                      <Text style={{ fontSize: 10, lineHeight: 12, fontFamily: "Inter_500Medium", color: colors.text, textAlign: "center" }} numberOfLines={1}>{pick.label}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -7488,11 +7490,15 @@ STRICT RULES:
                 position: "absolute",
                 left: 12,
                 right: 12,
-                bottom: effectiveBottom + floatingInputHeight + 8,
+                bottom: effectiveBottom + floatingInputHeight + 2,
                 maxHeight: 400,
-                backgroundColor: colors.surface,
+                backgroundColor: isDark ? "rgba(255,255,255,0.12)" : colors.inputBg,
                 borderRadius: 18,
+                borderBottomLeftRadius: 8,
+                borderBottomRightRadius: 8,
                 overflow: "hidden",
+                borderWidth: 0.5,
+                borderColor: isDark ? "rgba(255,255,255,0.22)" : colors.border,
                 ...Platform.select({
                   web: { boxShadow: "0px 5px 14px rgba(0,0,0,0.16)" } as any,
                   default: {
