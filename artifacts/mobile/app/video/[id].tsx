@@ -416,6 +416,7 @@ const VideoItem = React.memo(function VideoItem({
   // When an error occurs fall back directly to the raw video_url, bypassing cache/manifest
   const playbackUri = videoError ? item.video_url : (cachedUri || resolved.uri || item.video_url);
   const shouldMountVideo = isActive || isNearActive;
+  const sourceReadyRef = useRef(false);
   const preloadOnly = !isActive && isNearActive;
   const showExpand = !!item.content && (item.content.split("\n").length > 2 || item.content.length > 120);
 
@@ -549,6 +550,14 @@ const VideoItem = React.memo(function VideoItem({
   // away from the Shorts tab before backgrounding, we must NOT resume here
   // (the play/pause effect already paused the player; without this guard
   // any foreground AppState event would restart audio behind other screens).
+  const safelyPlay = () => {
+    try {
+      // The native type is void, while the web implementation may return a
+      // thenable. Promise.resolve handles both without exposing interruptions.
+      Promise.resolve((player.play() as any)).catch(() => {});
+    } catch {}
+  };
+
   useEffect(() => {
     const sub = AppState.addEventListener("change", (nextState) => {
       if (
@@ -561,7 +570,7 @@ const VideoItem = React.memo(function VideoItem({
         // Brief delay so the PiP-window closing animation fully completes
         // before we call play — avoids a stutter on the returning frame.
         setTimeout(() => {
-          try { if (!inPipRef.current && tabFocusedRef.current) player.play(); } catch {}
+          if (!inPipRef.current && tabFocusedRef.current) safelyPlay();
         }, 100);
       }
     });
@@ -570,14 +579,27 @@ const VideoItem = React.memo(function VideoItem({
 
   // ── Player source update ───────────────────────────────────────────────
   useEffect(() => {
-    if (!playbackUri || !shouldMountVideo) return;
-    player.replaceAsync({ uri: playbackUri }).catch(() => {
+    if (!playbackUri || !shouldMountVideo) {
+      sourceReadyRef.current = false;
+      return;
+    }
+
+    sourceReadyRef.current = false;
+    let cancelled = false;
+    player.replaceAsync({ uri: playbackUri }).then(() => {
+      if (cancelled) return;
+      sourceReadyRef.current = true;
+      if (isActive && !paused && !preloadOnly && tabFocused && !inPip) {
+        safelyPlay();
+      }
+    }).catch(() => {
       // replaceAsync failed (bad URI, network error, codec unsupported).
       // Flip videoError so playbackUri falls back to the raw video_url on
       // the next render; guard prevents a re-render loop if the raw URL
       // itself also fails.
       if (!videoError) setVideoError(true);
     });
+    return () => { cancelled = true; };
   }, [playbackUri, shouldMountVideo]);
 
   // Keep refs in sync with state/props so closures always read current values.
@@ -592,10 +614,11 @@ const VideoItem = React.memo(function VideoItem({
     // background audio session conflicts, etc.).
     try {
       if (!shouldMountVideo) { player.pause(); return; }
+      if (!sourceReadyRef.current) return;
       // When PiP is active honour the paused state — this lets the native
       // PiP play/pause button work correctly instead of being overridden.
-      if (inPip) { if (paused) { player.pause(); } else { player.play(); } return; }
-      if (!isActive || paused || preloadOnly || !tabFocused) { player.pause(); } else { player.play(); }
+      if (inPip) { if (paused) { player.pause(); } else { safelyPlay(); } return; }
+      if (!isActive || paused || preloadOnly || !tabFocused) { player.pause(); } else { safelyPlay(); }
     } catch {}
   }, [isActive, paused, preloadOnly, tabFocused, shouldMountVideo, inPip]);
 

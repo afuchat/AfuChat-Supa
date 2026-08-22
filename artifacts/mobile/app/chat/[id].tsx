@@ -6947,7 +6947,12 @@ STRICT RULES:
         )}
 
         {(attachmentPreview || selectedImages.length > 0) && (
-          <View style={[st.attachPreviewBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+          <View style={[st.attachPreviewBar, {
+            // Keep the attachment section opaque; only its controls adapt
+            // their ink color to the current theme.
+            backgroundColor: isDark ? "#1C1C1E" : colors.inputBg,
+            borderColor: isDark ? "rgba(255,255,255,0.22)" : colors.border,
+          }]}>
             {selectedImages.length > 0 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.multiAttachScroll}>
                 {selectedImages.map((image, index) => (
@@ -6974,22 +6979,22 @@ STRICT RULES:
             ) : attachmentPreview?.type === "image" ? (
               <Image source={{ uri: attachmentPreview.uri }} style={st.attachPreviewImg} />
             ) : attachmentPreview?.type === "video" ? (
-              <View style={[st.attachPreviewFile, { backgroundColor: colors.inputBg }]}>
-                <Ionicons name="videocam" size={20} color={BRAND} />
+              <View style={[st.attachPreviewFile, { backgroundColor: isDark ? "#1C1C1E" : colors.inputBg }]}>
+                <Ionicons name="videocam" size={20} color={isDark ? "#fff" : "#000"} />
                 {attachmentPreview.trimStart != null && attachmentPreview.trimEnd != null && (
-                  <Text style={[st.attachPreviewName, { color: BRAND, fontSize: 11 }]}>
+                  <Text style={[st.attachPreviewName, { color: isDark ? "#fff" : "#000", fontSize: 11 }]}>
                     {(() => { const d = attachmentPreview.trimEnd! - attachmentPreview.trimStart!; const m = Math.floor(d/60); const s = Math.floor(d%60); return `${m}:${s.toString().padStart(2,"0")}`; })()}
                   </Text>
                 )}
               </View>
             ) : (
-              <View style={[st.attachPreviewFile, { backgroundColor: colors.inputBg }]}>
-                <Ionicons name="document" size={20} color={BRAND} />
-                <Text style={[st.attachPreviewName, { color: colors.text }]} numberOfLines={1}>{attachmentPreview?.name || "File"}</Text>
+              <View style={[st.attachPreviewFile, { backgroundColor: isDark ? "#1C1C1E" : colors.inputBg }]}>
+                <Ionicons name="document" size={20} color={isDark ? "#fff" : "#000"} />
+                <Text style={[st.attachPreviewName, { color: isDark ? "#fff" : "#000" }]} numberOfLines={1}>{attachmentPreview?.name || "File"}</Text>
               </View>
             )}
             {selectedImages.length === 0 && <View style={{ flex: 1, paddingHorizontal: 10 }}>
-              <Text style={{ color: colors.text, fontSize: 13, fontWeight: "600" }} numberOfLines={1}>
+               <Text style={{ color: isDark ? "#fff" : "#000", fontSize: 13, fontWeight: "600" }} numberOfLines={1}>
                 {attachmentPreview?.type === "image" ? "Photo"
                   : attachmentPreview?.type === "video" ? (attachmentPreview.trimStart != null ? "Trimmed clip" : "Video")
                   : attachmentPreview?.name || "File"}
@@ -7002,15 +7007,15 @@ STRICT RULES:
                   setPendingVideoUri({ uri: attachmentPreview.uri, mimeType: attachmentPreview.mimeType || "video/mp4" });
                   setShowVideoTrimmer(true);
                 }}
-                style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: BRAND + "18", marginRight: 4 }}
+                 style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: isDark ? "#2A2A2E" : "#E8E8E8", marginRight: 4 }}
                 hitSlop={8}
               >
-                <Ionicons name="cut" size={16} color={BRAND} />
+                 <Ionicons name="cut" size={16} color={isDark ? "#fff" : "#000"} />
               </TouchableOpacity>
             )}
             {selectedImages.length === 0 && (
               <TouchableOpacity onPress={() => setAttachmentPreview(null)} style={st.attachPreviewClose} hitSlop={8}>
-                <Ionicons name="close-circle" size={22} color={colors.textMuted} />
+                 <Ionicons name="close-circle" size={22} color={isDark ? "#fff" : "#000"} />
               </TouchableOpacity>
             )}
           </View>
@@ -7120,6 +7125,11 @@ STRICT RULES:
                   flex: 1,
                   backgroundColor: isDark ? "rgba(255,255,255,0.12)" : colors.inputBg,
                   borderColor: isDark ? "rgba(255,255,255,0.22)" : colors.border,
+                  ...(attachmentPreview || selectedImages.length > 0 ? {
+                    borderTopLeftRadius: 0,
+                    borderTopRightRadius: 0,
+                    borderTopWidth: 0,
+                  } : {}),
                 }, isRecording && !recLocked ? st.recHoldGlass : undefined]}>
                   <View style={st.inputBarRow}>
                     {isRecording && !recLocked ? (
@@ -9068,7 +9078,18 @@ const st = StyleSheet.create({
   replyBannerName: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
   replyBannerText: { fontSize: 13, fontFamily: "Inter_400Regular" },
 
-  attachPreviewBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 8, gap: 10 },
+  attachPreviewBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 10,
+    borderWidth: 0.5,
+    borderBottomWidth: 0,
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    overflow: "hidden",
+  },
   multiAttachScroll: { gap: 8, paddingRight: 4 },
   multiAttachItem: { position: "relative" },
   multiAttachEdit: { position: "absolute", left: 5, bottom: 5, width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(0,0,0,0.68)" },
