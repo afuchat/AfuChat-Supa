@@ -429,6 +429,20 @@ export default function EditProfileScreen() {
     });
   }
 
+  function selectDobPart(part: "day" | "month" | "year", value: number) {
+    Haptics.selectionAsync();
+    if (part === "day") setDobDay(value);
+    if (part === "month") {
+      setDobMonth(value);
+      setDobDay(previous => Math.min(previous || 31, getDaysInMonth(value, dobYear)));
+    }
+    if (part === "year") {
+      setDobYear(value);
+      setDobDay(previous => Math.min(previous || 31, getDaysInMonth(dobMonth, value)));
+    }
+    setDobPicker(null);
+  }
+
   // ── Save ──────────────────────────────────────────────────────────────────
   async function save() {
     if (!displayName.trim()) { showAlert("Required", "Display name cannot be empty."); return; }
@@ -820,7 +834,11 @@ export default function EditProfileScreen() {
                 return (
                   <TouchableOpacity
                     key={part}
-                    style={[styles.dobPart, { backgroundColor: colors.backgroundTertiary, borderColor: dobPicker === part ? accent : colors.border }]}
+                    style={[
+                      styles.dobPart,
+                      part === "day" ? styles.dobPartDay : part === "month" ? styles.dobPartMonth : styles.dobPartYear,
+                      { backgroundColor: colors.backgroundTertiary, borderColor: dobPicker === part ? accent : colors.border },
+                    ]}
                     onPress={() => setDobPicker(prev => prev === part ? null : part)}
                   >
                     <Text style={[styles.dobPartText, { color: val ? colors.text : colors.textMuted }]}>{label}</Text>
@@ -832,23 +850,18 @@ export default function EditProfileScreen() {
 
             {dobPicker && (
               <View style={[styles.dobPickerWrap, { backgroundColor: colors.backgroundTertiary, borderColor: colors.border }]}>
-                <FlatList
-                  data={dobPickerData}
-                  keyExtractor={item => String(item.value)}
-                  style={{ maxHeight: 180 }}
+                <ScrollView
+                  style={styles.dobPickerScroll}
+                  nestedScrollEnabled
                   showsVerticalScrollIndicator={false}
-                  renderItem={({ item }) => {
+                >
+                  {dobPickerData.map(item => {
                     const isSelected = item.value === dobPickerValue;
                     return (
                       <TouchableOpacity
+                        key={String(item.value)}
                         style={[styles.dobPickerItem, isSelected && { backgroundColor: accent + "15" }]}
-                        onPress={() => {
-                          Haptics.selectionAsync();
-                          if (dobPicker === "day")   setDobDay(item.value);
-                          if (dobPicker === "month") setDobMonth(item.value);
-                          if (dobPicker === "year")  setDobYear(item.value);
-                          setDobPicker(null);
-                        }}
+                        onPress={() => selectDobPart(dobPicker, item.value)}
                       >
                         <Text style={[styles.dobPickerItemText, { color: isSelected ? accent : colors.text }]}>
                           {item.label}
@@ -856,8 +869,8 @@ export default function EditProfileScreen() {
                         {isSelected && <Ionicons name="checkmark" size={16} color={accent} />}
                       </TouchableOpacity>
                     );
-                  }}
-                />
+                  })}
+                </ScrollView>
               </View>
             )}
             {(dobDay > 0 || dobMonth > 0 || dobYear > 0) && (
@@ -1065,11 +1078,15 @@ const styles = StyleSheet.create({
   genderChipText: { fontSize: 13, fontFamily: "Inter_500Medium" },
 
   // DOB
-  dobRow: { flexDirection: "row", gap: 8, marginTop: 4 },
-  dobPart: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1 },
-  dobPartText: { fontSize: 14, fontFamily: "Inter_400Regular" },
-  dobPickerWrap: { borderRadius: 12, borderWidth: 0.5, overflow: "hidden", marginTop: 8 },
-  dobPickerItem: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 },
+  dobRow: { flexDirection: "row", gap: 8, marginTop: 4, width: "100%" },
+  dobPart: { minWidth: 0, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 10, paddingVertical: 11, borderRadius: 10, borderWidth: 1 },
+  dobPartDay: { flex: 0.8 },
+  dobPartMonth: { flex: 1.45 },
+  dobPartYear: { flex: 1 },
+  dobPartText: { fontSize: 14, fontFamily: "Inter_400Regular", flexShrink: 1 },
+  dobPickerWrap: { borderRadius: 12, borderWidth: 0.5, overflow: "hidden", marginTop: 10 },
+  dobPickerScroll: { maxHeight: 180 },
+  dobPickerItem: { minHeight: 42, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 10 },
   dobPickerItemText: { fontSize: 15, fontFamily: "Inter_400Regular" },
   clearText: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 6 },
 
