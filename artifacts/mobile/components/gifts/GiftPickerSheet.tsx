@@ -190,15 +190,17 @@ export default function GiftPickerSheet({
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { getDynamicPrice, statsMap } = useGiftPrices();
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const cardW = React.useMemo(
     () => Math.floor((screenWidth - 32 - CARD_GAP * (CARD_COLS - 1)) / CARD_COLS),
     [screenWidth],
   );
-  const gridH = React.useMemo(() => {
-    const cardH = Math.floor(cardW * 1.25);
-    return cardH * 4 + CARD_GAP * 3 + 16;
-  }, [cardW]);
+  // Keep the picker stable while the grid and confirmation controls change.
+  // The grid itself scrolls inside this fixed-height sheet.
+  const sheetHeight = React.useMemo(
+    () => Math.min(620, Math.max(420, Math.floor(screenHeight * 0.78))),
+    [screenHeight],
+  );
 
   const sheetTranslateY = useRef(new Animated.Value(1000)).current;
 
@@ -300,7 +302,7 @@ export default function GiftPickerSheet({
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={dismissSheet} />
         <Animated.View style={{ transform: [{ translateY: sheetTranslateY }], width: "100%" }}>
           <KeyboardAvoidingView behavior="padding" style={styles.kavWrapper}>
-            <View style={[styles.sheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 12 }]}>
+            <View style={[styles.sheet, { height: sheetHeight, backgroundColor: colors.surface, paddingBottom: insets.bottom + 12 }]}>
 
               {/* Drag handle */}
               <View {...sheetPan.panHandlers} style={{ alignItems: "center", paddingTop: 8, paddingBottom: 10 }}>
@@ -377,7 +379,7 @@ export default function GiftPickerSheet({
 
               {/* ── Gift grid ── */}
               {loading ? (
-                <View style={{ height: gridH, overflow: "hidden", paddingTop: 4 }}>
+                  <View style={{ flex: 1, overflow: "hidden", paddingTop: 4 }}>
                   {Array.from({ length: 3 }).map((_, row) => (
                     <View key={row} style={{ flexDirection: "row", gap: CARD_GAP, paddingHorizontal: 16, marginBottom: CARD_GAP }}>
                       {Array.from({ length: CARD_COLS }).map((_, col) => (
@@ -404,7 +406,7 @@ export default function GiftPickerSheet({
                   numColumns={CARD_COLS}
                   columnWrapperStyle={{ gap: CARD_GAP, paddingHorizontal: 16 }}
                   contentContainerStyle={{ gap: CARD_GAP, paddingBottom: 8, paddingTop: 4 }}
-                  style={{ height: gridH }}
+                  style={{ flex: 1, minHeight: 0 }}
                   showsVerticalScrollIndicator={false}
                   renderItem={({ item }) => {
                     const price = getDynamicPrice(item.id, item.base_xp_cost);
