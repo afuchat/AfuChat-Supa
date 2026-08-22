@@ -9,6 +9,7 @@ import {
   FlatList,
   InteractionManager,
   Image,
+  Modal,
   Platform,
   Pressable,
   RefreshControl,
@@ -604,6 +605,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   // ── Multi-select state ────────────────────────────────────────────────────
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectionMenuVisible, setSelectionMenuVisible] = useState(false);
 
   // ── FAB hide-on-scroll ──────────────────────────────────────────────────────
   const fabAnim     = useRef(new Animated.Value(1)).current;
@@ -1158,6 +1160,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   }, []);
 
   const exitSelectMode = useCallback(() => {
+    setSelectionMenuVisible(false);
     setSelectMode(false);
     setSelectedIds(new Set());
   }, []);
@@ -1620,15 +1623,27 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
           {selectMode ? (
-            <TouchableOpacity
-              onPress={() => selectAll(currentPageChats)}
-              hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-              disabled={selectedIds.size === currentPageChats.length && currentPageChats.length > 0}
-            >
-              <Text style={[selStyles.selectAllText, { color: selectedIds.size === currentPageChats.length && currentPageChats.length > 0 ? colors.textMuted : colors.accent }]}>
-                All
-              </Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+              <TouchableOpacity
+                onPress={() => selectAll(currentPageChats)}
+                hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                disabled={selectedIds.size === currentPageChats.length && currentPageChats.length > 0}
+                accessibilityRole="button"
+                accessibilityLabel="Select all chats"
+              >
+                <Text style={[selStyles.selectAllText, { color: selectedIds.size === currentPageChats.length && currentPageChats.length > 0 ? colors.textMuted : colors.accent }]}>
+                  All
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setSelectionMenuVisible(true)}
+                hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="More actions for selected chats"
+              >
+                <Ionicons name="ellipsis-horizontal" size={22} color={colors.text} />
+              </TouchableOpacity>
+            </View>
            ) : (
              <TouchableOpacity
                onPress={openChatSearch}
@@ -1955,34 +1970,61 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         } : undefined}
       />
 
-      {/* ── Multi-select bulk-delete action bar ─────────────────────────────── */}
-      {selectMode && !panelMode && (
-        <View
-          style={[
-            selStyles.actionBar,
-            {
-              bottom: insets.bottom + 90,
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-              pointerEvents: "box-none",
-            },
-          ]}
+      {/* ── Hidden selection actions ──────────────────────────────────────────
+          Actions stay out of the way while selecting. They appear only after
+          tapping the discreet ellipsis in the selection header. */}
+      <Modal
+        visible={selectionMenuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectionMenuVisible(false)}
+      >
+        <Pressable
+          style={selStyles.menuBackdrop}
+          onPress={() => setSelectionMenuVisible(false)}
         >
-          <TouchableOpacity
-            style={[selStyles.deleteBtn, { backgroundColor: selectedIds.size > 0 ? "#FF3B30" : colors.backgroundSecondary }]}
-            onPress={handleBulkDelete}
-            disabled={selectedIds.size === 0}
-            activeOpacity={0.82}
+          <Pressable
+            style={[selStyles.menuCard, { backgroundColor: colors.surface }]}
+            onPress={(event) => event.stopPropagation()}
           >
-            <Ionicons name="trash" size={18} color={selectedIds.size > 0 ? "#fff" : colors.textMuted} />
-            <Text style={[selStyles.deleteBtnText, { color: selectedIds.size > 0 ? "#fff" : colors.textMuted }]}>
-              {selectedIds.size > 0
-                ? `Delete ${selectedIds.size} chat${selectedIds.size !== 1 ? "s" : ""}`
-                : "Select chats to delete"}
+            <View style={selStyles.menuHandle} />
+            <Text style={[selStyles.menuTitle, { color: colors.text }]}>
+              {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Chat actions"}
             </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+            {selectedIds.size > 0 ? (
+              <TouchableOpacity
+                style={selStyles.menuAction}
+                onPress={handleBulkDelete}
+                activeOpacity={0.75}
+                accessibilityRole="button"
+                accessibilityLabel="Delete selected chats"
+              >
+                <View style={[selStyles.menuIcon, { backgroundColor: "rgba(255,59,48,0.14)" }]}>
+                  <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[selStyles.menuActionTitle, { color: "#FF3B30" }]}>Delete chats</Text>
+                  <Text style={[selStyles.menuActionSub, { color: colors.textMuted }]}>
+                    Remove the selected conversations
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            ) : (
+              <Text style={[selStyles.menuHint, { color: colors.textMuted }]}>
+                Select one or more chats first.
+              </Text>
+            )}
+            <TouchableOpacity
+              style={[selStyles.menuCancel, { backgroundColor: colors.backgroundSecondary }]}
+              onPress={() => setSelectionMenuVisible(false)}
+              activeOpacity={0.75}
+            >
+              <Text style={[selStyles.menuCancelText, { color: colors.text }]}>Cancel</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
     </View>
   );
@@ -2031,28 +2073,70 @@ const selStyles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
     paddingHorizontal: 4,
   },
-  actionBar: {
+  menuBackdrop: {
     position: "absolute",
-    left: 16,
-    right: 16,
-    borderRadius: 16,
-    borderWidth: 0.5,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    alignItems: "center",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: "rgba(0,0,0,0.52)",
+    justifyContent: "flex-end",
   },
-  deleteBtn: {
+  menuCard: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 28,
+  },
+  menuHandle: {
+    alignSelf: "center",
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(128,128,128,0.45)",
+    marginBottom: 18,
+  },
+  menuTitle: {
+    fontSize: 18,
+    fontFamily: "Inter_700Bold",
+    marginBottom: 14,
+  },
+  menuAction: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-    width: "100%",
+    gap: 12,
+    paddingVertical: 10,
+  },
+  menuIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    alignItems: "center",
     justifyContent: "center",
   },
-  deleteBtnText: {
+  menuActionTitle: {
     fontSize: 16,
+    fontFamily: "Inter_600SemiBold",
+  },
+  menuActionSub: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    marginTop: 3,
+  },
+  menuHint: {
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    paddingVertical: 12,
+  },
+  menuCancel: {
+    marginTop: 14,
+    borderRadius: 14,
+    paddingVertical: 13,
+    alignItems: "center",
+  },
+  menuCancelText: {
+    fontSize: 15,
     fontFamily: "Inter_600SemiBold",
   },
 });
