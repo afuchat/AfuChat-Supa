@@ -1778,7 +1778,13 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                style={[
                  st.metaRow,
                  hasAudio
-                   ? { marginTop: -2, zIndex: 0, opacity: 0.7 }
+                   ? {
+                       position: "absolute",
+                       right: 12,
+                       bottom: 5,
+                       zIndex: 0,
+                       opacity: 0.7,
+                     }
                    : { marginTop: 3 },
                ]}
              >
