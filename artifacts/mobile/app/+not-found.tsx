@@ -50,7 +50,7 @@ export default function NotFoundScreen() {
 
         <View style={styles.actions}>
           <TouchableOpacity
-            style={[styles.primaryBtn, { backgroundColor: "#1f95ff" }]}
+            style={[styles.primaryBtn, { backgroundColor: "#1018D8" }]}
             onPress={() => router.replace("/(tabs)/discover")}
             activeOpacity={0.85}
           >

@@ -7,7 +7,7 @@ export const SUPER_APP_REGISTRY: ModuleManifest[] = [
     description: "Your intelligent AI assistant. Ask anything, do everything.",
     version: "1.0.0",
     icon: "sparkles",
-    gradient: ["#1f95ff", "#1a7fd4"] as const,
+    gradient: ["#1018D8", "#0B10A8"] as const,
     keepAlive: true,
     badge: "AI",
   },

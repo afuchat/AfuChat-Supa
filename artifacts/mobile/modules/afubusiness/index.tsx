@@ -93,7 +93,7 @@ const CATEGORIES = [
 
 const ESCROW_COLORS: Record<string, { bg: string; fg: string; label: string }> = {
   pending_payment:  { bg: "#FF950018", fg: "#FF9500", label: "Awaiting Payment" },
-  payment_held:     { bg: "#1f95ff18", fg: "#1f95ff", label: "Payment Held" },
+  payment_held:     { bg: "#1018D818", fg: "#1018D8", label: "Payment Held" },
   processing:       { bg: "#AF52DE18", fg: "#AF52DE", label: "Processing" },
   shipped:          { bg: "#5856D618", fg: "#5856D6", label: "Shipped" },
   delivered:        { bg: "#34C75918", fg: "#34C759", label: "Delivered" },
@@ -111,7 +111,7 @@ function statusInfo(status: string) {
 const TOOLS = [
   { icon: "bar-chart" as const,   label: "Analytics", color: "#007AFF", screen: "analytics" as Screen },
   { icon: "pricetag"  as const,   label: "Products",  color: "#FF3B30", screen: "products"  as Screen },
-  { icon: "receipt"   as const,   label: "Orders",    color: "#1f95ff", screen: "orders"    as Screen },
+  { icon: "receipt"   as const,   label: "Orders",    color: "#1018D8", screen: "orders"    as Screen },
   { icon: "people"    as const,   label: "Audience",  color: "#34C759", screen: "audience"  as Screen },
 ];
 
@@ -440,7 +440,7 @@ export default function AfuBusinessApp() {
   if (screen === "analytics") {
     const kpis = analytics ? [
       { label: "Total Revenue", value: fmtAcoin(analytics.totalRevenue), icon: "cash" as const, color: "#34C759" },
-      { label: "Total Orders", value: fmtNum(analytics.totalOrders), icon: "receipt" as const, color: "#1f95ff" },
+      { label: "Total Orders", value: fmtNum(analytics.totalOrders), icon: "receipt" as const, color: "#1018D8" },
       { label: "Completed", value: fmtNum(analytics.completedOrders), icon: "checkmark-circle" as const, color: "#34C759" },
       { label: "Pending", value: fmtNum(analytics.pendingOrders), icon: "time" as const, color: "#FF9500" },
       { label: "Active Products", value: fmtNum(analytics.activeProducts), icon: "pricetag" as const, color: "#AF52DE" },
@@ -729,10 +729,10 @@ export default function AfuBusinessApp() {
               <Text style={[st.shopStatVal, { color: colors.text }]}>{new Date(selectedOrder.created_at).toLocaleString()}</Text>
             </View>
           </View>
-          <View style={[{ backgroundColor: "#1f95ff12", borderRadius: 14, padding: 14, flexDirection: "row", gap: 10 }]}>
-            <Ionicons name="shield-checkmark" size={18} color="#1f95ff" style={{ marginTop: 1 }} />
+          <View style={[{ backgroundColor: "#1018D812", borderRadius: 14, padding: 14, flexDirection: "row", gap: 10 }]}>
+            <Ionicons name="shield-checkmark" size={18} color="#1018D8" style={{ marginTop: 1 }} />
             <View style={{ flex: 1 }}>
-              <Text style={[{ color: "#1f95ff", fontFamily: "Inter_600SemiBold", fontSize: 13 }]}>AfuPay Escrow Protection</Text>
+              <Text style={[{ color: "#1018D8", fontFamily: "Inter_600SemiBold", fontSize: 13 }]}>AfuPay Escrow Protection</Text>
               <Text style={[{ color: colors.textMuted, fontFamily: "Inter_400Regular", fontSize: 12, marginTop: 2 }]}>
                 Funds are held securely by AfuPay and released to you upon confirmed delivery.
               </Text>

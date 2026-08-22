@@ -25,7 +25,7 @@ const GAMES: Game[] = [
   { id: "chess",   name: "AfuChess",   genre: "Strategy",   icon: "grid",        gradient: ["#1C1C1E", "#3A3A3C"] },
   { id: "runner",  name: "AfuRun",     genre: "Action",     icon: "flash",       gradient: ["#FF3B30", "#FF6B35"] },
   { id: "cards",   name: "AfuCards",   genre: "Card",       icon: "card",        gradient: ["#5856D6", "#7B79E8"] },
-  { id: "predict", name: "AfuPredict", genre: "Prediction", icon: "analytics",   gradient: ["#1f95ff", "#1a7fd4"] },
+  { id: "predict", name: "AfuPredict", genre: "Prediction", icon: "analytics",   gradient: ["#1018D8", "#0B10A8"] },
 ];
 
 export default function AfuGamesApp() {

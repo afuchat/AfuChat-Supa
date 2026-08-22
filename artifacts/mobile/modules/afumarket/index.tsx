@@ -239,7 +239,7 @@ export default function AfuMarketApp() {
 
   if (screen === "apply-seller") {
     return (
-      <View style={[s.root, { backgroundColor: accent === "#1f95ff" ? "#0a0a0a" : "#0a0a0a" }]}>
+      <View style={[s.root, { backgroundColor: "#0a0a0a" }]}>
         <View style={[s.topBar, { borderBottomColor: "rgba(255,255,255,0.08)", borderBottomWidth: 0.5 }]}>
           <Pressable onPress={() => setScreen("browse")} hitSlop={12} style={{ padding: 4 }}>
             <Ionicons name="arrow-back" size={22} color="#fff" />

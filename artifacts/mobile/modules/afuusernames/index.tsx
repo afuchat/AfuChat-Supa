@@ -490,7 +490,7 @@ export default function AfuUsernamesApp() {
   const [featured, setFeatured] = useState<FeaturedPlacement[]>([]);
   const [owned, setOwned] = useState<OwnedUsername[]>([]);
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"market" | "auctions" | "listings" | "owned">("market");
+  const [tab, setTab] = useState<"market" | "owned">("market");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -588,10 +588,10 @@ export default function AfuUsernamesApp() {
     [listings, user?.id],
   );
   const visibleListings = useMemo(() => {
-    const own = tab === "listings";
     return listings
-      .filter((item) => own ? item.seller_id === user?.id : tab === "auctions" ? item.is_auction : tab === "market" ? !item.is_auction : true)
+      .filter((item) => tab === "market")
       .sort((a, b) => {
+        if (a.is_auction !== b.is_auction) return a.is_auction ? -1 : 1;
         const aAmount = a.is_auction ? Math.max(a.current_bid || 0, a.reserve_price || 0) : a.price;
         const bAmount = b.is_auction ? Math.max(b.current_bid || 0, b.reserve_price || 0) : b.price;
         return aAmount - bAmount || a.created_at.localeCompare(b.created_at);
@@ -612,8 +612,8 @@ export default function AfuUsernamesApp() {
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View style={styles.headerTitle}>
           <Text style={[styles.eyebrow, { color: colors.accent }]}>USERNAME MARKET</Text>
-          <Text style={[styles.title, { color: colors.text }]}>Own digital identity</Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>Discover, trade, and build value around the handles people remember.</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Find a name worth keeping.</Text>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>Rare handles, verified sellers, protected transfers.</Text>
         </View>
         {user ? <WalletBadge balance={balance} loading={balanceLoading} colors={colors} /> : null}
       </View>
@@ -657,14 +657,6 @@ export default function AfuUsernamesApp() {
         <Pressable onPress={() => setTab("market")} style={[styles.tab, tab === "market" && { borderBottomColor: colors.accent }]}>
           <Text style={[styles.tabText, { color: tab === "market" ? colors.accent : colors.textMuted }]}>Buy now</Text>
         </Pressable>
-        <Pressable onPress={() => setTab("auctions")} style={[styles.tab, tab === "auctions" && { borderBottomColor: Colors.gold }]}>
-          <Text style={[styles.tabText, { color: tab === "auctions" ? Colors.gold : colors.textMuted }]}>Auctions</Text>
-          {auctionCount ? <View style={[styles.count, { backgroundColor: Colors.gold }]}><Text style={styles.countText}>{auctionCount}</Text></View> : null}
-        </Pressable>
-        {user ? <Pressable onPress={() => setTab("listings")} style={[styles.tab, tab === "listings" && { borderBottomColor: colors.accent }]}>
-          <Text style={[styles.tabText, { color: tab === "listings" ? colors.accent : colors.textMuted }]}>Sell</Text>
-          {sellerListingCount ? <View style={[styles.count, { backgroundColor: colors.accent }]}><Text style={styles.countText}>{sellerListingCount}</Text></View> : null}
-        </Pressable> : null}
         <Pressable onPress={() => setTab("owned")} style={[styles.tab, tab === "owned" && { borderBottomColor: colors.accent }]}>
           <Text style={[styles.tabText, { color: tab === "owned" ? colors.accent : colors.textMuted }]}>Owned</Text>
           {owned.length ? <View style={[styles.count, { backgroundColor: colors.accent }]}><Text style={styles.countText}>{owned.length}</Text></View> : null}
@@ -700,9 +692,9 @@ export default function AfuUsernamesApp() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load(true)} tintColor={colors.accent} />}
           ListEmptyComponent={
              <View style={styles.empty}>
-               <Ionicons name={loadError ? "cloud-offline-outline" : tab === "auctions" ? "hammer-outline" : tab === "listings" ? "analytics-outline" : "pricetag-outline"} size={35} color={loadError ? colors.error : tab === "auctions" ? Colors.gold : colors.accent} />
-               <Text style={[styles.emptyTitle, { color: colors.text }]}>{loadError ? "Marketplace unavailable" : search ? "No matches found" : tab === "auctions" ? "No live auctions" : tab === "listings" ? "You have no live listings" : "No usernames listed"}</Text>
-               <Text style={[styles.emptyCopy, { color: colors.textMuted }]}>{loadError ? "Check your connection and try again." : tab === "listings" ? "List a strategic handle and let the market price it." : tab === "auctions" ? "Rare handles will appear here when sellers open bidding." : "Try another search or list your current username for sale."}</Text>
+                <Ionicons name={loadError ? "cloud-offline-outline" : "pricetag-outline"} size={35} color={loadError ? colors.error : colors.accent} />
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>{loadError ? "Marketplace unavailable" : search ? "No matches found" : "No usernames listed"}</Text>
+                <Text style={[styles.emptyCopy, { color: colors.textMuted }]}>{loadError ? "Check your connection and try again." : "Try another search or list your current username for sale."}</Text>
               {loadError ? <Pressable onPress={() => void load()} style={[styles.retryButton, { backgroundColor: colors.accent }]}><Text style={styles.retryText}>Try again</Text></Pressable> : null}
             </View>
           }
@@ -729,9 +721,10 @@ export default function AfuUsernamesApp() {
         accessibilityRole="button"
         accessibilityLabel="List your username"
         onPress={() => (user ? setListVisible(true) : showAlert("Sign in required", "Sign in before listing a username."))}
-        style={({ pressed }) => [styles.fab, { backgroundColor: colors.accent, bottom: insets.bottom + 20, opacity: pressed ? 0.8 : 1 }]}
+        style={({ pressed }) => [styles.fab, { backgroundColor: colors.accent, bottom: insets.bottom + 20, width: 136, height: 52, borderRadius: 26, flexDirection: "row", gap: 7, opacity: pressed ? 0.8 : 1 }]}
       >
         <Ionicons name="add" size={27} color="#fff" />
+        <Text style={styles.fabText}>List handle</Text>
       </Pressable>
 
       <PurchaseSheet

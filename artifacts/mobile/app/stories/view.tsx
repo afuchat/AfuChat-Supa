@@ -618,7 +618,7 @@ export default function ViewStoryScreen() {
             onPress={() => { try { inPip ? storyVideoRef.current?.stopPictureInPicture() : storyVideoRef.current?.startPictureInPicture(); } catch {} }}
             activeOpacity={0.8}
           >
-            <Ionicons name={inPip ? "contract" : "expand"} size={20} color={inPip ? "#1f95ff" : "#fff"} />
+            <Ionicons name={inPip ? "contract" : "expand"} size={20} color={inPip ? "#1018D8" : "#fff"} />
           </TouchableOpacity>
         )}
         <TouchableOpacity style={styles.topBtn} onPress={openShareSheet} activeOpacity={0.8}>

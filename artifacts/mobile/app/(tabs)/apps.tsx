@@ -55,7 +55,7 @@ const CATEGORIES: Category[] = [
         id: "afuai",
         label: "AfuAI",
         icon: "sparkles",
-        gradient: ["#1f95ff", "#1a7fd4"],
+        gradient: ["#1018D8", "#0B10A8"],
         route: "/ai",
         badge: "AI",
         miniApp: true,
@@ -212,7 +212,7 @@ const ALL_APPS = CATEGORIES.flatMap((c) => c.apps);
 const FEATURED_IDS = ["afuai", "afupay", "afumarket", "afugames", "afumatch", "afufreelance"];
 
 function resolveGradient(gradient: [string, string], accent: string): [string, string] {
-  return gradient.map((c) => (c === "#1f95ff" ? accent : c)) as [string, string];
+  return gradient.map((c) => (c === "#1018D8" ? accent : c)) as [string, string];
 }
 
 function openAppItem(app: AppItem, openApp: (id: string) => void) {

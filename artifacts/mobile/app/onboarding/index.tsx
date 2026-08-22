@@ -78,7 +78,7 @@ function getDaysInMonth(month: number, year: number) {
 }
 
 const ACCENT_THEMES: { name: ChatTheme; hex: string }[] = [
-  { name: "Teal",    hex: "#1f95ff" },
+  { name: "Teal",    hex: "#1018D8" },
   { name: "Blue",    hex: "#007AFF" },
   { name: "Purple",  hex: "#AF52DE" },
   { name: "Rose",    hex: "#FF2D55" },

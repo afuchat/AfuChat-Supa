@@ -190,7 +190,7 @@ const TIER_CONFIG: Record<string, TierCfg> = {
     ],
   },
   platinum: {
-    color: "#1f95ff",
+    color: "#1018D8",
     emoji: "💎",
     badge: "PLATINUM",
     tagline: "Unlimited, elite, no limits",

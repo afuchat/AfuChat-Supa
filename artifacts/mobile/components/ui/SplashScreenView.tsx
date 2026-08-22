@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     }),
   },
   wordmarkAccent: {
-    color: "#0115D6",
+    color: "#1018D8",
   },
   taglineWrap: {
     marginTop: 10,

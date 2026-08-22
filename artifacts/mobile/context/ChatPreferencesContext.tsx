@@ -57,7 +57,7 @@ export type ChatPrefs = {
 };
 
 export const CHAT_THEME_COLORS: Record<string, { bubble: string; bubbleText: string; accent: string }> = {
-  Teal:     { bubble: "#1f95ff", bubbleText: "#fff", accent: "#1f95ff" },
+  Teal:     { bubble: "#1018D8", bubbleText: "#fff", accent: "#1018D8" },
   Blue:     { bubble: "#007AFF", bubbleText: "#fff", accent: "#007AFF" },
   Green:    { bubble: "#30D158", bubbleText: "#fff", accent: "#30D158" },
   Purple:   { bubble: "#AF52DE", bubbleText: "#fff", accent: "#AF52DE" },

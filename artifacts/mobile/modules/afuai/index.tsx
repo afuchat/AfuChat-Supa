@@ -598,7 +598,7 @@ export default function AfuAIApp() {
           >
             {!isUser && (
               <LinearGradient
-                colors={["#6C47FF", "#1f95ff"]}
+                colors={["#6C47FF", "#1018D8"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.aiBadge}
@@ -669,7 +669,7 @@ export default function AfuAIApp() {
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <LinearGradient
-          colors={["#6C47FF", "#1f95ff"]}
+          colors={["#6C47FF", "#1018D8"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.headerIcon}
@@ -791,7 +791,7 @@ function ThinkingBubble({ colors, accent }: { colors: any; accent: string }) {
     <View style={styles.bubbleWrap}>
       <View style={[styles.bubble, styles.bubbleAI, { backgroundColor: colors.surface }]}>
         <LinearGradient
-          colors={["#6C47FF", "#1f95ff"]}
+          colors={["#6C47FF", "#1018D8"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.aiBadge}
@@ -881,7 +881,7 @@ function SimpleMarkdown({ text, color }: { text: string; color: string }) {
     collapsed.push(b);
   }
 
-  const accentColor = "#1f95ff";
+  const accentColor = "#1018D8";
 
   return (
     <View style={{ gap: 0 }}>
@@ -967,7 +967,7 @@ const mdInline = StyleSheet.create({
     backgroundColor: "rgba(31,149,255,0.12)",
     borderRadius: 3,
     paddingHorizontal: 4,
-    color: "#1f95ff",
+    color: "#1018D8",
   },
 });
 

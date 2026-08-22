@@ -356,7 +356,7 @@ export default function SecuritySettingsScreen() {
             <TextInput style={[styles.input, { color: colors.text, backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)", borderColor: colors.border }]}
               placeholder="Confirm new password" placeholderTextColor={colors.textMuted} value={confirmPwd} onChangeText={setConfirmPwd} secureTextEntry />
             <TouchableOpacity style={[styles.modalBtn, changingPwd && { opacity: 0.6 }]} onPress={handleChangePassword} disabled={changingPwd} activeOpacity={0.8}>
-              <LinearGradient colors={["#1f95ff", "#1a7fd4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.modalBtnGradient}>
+              <LinearGradient colors={["#1018D8", "#0B10A8"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.modalBtnGradient}>
                 {changingPwd ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalBtnText}>Update Password</Text>}
               </LinearGradient>
             </TouchableOpacity>

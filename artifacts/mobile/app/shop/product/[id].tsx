@@ -353,7 +353,7 @@ export default function ProductDetailScreen() {
             }}
             disabled={!inStock}
           >
-            <LinearGradient colors={["#1f95ff", "#1a7fd4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.buyCTAGradient}>
+            <LinearGradient colors={["#1018D8", "#0B10A8"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.buyCTAGradient}>
               <Ionicons name="flash" size={18} color="#fff" />
               <Text style={st.buyCtaText}>Buy Now</Text>
             </LinearGradient>
@@ -471,7 +471,7 @@ export default function ProductDetailScreen() {
                 onPress={handleBuyNow}
                 disabled={!canAfford || buying}
               >
-                <LinearGradient colors={["#1f95ff", "#1a7fd4"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.confirmBtnGradient}>
+                <LinearGradient colors={["#1018D8", "#0B10A8"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.confirmBtnGradient}>
                   {buying ? (
                     <ActivityIndicator color="#fff" size="small" />
                   ) : (

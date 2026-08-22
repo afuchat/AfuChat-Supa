@@ -62,7 +62,7 @@ function buildHtml(expoUrl, qrDataUrl, metroReady) {
     }
     .logo{
       width:64px;height:64px;border-radius:18px;
-      background:linear-gradient(135deg,#1f95ff,#0a6fcc);
+      background:linear-gradient(135deg,#1018D8,#0a6fcc);
       display:inline-flex;align-items:center;justify-content:center;
       font-size:32px;margin-bottom:20px;
       box-shadow:0 8px 24px rgba(31,149,255,0.4);
@@ -110,11 +110,11 @@ function buildHtml(expoUrl, qrDataUrl, metroReady) {
     .step-num{
       width:22px;height:22px;border-radius:50%;flex-shrink:0;margin-top:1px;
       background:rgba(31,149,255,0.15);border:1px solid rgba(31,149,255,0.35);
-      color:#1f95ff;font-size:11px;font-weight:700;
+      color:#1018D8;font-size:11px;font-weight:700;
       display:flex;align-items:center;justify-content:center;
     }
     .badge{
-      display:inline-block;background:#1f95ff;color:#fff;
+      display:inline-block;background:#1018D8;color:#fff;
       font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;
       vertical-align:middle;margin-left:4px;
     }

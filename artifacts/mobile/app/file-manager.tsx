@@ -41,7 +41,7 @@ function typeIcon(type: FileItem["type"]): keyof typeof Ionicons.glyphMap {
 
 function typeColor(type: FileItem["type"]): string {
   switch (type) {
-    case "image": return "#1f95ff";
+    case "image": return "#1018D8";
     case "video": return "#9C27B0";
     case "audio": return "#FF9800";
     default: return "#607D8B";
