@@ -1,0 +1,146 @@
+Settings
+APPEARANCE
+Choose how AfuChat looks across the app.
+MESSAGING
+ADVANCED
+PRIVACY & SECURITY
+STORAGE & DATA
+SUPPORT & ABOUT
+AfuChat logo
+Afu
+Chat
+Connect · Discover · Create
+!
+
+Console Error
+Unexpected text node: . A text node cannot be a child of a <View>.
+artifacts/mobile/app/settings/index.tsx (189:11)
+
+ 
+ 187 |
+  size
+=
+{
+58
+}
+ 
+ 188 |
+/
+>
+>
+ 189 |
+<
+View
+ style
+=
+{s
+.
+profileInfo}
+>
+ 
+     |
+^
+ 
+ 190 |
+  
+<
+View
+ style
+=
+{s
+.
+profileNameRow}
+>
+ 
+ 191 |
+    
+<
+Text
+ style
+=
+{[s
+.
+profileName
+,
+ { color
+:
+ colors
+.
+text }]} numberOfLines
+=
+{
+1
+}
+>
+ 
+ 192 |
+      {profile
+?
+.
+display_name 
+?
+?
+ 
+"Your Name"
+}
+Component Stack
+27
+
+SettingsScreen
+artifacts/mobile/app/settings/index.tsx:189:11
+WrappedScreenComponent
+node_modules/.pnpm/expo-router@55.0.17_@expo+log-box@55.0.13_@expo+metro-runtime@55.0.12_@types+react@19.2_8e7922ac4fdb7e10b72fec1c33484f86/node_modules/expo-router/build/useScreens.js:194:16
+BaseRoute
+node_modules/.pnpm/expo-router@55.0.17_@expo+log-box@55.0.13_@expo+metro-runtime@55.0.12_@types+react@19.2_8e7922ac4fdb7e10b72fec1c33484f86/node_modules/expo-router/build/useScreens.js:239:13
+SceneView
+node_modules/.pnpm/@react-navigation+core@7.21.10_react@19.2.0/node_modules/@react-navigation/core/lib/module/SceneView.js:117:70
+Call Stack
+22
+
+Source Map
+
+This call stack is not symbolicated. Some features are unavailable such as viewing the function name or tapping to open files.
+Object.addLog
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:1033:32
+consoleErrorMiddleware
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:850:16
+console.error
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:789:29
+Proxy.<anonymous>
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/__replco/static/devtools/injected.js:37:27
+console.error
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:91707:7
+Proxy.<anonymous>
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/__replco/static/devtools/injected.js:37:27
+<unknown>
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:43975:19
+Array.forEach
+<anonymous>
+View
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:43973:46
+Object.react_stack_bottom_frame
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:17967:20
+renderWithHooks
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:8840:22
+updateForwardRef
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:10058:19
+beginWork
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:10872:18
+runWithFiberInDEV
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:5317:70
+performUnitOfWork
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:13225:95
+workLoopSync
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:13120:40
+renderRootSync
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:13105:9
+performWorkOnRoot
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:12742:184
+performSyncWorkOnRoot
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:13888:7
+flushSyncWorkAcrossRoots_impl
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:13803:308
+processRootScheduleInMicrotask
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:13824:104
+<unknown>
+https://bbdf991b-4a04-459d-9aaa-9f92bda74734-00-5c24jco5zj4c.spock.replit.dev/artifacts/mobile/node_modules/expo-router/entry.bundle:13899:154
