@@ -78,6 +78,7 @@ import { showToast as globalShowToast } from "@/lib/toast";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import UserName from "@/components/ui/UserName";
 import { useSuperApp } from "@/lib/superapp/SuperAppContext";
+import NotificationChatPanel from "@/components/chat/NotificationChatPanel";
 
 import {
   queueMessage,
@@ -289,6 +290,7 @@ type ChatInfo = {
   is_organization_verified?: boolean;
   other_last_seen?: string | null;
   other_show_online_status?: boolean;
+  other_handle?: string | null;
 };
 
 // Enable LayoutAnimation on Android — guarded for New Architecture (SDK 55+).
@@ -2700,6 +2702,7 @@ function ChatScreen() {
         is_organization_verified: isSelf ? false : !!other?.is_organization_verified,
         other_last_seen: isSelf ? null : (other?.last_seen || null),
         other_show_online_status: isSelf ? false : (other?.show_online_status !== false),
+         other_handle: isSelf ? null : (other?.handle || null),
       });
     }
   }, [id, user, isDraft]);
