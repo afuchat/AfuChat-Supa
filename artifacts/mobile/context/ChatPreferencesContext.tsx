@@ -24,9 +24,7 @@ const SERVER_KEYS = new Set([
 ]);
 
 export type ChatTheme =
-  | "Teal" | "Blue" | "Green" | "Purple" | "Red"
-  | "Orange" | "Pink" | "Cyan" | "RealTeal" | "Indigo"
-  | "Emerald" | "Gold" | "Rose" | "Amber";
+  | "Teal" | "Indigo" | "Emerald" | "Purple";
 
 export type BubbleStyle = "Rounded" | "Sharp" | "Minimal";
 export type MediaQuality = "Auto" | "High" | "Low";
@@ -58,34 +56,16 @@ export type ChatPrefs = {
 
 export const CHAT_THEME_COLORS: Record<string, { bubble: string; bubbleText: string; accent: string }> = {
   Teal:     { bubble: "#1018D8", bubbleText: "#fff", accent: "#1018D8" },
-  Blue:     { bubble: "#005FCC", bubbleText: "#fff", accent: "#005FCC" },
-  Green:    { bubble: "#168A3B", bubbleText: "#fff", accent: "#168A3B" },
   Purple:   { bubble: "#7B2FBE", bubbleText: "#fff", accent: "#7B2FBE" },
-  Red:      { bubble: "#C62828", bubbleText: "#fff", accent: "#C62828" },
-  Orange:   { bubble: "#C96A00", bubbleText: "#fff", accent: "#C96A00" },
-  Pink:     { bubble: "#C2185B", bubbleText: "#fff", accent: "#C2185B" },
-  Cyan:     { bubble: "#087EA4", bubbleText: "#fff", accent: "#087EA4" },
-  RealTeal: { bubble: "#008F7A", bubbleText: "#fff", accent: "#008F7A" },
   Indigo:   { bubble: "#3835A3", bubbleText: "#fff", accent: "#3835A3" },
   Emerald:  { bubble: "#198A3E", bubbleText: "#fff", accent: "#198A3E" },
-  Gold:     { bubble: "#9A6B13", bubbleText: "#fff", accent: "#9A6B13" },
-  Rose:     { bubble: "#C2185B", bubbleText: "#fff", accent: "#C2185B" },
-  Amber:    { bubble: "#C16B00", bubbleText: "#fff", accent: "#C16B00" },
 };
 
 export const ACCENT_SWATCHES: { key: ChatTheme; label: string }[] = [
-  { key: "Teal",     label: "AfuChat"  },
-  { key: "Blue",     label: "Blue"     },
-  { key: "Green",    label: "Green"    },
-  { key: "Purple",   label: "Purple"   },
-  { key: "Red",      label: "Red"      },
-  { key: "Orange",   label: "Orange"   },
-  { key: "Pink",     label: "Pink"     },
-  { key: "Cyan",     label: "Cyan"     },
-  { key: "RealTeal", label: "Teal"     },
-  { key: "Indigo",   label: "Indigo"   },
-  { key: "Emerald",  label: "Emerald"  },
-  { key: "Gold",     label: "Gold"     },
+  { key: "Teal",    label: "AfuChat" },
+  { key: "Indigo",  label: "Indigo"  },
+  { key: "Emerald", label: "Emerald" },
+  { key: "Purple",  label: "Purple"  },
 ];
 
 export const BUBBLE_RADIUS: Record<BubbleStyle, number> = {

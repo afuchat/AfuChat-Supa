@@ -1,7 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { useColorScheme } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import React, { createContext, useCallback, useContext, useState } from "react";
 type ThemeMode = "system" | "light" | "dark";
 
 type ThemeContextType = {
@@ -11,64 +8,24 @@ type ThemeContextType = {
   setForceDark: (v: boolean) => void;
 };
 
-const THEME_KEY = "@afuchat_theme";
-
-// Module-level cache — persists across hot-reloads and navigation so the
-// theme is available synchronously on every subsequent render without
-// waiting for AsyncStorage again → no flash on re-mount.
-// Follow the device by default. Explicit light/dark choices are still persisted
-// and honoured when the user selects one in Settings.
-let _moduleCache: ThemeMode | null = null;
-
 const ThemeContext = createContext<ThemeContextType>({
-  themeMode: "system",
-  isDark: false,
+  themeMode: "dark",
+  isDark: true,
   setThemeMode: () => {},
   setForceDark: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const systemScheme = useColorScheme();
-
-  // Use the module-level cache as the initial value so hot-reloads and
-  // re-mounts instantly show the correct theme without an async round-trip.
-  // Fall back to the device scheme so a fresh install follows the system
-  // appearance without waiting for the AsyncStorage read.
-  const [themeMode, setThemeModeState] = useState<ThemeMode>(
-    _moduleCache ?? "system"
-  );
+  const themeMode: ThemeMode = "dark";
   const [forceDark, setForceDarkState] = useState(false);
 
-  // Populate the cache once on first mount — purely for subsequent mounts.
-  const loaded = useRef(false);
-  useEffect(() => {
-    if (loaded.current) return;
-    loaded.current = true;
-    AsyncStorage.getItem(THEME_KEY)
-      .then((val) => {
-        // Honour all valid saved modes, including "system". Invalid or
-        // missing values keep the device-following default above.
-        if (val === "system" || val === "light" || val === "dark") {
-          _moduleCache = val;
-          setThemeModeState((prev) => (prev === val ? prev : val));
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  function setThemeMode(mode: ThemeMode) {
-    _moduleCache = mode;
-    setThemeModeState(mode);
-    AsyncStorage.setItem(THEME_KEY, mode).catch(() => {});
-  }
+  function setThemeMode(_mode: ThemeMode) {}
 
   const setForceDark = useCallback((v: boolean) => {
     setForceDarkState(v);
   }, []);
 
-  const baseIsDark =
-    themeMode === "system" ? systemScheme === "dark" : themeMode === "dark";
-  const isDark = forceDark || baseIsDark;
+  const isDark = forceDark || true;
 
   return (
     <ThemeContext.Provider value={{ themeMode, isDark, setThemeMode, setForceDark }}>

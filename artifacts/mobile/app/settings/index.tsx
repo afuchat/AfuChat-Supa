@@ -23,12 +23,6 @@ import { AfuLogo } from "@/components/ui/AfuLogo";
 import Colors from "@/constants/colors";
 
 // ─── Theme toggle options ──────────────────────────────────────────────────────
-const THEME_OPTIONS = [
-  { key: "light"  as const, label: "Light",  icon: "sunny"          as const },
-  { key: "system" as const, label: "Auto",   icon: "contrast"       as const },
-  { key: "dark"   as const, label: "Dark",   icon: "moon"           as const },
-];
-
 // ─── Reusable row primitives ───────────────────────────────────────────────────
 function Section({
   title,
@@ -114,7 +108,7 @@ function Row({
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function SettingsScreen() {
-  const { colors, themeMode, setThemeMode, accent, isDark } = useTheme();
+  const { colors, accent, isDark } = useTheme();
   const { langLabel } = useLanguage();
   const { user, profile, isPremium, linkedAccounts, switchAccount } = useAuth();
   const insets = useSafeAreaInsets();
@@ -305,28 +299,11 @@ export default function SettingsScreen() {
         {/* ── Appearance ────────────────────────────────────────────────── */}
         <Section title="APPEARANCE" colors={colors}>
           <View style={s.themeRow}>
-            {THEME_OPTIONS.map(({ key, label, icon }) => {
-              const active = themeMode === key;
-              return (
-                <TouchableOpacity
-                  key={key}
-                  style={[
-                    s.themeBtn,
-                    {
-                      backgroundColor: active ? accent : colors.backgroundSecondary,
-                      borderColor: active ? accent : colors.border,
-                    },
-                  ]}
-                  onPress={() => { Haptics.selectionAsync(); setThemeMode(key); }}
-                  activeOpacity={0.75}
-                >
-                  <Ionicons name={icon} size={16} color={active ? "#fff" : colors.textMuted} />
-                  <Text style={[s.themeBtnText, { color: active ? "#fff" : colors.textMuted }]}>
-                    {label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+            <View style={[s.darkModeBadge, { backgroundColor: accent + "18" }]}>
+              <Ionicons name="moon" size={16} color={accent} />
+              <Text style={[s.themeBtnText, { color: accent }]}>Dark chat mode</Text>
+            </View>
+            <Text style={[s.appearanceNote, { color: colors.textMuted }]}>AfuChat keeps the interface deep and focused for comfortable messaging.</Text>
           </View>
           <View style={[s.divider, { backgroundColor: colors.separator }]} />
           <Row
@@ -528,6 +505,8 @@ const s = StyleSheet.create({
 
   // Theme toggle
   themeRow: { flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 12 },
+  darkModeBadge: { flexDirection: "row", alignItems: "center", gap: 7, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 9, alignSelf: "flex-start" },
+  appearanceNote: { flex: 1, fontSize: 12, lineHeight: 17, fontFamily: "Inter_400Regular", paddingVertical: 2 },
   themeBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
     gap: 6, paddingVertical: 10, borderRadius: 12, borderWidth: 1,

@@ -23,35 +23,17 @@ import {
 // ── Palettes ───────────────────────────────────────────────────────────────────
 
 const BUBBLE_COLORS = [
-  { key: "default",  label: "Default",  value: undefined    as string | undefined },
-  { key: "teal",     label: "Teal",     value: "#009688" },
-  { key: "blue",     label: "Blue",     value: "#1565C0" },
-  { key: "indigo",   label: "Indigo",   value: "#3949AB" },
-  { key: "purple",   label: "Purple",   value: "#7B1FA2" },
-  { key: "pink",     label: "Pink",     value: "#C2185B" },
-  { key: "red",      label: "Red",      value: "#C62828" },
-  { key: "orange",   label: "Orange",   value: "#E65100" },
-  { key: "amber",    label: "Amber",    value: "#F57F17" },
-  { key: "green",    label: "Green",    value: "#2E7D32" },
-  { key: "cyan",     label: "Cyan",     value: "#00838F" },
-  { key: "rose",     label: "Rose",     value: "#E91E63" },
-  { key: "slate",    label: "Slate",    value: "#37474F" },
-  { key: "black",    label: "Black",    value: "#212121" },
+  { key: "afuchat", label: "AfuChat", value: "#1018D8" },
+  { key: "indigo",  label: "Indigo",  value: "#3835A3" },
+  { key: "emerald", label: "Emerald", value: "#198A3E" },
+  { key: "purple",  label: "Purple",  value: "#7B2FBE" },
 ];
 
 const BG_COLORS = [
-  { key: "default",   label: "Default",   value: undefined    as string | undefined },
-  { key: "cream",     label: "Cream",     value: "#FFF8E7" },
-  { key: "mint",      label: "Mint",      value: "#E8F5E9" },
-  { key: "blush",     label: "Blush",     value: "#FCE4EC" },
-  { key: "lavender",  label: "Lavender",  value: "#EDE7F6" },
-  { key: "sky",       label: "Sky",       value: "#E3F2FD" },
-  { key: "slate",     label: "Slate",     value: "#ECEFF1" },
-  { key: "sand",      label: "Sand",      value: "#FFF3E0" },
-  { key: "charcoal",  label: "Charcoal",  value: "#1A1A2E" },
-  { key: "ink",       label: "Ink",       value: "#0D1117" },
-  { key: "forest",    label: "Forest",    value: "#1B2A1F" },
-  { key: "night",     label: "Night",     value: "#0A0E1A" },
+  { key: "midnight", label: "Midnight", value: "#000000" },
+  { key: "navy",     label: "Navy",     value: "#0B1026" },
+  { key: "forest",   label: "Forest",   value: "#101C17" },
+  { key: "plum",     label: "Plum",     value: "#21152B" },
 ];
 
 const FONT_SIZES = [

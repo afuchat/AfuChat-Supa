@@ -79,11 +79,9 @@ function getDaysInMonth(month: number, year: number) {
 
 const ACCENT_THEMES: { name: ChatTheme; hex: string }[] = [
   { name: "Teal",    hex: "#1018D8" },
-  { name: "Blue",    hex: "#007AFF" },
-  { name: "Purple",  hex: "#AF52DE" },
-  { name: "Rose",    hex: "#FF2D55" },
-  { name: "Amber",   hex: "#FF9500" },
-  { name: "Emerald", hex: "#34C759" },
+  { name: "Indigo",  hex: "#3835A3" },
+  { name: "Emerald", hex: "#198A3E" },
+  { name: "Purple",  hex: "#7B2FBE" },
 ];
 
 // ─── Dot indicator ─────────────────────────────────────────────────────────────
