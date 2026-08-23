@@ -149,7 +149,7 @@ type FcmSendResult = {
 };
 
 const EXPECTED_FCM_PROJECT_ID = "afuchat-c3630";
-const FCM_CONFIG_KEY = "FCM_SERVICE_ACCOUNT_JSON";
+const FCM_CONFIG_KEY = "FIREBASE_SERVICE_ACCOUNT_KEY";
 
 let fcmConfigPromise: Promise<FcmServiceAccount | null> | null = null;
 let fcmAccessToken: { value: string; expiresAt: number } | null = null;
