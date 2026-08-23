@@ -49,6 +49,15 @@ export const SUPER_APP_REGISTRY: ModuleManifest[] = [
     badge: "AI",
   },
   {
+    id: "afusearch",
+    name: "Search",
+    description: "Find people, posts, channels, events and more.",
+    version: "1.0.0",
+    icon: "search",
+    gradient: ["#5856D6", "#6E6CD3"] as const,
+    keepAlive: false,
+  },
+  {
     id: "afuservices",
     name: "AfuServices",
     description: "Pay bills, top up airtime, and access local services.",
