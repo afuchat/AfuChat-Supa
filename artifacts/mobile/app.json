@@ -8,7 +8,7 @@
     "userInterfaceStyle": "automatic",
     "jsEngine": "hermes",
     "newArchEnabled": true,
-    "backgroundColor": "#000000",
+    "backgroundColor": "#FFFFFF",
     "android": {
       "package": "com.afuchat.afuapp",
       "resizeableActivity": true,
@@ -82,12 +82,12 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#1018D8",
-          "image": "./assets/images/icon.png",
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/images/black-logo.png",
           "imageWidth": 180,
           "dark": {
-            "backgroundColor": "#1018D8",
-            "image": "./assets/images/icon.png"
+            "backgroundColor": "#000000",
+            "image": "./assets/images/notification-icon.png"
           }
         }
       ],

@@ -3,7 +3,8 @@
  *
  * JS-side splash overlay shown while fonts and assets load.
  *
- * Both themes use the protected app icon artwork on its blue background.
+ * Light mode uses the black logo on white. Dark mode uses the white
+ * notification/logo mark on black. No app-icon or blue splash artwork is used.
  *
  * Fades out quickly once `ready` becomes true, then calls `onDone`
  * so the parent can call SplashScreen.hideAsync().
@@ -21,8 +22,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-const APP_ICON = require("@/assets/images/icon.png");
+import { LOGO_WHITE_B64, LOGO_BLACK_B64 } from "@/lib/logoAssets";
 
 const { width } = Dimensions.get("window");
 const LOGO_SIZE = Math.min(width * 0.32, 130);
@@ -73,10 +73,10 @@ export function SplashScreenView({ ready, onDone }: Props) {
     ]).start(() => onDoneRef.current());
   }, [ready, opacity, scale]);
 
-  const bg            = "#0719D6";
-  const wordmarkColor = "#FFFFFF";
-  const taglineColor  = "rgba(255,255,255,0.62)";
-  const logoSource    = APP_ICON;
+  const bg            = isDark ? "#000000" : "#FFFFFF";
+  const wordmarkColor = isDark ? "#FFFFFF" : "#000000";
+  const taglineColor  = isDark ? "rgba(255,255,255,0.52)" : "rgba(0,0,0,0.48)";
+  const logoSource    = { uri: isDark ? LOGO_WHITE_B64 : LOGO_BLACK_B64 };
 
   return (
     <Animated.View
@@ -94,7 +94,7 @@ export function SplashScreenView({ ready, onDone }: Props) {
 
       <View style={styles.wordmarkRow}>
         <Text style={[styles.wordmark, { color: wordmarkColor }]}>
-          Afu<Text style={styles.wordmarkAccent}>Chat</Text>
+          Afu<Text style={[styles.wordmarkAccent, { color: wordmarkColor }]}>Chat</Text>
         </Text>
       </View>
 
