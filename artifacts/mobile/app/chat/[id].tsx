@@ -78,7 +78,6 @@ import { showToast as globalShowToast } from "@/lib/toast";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import UserName from "@/components/ui/UserName";
 import { useSuperApp } from "@/lib/superapp/SuperAppContext";
-import NotificationChatPanel from "@/components/chat/NotificationChatPanel";
 
 import {
   queueMessage,
@@ -263,7 +262,34 @@ type Message = {
     imagePreview?: string;
     searchQuery?: string;
   };
+  _notification?: NotificationMessageData;
 };
+
+type NotificationMessageData = {
+  id: string;
+  kind: string;
+  cta_label: string | null;
+  cta_route: string | null;
+  entity_id: string | null;
+  metadata: Record<string, unknown> | null;
+  read_at: string | null;
+};
+
+function getNotificationRoute(event: NotificationMessageData): { pathname: string; params?: Record<string, string> } | null {
+  const route = event.cta_route?.trim();
+  if (!route || !route.startsWith("/") || route.includes("://") || route.includes("..")) return null;
+  if (route === "/premium" || route === "/settings/notifications" || route === "/(tabs)/discover" || route === "/(tabs)/shorts") {
+    return { pathname: route };
+  }
+  if (route === "/stories/view" && event.entity_id) {
+    const owner = typeof event.metadata?.story_owner_id === "string" ? event.metadata.story_owner_id : event.entity_id;
+    return { pathname: route, params: { userId: owner } };
+  }
+  if (event.entity_id && ["/chat/[id]", "/contact/[id]", "/post/[id]", "/video/[id]", "/article/[id]"].includes(route)) {
+    return { pathname: route, params: { id: event.entity_id } };
+  }
+  return null;
+}
 
 function parseGroupedImageUrls(message: Pick<Message, "attachment_url" | "attachment_type">): string[] {
   if (message.attachment_type !== "image_group" || !message.attachment_url) return [];
@@ -1132,7 +1158,7 @@ function MediaUploadIndicator({ kind, isMe }: { kind: "image" | "video"; isMe: b
   );
 }
 
-function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, replyPreview, onTapReply, isHighlighted, onTapEnvelope, onTapGift, onImageTap, onConfirmExec, onCancelExec, onSuggestionTap, onSenderPress, onReactionPress, onStatusPress, brandColor, flatSurface, hideTimestamp, isTextSelectionEnabled }: {
+function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, replyPreview, onTapReply, isHighlighted, onTapEnvelope, onTapGift, onImageTap, onConfirmExec, onCancelExec, onSuggestionTap, onSenderPress, onReactionPress, onStatusPress, onNotificationAction, brandColor, flatSurface, hideTimestamp, isTextSelectionEnabled }: {
   msg: Message;
   isMe: boolean;
   showTail: boolean;
@@ -1151,6 +1177,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   onSenderPress?: (senderId: string) => void;
   onReactionPress?: (msg: Message, emoji: string) => void;
   onStatusPress?: (msg: Message) => void;
+  onNotificationAction?: (notification: NotificationMessageData) => void;
   brandColor?: string;
   /** When true, renders a flat borderless surface — no bubble bg, no tail, no radius */
   flatSurface?: boolean;
@@ -1839,6 +1866,17 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                 <LinkPreview text={displayText} isMe={isMe} />
               )}
             </>
+          )}
+
+          {msg._notification?.cta_label && getNotificationRoute(msg._notification) && (
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={() => onNotificationAction?.(msg._notification!)}
+              style={[st.notificationCta, { borderTopColor: isMe ? "rgba(255,255,255,0.22)" : colors.border }]}
+            >
+              <Text style={[st.notificationCtaText, { color: isMe ? "#FFFFFF" : BRAND }]}>{msg._notification.cta_label}</Text>
+              <Ionicons name="arrow-forward" size={14} color={isMe ? "#FFFFFF" : BRAND} />
+            </TouchableOpacity>
           )}
 
           {/* AI invoice cards */}
@@ -2751,11 +2789,6 @@ function ChatScreen() {
   const loadMessages = useCallback(async () => {
     const chatId = isDraft ? realChatId : id;
     if (!chatId || !user) return;
-    if (isNotificationsChat) {
-      setLoading(false);
-      return;
-    }
-
     // My Notes is intentionally device-only. Do not query Supabase, subscribe
     // to realtime, or attempt any server sync for this conversation.
     if (isLocalNotesId(chatId)) {
@@ -2852,10 +2885,21 @@ function ChatScreen() {
     if (clearedAtServer && (!newestStored || clearedAtServer > newestStored)) {
       msgQuery = msgQuery.gt("sent_at", clearedAtServer);
     }
-    const { data } = await msgQuery;
+      const { data } = await msgQuery;
 
     if (data) {
       const msgIds = data.map((m: any) => m.id);
+        const notificationMap = new Map<string, NotificationMessageData>();
+        if (isNotificationsChat && msgIds.length > 0) {
+          const { data: notificationEvents } = await supabase
+            .from("notification_events")
+            .select("id, message_id, kind, cta_label, cta_route, entity_id, metadata, read_at")
+            .eq("recipient_id", user.id)
+            .in("message_id", msgIds);
+          for (const event of (notificationEvents ?? []) as any[]) {
+            if (event.message_id) notificationMap.set(event.message_id, event);
+          }
+        }
 
       // ── Fast path: map and display messages immediately, no reactions yet ────
       const mapped = data.map((m: any) => {
@@ -2877,6 +2921,7 @@ function ChatScreen() {
           _isAi: isBot || undefined,
           _aiActions: aiParsed && aiParsed.actions.length > 0 ? aiParsed.actions : undefined,
           _aiInvoices: aiParsed && aiParsed.invoices.length > 0 ? aiParsed.invoices : undefined,
+          _notification: notificationMap.get(m.id),
         };
       });
 
@@ -3212,10 +3257,6 @@ function ChatScreen() {
     if (!activeChatId) return;
 
     loadChatInfo();
-    if (isNotificationsChat) {
-      setLoading(false);
-      return;
-    }
     loadMessages();
 
     if (isLocalNotesId(activeChatId)) {
@@ -3273,10 +3314,21 @@ function ChatScreen() {
           const _senderSnap = _cachedSender
             ? { display_name: _cachedSender.display_name, avatar_url: _cachedSender.avatar_url ?? null, handle: _cachedSender.handle }
             : { display_name: "User", avatar_url: null, handle: "" };
+          const addNotificationData = async () => {
+            if (!isNotificationsChat || !user) return null;
+            const { data: event } = await supabase
+              .from("notification_events")
+              .select("id, message_id, kind, cta_label, cta_route, entity_id, metadata, read_at")
+              .eq("recipient_id", user.id)
+              .eq("message_id", newMsg.id)
+              .maybeSingle();
+            return event ? ({ ...event } as NotificationMessageData) : undefined;
+          };
+          const notificationData = await addNotificationData();
           setMessages((prev) => {
             // Deduplicate — broadcast fast-path may have already inserted this message
             if (prev.some((m) => m.id === newMsg.id)) return prev;
-            return [{ ...newMsg, sender: _senderSnap as any, reactions: [], status: undefined }, ...prev];
+            return [{ ...newMsg, sender: _senderSnap as any, reactions: [], status: undefined, _notification: notificationData }, ...prev];
           });
           if (!_cachedSender) {
             supabase.from("profiles").select("display_name, avatar_url, handle").eq("id", newMsg.sender_id).single().then(({ data: _sp }) => {
@@ -6554,6 +6606,24 @@ STRICT RULES:
     highlightTimerRef.current = setTimeout(() => setHighlightedMsgId(null), 1500);
   }, [messages]);
 
+  const handleNotificationAction = useCallback(async (notification: NotificationMessageData) => {
+    const route = getNotificationRoute(notification);
+    if (!route) return;
+    if (!notification.read_at && user?.id) {
+      void supabase
+        .from("notification_events")
+        .update({ read_at: new Date().toISOString() })
+        .eq("id", notification.id)
+        .eq("recipient_id", user.id);
+      setMessages((previous) => previous.map((message) =>
+        message._notification?.id === notification.id
+          ? { ...message, _notification: { ...message._notification, read_at: new Date().toISOString() } }
+          : message
+      ));
+    }
+    router.push(route as any);
+  }, [user?.id]);
+
   // Load phone-book name once we know who the other person is.
   useEffect(() => {
     const otherId = chatInfo?.other_id;
@@ -6647,6 +6717,7 @@ STRICT RULES:
             onSenderPress={advancedFeatures.mini_profile_popup && !isMe ? (id) => setMiniProfileUserId(id) : undefined}
             onReactionPress={addReaction}
             onStatusPress={isMe ? (m) => setMsgInfoTarget(m) : undefined}
+             onNotificationAction={isNotificationsChat ? handleNotificationAction : undefined}
             brandColor={colors.accent}
             hideTimestamp={isAfuAiDirectChat}
             isTextSelectionEnabled={item.id === textSelectionMessageId}
@@ -6654,7 +6725,7 @@ STRICT RULES:
         )}
       </View>
     );
-  }, [listData, messages, user, colors, highlightedMsgId, scrollToMessage, advancedFeatures.mini_profile_popup, textSelectionMessageId]);
+  }, [listData, messages, user, colors, highlightedMsgId, scrollToMessage, advancedFeatures.mini_profile_popup, textSelectionMessageId, isNotificationsChat, handleNotificationAction]);
 
   // Single source of truth for the bottom offset.
   // The floatingInputContainer is position:absolute so it cannot rely on
@@ -6897,13 +6968,7 @@ STRICT RULES:
 
       {/* ── Message list — fills remaining space, padded so content clears the floating input ── */}
       <View style={{ flex: 1, backgroundColor: colors.background }}>
-        {isNotificationsChat ? (
-          <NotificationChatPanel
-            userId={user?.id ?? ""}
-            colors={colors}
-            bottomInset={floatingInputHeight + effectiveBottom}
-          />
-        ) : loading ? (
+        {loading ? (
           <ChatLoadingSkeleton />
         ) : messages.length === 0 ? (
           <View style={[st.emptyState, { paddingBottom: floatingInputHeight + 16 }]}>
