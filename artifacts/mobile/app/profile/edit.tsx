@@ -28,6 +28,7 @@ import { aiGenerateBio } from "@/lib/aiHelper";
 import type { Country } from "@/constants/countries";
 const getCountries = () => (require("@/constants/countries").COUNTRIES as Country[]);
 import { storage, KEYS } from "@/lib/storage";
+import { checkUsernameAvailability, usernamePurchasePrompt } from "@/lib/usernameAvailability";
 
 // ─── Cooldown helpers ─────────────────────────────────────────────────────────
 const HANDLE_COOLDOWN_DAYS = 30;
@@ -298,14 +299,16 @@ function FieldRow({ label, children, noBorder, colors }: {
 }
 
 function HandleStatus({ status, colors, accent }: {
-  status: "idle" | "checking" | "available" | "taken" | "invalid_format" | "own";
+  status: "idle" | "checking" | "available" | "taken" | "invalid_format" | "own" | "owned" | "listed";
   colors: any; accent: string;
 }) {
   if (status === "idle" || status === "own") return null;
   if (status === "checking") return <ActivityIndicator size="small" color={colors.textMuted} style={{ marginLeft: 8 }} />;
   const map = {
     available:      { icon: "checkmark-circle", color: "#34C759", label: "Available" },
+    owned:          { icon: "checkmark-circle", color: "#34C759", label: "You own this username" },
     taken:          { icon: "close-circle",     color: "#FF3B30", label: "Already taken" },
+    listed:         { icon: "pricetag",          color: colors.accent, label: "Listed for sale — buy first" },
     invalid_format: { icon: "warning",          color: "#FF9F0A", label: "Letters, numbers & _ only (min 3)" },
   } as const;
   const cfg = map[status as keyof typeof map];
@@ -352,7 +355,8 @@ export default function EditProfileScreen() {
   const [bannerUri, setBannerUri] = useState<string | null>(null);
 
   // Handle availability
-  const [handleStatus, setHandleStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid_format" | "own">("own");
+  const [handleStatus, setHandleStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid_format" | "own" | "owned" | "listed">("own");
+  const [listedHandle, setListedHandle] = useState<{ username: string; price: number } | null>(null);
   const handleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Cooldown — read once synchronously from MMKV (synchronous store)
@@ -380,14 +384,18 @@ export default function EditProfileScreen() {
       return;
     }
     setHandleStatus("checking");
+    setListedHandle(null);
     handleTimerRef.current = setTimeout(async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("handle", clean)
-        .neq("id", user?.id || "")
-        .maybeSingle();
-      setHandleStatus(data ? "taken" : "available");
+      const result = await checkUsernameAvailability(clean);
+      if (!result) return;
+      if (result.status === "listed") {
+        setHandleStatus("listed");
+        setListedHandle({ username: clean, price: result.price });
+      } else if (result.status === "owned") {
+        setHandleStatus("owned");
+      } else {
+        setHandleStatus(result.status === "available" ? "available" : result.status === "taken" ? "taken" : "invalid_format");
+      }
     }, 600);
     return () => { if (handleTimerRef.current) clearTimeout(handleTimerRef.current); };
   }, [handle]);
@@ -447,7 +455,15 @@ export default function EditProfileScreen() {
   async function save() {
     if (!displayName.trim()) { showAlert("Required", "Display name cannot be empty."); return; }
     if (bio.length > 150) { showAlert("Too long", "Bio is limited to 150 characters."); return; }
-    if (handleStatus === "taken" || handleStatus === "invalid_format") {
+    if (handleStatus === "taken" || handleStatus === "listed" || handleStatus === "invalid_format") {
+      if (handleStatus === "listed" && listedHandle) {
+        showAlert(
+          "Username listed for sale",
+          `@${listedHandle.username} is reserved and can only be used after purchase.`,
+          usernamePurchasePrompt(listedHandle.username, listedHandle.price, () => router.push("/username-market")),
+        );
+        return;
+      }
       showAlert("Invalid handle", "Please fix your handle before saving."); return;
     }
 
@@ -492,7 +508,6 @@ export default function EditProfileScreen() {
     const cleanHandle = handle.trim().toLowerCase().replace(/[^a-z0-9_]/g, "_");
     const updateData: Record<string, any> = {
       display_name: displayName.trim(),
-      handle: cleanHandle,
       bio: bio.trim() || null,
       website_url: website.trim() || null,
       country: selectedCountry?.name || null,
@@ -505,6 +520,23 @@ export default function EditProfileScreen() {
     if (newAvatarUrl) updateData.avatar_url = newAvatarUrl;
     if (newBannerUrl) updateData.banner_url = newBannerUrl;
 
+    const { error: claimError } = handleChanged
+      ? await supabase.rpc("claim_username", { p_username: cleanHandle })
+      : { error: null };
+    if (claimError) {
+      setSaving(false);
+      if (claimError.message.toLowerCase().includes("listed for sale")) {
+        showAlert(
+          "Username listed for sale",
+          `@${cleanHandle} is reserved and can only be used after purchase.`,
+          usernamePurchasePrompt(cleanHandle, listedHandle?.price, () => router.push("/username-market")),
+        );
+      } else {
+        showAlert("Username unavailable", claimError.message);
+      }
+      return;
+    }
+    if (handleChanged) updateData.handle = cleanHandle;
     const { error } = await supabase.from("profiles").update(updateData).eq("id", user!.id);
     if (error) {
       showAlert("Error", error.message);

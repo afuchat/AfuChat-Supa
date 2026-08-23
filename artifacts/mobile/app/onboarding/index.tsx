@@ -39,6 +39,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { ensureAfuAiChat } from "@/lib/afuAiBot";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { CHAT_THEME_COLORS, type ChatTheme } from "@/context/ChatPreferencesContext";
+import { checkUsernameAvailability, usernamePurchasePrompt } from "@/lib/usernameAvailability";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -115,7 +116,8 @@ export default function OnboardingScreen() {
 
   const [displayName, setDisplayName] = useState("");
   const [handle, setHandle] = useState("");
-  const [handleStatus, setHandleStatus] = useState<"idle"|"checking"|"available"|"taken"|"invalid_format">("idle");
+  const [handleStatus, setHandleStatus] = useState<"idle"|"checking"|"available"|"owned"|"listed"|"taken"|"invalid_format">("idle");
+  const [listedHandle, setListedHandle] = useState<{ username: string; price: number; listing_id: string } | null>(null);
   const handleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [phoneAvailStatus, setPhoneAvailStatus] = useState<"idle"|"checking"|"available"|"taken">("idle");
@@ -186,7 +188,7 @@ export default function OnboardingScreen() {
   function canProceed(): boolean {
     switch (step) {
       case 1:
-        return displayName.trim().length >= 2 && handle.trim().length >= 3 && handleStatus === "available";
+        return displayName.trim().length >= 2 && handle.trim().length >= 3 && (handleStatus === "available" || handleStatus === "owned");
       case 2:
         return selectedCountry !== null && validatePhone() && phoneAvailStatus === "available";
       case 3: {
@@ -215,19 +217,22 @@ export default function OnboardingScreen() {
     }
     setHandleStatus("checking");
     setTakenHandleProfile(null);
+    setListedHandle(null);
     handleTimerRef.current = setTimeout(async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, display_name, avatar_url, handle")
-        .eq("handle", clean)
-        .neq("id", userId || "")
-        .maybeSingle();
-      if (data) {
+      const result = await checkUsernameAvailability(clean);
+      if (!result) {
+        setHandleStatus("checking");
+        return;
+      }
+      if (result.status === "listed") {
+        setHandleStatus("listed");
+        setListedHandle({ username: clean, price: result.price, listing_id: result.listing_id });
+      } else if (result.status === "taken") {
         setHandleStatus("taken");
-        setTakenHandleProfile({ display_name: data.display_name, avatar_url: data.avatar_url, handle: data.handle });
+      } else if (result.status === "owned") {
+        setHandleStatus("owned");
       } else {
-        setHandleStatus("available");
-        setTakenHandleProfile(null);
+        setHandleStatus(result.status === "available" ? "available" : "invalid_format");
       }
     }, 600);
     return () => { if (handleTimerRef.current) clearTimeout(handleTimerRef.current); };
@@ -367,11 +372,20 @@ export default function OnboardingScreen() {
     setLoading(true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    const { error: handleError } = await supabase
-      .from("profiles").select("id").eq("handle", cleanHandle).neq("id", userId).limit(1).single();
-    if (!handleError) {
+    const availability = await checkUsernameAvailability(cleanHandle);
+    if (!availability || (availability.status !== "available" && availability.status !== "owned")) {
       setLoading(false);
-      showAlert("Handle taken", "This handle is already in use. Please choose another one.");
+      if (availability?.status === "listed") {
+        showAlert(
+          "Username listed for sale",
+          `@${cleanHandle} is reserved and can only be used after purchase.`,
+          usernamePurchasePrompt(cleanHandle, availability.price, () => router.push("/username-market")),
+        );
+      } else if (availability?.status === "taken") {
+        showAlert("Handle taken", "This handle is already in use. Please choose another one.");
+      } else {
+        showAlert("Username unavailable", "We could not verify this username. Please try again.");
+      }
       setStep(1); return;
     }
 
@@ -416,12 +430,46 @@ export default function OnboardingScreen() {
         const constraint = (profileError as any).details || profileError.message || "";
         if (constraint.includes("phone_number") || constraint.includes("profiles_phone_number")) {
           showAlert("Phone number taken", "This phone number is already linked to another account.");
+        } else if (profileError.message.toLowerCase().includes("listed for sale")) {
+          showAlert(
+            "Username listed for sale",
+            `@${cleanHandle} is reserved and can only be used after purchase.`,
+            usernamePurchasePrompt(cleanHandle, listedHandle?.price, () => router.push("/username-market")),
+          );
+          setStep(1);
         } else {
           showAlert("Handle taken", "This handle is already in use."); setStep(1);
         }
       } else {
-        showAlert("Error", profileError.message || "Could not save your profile. Please try again.");
+        if (profileError.message.toLowerCase().includes("listed for sale")) {
+          showAlert(
+            "Username listed for sale",
+            `@${cleanHandle} is reserved and can only be used after purchase.`,
+            usernamePurchasePrompt(cleanHandle, listedHandle?.price, () => router.push("/username-market")),
+          );
+          setStep(1);
+        } else {
+          showAlert("Error", profileError.message || "Could not save your profile. Please try again.");
+        }
       }
+      return;
+    }
+    // Re-check and persist ownership through the protected RPC. The trigger
+    // also guards the upsert, but this makes ownership explicit and prevents a
+    // future profile write path from silently skipping the alias record.
+    const { error: claimError } = await supabase.rpc("claim_username", { p_username: cleanHandle });
+    if (claimError) {
+      setLoading(false);
+      if (claimError.message.toLowerCase().includes("listed for sale")) {
+        showAlert(
+          "Username listed for sale",
+          `@${cleanHandle} is reserved and can only be used after purchase.`,
+          usernamePurchasePrompt(cleanHandle, listedHandle?.price, () => router.push("/username-market")),
+        );
+      } else {
+        showAlert("Username unavailable", claimError.message);
+      }
+      setStep(1);
       return;
     }
 
@@ -497,7 +545,7 @@ export default function OnboardingScreen() {
               />
               {handleStatus === "checking" && <ActivityIndicator size="small" color={colors.accent} style={{ marginRight: 8 }} />}
               {handleStatus === "available" && <Ionicons name="checkmark-circle" size={20} color="#34C759" style={{ marginRight: 8 }} />}
-              {handleStatus === "taken" && <Ionicons name="close-circle" size={20} color="#FF3B30" style={{ marginRight: 8 }} />}
+              {(handleStatus === "taken" || handleStatus === "listed") && <Ionicons name="close-circle" size={20} color="#FF3B30" style={{ marginRight: 8 }} />}
             </View>
             {handleStatus === "invalid_format" && <Text style={st.errorHint}>Use only letters, numbers, and underscores (min 3 chars)</Text>}
             {handleStatus === "available" && <Text style={st.successHint}>✓ @{handle.replace(/[^a-zA-Z0-9_]/g,"").toLowerCase()} is available</Text>}
@@ -512,6 +560,19 @@ export default function OnboardingScreen() {
                 </View>
                 <TouchableOpacity style={[st.takenLoginBtn, { backgroundColor: colors.accent }]} onPress={() => router.replace("/(auth)/login")}>
                   <Text style={{ color: "#fff", fontSize: 13, fontFamily: "Inter_600SemiBold" }}>Log In Instead</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {handleStatus === "listed" && listedHandle && (
+              <View style={[st.takenCard, { backgroundColor: colors.inputBg, borderColor: colors.accent }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[{ fontSize: 14, fontFamily: "Inter_600SemiBold" }, { color: colors.text }]}>@{listedHandle.username} is reserved</Text>
+                  <Text style={[{ fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 3 }, { color: colors.textMuted }]}>
+                    Listed for {listedHandle.price} ACoin. Buy it first to use it.
+                  </Text>
+                </View>
+                <TouchableOpacity style={[st.takenLoginBtn, { backgroundColor: colors.accent }]} onPress={() => router.push("/username-market")}>
+                  <Text style={{ color: "#fff", fontSize: 13, fontFamily: "Inter_600SemiBold" }}>Buy username</Text>
                 </TouchableOpacity>
               </View>
             )}
