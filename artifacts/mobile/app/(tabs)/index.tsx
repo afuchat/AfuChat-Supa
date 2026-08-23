@@ -524,7 +524,7 @@ function waitForRequest<T>(
  */
 export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boolean; onOpenChat?: (item: ChatItem, chatId: string) => void } = {}) {
   const { colors, isDark } = useTheme();
-  const { user, session, profile, linkedAccounts, switchAccount, loading: authLoading } = useAuth();
+  const { user, session, profile, linkedAccounts, switchAccount, signOut, loading: authLoading } = useAuth();
   // AuthContext may expose a cached "synthetic" user during Android startup so
   // the shell can render immediately. That identity is not authorized for
   // Supabase requests until the real session has been restored.
@@ -551,6 +551,9 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   chatsRef.current = chats;
   const [loading, setLoading] = useState(() => !hasPreloadedConversations());
   const [sessionRestoring, setSessionRestoring] = useState(false);
+  const reloginPromptShownRef = useRef(false);
+  const signOutRef = useRef(signOut);
+  signOutRef.current = signOut;
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -991,10 +994,34 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     }
     setSessionRestoring(true);
     let disposed = false;
+    let failedChecks = 0;
+    const promptRelogin = () => {
+      if (reloginPromptShownRef.current || disposed) return;
+      reloginPromptShownRef.current = true;
+      showAlert(
+        "New sign-in detected",
+        "This account was signed in on another device. The session on this device is no longer valid, so your chats and account data cannot be loaded.",
+        [
+          {
+            text: "Log in again",
+            onPress: () => {
+              void signOutRef.current();
+            },
+          },
+          { text: "Later", style: "cancel" },
+        ],
+      );
+    };
     const retry = async () => {
       try {
         const { data } = await supabase.auth.getSession();
-        if (disposed || data.session?.user?.id !== user.id) return;
+        if (disposed) return;
+        if (data.session?.user?.id !== user.id) {
+          failedChecks += 1;
+          if (failedChecks >= 2) promptRelogin();
+          return;
+        }
+        failedChecks = 0;
         setSessionRestoring(false);
         await loadChats(true);
       } catch {
