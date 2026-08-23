@@ -38,8 +38,8 @@ The app ships with hardcoded production-safe fallbacks in `artifacts/mobile/lib/
 | Variable | Purpose | Required? |
 |---|---|---|
 | `EXPO_PUBLIC_SUPABASE_URL` | Override the Supabase project URL | No — fallback in `env.ts` |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Override the public anon key | No — fallback in `env.ts` |
-| `EXPO_PUBLIC_ENGAGERA_API_KEY` | Override the Engagera AI key | No — fallback in `env.ts` |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Public anon key used by the client | Required |
+| `EXPO_PUBLIC_ENGAGERA_API_KEY` | Engagera AI key (client use should be replaced by a server proxy) | Optional |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-side admin operations (Edge Functions) | Only for EAS builds |
 | `SUPABASE_ACCESS_TOKEN` | Deploy Edge Functions via CLI | Only for Edge Function deploys |
 | `EXPO_TOKEN` | EAS cloud builds | Only for EAS builds |
