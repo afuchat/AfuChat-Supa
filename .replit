@@ -87,3 +87,8 @@ externalPort = 80
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 120000
+
+[deployment]
+deploymentTarget = "static"
+build = ["bash", "-c", "cd artifacts/mobile && npx expo export -p web"]
+publicDir = "artifacts/mobile/dist"
