@@ -26,7 +26,7 @@ import QRPosterSheet from "@/components/ui/QRPosterSheet";
 import Colors from "@/constants/colors";
 import OfflineBanner from "@/components/ui/OfflineBanner";
 import { showAlert } from "@/lib/alert";
-import { isOnline, onConnectivityChange } from "@/lib/offlineStore";
+import { getCachedProfileSync, isOnline, onConnectivityChange } from "@/lib/offlineStore";
 import { showToast } from "@/lib/toast";
 import { TrustpilotReviewCard } from "@/components/TrustpilotReviewPrompt";
 
@@ -191,7 +191,15 @@ const pc = StyleSheet.create({
 
 export default function MeScreen() {
   const { colors, accent, isDark } = useTheme();
-  const { profile, isPremium, subscription, loading, user, equippedGoods } = useAuth();
+  const { profile: authProfile, isPremium, subscription, loading, user, equippedGoods } = useAuth();
+  // Match ChatsScreen's cache-first behavior. AuthContext refreshes this row
+  // in the background, but a cached profile is enough to render the Me tab
+  // immediately during offline startup or a slow session restore.
+  const cachedProfile = useMemo(() => {
+    const cached = getCachedProfileSync();
+    return cached && user?.id && cached.id === user.id ? cached : null;
+  }, [user?.id]);
+  const profile = authProfile ?? cachedProfile;
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [qrPosterOpen, setQrPosterOpen] = useState(false);
 
@@ -340,7 +348,7 @@ export default function MeScreen() {
   // A cached/synthetic user can keep the app shell usable while offline even
   // when this device has never persisted the full profile row. Do not bounce
   // the user out of the Me tab in that state.
-  if (!loading && !profile && user) {
+  if (!profile && user) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
         <OfflineBanner />
@@ -356,8 +364,7 @@ export default function MeScreen() {
       </View>
     );
   }
-  if (!loading && !profile) return <Redirect href="/discover" />;
-  if (loading || !profile) {
+  if (!profile) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.backgroundSecondary, paddingTop: insets.top }}>
         <MeTabSkeleton />
