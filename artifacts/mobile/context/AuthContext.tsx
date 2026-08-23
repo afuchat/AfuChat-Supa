@@ -176,17 +176,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Keystore storm racing the navigation state.
   const sessionRestoreRef = useRef<Promise<void> | null>(null);
   const sessionNoticeShownRef = useRef(false);
+  const signOutRef = useRef<(() => Promise<void>) | null>(null);
   const switchOperationRef = useRef(0);
   const linkedAccountsRequestRef = useRef(0);
-
-  const notifyRevokedSession = useCallback(() => {
-    if (sessionNoticeShownRef.current) return;
-    sessionNoticeShownRef.current = true;
-    showAlert(
-      "New sign-in detected",
-      "This account was signed in on another device, so this device's session expired. Your local chats and data are still safe. Please sign in again on this device to continue.",
-    );
-  }, []);
 
   // ── Profile fetch ───────────────────────────────────────────────────────────
 
@@ -627,6 +619,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setTimeout(() => { isUserSigningOut.current = false; }, 3000);
     }
   }, [user]);
+  signOutRef.current = signOut;
+
+  const notifyRevokedSession = useCallback(() => {
+    if (sessionNoticeShownRef.current) return;
+    sessionNoticeShownRef.current = true;
+    showAlert(
+      "New sign-in detected",
+      "This account was signed in on another device. This session is no longer valid, so chats and account data cannot be loaded here.",
+      [
+        {
+          text: "Log in again",
+          style: "default",
+          onPress: () => {
+            void signOutRef.current?.();
+          },
+        },
+        { text: "Later", style: "cancel" },
+      ],
+    );
+  }, []);
 
   // ── Bootstrap ────────────────────────────────────────────────────────────────
 
