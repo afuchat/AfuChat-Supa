@@ -490,7 +490,7 @@ export default function AfuUsernamesApp() {
   const [featured, setFeatured] = useState<FeaturedPlacement[]>([]);
   const [owned, setOwned] = useState<OwnedUsername[]>([]);
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"market" | "owned">("market");
+  const [tab, setTab] = useState<"market" | "owned" | "mine">("market");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -589,7 +589,11 @@ export default function AfuUsernamesApp() {
   );
   const visibleListings = useMemo(() => {
     return listings
-      .filter((item) => tab === "market")
+      .filter((item) => {
+        if (tab === "mine") return item.seller_id === user?.id;
+        if (tab === "market") return item.seller_id !== user?.id;
+        return false;
+      })
       .sort((a, b) => {
         if (a.is_auction !== b.is_auction) return a.is_auction ? -1 : 1;
         const aAmount = a.is_auction ? Math.max(a.current_bid || 0, a.reserve_price || 0) : a.price;
@@ -661,6 +665,10 @@ export default function AfuUsernamesApp() {
           <Text style={[styles.tabText, { color: tab === "owned" ? colors.accent : colors.textMuted }]}>Owned</Text>
           {owned.length ? <View style={[styles.count, { backgroundColor: colors.accent }]}><Text style={styles.countText}>{owned.length}</Text></View> : null}
         </Pressable>
+        <Pressable onPress={() => setTab("mine")} style={[styles.tab, tab === "mine" && { borderBottomColor: colors.accent }]}>
+          <Text style={[styles.tabText, { color: tab === "mine" ? colors.accent : colors.textMuted }]}>My Listings</Text>
+          {sellerListingCount ? <View style={[styles.count, { backgroundColor: colors.accent }]}><Text style={styles.countText}>{sellerListingCount}</Text></View> : null}
+        </Pressable>
       </View>
 
       {tab === "owned" ? (
@@ -693,8 +701,8 @@ export default function AfuUsernamesApp() {
           ListEmptyComponent={
              <View style={styles.empty}>
                 <Ionicons name={loadError ? "cloud-offline-outline" : "pricetag-outline"} size={35} color={loadError ? colors.error : colors.accent} />
-                <Text style={[styles.emptyTitle, { color: colors.text }]}>{loadError ? "Marketplace unavailable" : search ? "No matches found" : "No usernames listed"}</Text>
-                <Text style={[styles.emptyCopy, { color: colors.textMuted }]}>{loadError ? "Check your connection and try again." : "Try another search or list your current username for sale."}</Text>
+                 <Text style={[styles.emptyTitle, { color: colors.text }]}>{loadError ? "Marketplace unavailable" : tab === "mine" ? "No active listings" : search ? "No matches found" : "No usernames listed"}</Text>
+                 <Text style={[styles.emptyCopy, { color: colors.textMuted }]}>{loadError ? "Check your connection and try again." : tab === "mine" ? "Your usernames listed for sale will appear here." : "Try another search or list your current username for sale."}</Text>
               {loadError ? <Pressable onPress={() => void load()} style={[styles.retryButton, { backgroundColor: colors.accent }]}><Text style={styles.retryText}>Try again</Text></Pressable> : null}
             </View>
           }
