@@ -187,35 +187,43 @@ export default function NotificationChatPanel({ userId, colors, bottomInset = 0 
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 12, paddingBottom: bottomInset + 24, gap: 10 }}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              activeOpacity={getSafeRoute(item) ? 0.75 : 1}
-              onPress={getSafeRoute(item) ? () => void openEvent(item) : undefined}
-              style={[styles.card, { backgroundColor: colors.surface, borderColor: item.read_at ? colors.border : colors.accent + "66" }]}
-            >
-              <View style={[styles.kindIcon, { backgroundColor: item.read_at ? colors.backgroundSecondary : colors.accent + "18" }]}>
-                <Ionicons
-                  name={item.kind === "follow" ? "person-add" : item.kind === "system" ? "shield-checkmark" : "notifications"}
-                  size={18}
-                  color={item.read_at ? colors.textSecondary : colors.accent}
-                />
-              </View>
-              <View style={styles.copy}>
+          renderItem={({ item }) => {
+            const route = getSafeRoute(item);
+            const bubble = (
+              <View style={[styles.bubble, { backgroundColor: colors.surface }]}>
                 <View style={styles.titleRow}>
+                  <Ionicons
+                    name={item.kind === "follow" ? "person-add" : item.kind === "system" ? "shield-checkmark" : "notifications"}
+                    size={16}
+                    color={item.read_at ? colors.textSecondary : colors.accent}
+                  />
                   <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
                   {!item.read_at && <View style={[styles.unreadDot, { backgroundColor: colors.accent }]} />}
                 </View>
                 <Text style={[styles.body, { color: colors.textSecondary }]}>{item.body}</Text>
                 <Text style={[styles.date, { color: colors.textMuted }]}>{formatTime(item.created_at)}</Text>
-                {item.cta_label && getSafeRoute(item) && (
-                  <View style={[styles.cta, { backgroundColor: colors.accent }]}>
-                    <Text style={styles.ctaText}>{item.cta_label}</Text>
-                    <Ionicons name="arrow-forward" size={14} color="#fff" />
-                  </View>
+                {item.cta_label && route && (
+                  <TouchableOpacity
+                    onPress={() => void openEvent(item)}
+                    style={[styles.cta, { borderColor: colors.accent + "88" }]}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.ctaText, { color: colors.accent }]}>{item.cta_label}</Text>
+                    <Ionicons name="arrow-forward" size={14} color={colors.accent} />
+                  </TouchableOpacity>
                 )}
               </View>
-            </TouchableOpacity>
-          )}
+            );
+            return (
+              <View style={styles.messageRow}>
+                {route && !item.cta_label ? (
+                  <TouchableOpacity onPress={() => void openEvent(item)} activeOpacity={0.8}>
+                    {bubble}
+                  </TouchableOpacity>
+                ) : bubble}
+              </View>
+            );
+          }}
         />
       )}
     </View>
@@ -236,14 +244,13 @@ const styles = StyleSheet.create({
   introBody: { fontSize: 13, lineHeight: 18, fontFamily: "Inter_400Regular" },
   emptyTitle: { fontSize: 16, fontFamily: "Inter_700Bold", textAlign: "center" },
   emptyBody: { fontSize: 13, lineHeight: 18, fontFamily: "Inter_400Regular", textAlign: "center" },
-  card: { flexDirection: "row", padding: 14, borderRadius: 18, borderWidth: 0.5, gap: 11 },
-  kindIcon: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
-  copy: { flex: 1, gap: 5 },
+  messageRow: { alignItems: "flex-start" },
+  bubble: { maxWidth: "92%", paddingHorizontal: 14, paddingVertical: 11, borderRadius: 18, borderTopLeftRadius: 6, gap: 5 },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 7 },
   title: { flex: 1, fontSize: 14, fontFamily: "Inter_700Bold" },
   unreadDot: { width: 7, height: 7, borderRadius: 4 },
   body: { fontSize: 13, lineHeight: 18, fontFamily: "Inter_400Regular" },
   date: { fontSize: 11, fontFamily: "Inter_400Regular" },
-  cta: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, marginTop: 4 },
-  ctaText: { color: "#fff", fontSize: 12, fontFamily: "Inter_700Bold" },
+  cta: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 14, borderWidth: 1, marginTop: 4 },
+  ctaText: { fontSize: 12, fontFamily: "Inter_700Bold" },
 });

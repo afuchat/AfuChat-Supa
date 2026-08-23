@@ -155,3 +155,126 @@ CREATE TRIGGER follows_create_notification
 AFTER INSERT ON public.follows
 FOR EACH ROW
 EXECUTE FUNCTION public.notify_new_follower();
+
+-- Keep the notification inbox live while the user is in the normal
+-- @notifications chat. Realtime is not enabled for new tables by default.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'notification_events'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.notification_events;
+  END IF;
+END
+$$;
+
+CREATE OR REPLACE FUNCTION public.notify_post_like()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_author_id uuid;
+  v_name text;
+BEGIN
+  SELECT author_id INTO v_author_id FROM public.posts WHERE id = NEW.post_id;
+  IF v_author_id IS NULL OR v_author_id = NEW.user_id THEN RETURN NEW; END IF;
+
+  SELECT COALESCE(NULLIF(display_name, ''), NULLIF(handle, ''), 'Someone')
+  INTO v_name FROM public.profiles WHERE id = NEW.user_id;
+
+  PERFORM public.create_in_app_notification(
+    v_author_id,
+    'like',
+    COALESCE(v_name, 'Someone') || ' liked your post',
+    'Your post is getting attention.',
+    'View post',
+    '/post/[id]',
+    NEW.post_id::text,
+    jsonb_build_object('liker_id', NEW.user_id, 'post_id', NEW.post_id, 'like_id', NEW.id)
+  );
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS post_acknowledgments_create_notification ON public.post_acknowledgments;
+CREATE TRIGGER post_acknowledgments_create_notification
+AFTER INSERT ON public.post_acknowledgments
+FOR EACH ROW
+EXECUTE FUNCTION public.notify_post_like();
+
+CREATE OR REPLACE FUNCTION public.notify_post_reply()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_author_id uuid;
+  v_name text;
+  v_preview text;
+BEGIN
+  SELECT author_id INTO v_author_id FROM public.posts WHERE id = NEW.post_id;
+  IF v_author_id IS NULL OR v_author_id = NEW.author_id THEN RETURN NEW; END IF;
+
+  SELECT COALESCE(NULLIF(display_name, ''), NULLIF(handle, ''), 'Someone')
+  INTO v_name FROM public.profiles WHERE id = NEW.author_id;
+  v_preview := left(regexp_replace(COALESCE(NEW.content, ''), '\s+', ' ', 'g'), 140);
+
+  PERFORM public.create_in_app_notification(
+    v_author_id,
+    'reply',
+    COALESCE(v_name, 'Someone') || ' replied to your post',
+    CASE WHEN v_preview = '' THEN 'Open the conversation to see the reply.' ELSE '"' || v_preview || '"' END,
+    'View post',
+    '/post/[id]',
+    NEW.post_id::text,
+    jsonb_build_object('replier_id', NEW.author_id, 'post_id', NEW.post_id, 'reply_id', NEW.id)
+  );
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS post_replies_create_notification ON public.post_replies;
+CREATE TRIGGER post_replies_create_notification
+AFTER INSERT ON public.post_replies
+FOR EACH ROW
+EXECUTE FUNCTION public.notify_post_reply();
+
+-- The trigger was added after existing follow activity. Backfill only rows
+-- whose follow_id has not already produced an event, so this is idempotent.
+DO $$
+DECLARE
+  f record;
+  v_name text;
+BEGIN
+  FOR f IN
+    SELECT fo.*
+    FROM public.follows fo
+    WHERE NOT EXISTS (
+      SELECT 1 FROM public.notification_events ne
+      WHERE ne.kind = 'follow'
+        AND ne.metadata->>'follow_id' = fo.id::text
+    )
+  LOOP
+    SELECT COALESCE(NULLIF(display_name, ''), NULLIF(handle, ''), 'Someone')
+    INTO v_name FROM public.profiles WHERE id = f.follower_id;
+
+    PERFORM public.create_in_app_notification(
+      f.following_id,
+      'follow',
+      COALESCE(v_name, 'Someone') || ' followed you',
+      'See their profile and connect with them on AfuChat.',
+      'View profile',
+      '/contact/[id]',
+      f.follower_id::text,
+      jsonb_build_object('follower_id', f.follower_id, 'follow_id', f.id)
+    );
+  END LOOP;
+END
+$$;

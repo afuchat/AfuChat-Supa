@@ -9189,6 +9189,20 @@ const st = StyleSheet.create({
   bubbleWithReply: {
     alignSelf: "stretch",
   },
+  notificationCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 8,
+    paddingTop: 8,
+    paddingHorizontal: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  notificationCtaText: {
+    fontSize: 12,
+    fontFamily: "Inter_700Bold",
+  },
   // When no tail: all four corners stay at the full radius (set above).
   bubbleMe: {},
   bubbleOther: {},
