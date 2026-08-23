@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { showAlert } from "@/lib/alert";
+import { confirmAlert, showAlert } from "@/lib/alert";
 import Colors from "@/constants/colors";
 
 type Seller = {
@@ -102,11 +102,13 @@ function ListingCard({
   item,
   own,
   onPress,
+  onDelist,
   colors,
 }: {
   item: Listing;
   own: boolean;
   onPress: () => void;
+  onDelist?: () => void;
   colors: any;
 }) {
   const auction = item.is_auction;
@@ -136,7 +138,22 @@ function ListingCard({
       <View style={styles.price}>
         <Text style={[styles.priceValue, { color: own ? colors.textMuted : auction ? Colors.gold : colors.accent }]}>{money(displayPrice)}</Text>
         <Text style={[styles.priceUnit, { color: colors.textMuted }]}>{auction ? "current bid" : "ACoin"}</Text>
-        <Text style={[styles.priceAction, { color: own ? colors.textMuted : auction ? Colors.gold : colors.accent }]}>{own ? "Listed" : auction ? "Bid" : "Buy"}</Text>
+        {own ? (
+          <Pressable
+            testID={`delist-username-${item.id}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Delist @${item.username}`}
+            onPress={(event) => {
+              event.stopPropagation();
+              onDelist?.();
+            }}
+            style={[styles.delistButton, { borderColor: colors.error }]}
+          >
+            <Text style={[styles.delistButtonText, { color: colors.error }]}>Delist</Text>
+          </Pressable>
+        ) : (
+          <Text style={[styles.priceAction, { color: auction ? Colors.gold : colors.accent }]}>{auction ? "Bid" : "Buy"}</Text>
+        )}
       </View>
     </Pressable>
   );
@@ -598,6 +615,24 @@ export default function AfuUsernamesApp() {
   }, [listings, tab, user?.id]);
   const auctionCount = listings.filter((item) => item.is_auction).length;
   const sellerListingCount = listings.filter((item) => item.seller_id === user?.id).length;
+
+  const delist = async (item: Listing) => {
+    const confirmed = await confirmAlert(
+      "Delist username?",
+      `@${item.username} will be removed from the marketplace and will no longer be available to buyers.`,
+      { confirmText: "Delist", destructive: true },
+    );
+    if (!confirmed) return;
+
+    const { error } = await supabase.rpc("delist_username_listing", { p_listing_id: item.id });
+    if (error) {
+      showAlert("Could not delist username", friendlyError(error.message));
+      return;
+    }
+    setListings((current) => current.filter((listing) => listing.id !== item.id));
+    showAlert("Username delisted", `@${item.username} is no longer listed for sale.`);
+  };
+
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
@@ -700,12 +735,12 @@ export default function AfuUsernamesApp() {
               colors={colors}
               onPress={() => {
                  if (ownListingIds.has(item.id)) {
-                   setSelectedFeature(item);
                    return;
                  }
                  if (item.is_auction) { setSelectedBid(item); return; }
                  setSelected(item); void refreshBalance();
               }}
+              onDelist={ownListingIds.has(item.id) ? () => void delist(item) : undefined}
             />
           )}
         />
