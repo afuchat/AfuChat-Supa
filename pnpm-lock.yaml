@@ -81,9 +81,12 @@ importers:
       '@babel/types':
         specifier: 7.29.7
         version: 7.29.7
+      expo-share-intent:
+        specifier: ^6.1.1
+        version: 6.1.1(expo@55.0.28)(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0)
       react-native-compressor:
         specifier: 1.6.0
-        version: 1.6.0
+        version: 1.6.0(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0)
     devDependencies:
       typescript:
         specifier: ~5.9.2
@@ -171,7 +174,7 @@ importers:
         version: 55.0.16(expo@55.0.28)
       expo-share-intent:
         specifier: ^6.1.1
-        version: 6.1.1(expo-constants@55.0.17)(expo-linking@55.0.16)(expo@55.0.28)(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0)
+        version: 6.1.1(expo@55.0.28)(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0)
       expo-sharing:
         specifier: ~55.0.20
         version: 55.0.22(expo@55.0.28)(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0)
@@ -2482,8 +2485,6 @@ packages:
     resolution: {integrity: sha512-2t9OnnycDU2k+WQEppsENA6c4Bm+VANsl4eNJ/Q0EWpwBj4KL2Th/UE50TrOOJmAJGHyu2YPwZXFYqOKDs085Q==}
     peerDependencies:
       expo: ^55
-      expo-constants: '>=55.0.7'
-      expo-linking: '>=55.0.7'
       react: '*'
       react-native: '*'
 
@@ -6750,7 +6751,7 @@ snapshots:
 
   expo-server@55.0.11: {}
 
-  expo-share-intent@6.1.1(expo-constants@55.0.17)(expo-linking@55.0.16)(expo@55.0.28)(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0):
+  expo-share-intent@6.1.1(expo@55.0.28)(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0):
     dependencies:
       '@expo/config-plugins': 55.0.11
       expo: 55.0.28(@babel/core@7.29.7)(@expo/dom-webview@55.0.6)(@expo/metro-runtime@55.0.12)(expo-router@55.0.17)(react-dom@19.2.0(react@19.2.0))(react-native-webview@13.16.0(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0))(react-native-worklets@0.7.4(@babel/core@7.29.7)(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0))(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0)(typescript@5.9.3)
@@ -7759,7 +7760,10 @@ snapshots:
       react: 19.2.0
       react-native: 0.83.10(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0)
 
-  react-native-compressor@1.6.0: {}
+  react-native-compressor@1.6.0(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0):
+    dependencies:
+      react: 19.2.0
+      react-native: 0.83.10(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0)
 
   react-native-gesture-handler@2.30.1(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0):
     dependencies:
