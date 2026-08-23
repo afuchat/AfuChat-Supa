@@ -76,7 +76,7 @@
           ]
         }
       ],
-      "versionCode": 2239
+      "versionCode": 2240
     },
     "plugins": [
       [
@@ -98,8 +98,19 @@
       [
         "expo-share-intent",
         {
-          "androidIntentFilters": ["text/*", "image/*", "video/*", "audio/*", "*/*"],
-          "androidMultiIntentFilters": ["image/*", "video/*", "audio/*", "*/*"]
+          "androidIntentFilters": [
+            "text/*",
+            "image/*",
+            "video/*",
+            "audio/*",
+            "*/*"
+          ],
+          "androidMultiIntentFilters": [
+            "image/*",
+            "video/*",
+            "audio/*",
+            "*/*"
+          ]
         }
       ],
       [
