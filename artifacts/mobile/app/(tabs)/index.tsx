@@ -1008,7 +1008,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
               void signOutRef.current();
             },
           },
-          { text: "Later", style: "cancel" },
         ],
       );
     };

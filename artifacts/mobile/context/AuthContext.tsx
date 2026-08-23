@@ -635,7 +635,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             void signOutRef.current?.();
           },
         },
-        { text: "Later", style: "cancel" },
       ],
     );
   }, []);
