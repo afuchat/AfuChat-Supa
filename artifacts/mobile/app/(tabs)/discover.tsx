@@ -64,7 +64,6 @@ import { useOpenLink } from "@/lib/useOpenLink";
 import { useVideoProgress } from "@/hooks/useVideoProgress";
 import SignInPromptModal from "@/components/ui/SignInPromptModal";
 import { PostShareCaptureModal, type ShareablePost } from "@/components/ui/PostShareCard";
-import { VideoCommentsSheet } from "@/components/ui/VideoCommentsSheet";
 import { UserRecsCard } from "@/components/discover/UserRecsCard";
 import { DismissSheet, type DismissReason } from "@/components/discover/DismissSheet";
 import { SuggestedUsers } from "@/components/ui/SuggestedUsers";
@@ -543,7 +542,7 @@ function PostImages({
 
 }
 
-const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBookmark, onToggleFollow, onImagePress, onRequireAuth, colWidth, onOpenComments, onDismiss, onMuteAuthor }: { item: PostItem; onToggleLike: (postId: string) => void; onToggleBookmark: (postId: string) => void; onToggleFollow: (authorId: string) => void; onImagePress?: (images: string[], index: number, meta?: PostViewerMeta) => void; onRequireAuth?: () => void; colWidth?: number; onOpenComments: (postId: string, authorId: string) => void; onDismiss?: (postId: string) => void; onMuteAuthor?: (authorId: string, handle: string) => void }) {
+const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBookmark, onToggleFollow, onImagePress, onRequireAuth, colWidth, onDismiss, onMuteAuthor }: { item: PostItem; onToggleLike: (postId: string) => void; onToggleBookmark: (postId: string) => void; onToggleFollow: (authorId: string) => void; onImagePress?: (images: string[], index: number, meta?: PostViewerMeta) => void; onRequireAuth?: () => void; colWidth?: number; onDismiss?: (postId: string) => void; onMuteAuthor?: (authorId: string, handle: string) => void }) {
   const { colors, isDark } = useTheme();
   const { preferredLang } = useLanguage();
   const { width: screenW } = useWindowDimensions();
@@ -924,7 +923,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
             {/* Comments */}
             <TouchableOpacity
               style={styles.footerStat}
-              onPress={() => onOpenComments(item.id, item.author_id)}
+              onPress={openPost}
               activeOpacity={0.7}
             >
               <Ionicons name="chatbubble" size={21} color={colors.textMuted} />
@@ -1085,8 +1084,6 @@ export default function DiscoverScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [followingEmpty, setFollowingEmpty] = useState(false);
   const [bgRefreshing, setBgRefreshing] = useState(false);
-  const [commentPostId, setCommentPostId] = useState<string | null>(null);
-  const [commentPostAuthorId, setCommentPostAuthorId] = useState<string>("");
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [suppressedAuthors, setSuppressedAuthors] = useState<Set<string>>(new Set());
   const [dismissTarget, setDismissTarget] = useState<PostItem | null>(null);
@@ -1188,15 +1185,6 @@ export default function DiscoverScreen() {
       return next;
     });
   }, [showSnack]);
-
-  const onOpenComments = useCallback((postId: string, authorId: string) => {
-    setCommentPostId(postId);
-    setCommentPostAuthorId(authorId);
-  }, []);
-
-  const onCommentReplyCountChange = useCallback((postId: string, delta: number) => {
-    setPosts((prev) => prev.map((p) => p.id === postId ? { ...p, replyCount: Math.max(0, p.replyCount + delta) } : p));
-  }, []);
 
   const fabRef = useRef<React.ElementRef<typeof TouchableOpacity>>(null);
 
@@ -2579,13 +2567,12 @@ export default function DiscoverScreen() {
           onToggleFollow={toggleFollow}
           onImagePress={imgViewer.openViewer}
           onRequireAuth={onRequireAuth}
-          onOpenComments={onOpenComments}
           onDismiss={onDismissPost}
           onMuteAuthor={onMuteAuthor}
         />
       );
     },
-    [imgViewer.openViewer, onDismissPost, onMuteAuthor, onOpenComments, onRequireAuth, toggleBookmark, toggleFollow, toggleLike],
+    [imgViewer.openViewer, onDismissPost, onMuteAuthor, onRequireAuth, toggleBookmark, toggleFollow, toggleLike],
   );
 
   // Re-sync isFollowing for every post whenever Discover comes back into focus
@@ -2940,14 +2927,6 @@ export default function DiscoverScreen() {
       />
 
       <SignInPromptModal visible={showSignInPrompt} onDismiss={() => setShowSignInPrompt(false)} />
-
-      <VideoCommentsSheet
-        visible={!!commentPostId}
-        postId={commentPostId ?? ""}
-        postAuthorId={commentPostAuthorId}
-        onClose={() => { setCommentPostId(null); setCommentPostAuthorId(""); }}
-        onReplyCountChange={onCommentReplyCountChange}
-      />
 
       <DismissSheet
         visible={!!dismissTarget}
