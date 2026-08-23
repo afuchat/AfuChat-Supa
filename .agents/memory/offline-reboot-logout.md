@@ -24,4 +24,5 @@ cache, so it cannot be an authentication boundary.
 - If SecureStore returns null, schedule a 3-second retry to upgrade to real session
 - User stays in-app with cached identity only for a clearly non-authoritative loading/offline shell
 - Require a verified Supabase session for mutations, private data, account actions, and protected navigation
+- Treat empty chat-list responses as non-authoritative when local conversations are already hydrated; preserve the local list and retry rather than replacing it with an empty state
 - This is especially important in AuthContext's `restoreSession` / bootstrap logic

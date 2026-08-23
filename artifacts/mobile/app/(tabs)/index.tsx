@@ -524,7 +524,11 @@ function waitForRequest<T>(
  */
 export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boolean; onOpenChat?: (item: ChatItem, chatId: string) => void } = {}) {
   const { colors, isDark } = useTheme();
-  const { user, profile, linkedAccounts, switchAccount, loading: authLoading } = useAuth();
+  const { user, session, profile, linkedAccounts, switchAccount, loading: authLoading } = useAuth();
+  // AuthContext may expose a cached "synthetic" user during Android startup so
+  // the shell can render immediately. That identity is not authorized for
+  // Supabase requests until the real session has been restored.
+  const hasVerifiedSession = !!session?.user && session.user.id === user?.id;
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const pathname = usePathname() || "/";
@@ -634,7 +638,10 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   }, [fabAnim]);
 
   const loadChatsImpl = useCallback(async (background = false) => {
-    if (!user) return;
+    // Never reconcile the server list while AuthContext is using its cached
+    // startup identity. A request made before the real session is restored
+    // can return no rows and incorrectly erase the visible chat list.
+    if (!user || !hasVerifiedSession) return;
     // Native SQLite can be delayed by migrations on a release first launch.
     // Cache hydration is an enhancement, never a reason to block Supabase.
     const localNotes = await waitForRequest(
@@ -716,7 +723,20 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       return;
     }
     if (!chatRows?.length) {
-      setChats(localNotes ? [localNotesToChatItem(localNotes)] : []);
+      // An empty response is not proof that the account has no chats. During
+      // token refresh, a stale auth context or a transient RLS/network issue
+      // can make the RPC return zero rows. Never erase a list already hydrated
+      // from SQLite; keep it visible and let the next refresh reconcile it.
+      if (localNotes) {
+        setChats((prev) => {
+          const withoutNotes = prev.filter((item) => !isLocalNotesId(item.id));
+          return withoutNotes.length > 0
+            ? [...withoutNotes, localNotesToChatItem(localNotes)]
+            : [localNotesToChatItem(localNotes)];
+        });
+      } else if (chatsRef.current.length === 0) {
+        setChats([]);
+      }
       setLoading(false);
       setRefreshing(false);
       return;
@@ -901,7 +921,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     });
     setLoading(false);
     setRefreshing(false);
-  }, [user]);
+  }, [user, hasVerifiedSession]);
 
   // Initial mount and focus can fire together, and realtime can request a
   // refresh while the previous one is still running. Reuse the active promise
@@ -934,7 +954,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     });
     chatLoadInFlightRef.current = request;
     return request;
-  }, [user, loadChatsImpl]);
+  }, [user, hasVerifiedSession, loadChatsImpl]);
 
   useEffect(() => { loadChats(); }, [loadChats]);
   useFocusEffect(useCallback(() => { loadChats(true); }, [loadChats]));
