@@ -69,6 +69,7 @@ import { AnimationGuardInit } from "@/components/AnimationGuardInit";
 import { SplashScreenView } from "@/components/ui/SplashScreenView";
 import PushNotificationManager from "@/components/PushNotificationManager";
 import { safeRouter } from "@/lib/navUtils";
+import { ShareIntentProvider, useShareIntentContext } from "expo-share-intent";
 
 // NOTE: react-native-mmkv has been downgraded to v3 (stable JSI bridge) and
 // react-native-nitro-modules has been removed.  v4/Nitro caused an unrecoverable
@@ -212,6 +213,32 @@ function ThemedRoot({ children }: { children: React.ReactNode }) {
       {children}
     </View>
   );
+}
+
+function IncomingShareGate({ navigationReady }: { navigationReady: boolean }) {
+  const { hasShareIntent, isReady, shareIntent } = useShareIntentContext();
+  const routedShareRef = useRef("");
+
+  useEffect(() => {
+    if (!hasShareIntent) {
+      routedShareRef.current = "";
+      return;
+    }
+    if (!isReady || !navigationReady || routedShareRef.current) return;
+
+    const signature = [
+      shareIntent.type ?? "",
+      shareIntent.text ?? "",
+      shareIntent.webUrl ?? "",
+      ...(shareIntent.files ?? []).map((file) => file.path),
+    ].join("|");
+    if (!signature) return;
+
+    routedShareRef.current = signature;
+    safeRouter.push("/share" as any);
+  }, [hasShareIntent, isReady, navigationReady, shareIntent]);
+
+  return null;
 }
 
 export default function RootLayout() {
@@ -362,8 +389,9 @@ export default function RootLayout() {
 
 
   return (
-    <ErrorBoundary>
-      <GestureHandlerRootView style={styles.root}>
+    <ShareIntentProvider options={{ scheme: "afuchat" }}>
+      <ErrorBoundary>
+        <GestureHandlerRootView style={styles.root}>
         {/* JS splash overlay — visible until fonts load, then fades out */}
         {!splashDone && Platform.OS !== "web" && (
           <SplashScreenView ready={fontsLoaded || !!fontError} onDone={handleSplashDone} />
@@ -388,6 +416,7 @@ export default function RootLayout() {
                         <ChatPreferencesProvider>
                           <MiniAppRuntimeProvider>
                             <OfflineBanner />
+                            <IncomingShareGate navigationReady={!!rootNavigationState?.key} />
                             <AppNavigationStack />
                             <ToastContainer />
                             <AlertModal />
@@ -401,8 +430,9 @@ export default function RootLayout() {
           </ThemedRoot>
         </ThemeProvider>
 
-      </GestureHandlerRootView>
-    </ErrorBoundary>
+        </GestureHandlerRootView>
+      </ErrorBoundary>
+    </ShareIntentProvider>
   );
 }
 

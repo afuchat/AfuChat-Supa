@@ -2133,6 +2133,7 @@ function ChatScreen() {
     chatName,
     chatAvatar,
     initialMessage,
+    sharedImageUri,
     lensIntro,
   } = useLocalSearchParams<{
     id: string;
@@ -2148,6 +2149,7 @@ function ChatScreen() {
     chatName?: string;
     chatAvatar?: string;
     initialMessage?: string;
+    sharedImageUri?: string;
     lensIntro?: string;
   }>();
   const isDraft = id === "new";
@@ -2670,6 +2672,7 @@ function ChatScreen() {
   type AttachmentPreview = { uri: string; type: string; name?: string; mimeType?: string; trimStart?: number; trimEnd?: number };
   const [attachmentPreview, setAttachmentPreview] = useState<AttachmentPreview | null>(null);
   const [selectedImages, setSelectedImages] = useState<AttachmentPreview[]>([]);
+  const sharedImageInjectedRef = useRef(false);
   const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null);
   const [showVideoTrimmer, setShowVideoTrimmer] = useState(false);
   const [pendingVideoUri, setPendingVideoUri] = useState<{ uri: string; mimeType: string } | null>(null);
@@ -3638,6 +3641,18 @@ function ChatScreen() {
       AsyncStorage.getItem(`chat_draft_${id}`).then((draft) => { if (draft) setInput(draft); }).catch(() => {});
     }
   }, [id, user?.id]);
+
+  // Incoming shares open the normal composer with the media ready for review.
+  // The user still controls the final upload by tapping Send.
+  useEffect(() => {
+    if (!sharedImageUri || sharedImageInjectedRef.current) return;
+    sharedImageInjectedRef.current = true;
+    setSelectedImages([{
+      uri: decodeURIComponent(sharedImageUri as string),
+      type: "image",
+      mimeType: "image/jpeg",
+    }]);
+  }, [sharedImageUri]);
 
   // Auto-send a pre-filled message (e.g. from AI Lens "Ask AfuAI" button).
   // Fires once after the chat finishes loading and only for AfuAI direct chats.

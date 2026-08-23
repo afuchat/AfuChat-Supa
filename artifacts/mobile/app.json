@@ -96,6 +96,13 @@
         {}
       ],
       [
+        "expo-share-intent",
+        {
+          "androidIntentFilters": ["text/*", "image/*", "video/*", "audio/*", "*/*"],
+          "androidMultiIntentFilters": ["image/*", "video/*", "audio/*", "*/*"]
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/images/notification-icon.png",
