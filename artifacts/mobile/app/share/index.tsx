@@ -82,6 +82,11 @@ export default function ShareToAfuChatScreen() {
     () => sharedFiles.filter((file) => file.mimeType?.startsWith("image/")),
     [sharedFiles],
   );
+  const nonImageFile = sharedFiles.find((file) => !file.mimeType?.startsWith("image/"));
+  const sharedImageUris = useMemo(
+    () => imageFiles.map((file) => file.path).filter(Boolean).slice(0, 9),
+    [imageFiles],
+  );
   const firstImage = imageFiles[0]?.path;
   const title = shareIntent.meta?.title || (shareIntent.webUrl ? "Shared link" : "Shared content");
 
@@ -123,7 +128,9 @@ export default function ShareToAfuChatScreen() {
       pathname: "/create-post",
       params: {
         prefill: sharedText,
-        ...(firstImage ? { imageUrl: firstImage } : {}),
+        ...(sharedImageUris.length > 0
+          ? { imageUrls: JSON.stringify(sharedImageUris) }
+          : {}),
       },
     } as any);
   }
@@ -165,7 +172,18 @@ export default function ShareToAfuChatScreen() {
             otherName: contact.display_name,
             otherId: contact.id,
             ...(sharedText ? { initialMessage: encodeURIComponent(sharedText) } : {}),
-            ...(firstImage ? { sharedImageUri: firstImage } : {}),
+            ...(firstImage
+              ? { sharedImageUri: firstImage }
+              : nonImageFile?.path
+                ? {
+                    sharedFileUri: nonImageFile.path,
+                    sharedFileType: nonImageFile.mimeType || "application/octet-stream",
+                    sharedFileName:
+                      (nonImageFile as any).fileName ||
+                      (nonImageFile as any).name ||
+                      "Shared file",
+                  }
+                : {}),
           },
         } as any);
       }

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -108,16 +108,23 @@ export default function CreatePostScreen() {
   const { user, profile }  = useAuth();
   const { preferredLang }  = useLanguage();
   const insets             = useSafeAreaInsets();
-  const params             = useLocalSearchParams<{ prefill?: string; imageUrl?: string }>();
+  const params             = useLocalSearchParams<{ prefill?: string; imageUrl?: string; imageUrls?: string }>();
   const inputRef           = useRef<TextInput>(null);
   const postBtnScale       = useRef(new Animated.Value(1)).current;
 
   // ── state ──────────────────────────────────────────────────────────────────
   const [content,          setContent]          = useState(params.prefill ?? "");
   // Pre-populate with a shared image URL when coming from "Share to Feed" in chat
-  const [images,           setImages]           = useState<string[]>(
-    params.imageUrl ? [params.imageUrl] : []
-  );
+  const initialImages = useMemo(() => {
+    if (params.imageUrls) {
+      try {
+        const parsed = JSON.parse(params.imageUrls);
+        if (Array.isArray(parsed)) return parsed.filter((uri): uri is string => typeof uri === "string").slice(0, 9);
+      } catch {}
+    }
+    return params.imageUrl ? [params.imageUrl] : [];
+  }, [params.imageUrl, params.imageUrls]);
+  const [images,           setImages]           = useState<string[]>(initialImages);
   const [audience,         setAudience]         = useState<Audience>("public");
   const [langCode,         setLangCode]         = useState<string | null>(preferredLang);
   const [locationTag,      setLocationTag]      = useState("");

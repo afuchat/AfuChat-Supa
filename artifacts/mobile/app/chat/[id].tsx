@@ -2134,6 +2134,9 @@ function ChatScreen() {
     chatAvatar,
     initialMessage,
     sharedImageUri,
+    sharedFileUri,
+    sharedFileType,
+    sharedFileName,
     lensIntro,
   } = useLocalSearchParams<{
     id: string;
@@ -2150,6 +2153,9 @@ function ChatScreen() {
     chatAvatar?: string;
     initialMessage?: string;
     sharedImageUri?: string;
+    sharedFileUri?: string;
+    sharedFileType?: string;
+    sharedFileName?: string;
     lensIntro?: string;
   }>();
   const isDraft = id === "new";
@@ -3653,6 +3659,19 @@ function ChatScreen() {
       mimeType: "image/jpeg",
     }]);
   }, [sharedImageUri]);
+
+  useEffect(() => {
+    if (!sharedFileUri || sharedImageUri || sharedImageInjectedRef.current) return;
+    sharedImageInjectedRef.current = true;
+    const mimeType = decodeURIComponent((sharedFileType as string) || "application/octet-stream");
+    const isVideo = mimeType.startsWith("video/");
+    setAttachmentPreview({
+      uri: decodeURIComponent(sharedFileUri as string),
+      type: isVideo ? "video" : "file",
+      name: sharedFileName ? decodeURIComponent(sharedFileName as string) : "Shared file",
+      mimeType,
+    });
+  }, [sharedFileUri, sharedFileType, sharedFileName, sharedImageUri]);
 
   // Auto-send a pre-filled message (e.g. from AI Lens "Ask AfuAI" button).
   // Fires once after the chat finishes loading and only for AfuAI direct chats.
