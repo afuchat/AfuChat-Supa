@@ -641,7 +641,25 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     // Never reconcile the server list while AuthContext is using its cached
     // startup identity. A request made before the real session is restored
     // can return no rows and incorrectly erase the visible chat list.
-    if (!user || !hasVerifiedSession) return;
+    if (!user) return;
+    if (!hasVerifiedSession) {
+      // AuthContext can briefly lag behind Supabase's native session storage
+      // after a sign-in or a cold start on a new device. Check the authoritative
+      // session directly so the chat list does not stay on its skeleton forever.
+      // A cached/synthetic user alone is never enough to authorize this query.
+      let liveSessionUserId: string | null = null;
+      try {
+        const { data } = await supabase.auth.getSession();
+        liveSessionUserId = data.session?.user?.id ?? null;
+      } catch {
+        liveSessionUserId = null;
+      }
+      if (liveSessionUserId !== user.id) {
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+    }
     // Native SQLite can be delayed by migrations on a release first launch.
     // Cache hydration is an enhancement, never a reason to block Supabase.
     const localNotes = await waitForRequest(
