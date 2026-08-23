@@ -1010,9 +1010,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
 
   // Native nav header
-  navBar: {
-    
-  },
+  navBar: {},
   navBarInner: {
     flexDirection: "row",
     alignItems: "center",
@@ -1021,7 +1019,7 @@ const styles = StyleSheet.create({
     paddingTop: 6,
   },
   navSideLeft: {
-    width: 72,
+    width: 44,
     alignItems: "flex-start",
     justifyContent: "center",
   },
@@ -1038,9 +1036,8 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   saveChip: {
-    minWidth: 64,
+    width: 64,
     height: 36,
-    paddingHorizontal: 12,
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
