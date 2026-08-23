@@ -78,9 +78,6 @@ const voicePlaybackCoordinator = {
   finished(id: string) {
     if (activeVoicePlayerId !== id) return;
     activeVoicePlayerId = null;
-    const ids = Array.from(voicePlayers.keys());
-    const nextId = ids.slice(ids.indexOf(id) + 1).find((candidate) => voicePlayers.has(candidate));
-    if (nextId) this.play(nextId);
   },
 };
 
