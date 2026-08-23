@@ -32,6 +32,7 @@ import { startOfflineSync, stopOfflineSync } from "@/lib/offlineSync";
 import { registerDeviceSession } from "@/lib/deviceSession";
 import { ensureAfuAiChat } from "@/lib/afuAiBot";
 import { safeRouter } from "@/lib/navUtils";
+import { showAlert } from "@/lib/alert";
 
 type Profile = {
   id: string;
@@ -76,6 +77,21 @@ type Subscription = {
   plan_tier: string;
   plan_features: any[];
 };
+
+function isRevokedRefreshTokenError(error: unknown): boolean {
+  const value = error as { code?: string; message?: string } | null;
+  const code = String(value?.code ?? "").toLowerCase();
+  const message = String(value?.message ?? "").toLowerCase();
+  return (
+    code === "refresh_token_not_found" ||
+    code === "invalid_grant" ||
+    code === "refresh_token_already_used" ||
+    message.includes("refresh token not found") ||
+    message.includes("refresh token has been revoked") ||
+    message.includes("invalid refresh token") ||
+    message.includes("already used")
+  );
+}
 
 type AuthContextType = {
   session: Session | null;
@@ -159,8 +175,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // rejected. Keep fallback restoration single-flight to avoid a network and
   // Keystore storm racing the navigation state.
   const sessionRestoreRef = useRef<Promise<void> | null>(null);
+  const sessionNoticeShownRef = useRef(false);
   const switchOperationRef = useRef(0);
   const linkedAccountsRequestRef = useRef(0);
+
+  const notifyRevokedSession = useCallback(() => {
+    if (sessionNoticeShownRef.current) return;
+    sessionNoticeShownRef.current = true;
+    showAlert(
+      "New sign-in detected",
+      "This account was signed in on another device, so this device's session expired. Your local chats and data are still safe. Please sign in again on this device to continue.",
+    );
+  }, []);
 
   // ── Profile fetch ───────────────────────────────────────────────────────────
 
@@ -747,16 +773,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 supabase.auth
                   .refreshSession({ refresh_token: primaryAccount.refreshToken })
                   .then(({ error }) => {
-                    if (error) {
-                      // Token is dead but we do NOT log the user out. They keep
-                      // the synthetic session and can read cached data. On next
-                      // foreground the reconnect effect will retry. A user who
-                      // has ever logged in must NEVER be involuntarily signed out.
+                    if (error && isRevokedRefreshTokenError(error)) {
+                      notifyRevokedSession();
                     }
                     // On success: TOKEN_REFRESHED fires and replaces the synthetic
                     // session with a real one — no further action needed here.
                   })
-                  .catch(() => {});
+                  .catch((error) => {
+                    if (isRevokedRefreshTokenError(error)) notifyRevokedSession();
+                  });
               } else {
                 // SecureStore was temporarily unavailable (Android Keystore race on
                 // fresh reboot). Retry in 3 s — by then the Keystore is accessible.
@@ -773,7 +798,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                       refresh_token: stored.refreshToken,
                     });
                     // On success: TOKEN_REFRESHED fires and updates session state.
-                  } catch {}
+                  } catch (error) {
+                    if (isRevokedRefreshTokenError(error)) notifyRevokedSession();
+                  }
                 }, 3000);
               }
             } else {
@@ -852,13 +879,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const stored = accts[0] ?? null;
                 if (!stored) return;
 
-                await supabase.auth.setSession({
-                  access_token: stored.accessToken,
-                  refresh_token: stored.refreshToken,
-                });
-                // On success: TOKEN_REFRESHED fires and updates session state.
+                try {
+                  await supabase.auth.setSession({
+                    access_token: stored.accessToken,
+                    refresh_token: stored.refreshToken,
+                  });
+                  // On success: TOKEN_REFRESHED fires and updates session state.
+                } catch (error) {
+                  if (isRevokedRefreshTokenError(error)) notifyRevokedSession();
+                }
                 // On failure: user keeps their current (synthetic) session and
-                // cached data — they stay logged in and can continue using the app.
+                // cached data — they stay in the shell until they sign in again.
               })
               .catch(() => {});
             sessionRestoreRef.current = restorePromise;
@@ -933,7 +964,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(linkedAccountsTimer);
       listener.subscription.unsubscribe();
     };
-  }, []);
+  }, [notifyRevokedSession]);
 
   // Save current session tokens whenever the live session changes.
   // Guarded by isSwitchingRef / isLinkingRef so it never fires mid-switch.
