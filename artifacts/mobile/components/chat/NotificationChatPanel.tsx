@@ -43,6 +43,7 @@ function getSafeRoute(event: NotificationEvent): NotificationRoute | null {
   if (
     route === "/premium" ||
     route === "/settings/notifications" ||
+    route === "/device-security" ||
     route === "/(tabs)/discover" ||
     route === "/(tabs)/shorts"
   ) {

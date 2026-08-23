@@ -550,6 +550,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   const chatsRef = useRef<ChatItem[]>([]);
   chatsRef.current = chats;
   const [loading, setLoading] = useState(() => !hasPreloadedConversations());
+  const [sessionRestoring, setSessionRestoring] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -655,10 +656,12 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         liveSessionUserId = null;
       }
       if (liveSessionUserId !== user.id) {
+        setSessionRestoring(true);
         setLoading(false);
         setRefreshing(false);
         return;
       }
+      setSessionRestoring(false);
     }
     // Native SQLite can be delayed by migrations on a release first launch.
     // Cache hydration is an enhancement, never a reason to block Supabase.
@@ -976,6 +979,35 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
 
   useEffect(() => { loadChats(); }, [loadChats]);
   useFocusEffect(useCallback(() => { loadChats(true); }, [loadChats]));
+
+  // A new device can have a cached identity before Supabase has finished
+  // restoring its native session. Keep checking without requiring a logout or
+  // another manual sign-in, and never present that transient state as an empty
+  // account.
+  useEffect(() => {
+    if (!user || hasVerifiedSession) {
+      setSessionRestoring(false);
+      return;
+    }
+    setSessionRestoring(true);
+    let disposed = false;
+    const retry = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (disposed || data.session?.user?.id !== user.id) return;
+        setSessionRestoring(false);
+        await loadChats(true);
+      } catch {
+        // The next interval retries after a transient native/network failure.
+      }
+    };
+    void retry();
+    const timer = setInterval(() => void retry(), 2000);
+    return () => {
+      disposed = true;
+      clearInterval(timer);
+    };
+  }, [user?.id, hasVerifiedSession, loadChats]);
 
   // Push the latest total unread into the shared in-memory store so the tab
   // bar badge updates instantly without waiting for a SQLite round-trip.
@@ -1801,6 +1833,16 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                   <View key={pageKey} style={{ flex: 1, paddingTop: 0 }}>
                     {loading ? (
                       <View style={{ padding: 8 }}>{[1,2,3,4,5,6].map(i => <ChatRowSkeleton key={i} />)}</View>
+                    ) : sessionRestoring ? (
+                      <View style={styles.center}>
+                        <ActivityIndicator color={colors.accent} />
+                        <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 14 }]}>
+                          Restoring your account
+                        </Text>
+                        <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                          Your chats and account data will appear as soon as this device finishes signing in.
+                        </Text>
+                      </View>
                     ) : pageChats.length === 0 ? (
                       <View style={styles.center}>
                         <AfuLogo size={80} />
@@ -1938,6 +1980,16 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
           <View style={{ flex: 1, paddingTop: 0 }}>
             {loading ? (
               <View style={{ padding: 8 }}>{[1,2,3,4,5,6].map(i => <ChatRowSkeleton key={i} />)}</View>
+            ) : sessionRestoring ? (
+              <View style={styles.center}>
+                <ActivityIndicator color={colors.accent} />
+                <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 14 }]}>
+                  Restoring your account
+                </Text>
+                <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                  Your chats and account data will appear as soon as this device finishes signing in.
+                </Text>
+              </View>
             ) : filtered.length === 0 ? (
               <View style={styles.center}>
                 <AfuLogo size={80} />
