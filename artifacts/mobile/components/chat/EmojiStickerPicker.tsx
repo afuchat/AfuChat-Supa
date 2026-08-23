@@ -29,6 +29,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { GLASS, glassTokens } from "@/constants/glass";
+import { AnimatedSearchSurface } from "@/components/chat/AnimatedSearchSurface";
 
 // ─── History helpers ──────────────────────────────────────────────────────────
 
@@ -587,6 +588,7 @@ function GifPanel({ onSendGif, onScrollDown, onScrollUp, onSelect }: {
   return (
     <View style={{ flex: 1 }}>
       {/* Search bar — no branding */}
+      <AnimatedSearchSurface>
       <View style={[s.gifSearchRow, { borderBottomColor: glass.border }]}>
         <View style={[s.gifSearchBox, {
           backgroundColor: isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.07)",
@@ -611,6 +613,7 @@ function GifPanel({ onSendGif, onScrollDown, onScrollUp, onSelect }: {
           )}
         </View>
       </View>
+      </AnimatedSearchSurface>
 
       {loading ? (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>

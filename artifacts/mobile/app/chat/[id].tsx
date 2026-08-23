@@ -2481,10 +2481,12 @@ function ChatScreen() {
     return () => { onShow.remove(); onHide.remove(); };
   }, [keyboardOffsetAnim]);
   useEffect(() => {
-    Animated.timing(chatSearchAnim, {
+    Animated.spring(chatSearchAnim, {
       toValue: searchActive ? 1 : 0,
-      duration: CHAT_FAST_DURATION,
       useNativeDriver: true,
+      damping: 18,
+      stiffness: 190,
+      mass: 0.75,
     }).start();
   }, [chatSearchAnim, searchActive]);
   const [showChatOptions, setShowChatOptions] = useState(false);
@@ -6766,7 +6768,10 @@ STRICT RULES:
           backgroundColor: colors.surface,
           borderBottomColor: colors.border,
           opacity: chatSearchAnim,
-          transform: [{ translateY: chatSearchAnim.interpolate({ inputRange: [0, 1], outputRange: [-8, 0] }) }],
+          transform: [
+            { translateX: chatSearchAnim.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) },
+            { scaleX: chatSearchAnim.interpolate({ inputRange: [0, 1], outputRange: [0.82, 1] }) },
+          ],
         }]}>
           <Ionicons name="search" size={16} color={colors.textMuted} />
           <TextInput

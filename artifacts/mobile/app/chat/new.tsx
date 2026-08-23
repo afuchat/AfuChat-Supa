@@ -28,6 +28,7 @@ import { showAlert } from "@/lib/alert";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
+import { AnimatedSearchSurface } from "@/components/chat/AnimatedSearchSurface";
 import { Separator } from "@/components/ui/Separator";
 import { ContactRowSkeleton } from "@/components/ui/Skeleton";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
@@ -448,17 +449,19 @@ export default function NewChatScreen() {
             />
           )}
 
-          <TextInput
-            ref={inputRef}
-            style={[styles.toInput, { color: colors.text }]}
-            placeholder={selected.size === 0 ? "Search name or @handle…" : ""}
-            placeholderTextColor={colors.textMuted}
-            value={query}
-            onChangeText={setQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="search"
-          />
+          <AnimatedSearchSurface style={{ flex: 1 }}>
+            <TextInput
+              ref={inputRef}
+              style={[styles.toInput, { color: colors.text }]}
+              placeholder={selected.size === 0 ? "Search name or @handle…" : ""}
+              placeholderTextColor={colors.textMuted}
+              value={query}
+              onChangeText={setQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="search"
+            />
+          </AnimatedSearchSurface>
 
           {query.length > 0 && (
             <Pressable onPress={() => setQuery("")} hitSlop={8}>
