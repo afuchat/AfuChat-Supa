@@ -149,6 +149,7 @@ type FcmSendResult = {
 };
 
 const EXPECTED_FCM_PROJECT_ID = "afuchat-c3630";
+const FCM_CONFIG_KEY = "FCM_SERVICE_ACCOUNT_JSON";
 
 let fcmConfigPromise: Promise<FcmServiceAccount | null> | null = null;
 let fcmAccessToken: { value: string; expiresAt: number } | null = null;
@@ -191,47 +192,20 @@ async function loadFcmConfig(admin: any): Promise<FcmServiceAccount | null> {
     // sender project. The mobile binary's sender ID comes from
     // google-services.json and is fixed to EXPECTED_FCM_PROJECT_ID.
     const configuredProjectId = EXPECTED_FCM_PROJECT_ID;
-    const envKeys = [
-      "FCM_SERVICE_ACCOUNT_JSON",
-      "FIREBASE_SERVICE_ACCOUNT_JSON",
-      "FIREBASE_SERVICE_ACCOUNT_KEY",
-      "GOOGLE_APPLICATION_CREDENTIALS_JSON",
-    ];
-    for (const key of envKeys) {
-      const config = parseServiceAccount(Deno.env.get(key));
-      if (config) return { ...config, project_id: configuredProjectId };
-    }
+    const envConfig = parseServiceAccount(Deno.env.get(FCM_CONFIG_KEY));
+    if (envConfig) return { ...envConfig, project_id: configuredProjectId };
 
     // Some deployments keep server-only settings in the existing app_settings
     // table instead of function environment variables. Never log these values.
     const { data } = await admin
       .from("app_settings")
       .select("key, value")
-      .in("key", [
-        "FCM_SERVICE_ACCOUNT_JSON",
-        "FIREBASE_SERVICE_ACCOUNT_JSON",
-        "firebase_service_account",
-        "fcm_service_account",
-      ]);
+      .eq("key", FCM_CONFIG_KEY);
     for (const row of data ?? []) {
       const config = parseServiceAccount(row?.value);
       if (config) return { ...config, project_id: configuredProjectId };
     }
 
-    const projectId = configuredProjectId;
-    const clientEmail =
-      Deno.env.get("FCM_CLIENT_EMAIL") ??
-      Deno.env.get("FIREBASE_CLIENT_EMAIL");
-    const privateKey =
-      Deno.env.get("FCM_PRIVATE_KEY") ??
-      Deno.env.get("FIREBASE_PRIVATE_KEY");
-    if (projectId && clientEmail && privateKey) {
-      return parseServiceAccount({
-        project_id: projectId,
-        client_email: clientEmail,
-        private_key: privateKey,
-      });
-    }
     return null;
   })();
   try {
