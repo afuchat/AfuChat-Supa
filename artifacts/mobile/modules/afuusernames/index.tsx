@@ -823,6 +823,8 @@ const styles = StyleSheet.create({
   avatar: { width: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center" },
   sellerText: { flexShrink: 1, fontSize: 10, fontFamily: "Inter_500Medium" },
   cardNote: { fontSize: 10, fontFamily: "Inter_400Regular" },
+  delistButton: { marginTop: 5, borderWidth: 1, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 4 },
+  delistButtonText: { fontSize: 10, fontFamily: "Inter_700Bold" },
   featuredSection: { marginTop: 14, marginBottom: 6 },
   featuredHeading: { paddingHorizontal: 16, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 9 },
   sectionEyebrow: { fontSize: 9, letterSpacing: 1.4, fontFamily: "Inter_700Bold" },
