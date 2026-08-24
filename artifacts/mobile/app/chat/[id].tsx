@@ -3034,6 +3034,9 @@ function ChatScreen() {
       // ── Background: mark incoming messages as read ────────────────────────────
       const unreadFromOthers = data.filter((m: any) => m.sender_id !== user.id);
       if (unreadFromOthers.length > 0) {
+        // System conversations must clear their unread badge when opened.
+        // Regular chats still respect the user's read-receipt preference.
+        const shouldMarkRead = isNotificationsChat || isAfuAiDirectChat || chatPrefs.read_receipts;
         const now = new Date().toISOString();
         const unreadIds = unreadFromOthers.map((m: any) => m.id);
         supabase.from("message_status")
@@ -3046,13 +3049,13 @@ function ChatScreen() {
                 toMark.map((m: any) => m.id),
                 chatId,
                 user.id,
-                chatPrefs.read_receipts,
+                shouldMarkRead,
               );
               // Always broadcast "delivered" so the sender gets double-grey ticks.
               // Only broadcast "read" if the user has read receipts enabled (privacy).
               const msgIds = toMark.map((m: any) => m.id);
               typingChannelRef.current?.send({ type: "broadcast", event: "delivered", payload: { reader_id: user.id, message_ids: msgIds, chat_id: id, delivered_at: now } });
-              if (chatPrefs.read_receipts) {
+              if (shouldMarkRead) {
                 typingChannelRef.current?.send({ type: "broadcast", event: "read", payload: { reader_id: user.id, message_ids: msgIds, chat_id: id, read_at: now } });
               }
             }
@@ -3069,6 +3072,7 @@ function ChatScreen() {
     chatPrefs.save_to_gallery,
     chatPrefs.read_receipts,
     isNotificationsChat,
+    isAfuAiDirectChat,
   ]);
 
   const loadMoreMessages = useCallback(async () => {
