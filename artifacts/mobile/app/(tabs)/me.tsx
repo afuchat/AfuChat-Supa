@@ -27,7 +27,6 @@ import Colors from "@/constants/colors";
 import { showAlert } from "@/lib/alert";
 import { getCachedProfileSync, isOnline, onConnectivityChange } from "@/lib/offlineStore";
 import { showToast } from "@/lib/toast";
-import { TrustpilotReviewCard } from "@/components/TrustpilotReviewPrompt";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -621,9 +620,6 @@ export default function MeScreen() {
             />
           </MenuCard>
         </View>
-
-        {/* ── Trustpilot ──────────────────────────────────────────────────── */}
-        <TrustpilotReviewCard />
 
       </ScrollView>
 

@@ -496,7 +496,7 @@ export async function clearAccountCache(): Promise<void> {
 // ─── Device-level preference keys ────────────────────────────────────────────
 // These belong to the device / install, not to any logged-in account.
 // They survive sign-out and account wipes so users never have to reconfigure
-// theme, language, sound preferences, or Trustpilot status after signing out.
+// theme, language, and sound preferences after signing out.
 // (Same behaviour as WhatsApp, Telegram, YouTube.)
 
 /** MMKV keys that must survive wipeAllLocalData. */
@@ -507,7 +507,6 @@ const DEVICE_MMKV_KEYS: string[] = [
   KEYS.ONBOARDING_DONE,   // "onboarding_done" — never show welcome slides again
   KEYS.APP_LOCK_ENABLED,  // "app_lock_enabled" — biometric/PIN lock preference
   KEYS.DATA_MODE_OVERRIDE, // "data_mode_override" — data-saver toggle
-  "tp_review_dismissed_until", // Trustpilot dismissal timestamp (TrustpilotReviewPrompt)
 ];
 
 /** AsyncStorage keys that must survive wipeAllLocalData. */
@@ -521,7 +520,7 @@ const DEVICE_ASYNC_KEYS: string[] = [
  * Used on explicit sign-out so the device looks exactly like a fresh install.
  * Covers ALL stores: MMKV, AsyncStorage, and every SQLite table.
  *
- * Device-level preferences (theme, language, sound, Trustpilot status) are
+ * Device-level preferences (theme, language, and sound) are
  * preserved across the wipe — they belong to the install, not the account.
  *
  * Safe to call even if individual stores fail — each store is wrapped
