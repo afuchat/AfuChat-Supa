@@ -267,7 +267,7 @@ export default function FindPeopleTab() {
                 </View>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.followButton, { borderColor: item.is_following ? colors.border : accent, backgroundColor: item.is_following ? "transparent" : accent }]} onPress={() => void toggleFollow(item)} disabled={followBusy === item.id}>
-                {followBusy === item.id ? <ActivityIndicator size="small" color={item.is_following ? accent : "#fff"} /> : <Text style={{ color: item.is_following ? accent : "#fff", fontFamily: "Inter_600SemiBold", fontSize: 12 }}>{item.is_following ? "Following" : item.is_following_me ? "Follow back" : "Follow"}</Text>}
+                {followBusy === item.id ? <ActivityIndicator size="small" color={item.is_following ? accent : "#fff"} /> : <Text style={{ color: item.is_following ? accent : "#fff", fontFamily: "Inter_600SemiBold", fontSize: 12 }}>{item.is_following && item.is_following_me ? "Friend" : item.is_following ? "Following" : item.is_following_me ? "Follow back" : "Follow"}</Text>}
               </TouchableOpacity>
             </View>
           )}
