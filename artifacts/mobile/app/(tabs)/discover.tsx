@@ -1245,8 +1245,9 @@ export default function DiscoverScreen() {
       : Math.max(0, height - storiesHeight);
     Animated.spring(headerOffset, {
       // Hide the top bar and tabs, but move stories into their space so the
-      // stories remain visible instead of disappearing with the header.
-      toValue: -coreTravel,
+      // stories remain visible instead of disappearing with the header. Stop
+      // at the safe-area inset so the story content never enters the status bar.
+      toValue: -coreTravel + insets.top,
       useNativeDriver: DRIVER,
       tension: 220,
       friction: 28,
