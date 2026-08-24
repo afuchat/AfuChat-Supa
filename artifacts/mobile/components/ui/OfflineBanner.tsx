@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Platform, StyleSheet, Text } from "react-native";
+import { Animated, StyleSheet, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { isOnline, onConnectivityChange } from "@/lib/offlineStore";
 import { STATUS } from "@/constants/colors";
@@ -66,7 +66,7 @@ export default function OfflineBanner() {
 
   const isOffline = state === "offline";
   const isConnecting = state === "connecting";
-  const backgroundColor = isOffline ? STATUS.warning : STATUS.success;
+  const statusColor = isOffline ? STATUS.warning : STATUS.success;
   const icon = isOffline ? "cloud-offline-outline" : isConnecting ? "wifi-outline" : "sync-outline";
   const label = isOffline ? "Waiting for network" : isConnecting ? "Connecting…" : "Updating…";
 
@@ -74,11 +74,11 @@ export default function OfflineBanner() {
     <Animated.View
       style={[
         st.pill,
-        { backgroundColor, pointerEvents: "none", transform: [{ translateY }] },
+        { pointerEvents: "none", transform: [{ translateY }] },
       ]}
     >
-      <Ionicons name={icon as any} size={15} color="#fff" />
-      <Text style={st.label}>{label}</Text>
+      <Ionicons name={icon as any} size={15} color={statusColor} />
+      <Text style={[st.label, { color: statusColor }]}>{label}</Text>
     </Animated.View>
   );
 }
@@ -93,18 +93,8 @@ const st = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: T.radius.pill,
-    ...Platform.select({
-      web: { boxShadow: "0 2px 8px rgba(0,0,0,0.22)" } as any,
-      default: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.22,
-        shadowRadius: T.space.sm,
-      },
-    }),
   },
   label: {
-    color: "#fff",
     ...T.caption,
     fontSize: 10,
     letterSpacing: 0.1,
