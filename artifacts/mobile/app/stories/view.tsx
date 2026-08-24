@@ -24,7 +24,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Avatar } from "@/components/ui/Avatar";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import { shareStory } from "@/lib/share";
-import { markStoriesViewed } from "@/lib/storyViewedStore";
+import { hydrateViewedUsers, markStoriesViewed } from "@/lib/storyViewedStore";
 import { safePause, safePlay } from "@/lib/safeMedia";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getCachedStoryMedia } from "@/lib/storyMediaCache";
@@ -75,6 +75,7 @@ export default function ViewStoryScreen() {
   const [mediaReady, setMediaReady] = useState(false);
   const [mediaDownloading, setMediaDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [mediaError, setMediaError] = useState(false);
   const storyVideoPlayer = useVideoPlayer(null, (p) => { p.loop = false; p.muted = false; });
   const storyVideoRef = useRef<VideoView>(null);
   const [inPip, setInPip] = useState(false);
@@ -149,6 +150,7 @@ export default function ViewStoryScreen() {
       if (storyIds.length > 0) loadLikeState(storyIds);
     };
     (async () => {
+      await hydrateViewedUsers();
       // Show cached story metadata immediately. The media cache resolves the
       // actual image/video locally, so reopening a downloaded story works
       // without a network request.
@@ -163,7 +165,6 @@ export default function ViewStoryScreen() {
           .from("stories")
           .select("id, media_url, media_type, caption, privacy, created_at, expires_at, view_count, user_id, profiles!stories_user_id_fkey(display_name, avatar_url, handle, is_verified, is_organization_verified)")
           .eq("user_id", userId)
-          .gt("expires_at", new Date().toISOString())
           .order("created_at", { ascending: true });
         if (data && data.length > 0) {
           applyStories(data);
@@ -302,6 +303,7 @@ export default function ViewStoryScreen() {
     let cancelled = false;
     setMediaUri(null);
     setMediaReady(false);
+      setMediaError(false);
     setMediaDownloading(true);
     setDownloadProgress(0);
     getCachedStoryMedia(story.id, story.media_url, story.media_type, (p) => {
@@ -598,7 +600,16 @@ export default function ViewStoryScreen() {
     }
   }, [storiesLoaded, stories.length]);
 
-  if (!story) return <View style={[styles.root, { backgroundColor: "#0D0D0D" }]} />;
+  if (!story) {
+    return (
+      <View style={[styles.root, styles.loadingScreen]}>
+        <ActivityIndicator size="large" color="#fff" />
+        <Text style={styles.loadingLabel}>
+          {storiesLoaded ? "No stories available" : "Loading stories…"}
+        </Text>
+      </View>
+    );
+  }
 
   const elapsed = Math.floor((Date.now() - new Date(story.created_at).getTime()) / 3600000);
   const timeLabel = elapsed < 1 ? "just now" : `${elapsed}h ago`;
@@ -628,6 +639,7 @@ export default function ViewStoryScreen() {
           style={styles.media}
           resizeMode="contain"
           onLoad={() => setMediaReady(true)}
+          onError={() => { setMediaError(true); setMediaReady(true); }}
         />
       )}
 
@@ -640,6 +652,15 @@ export default function ViewStoryScreen() {
               ? `Downloading${downloadProgress > 0 ? ` ${Math.round(downloadProgress * 100)}%` : "…"}`
               : "Loading media…"}
           </Text>
+        </View>
+      )}
+      {mediaError && (
+        <View style={styles.mediaErrorOverlay}>
+          <Ionicons name="cloud-offline-outline" size={34} color="#fff" />
+          <Text style={styles.downloadText}>This story is not downloaded on this device</Text>
+          <TouchableOpacity style={styles.mediaErrorButton} onPress={() => router.back()}>
+            <Text style={styles.mediaErrorButtonText}>Close</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -953,6 +974,17 @@ export default function ViewStoryScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  loadingScreen: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    backgroundColor: "#0D0D0D",
+  },
+  loadingLabel: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 14,
+    fontFamily: "Inter_500Medium",
+  },
   media: { ...StyleSheet.absoluteFillObject },
   downloadOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -964,6 +996,26 @@ const styles = StyleSheet.create({
   downloadText: {
     color: "#fff",
     fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
+  mediaErrorOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    paddingHorizontal: 36,
+    backgroundColor: "rgba(13,13,13,0.9)",
+  },
+  mediaErrorButton: {
+    marginTop: 4,
+    paddingHorizontal: 22,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.16)",
+  },
+  mediaErrorButtonText: {
+    color: "#fff",
+    fontSize: 14,
     fontFamily: "Inter_600SemiBold",
   },
 

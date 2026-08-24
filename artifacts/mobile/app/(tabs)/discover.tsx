@@ -73,7 +73,7 @@ import { LinearGradient } from "@/components/ui/SafeGradient";
 import { BlurView } from "expo-blur";
 import { GLASS, glassTokens } from "@/constants/glass";
 import { useUserEffects } from "@/hooks/useUserEffects";
-import { getViewedUserIds, subscribeStoryViewed } from "@/lib/storyViewedStore";
+import { getViewedUserIds, hydrateViewedUsers, subscribeStoryViewed } from "@/lib/storyViewedStore";
 import { getCachedStoryMedia } from "@/lib/storyMediaCache";
 import { prefetchAvatars, prefetchThumbnails, prefetchListImages } from "@/lib/storage/imagePrefetcher";
 import { useThrottledFocusEffect } from "@/lib/hooks/useThrottledFocusEffect";
@@ -321,12 +321,19 @@ const DISCOVER_STORY_CACHE_KEY = "@afuchat:discover_story_list";
           seenCount: isSeen ? 1 : 0,
         });
       }
-      setStories(Array.from(map.values()).slice(0, 12));
+      const ordered = Array.from(map.values()).sort((a, b) => {
+        const aUnread = a.seenCount < a.storyCount;
+        const bUnread = b.seenCount < b.storyCount;
+        if (aUnread !== bUnread) return aUnread ? -1 : 1;
+        return 0;
+      });
+      setStories(ordered.slice(0, 12));
     };
 
     // Hydrate the row before touching the network. Do not apply an expiry
     // filter here: when offline, stories already downloaded on this device
     // must remain reopenable instead of turning into an empty/black viewer.
+    await hydrateViewedUsers();
     const cached = await AsyncStorage.getItem(DISCOVER_STORY_CACHE_KEY).catch(() => null);
     if (cached) {
       try { applyRows(JSON.parse(cached)); } catch {}
@@ -336,7 +343,6 @@ const DISCOVER_STORY_CACHE_KEY = "@afuchat:discover_story_list";
       const { data } = await supabase
         .from("stories")
         .select("id, user_id, media_url, media_type, caption, created_at, expires_at, view_count, privacy, profiles!stories_user_id_fkey(display_name, avatar_url, is_verified, is_organization_verified)")
-        .gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false })
         .limit(100);
       if (data) {
@@ -350,13 +356,11 @@ const DISCOVER_STORY_CACHE_KEY = "@afuchat:discover_story_list";
           AsyncStorage.setItem(DISCOVER_STORY_CACHE_KEY, JSON.stringify(visible)).catch(() => {});
           // Warm the persistent media cache for the stories users can open
           // from this row. This runs in the background and never blocks paint.
-          void Promise.all(visible.slice(0, 12).map((story: any) =>
+          void Promise.all(visible.map((story: any) =>
             story.media_url
               ? getCachedStoryMedia(story.id, story.media_url, story.media_type || "image").catch(() => null)
               : Promise.resolve(null),
           ));
-        } else {
-          AsyncStorage.removeItem(DISCOVER_STORY_CACHE_KEY).catch(() => {});
         }
       }
     } catch {
@@ -401,7 +405,11 @@ const DISCOVER_STORY_CACHE_KEY = "@afuchat:discover_story_list";
         viewed.has(entry.userId)
           ? { ...entry, seenCount: entry.storyCount }
           : entry
-      )));
+      )).sort((a, b) => {
+        const aUnread = a.seenCount < a.storyCount;
+        const bUnread = b.seenCount < b.storyCount;
+        return aUnread === bUnread ? 0 : aUnread ? -1 : 1;
+      }));
     });
   }, []);
 
