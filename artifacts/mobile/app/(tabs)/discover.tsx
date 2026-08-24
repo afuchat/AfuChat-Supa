@@ -273,6 +273,8 @@ type StoryEntry = {
   userId: string;
   name: string;
   avatar_url: string | null;
+  is_verified: boolean;
+  is_organization_verified: boolean;
   storyCount: number;
   seenCount: number;
 };
@@ -295,7 +297,7 @@ function StoriesRow({
     const now = new Date().toISOString();
     const { data } = await supabase
       .from("stories")
-      .select("id, user_id, created_at, privacy, profiles!stories_user_id_fkey(display_name, avatar_url)")
+      .select("id, user_id, created_at, privacy, profiles!stories_user_id_fkey(display_name, avatar_url, is_verified, is_organization_verified)")
       .gt("expires_at", now)
       .order("created_at", { ascending: false })
       .limit(100);
@@ -325,6 +327,8 @@ function StoriesRow({
         userId: s.user_id,
         name: isOwn ? (displayName || "You") : (s.profiles?.display_name || "User"),
         avatar_url: isOwn ? avatarUrl : (s.profiles?.avatar_url ?? null),
+        is_verified: isOwn ? !!(s.profiles?.is_verified) : !!(s.profiles?.is_verified),
+        is_organization_verified: !!s.profiles?.is_organization_verified,
         storyCount: 1,
         seenCount: isSeen ? 1 : 0,
       });
@@ -386,7 +390,7 @@ function StoriesRow({
       {stories.map((s) => (
         <TouchableOpacity
           key={s.userId}
-          style={{ alignItems: "center", gap: 3, width: 54 }}
+          style={{ alignItems: "center", gap: 3, width: 76 }}
           activeOpacity={0.8}
           onPress={() => safeRouter.push({
             pathname: "/stories/view",
@@ -402,20 +406,36 @@ function StoriesRow({
               )}
             </View>
           </StoryRing>
-          <Text
+          <View
             style={{
-              color: colors.textMuted,
-              fontSize: 10,
-              lineHeight: 12,
-              letterSpacing: -0.15,
-              fontFamily: "Inter_700Bold",
-              maxWidth: 54,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 2,
+              maxWidth: 76,
             }}
-            numberOfLines={1}
-            ellipsizeMode="tail"
           >
-            {s.name.split(" ")[0]}
-          </Text>
+            <Text
+              style={{
+                color: colors.textMuted,
+                fontSize: 10,
+                lineHeight: 12,
+                letterSpacing: -0.15,
+                fontFamily: "Inter_700Bold",
+                flexShrink: 1,
+                textAlign: "center",
+              }}
+            >
+              {s.name}
+            </Text>
+            {(s.is_verified || s.is_organization_verified) ? (
+              <VerifiedBadge
+                isVerified={s.is_verified}
+                isOrganizationVerified={s.is_organization_verified}
+                size={11}
+              />
+            ) : null}
+          </View>
         </TouchableOpacity>
       ))}
     </ScrollView>
