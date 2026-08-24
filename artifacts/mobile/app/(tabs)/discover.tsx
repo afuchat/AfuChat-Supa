@@ -1215,10 +1215,11 @@ export default function DiscoverScreen() {
   // ── Scroll-aware header ──────────────────────────────────────────────────
   // Uses Animated.event (not a plain onScroll function) so FlatList's internal
   // scroll tracking for onEndReached is never overridden.
-  const [headerHeight, setHeaderHeight] = useState(0);
   const [coreHeaderHeight, setCoreHeaderHeight] = useState(0);
   const [storiesHeight, setStoriesHeight] = useState(0);
   const headerOffset = useRef(new Animated.Value(0)).current;
+  const headerFlowHeight = useRef(new Animated.Value(1)).current;
+  const fullHeaderHeight = coreHeaderHeight + storiesHeight;
   const prevScrollYRef = useRef(0);
   const headerVisibleRef = useRef(true);
   // useNativeDriver:false because headerOffset target changes dynamically
@@ -1228,12 +1229,20 @@ export default function DiscoverScreen() {
   function revealHeader() {
     if (headerVisibleRef.current) return;
     headerVisibleRef.current = true;
-    Animated.spring(headerOffset, {
-      toValue: 0,
-      useNativeDriver: DRIVER,
-      tension: 220,
-      friction: 28,
-    }).start();
+    Animated.parallel([
+      Animated.spring(headerOffset, {
+        toValue: 0,
+        useNativeDriver: DRIVER,
+        tension: 220,
+        friction: 28,
+      }),
+      Animated.spring(headerFlowHeight, {
+        toValue: fullHeaderHeight,
+        useNativeDriver: DRIVER,
+        tension: 220,
+        friction: 28,
+      }),
+    ]).start();
   }
 
   function hideHeader(height: number) {
@@ -1242,7 +1251,9 @@ export default function DiscoverScreen() {
     const coreTravel = coreHeaderHeight > 0
       ? coreHeaderHeight
       : Math.max(0, height - storiesHeight);
-    Animated.spring(headerOffset, {
+    const storyFlowHeight = storiesHeight > 0 ? storiesHeight + insets.top : 0;
+    Animated.parallel([
+      Animated.spring(headerOffset, {
       // Hide the top bar and tabs, but move stories into their space so the
       // stories remain visible instead of disappearing with the header. Stop
       // at the safe-area inset so the story content never enters the status bar.
@@ -1250,20 +1261,27 @@ export default function DiscoverScreen() {
       useNativeDriver: DRIVER,
       tension: 220,
       friction: 28,
-    }).start();
+      }),
+      Animated.spring(headerFlowHeight, {
+        toValue: storyFlowHeight,
+        useNativeDriver: DRIVER,
+        tension: 220,
+        friction: 28,
+      }),
+    ]).start();
   }
 
   const handleFeedScrollFrame = useCallback((event: any) => {
     const y = Math.max(0, Number(event?.nativeEvent?.contentOffset?.y ?? 0));
     const delta = y - prevScrollYRef.current;
-    const collapsePoint = Math.max(24, headerHeight - 12);
+    const collapsePoint = Math.max(24, fullHeaderHeight - 12);
 
     // Keep the header over the feed until the list reaches the bottom of the
     // header's reserved space. This prevents a blank gap while it hides.
-    if (y > collapsePoint && delta > 1.5) hideHeader(headerHeight);
+    if (y > collapsePoint && delta > 1.5) hideHeader(fullHeaderHeight);
     else if (delta < -1.5 || y <= 0) revealHeader();
     prevScrollYRef.current = y;
-  }, [coreHeaderHeight, headerHeight, storiesHeight]);
+  }, [coreHeaderHeight, fullHeaderHeight, storiesHeight]);
 
   // The header and new-posts pill are combined animated nodes. Use the same
   // JS driver for their scroll updates and transitions so React Native never
@@ -1272,10 +1290,17 @@ export default function DiscoverScreen() {
   const handleFeedScrollSettled = useCallback((event: any) => {
     const y = Number(event?.nativeEvent?.contentOffset?.y ?? 0);
     const delta = y - prevScrollYRef.current;
-    if (y > Math.max(24, headerHeight - 12) && delta > 2) hideHeader(headerHeight);
+    if (y > Math.max(24, fullHeaderHeight - 12) && delta > 2) hideHeader(fullHeaderHeight);
     else if (delta < -2 || y <= 10) revealHeader();
     prevScrollYRef.current = y;
-  }, [headerHeight]);
+  }, [fullHeaderHeight]);
+
+  useEffect(() => {
+    if (headerVisibleRef.current && fullHeaderHeight > 0) {
+      headerFlowHeight.setValue(fullHeaderHeight);
+    }
+  }, [fullHeaderHeight]);
+
   // ────────────────────────────────────────────────────────────────────────
   const viewabilityConfig = useRef({ minimumViewTime: 800, itemVisiblePercentThreshold: 50 }).current;
   const onViewableItemsChangedRef = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {});
@@ -2619,11 +2644,7 @@ export default function DiscoverScreen() {
 
       {/* ── Auto-hiding header ── */}
       <Animated.View
-        onLayout={(e) => {
-          const nextHeight = Math.round(e.nativeEvent.layout.height);
-          setHeaderHeight((current) => current === nextHeight ? current : nextHeight);
-        }}
-        style={[styles.headerBlock]}
+        style={[styles.headerBlock, { height: headerFlowHeight }]}
       >
         {/* The compact top bar, tabs, and refresh status collapse together. */}
         <Animated.View
@@ -2751,7 +2772,7 @@ export default function DiscoverScreen() {
           <View key="for_you" style={{ flex: 1 }}>
             {feedTab === "for_you" ? (
               loading ? (
-                  <View style={{ padding: 8, paddingTop: headerHeight, gap: 8 }}>
+                  <View style={{ padding: 8, gap: 8 }}>
                   {[1,2,3,4,5,6,7,8].map(i => <PostSkeleton key={i} />)}
                 </View>
               ) : (
@@ -2760,7 +2781,7 @@ export default function DiscoverScreen() {
                   data={augmentedFeed}
                   keyExtractor={(entry: FeedEntry) => entry._kind === "post" ? entry.item.id : entry.id}
                   renderItem={renderFeedItem}
-                  contentContainerStyle={{ gap: 8, paddingTop: headerHeight, paddingBottom: insets.bottom + 100 }}
+                  contentContainerStyle={{ gap: 8, paddingBottom: insets.bottom + 100 }}
                   showsVerticalScrollIndicator={false}
                   onScroll={onFeedScroll}
                   scrollEventThrottle={32}
@@ -2777,7 +2798,7 @@ export default function DiscoverScreen() {
                   removeClippedSubviews={Platform.OS !== "web"}
 
                   refreshControl={
-                    <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
+                    <RefreshControl refreshing={refreshing} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
                   }
                   ListFooterComponent={
                     !hasMore && filteredPosts.length > 0 ? (
@@ -2791,14 +2812,14 @@ export default function DiscoverScreen() {
                 />
               )
             ) : (
-              <View style={{ flex: 1, paddingTop: headerHeight }} />
+              <View style={{ flex: 1 }} />
             )}
           </View>
           {/* Page 1: Following */}
           <View key="following" style={{ flex: 1 }}>
             {feedTab === "following" ? (
               !user ? (
-                <View style={[styles.center, { paddingTop: headerHeight + 80 }]}>
+                <View style={[styles.center, { paddingTop: 80 }]}>
                   <Ionicons name="lock-closed" size={56} color={colors.textMuted} />
                   <Text style={[styles.emptyTitle, { color: colors.text }]}>Sign in to see Following</Text>
                   <Text style={[styles.emptySub, { color: colors.textSecondary }]}>Follow people to see their posts here</Text>
@@ -2807,7 +2828,7 @@ export default function DiscoverScreen() {
                   </TouchableOpacity>
                 </View>
               ) : followingEmpty ? (
-                <View style={[styles.center, { paddingTop: headerHeight + 80 }]}>
+                <View style={[styles.center, { paddingTop: 80 }]}>
                   <Ionicons name="people" size={56} color={colors.textMuted} />
                   <Text style={[styles.emptyTitle, { color: colors.text }]}>No one followed yet</Text>
                   <Text style={[styles.emptySub, { color: colors.textSecondary }]}>Follow people to see their posts here</Text>
@@ -2816,7 +2837,7 @@ export default function DiscoverScreen() {
                   </TouchableOpacity>
                 </View>
               ) : loading ? (
-                <View style={{ padding: 8, paddingTop: headerHeight, gap: 8 }}>
+                <View style={{ padding: 8, gap: 8 }}>
                   {[1,2,3,4,5,6,7,8].map(i => <PostSkeleton key={i} />)}
                 </View>
               ) : (
@@ -2825,7 +2846,7 @@ export default function DiscoverScreen() {
                   data={augmentedFeed}
                   keyExtractor={(entry: FeedEntry) => entry._kind === "post" ? entry.item.id : entry.id}
                    renderItem={renderFeedItem}
-                  contentContainerStyle={{ gap: 8, paddingTop: headerHeight, paddingBottom: insets.bottom + 100 }}
+                  contentContainerStyle={{ gap: 8, paddingBottom: insets.bottom + 100 }}
                   showsVerticalScrollIndicator={false}
                   onScroll={onFeedScroll}
                   scrollEventThrottle={32}
@@ -2842,7 +2863,7 @@ export default function DiscoverScreen() {
                   removeClippedSubviews={Platform.OS !== "web"}
 
                   refreshControl={
-                    <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
+                    <RefreshControl refreshing={refreshing} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
                   }
                   ListFooterComponent={
                     !hasMore && filteredPosts.length > 0 ? (
@@ -2856,7 +2877,7 @@ export default function DiscoverScreen() {
                 />
               )
             ) : (
-              <View style={{ padding: 8, paddingTop: headerHeight, gap: 8 }}>
+              <View style={{ padding: 8, gap: 8 }}>
                 {[1,2,3,4,5,6,7,8].map(i => <PostSkeleton key={i} />)}
               </View>
             )}
@@ -2864,7 +2885,7 @@ export default function DiscoverScreen() {
         </_PagerView>
       ) : (
         feedTab === "following" && !user ? (
-          <View style={[styles.center, { paddingTop: headerHeight + 80 }]}>
+          <View style={[styles.center, { paddingTop: 80 }]}>
             <Ionicons name="lock-closed" size={56} color={colors.textMuted} />
             <Text style={[styles.emptyTitle, { color: colors.text }]}>Sign in to see Following</Text>
             <Text style={[styles.emptySub, { color: colors.textSecondary }]}>Follow people to see their posts here</Text>
@@ -2873,7 +2894,7 @@ export default function DiscoverScreen() {
             </TouchableOpacity>
           </View>
         ) : feedTab === "following" && followingEmpty ? (
-          <View style={[styles.center, { paddingTop: headerHeight + 80 }]}>
+          <View style={[styles.center, { paddingTop: 80 }]}>
             <Ionicons name="people" size={56} color={colors.textMuted} />
             <Text style={[styles.emptyTitle, { color: colors.text }]}>No one followed yet</Text>
             <Text style={[styles.emptySub, { color: colors.textSecondary }]}>Follow people to see their posts here</Text>
@@ -2882,14 +2903,14 @@ export default function DiscoverScreen() {
             </TouchableOpacity>
           </View>
         ) : loading ? (
-          <View style={{ padding: 8, paddingTop: headerHeight, gap: 8 }}>{[1,2,3,4,5,6,7,8].map(i => <PostSkeleton key={i} />)}</View>
+          <View style={{ padding: 8, gap: 8 }}>{[1,2,3,4,5,6,7,8].map(i => <PostSkeleton key={i} />)}</View>
         ) : (
           <AnimatedFlatList
             ref={flatListRef}
             data={augmentedFeed}
             keyExtractor={(entry: FeedEntry) => entry._kind === "post" ? entry.item.id : entry.id}
             renderItem={renderFeedItem}
-            contentContainerStyle={{ gap: 8, paddingTop: headerHeight, paddingBottom: insets.bottom + 100 }}
+            contentContainerStyle={{ gap: 8, paddingBottom: insets.bottom + 100 }}
             showsVerticalScrollIndicator={false}
             onScroll={onFeedScroll}
               scrollEventThrottle={32}
@@ -2906,7 +2927,7 @@ export default function DiscoverScreen() {
             removeClippedSubviews={Platform.OS !== "web"}
 
             refreshControl={
-              <RefreshControl refreshing={refreshing} progressViewOffset={headerHeight} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
+              <RefreshControl refreshing={refreshing} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
             }
             ListFooterComponent={
               !hasMore && filteredPosts.length > 0 ? (
@@ -2985,11 +3006,9 @@ export default function DiscoverScreen() {
         style={[
           styles.newPostsFloatingWrap,
           {
-            // Keep the pill directly below the complete header, including the
-            // For You / Following tabs, on every safe-area size.
-             // Stories are measured as the last header row, so this keeps the
-             // pill directly under the tabs while stories move behind it.
-             top: Math.max(0, headerHeight - storiesHeight) + 2,
+             // Keep the pill directly below the top bar and tabs. It follows
+             // the page-flow header instead of positioning against an overlay.
+             top: coreHeaderHeight + 2,
             transform: [{ translateY: Animated.add(headerOffset, popupSlide) }],
             opacity: popupOpacity,
             pointerEvents: popupSnapshot.length > 0 ? "auto" : "none",
@@ -3066,11 +3085,8 @@ export default function DiscoverScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   headerBlock: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 20,
+    position: "relative",
+    zIndex: 1,
     overflow: "hidden",
   },
   headerTop: {
