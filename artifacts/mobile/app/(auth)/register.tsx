@@ -24,6 +24,7 @@ import { makeRedirectUri } from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { supabase } from "@/lib/supabase";
+import { GOOGLE_WEB_CLIENT_ID } from "@/lib/env";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { useAppAccent } from "@/context/AppAccentContext";
@@ -314,7 +315,7 @@ export default function SignUpScreen() {
         try {
           const GoogleSignin = require("@react-native-google-signin/google-signin").GoogleSignin;
           await GoogleSignin.configure({
-            webClientId: "249391999620-8frki1cqjtc34d4ae37cncopncmt2rbc.apps.googleusercontent.com",
+            webClientId: GOOGLE_WEB_CLIENT_ID,
             offlineAccess: false,
           });
           await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
