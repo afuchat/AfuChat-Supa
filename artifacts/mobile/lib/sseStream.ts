@@ -19,7 +19,10 @@ const BASE_URL = `${SUPABASE_URL}/functions/v1`;
  */
 export async function* streamAiChat(
   params: Pick<ChatCreateParams, "messages" | "model"> &
-    Partial<Pick<ChatCreateParams, "conversationId" | "contextHint">>
+    Partial<Pick<ChatCreateParams, "conversationId" | "contextHint">> & {
+      fast?: boolean;
+      maxTokens?: number;
+    }
 ): AsyncGenerator<ChatStreamEvent> {
   const response = await fetch(`${BASE_URL}/afu-ai-reply`, {
     method: "POST",
@@ -30,8 +33,8 @@ export async function* streamAiChat(
     },
     body: JSON.stringify({
       messages: params.messages,
-      fast: false,
-      max_tokens: 800,
+      fast: params.fast ?? true,
+      max_tokens: params.maxTokens ?? 500,
     }),
   });
   if (!response.ok) {

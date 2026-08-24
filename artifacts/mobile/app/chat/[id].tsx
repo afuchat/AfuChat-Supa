@@ -585,50 +585,82 @@ function StreamingCursor({ color }: { color: string }) {
   );
 }
 
-function TypingBubble({ names, colors }: { names: string[]; colors: any }) {
+function TypingBubble({ colors, compact = false }: { colors: any; compact?: boolean }) {
   const dot1 = useRef(new Animated.Value(0)).current;
   const dot2 = useRef(new Animated.Value(0)).current;
   const dot3 = useRef(new Animated.Value(0)).current;
+  const pulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const bounce = (dot: Animated.Value, delay: number) =>
       Animated.loop(
         Animated.sequence([
           Animated.delay(delay),
-          Animated.timing(dot, { toValue: -5, duration: 300, useNativeDriver: true }),
-          Animated.timing(dot, { toValue: 0, duration: 300, useNativeDriver: true }),
-          Animated.delay(600),
+          Animated.parallel([
+            Animated.timing(dot, { toValue: -5, duration: 280, useNativeDriver: true }),
+            Animated.timing(dot, { toValue: 1, duration: 280, useNativeDriver: true }),
+          ]),
+          Animated.parallel([
+            Animated.timing(dot, { toValue: 0, duration: 280, useNativeDriver: true }),
+            Animated.timing(dot, { toValue: 0, duration: 280, useNativeDriver: true }),
+          ]),
+          Animated.delay(420),
         ])
       );
     const a1 = bounce(dot1, 0);
     const a2 = bounce(dot2, 150);
     const a3 = bounce(dot3, 300);
-    a1.start(); a2.start(); a3.start();
-    return () => { a1.stop(); a2.stop(); a3.stop(); };
+    const breathing = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 900, useNativeDriver: true }),
+      ])
+    );
+    a1.start(); a2.start(); a3.start(); breathing.start();
+    return () => { a1.stop(); a2.stop(); a3.stop(); breathing.stop(); };
   }, []);
 
+  const dotColor = colors.bubbleIncomingText === "#FFFFFF"
+    ? "rgba(255,255,255,0.9)"
+    : colors.accent;
+  const ringOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.12, 0.3] });
+  const ringScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.88, 1.08] });
+
   return (
-    <View style={{ paddingHorizontal: 16, paddingBottom: 4 }}>
-      <View style={[{ backgroundColor: colors.bubbleIncoming, borderRadius: 18, borderBottomLeftRadius: 4, paddingHorizontal: 16, paddingVertical: 10, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 10 }]}>
-        <View style={{ flexDirection: "row", gap: 4, alignItems: "center" }}>
+    <View style={{ paddingHorizontal: compact ? 0 : 16, paddingBottom: compact ? 0 : 4 }}>
+      <View style={{
+        width: compact ? 48 : 64,
+        height: compact ? 28 : 38,
+        backgroundColor: colors.bubbleIncoming,
+        borderRadius: compact ? 14 : 19,
+        borderBottomLeftRadius: compact ? 7 : 4,
+        alignSelf: "flex-start",
+        alignItems: "center",
+        justifyContent: "center",
+      }}>
+        <Animated.View style={{
+          position: "absolute",
+          width: compact ? 34 : 48,
+          height: compact ? 22 : 30,
+          borderRadius: 20,
+          backgroundColor: dotColor,
+          opacity: ringOpacity,
+          transform: [{ scale: ringScale }],
+        }} />
+        <View style={{ flexDirection: "row", gap: compact ? 4 : 5, alignItems: "center" }}>
           {[dot1, dot2, dot3].map((dot, i) => (
             <Animated.View
               key={i}
               style={{
-                width: 7,
-                height: 7,
-                borderRadius: 3.5,
-                backgroundColor: colors.bubbleIncomingText === "#FFFFFF" ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.35)",
+                width: compact ? 5 : 7,
+                height: compact ? 5 : 7,
+                borderRadius: 4,
+                backgroundColor: dotColor,
                 transform: [{ translateY: dot }],
               }}
             />
           ))}
         </View>
-        {names.length > 0 && (
-          <Text style={{ color: colors.textMuted, fontSize: 11, fontFamily: "Inter_400Regular" }}>
-            {names.join(", ")} {names.length === 1 ? "is" : "are"} typing
-          </Text>
-        )}
       </View>
     </View>
   );
@@ -3812,7 +3844,7 @@ function ChatScreen() {
     autoSentInitialRef.current = true;
     const t = setTimeout(() => {
       sendMessage(decodeURIComponent(initialMessage as string));
-    }, 600);
+    }, 0);
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, user, chatInfo?.other_id, initialMessage]);
@@ -3848,7 +3880,7 @@ function ChatScreen() {
         // any setMessages call (SQLite preload, network merge, realtime, etc.)
         setLensCardMsg({ ...cardMsg, sent_at: new Date().toISOString() });
         // Immediately generate a rich AfuAI response about the scanned item
-        setTimeout(() => handleAfuAiLensIntro(ctx, id as string), 700);
+        setTimeout(() => handleAfuAiLensIntro(ctx, id as string), 0);
       } catch {}
     }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -3905,6 +3937,8 @@ function ChatScreen() {
             },
           ],
           model: "engagera-2.1",
+          fast: true,
+          maxTokens: 600,
         })) {
           if (event.type === "text") {
             accumulated += event.text;
@@ -3920,15 +3954,8 @@ function ChatScreen() {
 
       const rawReply = (doneContent || accumulated).trim() || "I've reviewed your scan. What would you like to know?";
       const parsed = parseAfuAiTags(rawReply);
-      let savedId: string | null = null;
-      try {
-        const { data: rpcId } = await supabase.rpc("insert_afuai_message", { p_chat_id: chatId, p_content: rawReply });
-        if (typeof rpcId === "string") savedId = rpcId;
-      } catch {}
-
       setMessages(prev => prev.map(m => m.id === lensStreamId ? {
         ...m,
-        id: savedId || lensStreamId,
         encrypted_content: parsed.text || rawReply,
         sent_at: new Date().toISOString(),
         _streaming: false,
@@ -3938,6 +3965,14 @@ function ChatScreen() {
           `Any interesting history or origin?`,
         ],
       } : m));
+      // Do not keep the visible reply waiting on persistence.
+      void supabase.rpc("insert_afuai_message", { p_chat_id: chatId, p_content: rawReply })
+        .then(({ data: rpcId }) => {
+          if (typeof rpcId === "string") {
+            setMessages(prev => prev.map(m => m.id === lensStreamId ? { ...m, id: rpcId } : m));
+          }
+        })
+        .catch(() => {});
     } catch {
       setMessages(prev => prev.map(m => m.id === lensStreamId
         ? { ...m, encrypted_content: "I couldn't analyse that right now. Please try again.", _streaming: false }
@@ -4694,6 +4729,8 @@ STRICT RULES:
         for await (const event of streamAiChat({
           messages: [{ role: "system" as const, content: systemPrompt + lensAddition }, ...conversationMessages],
           model: "engagera-2.1",
+          fast: true,
+          maxTokens: 500,
         })) {
           if (event.type === "text") {
             accumulated += event.text;
@@ -4711,15 +4748,6 @@ STRICT RULES:
       const parsed = parseAfuAiTags(rawReply);
       const cleanText = parsed.text || rawReply;
       const sentAt = new Date().toISOString();
-
-      let savedId: string | null = null;
-      try {
-        const { data: rpcId } = await supabase.rpc("insert_afuai_message", {
-          p_chat_id: chatId,
-          p_content: rawReply,
-        });
-        if (typeof rpcId === "string") savedId = rpcId;
-      } catch (_) {}
 
       const execAction: AiExecAction | undefined = parsed.execAction ? (() => {
         const at = parsed.execAction!.actionType;
@@ -4750,7 +4778,6 @@ STRICT RULES:
         prev.map((m) =>
           m.id === streamingId ? {
             ...m,
-            id: savedId || streamingId,
             encrypted_content: cleanText,
             sent_at: sentAt,
             _streaming: false,
@@ -4761,6 +4788,15 @@ STRICT RULES:
           } : m
         )
       );
+      // Persistence is intentionally not on the critical path for rendering.
+      void supabase.rpc("insert_afuai_message", {
+        p_chat_id: chatId,
+        p_content: rawReply,
+      }).then(({ data: rpcId }) => {
+        if (typeof rpcId === "string") {
+          setMessages((prev) => prev.map((m) => m.id === streamingId ? { ...m, id: rpcId } : m));
+        }
+      }).catch(() => {});
     } catch {
       // Update the streaming placeholder to show the error in-place
       setMessages((prev) => {
@@ -7022,6 +7058,11 @@ STRICT RULES:
                 </Text>
               </>
             )}
+            {isAfuAiTyping && (
+              <View style={{ marginTop: 20 }}>
+                <TypingBubble colors={colors} />
+              </View>
+            )}
           </View>
         ) : (
           <View style={{ flex: 1 }}>
@@ -7029,7 +7070,7 @@ STRICT RULES:
               ref={flatListRef}
               data={listData}
               keyExtractor={(m) => m.id}
-              extraData={[highlightedMsgId, lensCardMsg?.id, searchActive, searchMatchIndices.length, searchCursor]}
+              extraData={[highlightedMsgId, lensCardMsg?.id, searchActive, searchMatchIndices.length, searchCursor, isAfuAiTyping]}
               renderItem={renderMessage}
               inverted
               contentContainerStyle={[st.listContent, { paddingTop: floatingInputHeight + effectiveBottom + 16 }]}
@@ -7050,9 +7091,14 @@ STRICT RULES:
                 }, 300);
               }}
               ListHeaderComponent={
-                typingUsers.length > 0
-                  ? <TypingBubble names={typingUsers} colors={colors} />
-                  : null
+                <>
+                  {isAfuAiTyping && (
+                    <TypingBubble colors={colors} compact />
+                  )}
+                  {typingUsers.length > 0 && (
+                    <TypingBubble colors={colors} />
+                  )}
+                </>
               }
               ListFooterComponent={
                 loadingMore
