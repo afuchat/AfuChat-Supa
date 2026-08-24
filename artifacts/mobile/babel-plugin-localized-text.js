@@ -6,8 +6,13 @@ module.exports = function localizedTextPlugin({ types: t }) {
         enter(path, state) {
           state.localizedTextUsed = false;
           state.localizeUiUsed = false;
+          const filename = state.filename || state.file?.opts?.filename || "";
+          state.isAppSource =
+            !filename.includes("node_modules") &&
+            !filename.includes(`${require("path").sep}vendor${require("path").sep}`);
         },
         exit(path, state) {
+          if (!state.isAppSource) return;
           if (state.localizedTextUsed) {
             const alreadyImported = path.node.body.some(
               (node) =>
@@ -53,6 +58,7 @@ module.exports = function localizedTextPlugin({ types: t }) {
         },
       },
       JSXIdentifier(path, state) {
+        if (!state.isAppSource) return;
         if (path.node.name !== "Text") {
           const attribute = path.parentPath;
           if (
