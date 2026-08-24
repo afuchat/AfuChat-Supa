@@ -8,6 +8,23 @@ import { translateUi } from "@/lib/uiTranslations";
 
 const STORAGE_KEY = "@afuchat:lang_pref";
 
+function normalizeLanguage(value: string | null | undefined): string | null {
+  if (!value || value === "none") return null;
+  const normalized = value.trim().toLowerCase().replace("_", "-");
+  const aliases: Record<string, string> = {
+    english: "en",
+    swahili: "sw",
+    kiswahili: "sw",
+    french: "fr",
+    français: "fr",
+    spanish: "es",
+    español: "es",
+    arabic: "ar",
+    العربية: "ar",
+  };
+  return aliases[normalized] ?? normalized.split("-")[0];
+}
+
 type LanguageContextType = {
   preferredLang: string | null;
   langLabel: string;
@@ -38,7 +55,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((stored) => {
-      if (stored && stored !== "none") setPreferredLangState(stored);
+      const lang = normalizeLanguage(stored);
+      if (lang) setPreferredLangState(lang);
     });
   }, []);
 
@@ -51,7 +69,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     if (!data) return;
     const lang =
       data.message_translation && data.translation_language
-        ? data.translation_language
+        ? normalizeLanguage(data.translation_language)
         : null;
     setPreferredLangState(lang);
     AsyncStorage.setItem(STORAGE_KEY, lang ?? "none");
@@ -90,7 +108,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
           if (!row) return;
           const lang =
             row.message_translation && row.translation_language
-              ? row.translation_language
+              ? normalizeLanguage(row.translation_language)
               : null;
           setPreferredLangState(lang);
           AsyncStorage.setItem(STORAGE_KEY, lang ?? "none");
@@ -103,14 +121,15 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   async function setPreferredLang(lang: string | null) {
-    setPreferredLangState(lang);
-    await AsyncStorage.setItem(STORAGE_KEY, lang ?? "none");
+    const normalizedLang = normalizeLanguage(lang);
+    setPreferredLangState(normalizedLang);
+    await AsyncStorage.setItem(STORAGE_KEY, normalizedLang ?? "none");
     if (user) {
       await supabase.from("advanced_feature_settings").upsert(
         {
           user_id: user.id,
-          message_translation: !!lang,
-          translation_language: lang ?? "en",
+          message_translation: !!normalizedLang,
+          translation_language: normalizedLang ?? "en",
         },
         { onConflict: "user_id" }
       );

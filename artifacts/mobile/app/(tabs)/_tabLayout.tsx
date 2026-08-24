@@ -297,10 +297,10 @@ function CompactTabBar({
               ]}
               activeOpacity={0.8}
               accessibilityRole="button"
-               accessibilityLabel={`${t("Create")} ${opt.label}`}
+               accessibilityLabel={`${t("Create")} ${t(opt.label)}`}
             >
               <View style={pill.actionLabel}>
-                <Text style={[pill.actionLabelText, { color: accentColor }]}>{opt.label}</Text>
+                <Text style={[pill.actionLabelText, { color: accentColor }]}>{t(opt.label)}</Text>
               </View>
               <View style={[pill.actionIcon, { backgroundColor: accentColor }]}>
                 <Ionicons name={opt.icon as any} size={20} color="#fff" />

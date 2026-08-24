@@ -2,6 +2,28 @@ export type UiLanguage = "en" | "sw" | "fr" | "es" | "ar";
 
 type TranslationTable = Record<string, string>;
 
+const LANGUAGE_ALIASES: Record<string, UiLanguage> = {
+  en: "en",
+  english: "en",
+  sw: "sw",
+  swa: "sw",
+  swahili: "sw",
+  kiswahili: "sw",
+  fr: "fr",
+  fra: "fr",
+  fre: "fr",
+  french: "fr",
+  français: "fr",
+  es: "es",
+  spa: "es",
+  spanish: "es",
+  español: "es",
+  ar: "ar",
+  ara: "ar",
+  arabic: "ar",
+  العربية: "ar",
+};
+
 const TABLES: Record<UiLanguage, TranslationTable> = {
   en: {},
   sw: {
@@ -292,6 +314,9 @@ const TABLES: Record<UiLanguage, TranslationTable> = {
 };
 
 export function translateUi(text: string, language: string | null | undefined): string {
-  if (!text || !language || language === "en") return text;
-  return TABLES[language as UiLanguage]?.[text] ?? text;
+  if (!text || !language) return text;
+  const normalized = language.trim().toLowerCase().replace("_", "-").split("-")[0];
+  const uiLanguage = LANGUAGE_ALIASES[language.trim().toLowerCase()] ?? LANGUAGE_ALIASES[normalized];
+  if (!uiLanguage || uiLanguage === "en") return text;
+  return TABLES[uiLanguage]?.[text] ?? text;
 }
