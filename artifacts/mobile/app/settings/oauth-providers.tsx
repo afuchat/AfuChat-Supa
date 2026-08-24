@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,7 +16,7 @@ import type { UserIdentity } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/hooks/useTheme";
 import { showAlert } from "@/lib/alert";
-import { GitHubLogo, XLogo, GitLabLogo } from "@/components/ui/OAuthLogos";
+import { GoogleLogo, GitHubLogo, XLogo, GitLabLogo } from "@/components/ui/OAuthLogos";
 import * as Haptics from "@/lib/haptics";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -32,6 +33,7 @@ type Provider = {
 };
 
 const PROVIDERS: Provider[] = [
+  { id: "google",  label: "Google",      iconGradient: ["#FFFFFF", "#E8EAED"], renderLogo: () => <GoogleLogo size={18} /> },
   { id: "github",  label: "GitHub",      iconGradient: ["#24292E", "#404040"], renderLogo: () => <GitHubLogo size={18} color="#fff" />, disabled: true },
   { id: "twitter", label: "X (Twitter)", iconGradient: ["#1a1a1a", "#333333"], renderLogo: () => <XLogo size={18} color="#fff" />,    disabled: true },
   { id: "gitlab",  label: "GitLab",      iconGradient: ["#FC6D26", "#E24329"], renderLogo: () => <GitLabLogo size={18} />,           disabled: true },
@@ -60,6 +62,17 @@ export default function OAuthProvidersScreen() {
 
   async function handleConnect(providerId: string) {
     setActionLoading(providerId);
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const { error } = await (supabase.auth as any).linkIdentity({
+        provider: providerId,
+        options: { redirectTo: `${window.location.origin}/` },
+      });
+      if (error) {
+        setActionLoading(null);
+        showAlert("Error", error.message);
+      }
+      return;
+    }
     const redirectUrl = makeRedirectUri({ native: "afuchat://settings/oauth-providers" });
     const { data, error } = await (supabase.auth as any).linkIdentity({
       provider: providerId,

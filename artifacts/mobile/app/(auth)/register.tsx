@@ -29,7 +29,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { showAlert } from "@/lib/alert";
 import AfuLogo from "@/components/ui/AfuLogo";
-import { GitHubLogo } from "@/components/ui/OAuthLogos";
+import { GitHubLogo, GoogleLogo } from "@/components/ui/OAuthLogos";
 import Colors from "@/constants/colors";
 
 const BG = "#000000";
@@ -301,6 +301,65 @@ export default function SignUpScreen() {
     } catch { setOauthLoading(false); showAlert("Error", "Could not complete GitHub sign-in."); }
   }
 
+  async function handleGoogle() {
+    try {
+      setOauthLoading(true);
+      if (Platform.OS === "web" && typeof window !== "undefined") {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo: `${window.location.origin}/` },
+        });
+        if (error) {
+          showAlert("Google sign-up failed", error.message);
+          setOauthLoading(false);
+        }
+        return;
+      }
+
+      const redirectUrl = makeRedirectUri({ native: "afuchat://(auth)/register" });
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: redirectUrl, skipBrowserRedirect: true },
+      });
+      if (error) { showAlert("Google sign-up failed", error.message); setOauthLoading(false); return; }
+      if (!data?.url) { setOauthLoading(false); return; }
+
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl, { showInRecents: false });
+      if (result.type === "success" && result.url) {
+        const url = new URL(result.url);
+        const code = url.searchParams.get("code");
+        if (code) {
+          const { data: sessionData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) throw exchangeError;
+          const uid = sessionData.user?.id;
+          if (uid) {
+            const { data: profile } = await supabase.from("profiles").select("onboarding_completed").eq("id", uid).maybeSingle();
+            if (!profile?.onboarding_completed) {
+              setOauthLoading(false);
+              router.replace({ pathname: "/onboarding", params: { userId: uid } } as any);
+              return;
+            }
+          }
+          setOauthLoading(false);
+          router.replace("/(tabs)/chats");
+          return;
+        }
+        const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+        const accessToken = url.searchParams.get("access_token") || hashParams.get("access_token");
+        const refreshToken = url.searchParams.get("refresh_token") || hashParams.get("refresh_token");
+        if (accessToken && refreshToken) {
+          const { error: sessionError } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+          if (sessionError) throw sessionError;
+          router.replace("/(tabs)/chats");
+        }
+      }
+      setOauthLoading(false);
+    } catch (error: any) {
+      setOauthLoading(false);
+      showAlert("Google sign-up failed", error?.message || "Could not complete Google sign-up.");
+    }
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: BG, overflow: "hidden" }}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
@@ -331,6 +390,12 @@ export default function SignUpScreen() {
           <Text style={sc.subheading}>Join millions of people on AfuChat</Text>
 
           <View style={{ gap: 12, marginTop: 28 }}>
+            {/* Google */}
+            <TouchableOpacity style={sc.glassBtn} onPress={handleGoogle} disabled={oauthLoading} activeOpacity={0.78}>
+              <GoogleLogo size={20} />
+              <Text style={sc.glassBtnText}>Continue with Google</Text>
+            </TouchableOpacity>
+
             {/* GitHub */}
             <TouchableOpacity style={sc.glassBtn} onPress={handleGitHub} disabled={oauthLoading} activeOpacity={0.78}>
               <GitHubLogo size={20} color="rgba(255,255,255,0.85)" />
