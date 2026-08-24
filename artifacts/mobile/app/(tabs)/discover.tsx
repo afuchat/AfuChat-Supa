@@ -1082,7 +1082,6 @@ export default function DiscoverScreen() {
   const [showSignInPrompt, setShowSignInPrompt] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [followingEmpty, setFollowingEmpty] = useState(false);
-  const [bgRefreshing, setBgRefreshing] = useState(false);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [suppressedAuthors, setSuppressedAuthors] = useState<Set<string>>(new Set());
   const [dismissTarget, setDismissTarget] = useState<PostItem | null>(null);
@@ -1458,7 +1457,6 @@ export default function DiscoverScreen() {
 
   const fetchPosts = useCallback(async (offset: number, isRefresh: boolean, tab?: "for_you" | "following", background?: boolean) => {
     const activeTab = tab ?? feedTabRef.current;
-    if (background) setBgRefreshing(true);
     try {
     if (!isOnline()) {
       if (!background) {
@@ -2054,7 +2052,6 @@ export default function DiscoverScreen() {
         setRefreshing(false);
         setLoadingMore(false);
       }
-      setBgRefreshing(false);
     }
   }, [user, profile]);
 
@@ -2064,7 +2061,6 @@ export default function DiscoverScreen() {
         fetchPosts(0, true, tab, background),
         FEED_REQUEST_TIMEOUT_MS,
         () => {
-          setBgRefreshing(false);
           if (!background) {
             setLoading(false);
             setRefreshing(false);
@@ -2712,27 +2708,6 @@ export default function DiscoverScreen() {
               </Text>
             </TouchableOpacity>
           )}
-          </View>
-
-
-          {/* Keep this row mounted so showing the indicator never changes the
-              measured header height while the feed is scrolling. */}
-          <View
-            style={[
-              styles.bgRefreshBar,
-              {
-                backgroundColor: colors.accent + "18",
-                opacity: bgRefreshing && newPostAuthors.length === 0 ? 1 : 0,
-              },
-            ]}
-            pointerEvents={bgRefreshing && newPostAuthors.length === 0 ? "auto" : "none"}
-          >
-            <View style={{ flexDirection: "row", gap: 4, alignItems: "center" }}>
-              {[0, 1, 2].map(i => (
-                <Animated.View key={i} style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.accent }} />
-              ))}
-            </View>
-            <Text style={[styles.bgRefreshText, { color: colors.accent }]}>Updating feed…</Text>
           </View>
         </Animated.View>
 
@@ -3473,16 +3448,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   readArticleText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
-  bgRefreshBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    height: 0,
-    paddingVertical: 0,
-    overflow: "hidden",
-  },
-  bgRefreshText: { fontSize: 11, fontFamily: "Inter_500Medium" },
   newPostsPill: {
     flexDirection: "row",
     alignItems: "center",
