@@ -59,7 +59,12 @@ Deno.serve(async (request) => {
   const url = Deno.env.get("SUPABASE_URL") ?? "";
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  const firebaseJson = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON") ?? "";
+  // Keep compatibility with the existing Supabase secret name. Both names
+  // are accepted so deployments do not require copying a private key again.
+  const firebaseJson =
+    Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON") ??
+    Deno.env.get("FIREBASE_SERVICE_ACCOUNT_KEY") ??
+    "";
   if (!url || !anonKey || !serviceRoleKey || !firebaseJson) return json({ error: "FCM is not configured" }, 503);
 
   const auth = createClient(url, anonKey, { global: { headers: { Authorization: authorization } } });

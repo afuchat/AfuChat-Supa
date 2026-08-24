@@ -13,8 +13,11 @@ CREATE INDEX IF NOT EXISTS story_likes_user_id_idx  ON story_likes(user_id);
 
 ALTER TABLE story_likes ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS story_likes_select ON story_likes;
 CREATE POLICY story_likes_select ON story_likes FOR SELECT USING (true);
+DROP POLICY IF EXISTS story_likes_insert ON story_likes;
 CREATE POLICY story_likes_insert ON story_likes FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS story_likes_delete ON story_likes;
 CREATE POLICY story_likes_delete ON story_likes FOR DELETE USING (auth.uid() = user_id);
 
 -- Full replica identity so DELETE events carry the old row (story_id)
@@ -23,4 +26,14 @@ ALTER TABLE story_likes  REPLICA IDENTITY FULL;
 ALTER TABLE story_views  REPLICA IDENTITY FULL;
 
 -- Add to realtime publication
-ALTER PUBLICATION supabase_realtime ADD TABLE story_likes;
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'story_likes'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE story_likes;
+  END IF;
+END $$;
