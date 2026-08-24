@@ -264,6 +264,21 @@ type Message = {
   _notification?: NotificationMessageData;
 };
 
+function isOptimisticMatch(local: Message, server: Message): boolean {
+  const isTemporary = local._pending ||
+    local.id.startsWith("msg_") ||
+    local.id.startsWith("pending-") ||
+    local.id.startsWith("pending-audio-") ||
+    local.id.startsWith("sticker_");
+  if (!isTemporary || local.sender_id !== server.sender_id) return false;
+  if (local.encrypted_content !== server.encrypted_content) return false;
+  if ((local.attachment_type || null) !== (server.attachment_type || null)) return false;
+  const localTime = new Date(local.sent_at).getTime();
+  const serverTime = new Date(server.sent_at).getTime();
+  return Number.isFinite(localTime) && Number.isFinite(serverTime) &&
+    Math.abs(localTime - serverTime) <= 15000;
+}
+
 type NotificationMessageData = {
   id: string;
   kind: string;
@@ -2928,7 +2943,10 @@ function ChatScreen() {
       setMessages((prev) => {
         if (mapped.length === 0) return prev;
         const serverIds = new Set(mapped.map((m: any) => m.id));
-        const notInServer = prev.filter((m) => !serverIds.has(m.id));
+        const notInServer = prev.filter((m) =>
+          !serverIds.has(m.id) &&
+          !mapped.some((serverMessage: Message) => isOptimisticMatch(m, serverMessage))
+        );
         const previousById = new Map(prev.map((m) => [m.id, m]));
         // A status write can be in flight while this refresh is running. Keep
         // the locally visible receipt until the server response catches up;
@@ -3105,7 +3123,10 @@ function ChatScreen() {
         });
         oldestCursorRef.current = data[data.length - 1].sent_at;
         setHasMore(data.length >= 50);
-        setMessages((prev) => [...prev, ...mapped]);
+        setMessages((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id));
+          return [...prev, ...mapped.filter((m: Message) => !existingIds.has(m.id))];
+        });
       } else {
         setHasMore(false);
       }
