@@ -113,6 +113,7 @@ import { subscribeToChat, broadcastToUserInbox } from "@/lib/globalMessageEvents
 import { askAi, aiSuggestReply, transcribeAudio, getEdgeFnBase, edgeHeaders, aiTransformTone, aiFixText, aiEmojifyText } from "@/lib/aiHelper";
 import { buildNavigationContext, ACTION_ROUTES_GUIDE, detectVoiceNavCommand, pickNavConfirmation } from "@/lib/platformKnowledge";
 import { AFUAI_BOT_ID } from "@/lib/afuAiBot";
+import { notifyChatRecipients } from "@/lib/pushNotifications";
 import { clearAIUnread } from "@/lib/aiChatStore";
 import { GIPHY_API_KEY } from "@/lib/env";
 import { BlurView } from "expo-blur";
@@ -5131,7 +5132,17 @@ STRICT RULES:
         .filter((recipientId): recipientId is string => Boolean(recipientId) && recipientId !== user.id);
     }
     if (recipientIds.length === 0) return;
-
+    void notifyChatRecipients({
+      recipientIds,
+      senderId: user.id,
+      senderName: profile?.display_name || "Someone",
+      senderAvatarUrl: profile?.avatar_url ?? null,
+      body: params.body,
+      chatId: params.chatId,
+      messageId: params.messageId,
+      attachmentUrl: params.attachmentUrl,
+      attachmentType: params.attachmentType,
+    });
   }
 
   async function handleInlineSendMoney() {
