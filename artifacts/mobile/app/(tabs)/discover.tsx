@@ -2747,42 +2747,8 @@ export default function DiscoverScreen() {
           }}
           style={{ zIndex: 2 }}
         >
-          {/* ── Row 1: user avatar | centered wordmark | bell ── */}
-          <View style={[styles.headerTop, { paddingTop: insets.top + 6 }]}>
-          {/* Left spacer keeps the wordmark centered without a profile shortcut. */}
-          <View style={styles.headerSpacer} />
-
-          {/* Brand wordmark — centred */}
-          <View style={styles.wordmarkRow}>
-            <Text style={[styles.wordmarkText, { color: colors.text }]}>AfuChat</Text>
-          </View>
-
-          {/* Right: bell icon */}
-          <View style={styles.headerActions}>
-            {!user && (
-              <TouchableOpacity
-                onPress={() => safeRouter.push("/(auth)/login")}
-                style={styles.signInBtn}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.signInText, { color: colors.textSecondary }]}>Sign in</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              onPress={() => { Haptics.selectionAsync(); router.push("/search" as any); }}
-              style={[styles.searchBtn, { backgroundColor: "transparent" }]}
-              activeOpacity={0.7}
-              hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
-              accessibilityRole="button"
-              accessibilityLabel="Search"
-            >
-              <Ionicons name="search" size={24} color={colors.icon} />
-            </TouchableOpacity>
-          </View>
-          </View>
-
-          {/* ── Row 2: For You / Following tabs ── */}
-          <View style={[styles.tabRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
+          {/* ── Tabs and actions ── */}
+          <View style={[styles.tabRow, { paddingTop: insets.top + 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
           <TouchableOpacity
             style={[
               styles.tabPill,
@@ -2819,6 +2785,26 @@ export default function DiscoverScreen() {
               </Text>
             </TouchableOpacity>
           )}
+          <View style={{ flex: 1 }} />
+          {!user && (
+            <TouchableOpacity
+              onPress={() => safeRouter.push("/(auth)/login")}
+              style={styles.signInBtn}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.signInText, { color: colors.textSecondary }]}>Sign in</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            onPress={() => { Haptics.selectionAsync(); router.push("/search" as any); }}
+            style={[styles.searchBtn, { backgroundColor: "transparent" }]}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Search"
+          >
+            <Ionicons name="search" size={24} color={colors.icon} />
+          </TouchableOpacity>
           </View>
         </View>
 
