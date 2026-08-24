@@ -1247,19 +1247,30 @@ export default function DiscoverScreen() {
     }).start();
   }
 
-  // Keep scroll work on the native driver. Header direction is evaluated only
-  // when a drag/momentum phase settles, rather than on every scroll frame.
+  const handleFeedScrollFrame = useCallback((event: any) => {
+    const y = Math.max(0, Number(event?.nativeEvent?.contentOffset?.y ?? 0));
+    const delta = y - prevScrollYRef.current;
+    const collapsePoint = Math.max(24, headerHeight - 12);
+
+    // Keep the header over the feed until the list reaches the bottom of the
+    // header's reserved space. This prevents a blank gap while it hides.
+    if (y > collapsePoint && delta > 1.5) hideHeader(headerHeight);
+    else if (delta < -1.5 || y <= 0) revealHeader();
+    prevScrollYRef.current = y;
+  }, [headerHeight]);
+
+  // Track the gesture during scrolling, not only after momentum settles.
   const onFeedScroll = Platform.OS === "web"
-    ? undefined
+    ? handleFeedScrollFrame
     : Animated.event(
         [{ nativeEvent: { contentOffset: { y: scrollYAnim } } }],
-        { useNativeDriver: true }
+        { useNativeDriver: true, listener: handleFeedScrollFrame }
       );
   const handleFeedScrollSettled = useCallback((event: any) => {
     const y = Number(event?.nativeEvent?.contentOffset?.y ?? 0);
     const delta = y - prevScrollYRef.current;
-    if (y > 80 && delta > 8) hideHeader(headerHeight);
-    else if (delta < -4 || y <= 10) revealHeader();
+    if (y > Math.max(24, headerHeight - 12) && delta > 2) hideHeader(headerHeight);
+    else if (delta < -2 || y <= 10) revealHeader();
     prevScrollYRef.current = y;
   }, [headerHeight]);
   // ────────────────────────────────────────────────────────────────────────
@@ -2711,6 +2722,13 @@ export default function DiscoverScreen() {
             </View>
             <Text style={[styles.bgRefreshText, { color: colors.accent }]}>Updating feed…</Text>
         </View>
+
+         {/* Stories belong to the collapsible header, not the feed list. */}
+         <StoriesRow
+           userId={user?.id ?? null}
+           avatarUrl={profile?.avatar_url ?? null}
+           displayName={profile?.display_name ?? null}
+         />
       </Animated.View>
       {/* ────────────────────────────────────────────────────────────────── */}
 
@@ -2739,7 +2757,6 @@ export default function DiscoverScreen() {
                   data={augmentedFeed}
                   keyExtractor={(entry: FeedEntry) => entry._kind === "post" ? entry.item.id : entry.id}
                   renderItem={renderFeedItem}
-                  ListHeaderComponent={<StoriesRow userId={user?.id ?? null} avatarUrl={profile?.avatar_url ?? null} displayName={profile?.display_name ?? null} />}
                   contentContainerStyle={{ gap: 8, paddingTop: headerHeight, paddingBottom: insets.bottom + 100 }}
                   showsVerticalScrollIndicator={false}
                   onScroll={onFeedScroll}
@@ -2869,7 +2886,6 @@ export default function DiscoverScreen() {
             data={augmentedFeed}
             keyExtractor={(entry: FeedEntry) => entry._kind === "post" ? entry.item.id : entry.id}
             renderItem={renderFeedItem}
-            ListHeaderComponent={<StoriesRow userId={user?.id ?? null} avatarUrl={profile?.avatar_url ?? null} displayName={profile?.display_name ?? null} />}
             contentContainerStyle={{ gap: 8, paddingTop: headerHeight, paddingBottom: insets.bottom + 100 }}
             showsVerticalScrollIndicator={false}
             onScroll={onFeedScroll}
