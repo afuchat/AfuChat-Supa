@@ -422,9 +422,13 @@ function StoriesRow({
                 lineHeight: 12,
                 letterSpacing: -0.15,
                 fontFamily: "Inter_700Bold",
+                flex: 1,
+                minWidth: 0,
                 flexShrink: 1,
                 textAlign: "center",
               }}
+              numberOfLines={1}
+              ellipsizeMode="tail"
             >
               {s.name}
             </Text>
