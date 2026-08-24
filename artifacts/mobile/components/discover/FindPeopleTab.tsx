@@ -25,9 +25,11 @@ type NearbyPerson = {
   distance_km: number | null;
   is_following: boolean;
   is_online: boolean;
+  last_seen: string | null;
 };
 
 const RADII = [5, 25, 100];
+const LIVE_WINDOW_MS = 10 * 60_000;
 
 function distanceLabel(distance: number | null) {
   if (distance == null) return "Nearby";
@@ -79,17 +81,26 @@ export default function FindPeopleTab() {
       ]);
       if (rpcError) throw rpcError;
       const followed = new Set((follows || []).map((row: any) => row.following_id));
-      setPeople(((data || []) as any[]).map((person) => ({
-        id: person.id,
-        display_name: person.display_name || `@${person.handle}`,
-        handle: person.handle || "",
-        avatar_url: person.avatar_url || null,
-        bio: person.bio || null,
-        distance_km: typeof person.distance_km === "number" ? person.distance_km : null,
-        is_following: followed.has(person.id),
-        is_online: !!person.location_updated_at &&
-          Date.now() - new Date(person.location_updated_at).getTime() < 5 * 60_000,
-      })));
+      const now = Date.now();
+      setPeople(((data || []) as any[])
+        .map((person) => {
+          const locationUpdatedAt = person.location_updated_at || null;
+          const lastSeen = person.last_seen || locationUpdatedAt;
+          return {
+            id: person.id,
+            display_name: person.display_name || `@${person.handle}`,
+            handle: person.handle || "",
+            avatar_url: person.avatar_url || null,
+            bio: person.bio || null,
+            distance_km: typeof person.distance_km === "number" ? person.distance_km : null,
+            is_following: followed.has(person.id),
+            is_online: !!lastSeen && now - new Date(lastSeen).getTime() < LIVE_WINDOW_MS,
+            last_seen: lastSeen,
+            locationAge: locationUpdatedAt ? now - new Date(locationUpdatedAt).getTime() : Infinity,
+          };
+        })
+        .filter((person) => person.locationAge < LIVE_WINDOW_MS)
+        .map(({ locationAge: _locationAge, ...person }) => person));
     } catch {
       setError("Nearby people could not be loaded right now.");
     } finally {
@@ -101,6 +112,36 @@ export default function FindPeopleTab() {
   useEffect(() => {
     if (coords) void loadPeople(coords);
   }, [coords, loadPeople]);
+
+  // Keep our presence fresh while this live tab is open.
+  useEffect(() => {
+    if (!user || !coords) return;
+    const heartbeat = () => {
+      supabase.rpc("update_last_seen").then(null, () => {});
+    };
+    heartbeat();
+    const timer = setInterval(heartbeat, 60_000);
+    return () => clearInterval(timer);
+  }, [coords, user]);
+
+  // Re-run the authoritative nearby query whenever a profile presence or
+  // location changes, so this is a live feed rather than a static history.
+  useEffect(() => {
+    if (!user || !coords) return;
+    let reloadTimer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleReload = () => {
+      if (reloadTimer) clearTimeout(reloadTimer);
+      reloadTimer = setTimeout(() => void loadPeople(coords), 1200);
+    };
+    const channel = supabase
+      .channel(`find-live-users-${user.id}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles" }, scheduleReload)
+      .subscribe();
+    return () => {
+      if (reloadTimer) clearTimeout(reloadTimer);
+      supabase.removeChannel(channel);
+    };
+  }, [coords, loadPeople, user]);
 
   const findNearby = useCallback(async () => {
     const next = await requestLocation();
