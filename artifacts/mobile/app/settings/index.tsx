@@ -110,7 +110,7 @@ function Row({
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function SettingsScreen() {
   const { colors, accent, isDark, themeMode, setThemeMode } = useTheme();
-  const { langLabel } = useLanguage();
+  const { langLabel, t } = useLanguage();
   const { user, profile, isPremium, linkedAccounts, switchAccount } = useAuth();
   const insets = useSafeAreaInsets();
   const [switchingId, setSwitchingId] = useState<string | null>(null);
@@ -127,22 +127,22 @@ export default function SettingsScreen() {
   async function handleSwitch(userId: string) {
     if (userId === user?.id || switchingId) return;
     showAlert(
-      "Switch account?",
-      "Your current session will be saved.",
+      t("Switch account?"),
+      t("Your current session will be saved."),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("Cancel"), style: "cancel" },
         {
-          text: "Switch",
+            text: t("Switch"),
           onPress: async () => {
             setSwitchingId(userId);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             try {
               const result = await switchAccount(userId);
               if (!result.success) {
-                showAlert("Switch Failed", result.error || "Could not switch account.");
+                showAlert(t("Switch Failed"), result.error || t("Could not switch account."));
               }
             } catch (_) {
-              showAlert("Switch Failed", "Could not switch account. Please try again.");
+              showAlert(t("Switch Failed"), "Could not switch account. Please try again.");
             } finally {
               setSwitchingId(null);
             }
@@ -156,15 +156,15 @@ export default function SettingsScreen() {
 
   return (
     <View style={[s.root, { backgroundColor: colors.backgroundSecondary }]}>
-      <GlassHeader title="Settings" />
+      <GlassHeader title={t("Settings")} />
 
       {/* Switching overlay */}
       {switchingId && (
         <View style={s.overlay}>
           <View style={[s.overlayCard, { backgroundColor: colors.surface }]}>
             <ActivityIndicator size="large" color={accent} />
-            <Text style={[s.overlayTitle, { color: colors.text }]}>Switching account…</Text>
-            <Text style={[s.overlaySub, { color: colors.textMuted }]}>Loading your other account</Text>
+            <Text style={[s.overlayTitle, { color: colors.text }]}>{t("Switching account…")}</Text>
+            <Text style={[s.overlaySub, { color: colors.textMuted }]}>{t("Loading your other account")}</Text>
           </View>
         </View>
       )}
@@ -213,7 +213,7 @@ export default function SettingsScreen() {
 
         {/* ── Accounts ──────────────────────────────────────────────────── */}
         {displayAccounts.length > 1 && (
-          <Section title="ACCOUNTS" colors={colors}>
+          <Section title={t("ACCOUNTS")} colors={colors}>
             {displayAccounts.map((account, i) => {
               const isCurrent = account.userId === user?.id;
               const isSwitching = switchingId === account.userId;
@@ -247,7 +247,7 @@ export default function SettingsScreen() {
                       <ActivityIndicator size="small" color={accent} />
                     ) : isCurrent ? (
                       <View style={[s.activePill, { backgroundColor: accent + "20" }]}>
-                        <Text style={[s.activePillText, { color: accent }]}>Active</Text>
+                          <Text style={[s.activePillText, { color: accent }]}>{t("Active")}</Text>
                       </View>
                     ) : (
                       <TouchableOpacity
@@ -257,7 +257,7 @@ export default function SettingsScreen() {
                         activeOpacity={0.8}
                       >
                         <Ionicons name="swap-horizontal" size={12} color="#fff" />
-                        <Text style={s.switchBtnText}>Switch</Text>
+                        <Text style={s.switchBtnText}>{t("Switch")}</Text>
                       </TouchableOpacity>
                     )}
                   </Pressable>
@@ -275,7 +275,7 @@ export default function SettingsScreen() {
             >
               <Ionicons name="person-add" size={15} color={colors.textMuted} />
               <Text style={[s.manageAccText, { color: colors.textMuted }]}>
-                {otherAccounts.length > 0 ? "Manage accounts" : "Add another account"}
+                {otherAccounts.length > 0 ? t("Manage accounts") : t("Add another account")}
               </Text>
               <Ionicons name="chevron-forward" size={13} color={colors.textMuted} />
             </TouchableOpacity>
@@ -287,8 +287,8 @@ export default function SettingsScreen() {
           <Section colors={colors}>
             <Row
             icon="person-add"
-              label="Add Another Account"
-              sublabel="Switch between multiple AfuChat accounts"
+              label={t("Add Another Account")}
+              sublabel={t("Switch between multiple AfuChat accounts")}
               onPress={() => router.push("/linked-accounts")}
               last
               colors={colors}
@@ -298,12 +298,12 @@ export default function SettingsScreen() {
         )}
 
         {/* ── Appearance ────────────────────────────────────────────────── */}
-        <Section title="APPEARANCE" colors={colors}>
+        <Section title={t("APPEARANCE")} colors={colors}>
           <View style={s.themeRow}>
             {([
-              { key: "system", label: "System", icon: "phone-portrait-outline" },
-              { key: "light", label: "Light", icon: "sunny-outline" },
-              { key: "dark", label: "Dark", icon: "moon-outline" },
+              { key: "system", label: t("System"), icon: "phone-portrait-outline" },
+              { key: "light", label: t("Light"), icon: "sunny-outline" },
+              { key: "dark", label: t("Dark"), icon: "moon-outline" },
             ] as const).map((option) => {
               const active = themeMode === option.key;
               return (
@@ -341,7 +341,7 @@ export default function SettingsScreen() {
         </Section>
 
         {/* ── Messaging ─────────────────────────────────────────────────── */}
-        <Section title="MESSAGING" colors={colors}>
+        <Section title={t("MESSAGING")} colors={colors}>
           <Row
             icon="chatbubble-ellipses"
             label="Chat Settings"

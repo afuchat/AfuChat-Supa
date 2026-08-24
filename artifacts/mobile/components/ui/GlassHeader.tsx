@@ -12,6 +12,7 @@ import { safeRouter } from "@/lib/navUtils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
 import { T } from "@/constants/theme";
+import { useLanguage } from "@/context/LanguageContext";
 
 export interface GlassHeaderProps {
   title: string;
@@ -37,6 +38,7 @@ export function GlassHeader({
   sideWidth = 52,
 }: GlassHeaderProps) {
   const { colors, isDark } = useTheme();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
 
   function handleBack() {
@@ -92,16 +94,16 @@ export function GlassHeader({
         <View style={styles.center}>
           {largeTitle ? (
             <Text style={[styles.largeTitle, { color: colors.text }]} numberOfLines={1}>
-              {title}
+              {t(title)}
             </Text>
           ) : (
             <>
               <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
-                {title}
+                {t(title)}
               </Text>
               {subtitle ? (
                 <Text style={[styles.subtitle, { color: colors.textMuted }]} numberOfLines={1}>
-                  {subtitle}
+                  {t(subtitle)}
                 </Text>
               ) : null}
             </>

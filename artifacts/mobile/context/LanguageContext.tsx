@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { translateText, LANG_LABELS } from "@/lib/translate";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
+import { translateUi } from "@/lib/uiTranslations";
 
 const STORAGE_KEY = "@afuchat:lang_pref";
 
@@ -14,6 +15,7 @@ type LanguageContextType = {
   autoTranslate: (text: string) => Promise<string>;
   voiceToText: boolean;
   textToSpeech: boolean;
+  t: (text: string) => string;
 };
 
 const LanguageContext = createContext<LanguageContextType>({
@@ -23,6 +25,7 @@ const LanguageContext = createContext<LanguageContextType>({
   autoTranslate: async (t) => t,
   voiceToText: false,
   textToSpeech: false,
+  t: (text) => text,
 });
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
@@ -122,10 +125,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const langLabel = preferredLang
     ? (LANG_LABELS[preferredLang] ?? preferredLang)
     : "Off";
+  const t = (text: string) => translateUi(text, preferredLang);
 
   return (
     <LanguageContext.Provider
-      value={{ preferredLang, langLabel, setPreferredLang, autoTranslate, voiceToText, textToSpeech }}
+      value={{ preferredLang, langLabel, setPreferredLang, autoTranslate, voiceToText, textToSpeech, t }}
     >
       {children}
     </LanguageContext.Provider>

@@ -27,6 +27,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { useAppAccent } from "@/context/AppAccentContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { showAlert } from "@/lib/alert";
 import AfuLogo from "@/components/ui/AfuLogo";
 import { GitHubLogo, GoogleLogo } from "@/components/ui/OAuthLogos";
@@ -185,6 +186,7 @@ function EmailVerifyModal({ visible, email, onClose, onVerified, isDark, accent 
 export default function SignUpScreen() {
   const { isDark } = useTheme();
   const { accent } = useAppAccent();
+  const { t } = useLanguage();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const { width: SW, height: SH } = useWindowDimensions();
@@ -434,25 +436,25 @@ export default function SignUpScreen() {
             </View>
           </View>
 
-          <Text style={sc.heading}>Create account</Text>
-          <Text style={sc.subheading}>Join millions of people on AfuChat</Text>
+          <Text style={sc.heading}>{t("Create account")}</Text>
+          <Text style={sc.subheading}>{t("Join millions of people on AfuChat")}</Text>
 
           <View style={{ gap: 12, marginTop: 28 }}>
             {/* Google */}
             <TouchableOpacity style={sc.glassBtn} onPress={handleGoogle} disabled={oauthLoading} activeOpacity={0.78}>
               <GoogleLogo size={20} />
-              <Text style={sc.glassBtnText}>Continue with Google</Text>
+              <Text style={sc.glassBtnText}>{t("Continue with Google")}</Text>
             </TouchableOpacity>
 
             {/* GitHub */}
             <TouchableOpacity style={sc.glassBtn} onPress={handleGitHub} disabled={oauthLoading} activeOpacity={0.78}>
               <GitHubLogo size={20} color="rgba(255,255,255,0.85)" />
-              <Text style={sc.glassBtnText}>Continue with GitHub</Text>
+              <Text style={sc.glassBtnText}>{t("Continue with GitHub")}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={sc.glassBtn} onPress={goToEmail} activeOpacity={0.78}>
               <Ionicons name="mail" size={20} color="rgba(255,255,255,0.75)" />
-              <Text style={sc.glassBtnText}>Continue with email</Text>
+              <Text style={sc.glassBtnText}>{t("Continue with email")}</Text>
             </TouchableOpacity>
           </View>
 
@@ -467,7 +469,7 @@ export default function SignUpScreen() {
             onPress={() => router.replace("/(auth)/login")}
             activeOpacity={0.78}
           >
-            <Text style={[sc.outlineBtnText, { color: accent }]}>Already have an account</Text>
+            <Text style={[sc.outlineBtnText, { color: accent }]}>{t("Already have an account")}</Text>
           </TouchableOpacity>
 
           <View style={{ marginTop: "auto", paddingTop: 32, alignItems: "center", gap: 6 }}>
@@ -499,8 +501,8 @@ export default function SignUpScreen() {
             </TouchableOpacity>
 
             <View style={{ marginTop: 24, marginBottom: 32 }}>
-              <Text style={sc.heading}>Create account</Text>
-              <Text style={sc.subheading}>Enter your details to get started</Text>
+              <Text style={sc.heading}>{t("Create account")}</Text>
+              <Text style={sc.subheading}>{t("Enter your details to get started")}</Text>
             </View>
 
             <View style={{ gap: 14 }}>
@@ -553,15 +555,15 @@ export default function SignUpScreen() {
               <LinearGradient colors={[accent, accent]} style={sc.primaryGrad}>
                 {loading
                   ? <ActivityIndicator color="#fff" size="small" />
-                  : <Text style={sc.primaryText}>Create account</Text>
+                  : <Text style={sc.primaryText}>{t("Create account")}</Text>
                 }
               </LinearGradient>
             </TouchableOpacity>
 
             <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 4, marginTop: 24 }}>
-              <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.40)" }}>Already have an account?</Text>
+              <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.40)" }}>{t("Already have an account?")}</Text>
               <TouchableOpacity onPress={() => router.replace("/(auth)/login")} activeOpacity={0.7}>
-                <Text style={{ fontSize: 14, fontFamily: "Inter_700Bold", color: accent }}>Sign in</Text>
+                <Text style={{ fontSize: 14, fontFamily: "Inter_700Bold", color: accent }}>{t("Sign in")}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

@@ -30,6 +30,7 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/env";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { useAppAccent } from "@/context/AppAccentContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { showAlert } from "@/lib/alert";
 import AfuLogo from "@/components/ui/AfuLogo";
 import { GitHubLogo, GoogleLogo } from "@/components/ui/OAuthLogos";
@@ -258,6 +259,7 @@ function EmailVerifyModal({ visible, email, onClose, onVerified, isDark, accent 
 export default function SignInScreen() {
   const { isDark } = useTheme();
   const { accent } = useAppAccent();
+  const { t } = useLanguage();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const { width: SW, height: SH } = useWindowDimensions();
@@ -635,26 +637,26 @@ export default function SignInScreen() {
             </View>
           )}
 
-          <Text style={sc.heading}>Welcome back</Text>
-          <Text style={sc.subheading}>Sign in to your AfuChat account</Text>
+          <Text style={sc.heading}>{t("Welcome back")}</Text>
+          <Text style={sc.subheading}>{t("Sign in to your AfuChat account")}</Text>
 
           <View style={{ gap: 12, marginTop: 28 }}>
             {/* Google */}
             <TouchableOpacity style={sc.glassBtn} onPress={handleGoogle} disabled={oauthLoading} activeOpacity={0.78}>
               <GoogleLogo size={20} />
-              <Text style={sc.glassBtnText}>Continue with Google</Text>
+              <Text style={sc.glassBtnText}>{t("Continue with Google")}</Text>
             </TouchableOpacity>
 
             {/* GitHub */}
             <TouchableOpacity style={sc.glassBtn} onPress={handleGitHub} disabled={oauthLoading} activeOpacity={0.78}>
               <GitHubLogo size={20} color="rgba(255,255,255,0.85)" />
-              <Text style={sc.glassBtnText}>Continue with GitHub</Text>
+              <Text style={sc.glassBtnText}>{t("Continue with GitHub")}</Text>
             </TouchableOpacity>
 
             {/* Email */}
             <TouchableOpacity style={sc.glassBtn} onPress={goToEmail} activeOpacity={0.78}>
               <Ionicons name="mail" size={20} color="rgba(255,255,255,0.75)" />
-              <Text style={sc.glassBtnText}>Continue with email</Text>
+              <Text style={sc.glassBtnText}>{t("Continue with email")}</Text>
             </TouchableOpacity>
           </View>
 
@@ -671,17 +673,17 @@ export default function SignInScreen() {
             onPress={() => router.push("/(auth)/register")}
             activeOpacity={0.78}
           >
-            <Text style={[sc.outlineBtnText, { color: accent }]}>Create a new account</Text>
+            <Text style={[sc.outlineBtnText, { color: accent }]}>{t("Create a new account")}</Text>
           </TouchableOpacity>
 
           {/* Footer */}
           <View style={{ marginTop: "auto", paddingTop: 28, alignItems: "center", gap: 6 }}>
             <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
-              <Text style={[sc.footerLink, { color: accent }]} onPress={() => Linking.openURL("https://afuchat.com/terms").catch(() => {})}>Terms</Text>
+              <Text style={[sc.footerLink, { color: accent }]} onPress={() => Linking.openURL("https://afuchat.com/terms").catch(() => {})}>{t("Terms")}</Text>
               <Text style={{ color: "rgba(255,255,255,0.20)", fontSize: 12 }}>·</Text>
-              <Text style={[sc.footerLink, { color: accent }]} onPress={() => Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>Privacy</Text>
+              <Text style={[sc.footerLink, { color: accent }]} onPress={() => Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>{t("Privacy")}</Text>
               <Text style={{ color: "rgba(255,255,255,0.20)", fontSize: 12 }}>·</Text>
-              <Text style={[sc.footerLink, { color: accent }]} onPress={() => router.push("/help")}>Help</Text>
+              <Text style={[sc.footerLink, { color: accent }]} onPress={() => router.push("/help")}>{t("Help")}</Text>
             </View>
             <Text style={{ fontSize: 10.5, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.14)" }}>
               © {new Date().getFullYear()} AfuChat Technologies Limited
@@ -706,8 +708,8 @@ export default function SignInScreen() {
             </TouchableOpacity>
 
             <View style={{ marginTop: 24, marginBottom: 36 }}>
-              <Text style={sc.heading}>Sign in</Text>
-              <Text style={sc.subheading}>Enter your credentials to continue</Text>
+              <Text style={sc.heading}>{t("Sign in")}</Text>
+              <Text style={sc.subheading}>{t("Enter your credentials to continue")}</Text>
             </View>
 
             <View style={{ gap: 14 }}>
@@ -736,7 +738,7 @@ export default function SignInScreen() {
             </View>
 
             <TouchableOpacity onPress={() => setForgotVisible(true)} style={{ alignSelf: "flex-end", paddingVertical: 12, marginBottom: 4 }}>
-              <Text style={{ fontSize: 13.5, fontFamily: "Inter_500Medium", color: accent }}>Forgot password?</Text>
+              <Text style={{ fontSize: 13.5, fontFamily: "Inter_500Medium", color: accent }}>{t("Forgot password?")}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -746,14 +748,14 @@ export default function SignInScreen() {
               activeOpacity={0.85}
             >
               <LinearGradient colors={[accent, Colors.brandDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
-                {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={sc.primaryText}>Sign in</Text>}
+                {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={sc.primaryText}>{t("Sign in")}</Text>}
               </LinearGradient>
             </TouchableOpacity>
 
             <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 4, marginTop: 24 }}>
-              <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.40)" }}>Don't have an account?</Text>
+              <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.40)" }}>{t("Don't have an account?")}</Text>
               <TouchableOpacity onPress={() => router.push("/(auth)/register")} activeOpacity={0.7}>
-                <Text style={{ fontSize: 14, fontFamily: "Inter_700Bold", color: accent }}>Sign up</Text>
+                <Text style={{ fontSize: 14, fontFamily: "Inter_700Bold", color: accent }}>{t("Sign up")}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

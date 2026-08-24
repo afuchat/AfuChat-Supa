@@ -27,7 +27,7 @@ const LANG_LIST = Object.entries(LANG_LABELS).map(([code, name]) => ({ code, nam
 export default function LanguageSettingsScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { preferredLang, setPreferredLang } = useLanguage();
+  const { preferredLang, setPreferredLang, t } = useLanguage();
   const [saving, setSaving] = useState<string | null>(null);
 
   async function pick(lang: string | null) {
@@ -43,14 +43,13 @@ export default function LanguageSettingsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
           <Ionicons name="chevron-back" size={26} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Language</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>{t("Language")}</Text>
         <View style={styles.backBtn} />
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
         <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
-          When a language is selected, all messages and posts across the app are automatically
-          translated into that language as you browse.
+          {t("When a language is selected, all messages and posts across the app are automatically translated into that language as you browse.")}
         </Text>
 
         <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -63,8 +62,8 @@ export default function LanguageSettingsScreen() {
               <Text style={styles.flagText}>🌐</Text>
             </View>
             <View style={styles.rowInfo}>
-              <Text style={[styles.rowName, { color: colors.text }]}>Original (no translation)</Text>
-              <Text style={[styles.rowSub, { color: colors.textMuted }]}>Show content in its original language</Text>
+              <Text style={[styles.rowName, { color: colors.text }]}>{t("Original (no translation)")}</Text>
+              <Text style={[styles.rowSub, { color: colors.textMuted }]}>{t("Show content in its original language")}</Text>
             </View>
             <View style={styles.rowRight}>
               {saving === "none" ? (
