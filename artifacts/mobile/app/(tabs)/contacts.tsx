@@ -25,7 +25,6 @@ import { Separator } from "@/components/ui/Separator";
 import Colors from "@/constants/colors";
 import { ContactRowSkeleton } from "@/components/ui/Skeleton";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
-import OfflineBanner from "@/components/ui/OfflineBanner";
 import { isOnline } from "@/lib/offlineStore";
 import { getLocalContacts, saveLocalContacts, getAllPhonebookNames } from "@/lib/storage/localContacts";
 import { createLocalNotesConversation } from "@/lib/storage/localNotes";
@@ -226,7 +225,6 @@ export default function ContactsScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.backgroundSecondary }]}>
-      <OfflineBanner />
       <View
         style={[
           styles.header,

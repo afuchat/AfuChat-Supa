@@ -24,7 +24,6 @@ import { AvatarViewer } from "@/components/ui/AvatarViewer";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import QRPosterSheet from "@/components/ui/QRPosterSheet";
 import Colors from "@/constants/colors";
-import OfflineBanner from "@/components/ui/OfflineBanner";
 import { showAlert } from "@/lib/alert";
 import { getCachedProfileSync, isOnline, onConnectivityChange } from "@/lib/offlineStore";
 import { showToast } from "@/lib/toast";
@@ -351,7 +350,6 @@ export default function MeScreen() {
   if (!profile && user) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
-        <OfflineBanner />
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32, gap: 12 }}>
           <Ionicons name="person-circle-outline" size={52} color={colors.textMuted} />
           <Text style={{ color: colors.text, fontSize: 17, fontFamily: "Inter_600SemiBold", textAlign: "center" }}>
@@ -376,9 +374,6 @@ export default function MeScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <OfflineBanner />
-
-
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[s.content, {

@@ -46,7 +46,6 @@ import { PostSkeleton } from "@/components/ui/Skeleton";
 import { VideoThumbnail } from "@/components/ui/VideoThumbnail";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import UserName from "@/components/ui/UserName";
-import OfflineBanner from "@/components/ui/OfflineBanner";
 import PostUploadBanner from "@/components/ui/PostUploadBanner";
 import { isOnline, onConnectivityChange } from "@/lib/offlineStore";
 import { getLocalFeedPosts, saveFeedPosts, getNewestFeedPostDate, type FeedTab as LocalFeedTab } from "@/lib/storage/localFeed";
@@ -2604,7 +2603,6 @@ export default function DiscoverScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <OfflineBanner />
       <PostUploadBanner />
       <>
 

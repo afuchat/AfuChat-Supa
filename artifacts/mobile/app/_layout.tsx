@@ -60,7 +60,6 @@ import { DataModeProvider } from "@/context/DataModeContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastContainer } from "@/components/ui/ToastContainer";
 import AlertModal from "@/components/ui/AlertModal";
-import OfflineBanner from "@/components/ui/OfflineBanner";
 import { GlobalInboxListener } from "@/components/GlobalInboxListener";
 import UpdatePrompt from "@/components/UpdatePrompt";
 import { initActivityTracker } from "@/lib/activityTracker";
@@ -413,7 +412,6 @@ export default function RootLayout() {
                       <AdvancedFeaturesProvider>
                         <ChatPreferencesProvider>
                           <MiniAppRuntimeProvider>
-                            <OfflineBanner />
                             <IncomingShareGate navigationReady={!!rootNavigationState?.key} />
                             <AppNavigationStack />
                             <ToastContainer />

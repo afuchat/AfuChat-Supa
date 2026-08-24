@@ -32,7 +32,6 @@ import { AnimatedSearchSurface } from "@/components/chat/AnimatedSearchSurface";
 import { Separator } from "@/components/ui/Separator";
 import { ContactRowSkeleton } from "@/components/ui/Skeleton";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
-import OfflineBanner from "@/components/ui/OfflineBanner";
 import { isOnline } from "@/lib/offlineStore";
 import {
   getLocalContacts,
@@ -383,8 +382,6 @@ export default function NewChatScreen() {
 
   return (
     <Animated.View style={[styles.root, { backgroundColor: colors.background, paddingBottom: keyboardOffsetAnim }]}>
-      <OfflineBanner />
-
       {/* ── Header ── */}
       <View
         style={[

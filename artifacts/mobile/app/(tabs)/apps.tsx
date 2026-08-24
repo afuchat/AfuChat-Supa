@@ -18,7 +18,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "@/lib/haptics";
 import { useSuperApp } from "@/lib/superapp/MiniAppRuntime";
 import { useTheme } from "@/hooks/useTheme";
-import OfflineBanner from "@/components/ui/OfflineBanner";
 import { useAuth } from "@/context/AuthContext";
 import { isOnline } from "@/lib/offlineStore";
 import { showToast } from "@/lib/toast";
@@ -386,7 +385,6 @@ export default function AppsScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <OfflineBanner />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={{
