@@ -3,7 +3,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { patchLocalSetting } from "@/lib/storage/localSettings";
-import { saveNotificationPreferences } from "@/lib/notificationPreferences";
 
 const CHAT_PREF_TO_LOCAL: Partial<Record<string, string>> = {
   read_receipts: "chat_read_receipts",
@@ -201,11 +200,6 @@ export function ChatPreferencesProvider({ children }: { children: React.ReactNod
     setPrefs((p) => ({ ...p, [key]: value }));
 
     if (key === "chat_theme") AsyncStorage.setItem(APP_ACCENT_KEY, value as string).catch(() => {});
-    if (key === "sounds_enabled") {
-      // Keep message notification audio in sync with the chat preference.
-      saveNotificationPreferences({ sounds: value as boolean });
-    }
-
     const localKey = CHAT_PREF_TO_LOCAL[key as string];
     if (localKey && user) {
       let localVal: any = value;

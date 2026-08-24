@@ -277,7 +277,7 @@ type NotificationMessageData = {
 function getNotificationRoute(event: NotificationMessageData): { pathname: string; params?: Record<string, string> } | null {
   const route = event.cta_route?.trim();
   if (!route || !route.startsWith("/") || route.includes("://") || route.includes("..")) return null;
-  if (route === "/premium" || route === "/settings/notifications" || route === "/(tabs)/discover" || route === "/(tabs)/shorts") {
+  if (route === "/premium" || route === "/(tabs)/discover" || route === "/(tabs)/shorts") {
     return { pathname: route };
   }
   if (route === "/stories/view" && event.entity_id) {

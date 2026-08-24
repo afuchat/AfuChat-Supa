@@ -189,5 +189,4 @@ export const KEYS = {
   LANGUAGE: "app_language",
   HANDLE_CHANGED_AT_PREFIX: "handle_changed_at_",
   NAME_CHANGED_AT_PREFIX: "name_changed_at_",
-  NOTIFICATION_PREFERENCES: "notification_preferences",
 } as const;

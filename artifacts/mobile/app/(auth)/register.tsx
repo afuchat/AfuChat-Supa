@@ -20,6 +20,7 @@ import {
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { makeRedirectUri } from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { supabase } from "@/lib/supabase";

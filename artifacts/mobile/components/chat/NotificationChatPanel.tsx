@@ -42,7 +42,6 @@ function getSafeRoute(event: NotificationEvent): NotificationRoute | null {
   // here as a second line of defence because this value is rendered from data.
   if (
     route === "/premium" ||
-    route === "/settings/notifications" ||
     route === "/device-security" ||
     route === "/(tabs)/discover" ||
     route === "/(tabs)/shorts"
