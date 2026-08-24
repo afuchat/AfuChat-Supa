@@ -477,11 +477,10 @@ function formatDateHeader(iso: string): string {
 function BubbleTail({ isMe, color }: { isMe: boolean; color: string }) {
   return (
     <View
-      pointerEvents="none"
       style={[
         st.tailBase,
         isMe ? st.tailMe : st.tailOther,
-        { borderTopColor: color },
+        { borderTopColor: color, pointerEvents: "none" },
       ]}
     />
   );
@@ -1189,7 +1188,6 @@ function MediaUploadIndicator({ kind, isMe }: { kind: "image" | "video"; isMe: b
 
   return (
     <View
-      pointerEvents="none"
       style={{
         position: "absolute",
         left: 8,
@@ -1197,6 +1195,7 @@ function MediaUploadIndicator({ kind, isMe }: { kind: "image" | "video"; isMe: b
         flexDirection: "row",
         alignItems: "center",
         gap: 6,
+        pointerEvents: "none",
         paddingHorizontal: 8,
         paddingVertical: 5,
         borderRadius: 14,
@@ -7844,7 +7843,7 @@ STRICT RULES:
           };
 
           return (
-            <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+            <View style={[StyleSheet.absoluteFill, { pointerEvents: "box-none" }]}>
               <TouchableOpacity
                 style={StyleSheet.absoluteFill}
                 activeOpacity={1}

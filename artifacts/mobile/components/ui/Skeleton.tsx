@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, StyleSheet, View, ViewStyle } from "react-native";
+import { Animated, Platform, StyleSheet, View, ViewStyle } from "react-native";
 import { useTheme } from "../../hooks/useTheme";
 
 type SkeletonProps = {
@@ -24,8 +24,8 @@ function SkeletonFallback({ width, height, borderRadius = 8, style, forceDark }:
   useEffect(() => {
     const anim = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: Platform.OS !== "web" }),
+        Animated.timing(pulse, { toValue: 0, duration: 700, useNativeDriver: Platform.OS !== "web" }),
       ])
     );
     anim.start();

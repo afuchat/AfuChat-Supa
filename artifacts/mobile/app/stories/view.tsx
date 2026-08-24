@@ -626,7 +626,7 @@ export default function ViewStoryScreen() {
 
       {/* Never advance the story while its media is still downloading/loading. */}
       {(!mediaReady || mediaDownloading) && (
-        <View style={styles.downloadOverlay} pointerEvents="none">
+        <View style={[styles.downloadOverlay, { pointerEvents: "none" }]}>
           <ActivityIndicator size="large" color="#fff" />
           <Text style={styles.downloadText}>
             {mediaDownloading

@@ -402,7 +402,20 @@ function StoriesRow({
               )}
             </View>
           </StoryRing>
-          <Text style={{ color: colors.textMuted, fontSize: 11, fontFamily: "Inter_400Regular" }} numberOfLines={1}>{s.name.split(" ")[0]}</Text>
+          <Text
+            style={{
+              color: colors.textMuted,
+              fontSize: 10,
+              lineHeight: 12,
+              letterSpacing: -0.15,
+              fontFamily: "Inter_700Bold",
+              maxWidth: 68,
+            }}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {s.name.split(" ")[0]}
+          </Text>
         </TouchableOpacity>
       ))}
     </ScrollView>

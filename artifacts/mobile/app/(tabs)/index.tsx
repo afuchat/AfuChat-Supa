@@ -1652,13 +1652,13 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 0 }]} />
          {!selectMode && !panelMode && (
            <Animated.View
-             pointerEvents={searchOpen ? "auto" : "none"}
              style={[
                styles.headerSearchOverlay,
                {
                  backgroundColor: colors.backgroundSecondary,
                  borderColor: colors.border,
                  opacity: searchAnim,
+                  pointerEvents: searchOpen ? "auto" : "none",
                  transform: [
                    { translateX: searchAnim.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) },
                    { scaleX: searchAnim.interpolate({ inputRange: [0, 1], outputRange: [0.82, 1] }) },
