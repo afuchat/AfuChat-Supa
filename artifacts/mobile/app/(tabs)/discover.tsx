@@ -2623,7 +2623,10 @@ export default function DiscoverScreen() {
           const nextHeight = Math.round(e.nativeEvent.layout.height);
           setHeaderHeight((current) => current === nextHeight ? current : nextHeight);
         }}
-        style={[styles.headerBlock]}
+        style={[
+          styles.headerBlock,
+          { transform: [{ translateY: headerOffset }] },
+        ]}
       >
         {/* Flat header background — unified BG, no separate surface colour */}
         <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 0 }]} />
@@ -2985,7 +2988,7 @@ export default function DiscoverScreen() {
             // Keep the pill directly below the complete header, including the
             // For You / Following tabs, on every safe-area size.
             top: headerHeight + 2,
-            transform: [{ translateY: popupSlide }],
+            transform: [{ translateY: Animated.add(headerOffset, popupSlide) }],
             opacity: popupOpacity,
             pointerEvents: popupSnapshot.length > 0 ? "auto" : "none",
           } as any,
