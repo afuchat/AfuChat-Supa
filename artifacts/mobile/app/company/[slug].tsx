@@ -70,6 +70,7 @@ type PagePost = {
   created_at: string;
   author_id: string;
   likes: number;
+  reply_count?: number;
 };
 
 type Follower = {
@@ -217,14 +218,26 @@ export default function CompanyPageScreen() {
     // Load liked posts
     if (user && postsData && postsData.length > 0) {
       const postIds = postsData.map((p: any) => p.id);
-      const { data: likedData } = await supabase
-        .from("post_acknowledgments")
+      const [{ data: likedData }, { data: replyData }] = await Promise.all([
+        supabase.from("post_acknowledgments").select("post_id").eq("user_id", user.id).in("post_id", postIds),
+        supabase.from("post_replies").select("post_id").in("post_id", postIds),
+      ]);
+      if (likedData) setLikedPosts(new Set(likedData.map((l: any) => l.post_id)));
+      const replyCounts = (replyData ?? []).reduce((acc: Record<string, number>, row: any) => {
+        acc[row.post_id] = (acc[row.post_id] ?? 0) + 1;
+        return acc;
+      }, {});
+      setPosts((current) => current.map((post) => ({ ...post, reply_count: replyCounts[post.id] ?? 0 })));
+    } else if (postsData && postsData.length > 0) {
+      const { data: replyData } = await supabase
+        .from("post_replies")
         .select("post_id")
-        .eq("user_id", user.id)
-        .in("post_id", postIds);
-      if (likedData) {
-        setLikedPosts(new Set(likedData.map((l: any) => l.post_id)));
-      }
+        .in("post_id", postsData.map((p: any) => p.id));
+      const replyCounts = (replyData ?? []).reduce((acc: Record<string, number>, row: any) => {
+        acc[row.post_id] = (acc[row.post_id] ?? 0) + 1;
+        return acc;
+      }, {});
+      setPosts((current) => current.map((post) => ({ ...post, reply_count: replyCounts[post.id] ?? 0 })));
     }
 
     setLoading(false);
@@ -758,7 +771,11 @@ export default function CompanyPageScreen() {
           renderItem={({ item }) => {
             const isLiked = likedPosts.has(item.id);
             return (
-              <View style={[styles.postCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <TouchableOpacity
+                style={[styles.postCard, { backgroundColor: colors.background, borderColor: colors.border }]}
+                onPress={() => router.push({ pathname: "/post/[id]", params: { id: item.id, org: "1" } } as any)}
+                activeOpacity={0.97}
+              >
                 {/* Post header */}
                 <View style={styles.postHeader}>
                   <View style={[styles.postLogo, { backgroundColor: colors.accent }]}>
@@ -810,13 +827,23 @@ export default function CompanyPageScreen() {
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.likeBtn}
+                    onPress={() => router.push({ pathname: "/post/[id]", params: { id: item.id, org: "1" } } as any)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="chatbubble-outline" size={17} color={colors.textMuted} />
+                    {(item.reply_count ?? 0) > 0 && (
+                      <Text style={[styles.likeBtnText, { color: colors.textMuted }]}>{fmtCount(item.reply_count ?? 0)}</Text>
+                    )}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.likeBtn}
                     onPress={sharePage}
                     activeOpacity={0.7}
                   >
                     <Ionicons name="share" size={17} color={colors.textMuted} />
                   </TouchableOpacity>
                 </View>
-              </View>
+              </TouchableOpacity>
             );
           }}
           contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
@@ -1389,14 +1416,17 @@ const styles = StyleSheet.create({
   tabBadgeText: { color: "#fff", fontSize: 10, fontFamily: "Inter_700Bold" },
   tabAction: { paddingHorizontal: 12, paddingVertical: 10 },
 
-  postCard: { marginHorizontal: 12, marginTop: 12, borderRadius: 16, padding: 14, borderWidth: 0.5, gap: 10 },
-  postHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
+  // Keep organization updates in the same edge-to-edge feed geometry as
+  // regular posts; the page identity is carried by the header, not a special
+  // card treatment.
+  postCard: { overflow: "hidden", borderBottomWidth: StyleSheet.hairlineWidth, gap: 0 },
+  postHeader: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 },
   postLogo: { width: 38, height: 38, borderRadius: 8, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   postPageName: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   postDate: { fontSize: 12, fontFamily: "Inter_400Regular" },
-  postContent: { fontSize: 15, fontFamily: "Inter_400Regular", lineHeight: 23 },
-  postImage: { width: "100%", height: 200, borderRadius: 10 },
-  postFooter: { flexDirection: "row", alignItems: "center", gap: 16, paddingTop: 10 },
+  postContent: { fontSize: 15, fontFamily: "Inter_400Regular", lineHeight: 23, paddingHorizontal: 66, paddingBottom: 8 },
+  postImage: { width: "100%", height: 200 },
+  postFooter: { flexDirection: "row", alignItems: "center", gap: 16, paddingLeft: 66, paddingRight: 16, paddingTop: 2, paddingBottom: 10 },
   likeBtn: { flexDirection: "row", alignItems: "center", gap: 5 },
   likeBtnText: { fontSize: 13, fontFamily: "Inter_500Medium" },
 

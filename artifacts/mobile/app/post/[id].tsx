@@ -258,7 +258,7 @@ type RecordState = "idle" | "recording" | "recorded";
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
 export default function PostDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, org } = useLocalSearchParams<{ id: string; org?: string }>();
   const { colors, isDark } = useTheme();
   const { accent } = useAppAccent();
   const { user, profile } = useAuth();
@@ -338,15 +338,42 @@ export default function PostDetailScreen() {
     (async () => {
       setLoading(true);
       try {
-        const { data } = await supabase
-          .from("posts")
-          .select(`
-            id, author_id, content, image_url, created_at, view_count, like_count, post_type,
-            profiles!posts_author_id_fkey(display_name, handle, avatar_url, is_verified, is_organization_verified),
-            post_images(image_url, display_order)
-          `)
-          .eq("id", id)
-          .single();
+        let data: any;
+        if (org === "1") {
+          const { data: orgPost } = await supabase
+            .from("organization_page_posts")
+            .select("id, content, image_url, created_at, author_id, likes, organization_pages!inner(name, slug, logo_url, is_verified)")
+            .eq("id", id)
+            .single();
+          const page = (orgPost as any)?.organization_pages;
+          data = orgPost
+            ? {
+                ...orgPost,
+                view_count: 0,
+                like_count: orgPost.likes ?? 0,
+                post_type: "text",
+                profiles: {
+                  display_name: page?.name ?? "Company",
+                  handle: page?.slug ?? "company",
+                  avatar_url: page?.logo_url ?? null,
+                  is_verified: false,
+                  is_organization_verified: page?.is_verified ?? false,
+                },
+                post_images: [],
+              }
+            : null;
+        } else {
+          const result = await supabase
+            .from("posts")
+            .select(`
+              id, author_id, content, image_url, created_at, view_count, like_count, post_type,
+              profiles!posts_author_id_fkey(display_name, handle, avatar_url, is_verified, is_organization_verified),
+              post_images(image_url, display_order)
+            `)
+            .eq("id", id)
+            .single();
+          data = result.data;
+        }
 
         if (!data || cancelled) { setLoading(false); return; }
 
@@ -470,12 +497,28 @@ export default function PostDetailScreen() {
     if (liked) {
       setLiked(false); setLikeCount((n) => Math.max(0, n - 1));
       try {
-        await supabase.from("post_acknowledgments").delete().eq("post_id", post.id).eq("user_id", user.id);
+        const { error } = await supabase.from("post_acknowledgments").delete().eq("post_id", post.id).eq("user_id", user.id);
+        if (org === "1") {
+          const { error: orgError } = await supabase
+            .from("organization_page_posts")
+            .update({ likes: Math.max(0, likeCount - 1) })
+            .eq("id", post.id);
+          if (orgError) throw orgError;
+        }
+        if (error) throw error;
       } catch { setLiked(true); setLikeCount((n) => n + 1); }
     } else {
       setLiked(true); setLikeCount((n) => n + 1);
       try {
-        await supabase.from("post_acknowledgments").upsert({ post_id: post.id, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
+        const { error } = await supabase.from("post_acknowledgments").upsert({ post_id: post.id, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true });
+        if (org === "1") {
+          const { error: orgError } = await supabase
+            .from("organization_page_posts")
+            .update({ likes: likeCount + 1 })
+            .eq("id", post.id);
+          if (orgError) throw orgError;
+        }
+        if (error) throw error;
       } catch { setLiked(false); setLikeCount((n) => Math.max(0, n - 1)); }
     }
   }, [user, post, liked, heartScale]);

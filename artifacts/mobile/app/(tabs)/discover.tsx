@@ -289,7 +289,7 @@ function StoriesRow({
   const { colors } = useTheme();
   const [stories, setStories] = useState<StoryEntry[]>([]);
   const [storiesLoaded, setStoriesLoaded] = useState(false);
-  const SZ = 58;
+  const SZ = 46;
 
   const loadDiscoverStories = useCallback(async () => {
     const now = new Date().toISOString();
@@ -380,13 +380,13 @@ function StoriesRow({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingHorizontal: 14, paddingVertical: 10, gap: 14 }}
+      contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 6, gap: 10 }}
     >
       {/* Stories from other users */}
       {stories.map((s) => (
         <TouchableOpacity
           key={s.userId}
-          style={{ alignItems: "center", gap: 5, width: 68 }}
+          style={{ alignItems: "center", gap: 3, width: 54 }}
           activeOpacity={0.8}
           onPress={() => safeRouter.push({
             pathname: "/stories/view",
@@ -409,7 +409,7 @@ function StoriesRow({
               lineHeight: 12,
               letterSpacing: -0.15,
               fontFamily: "Inter_700Bold",
-              maxWidth: 68,
+              maxWidth: 54,
             }}
             numberOfLines={1}
             ellipsizeMode="tail"
@@ -1487,8 +1487,8 @@ export default function DiscoverScreen() {
     const idx = feedTab === "for_you" ? 0 : 1;
     const layout = discoverTabLayoutsRef.current[idx];
     if (!layout) return;
-    Animated.spring(discoverPillX, { toValue: layout.x + 4, damping: 22, stiffness: 200, useNativeDriver: false }).start();
-    Animated.spring(discoverPillW, { toValue: layout.width - 8, damping: 22, stiffness: 200, useNativeDriver: false }).start();
+    discoverPillX.setValue(layout.x + 4);
+    discoverPillW.setValue(layout.width - 8);
   }, [feedTab]);
 
   const handleDiscoverPageScroll = useCallback((e: any) => {
@@ -2676,20 +2676,15 @@ export default function DiscoverScreen() {
       <PostUploadBanner />
       <>
 
-      {/* ── Auto-hiding header ── */}
-      <Animated.View
-        style={[styles.headerBlock, { height: headerFlowHeight }]}
-      >
+      {/* ── Fixed, compact Discover header ── */}
+      <View style={styles.headerBlock}>
         {/* The compact top bar, tabs, and refresh status collapse together. */}
-        <Animated.View
+        <View
           onLayout={(e) => {
             const nextHeight = Math.round(e.nativeEvent.layout.height);
             setCoreHeaderHeight((current) => current === nextHeight ? current : nextHeight);
           }}
-          style={{
-            transform: [{ translateY: headerOffset }],
-            zIndex: 2,
-          }}
+          style={{ zIndex: 2 }}
         >
           {/* ── Row 1: user avatar | centered wordmark | bell ── */}
           <View style={[styles.headerTop, { paddingTop: insets.top + 6 }]}>
@@ -2764,30 +2759,25 @@ export default function DiscoverScreen() {
             </TouchableOpacity>
           )}
           </View>
-        </Animated.View>
+        </View>
 
         {/* Stories move into the top-bar space when the tabs collapse. Keep
             this layer above the collapsing chrome and give it its own opaque
             background so the feed never shows through during the handoff. */}
-        <Animated.View
+        <View
           onLayout={(e) => {
             const nextHeight = Math.round(e.nativeEvent.layout.height);
             setStoriesHeight((current) => current === nextHeight ? current : nextHeight);
           }}
-          style={{
-            transform: [{ translateY: headerOffset }],
-            zIndex: 3,
-            width: "100%",
-            backgroundColor: colors.background,
-          }}
+          style={{ zIndex: 3, width: "100%", backgroundColor: colors.background }}
         >
           <StoriesRow
             userId={user?.id ?? null}
             avatarUrl={profile?.avatar_url ?? null}
             displayName={profile?.display_name ?? null}
           />
-        </Animated.View>
-      </Animated.View>
+        </View>
+      </View>
       {/* ────────────────────────────────────────────────────────────────── */}
 
       {/* Edge fade removed — it was overlaying the first row of feed content */}
