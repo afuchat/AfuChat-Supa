@@ -76,7 +76,9 @@ export default function OfflineBanner() {
     <Animated.View
       style={[
         st.pill,
-        { top: insets.top + 10, backgroundColor, pointerEvents: "none", transform: [{ translateY }] },
+        // Sit just below the app/header name instead of covering the status
+        // bar or the top navigation controls.
+        { top: insets.top + 48, backgroundColor, pointerEvents: "none", transform: [{ translateY }] },
       ]}
     >
       <Ionicons name={icon as any} size={15} color="#fff" />
@@ -91,9 +93,9 @@ const st = StyleSheet.create({
     alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
-    gap: T.space.sm - 2,
-    paddingHorizontal: T.space.lg - 2,
-    paddingVertical: T.space.sm - 2,
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: T.radius.pill,
     zIndex: 99999,
     elevation: T.elevation.overlay,
@@ -110,7 +112,7 @@ const st = StyleSheet.create({
   label: {
     color: "#fff",
     ...T.caption,
-    fontSize: 12,
+    fontSize: 10,
     letterSpacing: 0.1,
   },
 });
