@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -13,41 +14,45 @@ import { Image as ExpoImage } from "expo-image";
 import { router } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
-import { useNearbyLocation } from "@/hooks/useNearbyLocation";
 import { supabase } from "@/lib/supabase";
 
-type NearbyPerson = {
+type Person = {
   id: string;
   display_name: string;
   handle: string;
   avatar_url: string | null;
   bio: string | null;
-  distance_km: number | null;
-  is_following: boolean;
-  is_online: boolean;
+  follower_count: number;
+  is_verified: boolean;
+  is_organization_verified: boolean;
   last_seen: string | null;
+  is_following: boolean;
 };
 
-const RADII = [5, 25, 100];
-const LIVE_WINDOW_MS = 10 * 60_000;
+type Filter = "all" | "online" | "recent";
+const ONLINE_WINDOW = 10 * 60_000;
+const RECENT_WINDOW = 24 * 60 * 60_000;
 
-function distanceLabel(distance: number | null) {
-  if (distance == null) return "Nearby";
-  if (distance < 1) return `${Math.round(distance * 1000)} m away`;
-  return `${distance.toFixed(distance < 10 ? 1 : 0)} km away`;
+function isOnline(lastSeen: string | null) {
+  return !!lastSeen && Date.now() - new Date(lastSeen).getTime() <= ONLINE_WINDOW;
 }
 
-function PersonAvatar({ person, color }: { person: NearbyPerson; color: string }) {
+function relativeSeen(lastSeen: string | null) {
+  if (!lastSeen) return "Not active recently";
+  const minutes = Math.max(0, Math.floor((Date.now() - new Date(lastSeen).getTime()) / 60_000));
+  if (minutes < 1) return "Active now";
+  if (minutes < 60) return `Active ${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Active ${hours}h ago`;
+  return "Active recently";
+}
+
+function Avatar({ person, accent }: { person: Person; accent: string }) {
   return person.avatar_url ? (
-    <ExpoImage
-      source={{ uri: person.avatar_url }}
-      style={styles.avatar}
-      contentFit="cover"
-      cachePolicy="memory-disk"
-    />
+    <ExpoImage source={{ uri: person.avatar_url }} style={styles.avatar} contentFit="cover" cachePolicy="memory-disk" />
   ) : (
-    <View style={[styles.avatar, { backgroundColor: color + "20" }]}>
-      <Text style={[styles.initial, { color }]}>
+    <View style={[styles.avatar, { backgroundColor: accent + "20" }]}>
+      <Text style={[styles.initial, { color: accent }]}>
         {(person.display_name || person.handle || "?")[0].toUpperCase()}
       </Text>
     </View>
@@ -57,117 +62,105 @@ function PersonAvatar({ person, color }: { person: NearbyPerson; color: string }
 export default function FindPeopleTab() {
   const { colors, accent } = useTheme();
   const { user } = useAuth();
-  const { coords, locating, error: locationError, requestLocation } = useNearbyLocation();
-  const [radius, setRadius] = useState(25);
-  const [people, setPeople] = useState<NearbyPerson[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<Filter>("all");
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [followBusy, setFollowBusy] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState(Date.now());
 
-  const loadPeople = useCallback(async (nextCoords = coords) => {
-    if (!user || !nextCoords) return;
-    setLoading(true);
+  const loadPeople = useCallback(async (silent = false) => {
+    if (!user) return;
+    if (!silent) setLoading(true);
     setError(null);
     try {
-      const [{ data, error: rpcError }, { data: follows }] = await Promise.all([
-        supabase.rpc("nearby_users", {
-          user_lat: nextCoords.lat,
-          user_lng: nextCoords.lng,
-          radius_km: radius,
-          exclude_id: user.id,
-        }),
+      // This is deliberately a live presence query, not a recommendation or
+      // history query. last_seen is updated by the session heartbeat.
+      const [{ data, error: profileError }, { data: follows, error: followError }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, display_name, handle, avatar_url, bio, follower_count, is_verified, is_organization_verified, last_seen")
+          .neq("id", user.id)
+          .eq("onboarding_completed", true)
+          .eq("is_banned", false)
+          .eq("account_deleted", false)
+          .not("handle", "is", null)
+          .order("last_seen", { ascending: false, nullsFirst: false })
+          .limit(100),
         supabase.from("follows").select("following_id").eq("follower_id", user.id),
       ]);
-      if (rpcError) throw rpcError;
-      const followed = new Set((follows || []).map((row: any) => row.following_id));
-      const now = Date.now();
-      setPeople(((data || []) as any[])
-        .map((person) => {
-          const locationUpdatedAt = person.location_updated_at || null;
-          const lastSeen = person.last_seen || locationUpdatedAt;
-          return {
-            id: person.id,
-            display_name: person.display_name || `@${person.handle}`,
-            handle: person.handle || "",
-            avatar_url: person.avatar_url || null,
-            bio: person.bio || null,
-            distance_km: typeof person.distance_km === "number" ? person.distance_km : null,
-            is_following: followed.has(person.id),
-            is_online: !!lastSeen && now - new Date(lastSeen).getTime() < LIVE_WINDOW_MS,
-            last_seen: lastSeen,
-            locationAge: locationUpdatedAt ? now - new Date(locationUpdatedAt).getTime() : Infinity,
-          };
-        })
-        .filter((person) => person.locationAge < LIVE_WINDOW_MS)
-        .map(({ locationAge: _locationAge, ...person }) => person));
+      if (profileError) throw profileError;
+      if (followError) throw followError;
+      const followed = new Set((follows ?? []).map((row: any) => row.following_id));
+      setPeople(((data ?? []) as any[]).map((person) => ({
+        id: person.id,
+        display_name: person.display_name || `@${person.handle}`,
+        handle: person.handle || "",
+        avatar_url: person.avatar_url || null,
+        bio: person.bio || null,
+        follower_count: Number(person.follower_count || 0),
+        is_verified: !!person.is_verified,
+        is_organization_verified: !!person.is_organization_verified,
+        last_seen: person.last_seen || null,
+        is_following: followed.has(person.id),
+      })));
+      setLastUpdated(Date.now());
     } catch {
-      setError("Nearby people could not be loaded right now.");
+      setError("Live users could not be loaded right now.");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [coords, radius, user]);
+  }, [user]);
 
   useEffect(() => {
-    if (coords) void loadPeople(coords);
-  }, [coords, loadPeople]);
+    if (user) void loadPeople();
+  }, [loadPeople, user]);
 
-  // Keep our presence fresh while this live tab is open.
   useEffect(() => {
-    if (!user || !coords) return;
+    if (!user) return;
+    // Keep the current user eligible for the live feed while this tab is open.
     const heartbeat = () => {
-      supabase.rpc("update_last_seen").then(null, () => {});
+      supabase.rpc("update_last_seen").then(() => {}, () => {});
     };
     heartbeat();
-    const timer = setInterval(heartbeat, 60_000);
-    return () => clearInterval(timer);
-  }, [coords, user]);
-
-  // Re-run the authoritative nearby query whenever a profile presence or
-  // location changes, so this is a live feed rather than a static history.
-  useEffect(() => {
-    if (!user || !coords) return;
-    let reloadTimer: ReturnType<typeof setTimeout> | null = null;
-    const scheduleReload = () => {
-      if (reloadTimer) clearTimeout(reloadTimer);
-      reloadTimer = setTimeout(() => void loadPeople(coords), 1200);
-    };
+    const heartbeatTimer = setInterval(heartbeat, 60_000);
+    const pollTimer = setInterval(() => void loadPeople(true), 30_000);
     const channel = supabase
-      .channel(`find-live-users-${user.id}`)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles" }, scheduleReload)
+      .channel(`find-presence-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => void loadPeople(true))
       .subscribe();
     return () => {
-      if (reloadTimer) clearTimeout(reloadTimer);
+      clearInterval(heartbeatTimer);
+      clearInterval(pollTimer);
       supabase.removeChannel(channel);
     };
-  }, [coords, loadPeople, user]);
+  }, [loadPeople, user]);
 
-  const findNearby = useCallback(async () => {
-    const next = await requestLocation();
-    if (next) void loadPeople(next);
-  }, [loadPeople, requestLocation]);
+  const visiblePeople = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return people.filter((person) => {
+      const matchesQuery = !needle || person.display_name.toLowerCase().includes(needle) || person.handle.toLowerCase().includes(needle);
+      const age = person.last_seen ? Date.now() - new Date(person.last_seen).getTime() : Infinity;
+      const matchesFilter = filter === "all" || (filter === "online" ? age <= ONLINE_WINDOW : age <= RECENT_WINDOW);
+      return matchesQuery && matchesFilter;
+    }).sort((a, b) => Number(isOnline(b.last_seen)) - Number(isOnline(a.last_seen)));
+  }, [filter, lastUpdated, people, query]);
 
-  const toggleFollow = useCallback(async (person: NearbyPerson) => {
-    if (!user) {
-      router.push("/(auth)/login" as any);
-      return;
-    }
+  const toggleFollow = useCallback(async (person: Person) => {
+    if (!user) return router.push("/(auth)/login" as any);
     setFollowBusy(person.id);
-    const nextFollowing = !person.is_following;
-    setPeople((current) => current.map((item) =>
-      item.id === person.id ? { ...item, is_following: nextFollowing } : item,
-    ));
+    const next = !person.is_following;
+    setPeople((current) => current.map((item) => item.id === person.id ? { ...item, is_following: next } : item));
     try {
-      const query = supabase.from("follows");
-      const result = nextFollowing
-        ? await query.insert({ follower_id: user.id, following_id: person.id })
-        : await query.delete().eq("follower_id", user.id).eq("following_id", person.id);
+      const result = next
+        ? await supabase.from("follows").insert({ follower_id: user.id, following_id: person.id })
+        : await supabase.from("follows").delete().eq("follower_id", user.id).eq("following_id", person.id);
       if (result.error) throw result.error;
     } catch {
-      setPeople((current) => current.map((item) =>
-        item.id === person.id ? { ...item, is_following: person.is_following } : item,
-      ));
+      setPeople((current) => current.map((item) => item.id === person.id ? { ...item, is_following: !next } : item));
     } finally {
       setFollowBusy(null);
     }
@@ -176,13 +169,9 @@ export default function FindPeopleTab() {
   if (!user) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <View style={[styles.heroIcon, { backgroundColor: accent + "18" }]}>
-          <Ionicons name="location-outline" size={32} color={accent} />
-        </View>
+        <View style={[styles.heroIcon, { backgroundColor: accent + "18" }]}><Ionicons name="radio" size={32} color={accent} /></View>
         <Text style={[styles.title, { color: colors.text }]}>Find your people</Text>
-        <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-          Sign in to discover AfuChat people near you.
-        </Text>
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>Sign in to see who is active on AfuChat right now.</Text>
         <TouchableOpacity style={[styles.primaryButton, { backgroundColor: accent }]} onPress={() => router.push("/(auth)/login" as any)}>
           <Text style={styles.primaryButtonText}>Sign in</Text>
         </TouchableOpacity>
@@ -190,93 +179,60 @@ export default function FindPeopleTab() {
     );
   }
 
-  if (!coords) {
-    return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <View style={[styles.heroIcon, { backgroundColor: accent + "18" }]}>
-          {locating ? <ActivityIndicator color={accent} /> : <Ionicons name="navigate-outline" size={32} color={accent} />}
-        </View>
-        <Text style={[styles.title, { color: colors.text }]}>People around you</Text>
-        <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-          {locationError || "Turn on location to see people who are nearby. Your exact location is never shown."}
-        </Text>
-        <TouchableOpacity style={[styles.primaryButton, { backgroundColor: accent, opacity: locating ? 0.6 : 1 }]} onPress={findNearby} disabled={locating}>
-          <Ionicons name="locate-outline" size={18} color="#fff" />
-          <Text style={styles.primaryButtonText}>{locating ? "Finding people…" : "Find nearby people"}</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <View style={styles.intro}>
+      <View style={styles.header}>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.title, { color: colors.text }]}>People around you</Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-            Meet AfuChat users nearby
-          </Text>
+          <View style={styles.headingRow}>
+            <Text style={[styles.title, { color: colors.text }]}>Find people</Text>
+            <View style={[styles.livePill, { backgroundColor: "#36C96F18" }]}>
+              <View style={styles.liveDot} /><Text style={styles.liveText}>LIVE</Text>
+            </View>
+          </View>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>Real people, active right now</Text>
         </View>
-        <TouchableOpacity style={[styles.refreshButton, { backgroundColor: accent + "14" }]} onPress={findNearby} disabled={locating}>
-          <Ionicons name="locate-outline" size={20} color={accent} />
+        <TouchableOpacity style={[styles.refreshButton, { backgroundColor: accent + "14" }]} onPress={() => { setRefreshing(true); void loadPeople(); }} accessibilityLabel="Refresh live users">
+          <Ionicons name="refresh" size={20} color={accent} />
         </TouchableOpacity>
       </View>
-      <View style={styles.radiusRow}>
-        <Text style={[styles.radiusLabel, { color: colors.textMuted }]}>Within</Text>
-        {RADII.map((value) => (
-          <TouchableOpacity
-            key={value}
-            style={[styles.radiusChip, { backgroundColor: radius === value ? accent : colors.surface }]}
-            onPress={() => setRadius(value)}
-          >
-            <Text style={{ color: radius === value ? "#fff" : colors.textMuted, fontFamily: "Inter_600SemiBold", fontSize: 12 }}>
-              {value} km
-            </Text>
+      <View style={[styles.searchBox, { backgroundColor: colors.surface }]}>
+        <Ionicons name="search" size={18} color={colors.textMuted} />
+        <TextInput value={query} onChangeText={setQuery} placeholder="Search by name or username" placeholderTextColor={colors.textMuted} style={[styles.searchInput, { color: colors.text }]} returnKeyType="search" />
+        {!!query && <TouchableOpacity onPress={() => setQuery("")}><Ionicons name="close-circle" size={18} color={colors.textMuted} /></TouchableOpacity>}
+      </View>
+      <View style={styles.filterRow}>
+        {([["all", "Everyone"], ["online", "Online now"], ["recent", "Active today"]] as const).map(([value, label]) => (
+          <TouchableOpacity key={value} onPress={() => setFilter(value)} style={[styles.filterChip, { backgroundColor: filter === value ? accent : colors.surface }]}>
+            {value === "online" && <View style={[styles.tinyDot, { backgroundColor: filter === value ? "#fff" : "#36C96F" }]} />}
+            <Text style={[styles.filterText, { color: filter === value ? "#fff" : colors.textMuted }]}>{label}</Text>
           </TouchableOpacity>
         ))}
       </View>
-      {loading && people.length === 0 ? (
-        <View style={styles.center}><ActivityIndicator color={accent} /></View>
-      ) : error ? (
-        <View style={styles.center}>
-          <Ionicons name="cloud-offline-outline" size={28} color={colors.textMuted} />
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>{error}</Text>
-          <TouchableOpacity onPress={() => void loadPeople()}><Text style={{ color: accent, fontFamily: "Inter_600SemiBold" }}>Try again</Text></TouchableOpacity>
-        </View>
+      {loading && people.length === 0 ? <View style={styles.center}><ActivityIndicator color={accent} /></View> : error && people.length === 0 ? (
+        <View style={styles.center}><Ionicons name="cloud-offline-outline" size={30} color={colors.textMuted} /><Text style={[styles.subtitle, { color: colors.textMuted }]}>{error}</Text><TouchableOpacity onPress={() => void loadPeople()}><Text style={{ color: accent, fontFamily: "Inter_600SemiBold" }}>Try again</Text></TouchableOpacity></View>
       ) : (
         <FlatList
-          data={people}
+          data={visiblePeople}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={people.length ? styles.list : styles.emptyList}
+          contentContainerStyle={visiblePeople.length ? styles.list : styles.emptyList}
+          showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void loadPeople(); }} tintColor={accent} />}
           renderItem={({ item }) => (
             <View style={[styles.personCard, { backgroundColor: colors.surface }]}>
-              <TouchableOpacity style={styles.personIdentity} onPress={() => router.push(`/@${item.handle}` as any)}>
-                <View>
-                  <PersonAvatar person={item} color={accent} />
-                  {item.is_online && <View style={[styles.onlineDot, { backgroundColor: "#36C96F", borderColor: colors.surface }]} />}
-                </View>
+              <TouchableOpacity style={styles.personIdentity} onPress={() => router.push(`/@${item.handle}` as any)} activeOpacity={0.75}>
+                <View><Avatar person={item} accent={accent} />{isOnline(item.last_seen) && <View style={[styles.onlineDot, { backgroundColor: "#36C96F", borderColor: colors.surface }]} />}</View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.personName, { color: colors.text }]} numberOfLines={1}>{item.display_name}</Text>
-                  <Text style={[styles.handle, { color: colors.textMuted }]} numberOfLines={1}>@{item.handle} · {distanceLabel(item.distance_km)}</Text>
-                  {item.bio && <Text style={[styles.bio, { color: colors.textMuted }]} numberOfLines={1}>{item.bio}</Text>}
+                  <View style={styles.nameRow}><Text style={[styles.personName, { color: colors.text }]} numberOfLines={1}>{item.display_name}</Text>{(item.is_verified || item.is_organization_verified) && <Ionicons name="checkmark-circle" size={15} color={accent} />}</View>
+                  <Text style={[styles.handle, { color: colors.textMuted }]} numberOfLines={1}>@{item.handle} · {item.follower_count} followers</Text>
+                  <Text style={[styles.activity, { color: isOnline(item.last_seen) ? "#36C96F" : colors.textMuted }]}>{relativeSeen(item.last_seen)}</Text>
                 </View>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.followButton, { borderColor: item.is_following ? colors.border : accent, backgroundColor: item.is_following ? "transparent" : accent }]}
-                onPress={() => void toggleFollow(item)}
-                disabled={followBusy === item.id}
-              >
+              <TouchableOpacity style={[styles.followButton, { borderColor: item.is_following ? colors.border : accent, backgroundColor: item.is_following ? "transparent" : accent }]} onPress={() => void toggleFollow(item)} disabled={followBusy === item.id}>
                 {followBusy === item.id ? <ActivityIndicator size="small" color={item.is_following ? accent : "#fff"} /> : <Text style={{ color: item.is_following ? accent : "#fff", fontFamily: "Inter_600SemiBold", fontSize: 12 }}>{item.is_following ? "Following" : "Follow"}</Text>}
               </TouchableOpacity>
             </View>
           )}
-          ListEmptyComponent={
-            <View style={styles.center}>
-              <Ionicons name="people-outline" size={32} color={colors.textMuted} />
-              <Text style={[styles.subtitle, { color: colors.textMuted }]}>No one found within {radius} km yet.</Text>
-            </View>
-          }
+          ListEmptyComponent={<View style={styles.center}><Ionicons name={filter === "online" ? "radio-outline" : "people-outline"} size={34} color={colors.textMuted} /><Text style={[styles.emptyTitle, { color: colors.text }]}>No users match this view</Text><Text style={[styles.subtitle, { color: colors.textMuted }]}>{query ? "Try a different name or username." : "Check back soon — people will appear here as they come online."}</Text></View>}
         />
       )}
     </View>
@@ -287,25 +243,33 @@ const styles = StyleSheet.create({
   root: { flex: 1, paddingHorizontal: 16 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 28, gap: 14 },
   heroIcon: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
-  title: { fontSize: 22, fontFamily: "Inter_700Bold", textAlign: "center" },
+  title: { fontSize: 22, fontFamily: "Inter_700Bold" },
   subtitle: { fontSize: 14, lineHeight: 20, textAlign: "center", maxWidth: 320 },
-  primaryButton: { minHeight: 46, borderRadius: 23, paddingHorizontal: 20, flexDirection: "row", alignItems: "center", gap: 8 },
+  primaryButton: { minHeight: 46, borderRadius: 23, paddingHorizontal: 24, justifyContent: "center" },
   primaryButtonText: { color: "#fff", fontSize: 14, fontFamily: "Inter_600SemiBold" },
-  intro: { flexDirection: "row", alignItems: "center", paddingTop: 20, paddingBottom: 14 },
-  introTitle: { textAlign: "left" },
+  header: { flexDirection: "row", alignItems: "center", paddingTop: 20, paddingBottom: 14 },
+  headingRow: { flexDirection: "row", alignItems: "center", gap: 9 },
+  livePill: { flexDirection: "row", alignItems: "center", gap: 5, borderRadius: 10, paddingHorizontal: 7, paddingVertical: 4 },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#36C96F" },
+  liveText: { color: "#36C96F", fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 0.6 },
   refreshButton: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
-  radiusRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingBottom: 14 },
-  radiusLabel: { fontSize: 12, fontFamily: "Inter_600SemiBold", marginRight: 2 },
-  radiusChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16 },
+  searchBox: { height: 46, borderRadius: 14, paddingHorizontal: 13, flexDirection: "row", alignItems: "center", gap: 9 },
+  searchInput: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular", paddingVertical: 0 },
+  filterRow: { flexDirection: "row", gap: 8, paddingVertical: 14 },
+  filterChip: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 18 },
+  filterText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  tinyDot: { width: 6, height: 6, borderRadius: 3 },
   list: { paddingBottom: 24, gap: 10 },
   emptyList: { flexGrow: 1 },
-  personCard: { borderRadius: 16, padding: 12, flexDirection: "row", alignItems: "center", gap: 10 },
+  personCard: { borderRadius: 17, padding: 12, flexDirection: "row", alignItems: "center", gap: 10 },
   personIdentity: { flex: 1, flexDirection: "row", alignItems: "center", gap: 11 },
-  avatar: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
+  avatar: { width: 50, height: 50, borderRadius: 25, alignItems: "center", justifyContent: "center" },
   initial: { fontSize: 20, fontFamily: "Inter_700Bold" },
-  onlineDot: { position: "absolute", right: 0, bottom: 1, width: 12, height: 12, borderRadius: 6, borderWidth: 2 },
-  personName: { fontSize: 14, fontFamily: "Inter_700Bold" },
+  onlineDot: { position: "absolute", right: 0, bottom: 1, width: 13, height: 13, borderRadius: 7, borderWidth: 2 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  personName: { maxWidth: "88%", fontSize: 14, fontFamily: "Inter_700Bold" },
   handle: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
-  bio: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 3 },
-  followButton: { minWidth: 76, height: 32, borderRadius: 16, borderWidth: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 10 },
+  activity: { fontSize: 11, fontFamily: "Inter_600SemiBold", marginTop: 3 },
+  followButton: { minWidth: 78, height: 33, borderRadius: 17, borderWidth: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 10 },
+  emptyTitle: { fontSize: 16, fontFamily: "Inter_700Bold", textAlign: "center" },
 });
