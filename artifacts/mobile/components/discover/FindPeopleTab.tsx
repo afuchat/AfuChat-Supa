@@ -15,6 +15,7 @@ import { router } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { supabase } from "@/lib/supabase";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Person = {
   id: string;
@@ -62,6 +63,7 @@ function Avatar({ person, accent }: { person: Person; accent: string }) {
 export default function FindPeopleTab() {
   const { colors, accent } = useTheme();
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [people, setPeople] = useState<Person[]>([]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
@@ -87,6 +89,9 @@ export default function FindPeopleTab() {
           .eq("is_banned", false)
           .eq("account_deleted", false)
           .not("handle", "is", null)
+          .not("display_name", "is", null)
+          .not("avatar_url", "is", null)
+          .not("bio", "is", null)
           .order("last_seen", { ascending: false, nullsFirst: false })
           .limit(100),
         supabase.from("follows").select("following_id").eq("follower_id", user.id),
@@ -94,18 +99,25 @@ export default function FindPeopleTab() {
       if (profileError) throw profileError;
       if (followError) throw followError;
       const followed = new Set((follows ?? []).map((row: any) => row.following_id));
-      setPeople(((data ?? []) as any[]).map((person) => ({
-        id: person.id,
-        display_name: person.display_name || `@${person.handle}`,
-        handle: person.handle || "",
-        avatar_url: person.avatar_url || null,
-        bio: person.bio || null,
-        follower_count: Number(person.follower_count || 0),
-        is_verified: !!person.is_verified,
-        is_organization_verified: !!person.is_organization_verified,
-        last_seen: person.last_seen || null,
-        is_following: followed.has(person.id),
-      })));
+      setPeople(((data ?? []) as any[])
+        .filter((person) =>
+          typeof person.handle === "string" && person.handle.trim().length > 0 &&
+          typeof person.display_name === "string" && person.display_name.trim().length > 0 &&
+          typeof person.avatar_url === "string" && person.avatar_url.trim().length > 0 &&
+          typeof person.bio === "string" && person.bio.trim().length > 0
+        )
+        .map((person) => ({
+          id: person.id,
+          display_name: person.display_name.trim(),
+          handle: person.handle.trim(),
+          avatar_url: person.avatar_url,
+          bio: person.bio.trim(),
+          follower_count: Number(person.follower_count || 0),
+          is_verified: !!person.is_verified,
+          is_organization_verified: !!person.is_organization_verified,
+          last_seen: person.last_seen || null,
+          is_following: followed.has(person.id),
+        })));
       setLastUpdated(Date.now());
     } catch {
       setError("Live users could not be loaded right now.");
@@ -214,7 +226,9 @@ export default function FindPeopleTab() {
         <FlatList
           data={visiblePeople}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={visiblePeople.length ? styles.list : styles.emptyList}
+          contentContainerStyle={visiblePeople.length
+            ? [styles.list, { paddingBottom: insets.bottom + 112 }]
+            : [styles.emptyList, { paddingBottom: insets.bottom + 112 }]}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void loadPeople(); }} tintColor={accent} />}
           renderItem={({ item }) => (
