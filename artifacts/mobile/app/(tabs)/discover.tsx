@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   ActivityIndicator,
   Animated,
+  Easing,
   FlatList,
   Image as RNImage,
   InteractionManager,
@@ -1219,6 +1220,7 @@ export default function DiscoverScreen() {
   const [storiesHeight, setStoriesHeight] = useState(0);
   const headerOffset = useRef(new Animated.Value(0)).current;
   const headerFlowHeight = useRef(new Animated.Value(1)).current;
+  const headerAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const fullHeaderHeight = coreHeaderHeight + storiesHeight;
   const prevScrollYRef = useRef(0);
   const headerVisibleRef = useRef(true);
@@ -1229,20 +1231,22 @@ export default function DiscoverScreen() {
   function revealHeader() {
     if (headerVisibleRef.current) return;
     headerVisibleRef.current = true;
-    Animated.parallel([
-      Animated.spring(headerOffset, {
+    headerAnimationRef.current?.stop();
+    headerAnimationRef.current = Animated.parallel([
+      Animated.timing(headerOffset, {
         toValue: 0,
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: DRIVER,
-        tension: 220,
-        friction: 28,
       }),
-      Animated.spring(headerFlowHeight, {
+      Animated.timing(headerFlowHeight, {
         toValue: fullHeaderHeight,
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: DRIVER,
-        tension: 220,
-        friction: 28,
       }),
-    ]).start();
+    ]);
+    headerAnimationRef.current.start(() => { headerAnimationRef.current = null; });
   }
 
   function hideHeader(height: number) {
@@ -1252,23 +1256,24 @@ export default function DiscoverScreen() {
       ? coreHeaderHeight
       : Math.max(0, height - storiesHeight);
     const storyFlowHeight = storiesHeight > 0 ? storiesHeight + insets.top : 0;
-    Animated.parallel([
-      Animated.spring(headerOffset, {
-      // Hide the top bar and tabs, but move stories into their space so the
-      // stories remain visible instead of disappearing with the header. Stop
-      // at the safe-area inset so the story content never enters the status bar.
-      toValue: -coreTravel + insets.top,
-      useNativeDriver: DRIVER,
-      tension: 220,
-      friction: 28,
-      }),
-      Animated.spring(headerFlowHeight, {
-        toValue: storyFlowHeight,
+    headerAnimationRef.current?.stop();
+    headerAnimationRef.current = Animated.parallel([
+      Animated.timing(headerOffset, {
+        // Hide the top bar and tabs, but move stories into their space so the
+        // stories remain visible instead of disappearing with the header.
+        toValue: -coreTravel + insets.top,
+        duration: 220,
+        easing: Easing.inOut(Easing.cubic),
         useNativeDriver: DRIVER,
-        tension: 220,
-        friction: 28,
       }),
-    ]).start();
+      Animated.timing(headerFlowHeight, {
+        toValue: storyFlowHeight,
+        duration: 220,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: DRIVER,
+      }),
+    ]);
+    headerAnimationRef.current.start(() => { headerAnimationRef.current = null; });
   }
 
   const handleFeedScrollFrame = useCallback((event: any) => {
@@ -1278,8 +1283,8 @@ export default function DiscoverScreen() {
 
     // Keep the header over the feed until the list reaches the bottom of the
     // header's reserved space. This prevents a blank gap while it hides.
-    if (y > collapsePoint && delta > 1.5) hideHeader(fullHeaderHeight);
-    else if (delta < -1.5 || y <= 0) revealHeader();
+    if (y > collapsePoint && delta > 3) hideHeader(fullHeaderHeight);
+    else if (delta < -5 || y <= 0) revealHeader();
     prevScrollYRef.current = y;
   }, [coreHeaderHeight, fullHeaderHeight, storiesHeight]);
 
@@ -1290,8 +1295,8 @@ export default function DiscoverScreen() {
   const handleFeedScrollSettled = useCallback((event: any) => {
     const y = Number(event?.nativeEvent?.contentOffset?.y ?? 0);
     const delta = y - prevScrollYRef.current;
-    if (y > Math.max(24, fullHeaderHeight - 12) && delta > 2) hideHeader(fullHeaderHeight);
-    else if (delta < -2 || y <= 10) revealHeader();
+    if (y > Math.max(24, fullHeaderHeight - 12) && delta > 3) hideHeader(fullHeaderHeight);
+    else if (delta < -5 || y <= 10) revealHeader();
     prevScrollYRef.current = y;
   }, [fullHeaderHeight]);
 
