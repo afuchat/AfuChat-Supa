@@ -2629,9 +2629,6 @@ export default function DiscoverScreen() {
         }}
         style={[styles.headerBlock]}
       >
-        {/* Flat header background — unified BG, no separate surface colour */}
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 0 }]} />
-
         {/* The compact top bar, tabs, and refresh status collapse together. */}
         <Animated.View
           onLayout={(e) => {
@@ -2641,7 +2638,6 @@ export default function DiscoverScreen() {
           style={{
             transform: [{ translateY: headerOffset }],
             zIndex: 2,
-            backgroundColor: colors.background,
           }}
         >
           {/* ── Row 1: user avatar | centered wordmark | bell ── */}
