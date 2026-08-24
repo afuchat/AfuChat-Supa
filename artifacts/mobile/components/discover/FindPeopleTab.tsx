@@ -99,7 +99,22 @@ export default function FindPeopleTab() {
       if (profileError) throw profileError;
       if (followError) throw followError;
       const followed = new Set((follows ?? []).map((row: any) => row.following_id));
-      setPeople(((data ?? []) as any[])
+      const completeProfiles = ((data ?? []) as any[]).filter((person) =>
+        typeof person.handle === "string" && person.handle.trim().length > 0 &&
+        typeof person.display_name === "string" && person.display_name.trim().length > 0 &&
+        typeof person.avatar_url === "string" && person.avatar_url.trim().length > 0 &&
+        typeof person.bio === "string" && person.bio.trim().length > 0
+      );
+      const profileIds = completeProfiles.map((person) => person.id);
+      const { data: followerRows, error: followerError } = profileIds.length
+        ? await supabase.from("follows").select("following_id").in("following_id", profileIds)
+        : { data: [], error: null };
+      if (followerError) throw followerError;
+      const followerCounts = new Map<string, number>();
+      (followerRows ?? []).forEach((row: any) => {
+        followerCounts.set(row.following_id, (followerCounts.get(row.following_id) ?? 0) + 1);
+      });
+      setPeople(completeProfiles
         .filter((person) =>
           typeof person.handle === "string" && person.handle.trim().length > 0 &&
           typeof person.display_name === "string" && person.display_name.trim().length > 0 &&
@@ -112,7 +127,8 @@ export default function FindPeopleTab() {
           handle: person.handle.trim(),
           avatar_url: person.avatar_url,
           bio: person.bio.trim(),
-          follower_count: Number(person.follower_count || 0),
+          // Always derive this from relationship rows, never the cached profile counter.
+          follower_count: followerCounts.get(person.id) ?? 0,
           is_verified: !!person.is_verified,
           is_organization_verified: !!person.is_organization_verified,
           last_seen: person.last_seen || null,
@@ -165,14 +181,18 @@ export default function FindPeopleTab() {
     if (!user) return router.push("/(auth)/login" as any);
     setFollowBusy(person.id);
     const next = !person.is_following;
-    setPeople((current) => current.map((item) => item.id === person.id ? { ...item, is_following: next } : item));
+    setPeople((current) => current.map((item) => item.id === person.id
+      ? { ...item, is_following: next, follower_count: Math.max(0, item.follower_count + (next ? 1 : -1)) }
+      : item));
     try {
       const result = next
         ? await supabase.from("follows").insert({ follower_id: user.id, following_id: person.id })
         : await supabase.from("follows").delete().eq("follower_id", user.id).eq("following_id", person.id);
       if (result.error) throw result.error;
     } catch {
-      setPeople((current) => current.map((item) => item.id === person.id ? { ...item, is_following: !next } : item));
+      setPeople((current) => current.map((item) => item.id === person.id
+        ? { ...item, is_following: !next, follower_count: Math.max(0, item.follower_count + (next ? -1 : 1)) }
+        : item));
     } finally {
       setFollowBusy(null);
     }
