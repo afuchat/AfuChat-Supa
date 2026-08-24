@@ -1217,7 +1217,6 @@ export default function DiscoverScreen() {
   // Uses Animated.event (not a plain onScroll function) so FlatList's internal
   // scroll tracking for onEndReached is never overridden.
   const [headerHeight, setHeaderHeight] = useState(0);
-  const scrollYAnim = useRef(new Animated.Value(0)).current;
   const headerOffset = useRef(new Animated.Value(0)).current;
   const prevScrollYRef = useRef(0);
   const headerVisibleRef = useRef(true);
@@ -1259,13 +1258,10 @@ export default function DiscoverScreen() {
     prevScrollYRef.current = y;
   }, [headerHeight]);
 
-  // Track the gesture during scrolling, not only after momentum settles.
-  const onFeedScroll = Platform.OS === "web"
-    ? handleFeedScrollFrame
-    : Animated.event(
-        [{ nativeEvent: { contentOffset: { y: scrollYAnim } } }],
-        { useNativeDriver: true, listener: handleFeedScrollFrame }
-      );
+  // The header and new-posts pill are combined animated nodes. Use the same
+  // JS driver for their scroll updates and transitions so React Native never
+  // tries to switch one node between native and JS ownership.
+  const onFeedScroll = handleFeedScrollFrame;
   const handleFeedScrollSettled = useCallback((event: any) => {
     const y = Number(event?.nativeEvent?.contentOffset?.y ?? 0);
     const delta = y - prevScrollYRef.current;
@@ -1391,9 +1387,9 @@ export default function DiscoverScreen() {
 
   // Animate the floating "new posts" popup in when new authors arrive,
   // out when the list is cleared (refresh, tab switch, etc.).
-  // The native animated driver is unavailable on web; keep the same animation
-  // behavior there with the JS driver instead of triggering a runtime warning.
-  const _useND = Platform.OS !== "web";
+  // Keep this on the JS driver because popupSlide is combined with the
+  // JS-driven headerOffset in the pill transform below.
+  const _useND = false;
   useEffect(() => {
     if (newPostAuthors.length === 0) {
       if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
