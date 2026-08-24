@@ -2812,10 +2812,15 @@ export default function DiscoverScreen() {
             accessibilityRole="tab"
             accessibilityLabel="Find people nearby"
           >
-            <Text style={[
-              styles.tabPillText,
-              { color: activeDiscoverTab === "find" ? colors.accent : colors.textMuted },
-            ]}>Find</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+              <Text style={[
+                styles.tabPillText,
+                { color: activeDiscoverTab === "find" ? colors.accent : colors.textMuted },
+              ]}>Find</Text>
+              <View style={[styles.newTabBadge, { backgroundColor: colors.accent }]}>
+                <Text style={styles.newTabBadgeText}>NEW</Text>
+              </View>
+            </View>
           </TouchableOpacity>
           <View style={{ flex: 1 }} />
           {!user && (
@@ -3299,6 +3304,17 @@ const styles = StyleSheet.create({
   },
   tabPill: { minWidth: 116, paddingVertical: 12, paddingHorizontal: 22, alignItems: "center" },
   tabPillText: { fontSize: 15, fontFamily: "Inter_700Bold" },
+  newTabBadge: {
+    borderRadius: 5,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  newTabBadgeText: {
+    color: "#fff",
+    fontSize: 8,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.4,
+  },
   crownModalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.62)",
