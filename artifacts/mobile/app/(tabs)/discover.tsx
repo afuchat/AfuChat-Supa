@@ -2739,26 +2739,27 @@ export default function DiscoverScreen() {
           </View>
         </Animated.View>
 
-         {/* Stories move into the top-bar space when the tabs collapse, but
-             remain visible instead of being hidden with the header. */}
-         <Animated.View
-           onLayout={(e) => {
-             const nextHeight = Math.round(e.nativeEvent.layout.height);
-             setStoriesHeight((current) => current === nextHeight ? current : nextHeight);
-           }}
-           style={{
-             transform: [{ translateY: headerOffset }],
-             zIndex: 1,
-             width: "100%",
-             backgroundColor: colors.background,
-           }}
-         >
-           <StoriesRow
-             userId={user?.id ?? null}
-             avatarUrl={profile?.avatar_url ?? null}
-             displayName={profile?.display_name ?? null}
-           />
-         </Animated.View>
+        {/* Stories move into the top-bar space when the tabs collapse. Keep
+            this layer above the collapsing chrome and give it its own opaque
+            background so the feed never shows through during the handoff. */}
+        <Animated.View
+          onLayout={(e) => {
+            const nextHeight = Math.round(e.nativeEvent.layout.height);
+            setStoriesHeight((current) => current === nextHeight ? current : nextHeight);
+          }}
+          style={{
+            transform: [{ translateY: headerOffset }],
+            zIndex: 3,
+            width: "100%",
+            backgroundColor: colors.background,
+          }}
+        >
+          <StoriesRow
+            userId={user?.id ?? null}
+            avatarUrl={profile?.avatar_url ?? null}
+            displayName={profile?.display_name ?? null}
+          />
+        </Animated.View>
       </Animated.View>
       {/* ────────────────────────────────────────────────────────────────── */}
 
