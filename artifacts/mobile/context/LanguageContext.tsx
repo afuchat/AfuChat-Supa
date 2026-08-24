@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { translateText, LANG_LABELS } from "@/lib/translate";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
-import { translateUi } from "@/lib/uiTranslations";
+import { setCurrentUiLanguage, translateUi } from "@/lib/uiTranslations";
 
 const STORAGE_KEY = "@afuchat:lang_pref";
 
@@ -144,6 +144,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const langLabel = preferredLang
     ? (LANG_LABELS[preferredLang] ?? preferredLang)
     : "Off";
+  useEffect(() => {
+    setCurrentUiLanguage(preferredLang);
+  }, [preferredLang]);
   const t = (text: string) => translateUi(text, preferredLang);
 
   return (

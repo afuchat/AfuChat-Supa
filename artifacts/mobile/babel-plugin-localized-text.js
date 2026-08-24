@@ -1,0 +1,94 @@
+module.exports = function localizedTextPlugin({ types: t }) {
+  return {
+    name: "localized-text",
+    visitor: {
+      Program: {
+        enter(path, state) {
+          state.localizedTextUsed = false;
+          state.localizeUiUsed = false;
+        },
+        exit(path, state) {
+          if (state.localizedTextUsed) {
+            const alreadyImported = path.node.body.some(
+              (node) =>
+                t.isImportDeclaration(node) &&
+                node.source.value === "@/components/ui/LocalizedText",
+            );
+            if (!alreadyImported) {
+              path.unshiftContainer(
+                "body",
+                t.importDeclaration(
+                  [t.importDefaultSpecifier(t.identifier("LocalizedText"))],
+                  t.stringLiteral("@/components/ui/LocalizedText"),
+                ),
+              );
+            }
+          }
+          if (state.localizeUiUsed) {
+            const alreadyUiImport = path.node.body.some(
+              (node) =>
+                t.isImportDeclaration(node) &&
+                node.source.value === "@/lib/uiTranslations" &&
+                node.specifiers.some(
+                  (specifier) =>
+                    t.isImportSpecifier(specifier) &&
+                    specifier.imported.name === "localizeUi",
+                ),
+            );
+            if (!alreadyUiImport) {
+              path.unshiftContainer(
+                "body",
+                t.importDeclaration(
+                  [
+                    t.importSpecifier(
+                      t.identifier("localizeUi"),
+                      t.identifier("localizeUi"),
+                    ),
+                  ],
+                  t.stringLiteral("@/lib/uiTranslations"),
+                ),
+              );
+            }
+          }
+        },
+      },
+      JSXIdentifier(path, state) {
+        if (path.node.name !== "Text") {
+          const attribute = path.parentPath;
+          if (
+            attribute.isJSXAttribute() &&
+            [
+              "placeholder",
+              "accessibilityLabel",
+              "accessibilityHint",
+              "title",
+              "label",
+              "subtitle",
+              "description",
+              "message",
+              "buttonText",
+            ].includes(path.node.name) &&
+            t.isStringLiteral(attribute.node.value)
+          ) {
+            attribute.node.value = t.jsxExpressionContainer(
+              t.callExpression(t.identifier("localizeUi"), [
+                t.stringLiteral(attribute.node.value.value),
+              ]),
+            );
+            state.localizeUiUsed = true;
+          }
+          return;
+        }
+        const parent = path.parentPath;
+        if (
+          !parent.isJSXOpeningElement() &&
+          !parent.isJSXClosingElement()
+        ) {
+          return;
+        }
+        path.node.name = "LocalizedText";
+        state.localizedTextUsed = true;
+      },
+    },
+  };
+};

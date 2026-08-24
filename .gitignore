@@ -65,3 +65,12 @@ Thumbs.db
 *.dump
 *.sql.gz
 *.bak
+
+# Credentials and private certificates — never commit
+**/*service-account*.json
+**/*firebase-adminsdk*.json
+**/client_secret*.json
+**/*private-key*.json
+**/*.p12
+**/*.pem
+**/*.key

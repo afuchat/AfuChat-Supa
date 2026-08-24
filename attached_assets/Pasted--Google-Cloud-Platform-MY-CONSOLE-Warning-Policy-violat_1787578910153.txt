@@ -1,0 +1,24 @@
+
+Google Cloud Platform
+MY CONSOLE
+Warning	Policy violation
+Immediate action required: Resources associated with your Google Cloud Platform/API project afuchat-c3630 are being restricted
+Dear Developer,
+We detected and will disable a publicly exposed service account authentication credential associated with the following Google Cloud Platform account:
+
+firebase-adminsdk-fbsvc@afuchat-c3630.iam.gserviceaccount.com with key ID 2139b4788acfb295282455e28d1457e1c9594fb1
+
+This key was found at the following URL: https://github.com/afuchat1/AfuChat-Supa/blob/594276f5031ffdf2337c4bb39c90f65a91154ecc/attached_assets/afuchat-c3630-firebase-adminsdk-fbsvc-2139b4788a_1787572813399.json
+
+For a subset of abuse issues, we send abuse notifications in log format. Please log in to your console and review this abuse notification in Cloud Logging.
+
+To prevent potential security and abuse risks, this service account authentication credential will be disabled in accordance with your organisational policy for 'Service account key exposure response'. Your service account credential may have been inadvertently published in public sources or websites (for instance, the credentials were mistakenly uploaded to a service like GitHub). Please note that as the project/account owner, you are responsible for securing your resources.  
+
+Immediate action is required to secure your account(s). We strongly recommend that you take the following steps:
+
+Log in to the Google Cloud Console and review the activity on your account. 
+Rotate the credential for the disabled service account. 
+Take immediate steps to ensure that your service account credentials are not embedded in public source code systems, stored in download directories or unintentionally shared in other ways.
+Learn more about responding to abuse notifications and warnings
+
+The security of your Google Cloud Platform account(s) is important to us. You can find more information on securely using IAM here, and also recommend best practices for keeping service account keys safe. Please let us know if you have additional questions by contacting Google Cloud Support.
