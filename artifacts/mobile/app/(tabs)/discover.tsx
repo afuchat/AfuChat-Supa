@@ -1152,6 +1152,7 @@ export default function DiscoverScreen() {
   // ?tab=shorts is forwarded there so existing links keep working.
   const [feedTab, setFeedTab] = useState<"for_you" | "following">("for_you");
   const [findTabOpen, setFindTabOpen] = useState(false);
+  const activeDiscoverTab = findTabOpen ? "find" : feedTab;
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -2754,17 +2755,18 @@ export default function DiscoverScreen() {
           <TouchableOpacity
             style={[
               styles.tabPill,
-              feedTab === "for_you" && { borderBottomWidth: 2.5, borderBottomColor: colors.accent },
+              activeDiscoverTab === "for_you" && { borderBottomWidth: 2.5, borderBottomColor: colors.accent },
             ]}
             onPress={() => {
               setFeedTab("for_you");
               setFindTabOpen(false);
+              revealHeader();
               pagerRef.current?.setPage(0);
             }}
           >
             <Text style={[
               styles.tabPillText,
-              { color: feedTab === "for_you" ? colors.accent : colors.textMuted },
+              { color: activeDiscoverTab === "for_you" ? colors.accent : colors.textMuted },
             ]}>
               For You
             </Text>
@@ -2773,32 +2775,40 @@ export default function DiscoverScreen() {
             <TouchableOpacity
               style={[
                 styles.tabPill,
-                feedTab === "following" && { borderBottomWidth: 2.5, borderBottomColor: colors.accent },
+                activeDiscoverTab === "following" && { borderBottomWidth: 2.5, borderBottomColor: colors.accent },
               ]}
               onPress={() => {
                 setFeedTab("following");
                 setFindTabOpen(false);
+                revealHeader();
                 pagerRef.current?.setPage(1);
               }}
             >
               <Text style={[
                 styles.tabPillText,
-                { color: feedTab === "following" ? colors.accent : colors.textMuted },
+                  { color: activeDiscoverTab === "following" ? colors.accent : colors.textMuted },
               ]}>
                 Following
               </Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity
-            style={styles.tabPill}
+            style={[
+              styles.tabPill,
+              activeDiscoverTab === "find" && { borderBottomWidth: 2.5, borderBottomColor: colors.accent },
+            ]}
             onPress={() => {
               Haptics.selectionAsync();
+              revealHeader();
               setFindTabOpen(true);
             }}
             accessibilityRole="tab"
             accessibilityLabel="Find people nearby"
           >
-            <Text style={[styles.tabPillText, { color: findTabOpen ? colors.accent : colors.textMuted }]}>Find</Text>
+            <Text style={[
+              styles.tabPillText,
+              { color: activeDiscoverTab === "find" ? colors.accent : colors.textMuted },
+            ]}>Find</Text>
           </TouchableOpacity>
           <View style={{ flex: 1 }} />
           {!user && (
