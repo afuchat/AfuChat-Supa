@@ -3243,6 +3243,7 @@ const styles = StyleSheet.create({
   },
   tabRow: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 4,
   },
