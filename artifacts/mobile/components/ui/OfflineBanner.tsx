@@ -89,10 +89,6 @@ const st = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    marginVertical: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: T.radius.pill,
   },
   label: {
     ...T.caption,
