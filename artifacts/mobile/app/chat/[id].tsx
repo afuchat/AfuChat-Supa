@@ -112,7 +112,6 @@ import { getProfileCache, setProfileCache } from "@/lib/profileCache";
 import { subscribeToChat, broadcastToUserInbox } from "@/lib/globalMessageEvents";
 import { askAi, aiSuggestReply, transcribeAudio, getEdgeFnBase, edgeHeaders, aiTransformTone, aiFixText, aiEmojifyText } from "@/lib/aiHelper";
 import { getEngagera } from "@/lib/engagera";
-import { streamAiChat } from "@/lib/sseStream";
 import { buildNavigationContext, ACTION_ROUTES_GUIDE, detectVoiceNavCommand, pickNavConfirmation } from "@/lib/platformKnowledge";
 import { AFUAI_BOT_ID } from "@/lib/afuAiBot";
 import { clearAIUnread } from "@/lib/aiChatStore";
@@ -286,7 +285,6 @@ type Message = {
   edited_at?: string | null;
   _pending?: boolean;
   _isAi?: boolean;
-  _streaming?: boolean;
   _aiActions?: AiActionButton[];
   _aiSuggestions?: string[];
   _aiInvoices?: AiInvoiceData[];
@@ -564,24 +562,6 @@ function SmartReplyBar({ messages, myId, input, onSend, colors }: {
         </TouchableOpacity>
       ))}
     </Animated.View>
-  );
-}
-
-// Blinking cursor shown at the tail of a streaming AI message
-function StreamingCursor({ color }: { color: string }) {
-  const opacity = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    const anim = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity, { toValue: 0.15, duration: 420, useNativeDriver: true }),
-        Animated.timing(opacity, { toValue: 1,    duration: 420, useNativeDriver: true }),
-      ])
-    );
-    anim.start();
-    return () => anim.stop();
-  }, []);
-  return (
-    <Animated.Text style={{ opacity, color, fontSize: 13, lineHeight: 20 }}>{"\u258B"}</Animated.Text>
   );
 }
 
@@ -1471,8 +1451,6 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   // rcptRead: high-visibility blue — stays readable on dark AND light bubble colours
   const rcptRead      = darkBubble ? "#7DD3FC" : "#0284C7";
   const isPending = msg._pending || msg.status === "sending";
-  const isEmptyAiStream = !!msg._isAi && !!msg._streaming && !displayText;
-
   if (isRedEnvelope) {
     return (
       <View style={[st.msgRow, isMe ? st.msgRowMe : st.msgRowOther]}>
@@ -1532,14 +1510,14 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
         isMe ? st.bubbleContainerMe : st.bubbleContainerOther,
         flatSurface && { maxWidth: "100%" },
       ]}>
-        {showTail && !flatSurface && !isEmptyAiStream && <BubbleTail isMe={isMe} color={bubbleColor} />}
+        {showTail && !flatSurface && <BubbleTail isMe={isMe} color={bubbleColor} />}
 
         <Pressable
           onLongPress={messageLongPress}
           delayLongPress={300}
           style={[
             st.bubble,
-            flatSurface || isEmptyAiStream
+            flatSurface
               ? { backgroundColor: "transparent", borderRadius: 0, paddingHorizontal: 4, paddingTop: 2, paddingBottom: 0 }
               : hasAudio
               ? { backgroundColor: bubbleColor, borderRadius: chatRadius ?? 18, paddingHorizontal: 10, paddingTop: 7, paddingBottom: 7 }
@@ -1886,21 +1864,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                           style={[st.bubbleText, { color: textColor, fontSize: _perChatFont, lineHeight: _perChatFont + 5 }]}
                         />
                       ) : (
-                      <>
-                        {msg._streaming && !displayText ? (
-                          // Empty streaming bubble — show bouncing dots while first tokens arrive
-                          <View style={{ flexDirection: "row", gap: 4, alignItems: "center", paddingVertical: 2 }}>
-                            {[0, 1, 2].map((i) => (
-                              <View key={i} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.textMuted, opacity: 0.5 }} />
-                            ))}
-                          </View>
-                        ) : (
-                          <AiRichContent content={displayText} colors={colors} isUser={isMe} />
-                        )}
-                        {msg._streaming && !!displayText && (
-                          <StreamingCursor color={colors.textMuted} />
-                        )}
-                      </>
+                        <AiRichContent content={displayText} colors={colors} isUser={isMe} />
                       )
                     )
                     : (
@@ -3868,18 +3832,6 @@ function ChatScreen() {
 
   async function handleAfuAiLensIntro(ctx: NonNullable<typeof lensContextRef.current>, chatId: string) {
     setIsAfuAiTyping(true);
-    const lensStreamId = `lens_s_${Date.now()}`;
-    setMessages(prev => [{
-      id: lensStreamId,
-      chat_id: chatId,
-      sender_id: AFUAI_BOT_ID,
-      encrypted_content: "",
-      sent_at: new Date().toISOString(),
-      sender: { display_name: "AfuAI", avatar_url: null, handle: "afuai" },
-      reactions: [],
-      _isAi: true,
-      _streaming: true,
-    }, ...prev]);
 
     const contextLines = [
       `Title: ${ctx.title}`,
@@ -3893,10 +3845,7 @@ function ChatScreen() {
     ].filter(Boolean).join("\n");
 
     try {
-      let accumulated = "";
-      let lastFlushed = "";
-       let doneContent = "";
-       for await (const event of streamAiChat({
+      const response = await getEngagera().chat.create({
           messages: [
             {
               role: "system" as const,
@@ -3908,52 +3857,39 @@ function ChatScreen() {
             },
           ],
           model: "engagera-2.1",
-          fast: true,
-          maxTokens: 600,
-         })) {
-          if (event.type === "text") {
-            accumulated += event.text;
-               // Paint each chunk immediately so the reply reads like live typing.
-               if (accumulated !== lastFlushed) {
-                 lastFlushed = accumulated;
-                 setMessages(prev => prev.map(m => m.id === lensStreamId
-                   ? { ...m, encrypted_content: accumulated }
-                   : m
-                 ));
-               }
-          } else if (event.type === "done") {
-            doneContent = event.content;
-          } else if (event.type === "error") {
-            throw new Error(event.message);
-          }
-         }
+          stream: false,
+        });
 
-      const rawReply = (doneContent || accumulated).trim() || "I've reviewed your scan. What would you like to know?";
+      const rawReply = (response.content || "").trim() || "I've reviewed your scan. What would you like to know?";
       const parsed = parseAfuAiTags(rawReply);
-      setMessages(prev => prev.map(m => m.id === lensStreamId ? {
-        ...m,
+      setMessages(prev => [{
+        id: `afuai_lens_${Date.now()}`,
+        chat_id: chatId,
+        sender_id: AFUAI_BOT_ID,
         encrypted_content: parsed.text || rawReply,
         sent_at: new Date().toISOString(),
-        _streaming: false,
+        sender: { display_name: "AfuAI", avatar_url: null, handle: "afuai" },
+        reactions: [],
+        _isAi: true,
         _aiSuggestions: parsed.suggestions.length > 0 ? parsed.suggestions : [
           `Tell me more about ${ctx.title}`,
           `What are the main uses of ${ctx.title}?`,
           `Any interesting history or origin?`,
         ],
-      } : m));
+      }, ...prev]);
       // Do not keep the visible reply waiting on persistence.
-      void Promise.resolve(supabase.rpc("insert_afuai_message", { p_chat_id: chatId, p_content: rawReply }))
-        .then(({ data: rpcId }) => {
-          if (typeof rpcId === "string") {
-            setMessages(prev => prev.map(m => m.id === lensStreamId ? { ...m, id: rpcId } : m));
-          }
-        })
-        .catch(() => {});
+      void supabase.rpc("insert_afuai_message", { p_chat_id: chatId, p_content: rawReply }).then(undefined, () => {});
     } catch {
-      setMessages(prev => prev.map(m => m.id === lensStreamId
-        ? { ...m, encrypted_content: "I couldn't analyse that right now. Please try again.", _streaming: false }
-        : m
-      ));
+      setMessages(prev => [{
+        id: `afuai_lens_err_${Date.now()}`,
+        chat_id: chatId,
+        sender_id: AFUAI_BOT_ID,
+        encrypted_content: "I couldn't analyse that right now. Please try again.",
+        sent_at: new Date().toISOString(),
+        sender: { display_name: "AfuAI", avatar_url: null, handle: "afuai" },
+        reactions: [],
+        _isAi: true,
+      }, ...prev]);
     } finally {
       setIsAfuAiTyping(false);
     }
@@ -4576,20 +4512,6 @@ function ChatScreen() {
     }
     // ── End voice-activated navigation ────────────────────────────────────────
 
-    // Inject streaming placeholder immediately — replaces the typing indicator
-    const streamingId = `afuai_s_${Date.now()}`;
-    setMessages((prev) => [{
-      id: streamingId,
-      chat_id: chatId,
-      sender_id: AFUAI_BOT_ID,
-      encrypted_content: "",
-      sent_at: new Date().toISOString(),
-      sender: { display_name: "AfuAI", avatar_url: null, handle: "afuai" },
-      reactions: [],
-      _isAi: true,
-      _streaming: true,
-    }, ...prev]);
-
     try {
       const userContext = await getAfuAiUserContext();
       const platformContext = buildNavigationContext();
@@ -4687,36 +4609,13 @@ STRICT RULES:
         .map(m => ({ role: m.sender_id === user?.id ? "user" as const : "assistant" as const, content: m.encrypted_content }));
       conversationMessages.push({ role: "user", content: userText.replace(/@afuai/gi, "").trim() || userText });
 
-      // Token accumulator — flush to state every 40 ms for smooth per-token display
-      let accumulated = "";
-      let lastFlushed = "";
-       let doneContent = "";
-       for await (const event of streamAiChat({
-          messages: [{ role: "system" as const, content: systemPrompt + lensAddition }, ...conversationMessages],
-          model: "engagera-2.1",
-          fast: true,
-          maxTokens: 500,
-         })) {
-          if (event.type === "text") {
-            accumulated += event.text;
-             // Do not wait for Engagera's done event: render each received chunk.
-             if (accumulated !== lastFlushed) {
-               lastFlushed = accumulated;
-               setMessages((prev) =>
-                 prev.map((m) => m.id === streamingId
-                   ? { ...m, encrypted_content: accumulated }
-                   : m
-                 )
-               );
-             }
-          } else if (event.type === "done") {
-            doneContent = event.content;
-          } else if (event.type === "error") {
-            throw new Error(event.message);
-          }
-         }
+      const response = await getEngagera().chat.create({
+        messages: [{ role: "system" as const, content: systemPrompt + lensAddition }, ...conversationMessages],
+        model: "engagera-2.1",
+        stream: false,
+      });
 
-      const rawReply = (doneContent || accumulated).trim() || "Sorry, I couldn't process that. Please try again.";
+      const rawReply = (response.content || "").trim() || "Sorry, I couldn't process that. Please try again.";
       const parsed = parseAfuAiTags(rawReply);
       const cleanText = parsed.text || rawReply;
       const sentAt = new Date().toISOString();
@@ -4745,50 +4644,36 @@ STRICT RULES:
         return { id: `exec_${Date.now()}`, actionType: at, params: p, label: labelMap[at] || "Confirm action", description: descMap[at] || "", status: "pending" as const };
       })() : undefined;
 
-      // Replace streaming placeholder with the fully-parsed final message
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === streamingId ? {
-            ...m,
-            encrypted_content: cleanText,
-            sent_at: sentAt,
-            _streaming: false,
-            _aiActions: parsed.actions.length > 0 ? parsed.actions : undefined,
-            _aiSuggestions: parsed.suggestions.length > 0 ? parsed.suggestions : undefined,
-            _aiInvoices: parsed.invoices.length > 0 ? parsed.invoices : undefined,
-            _aiExecAction: execAction,
-          } : m
-        )
-      );
+      setMessages((prev) => [{
+        id: `afuai_${Date.now()}`,
+        chat_id: chatId,
+        sender_id: AFUAI_BOT_ID,
+        encrypted_content: cleanText,
+        sent_at: sentAt,
+        sender: { display_name: "AfuAI", avatar_url: null, handle: "afuai" },
+        reactions: [],
+        _isAi: true,
+        _aiActions: parsed.actions.length > 0 ? parsed.actions : undefined,
+        _aiSuggestions: parsed.suggestions.length > 0 ? parsed.suggestions : undefined,
+        _aiInvoices: parsed.invoices.length > 0 ? parsed.invoices : undefined,
+        _aiExecAction: execAction,
+      }, ...prev]);
       // Persistence is intentionally not on the critical path for rendering.
-      void Promise.resolve(supabase.rpc("insert_afuai_message", {
+      void supabase.rpc("insert_afuai_message", {
         p_chat_id: chatId,
         p_content: rawReply,
-      })).then(({ data: rpcId }) => {
-        if (typeof rpcId === "string") {
-          setMessages((prev) => prev.map((m) => m.id === streamingId ? { ...m, id: rpcId } : m));
-        }
-      }).catch(() => {});
+      }).then(undefined, () => {});
     } catch {
-      // Update the streaming placeholder to show the error in-place
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === streamingId)) {
-          return prev.map((m) => m.id === streamingId ? {
-            ...m,
-            encrypted_content: "Sorry, I couldn't respond right now. Please try again.",
-            _streaming: false,
-          } : m);
-        }
-        return [{
-          id: `afuai_err_${Date.now()}`,
-          chat_id: chatId,
-          sender_id: AFUAI_BOT_ID,
-          encrypted_content: "Sorry, I couldn't respond right now. Please try again.",
-          sent_at: new Date().toISOString(),
-          sender: { display_name: "AfuAI", avatar_url: null, handle: "afuai" },
-          reactions: [],
-        }, ...prev];
-      });
+      setMessages((prev) => [{
+        id: `afuai_err_${Date.now()}`,
+        chat_id: chatId,
+        sender_id: AFUAI_BOT_ID,
+        encrypted_content: "Sorry, I couldn't respond right now. Please try again.",
+        sent_at: new Date().toISOString(),
+        sender: { display_name: "AfuAI", avatar_url: null, handle: "afuai" },
+        reactions: [],
+        _isAi: true,
+      }, ...prev]);
     } finally {
       setIsAfuAiTyping(false);
     }
@@ -7059,7 +6944,7 @@ STRICT RULES:
               }}
               ListHeaderComponent={
                 <>
-                  {typingUsers.length > 0 && !isAfuAiDirectChat && !messages.some((message) => message._streaming) && (
+                  {(typingUsers.length > 0 || (isAfuAiDirectChat && isAfuAiTyping)) && (
                     <TypingBubble colors={colors} />
                   )}
                 </>
