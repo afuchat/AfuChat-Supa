@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useLocalSearchParams } from "expo-router";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useAuth } from "@/context/AuthContext";
 import { getCachedUserId } from "@/lib/offlineStore";
 import { storage, KEYS } from "@/lib/storage/mmkv";
@@ -100,16 +100,10 @@ export default function IndexScreen() {
     return () => clearTimeout(timeout);
   }, [handle, loading, user?.id]);
 
-  // Keep the boot route visibly responsive while Supabase restores a session
-  // or the cached identity decides where to route. Returning null here made a
-  // slow restore look like a frozen/black app.
-  return (
-    <View style={styles.boot}>
-      <Text style={styles.brand}>AfuChat</Text>
-      <ActivityIndicator color="#1F95FF" size="small" />
-      <Text style={styles.status}>Loading your space…</Text>
-    </View>
-  );
+  // This route is only a navigation handoff. Returning users are routed from
+  // the synchronous local identity cache, so never show an account-restoring
+  // or loading message while background auth work continues.
+  return <View style={styles.boot} />;
 }
 
 const styles = StyleSheet.create({
@@ -119,15 +113,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 14,
     backgroundColor: "#000000",
-  },
-  brand: {
-    color: "#FFFFFF",
-    fontSize: 24,
-    fontWeight: "700",
-    letterSpacing: -0.5,
-  },
-  status: {
-    color: "rgba(255,255,255,0.48)",
-    fontSize: 13,
   },
 });

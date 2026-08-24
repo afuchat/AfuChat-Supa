@@ -755,16 +755,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Restore MMKV userId if it was wiped (ensures fast startup next time)
             if (!cachedUserId && effectiveUserId) setCachedUserId(effectiveUserId);
 
-            const cached = (await getCachedProfile()) ?? (await getLocalProfile(effectiveUserId));
-            if (!isCurrentBootstrap()) return;
-            if (cached) setProfile(cached as Profile);
+            // Publish the synchronous cache immediately. Never wait for
+            // AsyncStorage/SQLite here: those reads can stall while Android is
+            // offline or while the device has just unlocked.
+            const cachedSync = getCachedProfileSync();
+            if (cachedSync) setProfile(cachedSync as Profile);
 
-            // Set a synthetic user IMMEDIATELY so the app routes to home without
+            // Set a synthetic user immediately so the app routes to home without
             // waiting for a network round-trip. The real session replaces it once
             // the background token refresh completes (TOKEN_REFRESHED fires).
             const syntheticUser = {
               id: effectiveUserId,
-              email: primaryAccount?.email || (cached as any)?.email || "",
+              email: primaryAccount?.email || (cachedSync as any)?.email || "",
               app_metadata: {},
               user_metadata: {},
               aud: "authenticated",
@@ -775,6 +777,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Release loading NOW — home renders before refresh completes.
              clearTimeout(safetyTimer);
             setLoading(false);
+
+            // Hydrate the slower local profile cache after routing. This is
+            // deliberately fire-and-forget and cannot delay chats or navigation.
+            if (!cachedSync) {
+              getCachedProfile()
+                .then((cached) => {
+                  if (isCurrentBootstrap() && cached) setProfile(cached as Profile);
+                })
+                .catch(() => {});
+              getLocalProfile(effectiveUserId)
+                .then((local) => {
+                  if (isCurrentBootstrap() && !getCachedProfileSync() && local) {
+                    setProfile(local as unknown as Profile);
+                  }
+                })
+                .catch(() => {});
+            }
 
             if (isOnline()) {
               if (primaryAccount) {
