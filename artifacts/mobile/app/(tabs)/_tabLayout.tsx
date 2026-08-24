@@ -24,6 +24,7 @@ import { getLocalConversations } from "@/lib/storage/localConversations";
 import { supabase } from "@/lib/supabase";
 import { getTotalUnread, subscribeUnread } from "@/lib/chatUnreadEvents";
 import { Avatar } from "@/components/ui/Avatar";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Visible bottom bar tabs — Chat · Discover · Shorts · Apps · Me
 const BOTTOM_TABS = [
@@ -157,6 +158,7 @@ function CompactTabBar({
   const pathname           = usePathname();
   const insets             = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
+  const { t } = useLanguage();
   const totalUnread        = useTotalUnread(userId);
   const active             = normalizeTabPath(pathname);
   const [showCreateActions, setShowCreateActions] = useState(false);
@@ -232,7 +234,7 @@ function CompactTabBar({
                 onPress={() => handleTabPress(tab.route)}
                 activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel={tab.label}
+                 accessibilityLabel={t(tab.label)}
                 accessibilityState={{ selected: focused }}
               >
                 <View
@@ -269,7 +271,7 @@ function CompactTabBar({
                   allowFontScaling={false}
                   maxFontSizeMultiplier={1}
                 >
-                  {tab.label}
+                   {t(tab.label)}
                 </Text>
               </TouchableOpacity>
             );
@@ -295,7 +297,7 @@ function CompactTabBar({
               ]}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel={`Create ${opt.label}`}
+               accessibilityLabel={`${t("Create")} ${opt.label}`}
             >
               <View style={pill.actionLabel}>
                 <Text style={[pill.actionLabelText, { color: accentColor }]}>{opt.label}</Text>
