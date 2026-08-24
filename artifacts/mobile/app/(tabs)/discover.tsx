@@ -2792,10 +2792,9 @@ export default function DiscoverScreen() {
               safeRouter.push("/user-discovery");
             }}
             accessibilityRole="button"
-            accessibilityLabel="Find new people nearby"
+            accessibilityLabel="Find people nearby"
           >
-            <Ionicons name="people-outline" size={15} color={colors.textMuted} />
-            <Text style={[styles.tabPillText, { color: colors.textMuted }]}>New</Text>
+            <Text style={[styles.tabPillText, { color: colors.textMuted }]}>Find</Text>
           </TouchableOpacity>
           <View style={{ flex: 1 }} />
           {!user && (
