@@ -127,6 +127,7 @@ import FormatToolbar from "@/components/chat/FormatToolbar";
 import MiniProfilePopup from "@/components/chat/MiniProfilePopup";
 import { VoiceWaveform } from "@/components/chat/VoiceWaveform";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { audioFocus } from "@/lib/audioFocus";
 
 const ChatFontSizeCtx = React.createContext<number>(14);
 
@@ -5807,6 +5808,10 @@ STRICT RULES:
 
   async function startVoiceRecordingHold() {
     if (recordingActiveRef.current) return;
+    // Microphone input owns the audio session. Stop any voice message (and
+    // every other registered speaker playback) before asking for the mic so
+    // recording starts without speaker bleed or an audio-session race.
+    audioFocus.claimRecording();
     recordingStartingRef.current = true;
     recLockedSV.value = true;
     setIsRecordingPaused(false);

@@ -34,6 +34,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "@/lib/haptics";
 
 import { supabase } from "@/lib/supabase";
+import { audioFocus } from "@/lib/audioFocus";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { useAppAccent } from "@/context/AppAccentContext";
@@ -628,6 +629,7 @@ export default function PostDetailScreen() {
 
   async function startRecording() {
     if (!Audio) { showAlert("Not supported", "Audio recording is not available here."); return; }
+    audioFocus.claimRecording();
     let granted = false;
     try {
       const result = await Audio.requestPermissionsAsync();

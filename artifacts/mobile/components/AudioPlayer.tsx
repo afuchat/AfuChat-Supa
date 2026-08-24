@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { isExpoGo } from "@/lib/expoEnvironment";
+import { audioFocus } from "@/lib/audioFocus";
 // expo-av: lazy-load on native only.
 // Do NOT gate on NativeModules.ExponentAV — in Expo SDK 55 + New Architecture
 // production builds expo-av uses TurboModules/JSI and is absent from NativeModules,
@@ -134,8 +135,24 @@ function AudioPlayerActive({
 
   useEffect(() => {
     mountedRef.current = true;
-    return () => { mountedRef.current = false; };
-  }, []);
+    const unsubscribe = audioFocus.subscribe(() => {
+      // Stop immediately when the microphone takes audio focus. Unmounting
+      // alone is not enough because expo-av cleanup is asynchronous.
+      const sound = soundRef.current;
+      if (!sound) return;
+      sound.stopAsync().catch(() => {});
+      soundRef.current = null;
+      if (mountedRef.current) {
+        setIsPlaying(false);
+        setPositionMs(0);
+      }
+      voicePlaybackCoordinator.finished(playerId);
+    });
+    return () => {
+      mountedRef.current = false;
+      unsubscribe();
+    };
+  }, [playerId]);
 
   useEffect(() => {
     let mounted = true;

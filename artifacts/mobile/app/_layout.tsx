@@ -168,8 +168,8 @@ function PageWatcher() {
 // ─── AppNavigationStack ───────────────────────────────────────────────────────
 // Reads the theme background so every screen card uses the real background
 // colour instead of "transparent" (which causes a white flash on push/pop).
-// Use instant route swaps globally. This keeps taps responsive on Android and
-// avoids stacking a transition delay on top of data-loading screens.
+// Use a consistent directional transition globally so every pushed page
+// enters from the right and every popped page reverses smoothly.
 function AppNavigationStack() {
   const { colors } = useTheme();
   const bg = colors.background;
@@ -177,17 +177,15 @@ function AppNavigationStack() {
     <Stack
       screenOptions={{
         headerShown: false,
-        animation: "none",
+        animation: "slide_from_right",
         gestureEnabled: true,
         contentStyle: { backgroundColor: bg },
       }}
     >
-      {/* Boot / auth-shell screens — no directional slide, instant swap */}
-      <Stack.Screen name="index"      options={{ animation: "none", contentStyle: { backgroundColor: bg } }} />
-      <Stack.Screen name="welcome"    options={{ animation: "none", gestureEnabled: false }} />
+      <Stack.Screen name="index"      options={{ animation: "slide_from_right", contentStyle: { backgroundColor: bg } }} />
+      <Stack.Screen name="welcome"    options={{ animation: "slide_from_right", gestureEnabled: false }} />
       <Stack.Screen name="(auth)"     options={{ animation: "slide_from_right" }} />
-      <Stack.Screen name="(tabs)"     options={{ animation: "none" }} />
-      {/* Every other group and screen inherits the instant transition */}
+      <Stack.Screen name="(tabs)"     options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="+not-found" />
     </Stack>
   );

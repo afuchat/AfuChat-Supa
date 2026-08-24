@@ -48,6 +48,7 @@ if (_AvPlatform.OS !== "web" && !isExpoGo()) {
 import * as ImagePicker from "expo-image-picker";
 
 import { supabase } from "@/lib/supabase";
+import { audioFocus } from "@/lib/audioFocus";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useAuth } from "@/context/AuthContext";
 import { useAppAccent } from "@/context/AppAccentContext";
@@ -257,6 +258,18 @@ function VoicePlayer({
       setSound((prev) => { prev?.unloadAsync().catch(() => {}); return null; });
     };
   }, [uri]);
+
+  useEffect(() => {
+    if (!sound) return;
+    const unsubscribe = audioFocus.subscribe(() => {
+      sound.stopAsync().catch(() => {});
+      setPlaying(false);
+      setPositionMs(0);
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [sound]);
 
   async function togglePlay() {
     if (!sound) return;
@@ -889,6 +902,7 @@ export function VideoCommentsSheet({
       showAlert("Not supported", "Audio recording is not available in this environment.");
       return;
     }
+    audioFocus.claimRecording();
     const { granted } = await Audio.requestPermissionsAsync();
     if (!granted) {
       showAlert("Microphone access needed", "Please enable microphone access in Settings to record voice notes.");
