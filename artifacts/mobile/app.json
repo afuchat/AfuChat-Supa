@@ -11,6 +11,7 @@
     "backgroundColor": "#FFFFFF",
     "android": {
       "package": "com.afuchat.afuapp",
+      "googleServicesFile": "./google-services.json",
       "resizeableActivity": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
@@ -182,6 +183,9 @@
         {
           "microphonePermission": "AfuChat uses the microphone to record voice messages."
         }
+      ],
+      [
+        "@react-native-google-signin/google-signin"
       ]
     ],
     "updates": {

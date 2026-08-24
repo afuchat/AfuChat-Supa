@@ -61,6 +61,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastContainer } from "@/components/ui/ToastContainer";
 import AlertModal from "@/components/ui/AlertModal";
 import { GlobalInboxListener } from "@/components/GlobalInboxListener";
+import PushNotificationManager from "@/components/PushNotificationManager";
 import UpdatePrompt from "@/components/UpdatePrompt";
 import { initActivityTracker } from "@/lib/activityTracker";
 import { MiniAppRuntimeProvider } from "@/lib/superapp/MiniAppRuntime";
@@ -407,6 +408,7 @@ export default function RootLayout() {
                     <CrashSupportHandler />
                     <PageWatcher />
                     <GlobalInboxListener />
+                    <PushNotificationManager />
                     <UpdatePrompt />
                     <LanguageProvider>
                       <AdvancedFeaturesProvider>

@@ -495,6 +495,40 @@ export default function SignInScreen() {
   async function handleGoogle() {
     try {
       setOauthLoading(true);
+      if (Platform.OS === "android") {
+        // Use the native Google credential flow in standalone/dev builds.
+        // Expo Go does not contain this native module, so it falls through to
+        // the existing Supabase browser flow below.
+        try {
+          const GoogleSignin = require("@react-native-google-signin/google-signin").GoogleSignin;
+          await GoogleSignin.configure({
+            webClientId: "249391999620-8frki1cqjtc34d4ae37cncopncmt2rbc.apps.googleusercontent.com",
+            offlineAccess: false,
+          });
+          await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+          const result = await GoogleSignin.signIn();
+          const idToken = result?.data?.idToken ?? result?.idToken;
+          if (!idToken) throw new Error("Google did not return an ID token.");
+          const { error } = await supabase.auth.signInWithIdToken({
+            provider: "google",
+            token: idToken,
+          });
+          if (error) throw error;
+          setOauthLoading(false);
+          router.replace("/(tabs)/chats");
+          return;
+        } catch (nativeError: any) {
+          const code = nativeError?.code;
+          if (code === "SIGN_IN_CANCELLED" || code === "12501") {
+            setOauthLoading(false);
+            return;
+          }
+          // Missing native module means Expo Go; use the browser fallback.
+          if (!String(nativeError?.message ?? "").includes("Cannot find module")) {
+            throw nativeError;
+          }
+        }
+      }
       if (Platform.OS === "web" && typeof window !== "undefined") {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "google",

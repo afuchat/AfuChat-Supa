@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "249391999620",
+    "project_id": "afuchat-c3630",
+    "storage_bucket": "afuchat-c3630.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:249391999620:android:40326be3316f3c567130d1",
+        "android_client_info": {
+          "package_name": "com.afuchat.afuapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "249391999620-o9cgvn31f32r9lr310001enap6mnpbev.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.afuchat.afuapp",
+            "certificate_hash": "a84513d5e81babac0468dfb5e20838424c9dfee1"
+          }
+        },
+        {
+          "client_id": "249391999620-8frki1cqjtc34d4ae37cncopncmt2rbc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6j1MkU2CKL79gG2ELRIUlbWVzf7cj9Os"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "249391999620-8frki1cqjtc34d4ae37cncopncmt2rbc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
