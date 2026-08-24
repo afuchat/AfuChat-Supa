@@ -1217,6 +1217,7 @@ export default function DiscoverScreen() {
   // Uses Animated.event (not a plain onScroll function) so FlatList's internal
   // scroll tracking for onEndReached is never overridden.
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [coreHeaderHeight, setCoreHeaderHeight] = useState(0);
   const [storiesHeight, setStoriesHeight] = useState(0);
   const headerOffset = useRef(new Animated.Value(0)).current;
   const prevScrollYRef = useRef(0);
@@ -1239,10 +1240,13 @@ export default function DiscoverScreen() {
   function hideHeader(height: number) {
     if (!headerVisibleRef.current || height === 0) return;
     headerVisibleRef.current = false;
-    const storyTravel = storiesHeight > 0 ? storiesHeight * 0.9 : height;
+    const coreTravel = coreHeaderHeight > 0
+      ? coreHeaderHeight
+      : Math.max(0, height - storiesHeight);
     Animated.spring(headerOffset, {
-      // Keep the stories partially visible instead of hiding the entire row.
-      toValue: -storyTravel,
+      // Hide the top bar and tabs, but move stories into their space so the
+      // stories remain visible instead of disappearing with the header.
+      toValue: -coreTravel,
       useNativeDriver: DRIVER,
       tension: 220,
       friction: 28,
@@ -1259,7 +1263,7 @@ export default function DiscoverScreen() {
     if (y > collapsePoint && delta > 1.5) hideHeader(headerHeight);
     else if (delta < -1.5 || y <= 0) revealHeader();
     prevScrollYRef.current = y;
-  }, [headerHeight, storiesHeight]);
+  }, [coreHeaderHeight, headerHeight, storiesHeight]);
 
   // The header and new-posts pill are combined animated nodes. Use the same
   // JS driver for their scroll updates and transitions so React Native never
@@ -2627,8 +2631,16 @@ export default function DiscoverScreen() {
         {/* Flat header background — unified BG, no separate surface colour */}
         <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 0 }]} />
 
-        {/* ── Row 1: user avatar | centered wordmark | bell ── */}
-        <View style={[styles.headerTop, { paddingTop: insets.top + 6 }]}>
+        {/* The compact top bar, tabs, and refresh status collapse together. */}
+        <Animated.View
+          onLayout={(e) => {
+            const nextHeight = Math.round(e.nativeEvent.layout.height);
+            setCoreHeaderHeight((current) => current === nextHeight ? current : nextHeight);
+          }}
+          style={{ transform: [{ translateY: headerOffset }], zIndex: 2 }}
+        >
+          {/* ── Row 1: user avatar | centered wordmark | bell ── */}
+          <View style={[styles.headerTop, { paddingTop: insets.top + 6 }]}>
           {/* Left spacer keeps the wordmark centered without a profile shortcut. */}
           <View style={styles.headerSpacer} />
 
@@ -2659,10 +2671,10 @@ export default function DiscoverScreen() {
               <Ionicons name="search" size={24} color={colors.icon} />
             </TouchableOpacity>
           </View>
-        </View>
+          </View>
 
-        {/* ── Row 2: For You / Following tabs ── */}
-        <View style={[styles.tabRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
+          {/* ── Row 2: For You / Following tabs ── */}
+          <View style={[styles.tabRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
           <TouchableOpacity
             style={[
               styles.tabPill,
@@ -2699,30 +2711,32 @@ export default function DiscoverScreen() {
               </Text>
             </TouchableOpacity>
           )}
-        </View>
+          </View>
 
 
-        {/* Keep this row mounted so showing the indicator never changes the
-            measured header height while the feed is scrolling. */}
-        <View
-          style={[
-            styles.bgRefreshBar,
-            {
-              backgroundColor: colors.accent + "18",
-              opacity: bgRefreshing && newPostAuthors.length === 0 ? 1 : 0,
-            },
-          ]}
-          pointerEvents={bgRefreshing && newPostAuthors.length === 0 ? "auto" : "none"}
-        >
+          {/* Keep this row mounted so showing the indicator never changes the
+              measured header height while the feed is scrolling. */}
+          <View
+            style={[
+              styles.bgRefreshBar,
+              {
+                backgroundColor: colors.accent + "18",
+                opacity: bgRefreshing && newPostAuthors.length === 0 ? 1 : 0,
+              },
+            ]}
+            pointerEvents={bgRefreshing && newPostAuthors.length === 0 ? "auto" : "none"}
+          >
             <View style={{ flexDirection: "row", gap: 4, alignItems: "center" }}>
               {[0, 1, 2].map(i => (
                 <Animated.View key={i} style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: colors.accent }} />
               ))}
             </View>
             <Text style={[styles.bgRefreshText, { color: colors.accent }]}>Updating feed…</Text>
-        </View>
+          </View>
+        </Animated.View>
 
-         {/* Stories belong to the collapsible header, not the feed list. */}
+         {/* Stories move into the top-bar space when the tabs collapse, but
+             remain visible instead of being hidden with the header. */}
          <Animated.View
            onLayout={(e) => {
              const nextHeight = Math.round(e.nativeEvent.layout.height);
