@@ -1279,12 +1279,13 @@ export default function DiscoverScreen() {
   const handleFeedScrollFrame = useCallback((event: any) => {
     const y = Math.max(0, Number(event?.nativeEvent?.contentOffset?.y ?? 0));
     const delta = y - prevScrollYRef.current;
-    const collapsePoint = Math.max(24, fullHeaderHeight - 12);
+    // Start collapsing after a short intentional downward drag. Requiring the
+    // full header height made the mobile header feel stuck; the visibility
+    // guard keeps this low threshold from flickering between states.
+    const collapsePoint = Math.min(16, Math.max(8, fullHeaderHeight - 12));
 
-    // Keep the header over the feed until the list reaches the bottom of the
-    // header's reserved space. This prevents a blank gap while it hides.
-    if (y > collapsePoint && delta > 3) hideHeader(fullHeaderHeight);
-    else if (delta < -5 || y <= 0) revealHeader();
+    if (y > collapsePoint && delta > 1.5) hideHeader(fullHeaderHeight);
+    else if (delta < -3 || y <= 8) revealHeader();
     prevScrollYRef.current = y;
   }, [coreHeaderHeight, fullHeaderHeight, storiesHeight]);
 
@@ -1295,8 +1296,9 @@ export default function DiscoverScreen() {
   const handleFeedScrollSettled = useCallback((event: any) => {
     const y = Number(event?.nativeEvent?.contentOffset?.y ?? 0);
     const delta = y - prevScrollYRef.current;
-    if (y > Math.max(24, fullHeaderHeight - 12) && delta > 3) hideHeader(fullHeaderHeight);
-    else if (delta < -5 || y <= 10) revealHeader();
+    const collapsePoint = Math.min(16, Math.max(8, fullHeaderHeight - 12));
+    if (y > collapsePoint && delta > 1.5) hideHeader(fullHeaderHeight);
+    else if (delta < -3 || y <= 8) revealHeader();
     prevScrollYRef.current = y;
   }, [fullHeaderHeight]);
 
