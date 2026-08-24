@@ -581,14 +581,6 @@ export default function MeScreen() {
           <SectionLabel label="Social & Growth" colors={colors} />
           <MenuCard colors={colors}>
             <MenuItem
-              icon="people"
-              iconColor={accent}
-              label="Find People"
-              onPress={() => router.push("/user-discovery")}
-              showSeparator
-              colors={colors}
-            />
-            <MenuItem
               icon="trophy"
               iconColor={accent}
               label="Prestige & Rewards"

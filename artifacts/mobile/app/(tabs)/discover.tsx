@@ -2785,6 +2785,18 @@ export default function DiscoverScreen() {
               </Text>
             </TouchableOpacity>
           )}
+          <TouchableOpacity
+            style={styles.tabPill}
+            onPress={() => {
+              Haptics.selectionAsync();
+              safeRouter.push("/user-discovery");
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Find new people nearby"
+          >
+            <Ionicons name="people-outline" size={15} color={colors.textMuted} />
+            <Text style={[styles.tabPillText, { color: colors.textMuted }]}>New</Text>
+          </TouchableOpacity>
           <View style={{ flex: 1 }} />
           {!user && (
             <TouchableOpacity
