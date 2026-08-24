@@ -1284,8 +1284,8 @@ export default function DiscoverScreen() {
     // guard keeps this low threshold from flickering between states.
     const collapsePoint = Math.min(16, Math.max(8, fullHeaderHeight - 12));
 
-    if (y > collapsePoint && delta > 1.5) hideHeader(fullHeaderHeight);
-    else if (delta < -3 || y <= 8) revealHeader();
+    if (y > collapsePoint) hideHeader(fullHeaderHeight);
+    else if (delta < -3 || y <= 0) revealHeader();
     prevScrollYRef.current = y;
   }, [coreHeaderHeight, fullHeaderHeight, storiesHeight]);
 
@@ -1297,8 +1297,8 @@ export default function DiscoverScreen() {
     const y = Number(event?.nativeEvent?.contentOffset?.y ?? 0);
     const delta = y - prevScrollYRef.current;
     const collapsePoint = Math.min(16, Math.max(8, fullHeaderHeight - 12));
-    if (y > collapsePoint && delta > 1.5) hideHeader(fullHeaderHeight);
-    else if (delta < -3 || y <= 8) revealHeader();
+    if (y > collapsePoint) hideHeader(fullHeaderHeight);
+    else if (delta < -3 || y <= 0) revealHeader();
     prevScrollYRef.current = y;
   }, [fullHeaderHeight]);
 
