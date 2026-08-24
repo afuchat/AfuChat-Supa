@@ -102,7 +102,6 @@ import { clearUnread, getLocalConversation } from "@/lib/storage/localConversati
 import { getLocalAttachmentUri, ensureChatAttachmentDownloaded, autoDownloadChatAttachments, openChatFile, saveAttachmentToGallery } from "@/lib/storage/chatAttachmentCache";
 import { uploadChatMedia } from "@/lib/mediaUpload";
 import { syncPendingMessages } from "@/lib/offlineSync";
-import OfflineBanner from "@/components/ui/OfflineBanner";
 import { translateText, detectMessageLanguage, LANG_LABELS } from "@/lib/translate";
 import { useLanguage } from "@/context/LanguageContext";
 import { useChatPreferences, CHAT_THEME_COLORS, BUBBLE_RADIUS } from "@/context/ChatPreferencesContext";
@@ -6804,7 +6803,6 @@ STRICT RULES:
           )}
         </View>
       </View>
-      <OfflineBanner />
 
       {/* ── In-chat search bar ─────────────────────────────────────────────── */}
       {searchActive && (
