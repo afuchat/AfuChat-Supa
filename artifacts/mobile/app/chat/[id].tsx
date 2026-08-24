@@ -115,6 +115,7 @@ import { getEngagera } from "@/lib/engagera";
 import { streamAiChat } from "@/lib/sseStream";
 import { buildNavigationContext, ACTION_ROUTES_GUIDE, detectVoiceNavCommand, pickNavConfirmation } from "@/lib/platformKnowledge";
 import { AFUAI_BOT_ID } from "@/lib/afuAiBot";
+import { clearAIUnread } from "@/lib/aiChatStore";
 import { GIPHY_API_KEY } from "@/lib/env";
 import { BlurView } from "expo-blur";
 import WallpaperOverlay from "@/components/chat/WallpaperOverlay";
@@ -157,6 +158,48 @@ async function persistIncomingStatus(
     .upsert(rows, { onConflict: "message_id,user_id" });
   if (error) {
     await enqueue("mark_read", { chat_id: chatId, user_id: userId, message_ids: messageIds, read_receipts: readReceipts });
+  }
+}
+
+/**
+ * System chats must be read when opened, even when every message was already
+ * present in the local cache. The normal message loader only sees fresh server
+ * rows, which made cached Notifications/AfuAI chats keep their server unread
+ * count forever.
+ */
+async function markSystemChatRead(
+  chatId: string,
+  userId: string,
+  options: { notifications: boolean; afuAi: boolean },
+): Promise<void> {
+  await clearUnread(chatId);
+  if (options.afuAi) {
+    // Older installs may still have the synthetic local AfuAI conversation.
+    await clearAIUnread();
+  }
+
+  const [{ data: incoming }, notificationResult] = await Promise.all([
+    supabase
+      .from("messages")
+      .select("id")
+      .eq("chat_id", chatId)
+      .neq("sender_id", userId),
+    options.notifications
+      ? supabase
+          .from("notification_events")
+          .update({ read_at: new Date().toISOString() })
+          .eq("recipient_id", userId)
+          .is("read_at", null)
+      : Promise.resolve({ error: null }),
+  ]);
+
+  if (notificationResult.error) {
+    console.warn("[Notifications] failed to mark events read", notificationResult.error.message);
+  }
+
+  const messageIds = (incoming ?? []).map((message: { id: string }) => message.id);
+  if (messageIds.length > 0) {
+    await persistIncomingStatus(messageIds, chatId, userId, true);
   }
 }
 
@@ -2802,6 +2845,14 @@ function ChatScreen() {
   const loadMessages = useCallback(async () => {
     const chatId = isDraft ? realChatId : id;
     if (!chatId || !user) return;
+    if (isNotificationsChat || isAfuAiDirectChat) {
+      // Do this before reading the cache or waiting for the network so a
+      // subsequent chats-list refresh cannot restore the unread badge.
+      void markSystemChatRead(chatId, user.id, {
+        notifications: isNotificationsChat,
+        afuAi: isAfuAiDirectChat,
+      });
+    }
     // My Notes is intentionally device-only. Do not query Supabase, subscribe
     // to realtime, or attempt any server sync for this conversation.
     if (isLocalNotesId(chatId)) {
@@ -3279,12 +3330,15 @@ function ChatScreen() {
     const activeChatId = isDraft ? realChatId : id;
     if (!activeChatId) return;
 
+    // Set this synchronously, before any async load. ChatsScreen may refresh
+    // while this screen is opening; the RPC then excludes this chat's unread
+    // rows instead of racing the loader and briefly restoring the badge.
+    markChatVisited(activeChatId);
+    setActiveChatId(activeChatId);
     loadChatInfo();
     loadMessages();
 
     if (isLocalNotesId(activeChatId)) {
-      markChatVisited(activeChatId);
-      setActiveChatId(activeChatId);
       return () => {
         clearActiveChatId();
       };
