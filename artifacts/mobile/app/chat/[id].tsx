@@ -589,7 +589,6 @@ function TypingBubble({ colors, compact = false }: { colors: any; compact?: bool
   const dot1 = useRef(new Animated.Value(0)).current;
   const dot2 = useRef(new Animated.Value(0)).current;
   const dot3 = useRef(new Animated.Value(0)).current;
-  const pulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const bounce = (dot: Animated.Value, delay: number) =>
@@ -610,43 +609,23 @@ function TypingBubble({ colors, compact = false }: { colors: any; compact?: bool
     const a1 = bounce(dot1, 0);
     const a2 = bounce(dot2, 150);
     const a3 = bounce(dot3, 300);
-    const breathing = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 900, useNativeDriver: true }),
-      ])
-    );
-    a1.start(); a2.start(); a3.start(); breathing.start();
-    return () => { a1.stop(); a2.stop(); a3.stop(); breathing.stop(); };
+    a1.start(); a2.start(); a3.start();
+    return () => { a1.stop(); a2.stop(); a3.stop(); };
   }, []);
 
   const dotColor = colors.bubbleIncomingText === "#FFFFFF"
     ? "rgba(255,255,255,0.9)"
     : colors.accent;
-  const ringOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.12, 0.3] });
-  const ringScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.88, 1.08] });
 
   return (
     <View style={{ paddingHorizontal: compact ? 0 : 16, paddingBottom: compact ? 0 : 4 }}>
       <View style={{
         width: compact ? 48 : 64,
         height: compact ? 28 : 38,
-        backgroundColor: colors.bubbleIncoming,
-        borderRadius: compact ? 14 : 19,
-        borderBottomLeftRadius: compact ? 7 : 4,
         alignSelf: "flex-start",
         alignItems: "center",
         justifyContent: "center",
       }}>
-        <Animated.View style={{
-          position: "absolute",
-          width: compact ? 34 : 48,
-          height: compact ? 22 : 30,
-          borderRadius: 20,
-          backgroundColor: dotColor,
-          opacity: ringOpacity,
-          transform: [{ scale: ringScale }],
-        }} />
         <View style={{ flexDirection: "row", gap: compact ? 4 : 5, alignItems: "center" }}>
           {[dot1, dot2, dot3].map((dot, i) => (
             <Animated.View
@@ -1492,6 +1471,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   // rcptRead: high-visibility blue — stays readable on dark AND light bubble colours
   const rcptRead      = darkBubble ? "#7DD3FC" : "#0284C7";
   const isPending = msg._pending || msg.status === "sending";
+  const isEmptyAiStream = !!msg._isAi && !!msg._streaming && !displayText;
 
   if (isRedEnvelope) {
     return (
@@ -3915,17 +3895,8 @@ function ChatScreen() {
     try {
       let accumulated = "";
       let lastFlushed = "";
-      const flushTimer = setInterval(() => {
-        if (accumulated !== lastFlushed) {
-          const snap = accumulated;
-          lastFlushed = snap;
-          setMessages(prev => prev.map(m => m.id === lensStreamId ? { ...m, encrypted_content: snap } : m));
-        }
-      }, 40);
-
-      let doneContent = "";
-      try {
-        for await (const event of streamAiChat({
+       let doneContent = "";
+       for await (const event of streamAiChat({
           messages: [
             {
               role: "system" as const,
@@ -3939,18 +3910,23 @@ function ChatScreen() {
           model: "engagera-2.1",
           fast: true,
           maxTokens: 600,
-        })) {
+         })) {
           if (event.type === "text") {
             accumulated += event.text;
+               // Paint each chunk immediately so the reply reads like live typing.
+               if (accumulated !== lastFlushed) {
+                 lastFlushed = accumulated;
+                 setMessages(prev => prev.map(m => m.id === lensStreamId
+                   ? { ...m, encrypted_content: accumulated }
+                   : m
+                 ));
+               }
           } else if (event.type === "done") {
             doneContent = event.content;
           } else if (event.type === "error") {
             throw new Error(event.message);
           }
-        }
-      } finally {
-        clearInterval(flushTimer);
-      }
+         }
 
       const rawReply = (doneContent || accumulated).trim() || "I've reviewed your scan. What would you like to know?";
       const parsed = parseAfuAiTags(rawReply);
@@ -3966,7 +3942,7 @@ function ChatScreen() {
         ],
       } : m));
       // Do not keep the visible reply waiting on persistence.
-      void supabase.rpc("insert_afuai_message", { p_chat_id: chatId, p_content: rawReply })
+      void Promise.resolve(supabase.rpc("insert_afuai_message", { p_chat_id: chatId, p_content: rawReply }))
         .then(({ data: rpcId }) => {
           if (typeof rpcId === "string") {
             setMessages(prev => prev.map(m => m.id === lensStreamId ? { ...m, id: rpcId } : m));
@@ -4714,35 +4690,31 @@ STRICT RULES:
       // Token accumulator — flush to state every 40 ms for smooth per-token display
       let accumulated = "";
       let lastFlushed = "";
-      const flushTimer = setInterval(() => {
-        if (accumulated !== lastFlushed) {
-          const snap = accumulated;
-          lastFlushed = snap;
-          setMessages((prev) =>
-            prev.map((m) => m.id === streamingId ? { ...m, encrypted_content: snap } : m)
-          );
-        }
-      }, 40);
-
-      let doneContent = "";
-      try {
-        for await (const event of streamAiChat({
+       let doneContent = "";
+       for await (const event of streamAiChat({
           messages: [{ role: "system" as const, content: systemPrompt + lensAddition }, ...conversationMessages],
           model: "engagera-2.1",
           fast: true,
           maxTokens: 500,
-        })) {
+         })) {
           if (event.type === "text") {
             accumulated += event.text;
+             // Do not wait for Engagera's done event: render each received chunk.
+             if (accumulated !== lastFlushed) {
+               lastFlushed = accumulated;
+               setMessages((prev) =>
+                 prev.map((m) => m.id === streamingId
+                   ? { ...m, encrypted_content: accumulated }
+                   : m
+                 )
+               );
+             }
           } else if (event.type === "done") {
             doneContent = event.content;
           } else if (event.type === "error") {
             throw new Error(event.message);
           }
-        }
-      } finally {
-        clearInterval(flushTimer);
-      }
+         }
 
       const rawReply = (doneContent || accumulated).trim() || "Sorry, I couldn't process that. Please try again.";
       const parsed = parseAfuAiTags(rawReply);
@@ -4789,10 +4761,10 @@ STRICT RULES:
         )
       );
       // Persistence is intentionally not on the critical path for rendering.
-      void supabase.rpc("insert_afuai_message", {
+      void Promise.resolve(supabase.rpc("insert_afuai_message", {
         p_chat_id: chatId,
         p_content: rawReply,
-      }).then(({ data: rpcId }) => {
+      })).then(({ data: rpcId }) => {
         if (typeof rpcId === "string") {
           setMessages((prev) => prev.map((m) => m.id === streamingId ? { ...m, id: rpcId } : m));
         }
@@ -7087,7 +7059,7 @@ STRICT RULES:
               }}
               ListHeaderComponent={
                 <>
-                  {typingUsers.length > 0 && (
+                  {typingUsers.length > 0 && !isAfuAiDirectChat && !messages.some((message) => message._streaming) && (
                     <TypingBubble colors={colors} />
                   )}
                 </>
