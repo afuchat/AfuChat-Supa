@@ -28,6 +28,7 @@ type Person = {
   is_organization_verified: boolean;
   last_seen: string | null;
   is_following: boolean;
+  is_following_me: boolean;
 };
 
 type Filter = "all" | "online" | "recent";
@@ -80,7 +81,7 @@ export default function FindPeopleTab() {
     try {
       // This is deliberately a live presence query, not a recommendation or
       // history query. last_seen is updated by the session heartbeat.
-      const [{ data, error: profileError }, { data: follows, error: followError }] = await Promise.all([
+      const [{ data, error: profileError }, { data: follows, error: followError }, { data: followers, error: followersError }] = await Promise.all([
         supabase
           .from("profiles")
           .select("id, display_name, handle, avatar_url, bio, follower_count, is_verified, is_organization_verified, last_seen")
@@ -95,10 +96,13 @@ export default function FindPeopleTab() {
           .order("last_seen", { ascending: false, nullsFirst: false })
           .limit(100),
         supabase.from("follows").select("following_id").eq("follower_id", user.id),
+        supabase.from("follows").select("follower_id").eq("following_id", user.id),
       ]);
       if (profileError) throw profileError;
       if (followError) throw followError;
+      if (followersError) throw followersError;
       const followed = new Set((follows ?? []).map((row: any) => row.following_id));
+      const followingMe = new Set((followers ?? []).map((row: any) => row.follower_id));
       const completeProfiles = ((data ?? []) as any[]).filter((person) =>
         typeof person.handle === "string" && person.handle.trim().length > 0 &&
         typeof person.display_name === "string" && person.display_name.trim().length > 0 &&
@@ -133,6 +137,7 @@ export default function FindPeopleTab() {
           is_organization_verified: !!person.is_organization_verified,
           last_seen: person.last_seen || null,
           is_following: followed.has(person.id),
+          is_following_me: followingMe.has(person.id),
         })));
       setLastUpdated(Date.now());
     } catch {
@@ -262,7 +267,7 @@ export default function FindPeopleTab() {
                 </View>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.followButton, { borderColor: item.is_following ? colors.border : accent, backgroundColor: item.is_following ? "transparent" : accent }]} onPress={() => void toggleFollow(item)} disabled={followBusy === item.id}>
-                {followBusy === item.id ? <ActivityIndicator size="small" color={item.is_following ? accent : "#fff"} /> : <Text style={{ color: item.is_following ? accent : "#fff", fontFamily: "Inter_600SemiBold", fontSize: 12 }}>{item.is_following ? "Following" : "Follow"}</Text>}
+                {followBusy === item.id ? <ActivityIndicator size="small" color={item.is_following ? accent : "#fff"} /> : <Text style={{ color: item.is_following ? accent : "#fff", fontFamily: "Inter_600SemiBold", fontSize: 12 }}>{item.is_following ? "Following" : item.is_following_me ? "Follow back" : "Follow"}</Text>}
               </TouchableOpacity>
             </View>
           )}
