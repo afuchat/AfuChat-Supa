@@ -70,17 +70,49 @@ Deno.serve(async (request) => {
   const auth = createClient(url, anonKey, { global: { headers: { Authorization: authorization } } });
   const { data: userData, error: userError } = await auth.auth.getUser();
   if (userError || !userData.user) return json({ error: "Invalid session" }, 401);
+  const authenticatedUserId = userData.user.id;
   const body = await request.json().catch(() => null);
+  if (body?.senderId !== authenticatedUserId) {
+    return json({ error: "Sender does not match the authenticated user" }, 403);
+  }
+  const chatId = typeof body?.chatId === "string" ? body.chatId.trim() : "";
+  const messageId = typeof body?.messageId === "string" ? body.messageId.trim() : "";
+  if (!chatId || !messageId) return json({ error: "A chat and message are required" }, 400);
+
+  // The client may request delivery only for a message it actually sent in a
+  // chat where it is a member. This prevents arbitrary push spam and blocks
+  // user-ID substitution in the request body.
+  const { data: membership, error: membershipError } = await adminlessMembershipCheck(auth, chatId, authenticatedUserId);
+  if (membershipError || !membership) return json({ error: "Not authorized for this chat" }, 403);
+  const { data: ownMessage, error: messageError } = await auth
+    .from("messages")
+    .select("id")
+    .eq("id", messageId)
+    .eq("chat_id", chatId)
+    .eq("sender_id", authenticatedUserId)
+    .maybeSingle();
+  if (messageError || !ownMessage) return json({ error: "Message is not owned by the authenticated user" }, 403);
+
   const recipientIds = Array.isArray(body?.recipientUserIds)
     ? [...new Set(body.recipientUserIds.filter((id: unknown): id is string => typeof id === "string" && id.length > 0))]
     : [];
   if (!recipientIds.length) return json({ ok: true, sent: 0 });
 
   const admin = createClient(url, serviceRoleKey);
+  const { data: chatRecipients, error: recipientError } = await admin
+    .from("chat_members")
+    .select("user_id")
+    .eq("chat_id", chatId)
+    .in("user_id", recipientIds);
+  if (recipientError) return json({ error: "Could not verify chat recipients" }, 500);
+  const authorizedRecipientIds = new Set((chatRecipients ?? []).map((row) => row.user_id));
+  if (authorizedRecipientIds.size !== recipientIds.length) {
+    return json({ error: "One or more recipients are not members of this chat" }, 403);
+  }
   const { data: devices, error: deviceError } = await admin
     .from("push_devices")
     .select("id, token")
-    .in("user_id", recipientIds)
+    .in("user_id", [...authorizedRecipientIds])
     .eq("enabled", true);
   if (deviceError) return json({ error: "Could not load push devices" }, 500);
 
@@ -122,3 +154,16 @@ Deno.serve(async (request) => {
   }
   return json({ ok: true, sent, attempted: devices?.length ?? 0 });
 });
+
+async function adminlessMembershipCheck(
+  client: ReturnType<typeof createClient>,
+  chatId: string,
+  userId: string,
+) {
+  return await client
+    .from("chat_members")
+    .select("user_id")
+    .eq("chat_id", chatId)
+    .eq("user_id", userId)
+    .maybeSingle();
+}

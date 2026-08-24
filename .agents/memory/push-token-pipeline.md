@@ -84,3 +84,11 @@ Production registration failures with `INVALID_DEVICE_TOKEN` and no `push_device
 **Why:** Expo Go can exercise the JavaScript registration path but cannot produce the Firebase-backed native token required by the direct FCM sender.
 
 **How to apply:** Test registration with the current Firebase-enabled standalone APK/AAB after a clean reinstall; do not loosen server validation to make Expo Go appear registered.
+
+## Sender authorization
+
+The push sender must derive identity from the verified Supabase session and verify sender membership, message ownership, and recipient membership for the supplied chat before reading device tokens.
+
+**Why:** Authentication alone does not stop a signed-in client from submitting another user's IDs or using the sender as an arbitrary push-spam endpoint.
+
+**How to apply:** Reject mismatched sender IDs and any message/chat/recipient combination not authorized by the authenticated user; keep device-token writes scoped by RLS to the token owner.

@@ -18,8 +18,7 @@ Deno.serve(async (request) => {
 
   const url = Deno.env.get("SUPABASE_URL") ?? "";
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  if (!url || !anonKey || !serviceRoleKey) return json({ error: "Push registration is not configured" }, 500);
+  if (!url || !anonKey) return json({ error: "Push registration is not configured" }, 500);
 
   const auth = createClient(url, anonKey, {
     global: { headers: { Authorization: authorization } },
@@ -30,12 +29,20 @@ Deno.serve(async (request) => {
   const body = await request.json().catch(() => null);
   const token = typeof body?.token === "string" ? body.token.trim() : "";
   const platform = body?.platform === "android" || body?.platform === "ios" ? body.platform : null;
-  if (token.length < 20 || token.length > 4096 || !platform || /^(Expo|Exponent)PushToken\[/.test(token)) {
+  if (
+    token.length < 20 ||
+    token.length > 4096 ||
+    !platform ||
+    body?.provider !== "fcm" ||
+    /^(Expo|Exponent)PushToken\[/.test(token)
+  ) {
     return json({ error: "A valid native FCM token and platform are required" }, 400);
   }
 
-  const admin = createClient(url, serviceRoleKey);
-  const { error } = await admin.from("push_devices").upsert({
+  // Use the authenticated client for registration. RLS then permits updates
+  // only to a row already owned by this user, so a stolen token cannot be
+  // reassigned to another account through an admin upsert.
+  const { error } = await auth.from("push_devices").upsert({
     user_id: authData.user.id,
     token,
     platform,
