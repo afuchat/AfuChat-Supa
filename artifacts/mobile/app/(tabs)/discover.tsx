@@ -1224,6 +1224,7 @@ export default function DiscoverScreen() {
   const fullHeaderHeight = coreHeaderHeight + storiesHeight;
   const prevScrollYRef = useRef(0);
   const headerVisibleRef = useRef(true);
+  const headerAnimationDuration = 150;
   // useNativeDriver:false because headerOffset target changes dynamically
   // and web doesn't support native driver for transforms driven this way.
   const DRIVER = false;
@@ -1232,10 +1233,11 @@ export default function DiscoverScreen() {
     if (headerVisibleRef.current && updatePageLayout) return;
     headerVisibleRef.current = true;
     headerAnimationRef.current?.stop();
+    headerAnimationRef.current = null;
     const animations: Animated.CompositeAnimation[] = [
       Animated.timing(headerOffset, {
         toValue: 0,
-        duration: 220,
+        duration: headerAnimationDuration,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: DRIVER,
       }),
@@ -1243,7 +1245,7 @@ export default function DiscoverScreen() {
     if (updatePageLayout) {
       animations.push(Animated.timing(headerFlowHeight, {
         toValue: fullHeaderHeight,
-        duration: 220,
+        duration: headerAnimationDuration,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: DRIVER,
       }));
@@ -1261,22 +1263,23 @@ export default function DiscoverScreen() {
       : Math.max(0, height - storiesHeight);
     const storyFlowHeight = storiesHeight > 0 ? storiesHeight + insets.top : 0;
     headerAnimationRef.current?.stop();
+    headerAnimationRef.current = null;
     const animations: Animated.CompositeAnimation[] = [];
     if (shouldMoveChrome) {
       animations.push(Animated.timing(headerOffset, {
         // Hide the top bar and tabs, but move stories into their space so the
         // stories remain visible instead of disappearing with the header.
         toValue: -coreTravel + insets.top,
-        duration: 220,
-        easing: Easing.inOut(Easing.cubic),
+        duration: headerAnimationDuration,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: DRIVER,
       }));
     }
     if (updatePageLayout) {
       animations.push(Animated.timing(headerFlowHeight, {
         toValue: storyFlowHeight,
-        duration: 220,
-        easing: Easing.inOut(Easing.cubic),
+        duration: headerAnimationDuration,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: DRIVER,
       }));
     }
@@ -1291,6 +1294,7 @@ export default function DiscoverScreen() {
     // Start collapsing after a short intentional downward drag. Requiring the
     // full header height made the mobile header feel stuck; the visibility
     // guard keeps this low threshold from flickering between states.
+    if (Platform.OS === "web") return;
     const collapsePoint = Math.min(16, Math.max(8, fullHeaderHeight - 12));
 
     if (y > collapsePoint) hideHeader(fullHeaderHeight, false);
@@ -1303,6 +1307,7 @@ export default function DiscoverScreen() {
   // tries to switch one node between native and JS ownership.
   const onFeedScroll = handleFeedScrollFrame;
   const handleFeedScrollSettled = useCallback((event: any) => {
+    if (Platform.OS === "web") return;
     const y = Number(event?.nativeEvent?.contentOffset?.y ?? 0);
     const delta = y - prevScrollYRef.current;
     const collapsePoint = Math.min(16, Math.max(8, fullHeaderHeight - 12));
@@ -2800,7 +2805,8 @@ export default function DiscoverScreen() {
                   contentContainerStyle={{ gap: 8, paddingBottom: insets.bottom + 100 }}
                   showsVerticalScrollIndicator={false}
                   onScroll={onFeedScroll}
-                  scrollEventThrottle={32}
+                   scrollEventThrottle={16}
+                   onScrollBeginDrag={() => headerAnimationRef.current?.stop()}
                   onScrollEndDrag={handleFeedScrollSettled}
                   onMomentumScrollEnd={handleFeedScrollSettled}
                   onEndReached={loadMore}
@@ -2865,7 +2871,8 @@ export default function DiscoverScreen() {
                   contentContainerStyle={{ gap: 8, paddingBottom: insets.bottom + 100 }}
                   showsVerticalScrollIndicator={false}
                   onScroll={onFeedScroll}
-                  scrollEventThrottle={32}
+                   scrollEventThrottle={16}
+                   onScrollBeginDrag={() => headerAnimationRef.current?.stop()}
                   onScrollEndDrag={handleFeedScrollSettled}
                   onMomentumScrollEnd={handleFeedScrollSettled}
                   onEndReached={loadMore}
@@ -2929,7 +2936,8 @@ export default function DiscoverScreen() {
             contentContainerStyle={{ gap: 8, paddingBottom: insets.bottom + 100 }}
             showsVerticalScrollIndicator={false}
             onScroll={onFeedScroll}
-              scrollEventThrottle={32}
+              scrollEventThrottle={16}
+              onScrollBeginDrag={() => headerAnimationRef.current?.stop()}
               onScrollEndDrag={handleFeedScrollSettled}
               onMomentumScrollEnd={handleFeedScrollSettled}
             onEndReached={loadMore}
