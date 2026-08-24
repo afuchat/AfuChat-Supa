@@ -1228,51 +1228,60 @@ export default function DiscoverScreen() {
   // and web doesn't support native driver for transforms driven this way.
   const DRIVER = false;
 
-  function revealHeader() {
-    if (headerVisibleRef.current) return;
+  function revealHeader(updatePageLayout = true) {
+    if (headerVisibleRef.current && updatePageLayout) return;
     headerVisibleRef.current = true;
     headerAnimationRef.current?.stop();
-    headerAnimationRef.current = Animated.parallel([
+    const animations: Animated.CompositeAnimation[] = [
       Animated.timing(headerOffset, {
         toValue: 0,
         duration: 220,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: DRIVER,
       }),
-      Animated.timing(headerFlowHeight, {
+    ];
+    if (updatePageLayout) {
+      animations.push(Animated.timing(headerFlowHeight, {
         toValue: fullHeaderHeight,
         duration: 220,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: DRIVER,
-      }),
-    ]);
+      }));
+    }
+    headerAnimationRef.current = Animated.parallel(animations);
     headerAnimationRef.current.start(() => { headerAnimationRef.current = null; });
   }
 
-  function hideHeader(height: number) {
-    if (!headerVisibleRef.current || height === 0) return;
+  function hideHeader(height: number, updatePageLayout = true) {
+    if (height === 0) return;
+    const shouldMoveChrome = headerVisibleRef.current;
     headerVisibleRef.current = false;
     const coreTravel = coreHeaderHeight > 0
       ? coreHeaderHeight
       : Math.max(0, height - storiesHeight);
     const storyFlowHeight = storiesHeight > 0 ? storiesHeight + insets.top : 0;
     headerAnimationRef.current?.stop();
-    headerAnimationRef.current = Animated.parallel([
-      Animated.timing(headerOffset, {
+    const animations: Animated.CompositeAnimation[] = [];
+    if (shouldMoveChrome) {
+      animations.push(Animated.timing(headerOffset, {
         // Hide the top bar and tabs, but move stories into their space so the
         // stories remain visible instead of disappearing with the header.
         toValue: -coreTravel + insets.top,
         duration: 220,
         easing: Easing.inOut(Easing.cubic),
         useNativeDriver: DRIVER,
-      }),
-      Animated.timing(headerFlowHeight, {
+      }));
+    }
+    if (updatePageLayout) {
+      animations.push(Animated.timing(headerFlowHeight, {
         toValue: storyFlowHeight,
         duration: 220,
         easing: Easing.inOut(Easing.cubic),
         useNativeDriver: DRIVER,
-      }),
-    ]);
+      }));
+    }
+    if (animations.length === 0) return;
+    headerAnimationRef.current = Animated.parallel(animations);
     headerAnimationRef.current.start(() => { headerAnimationRef.current = null; });
   }
 
@@ -1284,8 +1293,8 @@ export default function DiscoverScreen() {
     // guard keeps this low threshold from flickering between states.
     const collapsePoint = Math.min(16, Math.max(8, fullHeaderHeight - 12));
 
-    if (y > collapsePoint) hideHeader(fullHeaderHeight);
-    else if (delta < -3 || y <= 0) revealHeader();
+    if (y > collapsePoint) hideHeader(fullHeaderHeight, false);
+    else if (delta < -3 || y <= 0) revealHeader(false);
     prevScrollYRef.current = y;
   }, [coreHeaderHeight, fullHeaderHeight, storiesHeight]);
 
@@ -1297,8 +1306,8 @@ export default function DiscoverScreen() {
     const y = Number(event?.nativeEvent?.contentOffset?.y ?? 0);
     const delta = y - prevScrollYRef.current;
     const collapsePoint = Math.min(16, Math.max(8, fullHeaderHeight - 12));
-    if (y > collapsePoint) hideHeader(fullHeaderHeight);
-    else if (delta < -3 || y <= 0) revealHeader();
+    if (y > collapsePoint) hideHeader(fullHeaderHeight, true);
+    else if (delta < -3 || y <= 0) revealHeader(true);
     prevScrollYRef.current = y;
   }, [fullHeaderHeight]);
 
