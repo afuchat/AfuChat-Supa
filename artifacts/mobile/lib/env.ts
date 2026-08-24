@@ -24,6 +24,12 @@ export const APP_ORIGIN: string = `https://${APP_DOMAIN}`;
 
 export const SUPABASE_EDGE_URL: string = `${SUPABASE_URL}/functions/v1`;
 
+// Google OAuth web client ID. This is public configuration and is also used
+// by the native Google credential flow as its server/web audience.
+export const GOOGLE_WEB_CLIENT_ID: string =
+  (process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "").trim() ||
+  "249391999620-8frki1cqjtc34d4ae37cncopncmt2rbc.apps.googleusercontent.com";
+
 /**
  * Engagera API key. Provider keys can carry quota or billing privileges even
  * when requests originate from a client app, so this must not be committed.

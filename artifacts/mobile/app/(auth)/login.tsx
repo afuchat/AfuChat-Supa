@@ -35,6 +35,7 @@ import { showAlert } from "@/lib/alert";
 import AfuLogo from "@/components/ui/AfuLogo";
 import { GitHubLogo, GoogleLogo } from "@/components/ui/OAuthLogos";
 import Colors from "@/constants/colors";
+import GoogleOneTap from "@/components/auth/GoogleOneTap";
 
 const BG = "#000000";
 const BIO_REFRESH_KEY = "afu_bio_refresh_token";
@@ -598,12 +599,29 @@ export default function SignInScreen() {
     }
   }
 
+  async function handleGoogleOneTap(idToken: string) {
+    try {
+      setOauthLoading(true);
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: "google",
+        token: idToken,
+      });
+      if (error) throw error;
+      router.replace("/(tabs)/chats");
+    } catch (error: any) {
+      showAlert("Google sign-in failed", error?.message || "Could not complete Google One Tap sign-in.");
+    } finally {
+      setOauthLoading(false);
+    }
+  }
+
   const idType = detectType(identifier);
   const idIcon = idType === "email" ? "mail" : idType === "phone" ? "call" : "at";
   const showBioBtn = bioAvailable && bioStored;
 
   return (
     <View style={{ flex: 1, backgroundColor: BG, overflow: "hidden" }}>
+      <GoogleOneTap onCredential={handleGoogleOneTap} />
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       {/* ── Background orbs ── */}

@@ -32,6 +32,7 @@ import { showAlert } from "@/lib/alert";
 import AfuLogo from "@/components/ui/AfuLogo";
 import { GitHubLogo, GoogleLogo } from "@/components/ui/OAuthLogos";
 import Colors from "@/constants/colors";
+import GoogleOneTap from "@/components/auth/GoogleOneTap";
 
 const BG = "#000000";
 
@@ -421,8 +422,36 @@ export default function SignUpScreen() {
     }
   }
 
+  async function handleGoogleOneTap(idToken: string) {
+    try {
+      setOauthLoading(true);
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: "google",
+        token: idToken,
+      });
+      if (error) throw error;
+      const uid = data.user?.id;
+      if (!uid) throw new Error("Google sign-up did not create a user session.");
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_completed")
+        .eq("id", uid)
+        .maybeSingle();
+      if (!profile?.onboarding_completed) {
+        router.replace({ pathname: "/onboarding", params: { userId: uid } } as any);
+      } else {
+        router.replace("/(tabs)/chats");
+      }
+    } catch (error: any) {
+      showAlert("Google sign-up failed", error?.message || "Could not complete Google One Tap sign-up.");
+    } finally {
+      setOauthLoading(false);
+    }
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: BG, overflow: "hidden" }}>
+      <GoogleOneTap onCredential={handleGoogleOneTap} />
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       {/* ── Background orbs ── */}
