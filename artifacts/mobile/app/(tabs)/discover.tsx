@@ -77,6 +77,7 @@ import { getViewedUserIds, hydrateViewedUsers, subscribeStoryViewed } from "@/li
 import { getCachedStoryMedia } from "@/lib/storyMediaCache";
 import { prefetchAvatars, prefetchThumbnails, prefetchListImages } from "@/lib/storage/imagePrefetcher";
 import { useThrottledFocusEffect } from "@/lib/hooks/useThrottledFocusEffect";
+import FindPeopleTab from "@/components/discover/FindPeopleTab";
 
 type PostItem = {
   id: string;
@@ -1150,6 +1151,7 @@ export default function DiscoverScreen() {
   // Shorts now lives at /shorts (which redirects to /video/[id]). Any URL like
   // ?tab=shorts is forwarded there so existing links keep working.
   const [feedTab, setFeedTab] = useState<"for_you" | "following">("for_you");
+  const [findTabOpen, setFindTabOpen] = useState(false);
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -2756,6 +2758,7 @@ export default function DiscoverScreen() {
             ]}
             onPress={() => {
               setFeedTab("for_you");
+              setFindTabOpen(false);
               pagerRef.current?.setPage(0);
             }}
           >
@@ -2774,6 +2777,7 @@ export default function DiscoverScreen() {
               ]}
               onPress={() => {
                 setFeedTab("following");
+                setFindTabOpen(false);
                 pagerRef.current?.setPage(1);
               }}
             >
@@ -2789,12 +2793,12 @@ export default function DiscoverScreen() {
             style={styles.tabPill}
             onPress={() => {
               Haptics.selectionAsync();
-              safeRouter.push("/user-discovery");
+              setFindTabOpen(true);
             }}
-            accessibilityRole="button"
+            accessibilityRole="tab"
             accessibilityLabel="Find people nearby"
           >
-            <Text style={[styles.tabPillText, { color: colors.textMuted }]}>Find</Text>
+            <Text style={[styles.tabPillText, { color: findTabOpen ? colors.accent : colors.textMuted }]}>Find</Text>
           </TouchableOpacity>
           <View style={{ flex: 1 }} />
           {!user && (
@@ -2840,7 +2844,9 @@ export default function DiscoverScreen() {
 
       {/* Edge fade removed — it was overlaying the first row of feed content */}
 
-      {_PagerView ? (
+      {findTabOpen ? (
+        <FindPeopleTab />
+      ) : _PagerView ? (
         <_PagerView
           ref={pagerRef}
           style={{ flex: 1 }}
