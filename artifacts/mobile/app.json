@@ -16,11 +16,9 @@
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#1018D8"
       },
-      "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
-        "android.permission.POST_NOTIFICATIONS",
         "android.permission.VIBRATE",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
@@ -113,16 +111,7 @@
           ]
         }
       ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/notification-icon.png",
-          "color": "#1018D8",
-          "defaultChannel": "messages_v2"
-        }
-      ],
       "expo-font",
-      "@react-native-google-signin/google-signin",
       [
         "expo-image-picker",
         {

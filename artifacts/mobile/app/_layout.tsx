@@ -67,7 +67,6 @@ import { initActivityTracker } from "@/lib/activityTracker";
 import { MiniAppRuntimeProvider } from "@/lib/superapp/MiniAppRuntime";
 import { AnimationGuardInit } from "@/components/AnimationGuardInit";
 import { SplashScreenView } from "@/components/ui/SplashScreenView";
-import PushNotificationManager from "@/components/PushNotificationManager";
 import { safeRouter } from "@/lib/navUtils";
 import { ShareIntentProvider, useShareIntentContext } from "expo-share-intent";
 
@@ -407,7 +406,6 @@ export default function RootLayout() {
                   <ActivityTrackerSync />
                     <CrashReporterUserSync />
                     <CrashSupportHandler />
-                    <PushNotificationManager />
                     <PageWatcher />
                     <GlobalInboxListener />
                     <UpdatePrompt />

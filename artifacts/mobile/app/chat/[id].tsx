@@ -72,7 +72,6 @@ import Colors from "@/constants/colors";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { showAlert } from "@/lib/alert";
 import { setChatScreenshotProtection } from "@/lib/appLock";
-import { notifyChatRecipients } from "@/lib/pushNotifications";
 import { generateGroupInviteLink } from "@/lib/groupInvite";
 import { showToast as globalShowToast } from "@/lib/toast";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
@@ -5155,17 +5154,6 @@ STRICT RULES:
     }
     if (recipientIds.length === 0) return;
 
-    notifyChatRecipients({
-      recipientIds,
-      senderId: user.id,
-      senderName: profile?.display_name || "Someone",
-      senderAvatarUrl: profile?.avatar_url ?? null,
-      body: params.body,
-      chatId: params.chatId,
-      messageId: params.messageId,
-      attachmentUrl: params.attachmentUrl ?? null,
-      attachmentType: params.attachmentType ?? null,
-    });
   }
 
   async function handleInlineSendMoney() {
@@ -5685,22 +5673,6 @@ STRICT RULES:
             ? { ...m, id: inserted?.id || tempId, attachment_url: JSON.stringify(uploaded), _pending: false }
             : m
         ));
-        if (chatInfo && inserted?.id) {
-          const recipientIds = chatInfo.member_ids.length > 0
-            ? chatInfo.member_ids
-            : chatInfo.other_id ? [chatInfo.other_id] : [];
-          void notifyChatRecipients({
-            recipientIds: recipientIds.filter((rid: string) => rid !== user.id),
-            senderId: user.id,
-            senderName: profile?.display_name || "Someone",
-            senderAvatarUrl: profile?.avatar_url ?? null,
-            body: label,
-            chatId: activeChatId,
-            messageId: inserted.id,
-            attachmentUrl: JSON.stringify(uploaded),
-            attachmentType: "image_group",
-          });
-        }
       } catch (error: any) {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         showAlert("Upload failed", error?.message || "Could not upload images. Please try again.");
@@ -5774,26 +5746,6 @@ STRICT RULES:
         }
       }
 
-      // Notify recipients — same logic as sendMessage()
-      if (chatInfo) {
-        const recipientIds = chatInfo.member_ids.length > 0
-          ? chatInfo.member_ids
-          : chatInfo.other_id ? [chatInfo.other_id] : [];
-        const filteredRecipients = recipientIds.filter((rid: string) => rid !== user.id);
-        if (inserted?.id && filteredRecipients.length > 0) {
-          void notifyChatRecipients({
-            recipientIds: filteredRecipients,
-            senderId: user.id,
-            senderName: profile?.display_name || "Someone",
-            senderAvatarUrl: profile?.avatar_url ?? null,
-            body: caption || label,
-            chatId: activeChatId,
-            messageId: inserted.id,
-            attachmentUrl: publicUrl,
-            attachmentType: type,
-          });
-        }
-      }
     } catch (e: any) {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
       showAlert("Upload failed", e?.message || "Could not upload file");

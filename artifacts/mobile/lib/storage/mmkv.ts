@@ -190,8 +190,4 @@ export const KEYS = {
   HANDLE_CHANGED_AT_PREFIX: "handle_changed_at_",
   NAME_CHANGED_AT_PREFIX: "name_changed_at_",
   NOTIFICATION_PREFERENCES: "notification_preferences",
-  PUSH_TOKEN: "push_token",
-  PUSH_NATIVE_TOKEN: "push_native_token",
-  PUSH_TOKEN_REGISTERED_AT: "push_token_registered_at",
-  PUSH_TOKEN_REGISTERED_BUILD: "push_token_registered_build",
 } as const;

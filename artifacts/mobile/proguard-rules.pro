@@ -75,10 +75,7 @@
 }
 -dontwarn kotlinx.serialization.**
 
-# ─── Firebase + Google Play Services ─────────────────────────────────────────
--keep class com.google.firebase.** { *; }
 -keep class com.google.android.gms.** { *; }
--dontwarn com.google.firebase.**
 -dontwarn com.google.android.gms.**
 
 # ─── Expo modules core ───────────────────────────────────────────────────────
@@ -147,10 +144,6 @@
 # ─── React Native community packages (clipboard, net-info, etc.) ─────────────
 -keep class com.reactnativecommunity.** { *; }
 -dontwarn com.reactnativecommunity.**
-
-# ─── Google Sign-In ───────────────────────────────────────────────────────────
--keep class com.google.android.gms.auth.** { *; }
--keep class com.google.android.gms.common.** { *; }
 
 # ─── Deep link + intent filter Activities ────────────────────────────────────
 # Activities launched from an intent filter are instantiated by name from

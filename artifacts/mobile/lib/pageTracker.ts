@@ -113,7 +113,7 @@ const ROUTE_MAP: Array<{ match: RegExp; name: string; summary: string }> = [
 
   // Settings
   { match: /^\/settings\/two-factor/, name: "Two-Factor Auth", summary: "Enable or disable two-factor authentication for your account." },
-  { match: /^\/settings\/oauth-providers/, name: "Linked Accounts (Settings)", summary: "Manage linked external accounts — Google, GitHub, X." },
+  { match: /^\/settings\/oauth-providers/, name: "Linked Accounts (Settings)", summary: "Manage linked external accounts — GitHub, X." },
   { match: /^\/settings\/privacy-account/, name: "Account Privacy", summary: "Control who can see your account on AfuChat." },
   { match: /^\/settings\/privacy-visibility/, name: "Profile Visibility", summary: "Control your profile visibility settings." },
   { match: /^\/settings\/privacy-messages/, name: "Message Privacy", summary: "Control who can send you messages." },

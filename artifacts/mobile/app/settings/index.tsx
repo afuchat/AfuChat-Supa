@@ -394,7 +394,7 @@ export default function SettingsScreen() {
           <Row
             icon="key"
             label="Login Methods"
-            sublabel="Google, Apple and other sign-in options"
+            sublabel="Other sign-in options"
             onPress={() => router.push("/settings/oauth-providers")}
             colors={colors}
             accent={accent}

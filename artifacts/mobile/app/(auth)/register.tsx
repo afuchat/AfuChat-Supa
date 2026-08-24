@@ -21,16 +21,14 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
-import { makeRedirectUri } from "expo-auth-session";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { showAlert } from "@/lib/alert";
-import { googleSignIn } from "@/lib/googleAuth";
 import AfuLogo from "@/components/ui/AfuLogo";
-import { GoogleLogo, GitHubLogo } from "@/components/ui/OAuthLogos";
+import { GitHubLogo } from "@/components/ui/OAuthLogos";
 import Colors from "@/constants/colors";
 
 const BG = "#000000";
@@ -209,7 +207,6 @@ export default function SignUpScreen() {
   const [verifyEmail, setVerifyEmail] = useState("");
   const [signupUserId, setSignupUserId] = useState<string | null>(null);
   const pwdRef = useRef<TextInput>(null);
-  const oauthHandledRef = useRef(false);
 
   // Slide animation
   const landingX = useRef(new Animated.Value(0)).current;
@@ -251,85 +248,6 @@ export default function SignUpScreen() {
       else router.replace({ pathname: "/onboarding", params: { userId: data.user.id } } as any);
     }
   }
-
-  async function nativeGoogleSignIn() {
-    if (Platform.OS === "web") {
-      await webGoogleSignIn();
-      return;
-    }
-
-    setOauthLoading(true);
-    const result = await googleSignIn();
-    if (!result.ok) {
-      setOauthLoading(false);
-      if (result.cancelled) return;
-      return webGoogleSignIn();
-    }
-    const uid = result.userId;
-    if (uid) {
-      const { data: prof } = await supabase.from("profiles").select("onboarding_completed").eq("id", uid).maybeSingle();
-      if (!prof?.onboarding_completed) { setOauthLoading(false); router.replace({ pathname: "/onboarding", params: { userId: uid } } as any); return; }
-    }
-    setOauthLoading(false);
-    router.replace("/(tabs)/chats");
-  }
-
-  async function webGoogleSignIn() {
-    try {
-      setOauthLoading(true);
-      if (Platform.OS === "web" && typeof window !== "undefined") {
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: `${window.location.origin}/`,
-            queryParams: { prompt: "select_account" },
-          },
-        });
-        if (error) {
-          showAlert("Error", error.message);
-          setOauthLoading(false);
-        }
-        return;
-      }
-
-      const redirectUrl = makeRedirectUri({ native: "afuchat://(auth)/register" });
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: redirectUrl, skipBrowserRedirect: true, queryParams: { prompt: "select_account" } },
-      });
-      if (error) { showAlert("Error", error.message); setOauthLoading(false); return; }
-      if (!data?.url) { setOauthLoading(false); return; }
-      oauthHandledRef.current = false;
-      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl, { showInRecents: false });
-      if (result.type === "success" && result.url) {
-        const url = new URL(result.url);
-        const code = url.searchParams.get("code");
-        if (code) {
-          const { data: sd, error: e } = await supabase.auth.exchangeCodeForSession(code);
-          if (e) { showAlert("Error", e.message); }
-          else {
-            const uid = sd.user?.id;
-            if (uid) {
-              const { data: prof } = await supabase.from("profiles").select("onboarding_completed").eq("id", uid).maybeSingle();
-              if (!prof?.onboarding_completed) { setOauthLoading(false); router.replace({ pathname: "/onboarding", params: { userId: uid } } as any); return; }
-            }
-            setOauthLoading(false); router.replace("/(tabs)/chats"); return;
-          }
-        }
-        let at = url.hash ? new URLSearchParams(url.hash.substring(1)).get("access_token") : null;
-        let rt = url.hash ? new URLSearchParams(url.hash.substring(1)).get("refresh_token") : null;
-        if (!at) { at = url.searchParams.get("access_token"); rt = url.searchParams.get("refresh_token"); }
-        if (at && rt) {
-          const { error: e } = await supabase.auth.setSession({ access_token: at, refresh_token: rt });
-          if (e) showAlert("Error", e.message);
-          else router.replace("/(tabs)/chats");
-        }
-      }
-      setOauthLoading(false);
-    } catch { setOauthLoading(false); showAlert("Error", "Could not complete Google sign-in."); }
-  }
-
-  function handleGoogle() { nativeGoogleSignIn(); }
 
   async function handleGitHub() {
     try {
@@ -412,16 +330,6 @@ export default function SignUpScreen() {
           <Text style={sc.subheading}>Join millions of people on AfuChat</Text>
 
           <View style={{ gap: 12, marginTop: 28 }}>
-            <TouchableOpacity style={sc.glassBtn} onPress={handleGoogle} disabled={oauthLoading} activeOpacity={0.78}>
-              {oauthLoading
-                ? <ActivityIndicator size="small" color={accent} />
-                : (<>
-                    <GoogleLogo size={20} />
-                    <Text style={sc.glassBtnText}>Continue with Google</Text>
-                  </>)
-              }
-            </TouchableOpacity>
-
             {/* GitHub */}
             <TouchableOpacity style={sc.glassBtn} onPress={handleGitHub} disabled={oauthLoading} activeOpacity={0.78}>
               <GitHubLogo size={20} color="rgba(255,255,255,0.85)" />

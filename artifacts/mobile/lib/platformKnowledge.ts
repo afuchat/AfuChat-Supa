@@ -116,7 +116,7 @@ export const PLATFORM_NAV_MAP = `
 | /settings | Main settings menu |
 | /settings/security | Password, 2FA, linked accounts |
 | /settings/two-factor | Enable/disable two-factor authentication |
-| /settings/oauth-providers | Manage linked social accounts (Google, GitHub, X) |
+| /settings/oauth-providers | Manage linked social accounts (GitHub, X) |
 | /settings/privacy | Privacy overview |
 | /settings/privacy-account | Who can see your account |
 | /settings/privacy-visibility | Profile visibility settings |
