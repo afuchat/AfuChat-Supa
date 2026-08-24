@@ -12,7 +12,6 @@
     "android": {
       "package": "com.afuchat.afuapp",
       "googleServicesFile": "./google-services.json",
-      "edgeToEdgeEnabled": true,
       "resizeableActivity": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
@@ -135,6 +134,7 @@
           "recordAudioAndroid": true
         }
       ],
+      "./plugins/withFlexibleMlKitScanner",
       [
         "expo-media-library",
         {
