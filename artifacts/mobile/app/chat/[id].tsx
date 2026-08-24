@@ -1552,14 +1552,14 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
         isMe ? st.bubbleContainerMe : st.bubbleContainerOther,
         flatSurface && { maxWidth: "100%" },
       ]}>
-        {showTail && !flatSurface && <BubbleTail isMe={isMe} color={bubbleColor} />}
+        {showTail && !flatSurface && !isEmptyAiStream && <BubbleTail isMe={isMe} color={bubbleColor} />}
 
         <Pressable
           onLongPress={messageLongPress}
           delayLongPress={300}
           style={[
             st.bubble,
-            flatSurface
+            flatSurface || isEmptyAiStream
               ? { backgroundColor: "transparent", borderRadius: 0, paddingHorizontal: 4, paddingTop: 2, paddingBottom: 0 }
               : hasAudio
               ? { backgroundColor: bubbleColor, borderRadius: chatRadius ?? 18, paddingHorizontal: 10, paddingTop: 7, paddingBottom: 7 }
@@ -7058,11 +7058,6 @@ STRICT RULES:
                 </Text>
               </>
             )}
-            {isAfuAiTyping && (
-              <View style={{ marginTop: 20 }}>
-                <TypingBubble colors={colors} />
-              </View>
-            )}
           </View>
         ) : (
           <View style={{ flex: 1 }}>
@@ -7092,9 +7087,6 @@ STRICT RULES:
               }}
               ListHeaderComponent={
                 <>
-                  {isAfuAiTyping && (
-                    <TypingBubble colors={colors} compact />
-                  )}
                   {typingUsers.length > 0 && (
                     <TypingBubble colors={colors} />
                   )}
