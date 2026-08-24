@@ -6698,7 +6698,6 @@ STRICT RULES:
     <ChatFontSizeCtx.Provider value={effectiveChatFontSize}>
     <View style={[st.root, { backgroundColor: colors.background }]}>
       <WallpaperOverlay wallpaper={chatAppearance?.wallpaper} dark={isDark} />
-      {<OfflineBanner />}
       <View style={[st.header, { backgroundColor: colors.surface, paddingTop: insets.top + 4, borderBottomColor: colors.border }]}>
         {(
           <TouchableOpacity onPress={() => router.back()} style={st.backBtn} hitSlop={12}>
@@ -6784,6 +6783,7 @@ STRICT RULES:
           )}
         </View>
       </View>
+      <OfflineBanner />
 
       {/* ── In-chat search bar ─────────────────────────────────────────────── */}
       {searchActive && (

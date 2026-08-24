@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, Platform, StyleSheet, Text } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { isOnline, onConnectivityChange } from "@/lib/offlineStore";
 import { STATUS } from "@/constants/colors";
@@ -9,7 +8,6 @@ import { T } from "@/constants/theme";
 type State = "hidden" | "offline" | "connecting" | "updating";
 
 export default function OfflineBanner() {
-  const insets = useSafeAreaInsets();
   const [state, setState] = useState<State>(() => (isOnline() ? "hidden" : "offline"));
   const stateRef = useRef<State>(state);
   const wasOffline = useRef(state === "offline");
@@ -76,9 +74,7 @@ export default function OfflineBanner() {
     <Animated.View
       style={[
         st.pill,
-        // Sit just below the app/header name instead of covering the status
-        // bar or the top navigation controls.
-        { top: insets.top + 48, backgroundColor, pointerEvents: "none", transform: [{ translateY }] },
+        { backgroundColor, pointerEvents: "none", transform: [{ translateY }] },
       ]}
     >
       <Ionicons name={icon as any} size={15} color="#fff" />
@@ -89,16 +85,14 @@ export default function OfflineBanner() {
 
 const st = StyleSheet.create({
   pill: {
-    position: "absolute",
     alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
+    marginVertical: 4,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: T.radius.pill,
-    zIndex: 99999,
-    elevation: T.elevation.overlay,
     ...Platform.select({
       web: { boxShadow: "0 2px 8px rgba(0,0,0,0.22)" } as any,
       default: {

@@ -1629,7 +1629,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         },
       ]}
     >
-      <OfflineBanner />
       {panelMode ? (
         <View style={[styles.panelHeader, { backgroundColor: colors.background }]}>
           <Text style={[styles.panelTitle, { color: colors.text }]}>Chats</Text>
@@ -1775,6 +1774,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         </View>
       </View>
       )}
+      <OfflineBanner />
 
       {!panelMode && !selectMode && <HomeBanner />}
 
