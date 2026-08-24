@@ -12,6 +12,15 @@ module.exports = function withFlexibleMlKitScanner(config) {
   return withAndroidManifest(config, (config) => {
     const application = config.modResults.manifest.application?.[0];
     if (!application) return config;
+
+    // Keep the host application unrestricted for large screens. The
+    // resizeableActivity config is intentionally omitted from app.json, but
+    // remove a stale value if another config plugin added it.
+    if (application.$?.["android:resizeableActivity"]) {
+      delete application.$["android:resizeableActivity"];
+      application.$["tools:remove"] = "android:resizeableActivity";
+    }
+
     const activities = application.activity ?? (application.activity = []);
     const scanner = activities.find(
       (activity) => activity.$?.["android:name"] === SCANNER_ACTIVITY,

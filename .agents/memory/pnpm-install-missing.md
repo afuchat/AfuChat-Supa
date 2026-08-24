@@ -16,4 +16,4 @@ from `/home/runner/workspace` (the workspace root, not artifacts/mobile).
 
 **How to apply:** Whenever the Start application workflow fails with `PluginError: Failed to resolve plugin`, `Cannot find module`, or an unexpected missing package shim, run the install command above first. Takes ~35s with the lockfile cached.
 
-The lockfile can already target a newer Expo SDK while stale `node_modules` still reports an older SDK. A frozen reinstall restores the lockfile versions without changing `package.json`.
+If a frozen reinstall reports that the Expo version in the mobile manifest differs from the lockfile, use `CI=true pnpm install --no-frozen-lockfile` from the workspace root to reconcile it before restarting the workflow.

@@ -5,6 +5,7 @@
     "version": "2.2.22",
     "icon": "./assets/images/icon.png",
     "scheme": "afuchat",
+    "orientation": "default",
     "userInterfaceStyle": "automatic",
     "jsEngine": "hermes",
     "newArchEnabled": true,
@@ -12,7 +13,6 @@
     "android": {
       "package": "com.afuchat.afuapp",
       "googleServicesFile": "./google-services.json",
-      "resizeableActivity": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#1018D8"
