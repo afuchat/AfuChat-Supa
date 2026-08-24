@@ -104,6 +104,7 @@ export default function MiniAppWindow({ app, onClose, onMinimize, children }: Pr
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const isActive = app.state === "active";
+  const isFullScreenApp = app.manifest.id === "afusearch";
   const [showing, setShowing] = useState(false);
 
   const screenHeight = Dimensions.get("window").height;
@@ -181,62 +182,64 @@ export default function MiniAppWindow({ app, onClose, onMinimize, children }: Pr
       <Animated.View
         style={[
           styles.window,
+          isFullScreenApp && styles.fullScreenWindow,
           { transform: [{ translateY }], backgroundColor: colors.background },
         ]}
       >
-        {/* Header */}
-        <View
-          style={[
-            styles.header,
-            {
-              paddingTop: insets.top + 6,
-              backgroundColor: colors.surface,
-              borderBottomColor: colors.border,
-            },
-          ]}
-        >
-          <View style={styles.headerLeft}>
-            <LinearGradient
-              colors={app.manifest.gradient as [string, string]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.appIcon}
-            >
-              <Ionicons name={app.manifest.icon as any} size={14} color="#fff" />
-            </LinearGradient>
-            <Text style={[styles.appName, { color: colors.text }]}>
-              {app.manifest.name}
-            </Text>
-            {app.manifest.badge ? (
-              <View style={[styles.badge, { backgroundColor: colors.accent + "20" }]}>
-                <Text style={[styles.badgeText, { color: colors.accent }]}>
-                  {app.manifest.badge}
-                </Text>
-              </View>
-            ) : null}
-          </View>
+        {!isFullScreenApp && (
+          <View
+            style={[
+              styles.header,
+              {
+                paddingTop: insets.top + 6,
+                backgroundColor: colors.surface,
+                borderBottomColor: colors.border,
+              },
+            ]}
+          >
+            <View style={styles.headerLeft}>
+              <LinearGradient
+                colors={app.manifest.gradient as [string, string]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.appIcon}
+              >
+                <Ionicons name={app.manifest.icon as any} size={14} color="#fff" />
+              </LinearGradient>
+              <Text style={[styles.appName, { color: colors.text }]}>
+                {app.manifest.name}
+              </Text>
+              {app.manifest.badge ? (
+                <View style={[styles.badge, { backgroundColor: colors.accent + "20" }]}>
+                  <Text style={[styles.badgeText, { color: colors.accent }]}>
+                    {app.manifest.badge}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
 
-          <View style={styles.headerRight}>
-            <Pressable
-              onPress={handleMinimize}
-              hitSlop={14}
-              style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.55 }]}
-            >
-              <Ionicons name="remove" size={22} color={colors.textSecondary} />
-            </Pressable>
-            <Pressable
-              onPress={handleClose}
-              hitSlop={14}
-              style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.55 }]}
-            >
-              <View style={[styles.closeCircle, { backgroundColor: colors.backgroundSecondary }]}>
-                <Ionicons name="close" size={15} color={colors.text} />
-              </View>
-            </Pressable>
+            <View style={styles.headerRight}>
+              <Pressable
+                onPress={handleMinimize}
+                hitSlop={14}
+                style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.55 }]}
+              >
+                <Ionicons name="remove" size={22} color={colors.textSecondary} />
+              </Pressable>
+              <Pressable
+                onPress={handleClose}
+                hitSlop={14}
+                style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.55 }]}
+              >
+                <View style={[styles.closeCircle, { backgroundColor: colors.backgroundSecondary }]}>
+                  <Ionicons name="close" size={15} color={colors.text} />
+                </View>
+              </Pressable>
+            </View>
           </View>
-        </View>
+        )}
 
-        <View style={styles.content}>
+        <View style={[styles.content, isFullScreenApp && styles.fullScreenContent]}>
           <MiniAppErrorBoundary
             appName={app.manifest.name}
             onRetry={onClose}
@@ -265,6 +268,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+  },
+  fullScreenWindow: {
+    borderRadius: 0,
+  },
+  fullScreenContent: {
+    flex: 1,
   },
   header: {
     flexDirection: "row",

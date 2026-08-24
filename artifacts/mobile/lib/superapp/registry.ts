@@ -50,7 +50,7 @@ export const SUPER_APP_REGISTRY: ModuleManifest[] = [
   },
   {
     id: "afusearch",
-    name: "Search",
+    name: "AfuSearch",
     description: "Find people, posts, channels, events and more.",
     version: "1.0.0",
     icon: "search",

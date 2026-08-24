@@ -272,7 +272,7 @@ function RowSkeleton({ bg }: { bg: string }) {
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
-export default function SearchScreen() {
+export function SearchScreen({ title = "Search" }: { title?: string } = {}) {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
   // Shadow the module-level BRAND constant so every reference inside this
@@ -1746,7 +1746,7 @@ export default function SearchScreen() {
 
         {/* Title + AI toggle */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <Text style={{ fontSize: 24, fontFamily: "Inter_700Bold", color: colors.text, letterSpacing: -0.3 }}>Search</Text>
+          <Text style={{ fontSize: 24, fontFamily: "Inter_700Bold", color: colors.text, letterSpacing: -0.3 }}>{title}</Text>
           <TouchableOpacity
             style={[ss.aiToggle, aiMode && { backgroundColor: PURPLE + "18", borderColor: PURPLE + "44" }]}
             onPress={toggleAiMode}
@@ -1876,6 +1876,10 @@ export default function SearchScreen() {
           : renderDiscovery()}
     </View>
   );
+}
+
+export default function SearchRoute() {
+  return <SearchScreen />;
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
