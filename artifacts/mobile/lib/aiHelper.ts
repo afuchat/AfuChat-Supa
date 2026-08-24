@@ -1,5 +1,4 @@
 import { SUPABASE_URL as supabaseUrl, SUPABASE_ANON_KEY as supabaseAnonKey } from "./env";
-import { getEngagera } from "@/lib/engagera";
 
 /**
  * Returns the Supabase edge function base URL.
@@ -42,9 +41,21 @@ export async function askAi(prompt: string, systemPrompt?: string, options?: Ask
   }
   messages.push({ role: "user", content: prompt });
 
-  const client = getEngagera();
-  const reply = await client.chat.create({ messages });
-  return reply.content || "Sorry, I couldn't generate a response.";
+  const response = await fetch(`${getEdgeFnBase()}/afu-ai-reply`, {
+    method: "POST",
+    headers: edgeHeaders(),
+    body: JSON.stringify({
+      messages,
+      fast: options?.fast ?? false,
+      max_tokens: options?.maxTokens,
+    }),
+  });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`AI request failed (${response.status})${detail ? `: ${detail.slice(0, 160)}` : ""}`);
+  }
+  const data = await response.json();
+  return data.reply || "Sorry, I couldn't generate a response.";
 }
 
 export async function aiEnhancePost(content: string): Promise<string> {
