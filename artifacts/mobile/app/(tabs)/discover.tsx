@@ -2637,7 +2637,11 @@ export default function DiscoverScreen() {
             const nextHeight = Math.round(e.nativeEvent.layout.height);
             setCoreHeaderHeight((current) => current === nextHeight ? current : nextHeight);
           }}
-          style={{ transform: [{ translateY: headerOffset }], zIndex: 2 }}
+          style={{
+            transform: [{ translateY: headerOffset }],
+            zIndex: 2,
+            backgroundColor: colors.background,
+          }}
         >
           {/* ── Row 1: user avatar | centered wordmark | bell ── */}
           <View style={[styles.headerTop, { paddingTop: insets.top + 6 }]}>
@@ -2742,7 +2746,12 @@ export default function DiscoverScreen() {
              const nextHeight = Math.round(e.nativeEvent.layout.height);
              setStoriesHeight((current) => current === nextHeight ? current : nextHeight);
            }}
-           style={{ transform: [{ translateY: headerOffset }], zIndex: 1 }}
+           style={{
+             transform: [{ translateY: headerOffset }],
+             zIndex: 1,
+             width: "100%",
+             backgroundColor: colors.background,
+           }}
          >
            <StoriesRow
              userId={user?.id ?? null}
