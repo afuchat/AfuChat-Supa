@@ -1217,6 +1217,7 @@ export default function DiscoverScreen() {
   // Uses Animated.event (not a plain onScroll function) so FlatList's internal
   // scroll tracking for onEndReached is never overridden.
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [storiesHeight, setStoriesHeight] = useState(0);
   const headerOffset = useRef(new Animated.Value(0)).current;
   const prevScrollYRef = useRef(0);
   const headerVisibleRef = useRef(true);
@@ -1238,8 +1239,10 @@ export default function DiscoverScreen() {
   function hideHeader(height: number) {
     if (!headerVisibleRef.current || height === 0) return;
     headerVisibleRef.current = false;
+    const storyTravel = storiesHeight > 0 ? storiesHeight * 0.9 : height;
     Animated.spring(headerOffset, {
-      toValue: -height,
+      // Keep the stories partially visible instead of hiding the entire row.
+      toValue: -storyTravel,
       useNativeDriver: DRIVER,
       tension: 220,
       friction: 28,
@@ -1256,7 +1259,7 @@ export default function DiscoverScreen() {
     if (y > collapsePoint && delta > 1.5) hideHeader(headerHeight);
     else if (delta < -1.5 || y <= 0) revealHeader();
     prevScrollYRef.current = y;
-  }, [headerHeight]);
+  }, [headerHeight, storiesHeight]);
 
   // The header and new-posts pill are combined animated nodes. Use the same
   // JS driver for their scroll updates and transitions so React Native never
@@ -2619,10 +2622,7 @@ export default function DiscoverScreen() {
           const nextHeight = Math.round(e.nativeEvent.layout.height);
           setHeaderHeight((current) => current === nextHeight ? current : nextHeight);
         }}
-        style={[
-          styles.headerBlock,
-          { transform: [{ translateY: headerOffset }] },
-        ]}
+        style={[styles.headerBlock]}
       >
         {/* Flat header background — unified BG, no separate surface colour */}
         <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, zIndex: 0 }]} />
@@ -2723,11 +2723,19 @@ export default function DiscoverScreen() {
         </View>
 
          {/* Stories belong to the collapsible header, not the feed list. */}
-         <StoriesRow
-           userId={user?.id ?? null}
-           avatarUrl={profile?.avatar_url ?? null}
-           displayName={profile?.display_name ?? null}
-         />
+         <Animated.View
+           onLayout={(e) => {
+             const nextHeight = Math.round(e.nativeEvent.layout.height);
+             setStoriesHeight((current) => current === nextHeight ? current : nextHeight);
+           }}
+           style={{ transform: [{ translateY: headerOffset }], zIndex: 1 }}
+         >
+           <StoriesRow
+             userId={user?.id ?? null}
+             avatarUrl={profile?.avatar_url ?? null}
+             displayName={profile?.display_name ?? null}
+           />
+         </Animated.View>
       </Animated.View>
       {/* ────────────────────────────────────────────────────────────────── */}
 
@@ -2983,7 +2991,9 @@ export default function DiscoverScreen() {
           {
             // Keep the pill directly below the complete header, including the
             // For You / Following tabs, on every safe-area size.
-            top: headerHeight + 2,
+             // Stories are measured as the last header row, so this keeps the
+             // pill directly under the tabs while stories move behind it.
+             top: Math.max(0, headerHeight - storiesHeight) + 2,
             transform: [{ translateY: Animated.add(headerOffset, popupSlide) }],
             opacity: popupOpacity,
             pointerEvents: popupSnapshot.length > 0 ? "auto" : "none",
