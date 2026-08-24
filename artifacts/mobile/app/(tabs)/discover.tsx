@@ -1151,8 +1151,7 @@ export default function DiscoverScreen() {
   // Shorts now lives at /shorts (which redirects to /video/[id]). Any URL like
   // ?tab=shorts is forwarded there so existing links keep working.
   const [feedTab, setFeedTab] = useState<"for_you" | "following">("for_you");
-  const [findTabOpen, setFindTabOpen] = useState(false);
-  const activeDiscoverTab = findTabOpen ? "find" : feedTab;
+  const [activeDiscoverTab, setActiveDiscoverTab] = useState<"for_you" | "following" | "find">("for_you");
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -1542,6 +1541,7 @@ export default function DiscoverScreen() {
   useEffect(() => {
     if (!user && feedTabRef.current === "following") {
       setFeedTab("for_you");
+      setActiveDiscoverTab("for_you");
       pagerRef.current?.setPage(0);
     }
   }, [user]);
@@ -1571,7 +1571,13 @@ export default function DiscoverScreen() {
 
   const handleDiscoverPageSelected = useCallback((e: any) => {
     const idx = e.nativeEvent.position;
-    setFeedTab(idx === 0 ? "for_you" : "following");
+    if (idx === 2) {
+      setActiveDiscoverTab("find");
+      return;
+    }
+    const nextTab = idx === 0 ? "for_you" : "following";
+    setActiveDiscoverTab(nextTab);
+    setFeedTab(nextTab);
   }, []);
 
   useEffect(() => {
@@ -2759,7 +2765,7 @@ export default function DiscoverScreen() {
             ]}
             onPress={() => {
               setFeedTab("for_you");
-              setFindTabOpen(false);
+              setActiveDiscoverTab("for_you");
               revealHeader();
               pagerRef.current?.setPage(0);
             }}
@@ -2779,7 +2785,7 @@ export default function DiscoverScreen() {
               ]}
               onPress={() => {
                 setFeedTab("following");
-                setFindTabOpen(false);
+                setActiveDiscoverTab("following");
                 revealHeader();
                 pagerRef.current?.setPage(1);
               }}
@@ -2800,7 +2806,8 @@ export default function DiscoverScreen() {
             onPress={() => {
               Haptics.selectionAsync();
               revealHeader();
-              setFindTabOpen(true);
+              setActiveDiscoverTab("find");
+              pagerRef.current?.setPage(2);
             }}
             accessibilityRole="tab"
             accessibilityLabel="Find people nearby"
@@ -2854,9 +2861,7 @@ export default function DiscoverScreen() {
 
       {/* Edge fade removed — it was overlaying the first row of feed content */}
 
-      {findTabOpen ? (
-        <FindPeopleTab />
-      ) : _PagerView ? (
+      {_PagerView ? (
         <_PagerView
           ref={pagerRef}
           style={{ flex: 1 }}
@@ -2981,6 +2986,11 @@ export default function DiscoverScreen() {
                 {[1,2,3,4,5,6,7,8].map(i => <PostSkeleton key={i} />)}
               </View>
             )}
+          </View>
+          {/* Page 2: Find — kept in the same pager so switching tabs does not
+              replace the feed container or jump the surrounding layout. */}
+          <View key="find" style={{ flex: 1 }}>
+            {activeDiscoverTab === "find" ? <FindPeopleTab /> : null}
           </View>
         </_PagerView>
       ) : (
