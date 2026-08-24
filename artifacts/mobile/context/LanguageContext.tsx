@@ -28,6 +28,7 @@ function normalizeLanguage(value: string | null | undefined): string | null {
 type LanguageContextType = {
   preferredLang: string | null;
   langLabel: string;
+  isRTL: boolean;
   setPreferredLang: (lang: string | null) => Promise<void>;
   autoTranslate: (text: string) => Promise<string>;
   voiceToText: boolean;
@@ -38,6 +39,7 @@ type LanguageContextType = {
 const LanguageContext = createContext<LanguageContextType>({
   preferredLang: null,
   langLabel: "Off",
+  isRTL: false,
   setPreferredLang: async () => {},
   autoTranslate: async (t) => t,
   voiceToText: false,
@@ -144,6 +146,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const langLabel = preferredLang
     ? (LANG_LABELS[preferredLang] ?? preferredLang)
     : "Off";
+  const isRTL = preferredLang === "ar";
   useEffect(() => {
     setCurrentUiLanguage(preferredLang);
   }, [preferredLang]);
@@ -151,7 +154,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <LanguageContext.Provider
-      value={{ preferredLang, langLabel, setPreferredLang, autoTranslate, voiceToText, textToSpeech, t }}
+      value={{ preferredLang, langLabel, isRTL, setPreferredLang, autoTranslate, voiceToText, textToSpeech, t }}
     >
       {children}
     </LanguageContext.Provider>

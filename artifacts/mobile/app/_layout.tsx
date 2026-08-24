@@ -53,7 +53,7 @@ import {
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AppAccentProvider } from "@/context/AppAccentContext";
-import { LanguageProvider } from "@/context/LanguageContext";
+import { LanguageProvider, useLanguage } from "@/context/LanguageContext";
 import { AdvancedFeaturesProvider } from "@/context/AdvancedFeaturesContext";
 import { ChatPreferencesProvider } from "@/context/ChatPreferencesContext";
 import { DataModeProvider } from "@/context/DataModeContext";
@@ -209,6 +209,15 @@ function ThemedRoot({ children }: { children: React.ReactNode }) {
   const { colors } = useTheme();
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {children}
+    </View>
+  );
+}
+
+function LanguageDirectionShell({ children }: { children: React.ReactNode }) {
+  const { isRTL } = useLanguage();
+  return (
+    <View style={[styles.directionShell, { direction: isRTL ? "rtl" : "ltr" }]}>
       {children}
     </View>
   );
@@ -411,16 +420,18 @@ export default function RootLayout() {
                     <PushNotificationManager />
                     <UpdatePrompt />
                     <LanguageProvider>
-                      <AdvancedFeaturesProvider>
-                        <ChatPreferencesProvider>
-                          <MiniAppRuntimeProvider>
-                            <IncomingShareGate navigationReady={!!rootNavigationState?.key} />
-                            <AppNavigationStack />
-                            <ToastContainer />
-                            <AlertModal />
-                          </MiniAppRuntimeProvider>
-                        </ChatPreferencesProvider>
-                      </AdvancedFeaturesProvider>
+                      <LanguageDirectionShell>
+                        <AdvancedFeaturesProvider>
+                          <ChatPreferencesProvider>
+                            <MiniAppRuntimeProvider>
+                              <IncomingShareGate navigationReady={!!rootNavigationState?.key} />
+                              <AppNavigationStack />
+                              <ToastContainer />
+                              <AlertModal />
+                            </MiniAppRuntimeProvider>
+                          </ChatPreferencesProvider>
+                        </AdvancedFeaturesProvider>
+                      </LanguageDirectionShell>
                     </LanguageProvider>
                 </AuthProvider>
               </DataModeProvider>
@@ -436,4 +447,5 @@ export default function RootLayout() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  directionShell: { flex: 1 },
 });

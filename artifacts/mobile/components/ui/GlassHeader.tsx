@@ -38,7 +38,7 @@ export function GlassHeader({
   sideWidth = 52,
 }: GlassHeaderProps) {
   const { colors, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const insets = useSafeAreaInsets();
 
   function handleBack() {
@@ -78,10 +78,10 @@ export function GlassHeader({
                 onPress={handleBack}
                 hitSlop={{ top: 8, left: 8, right: 12, bottom: 8 }}
                 accessibilityRole="button"
-                accessibilityLabel="Go back"
+                 accessibilityLabel={t("Go back")}
               >
                 <Ionicons
-                  name="arrow-back"
+                   name={isRTL ? "arrow-forward" : "arrow-back"}
                   size={26}
                   color={colors.accent}
                 />

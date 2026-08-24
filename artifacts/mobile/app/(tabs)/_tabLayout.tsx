@@ -158,7 +158,7 @@ function CompactTabBar({
   const pathname           = usePathname();
   const insets             = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const totalUnread        = useTotalUnread(userId);
   const active             = normalizeTabPath(pathname);
   const [showCreateActions, setShowCreateActions] = useState(false);
@@ -290,7 +290,8 @@ function CompactTabBar({
                 pill.actionFab,
                 {
                   bottom: PILL_BOTTOM + PILL_H + 72 + (CREATE_OPTIONS.length - index - 1) * 58,
-                  right: 28,
+                  right: isRTL ? undefined : 28,
+                  left: isRTL ? 28 : undefined,
                   backgroundColor: isDark ? colors.surface : colors.card,
                   borderColor: accentColor,
                 },
@@ -300,7 +301,14 @@ function CompactTabBar({
                accessibilityLabel={`${t("Create")} ${t(opt.label)}`}
             >
               <View style={pill.actionLabel}>
-                <Text style={[pill.actionLabelText, { color: accentColor }]}>{t(opt.label)}</Text>
+                <Text
+                  style={[
+                    pill.actionLabelText,
+                    { color: accentColor, textAlign: isRTL ? "right" : "left" },
+                  ]}
+                >
+                  {t(opt.label)}
+                </Text>
               </View>
               <View style={[pill.actionIcon, { backgroundColor: accentColor }]}>
                 <Ionicons name={opt.icon as any} size={20} color="#fff" />
@@ -316,7 +324,8 @@ function CompactTabBar({
               pill.fab,
               {
                 bottom: PILL_BOTTOM + PILL_H + 12,
-                right: 24,
+                right: isRTL ? undefined : 24,
+                left: isRTL ? 24 : undefined,
                 backgroundColor: accentColor,
               },
             ]}
