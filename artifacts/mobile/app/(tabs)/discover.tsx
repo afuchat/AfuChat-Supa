@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   ActivityIndicator,
   Animated,
@@ -73,6 +74,7 @@ import { BlurView } from "expo-blur";
 import { GLASS, glassTokens } from "@/constants/glass";
 import { useUserEffects } from "@/hooks/useUserEffects";
 import { getViewedUserIds, subscribeStoryViewed } from "@/lib/storyViewedStore";
+import { getCachedStoryMedia } from "@/lib/storyMediaCache";
 import { prefetchAvatars, prefetchThumbnails, prefetchListImages } from "@/lib/storage/imagePrefetcher";
 import { useThrottledFocusEffect } from "@/lib/hooks/useThrottledFocusEffect";
 
@@ -292,49 +294,76 @@ function StoriesRow({
   const [stories, setStories] = useState<StoryEntry[]>([]);
   const [storiesLoaded, setStoriesLoaded] = useState(false);
   const SZ = 46;
+const DISCOVER_STORY_CACHE_KEY = "@afuchat:discover_story_list";
 
   const loadDiscoverStories = useCallback(async () => {
-    const now = new Date().toISOString();
-    const { data } = await supabase
-      .from("stories")
-      .select("id, user_id, created_at, privacy, profiles!stories_user_id_fkey(display_name, avatar_url, is_verified, is_organization_verified)")
-      .gt("expires_at", now)
-      .order("created_at", { ascending: false })
-      .limit(100);
-    if (!data) return;
-
-    const visible = (data as any[]).filter((s) =>
-      s.user_id === userId || s.privacy === "everyone",
-    );
-    const storyIds = visible.map((s) => s.id).filter(Boolean);
-    const { data: viewed } = userId && storyIds.length
-      ? await supabase.from("story_views").select("story_id").eq("viewer_id", userId).in("story_id", storyIds)
-      : { data: [] as any[] };
-    const viewedSet = new Set((viewed || []).map((v: any) => v.story_id));
-    const sessionViewed = getViewedUserIds();
-    const map = new Map<string, StoryEntry>();
-    for (const s of visible) {
-      if (!s.user_id) continue;
-      const isOwn = s.user_id === userId;
-      const isSeen = isOwn || sessionViewed.has(s.user_id) || viewedSet.has(s.id);
-      const existing = map.get(s.user_id);
-      if (existing) {
-        existing.storyCount += 1;
-        if (isSeen) existing.seenCount += 1;
-        continue;
+    const applyRows = (rows: any[], viewedIds = new Set<string>()) => {
+      const visible = rows.filter((s: any) => s.user_id === userId || s.privacy === "everyone");
+      const sessionViewed = getViewedUserIds();
+      const map = new Map<string, StoryEntry>();
+      for (const s of visible) {
+        if (!s.user_id) continue;
+        const isOwn = s.user_id === userId;
+        const isSeen = isOwn || sessionViewed.has(s.user_id) || viewedIds.has(s.id);
+        const existing = map.get(s.user_id);
+        if (existing) {
+          existing.storyCount += 1;
+          if (isSeen) existing.seenCount += 1;
+          continue;
+        }
+        map.set(s.user_id, {
+          userId: s.user_id,
+          name: isOwn ? (displayName || "You") : (s.profiles?.display_name || "User"),
+          avatar_url: isOwn ? avatarUrl : (s.profiles?.avatar_url ?? null),
+          is_verified: !!s.profiles?.is_verified,
+          is_organization_verified: !!s.profiles?.is_organization_verified,
+          storyCount: 1,
+          seenCount: isSeen ? 1 : 0,
+        });
       }
-      map.set(s.user_id, {
-        userId: s.user_id,
-        name: isOwn ? (displayName || "You") : (s.profiles?.display_name || "User"),
-        avatar_url: isOwn ? avatarUrl : (s.profiles?.avatar_url ?? null),
-        is_verified: isOwn ? !!(s.profiles?.is_verified) : !!(s.profiles?.is_verified),
-        is_organization_verified: !!s.profiles?.is_organization_verified,
-        storyCount: 1,
-        seenCount: isSeen ? 1 : 0,
-      });
+      setStories(Array.from(map.values()).slice(0, 12));
+    };
+
+    // Hydrate the row before touching the network. Do not apply an expiry
+    // filter here: when offline, stories already downloaded on this device
+    // must remain reopenable instead of turning into an empty/black viewer.
+    const cached = await AsyncStorage.getItem(DISCOVER_STORY_CACHE_KEY).catch(() => null);
+    if (cached) {
+      try { applyRows(JSON.parse(cached)); } catch {}
     }
-    setStories(Array.from(map.values()).slice(0, 12));
-    setStoriesLoaded(true);
+
+    try {
+      const { data } = await supabase
+        .from("stories")
+        .select("id, user_id, media_url, media_type, caption, created_at, expires_at, view_count, privacy, profiles!stories_user_id_fkey(display_name, avatar_url, is_verified, is_organization_verified)")
+        .gt("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (data) {
+        const visible = (data as any[]).filter((s) => s.user_id === userId || s.privacy === "everyone");
+        const storyIds = visible.map((s) => s.id).filter(Boolean);
+        const { data: viewed } = userId && storyIds.length
+          ? await supabase.from("story_views").select("story_id").eq("viewer_id", userId).in("story_id", storyIds)
+          : { data: [] as any[] };
+        applyRows(visible, new Set((viewed || []).map((v: any) => v.story_id)));
+        if (visible.length > 0) {
+          AsyncStorage.setItem(DISCOVER_STORY_CACHE_KEY, JSON.stringify(visible)).catch(() => {});
+          // Warm the persistent media cache for the stories users can open
+          // from this row. This runs in the background and never blocks paint.
+          void Promise.all(visible.slice(0, 12).map((story: any) =>
+            story.media_url
+              ? getCachedStoryMedia(story.id, story.media_url, story.media_type || "image").catch(() => null)
+              : Promise.resolve(null),
+          ));
+        } else {
+          AsyncStorage.removeItem(DISCOVER_STORY_CACHE_KEY).catch(() => {});
+        }
+      }
+    } catch {
+      // Keep the cached row visible when the device is offline.
+    } finally {
+      setStoriesLoaded(true);
+    }
   }, [avatarUrl, displayName, userId]);
 
   // Reload whenever this tab comes into focus — throttled to at most once per

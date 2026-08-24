@@ -31,6 +31,7 @@ import { getCachedStoryMedia } from "@/lib/storyMediaCache";
 
 const STORY_DURATION = 5000;
 const STORY_LIST_CACHE_PREFIX = "@afuchat:story_list:";
+const DISCOVER_STORY_CACHE_KEY = "@afuchat:discover_story_list";
 
 type Story = {
   id: string;
@@ -136,6 +137,7 @@ export default function ViewStoryScreen() {
     const applyStories = (rows: any[]) => {
       if (cancelled) return;
       const visible = rows.filter((s: any) => {
+        if (s.user_id !== userId) return false;
         const p = s.privacy || "everyone";
         if (p === "only_me" && s.user_id !== user?.id) return false;
         if (p === "close_friends" && s.user_id !== user?.id) return false;
@@ -146,30 +148,35 @@ export default function ViewStoryScreen() {
       const storyIds = mapped.map((s: any) => s.id);
       if (storyIds.length > 0) loadLikeState(storyIds);
     };
-    supabase
-      .from("stories")
-      .select("id, media_url, media_type, caption, privacy, created_at, view_count, user_id, profiles!stories_user_id_fkey(display_name, avatar_url, handle, is_verified, is_organization_verified)")
-      .eq("user_id", userId)
-      .gt("expires_at", new Date().toISOString())
-      .order("created_at", { ascending: true })
-      .then(async ({ data }) => {
+    (async () => {
+      // Show cached story metadata immediately. The media cache resolves the
+      // actual image/video locally, so reopening a downloaded story works
+      // without a network request.
+      const cached = await AsyncStorage.getItem(`${STORY_LIST_CACHE_PREFIX}${userId}`)
+        .catch(() => null)
+        .then(async (value) => value ?? AsyncStorage.getItem(DISCOVER_STORY_CACHE_KEY).catch(() => null));
+      if (cached) {
+        try { applyStories(JSON.parse(cached)); } catch {}
+      }
+      try {
+        const { data } = await supabase
+          .from("stories")
+          .select("id, media_url, media_type, caption, privacy, created_at, expires_at, view_count, user_id, profiles!stories_user_id_fkey(display_name, avatar_url, handle, is_verified, is_organization_verified)")
+          .eq("user_id", userId)
+          .gt("expires_at", new Date().toISOString())
+          .order("created_at", { ascending: true });
         if (data && data.length > 0) {
           applyStories(data);
           AsyncStorage.setItem(`${STORY_LIST_CACHE_PREFIX}${userId}`, JSON.stringify(data)).catch(() => {});
-        } else {
-          const cached = await AsyncStorage.getItem(`${STORY_LIST_CACHE_PREFIX}${userId}`);
-          if (cached) applyStories(JSON.parse(cached));
+        } else if (data && data.length === 0) {
+          AsyncStorage.removeItem(`${STORY_LIST_CACHE_PREFIX}${userId}`).catch(() => {});
         }
-        // Mark fetch complete regardless of result so the empty-state guard fires
+      } catch {
+        // Offline: retain the cached list and let getCachedStoryMedia serve it.
+      } finally {
         if (!cancelled) setStoriesLoaded(true);
-      })
-      .then(undefined, async () => {
-        const cached = await AsyncStorage.getItem(`${STORY_LIST_CACHE_PREFIX}${userId}`).catch(() => null);
-        if (cached) {
-          try { applyStories(JSON.parse(cached)); } catch {}
-        }
-        if (!cancelled) setStoriesLoaded(true);
-      });
+      }
+    })();
     return () => { cancelled = true; };
   }, [userId]);
 
