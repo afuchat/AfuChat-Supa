@@ -22,12 +22,14 @@ export default function PushNotificationManager() {
     let active = true;
     const handleResponse = async (response: any) => {
       if (!active) return;
-      const { chatId } = getNotificationTarget(response);
-      if (response.actionIdentifier === PUSH_ACTION_OPEN && chatId) {
-        safeRouter.push({ pathname: "/chat/[id]", params: { id: chatId } } as any);
-      }
       try {
         await handleNotificationResponse(response, user.id);
+        const { chatId } = getNotificationTarget(response);
+        if (response.actionIdentifier === PUSH_ACTION_OPEN && chatId) {
+          // Navigate only after the action has been handled. Reply and
+          // mark-as-read must remain background-only and never open the chat.
+          safeRouter.push({ pathname: "/chat/[id]", params: { id: chatId } } as any);
+        }
       } finally {
         clearLastNotificationResponse();
       }

@@ -17,6 +17,7 @@ export const PUSH_CATEGORY_MESSAGE = "message";
 export const PUSH_BACKGROUND_TASK = "AFUCHAT_NOTIFICATION_ACTION_TASK";
 
 let moduleCache: NotificationsModule | null | undefined;
+let backgroundTaskRegistration: Promise<void> | null = null;
 function getNotifications(): NotificationsModule | null {
   if (moduleCache !== undefined) return moduleCache;
   if (Platform.OS === "web") return (moduleCache = null);
@@ -85,6 +86,19 @@ function defineBackgroundTask() {
       const userId = sessionData.session?.user?.id;
       if (userId) await handleNotificationResponse(data as PushResponse, userId);
     });
+
+    // Defining a task is not enough: Expo only delivers background action
+    // responses to tasks that have also been registered with the notifications
+    // module. Keep this registration idempotent because this module can be
+    // imported by both the root layout and a notification manager.
+    const notifications = getNotifications();
+    if (notifications?.registerTaskAsync) {
+      backgroundTaskRegistration = notifications.registerTaskAsync(PUSH_BACKGROUND_TASK)
+        .then(() => undefined)
+        .catch((error) => {
+          if (__DEV__) console.warn("[push] background action task registration failed", error);
+        });
+    }
   } catch (error) {
     if (__DEV__) console.warn("[push] background action task unavailable", error);
   }
@@ -94,6 +108,15 @@ defineBackgroundTask();
 export function configurePushNotifications() {
   const notifications = getNotifications();
   if (!notifications) return;
+  // Retry registration if the native notifications module was not ready during
+  // module evaluation (common during a cold start on Android).
+  if (!backgroundTaskRegistration && notifications.registerTaskAsync) {
+    backgroundTaskRegistration = notifications.registerTaskAsync(PUSH_BACKGROUND_TASK)
+      .then(() => undefined)
+      .catch((error) => {
+        if (__DEV__) console.warn("[push] background action task registration failed", error);
+      });
+  }
   notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowBanner: true,
@@ -140,7 +163,9 @@ export function addNotificationResponseListener(listener: (response: PushRespons
 }
 
 export async function getLastNotificationResponse() {
-  return (await getNotifications()?.getLastNotificationResponseAsync()) as PushResponse | null | undefined;
+  const response = await getNotifications()?.getLastNotificationResponseAsync();
+  if (!response) return response as null | undefined;
+  return response as PushResponse;
 }
 
 export function clearLastNotificationResponse() {

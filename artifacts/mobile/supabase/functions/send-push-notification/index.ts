@@ -100,7 +100,14 @@ Deno.serve(async (request) => {
           data,
           android: {
             priority: "HIGH",
-            notification: { channel_id: "messages_v2", sound: "default", click_action: "open" },
+            notification: {
+              channel_id: "messages_v2",
+              sound: "default",
+              // Expo Notifications reads categoryId from the FCM data
+              // payload and applies the registered Reply/Mark as read/Open
+              // actions to the system notification.
+              click_action: "open",
+            },
           },
         },
       }),
