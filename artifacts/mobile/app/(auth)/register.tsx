@@ -349,7 +349,18 @@ export default function SignUpScreen() {
             setOauthLoading(false);
             return;
           }
-          if (!String(nativeError?.message ?? "").includes("Cannot find module")) {
+          // Expo Go has no native module, and DEVELOPER_ERROR (10) means the
+          // installed build's signing certificate is not registered in Google
+          // Cloud. Both cases must use the Supabase browser flow below.
+          const message = String(nativeError?.message ?? "");
+          const canUseBrowserFallback =
+            message.includes("Cannot find module") ||
+            code === "10" ||
+            code === 10 ||
+            code === "DEVELOPER_ERROR" ||
+            code === "12500" ||
+            message.includes("DEVELOPER_ERROR");
+          if (!canUseBrowserFallback) {
             throw nativeError;
           }
         }

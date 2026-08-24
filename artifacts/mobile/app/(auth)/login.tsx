@@ -525,8 +525,19 @@ export default function SignInScreen() {
             setOauthLoading(false);
             return;
           }
-          // Missing native module means Expo Go; use the browser fallback.
-          if (!String(nativeError?.message ?? "").includes("Cannot find module")) {
+          // Expo Go has no native module, and DEVELOPER_ERROR (10) means the
+          // installed build's signing certificate is not registered in Google
+          // Cloud. Both cases must use the Supabase browser flow below rather
+          // than leaving the user with a non-recoverable native error.
+          const message = String(nativeError?.message ?? "");
+          const canUseBrowserFallback =
+            message.includes("Cannot find module") ||
+            code === "10" ||
+            code === 10 ||
+            code === "DEVELOPER_ERROR" ||
+            code === "12500" ||
+            message.includes("DEVELOPER_ERROR");
+          if (!canUseBrowserFallback) {
             throw nativeError;
           }
         }
