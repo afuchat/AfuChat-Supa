@@ -12,7 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 
-type LegalPageKind = "terms" | "privacy" | "account-deletion";
+type LegalPageKind = "terms" | "privacy" | "account-deletion" | "child-safety";
 
 type Section = {
   title: string;
@@ -207,6 +207,52 @@ const PAGES: Record<
       },
     ],
   },
+  "child-safety": {
+    eyebrow: "AFUCHAT · TRUST & SAFETY",
+    title: "Child Safety Standards",
+    intro:
+      "AfuChat has zero tolerance for child sexual abuse and exploitation (CSAE). These standards explain what we prohibit, how to report concerns, and how we respond to protect children.",
+    icon: "shield-checkmark-outline",
+    sections: [
+      {
+        title: "Our zero-tolerance standard",
+        paragraphs: [
+          "AfuChat prohibits child sexual abuse and exploitation in every form. This includes child sexual abuse material (CSAM), sexualization of children, grooming, sexual solicitation of a minor, sextortion, trafficking, and any attempt to arrange or facilitate sexual abuse or exploitation.",
+          "We prohibit content that depicts, promotes, requests, links to, or directs people to child sexual abuse or exploitation, whether shared publicly, privately, in profiles, messages, calls, or any other feature.",
+        ],
+      },
+      {
+        title: "Age and safety expectations",
+        paragraphs: [
+          "You must meet the minimum age required to use AfuChat in your country. Do not misrepresent your age, contact a minor for a sexual purpose, or use AfuChat to move a child to another service or an offline meeting.",
+          "Adults must never request sexual images or sexual conversations from a minor. If you believe a child is in immediate danger, contact local emergency services first.",
+        ],
+      },
+      {
+        title: "How to report a child-safety concern",
+        paragraphs: [
+          "Report suspected CSAE, grooming, sexual exploitation, or an account that appears to belong to a child by emailing support@afuchat.com with the subject “Child safety report.” You can also use the report tools inside AfuChat when available.",
+          "Include the profile handle or message link, a description of what happened, and relevant dates or context. Do not forward or attach suspected CSAM. Preserve the message or account link without downloading, copying, or redistributing illegal material.",
+        ],
+      },
+      {
+        title: "Our response",
+        bullets: [
+          "We prioritize child-safety reports for review and take action when our policies or the law require it.",
+          "We may remove content, restrict features, suspend or permanently terminate accounts, and block related accounts or activity.",
+          "We preserve relevant information when appropriate and cooperate with valid requests from law enforcement and child-protection authorities.",
+          "We do not disclose the identity of a reporter to the reported user except where required by law.",
+        ],
+      },
+      {
+        title: "Contact",
+        paragraphs: [
+          "For child-safety reports and urgent trust-and-safety concerns: support@afuchat.com. For an immediate threat to a child’s safety, contact local emergency services or a child-protection authority and then notify AfuChat so we can take platform action.",
+          "These standards are publicly published and may be updated as our safety practices and legal obligations develop. Last updated: August 25, 2026.",
+        ],
+      },
+    ],
+  },
 };
 
 function navigateTo(path: string) {
@@ -271,6 +317,9 @@ export default function LegalPage({ kind }: { kind: LegalPageKind }) {
               <Pressable onPress={() => navigateTo("/account-deletion")} accessibilityRole="link">
                 <Text style={styles.navLink}>Account deletion</Text>
               </Pressable>
+              <Pressable onPress={() => navigateTo("/child-safety")} accessibilityRole="link">
+                <Text style={styles.navLink}>Child safety</Text>
+              </Pressable>
             </View>
           )}
         </View>
@@ -314,6 +363,9 @@ export default function LegalPage({ kind }: { kind: LegalPageKind }) {
           </Pressable>
           <Pressable onPress={() => navigateTo("/account-deletion")} accessibilityRole="link">
             <Text style={styles.footerLink}>Account deletion</Text>
+          </Pressable>
+          <Pressable onPress={() => navigateTo("/child-safety")} accessibilityRole="link">
+            <Text style={styles.footerLink}>Child safety standards</Text>
           </Pressable>
           <Pressable
             onPress={() => Linking.openURL("mailto:support@afuchat.com").catch(() => {})}
