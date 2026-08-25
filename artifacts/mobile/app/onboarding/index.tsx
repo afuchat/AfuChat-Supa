@@ -993,14 +993,20 @@ export default function OnboardingScreen() {
       {/* ── Bottom action bar — positioned absolute so it floats above keyboard ── */}
         <View style={[st.bottomBar, { paddingBottom: insets.bottom > 0 ? insets.bottom : 16, backgroundColor: colors.background }]}>
         <Pressable
-          style={[st.nextBtn, { opacity: canProceed() ? 1 : 0.35 }]}
+          style={[
+            st.nextBtn,
+            {
+              backgroundColor: canProceed() ? colors.accent : colors.inputBg,
+              borderColor: canProceed() ? colors.accent : colors.border,
+            },
+          ]}
           onPress={step === TOTAL_STEPS ? handleComplete : goNext}
           disabled={!canProceed() || loading}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={st.nextBtnText}>
+            <Text style={[st.nextBtnText, { color: canProceed() ? "#fff" : colors.textMuted }]}>
               {step === TOTAL_STEPS ? "Get Started" : "Continue"}
             </Text>
           )}
@@ -1132,7 +1138,7 @@ const st = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 12,
   },
-  nextBtn:     { backgroundColor: "rgba(255,255,255,0.08)", height: 52, borderRadius: 999, alignItems: "center", justifyContent: "center" },
+  nextBtn:     { height: 52, borderRadius: 999, alignItems: "center", justifyContent: "center", borderWidth: 1 },
   nextBtnText: { color: "#fff", fontSize: 17, fontFamily: "Inter_600SemiBold" },
 
   // Modals
