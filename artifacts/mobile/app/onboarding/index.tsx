@@ -188,9 +188,11 @@ export default function OnboardingScreen() {
   function canProceed(): boolean {
     switch (step) {
       case 1:
-        return displayName.trim().length >= 2 && handle.trim().length >= 3 && (handleStatus === "available" || handleStatus === "owned");
+        return displayName.trim().length >= 2 && handle.trim().length >= 3 &&
+          (handleStatus === "available" || handleStatus === "owned" || handleStatus === "error");
       case 2:
-        return selectedCountry !== null && validatePhone() && phoneAvailStatus === "available";
+        return selectedCountry !== null && validatePhone() &&
+          (phoneAvailStatus === "available" || phoneAvailStatus === "error");
       case 3: {
         const currentYear = new Date().getFullYear();
         return dobDay > 0 && dobMonth > 0 && dobYear > 0 && dobYear <= currentYear - 13 && gender !== "";
@@ -384,7 +386,7 @@ export default function OnboardingScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     const availability = await checkUsernameAvailability(cleanHandle);
-    if (!availability || (availability.status !== "available" && availability.status !== "owned")) {
+    if (availability && availability.status !== "available" && availability.status !== "owned") {
       setLoading(false);
       if (availability?.status === "listed") {
         showAlert(
@@ -413,8 +415,7 @@ export default function OnboardingScreen() {
 
     const fullPhone = getPhoneValidation().e164 ?? null;
     if (fullPhone) {
-      const { data: existingPhone, error: phoneError } = await supabase.from("profiles").select("id").eq("phone_number", fullPhone).neq("id", userId).limit(1).maybeSingle();
-      if (phoneError) throw phoneError;
+      const { data: existingPhone } = await supabase.from("profiles").select("id").eq("phone_number", fullPhone).neq("id", userId).limit(1).maybeSingle();
       if (existingPhone) {
         setLoading(false);
         showAlert("Phone number taken", "This phone number is already linked to another account.");
