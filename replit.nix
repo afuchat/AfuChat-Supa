@@ -1,5 +1,6 @@
 {pkgs}: {
   deps = [
+    pkgs.zulu23
     pkgs.libxkbcommon
     pkgs.libgbm
     pkgs.mesa

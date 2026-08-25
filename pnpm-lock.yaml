@@ -81,6 +81,9 @@ importers:
       '@babel/types':
         specifier: 7.29.7
         version: 7.29.7
+      '@react-native-google-signin/google-signin':
+        specifier: ^16.1.4
+        version: 16.1.4(expo@55.0.28)(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0)
       expo-notifications:
         specifier: ~55.0.26
         version: 55.0.26(expo@55.0.28)(react-native@0.83.10(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.0))(react@19.2.0)(typescript@5.9.3)
