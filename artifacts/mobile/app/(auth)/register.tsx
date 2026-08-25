@@ -207,7 +207,7 @@ export default function SignUpScreen() {
   const [ageOk, setAgeOk] = useState(false);
   const [termsOk, setTermsOk] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<"google" | "github" | null>(null);
   const [verifyVisible, setVerifyVisible] = useState(false);
   const [verifyEmail, setVerifyEmail] = useState("");
   const [signupUserId, setSignupUserId] = useState<string | null>(null);
@@ -256,7 +256,7 @@ export default function SignUpScreen() {
 
   async function handleGitHub() {
     try {
-      setOauthLoading(true);
+      setOauthLoading("github");
       if (Platform.OS === "web" && typeof window !== "undefined") {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "github",
@@ -264,7 +264,7 @@ export default function SignUpScreen() {
         });
         if (error) {
           showAlert("Error", error.message);
-          setOauthLoading(false);
+          setOauthLoading(null);
         }
         return;
       }
@@ -274,8 +274,8 @@ export default function SignUpScreen() {
         provider: "github",
         options: { redirectTo: redirectUrl, skipBrowserRedirect: true },
       });
-      if (error) { showAlert("Error", error.message); setOauthLoading(false); return; }
-      if (!data?.url) { setOauthLoading(false); return; }
+      if (error) { showAlert("Error", error.message); setOauthLoading(null); return; }
+      if (!data?.url) { setOauthLoading(null); return; }
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl, { showInRecents: false });
       if (result.type === "success" && result.url) {
         const url = new URL(result.url);
@@ -287,9 +287,9 @@ export default function SignUpScreen() {
             const uid = sd.user?.id;
             if (uid) {
               const { data: prof } = await supabase.from("profiles").select("onboarding_completed").eq("id", uid).maybeSingle();
-              if (!prof?.onboarding_completed) { setOauthLoading(false); router.replace({ pathname: "/onboarding", params: { userId: uid } } as any); return; }
+              if (!prof?.onboarding_completed) { setOauthLoading(null); router.replace({ pathname: "/onboarding", params: { userId: uid } } as any); return; }
             }
-            setOauthLoading(false); router.replace("/(tabs)/chats"); return;
+            setOauthLoading(null); router.replace("/(tabs)/chats"); return;
           }
         }
         let at = url.hash ? new URLSearchParams(url.hash.substring(1)).get("access_token") : null;
@@ -301,13 +301,13 @@ export default function SignUpScreen() {
           else router.replace("/(tabs)/chats");
         }
       }
-      setOauthLoading(false);
-    } catch { setOauthLoading(false); showAlert("Error", "Could not complete GitHub sign-in."); }
+      setOauthLoading(null);
+    } catch { setOauthLoading(null); showAlert("Error", "Could not complete GitHub sign-in."); }
   }
 
   async function handleGoogle() {
     try {
-      setOauthLoading(true);
+      setOauthLoading("google");
       if (Platform.OS === "android") {
         // Use the same native Google credential flow as login for standalone
         // Android builds. Expo Go does not include this native module, so only
@@ -336,7 +336,7 @@ export default function SignUpScreen() {
               .select("onboarding_completed")
               .eq("id", uid)
               .maybeSingle();
-            setOauthLoading(false);
+            setOauthLoading(null);
             if (!profile?.onboarding_completed) {
               router.replace({ pathname: "/onboarding", params: { userId: uid } } as any);
             } else {
@@ -348,7 +348,7 @@ export default function SignUpScreen() {
         } catch (nativeError: any) {
           const code = nativeError?.code;
           if (code === "SIGN_IN_CANCELLED" || code === "12501") {
-            setOauthLoading(false);
+            setOauthLoading(null);
             return;
           }
           // Expo Go has no native module, and DEVELOPER_ERROR (10) means the
@@ -374,7 +374,7 @@ export default function SignUpScreen() {
         });
         if (error) {
           showAlert("Google sign-up failed", error.message);
-          setOauthLoading(false);
+            setOauthLoading(null);
         }
         return;
       }
@@ -384,8 +384,8 @@ export default function SignUpScreen() {
         provider: "google",
         options: { redirectTo: redirectUrl, skipBrowserRedirect: true },
       });
-      if (error) { showAlert("Google sign-up failed", error.message); setOauthLoading(false); return; }
-      if (!data?.url) { setOauthLoading(false); return; }
+      if (error) { showAlert("Google sign-up failed", error.message); setOauthLoading(null); return; }
+      if (!data?.url) { setOauthLoading(null); return; }
 
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl, { showInRecents: false });
       if (result.type === "success" && result.url) {
@@ -398,12 +398,12 @@ export default function SignUpScreen() {
           if (uid) {
             const { data: profile } = await supabase.from("profiles").select("onboarding_completed").eq("id", uid).maybeSingle();
             if (!profile?.onboarding_completed) {
-              setOauthLoading(false);
+              setOauthLoading(null);
               router.replace({ pathname: "/onboarding", params: { userId: uid } } as any);
               return;
             }
           }
-          setOauthLoading(false);
+          setOauthLoading(null);
           router.replace("/(tabs)/chats");
           return;
         }
@@ -416,16 +416,16 @@ export default function SignUpScreen() {
           router.replace("/(tabs)/chats");
         }
       }
-      setOauthLoading(false);
+      setOauthLoading(null);
     } catch (error: any) {
-      setOauthLoading(false);
+      setOauthLoading(null);
       showAlert("Google sign-up failed", error?.message || "Could not complete Google sign-up.");
     }
   }
 
   async function handleGoogleOneTap(idToken: string) {
     try {
-      setOauthLoading(true);
+      setOauthLoading("google");
       const { data, error } = await supabase.auth.signInWithIdToken({
         provider: "google",
         token: idToken,
@@ -446,7 +446,7 @@ export default function SignUpScreen() {
     } catch (error: any) {
       showAlert("Google sign-up failed", error?.message || "Could not complete Google One Tap sign-up.");
     } finally {
-      setOauthLoading(false);
+      setOauthLoading(null);
     }
   }
 
@@ -482,15 +482,15 @@ export default function SignUpScreen() {
 
           <View style={{ gap: 12, marginTop: 28 }}>
             {/* Google */}
-            <TouchableOpacity style={[sc.glassBtn, oauthLoading && { opacity: 0.62 }]} onPress={handleGoogle} disabled={oauthLoading} activeOpacity={0.78}>
-              {oauthLoading ? <ActivityIndicator size="small" color={accent} /> : <GoogleLogo size={20} />}
-              <Text style={sc.glassBtnText}>{oauthLoading ? t("Signing up…") : t("Continue with Google")}</Text>
+            <TouchableOpacity style={[sc.glassBtn, oauthLoading === "google" && { opacity: 0.62 }]} onPress={handleGoogle} disabled={oauthLoading !== null} activeOpacity={0.78}>
+              {oauthLoading === "google" ? <ActivityIndicator size="small" color={accent} /> : <GoogleLogo size={20} />}
+              <Text style={sc.glassBtnText}>{oauthLoading === "google" ? t("Signing up…") : t("Continue with Google")}</Text>
             </TouchableOpacity>
 
             {/* GitHub */}
-            <TouchableOpacity style={[sc.glassBtn, oauthLoading && { opacity: 0.62 }]} onPress={handleGitHub} disabled={oauthLoading} activeOpacity={0.78}>
-              {oauthLoading ? <ActivityIndicator size="small" color={accent} /> : <GitHubLogo size={20} color="rgba(255,255,255,0.85)" />}
-              <Text style={sc.glassBtnText}>{oauthLoading ? t("Signing up…") : t("Continue with GitHub")}</Text>
+            <TouchableOpacity style={[sc.glassBtn, oauthLoading === "github" && { opacity: 0.62 }]} onPress={handleGitHub} disabled={oauthLoading !== null} activeOpacity={0.78}>
+              {oauthLoading === "github" ? <ActivityIndicator size="small" color={accent} /> : <GitHubLogo size={20} color="rgba(255,255,255,0.85)" />}
+              <Text style={sc.glassBtnText}>{oauthLoading === "github" ? t("Signing up…") : t("Continue with GitHub")}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={sc.glassBtn} onPress={goToEmail} activeOpacity={0.78}>
