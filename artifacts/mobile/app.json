@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "AfuChat",
-    "slug": "afuchat",
+    "slug": "afuchat-personal",
     "version": "0.0.1",
     "icon": "./assets/images/icon.png",
     "scheme": "afuchat",
@@ -212,7 +212,27 @@
       ]
     },
     "extra": {
-      "eas": {}
+      "eas": {
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "ShareExtension",
+                  "bundleIdentifier": "com.afuchat.mobile.share-extension",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.afuchat.mobile"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "a3564af6-6f1d-45c2-847e-0cd0ed6529a8"
+      },
+      "router": {}
     }
   }
 }
