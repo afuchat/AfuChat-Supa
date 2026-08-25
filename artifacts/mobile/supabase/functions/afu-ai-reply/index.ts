@@ -17,7 +17,7 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
-async function streamChatWithEngagera(messages: unknown[], maxTokens: number, apiKey: string): Promise<Response> {
+async function chatWithEngagera(messages: unknown[], maxTokens: number, apiKey: string): Promise<string> {
   const response = await fetch("https://rhnsjqqtdzlkvqazfcbg.supabase.co/functions/v1/chat", {
     method: "POST",
     headers: {
@@ -28,11 +28,14 @@ async function streamChatWithEngagera(messages: unknown[], maxTokens: number, ap
       messages,
       model: "engagera-2.1",
       max_tokens: maxTokens,
-       stream: true,
+       stream: false,
     }),
   });
   if (!response.ok) throw new Error(`Engagera error: ${response.status}`);
-  return response;
+  const data = await response.json();
+  const text = data?.message?.content ?? data?.content ?? "";
+  if (!text) throw new Error("Engagera returned empty content");
+  return text;
 }
 
 Deno.serve(async (request) => {
@@ -62,17 +65,7 @@ Deno.serve(async (request) => {
     : fast ? 300 : 2048;
 
   try {
-    const upstream = await streamChatWithEngagera(messages, maxTokens, apiKey);
-    if (!upstream.body) throw new Error("Engagera returned no stream");
-    return new Response(upstream.body, {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": upstream.headers.get("content-type") || "text/event-stream",
-        "Cache-Control": "no-cache, no-transform",
-        "X-Accel-Buffering": "no",
-      },
-    });
+    return json({ reply: await chatWithEngagera(messages, maxTokens, apiKey) });
   } catch (error) {
     console.error("[afu-ai-reply] Engagera chat failed", error);
     return json({ reply: "I'm having trouble connecting to AfuAI right now. Please try again in a moment." });
