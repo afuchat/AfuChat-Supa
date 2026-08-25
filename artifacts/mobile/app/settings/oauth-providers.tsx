@@ -34,7 +34,7 @@ type Provider = {
 
 const PROVIDERS: Provider[] = [
   { id: "google",  label: "Google",      iconGradient: ["#FFFFFF", "#E8EAED"], renderLogo: () => <GoogleLogo size={18} /> },
-  { id: "github",  label: "GitHub",      iconGradient: ["#24292E", "#404040"], renderLogo: () => <GitHubLogo size={18} color="#fff" />, disabled: true },
+  { id: "github",  label: "GitHub",      iconGradient: ["#24292E", "#404040"], renderLogo: () => <GitHubLogo size={18} color="#fff" /> },
   { id: "twitter", label: "X (Twitter)", iconGradient: ["#1a1a1a", "#333333"], renderLogo: () => <XLogo size={18} color="#fff" />,    disabled: true },
   { id: "gitlab",  label: "GitLab",      iconGradient: ["#FC6D26", "#E24329"], renderLogo: () => <GitLabLogo size={18} />,           disabled: true },
 ];
