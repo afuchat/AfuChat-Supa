@@ -11,7 +11,7 @@ import {
 } from "@/lib/storage/localPhoneContacts";
 
 export const AFUCHAT_DOWNLOAD_URL =
-  "https://play.google.com/store/apps/details?id=com.afu.app";
+  "https://play.google.com/store/apps/details?id=com.afuchat.mobile";
 
 export const AFUCHAT_INVITE_MESSAGE =
   `Hey! I’m using AfuChat to stay connected through messaging, calls, and sharing. Join me there so we can connect on AfuChat: ${AFUCHAT_DOWNLOAD_URL}`;

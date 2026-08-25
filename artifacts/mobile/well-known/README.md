@@ -50,7 +50,7 @@ You can include multiple fingerprints (e.g. debug + release) as an array.
 
 Replace `REPLACE_WITH_APPLE_TEAM_ID` in the file with your Team ID, e.g.:
 ```
-A1B2C3D4E5.com.afu.app
+A1B2C3D4E5.com.afuchat.mobile
 ```
 
 ---
@@ -68,8 +68,8 @@ curl -I "https://afuchat.com/.well-known/apple-app-site-association"
 
 Android also caches App Links verification — on a test device run:
 ```bash
-adb shell pm set-app-links --package com.afu.app 2 afuchat.com www.afuchat.com
-adb shell pm verify-app-links --re-verify com.afu.app
+adb shell pm set-app-links --package com.afuchat.mobile 2 afuchat.com www.afuchat.com
+adb shell pm verify-app-links --re-verify com.afuchat.mobile
 ```
 
 ---

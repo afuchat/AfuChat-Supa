@@ -9,7 +9,7 @@ export interface UpdateInfo {
   androidUrl: string;
 }
 
-const DEFAULT_ANDROID_URL = "https://play.google.com/store/apps/details?id=com.afuchat.app";
+const DEFAULT_ANDROID_URL = "https://play.google.com/store/apps/details?id=com.afuchat.mobile";
 
 /** Compare semver strings. Returns >0 if b is newer than a. */
 function semverCompare(a: string, b: string): number {

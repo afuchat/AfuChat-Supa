@@ -5,7 +5,7 @@
     ],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.afu.app",
+      "package_name": "com.afuchat.mobile",
       "sha256_cert_fingerprints": [
         "7E:DC:5D:B8:00:4C:6B:65:BA:D0:3D:4B:6E:05:0D:D0:A8:AE:D0:D1:C6:A1:5C:75:77:A2:1E:7D:9A:76:BC:6D",
         "05:CA:AA:C2:34:AA:0D:76:A7:30:93:EF:0B:39:1C:92:84:50:49:E2:07:84:1D:F5:C4:BB:D1:88:E4:A6:E0:74"
