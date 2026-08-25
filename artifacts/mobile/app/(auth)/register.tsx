@@ -149,7 +149,7 @@ function EmailVerifyModal({ visible, email, onClose, onVerified, isDark, accent 
       const { error } = await supabase.auth.resend({ type: "signup", email });
       if (error) throw error;
     } catch (error: any) {
-      showAlert("Could not send code", error?.message || "Please try again.");
+      showAlert("Could not send code", error);
     } finally {
       setSending(false);
     }
@@ -248,7 +248,7 @@ export default function SignUpScreen() {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({ email: e, password });
-      if (error) { showAlert("Sign up failed", error.message); return; }
+      if (error) { showAlert("Sign up failed", error); return; }
       if (!data.user) {
         showAlert("Sign up failed", "No account was created. Please try again.");
         return;
@@ -261,7 +261,7 @@ export default function SignUpScreen() {
       if (!data.session) { setVerifyEmail(e); setVerifyVisible(true); }
       else router.replace({ pathname: "/onboarding", params: { userId: data.user.id } } as any);
     } catch (error: any) {
-      showAlert("Sign up failed", error?.message || "Network error. Please try again.");
+      showAlert("Sign up failed", error);
     } finally {
       setLoading(false);
     }

@@ -18,6 +18,21 @@ type Listener = (state: AlertState) => void;
 
 let _listener: Listener | null = null;
 
+export function formatAlertMessage(value: unknown, fallback = "Something went wrong. Please try again."): string {
+  if (typeof value === "string" && value.trim()) return value;
+  if (value instanceof Error && value.message) return value.message;
+  if (value && typeof value === "object") {
+    const error = value as Record<string, unknown>;
+    for (const key of ["message", "error_description", "details", "hint"]) {
+      const candidate = error[key];
+      if (typeof candidate === "string" && candidate.trim()) return candidate;
+    }
+    const code = typeof error.code === "string" ? error.code : "";
+    if (code) return `Request failed (${code}). Please try again.`;
+  }
+  return fallback;
+}
+
 export function registerAlertListener(fn: Listener) {
   _listener = fn;
 }
@@ -32,12 +47,13 @@ export function showToast(message: string, _long = false) {
 
 export function showAlert(
   title: string,
-  message?: string,
+  message?: unknown,
   buttons?: AlertButton[],
 ) {
+  const safeMessage = message === undefined ? undefined : formatAlertMessage(message);
   // Always prefer the custom AlertModal — gives a consistent appearance across platforms.
   if (_listener) {
-    _listener({ visible: true, title, message, buttons });
+    _listener({ visible: true, title, message: safeMessage, buttons });
     return;
   }
 
@@ -50,12 +66,12 @@ export function showAlert(
           onPress: b.onPress,
         }))
       : [{ text: "OK" }];
-  Alert.alert(title || "", message || "", nativeButtons, { cancelable: true });
+  Alert.alert(title || "", safeMessage || "", nativeButtons, { cancelable: true });
 }
 
 export function confirmAlert(
   title: string,
-  message?: string,
+  message?: unknown,
   options?: {
     confirmText?: string;
     cancelText?: string;
