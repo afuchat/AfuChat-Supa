@@ -75,7 +75,7 @@
           ]
         }
       ],
-      "versionCode": 2244
+      "versionCode": 2245
     },
     "plugins": [
       [
@@ -164,7 +164,7 @@
           }
         }
       ],
-    "./plugins/withAndroidAbiSplits",
+      "./plugins/withAndroidAbiSplits",
       "./plugins/withProguardRules",
       "expo-secure-store",
       "expo-sqlite",
