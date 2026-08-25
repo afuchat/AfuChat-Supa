@@ -19,16 +19,32 @@ type Listener = (state: AlertState) => void;
 let _listener: Listener | null = null;
 
 export function formatAlertMessage(value: unknown, fallback = "Something went wrong. Please try again."): string {
-  if (typeof value === "string" && value.trim()) return value;
-  if (value instanceof Error && value.message) return value.message;
+  const isUseful = (candidate: unknown): candidate is string =>
+    typeof candidate === "string" &&
+    candidate.trim().length > 0 &&
+    candidate.trim() !== "{}" &&
+    candidate.trim() !== "[]";
+
+  if (isUseful(value)) return value;
+  if (value instanceof Error && isUseful(value.message)) return value.message;
   if (value && typeof value === "object") {
     const error = value as Record<string, unknown>;
-    for (const key of ["message", "error_description", "details", "hint"]) {
+    for (const key of ["message", "error_description", "error", "details", "hint"]) {
       const candidate = error[key];
-      if (typeof candidate === "string" && candidate.trim()) return candidate;
+      if (isUseful(candidate)) return candidate;
+      if (candidate && typeof candidate === "object") {
+        const nested = formatAlertMessage(candidate, "");
+        if (isUseful(nested)) return nested;
+      }
     }
     const code = typeof error.code === "string" ? error.code : "";
     if (code) return `Request failed (${code}). Please try again.`;
+    try {
+      const serialized = JSON.stringify(value);
+      if (isUseful(serialized)) return serialized;
+    } catch {
+      // Use the caller's fallback when an error object cannot be serialized.
+    }
   }
   return fallback;
 }
