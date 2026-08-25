@@ -139,6 +139,7 @@ export default function ViewStoryScreen() {
       if (cancelled) return;
       const visible = rows.filter((s: any) => {
         if (s.user_id !== userId) return false;
+        if (!s.expires_at || new Date(s.expires_at).getTime() <= Date.now()) return false;
         const p = s.privacy || "everyone";
         if (p === "only_me" && s.user_id !== user?.id) return false;
         if (p === "close_friends" && s.user_id !== user?.id) return false;
@@ -165,6 +166,7 @@ export default function ViewStoryScreen() {
           .from("stories")
           .select("id, media_url, media_type, caption, privacy, created_at, expires_at, view_count, user_id, profiles!stories_user_id_fkey(display_name, avatar_url, handle, is_verified, is_organization_verified)")
           .eq("user_id", userId)
+          .gt("expires_at", new Date().toISOString())
           .order("created_at", { ascending: true });
         if (data && data.length > 0) {
           applyStories(data);

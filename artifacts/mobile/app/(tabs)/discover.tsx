@@ -299,7 +299,11 @@ const DISCOVER_STORY_CACHE_KEY = "@afuchat:discover_story_list";
 
   const loadDiscoverStories = useCallback(async () => {
     const applyRows = (rows: any[], viewedIds = new Set<string>()) => {
-      const visible = rows.filter((s: any) => s.user_id === userId || s.privacy === "everyone");
+      const visible = rows.filter((s: any) =>
+        (s.user_id === userId || s.privacy === "everyone") &&
+        s.expires_at &&
+        new Date(s.expires_at).getTime() > Date.now()
+      );
       const sessionViewed = getViewedUserIds();
       const map = new Map<string, StoryEntry>();
       for (const s of visible) {
@@ -331,9 +335,8 @@ const DISCOVER_STORY_CACHE_KEY = "@afuchat:discover_story_list";
       setStories(ordered.slice(0, 12));
     };
 
-    // Hydrate the row before touching the network. Do not apply an expiry
-    // filter here: when offline, stories already downloaded on this device
-    // must remain reopenable instead of turning into an empty/black viewer.
+     // Hydrate the row before touching the network, but never resurrect an
+     // expired story from the local cache.
     await hydrateViewedUsers();
     const cached = await AsyncStorage.getItem(DISCOVER_STORY_CACHE_KEY).catch(() => null);
     if (cached) {
@@ -344,6 +347,7 @@ const DISCOVER_STORY_CACHE_KEY = "@afuchat:discover_story_list";
       const { data } = await supabase
         .from("stories")
         .select("id, user_id, media_url, media_type, caption, created_at, expires_at, view_count, privacy, profiles!stories_user_id_fkey(display_name, avatar_url, is_verified, is_organization_verified)")
+          .gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false })
         .limit(100);
       if (data) {
