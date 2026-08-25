@@ -550,10 +550,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   const chatsRef = useRef<ChatItem[]>([]);
   chatsRef.current = chats;
   const [loading, setLoading] = useState(() => !hasPreloadedConversations());
-  const [sessionRestoring, setSessionRestoring] = useState(false);
-  const reloginPromptShownRef = useRef(false);
-  const signOutRef = useRef(signOut);
-  signOutRef.current = signOut;
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -679,7 +675,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     }
 
     if (offline) {
-      setSessionRestoring(false);
       setChats((prev) => {
         const withoutNotes = prev.filter((item) => !isLocalNotesId(item.id));
         return localNotes ? [...withoutNotes, localNotesToChatItem(localNotes)] : withoutNotes;
@@ -702,12 +697,10 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         liveSessionUserId = null;
       }
       if (liveSessionUserId !== user.id) {
-        setSessionRestoring(true);
         setLoading(false);
         setRefreshing(false);
         return;
       }
-      setSessionRestoring(false);
     }
 
     const unreadExcludedIds = [
@@ -985,70 +978,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
 
   useEffect(() => { loadChats(); }, [loadChats]);
   useFocusEffect(useCallback(() => { loadChats(true); }, [loadChats]));
-
-  // A new device can have a cached identity before Supabase has finished
-  // restoring its native session. Keep checking without requiring a logout or
-  // another manual sign-in, and never present that transient state as an empty
-  // account.
-  useEffect(() => {
-    if (!user || hasVerifiedSession) {
-      setSessionRestoring(false);
-      return;
-    }
-    let disposed = false;
-    let failedChecks = 0;
-    const promptRelogin = () => {
-      if (reloginPromptShownRef.current || disposed) return;
-      reloginPromptShownRef.current = true;
-      showAlert(
-        "New sign-in detected",
-        "This account was signed in on another device. The session on this device is no longer valid, so your chats and account data cannot be loaded.",
-        [
-          {
-            text: "Log in again",
-            onPress: () => {
-              void signOutRef.current();
-            },
-          },
-        ],
-      );
-    };
-    const retry = async () => {
-      if (!isOnline()) {
-        setSessionRestoring(false);
-        return;
-      }
-      setSessionRestoring(true);
-      try {
-        const { data } = await supabase.auth.getSession();
-        if (disposed) return;
-        if (data.session?.user?.id !== user.id) {
-          failedChecks += 1;
-          if (failedChecks >= 2) promptRelogin();
-          return;
-        }
-        failedChecks = 0;
-        setSessionRestoring(false);
-        await loadChats(true);
-      } catch {
-        // The next interval retries after a transient native/network failure.
-      }
-    };
-    if (isOnline()) void retry();
-    const timer = setInterval(() => void retry(), 2000);
-    const unsubscribe = onConnectivityChange((online) => {
-      if (!online) {
-        setSessionRestoring(false);
-        return;
-      }
-      void retry();
-    });
-    return () => {
-      disposed = true;
-      clearInterval(timer);
-      unsubscribe();
-    };
-  }, [user?.id, hasVerifiedSession, loadChats]);
 
   // Push the latest total unread into the shared in-memory store so the tab
   // bar badge updates instantly without waiting for a SQLite round-trip.
@@ -1874,16 +1803,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                   <View key={pageKey} style={{ flex: 1, paddingTop: 0 }}>
                     {loading ? (
                       <View style={{ padding: 8 }}>{[1,2,3,4,5,6].map(i => <ChatRowSkeleton key={i} />)}</View>
-                    ) : sessionRestoring && pageChats.length === 0 ? (
-                      <View style={styles.center}>
-                        <ActivityIndicator color={colors.accent} />
-                        <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 14 }]}>
-                          Restoring your account
-                        </Text>
-                        <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                          Your chats and account data will appear as soon as this device finishes signing in.
-                        </Text>
-                      </View>
                     ) : pageChats.length === 0 ? (
                       <View style={styles.center}>
                         <AfuLogo size={80} />
@@ -2021,17 +1940,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
           <View style={{ flex: 1, paddingTop: 0 }}>
             {loading ? (
               <View style={{ padding: 8 }}>{[1,2,3,4,5,6].map(i => <ChatRowSkeleton key={i} />)}</View>
-                    ) : sessionRestoring && filtered.length === 0 ? (
-              <View style={styles.center}>
-                <ActivityIndicator color={colors.accent} />
-                <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 14 }]}>
-                  Restoring your account
-                </Text>
-                <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                  Your chats and account data will appear as soon as this device finishes signing in.
-                </Text>
-              </View>
-            ) : filtered.length === 0 ? (
+                    ) : filtered.length === 0 ? (
               <View style={styles.center}>
                 <AfuLogo size={80} />
                 <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 12 }]}>

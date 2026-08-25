@@ -11,7 +11,7 @@
     "newArchEnabled": true,
     "backgroundColor": "#FFFFFF",
     "android": {
-      "package": "com.afuchat.afuapp",
+      "package": "com.afu.app",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",

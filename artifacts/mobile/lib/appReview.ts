@@ -1,6 +1,6 @@
 import { Linking, Platform } from "react-native";
 
-const ANDROID_PACKAGE = "com.afuchat.afuapp";
+const ANDROID_PACKAGE = "com.afu.app";
 const PLAY_STORE_URL = `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}`;
 
 /**

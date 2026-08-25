@@ -29,10 +29,8 @@ import { saveLocalProfile, getLocalProfile } from "@/lib/storage/localProfile";
 import { saveLocalSettings, deleteLocalSettings } from "@/lib/storage/localSettings";
 import { clearProfileCache } from "@/lib/profileCache";
 import { startOfflineSync, stopOfflineSync } from "@/lib/offlineSync";
-import { registerDeviceSession } from "@/lib/deviceSession";
 import { ensureAfuAiChat } from "@/lib/afuAiBot";
 import { safeRouter } from "@/lib/navUtils";
-import { showAlert } from "@/lib/alert";
 
 type Profile = {
   id: string;
@@ -77,21 +75,6 @@ type Subscription = {
   plan_tier: string;
   plan_features: any[];
 };
-
-function isRevokedRefreshTokenError(error: unknown): boolean {
-  const value = error as { code?: string; message?: string } | null;
-  const code = String(value?.code ?? "").toLowerCase();
-  const message = String(value?.message ?? "").toLowerCase();
-  return (
-    code === "refresh_token_not_found" ||
-    code === "invalid_grant" ||
-    code === "refresh_token_already_used" ||
-    message.includes("refresh token not found") ||
-    message.includes("refresh token has been revoked") ||
-    message.includes("invalid refresh token") ||
-    message.includes("already used")
-  );
-}
 
 type AuthContextType = {
   session: Session | null;
@@ -167,8 +150,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // rejected. Keep fallback restoration single-flight to avoid a network and
   // Keystore storm racing the navigation state.
   const sessionRestoreRef = useRef<Promise<void> | null>(null);
-  const sessionNoticeShownRef = useRef(false);
-  const signOutRef = useRef<(() => Promise<void>) | null>(null);
 
   // ── Profile fetch ───────────────────────────────────────────────────────────
 
@@ -538,7 +519,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       safeRouter.replace("/(tabs)/discover");
 
       // Background: register device + ensure AI chat exists
-      registerDeviceSession(newSession.user.id).catch(() => {});
       supabase
         .from("profiles")
         .select("display_name")
@@ -614,26 +594,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setTimeout(() => { isUserSigningOut.current = false; }, 3000);
     }
   }, [user]);
-  signOutRef.current = signOut;
-
-  const notifyRevokedSession = useCallback(() => {
-    if (sessionNoticeShownRef.current) return;
-    sessionNoticeShownRef.current = true;
-    showAlert(
-      "New sign-in detected",
-      "This account was signed in on another device. This session is no longer valid, so chats and account data cannot be loaded here.",
-      [
-        {
-          text: "Log in again",
-          style: "default",
-          onPress: () => {
-            void signOutRef.current?.();
-          },
-        },
-      ],
-    );
-  }, []);
-
   // ── Bootstrap ────────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -804,14 +764,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 supabase.auth
                   .refreshSession({ refresh_token: primaryAccount.refreshToken })
                   .then(({ error }) => {
-                    if (error && isRevokedRefreshTokenError(error)) {
-                      notifyRevokedSession();
-                    }
                     // On success: TOKEN_REFRESHED fires and replaces the synthetic
                     // session with a real one — no further action needed here.
                   })
                   .catch((error) => {
-                    if (isRevokedRefreshTokenError(error)) notifyRevokedSession();
                   });
               } else {
                 // SecureStore was temporarily unavailable (Android Keystore race on
@@ -830,7 +786,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     });
                     // On success: TOKEN_REFRESHED fires and updates session state.
                   } catch (error) {
-                    if (isRevokedRefreshTokenError(error)) notifyRevokedSession();
                   }
                 }, 3000);
               }
@@ -912,7 +867,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   });
                   // On success: TOKEN_REFRESHED fires and updates session state.
                 } catch (error) {
-                  if (isRevokedRefreshTokenError(error)) notifyRevokedSession();
                 }
                 // On failure: user keeps their current (synthetic) session and
                 // cached data — they stay in the shell until they sign in again.
@@ -960,7 +914,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           refreshToken: newSession.refresh_token,
         }).catch(() => {});
 
-        registerDeviceSession(newSession.user.id).catch(() => {});
         fetchProfile(
           newSession.user.id,
           () =>
@@ -989,7 +942,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       offlineSyncTask?.cancel?.();
       listener.subscription.unsubscribe();
     };
-  }, [notifyRevokedSession]);
+  }, []);
 
   // Save current session tokens whenever the live session changes.
   // Guarded by isSwitchingRef / isLinkingRef so it never fires mid-switch.
