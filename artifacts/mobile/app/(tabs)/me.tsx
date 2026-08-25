@@ -26,6 +26,7 @@ import QRPosterSheet from "@/components/ui/QRPosterSheet";
 import Colors from "@/constants/colors";
 import { showAlert } from "@/lib/alert";
 import { getCachedProfileSync, isOnline, onConnectivityChange } from "@/lib/offlineStore";
+import { getLocalProfile } from "@/lib/storage/localProfile";
 import { showToast } from "@/lib/toast";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -197,7 +198,8 @@ export default function MeScreen() {
     const cached = getCachedProfileSync();
     return cached && user?.id && cached.id === user.id ? cached : null;
   }, [user?.id]);
-  const profile = authProfile ?? cachedProfile;
+  const [localProfile, setLocalProfile] = useState<any>(null);
+  const profile = authProfile ?? cachedProfile ?? localProfile;
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [qrPosterOpen, setQrPosterOpen] = useState(false);
 
@@ -209,6 +211,25 @@ export default function MeScreen() {
   const [followingCount, setFollowingCount] = useState(0);
   const [postCount, setPostCount] = useState(0);
   const insets = useSafeAreaInsets();
+
+  // MMKV is the instant path, but SQLite is the durable fallback used by
+  // Discover-style offline hydration. Do not show a reconnect warning while
+  // this second local store is still being read.
+  useEffect(() => {
+    let cancelled = false;
+    if (!user?.id || cachedProfile) {
+      setLocalProfile(null);
+      return;
+    }
+    getLocalProfile(user.id)
+      .then((stored) => {
+        if (!cancelled && stored) setLocalProfile(stored);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, cachedProfile]);
 
   type PurchaseInfo = { handle: string; price: number; purchasedAt: string; sellerHandle: string | null };
   const [purchasePopup, setPurchasePopup] = useState<PurchaseInfo | null>(null);
@@ -349,15 +370,7 @@ export default function MeScreen() {
   if (!profile && user) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32, gap: 12 }}>
-          <Ionicons name="person-circle-outline" size={52} color={colors.textMuted} />
-          <Text style={{ color: colors.text, fontSize: 17, fontFamily: "Inter_600SemiBold", textAlign: "center" }}>
-            Your profile is available when you reconnect
-          </Text>
-          <Text style={{ color: colors.textMuted, fontSize: 13, lineHeight: 19, textAlign: "center" }}>
-            We could not find a saved profile on this device yet. Your account and cached chats are still safe.
-          </Text>
-        </View>
+        <MeTabSkeleton />
       </View>
     );
   }

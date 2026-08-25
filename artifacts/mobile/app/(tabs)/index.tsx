@@ -642,30 +642,12 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   }, [fabAnim]);
 
   const loadChatsImpl = useCallback(async (background = false) => {
-    // Never reconcile the server list while AuthContext is using its cached
-    // startup identity. A request made before the real session is restored
-    // can return no rows and incorrectly erase the visible chat list.
     if (!user) return;
-    if (!hasVerifiedSession) {
-      // AuthContext can briefly lag behind Supabase's native session storage
-      // after a sign-in or a cold start on a new device. Check the authoritative
-      // session directly so the chat list does not stay on its skeleton forever.
-      // A cached/synthetic user alone is never enough to authorize this query.
-      let liveSessionUserId: string | null = null;
-      try {
-        const { data } = await supabase.auth.getSession();
-        liveSessionUserId = data.session?.user?.id ?? null;
-      } catch {
-        liveSessionUserId = null;
-      }
-      if (liveSessionUserId !== user.id) {
-        setSessionRestoring(true);
-        setLoading(false);
-        setRefreshing(false);
-        return;
-      }
-      setSessionRestoring(false);
-    }
+    const offline = !isOnline();
+
+    // Offline users must be able to open the durable chat cache even when the
+    // auth token has not yet been restored. Session verification is only
+    // required before a server request, never before local hydration.
     // Native SQLite can be delayed by migrations on a release first launch.
     // Cache hydration is an enhancement, never a reason to block Supabase.
     const localNotes = await waitForRequest(
@@ -697,7 +679,8 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       }
     }
 
-    if (!isOnline()) {
+    if (offline) {
+      setSessionRestoring(false);
       setChats((prev) => {
         const withoutNotes = prev.filter((item) => !isLocalNotesId(item.id));
         return localNotes ? [...withoutNotes, localNotesToChatItem(localNotes)] : withoutNotes;
@@ -705,6 +688,27 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       setLoading(false);
       setRefreshing(false);
       return;
+    }
+
+    // AuthContext can briefly lag behind Supabase's native session storage
+    // after a sign-in or a cold start on a new device. Check the authoritative
+    // session directly before the server query, but only after local hydration
+    // has already made cached chats visible.
+    if (!hasVerifiedSession) {
+      let liveSessionUserId: string | null = null;
+      try {
+        const { data } = await supabase.auth.getSession();
+        liveSessionUserId = data.session?.user?.id ?? null;
+      } catch {
+        liveSessionUserId = null;
+      }
+      if (liveSessionUserId !== user.id) {
+        setSessionRestoring(true);
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+      setSessionRestoring(false);
     }
 
     const unreadExcludedIds = [
@@ -992,7 +996,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       setSessionRestoring(false);
       return;
     }
-    setSessionRestoring(true);
     let disposed = false;
     let failedChecks = 0;
     const promptRelogin = () => {
@@ -1012,6 +1015,11 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       );
     };
     const retry = async () => {
+      if (!isOnline()) {
+        setSessionRestoring(false);
+        return;
+      }
+      setSessionRestoring(true);
       try {
         const { data } = await supabase.auth.getSession();
         if (disposed) return;
@@ -1027,11 +1035,19 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         // The next interval retries after a transient native/network failure.
       }
     };
-    void retry();
+    if (isOnline()) void retry();
     const timer = setInterval(() => void retry(), 2000);
+    const unsubscribe = onConnectivityChange((online) => {
+      if (!online) {
+        setSessionRestoring(false);
+        return;
+      }
+      void retry();
+    });
     return () => {
       disposed = true;
       clearInterval(timer);
+      unsubscribe();
     };
   }, [user?.id, hasVerifiedSession, loadChats]);
 
@@ -1859,7 +1875,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
                   <View key={pageKey} style={{ flex: 1, paddingTop: 0 }}>
                     {loading ? (
                       <View style={{ padding: 8 }}>{[1,2,3,4,5,6].map(i => <ChatRowSkeleton key={i} />)}</View>
-                    ) : sessionRestoring ? (
+                    ) : sessionRestoring && pageChats.length === 0 ? (
                       <View style={styles.center}>
                         <ActivityIndicator color={colors.accent} />
                         <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 14 }]}>
@@ -2006,7 +2022,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
           <View style={{ flex: 1, paddingTop: 0 }}>
             {loading ? (
               <View style={{ padding: 8 }}>{[1,2,3,4,5,6].map(i => <ChatRowSkeleton key={i} />)}</View>
-            ) : sessionRestoring ? (
+                    ) : sessionRestoring && filtered.length === 0 ? (
               <View style={styles.center}>
                 <ActivityIndicator color={colors.accent} />
                 <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 14 }]}>
