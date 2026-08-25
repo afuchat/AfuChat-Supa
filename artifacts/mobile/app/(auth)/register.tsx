@@ -149,7 +149,7 @@ function EmailVerifyModal({ visible, email, onClose, onVerified, isDark, accent 
       const { error } = await supabase.auth.resend({ type: "signup", email });
       if (error) throw error;
     } catch (error: any) {
-      showAlert("Could not send code", error);
+      showAlert("Could not send code", error?.message || "We couldn't send a verification code. Please try again.");
     } finally {
       setSending(false);
     }
@@ -248,7 +248,16 @@ export default function SignUpScreen() {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({ email: e, password });
-      if (error) { showAlert("Sign up failed", error); return; }
+      if (error) {
+        const message = error.message || "We couldn't create your account. Please try again.";
+        if (/already registered|already exists|user already/i.test(message)) {
+          showAlert("Account exists", "An account with this email already exists. Please sign in instead.");
+          router.replace("/(auth)/login");
+        } else {
+          showAlert("Sign up failed", message);
+        }
+        return;
+      }
       if (!data.user) {
         showAlert("Sign up failed", "No account was created. Please try again.");
         return;
@@ -261,7 +270,7 @@ export default function SignUpScreen() {
       if (!data.session) { setVerifyEmail(e); setVerifyVisible(true); }
       else router.replace({ pathname: "/onboarding", params: { userId: data.user.id } } as any);
     } catch (error: any) {
-      showAlert("Sign up failed", error);
+      showAlert("Sign up failed", error?.message || "We couldn't create your account. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
