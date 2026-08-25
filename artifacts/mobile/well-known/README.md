@@ -77,6 +77,6 @@ adb shell pm verify-app-links --re-verify com.afuchat.mobile
 ## 4. What was changed in the app
 
 - `app.json` → `android.intentFilters`: added a second filter with `autoVerify: true` for `https://afuchat.com/*` and `https://www.afuchat.com/*`
-- `app.json` → `ios`: added `bundleIdentifier: "com.afuchat.afuapp"` and `associatedDomains: ["applinks:afuchat.com", "applinks:www.afuchat.com"]`
+- `app.json` → `ios`: added `bundleIdentifier: "com.afuchat.mobile"` and `associatedDomains: ["applinks:afuchat.com", "applinks:www.afuchat.com"]`
 
 A new EAS build is required for these changes to take effect in the installed app.

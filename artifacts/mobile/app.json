@@ -203,7 +203,7 @@
       "favicon": "./assets/images/icon.png"
     },
     "ios": {
-      "bundleIdentifier": "com.afuchat.afuapp",
+      "bundleIdentifier": "com.afuchat.mobile",
       "buildNumber": "2.2.23",
       "associatedDomains": [
         "applinks:afuchat.com",
