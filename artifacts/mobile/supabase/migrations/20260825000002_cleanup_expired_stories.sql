@@ -43,8 +43,6 @@ REVOKE ALL ON FUNCTION public.cleanup_expired_stories() FROM PUBLIC;
 
 -- Run frequently enough that an expired story does not remain available for
 -- more than a short cleanup window after its 24-hour lifetime.
-CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA extensions;
-
 DO $cleanup_job$
 DECLARE
   existing_job_id bigint;
