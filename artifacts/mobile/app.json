@@ -164,6 +164,7 @@
           }
         }
       ],
+    "./plugins/withAndroidAbiSplits",
       "./plugins/withProguardRules",
       "expo-secure-store",
       "expo-sqlite",
