@@ -7,12 +7,21 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:148950951890:android:67ef3a696d4562f4a28a0b",
+        "mobilesdk_app_id": "1:148950951890:android:24bc99b5d163d20fa28a0b",
         "android_client_info": {
-          "package_name": "com.afu.app"
+          "package_name": "com.afuchat.mobile"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "148950951890-elmsr4f9mlrut199jqq2n0d318ufj2ps.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.afuchat.mobile",
+            "certificate_hash": "31c52eb7d9d956cd63a69217b5e25ebf4d4c6f45"
+          }
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAhktqKzSv41hj2dNRAfGMu0CUusV2HrhE"
