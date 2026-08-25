@@ -55,6 +55,11 @@ export default function GoogleOneTap({
 
   useEffect(() => {
     if (Platform.OS !== "web" || !GOOGLE_WEB_CLIENT_ID || startedRef.current) return;
+    // Replit's preview embeds the app in a cross-origin iframe. Google
+    // Identity Services cannot use FedCM there because the parent document
+    // does not grant identity-credentials-get, so avoid initializing GIS in
+    // that environment. Top-level production web pages still use One Tap.
+    if (window.top !== window.self) return;
     startedRef.current = true;
     let cancelled = false;
 
@@ -70,7 +75,10 @@ export default function GoogleOneTap({
           },
           auto_select: false,
           cancel_on_tap_outside: true,
-          use_fedcm_for_prompt: true,
+          // Replit's proxied preview runs in an iframe without the
+          // identity-credentials-get permission policy. Standard One Tap
+          // works without FedCM and avoids a noisy NotAllowedError there.
+          use_fedcm_for_prompt: false,
         });
         window.google.accounts.id.prompt();
       })
