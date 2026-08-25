@@ -28,7 +28,7 @@ export const SUPABASE_EDGE_URL: string = `${SUPABASE_URL}/functions/v1`;
 // by the native Google credential flow as its server/web audience.
 export const GOOGLE_WEB_CLIENT_ID: string =
   (process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "").trim() ||
-  "148950951890-elmsr4f9mlrut199jqq2n0d318ufj2ps.apps.googleusercontent.com";
+  "148950951890-hejlh2vvpeb7tg7d8haj6om52pf86ig6.apps.googleusercontent.com";
 
 /**
  * Engagera API key. Provider keys can carry quota or billing privileges even
