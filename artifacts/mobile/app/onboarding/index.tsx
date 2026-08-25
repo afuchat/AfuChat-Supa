@@ -566,6 +566,7 @@ export default function OnboardingScreen() {
               {(handleStatus === "taken" || handleStatus === "listed") && <Ionicons name="close-circle" size={20} color="#FF3B30" style={{ marginRight: 8 }} />}
             </View>
             {handleStatus === "invalid_format" && <Text style={st.errorHint}>Use only letters, numbers, and underscores (min 3 chars)</Text>}
+            {handleStatus === "taken" && <Text style={st.errorHint}>Username already taken</Text>}
             {handleStatus === "available" && <Text style={st.successHint}>✓ @{handle.replace(/[^a-zA-Z0-9_]/g,"").toLowerCase()} is available</Text>}
             {handleStatus === "taken" && takenHandleProfile && (
               <View style={[st.takenCard, { backgroundColor: colors.inputBg, borderColor: "#FF3B30" }]}>
@@ -1068,7 +1069,7 @@ const st = StyleSheet.create({
   field: {
     flexDirection: "row",
     alignItems:    "center",
-    borderRadius:  12,
+    borderRadius:  999,
     paddingHorizontal: 14,
     height: 52,
   },
@@ -1085,16 +1086,16 @@ const st = StyleSheet.create({
   countryName:  { fontSize: 16, fontFamily: "Inter_400Regular", flex: 1 },
   placeholderText: { fontSize: 16, fontFamily: "Inter_400Regular", flex: 1 },
   phoneRow:     { flexDirection: "row", gap: 8 },
-  dialCodeBox:  { flexDirection: "row", alignItems: "center", borderRadius: 12, paddingHorizontal: 12, height: 52, minWidth: 90 },
+  dialCodeBox:  { flexDirection: "row", alignItems: "center", borderRadius: 999, paddingHorizontal: 12, height: 52, minWidth: 90 },
   dialCodeText: { fontSize: 15, fontFamily: "Inter_500Medium" },
-  phoneField:   { flexDirection: "row", alignItems: "center", borderRadius: 12, paddingHorizontal: 14, height: 52 },
+  phoneField:   { flexDirection: "row", alignItems: "center", borderRadius: 999, paddingHorizontal: 14, height: 52 },
 
   // DOB / gender
   dobRow:          { flexDirection: "row", alignItems: "center", gap: 8 },
-  dobSelector:     { height: 52, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderRadius: 12, paddingHorizontal: 14 },
+  dobSelector:     { height: 52, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderRadius: 999, paddingHorizontal: 14 },
   dobSelectorText: { fontSize: 15, fontFamily: "Inter_500Medium" },
   genderRow:       { flexDirection: "row", gap: 12 },
-  genderBtn:       { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 16, borderRadius: 14 },
+  genderBtn:       { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, minHeight: 52, paddingHorizontal: 16, borderRadius: 999 },
   genderText:      { fontSize: 16, fontFamily: "Inter_600SemiBold" },
 
   // Interests
@@ -1145,7 +1146,7 @@ const st = StyleSheet.create({
   modalContainer: { flex: 1 },
   modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 16 },
   modalTitle:  { fontSize: 18, fontFamily: "Inter_600SemiBold" },
-  searchBox:   { flexDirection: "row", alignItems: "center", margin: 16, borderRadius: 12, paddingHorizontal: 12, height: 44, gap: 8 },
+  searchBox:   { flexDirection: "row", alignItems: "center", margin: 16, borderRadius: 999, paddingHorizontal: 12, height: 44, gap: 8 },
   searchInput: { flex: 1, fontSize: 16, fontFamily: "Inter_400Regular", height: 44 },
   countryItem: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
   countryItemFlag: { fontSize: 24 },
