@@ -20,6 +20,10 @@
             "package_name": "com.afuchat.mobile",
             "certificate_hash": "31c52eb7d9d956cd63a69217b5e25ebf4d4c6f45"
           }
+        },
+        {
+          "client_id": "148950951890-hejlh2vvpeb7tg7d8haj6om52pf86ig6.apps.googleusercontent.com",
+          "client_type": 3
         }
       ],
       "api_key": [
@@ -29,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "148950951890-hejlh2vvpeb7tg7d8haj6om52pf86ig6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
