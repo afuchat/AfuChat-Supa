@@ -2,7 +2,7 @@
   "expo": {
     "name": "AfuChat",
     "slug": "afuchat",
-    "version": "2.2.23",
+    "version": "0.0.1",
     "icon": "./assets/images/icon.png",
     "scheme": "afuchat",
     "orientation": "default",
@@ -196,7 +196,7 @@
     "experiments": {
       "typedRoutes": true
     },
-    "owner": "mindsetradio",
+    "owner": "afuchat-2",
     "web": {
       "bundler": "metro",
       "output": "single",
@@ -205,16 +205,14 @@
     "ios": {
       "bundleIdentifier": "com.afuchat.mobile",
       "googleServicesFile": "./GoogleService-Info.plist",
-      "buildNumber": "2.2.23",
+      "buildNumber": "1",
       "associatedDomains": [
         "applinks:afuchat.com",
         "applinks:www.afuchat.com"
       ]
     },
     "extra": {
-      "eas": {
-        "projectId": "7efbd70c-e8d4-485d-88a9-d05e3d34f280"
-      }
+      "eas": {}
     }
   }
 }
