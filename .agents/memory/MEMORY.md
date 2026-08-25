@@ -78,3 +78,4 @@
 - [Profile username trigger timing](profile-username-trigger-timing.md) — ownership reservation must run after profile insert because owned_usernames references profiles.
 - [Credential attachment handling](credential-attachment-handling.md) — uploaded credential files are not automatically Replit Secrets; the secure secret form requires their text value, never chat.
 - [Android package identity migration](android-package-identity.md) — changing the application ID requires matching Firebase config and refreshed App Links signing fingerprints.
+- [Public legal pages](public-legal-pages.md) — public policy routes share one web renderer; keep canonical URLs stable and render contact emails as real links.

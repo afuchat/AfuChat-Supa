@@ -32,6 +32,7 @@ const PAGES: Record<
     title: string;
     intro: string;
     icon: keyof typeof Ionicons.glyphMap;
+    updated?: string;
     sections: Section[];
   }
 > = {
@@ -213,6 +214,7 @@ const PAGES: Record<
     intro:
       "AfuChat has zero tolerance for child sexual abuse and exploitation (CSAE). These standards explain what we prohibit, how to report concerns, and how we respond to protect children.",
     icon: "shield-checkmark-outline",
+    updated: "Last updated: August 25, 2026",
     sections: [
       {
         title: "Our zero-tolerance standard",
@@ -264,13 +266,34 @@ function navigateTo(path: string) {
 }
 
 function LegalSection({ section, accent }: { section: Section; accent: string }) {
+  const renderParagraph = (paragraph: string) => {
+    const parts = paragraph.split(/(support@afuchat\.com|hello@afuchat\.com)/g);
+    return (
+      <Text style={styles.paragraph}>
+        {parts.map((part, index) =>
+          part === "support@afuchat.com" || part === "hello@afuchat.com" ? (
+            <Text
+              key={`${part}-${index}`}
+              style={[styles.emailLink, { color: accent }]}
+              onPress={() => Linking.openURL(`mailto:${part}`).catch(() => {})}
+              accessibilityRole="link"
+              accessibilityLabel={`Email ${part}`}
+            >
+              {part}
+            </Text>
+          ) : (
+            part
+          ),
+        )}
+      </Text>
+    );
+  };
+
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{section.title}</Text>
       {section.paragraphs?.map((paragraph) => (
-        <Text key={paragraph} style={styles.paragraph}>
-          {paragraph}
-        </Text>
+        <React.Fragment key={paragraph}>{renderParagraph(paragraph)}</React.Fragment>
       ))}
       {section.bullets && (
         <View style={styles.bulletList}>
@@ -333,7 +356,7 @@ export default function LegalPage({ kind }: { kind: LegalPageKind }) {
           <Text style={styles.eyebrow}>{page.eyebrow}</Text>
           <Text style={[styles.title, compact && styles.titleCompact]}>{page.title}</Text>
           <Text style={styles.intro}>{page.intro}</Text>
-          <Text style={styles.updated}>Last updated: August 14, 2026</Text>
+          <Text style={styles.updated}>{page.updated ?? "Last updated: August 14, 2026"}</Text>
         </View>
       </View>
 
@@ -483,6 +506,10 @@ const styles = StyleSheet.create({
     lineHeight: 25,
     fontFamily: "Inter_400Regular",
     marginBottom: 11,
+  },
+  emailLink: {
+    textDecorationLine: "underline",
+    fontFamily: "Inter_600SemiBold",
   },
   bulletList: { gap: 11, marginTop: 2 },
   bulletRow: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
