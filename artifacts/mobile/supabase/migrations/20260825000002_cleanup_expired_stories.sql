@@ -1,39 +1,21 @@
--- Remove expired stories and their uploaded media automatically.
--- Stories are intentionally retained for only 24 hours by the client, but
--- client-side filtering must not be the sole data-retention control.
+-- Schedule the cleanup-expired-stories Edge Function. It removes both the
+-- database rows and Storage objects because storage.objects cannot be deleted
+-- directly from SQL on Supabase.
 
 CREATE OR REPLACE FUNCTION public.cleanup_expired_stories()
 RETURNS integer
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, storage
+SET search_path = public
 AS $$
 DECLARE
   deleted_count integer;
 BEGIN
-  WITH expired AS MATERIALIZED (
-    SELECT
-      id,
-      substring(media_url FROM '/stories/(.*)$') AS object_name
-    FROM public.stories
-    WHERE expires_at IS NOT NULL
-      AND expires_at <= now()
-  ),
-  deleted_stories AS (
-    DELETE FROM public.stories AS s
-    USING expired AS e
-    WHERE s.id = e.id
-    RETURNING s.id
-  ),
-  deleted_objects AS (
-    DELETE FROM storage.objects AS o
-    USING expired AS e
-    WHERE o.bucket_id = 'stories'
-      AND e.object_name IS NOT NULL
-      AND o.name = e.object_name
-    RETURNING o.id
-  )
-  SELECT count(*) INTO deleted_count FROM deleted_stories;
+  DELETE FROM public.stories
+   WHERE expires_at IS NOT NULL
+     AND expires_at <= now();
+
+  GET DIAGNOSTICS deleted_count = ROW_COUNT;
 
   RETURN COALESCE(deleted_count, 0);
 END;
@@ -59,7 +41,13 @@ BEGIN
   PERFORM cron.schedule(
     'cleanup-expired-stories',
     '*/15 * * * *',
-    'SELECT public.cleanup_expired_stories();'
+    $cron$
+      SELECT net.http_post(
+        url := 'https://rhnsjqqtdzlkvqazfcbg.supabase.co/functions/v1/cleanup-expired-stories',
+        headers := '{"Content-Type":"application/json"}'::jsonb,
+        body := '{}'::jsonb
+      );
+    $cron$
   );
 END;
 $cleanup_job$;
