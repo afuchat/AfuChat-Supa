@@ -360,7 +360,9 @@ export default function PostDetailScreen() {
                   is_verified: false,
                   is_organization_verified: page?.is_verified ?? false,
                 },
-                post_images: [],
+                post_images: orgPost.image_url
+                  ? [{ image_url: orgPost.image_url, display_order: 0 }]
+                  : [],
               }
             : null;
         } else {
@@ -522,7 +524,7 @@ export default function PostDetailScreen() {
         if (error) throw error;
       } catch { setLiked(false); setLikeCount((n) => Math.max(0, n - 1)); }
     }
-  }, [user, post, liked, heartScale]);
+  }, [user, post, liked, heartScale, org]);
 
   // ── Bookmark toggle ───────────────────────────────────────────────────────────
   const toggleBookmark = useCallback(async () => {

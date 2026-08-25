@@ -213,23 +213,7 @@
     },
     "extra": {
       "eas": {
-        "build": {
-          "experimental": {
-            "ios": {
-              "appExtensions": [
-                {
-                  "targetName": "ShareExtension",
-                  "bundleIdentifier": "com.afuchat.mobile.share-extension",
-                  "entitlements": {
-                    "com.apple.security.application-groups": [
-                      "group.com.afuchat.mobile"
-                    ]
-                  }
-                }
-              ]
-            }
-          }
-        },
+        "build": {},
         "projectId": "a3564af6-6f1d-45c2-847e-0cd0ed6529a8"
       },
       "router": {}

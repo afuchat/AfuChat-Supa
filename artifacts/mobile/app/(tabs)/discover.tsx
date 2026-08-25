@@ -672,10 +672,6 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
   }, [preferredLang, item.content, item.language_code]);
 
   function openPost() {
-    if (item.org_page_id) {
-      safeRouter.push(`/company/${item.org_slug}` as any);
-      return;
-    }
     if (item.post_type === "video") {
       safeRouter.push({ pathname: "/video/[id]", params: { id: item.id } });
       return;
@@ -685,7 +681,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
       return;
     }
     // All other post types (text, image, etc.) → dedicated post detail page.
-    safeRouter.push({ pathname: "/post/[id]", params: { id: item.id } } as any);
+    safeRouter.push({ pathname: "/post/[id]", params: { id: item.id, ...(item.org_page_id ? { org: "1" } : {}) } } as any);
   }
 
   function capturePostImage() {
@@ -735,7 +731,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
             />
           )}
           {/* ── Header ── */}
-          <View style={[styles.cardHeader, (!item.org_page_id && !item.profile.bio) && { paddingBottom: 2 }]}>
+          <View style={[styles.cardHeader, !item.profile.bio && { paddingBottom: 2 }]}>
             {item.org_page_id ? (
               <TouchableOpacity
                 onPress={() => safeRouter.push(`/company/${item.org_slug}` as any)}
@@ -772,44 +768,12 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
               </View>
             )}
             <View style={{ flex: 1, gap: 0, paddingTop: 10 }}>
-              {item.org_page_id ? (
-                /* ── Org page: keep display name + type badge inline ── */
-                <>
-                  <View style={[styles.nameRow, { flex: 1 }]}>
-                    <TouchableOpacity onPress={() => safeRouter.push(`/company/${item.org_slug}` as any)} activeOpacity={0.7}>
-                      <UserName userId={item.author_id} name={item.profile.display_name} style={[styles.cardHandle, { color: colors.text, fontSize: 13, flexShrink: 1 }]} numberOfLines={1} />
-                    </TouchableOpacity>
-                    {item.org_verified ? <VerifiedBadge isVerified={false} isOrganizationVerified size={12} /> : null}
-                    <View style={{ backgroundColor: colors.accent + "15", borderRadius: 4, paddingHorizontal: 5, paddingVertical: 1 }}>
-                      <Text style={{ fontSize: 9.5, fontFamily: "Inter_600SemiBold", color: colors.accent, textTransform: "capitalize" }}>
-                        {item.org_type?.replace(/\s*\/.*$/, "") || "Company"}
-                      </Text>
-                    </View>
-                    <View style={{ flex: 1 }} />
-                    <TouchableOpacity
-                      style={[styles.followBtn, { backgroundColor: colors.accent + "15", borderWidth: 1, borderColor: colors.accent + "30", marginRight: 6 }]}
-                      onPress={() => safeRouter.push(`/company/${item.org_slug}` as any)}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name="business" size={13} color={colors.accent} />
-                      <Text style={[styles.followBtnText, { color: colors.accent }]}>View Page</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setMenuVisible(true); }}
-                      hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
-                    >
-                      <Ionicons name="ellipsis-vertical" size={18} color={colors.textMuted} />
-                    </TouchableOpacity>
-                  </View>
-                </>
-              ) : (
-                /* ── Person: bold display name / @handle subtitle / bio ── */
-                <>
+              <>
                   <View style={[styles.nameRow, { flex: 1 }]}>
                   <UserName userId={item.author_id} name={item.profile.display_name || item.profile.handle} style={[styles.cardHandle, { color: colors.text, fontSize: 13, fontFamily: "Inter_700Bold", flexShrink: 1 }]} numberOfLines={1} />
                   <VerifiedBadge isVerified={item.is_verified} isOrganizationVerified={item.is_organization_verified} size={12} />
                     <View style={{ flex: 1 }} />
-                    {showFollowBtn && (
+                    {showFollowBtn && !item.org_page_id && (
                       <TouchableOpacity
                         style={{
                           backgroundColor: isDark ? "#ffffff" : "#0f0f0f",
@@ -834,8 +798,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
                   <Text style={{ fontSize: 12, fontFamily: "Inter_400Regular", color: colors.textMuted, marginTop: 1 }} numberOfLines={1}>
                     @{item.profile.handle} · {compactTime(item.created_at)}
                   </Text>
-                </>
-              )}
+              </>
             </View>
           </View>
 
@@ -2080,10 +2043,25 @@ export default function DiscoverScreen() {
       try {
         const orgData = _orgData;
         if (orgData && orgData.length > 0) {
+          const orgIds = orgData.map((op: any) => op.id);
+          const [{ data: orgReplies }, { data: orgLikes }] = await Promise.all([
+            supabase.from("post_replies").select("post_id").in("post_id", orgIds),
+            user
+              ? supabase.from("post_acknowledgments").select("post_id").in("post_id", orgIds).eq("user_id", user.id)
+              : Promise.resolve({ data: [] }),
+          ]);
+          const orgReplyCounts: Record<string, number> = {};
+          for (const reply of (orgReplies || [])) {
+            orgReplyCounts[reply.post_id] = (orgReplyCounts[reply.post_id] || 0) + 1;
+          }
+          const orgLiked = new Set((orgLikes || []).map((like: any) => like.post_id));
           orgPostItems = orgData.map((op: any) => {
             const pg = op.organization_pages;
             return {
-              id: `org_${op.id}`,
+              // Organization posts use the same post-id namespace as regular
+              // posts so likes, replies, bookmarks, and detail routes behave
+              // identically.
+              id: op.id,
               author_id: op.author_id || pg?.id || "",
               content: op.content || "",
               image_url: op.image_url || null,
@@ -2098,9 +2076,9 @@ export default function DiscoverScreen() {
                 handle: pg?.slug || "",
                 avatar_url: pg?.logo_url || null,
               },
-              liked: false,
+              liked: orgLiked.has(op.id),
               likeCount: op.likes || 0,
-              replyCount: 0,
+              replyCount: orgReplyCounts[op.id] || 0,
               score: 50,
               bookmarked: false,
               post_type: "post",
@@ -2611,43 +2589,6 @@ export default function DiscoverScreen() {
     const post = postsRef.current.find((p) => p.id === postId);
     if (!post) return;
 
-    // Org page posts use a different table — update `likes` int column directly
-    if (postId.startsWith("org_")) {
-      const realId = postId.slice(4);
-      if (post.liked) {
-        // Optimistic update
-        setPosts((prev) =>
-          prev.map((p) => p.id === postId ? { ...p, liked: false, likeCount: Math.max(0, p.likeCount - 1) } : p)
-        );
-        const { error } = await supabase
-          .from("organization_page_posts")
-          .update({ likes: Math.max(0, post.likeCount - 1) })
-          .eq("id", realId);
-        if (error) {
-          // Revert on failure
-          setPosts((prev) =>
-            prev.map((p) => p.id === postId ? { ...p, liked: true, likeCount: p.likeCount + 1 } : p)
-          );
-        }
-      } else {
-        // Optimistic update
-        setPosts((prev) =>
-          prev.map((p) => p.id === postId ? { ...p, liked: true, likeCount: p.likeCount + 1 } : p)
-        );
-        const { error } = await supabase
-          .from("organization_page_posts")
-          .update({ likes: post.likeCount + 1 })
-          .eq("id", realId);
-        if (error) {
-          // Revert on failure
-          setPosts((prev) =>
-            prev.map((p) => p.id === postId ? { ...p, liked: false, likeCount: Math.max(0, p.likeCount - 1) } : p)
-          );
-        }
-      }
-      return;
-    }
-
     if (post.liked) {
       // Optimistic update — flip instantly
       setPosts((prev) =>
@@ -2659,6 +2600,10 @@ export default function DiscoverScreen() {
         setPosts((prev) =>
           prev.map((p) => p.id === postId ? { ...p, liked: true, likeCount: p.likeCount + 1 } : p)
         );
+      } else if (post.org_page_id) {
+        await supabase.from("organization_page_posts")
+          .update({ likes: Math.max(0, post.likeCount - 1) })
+          .eq("id", post.id);
       }
     } else {
       // Optimistic update — flip instantly
@@ -2677,6 +2622,10 @@ export default function DiscoverScreen() {
         setPosts((prev) =>
           prev.map((p) => p.id === postId ? { ...p, liked: false, likeCount: Math.max(0, p.likeCount - 1) } : p)
         );
+      } else if (post.org_page_id) {
+        await supabase.from("organization_page_posts")
+          .update({ likes: post.likeCount + 1 })
+          .eq("id", post.id);
       }
     }
   }, [user, profile, postsRef]);
