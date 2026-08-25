@@ -671,15 +671,15 @@ export default function SignInScreen() {
 
           <View style={{ gap: 12, marginTop: 28 }}>
             {/* Google */}
-            <TouchableOpacity style={sc.glassBtn} onPress={handleGoogle} disabled={oauthLoading} activeOpacity={0.78}>
-              <GoogleLogo size={20} />
-              <Text style={sc.glassBtnText}>{t("Continue with Google")}</Text>
+            <TouchableOpacity style={[sc.glassBtn, oauthLoading && { opacity: 0.62 }]} onPress={handleGoogle} disabled={oauthLoading} activeOpacity={0.78}>
+              {oauthLoading ? <ActivityIndicator size="small" color={accent} /> : <GoogleLogo size={20} />}
+              <Text style={sc.glassBtnText}>{oauthLoading ? t("Signing in…") : t("Continue with Google")}</Text>
             </TouchableOpacity>
 
             {/* GitHub */}
-            <TouchableOpacity style={sc.glassBtn} onPress={handleGitHub} disabled={oauthLoading} activeOpacity={0.78}>
-              <GitHubLogo size={20} color="rgba(255,255,255,0.85)" />
-              <Text style={sc.glassBtnText}>{t("Continue with GitHub")}</Text>
+            <TouchableOpacity style={[sc.glassBtn, oauthLoading && { opacity: 0.62 }]} onPress={handleGitHub} disabled={oauthLoading} activeOpacity={0.78}>
+              {oauthLoading ? <ActivityIndicator size="small" color={accent} /> : <GitHubLogo size={20} color="rgba(255,255,255,0.85)" />}
+              <Text style={sc.glassBtnText}>{oauthLoading ? t("Signing in…") : t("Continue with GitHub")}</Text>
             </TouchableOpacity>
 
             {/* Email */}
