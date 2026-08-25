@@ -190,10 +190,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!isOnline()) {
       const cached = (await getCachedProfile()) ?? (await getLocalProfile(userId));
+      const ownedCached = cached?.id === userId ? cached : null;
       if (!isCurrent()) return null;
-      if (cached) setProfile(cached as Profile);
+      if (ownedCached) setProfile(ownedCached as Profile);
       setSubscription(null);
-      return cached as Profile | null;
+      return ownedCached as Profile | null;
     }
 
     try {
@@ -224,9 +225,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!isCurrent()) return null;
 
       if (profileData) {
+        // The durable profile is the root of the offline identity pipeline.
+        // Finish both local writes before exposing fresh profile state to
+        // dependent screens, so chats/feed can never outrun profile storage.
+        await saveLocalProfile(profileData as any);
+        await cacheProfile(profileData);
         setProfile(profileData as Profile);
-        cacheProfile(profileData);
-        saveLocalProfile(profileData as any).catch(() => {});
         updateAccountProfile(userId, {
           displayName: (profileData as any).display_name,
           handle: (profileData as any).handle,
@@ -258,8 +262,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const cached = (await getCachedProfile()) ?? (await getLocalProfile(userId));
         if (!isCurrent()) return null;
-        if (cached) setProfile(cached as Profile);
-        return cached as Profile | null;
+        const ownedCached = cached?.id === userId ? cached : null;
+        if (ownedCached) setProfile(ownedCached as Profile);
+        return ownedCached as Profile | null;
       } catch {
         return null;
       }
@@ -275,6 +280,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!prev) return prev;
       const merged = { ...prev, ...patch };
       cacheProfile(merged);
+      saveLocalProfile(merged as any).catch(() => {});
       return merged;
     });
   }
@@ -701,25 +707,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(session);
           setUser(session.user);
           setCachedUserId(session.user.id);
-          // Use synchronous MMKV read first — releases loading immediately
-          // so the UI renders from cache while the fresh profile loads in bg.
-          const cachedSync = getCachedProfileSync();
-          if (cachedSync) setProfile(cachedSync as Profile);
-           clearTimeout(safetyTimer);
+          // Hydrate the profile root before releasing the app to dependent
+          // screens. MMKV is fastest; SQLite is the durable fallback.
+          const cachedSyncRaw = getCachedProfileSync();
+          const cachedSync = cachedSyncRaw?.id === session.user.id ? cachedSyncRaw : null;
+          const durableProfile = cachedSync ? null : await getLocalProfile(session.user.id);
+          const initialProfile = cachedSync ?? durableProfile;
+          if (initialProfile) setProfile(initialProfile as Profile);
+          const refreshProfilePromise = fetchProfile(session.user.id, isCurrentBootstrap);
+          // A first-ever user has no safe local identity to fall back to.
+          // Complete the profile fetch and durable write before releasing
+          // dependent screens. Existing cached users remain instant.
+          if (!initialProfile && isOnline()) {
+            await refreshProfilePromise.catch(() => null);
+          }
+          clearTimeout(safetyTimer);
           setLoading(false);
-          // Refresh profile from Supabase in the background (non-blocking)
-           fetchProfile(session.user.id, isCurrentBootstrap)
-             .then((freshProfile) => {
-               // AI-chat provisioning is housekeeping, not boot-critical data.
-               // Avoid a fourth Supabase request competing with the first chat
-               // list/feed requests in a standalone release build.
-               setTimeout(() => {
-                 if (isCurrentBootstrap()) {
-                   ensureAfuAiChat(session.user.id, freshProfile?.display_name).catch(() => {});
-                 }
-               }, 5000);
-             })
-             .catch(() => {});
+          // Existing cached profiles refresh in the background. For a new
+          // profile this promise is already complete, so this also provisions
+          // dependent services from the durable profile result.
+          refreshProfilePromise
+            .then((freshProfile) => {
+              setTimeout(() => {
+                if (isCurrentBootstrap()) {
+                  ensureAfuAiChat(session.user.id, freshProfile?.display_name).catch(() => {});
+                }
+              }, 5000);
+            })
+            .catch(() => {});
           scheduleOfflineSync();
         } else {
           // No live session — try to stay "soft logged in" from local storage.
@@ -758,8 +773,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Publish the synchronous cache immediately. Never wait for
             // AsyncStorage/SQLite here: those reads can stall while Android is
             // offline or while the device has just unlocked.
-            const cachedSync = getCachedProfileSync();
-            if (cachedSync) setProfile(cachedSync as Profile);
+            // Profile is the root cache for this identity. Read the durable
+            // row before routing so chats and feed never become the only
+            // surviving offline data.
+            const cachedSyncRaw = getCachedProfileSync();
+            const cachedSync = cachedSyncRaw?.id === effectiveUserId ? cachedSyncRaw : null;
+            const [asyncCached, durableProfile] = await Promise.all([
+              cachedSync ? Promise.resolve(null) : getCachedProfile(),
+              cachedSync ? Promise.resolve(null) : getLocalProfile(effectiveUserId),
+            ]);
+            const initialProfile =
+              cachedSync ??
+              (asyncCached?.id === effectiveUserId ? asyncCached : null) ??
+              (durableProfile?.id === effectiveUserId ? durableProfile : null);
+            if (initialProfile) setProfile(initialProfile as Profile);
 
             // Set a synthetic user immediately so the app routes to home without
             // waiting for a network round-trip. The real session replaces it once
@@ -780,21 +807,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             // Hydrate the slower local profile cache after routing. This is
             // deliberately fire-and-forget and cannot delay chats or navigation.
-            if (!cachedSync) {
-              getCachedProfile()
-                .then((cached) => {
-                  if (isCurrentBootstrap() && cached) setProfile(cached as Profile);
-                })
-                .catch(() => {});
-              getLocalProfile(effectiveUserId)
-                .then((local) => {
-                  if (isCurrentBootstrap() && !getCachedProfileSync() && local) {
-                    setProfile(local as unknown as Profile);
-                  }
-                })
-                .catch(() => {});
-            }
-
             if (isOnline()) {
               if (primaryAccount) {
                 // Pass refresh token explicitly — Supabase's AsyncStorage may have
@@ -1069,6 +1081,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (!prev) return prev;
             const merged = { ...prev, ...incoming };
             cacheProfile(merged);
+            saveLocalProfile(merged as any).catch(() => {});
             return merged;
           });
         }
