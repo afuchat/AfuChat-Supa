@@ -75,5 +75,6 @@
 - [TypeScript typecheck heap](typescript-typecheck-heap.md) — full mobile typechecks need a larger Node heap than the default in this workspace.
 - [Conservative dead-code audits](cleanup-audit.md) — trace indirect runtime imports and registries before deleting modules that look unreferenced.
 - [Username reservation security](username-reservation-security.md) — database claim RPC and profile trigger are authoritative; client availability checks are advisory only.
+- [Profile username trigger timing](profile-username-trigger-timing.md) — ownership reservation must run after profile insert because owned_usernames references profiles.
 - [Credential attachment handling](credential-attachment-handling.md) — uploaded credential files are not automatically Replit Secrets; the secure secret form requires their text value, never chat.
 - [Android package identity migration](android-package-identity.md) — changing the application ID requires matching Firebase config and refreshed App Links signing fingerprints.
