@@ -145,8 +145,14 @@ function EmailVerifyModal({ visible, email, onClose, onVerified, isDark, accent 
 
   async function sendCode() {
     setSending(true);
-    await supabase.auth.resend({ type: "signup", email });
-    setSending(false);
+    try {
+      const { error } = await supabase.auth.resend({ type: "signup", email });
+      if (error) throw error;
+    } catch (error: any) {
+      showAlert("Could not send code", error?.message || "Please try again.");
+    } finally {
+      setSending(false);
+    }
   }
 
   async function verify() {
@@ -240,10 +246,13 @@ export default function SignUpScreen() {
     if (!termsOk) return showAlert("Terms required", "You must agree to the Terms of Service and Privacy Policy.");
     if (password.length < 8) return showAlert("Password too short", "Password must be at least 8 characters.");
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({ email: e, password });
-    setLoading(false);
-    if (error) { showAlert("Sign up failed", error.message); return; }
-    if (data.user) {
+    try {
+      const { data, error } = await supabase.auth.signUp({ email: e, password });
+      if (error) { showAlert("Sign up failed", error.message); return; }
+      if (!data.user) {
+        showAlert("Sign up failed", "No account was created. Please try again.");
+        return;
+      }
       if (data.user.identities && data.user.identities.length === 0) {
         showAlert("Account exists", "An account with this email already exists. Please sign in instead.");
         router.replace("/(auth)/login"); return;
@@ -251,6 +260,10 @@ export default function SignUpScreen() {
       setSignupUserId(data.user.id);
       if (!data.session) { setVerifyEmail(e); setVerifyVisible(true); }
       else router.replace({ pathname: "/onboarding", params: { userId: data.user.id } } as any);
+    } catch (error: any) {
+      showAlert("Sign up failed", error?.message || "Network error. Please try again.");
+    } finally {
+      setLoading(false);
     }
   }
 

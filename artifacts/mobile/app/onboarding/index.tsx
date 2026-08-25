@@ -116,11 +116,11 @@ export default function OnboardingScreen() {
 
   const [displayName, setDisplayName] = useState("");
   const [handle, setHandle] = useState("");
-  const [handleStatus, setHandleStatus] = useState<"idle"|"checking"|"available"|"owned"|"listed"|"taken"|"invalid_format">("idle");
+  const [handleStatus, setHandleStatus] = useState<"idle"|"checking"|"available"|"owned"|"listed"|"taken"|"invalid_format"|"error">("idle");
   const [listedHandle, setListedHandle] = useState<{ username: string; price: number; listing_id: string } | null>(null);
   const handleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const [phoneAvailStatus, setPhoneAvailStatus] = useState<"idle"|"checking"|"available"|"taken">("idle");
+  const [phoneAvailStatus, setPhoneAvailStatus] = useState<"idle"|"checking"|"available"|"taken"|"error">("idle");
   const phoneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [takenHandleProfile, setTakenHandleProfile] = useState<{ display_name: string; avatar_url: string | null; handle: string } | null>(null);
   const [takenPhoneProfile, setTakenPhoneProfile] = useState<{ display_name: string; avatar_url: string | null; handle: string } | null>(null);
@@ -219,20 +219,24 @@ export default function OnboardingScreen() {
     setTakenHandleProfile(null);
     setListedHandle(null);
     handleTimerRef.current = setTimeout(async () => {
-      const result = await checkUsernameAvailability(clean);
-      if (!result) {
-        setHandleStatus("checking");
-        return;
-      }
-      if (result.status === "listed") {
-        setHandleStatus("listed");
-        setListedHandle({ username: clean, price: result.price, listing_id: result.listing_id });
-      } else if (result.status === "taken") {
-        setHandleStatus("taken");
-      } else if (result.status === "owned") {
-        setHandleStatus("owned");
-      } else {
-        setHandleStatus(result.status === "available" ? "available" : "invalid_format");
+      try {
+        const result = await checkUsernameAvailability(clean);
+        if (!result) {
+          setHandleStatus("error");
+          return;
+        }
+        if (result.status === "listed") {
+          setHandleStatus("listed");
+          setListedHandle({ username: clean, price: result.price, listing_id: result.listing_id });
+        } else if (result.status === "taken") {
+          setHandleStatus("taken");
+        } else if (result.status === "owned") {
+          setHandleStatus("owned");
+        } else {
+          setHandleStatus(result.status === "available" ? "available" : "invalid_format");
+        }
+      } catch {
+        setHandleStatus("error");
       }
     }, 600);
     return () => { if (handleTimerRef.current) clearTimeout(handleTimerRef.current); };
@@ -243,22 +247,28 @@ export default function OnboardingScreen() {
     if (!selectedCountry || !phoneNumber) { setPhoneAvailStatus("idle"); return; }
     const v = getPhoneValidation();
     if (!v.valid) { setPhoneAvailStatus("idle"); return; }
-    const fullPhone = `${selectedCountry.dial}${phoneNumber.replace(/\D/g, "")}`;
+    const fullPhone = v.e164;
+    if (!fullPhone) { setPhoneAvailStatus("error"); return; }
     setPhoneAvailStatus("checking");
     setTakenPhoneProfile(null);
     phoneTimerRef.current = setTimeout(async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, display_name, avatar_url, handle")
-        .eq("phone_number", fullPhone)
-        .neq("id", userId || "")
-        .maybeSingle();
-      if (data) {
-        setPhoneAvailStatus("taken");
-        setTakenPhoneProfile({ display_name: data.display_name, avatar_url: data.avatar_url, handle: data.handle });
-      } else {
-        setPhoneAvailStatus("available");
-        setTakenPhoneProfile(null);
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, display_name, avatar_url, handle")
+          .eq("phone_number", fullPhone)
+          .neq("id", userId || "")
+          .maybeSingle();
+        if (error) throw error;
+        if (data) {
+          setPhoneAvailStatus("taken");
+          setTakenPhoneProfile({ display_name: data.display_name, avatar_url: data.avatar_url, handle: data.handle });
+        } else {
+          setPhoneAvailStatus("available");
+          setTakenPhoneProfile(null);
+        }
+      } catch {
+        setPhoneAvailStatus("error");
       }
     }, 700);
     return () => { if (phoneTimerRef.current) clearTimeout(phoneTimerRef.current); };
@@ -370,7 +380,8 @@ export default function OnboardingScreen() {
     if (cleanHandle.length < 3) { showAlert("Invalid handle", "Handle must be at least 3 characters."); return; }
 
     setLoading(true);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    try {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     const availability = await checkUsernameAvailability(cleanHandle);
     if (!availability || (availability.status !== "available" && availability.status !== "owned")) {
@@ -400,9 +411,10 @@ export default function OnboardingScreen() {
       }
     }
 
-    const fullPhone = selectedCountry ? `${selectedCountry.dial}${phoneNumber.replace(/\D/g, "")}` : null;
+    const fullPhone = getPhoneValidation().e164 ?? null;
     if (fullPhone) {
-      const { data: existingPhone } = await supabase.from("profiles").select("id").eq("phone_number", fullPhone).neq("id", userId).limit(1).maybeSingle();
+      const { data: existingPhone, error: phoneError } = await supabase.from("profiles").select("id").eq("phone_number", fullPhone).neq("id", userId).limit(1).maybeSingle();
+      if (phoneError) throw phoneError;
       if (existingPhone) {
         setLoading(false);
         showAlert("Phone number taken", "This phone number is already linked to another account.");
@@ -481,6 +493,11 @@ export default function OnboardingScreen() {
     setLoading(false);
 
     router.replace("/(tabs)/discover");
+    } catch (error: any) {
+      showAlert("Could not finish setup", error?.message || "Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   // ── Derived display data ─────────────────────────────────────────────────────
