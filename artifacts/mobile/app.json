@@ -204,6 +204,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.afuchat.mobile",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "buildNumber": "2.2.23",
       "associatedDomains": [
         "applinks:afuchat.com",
