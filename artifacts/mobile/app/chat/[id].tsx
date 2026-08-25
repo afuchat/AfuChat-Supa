@@ -333,7 +333,7 @@ type NotificationMessageData = {
 function getNotificationRoute(event: NotificationMessageData): { pathname: string; params?: Record<string, string> } | null {
   const route = event.cta_route?.trim();
   if (!route || !route.startsWith("/") || route.includes("://") || route.includes("..")) return null;
-  if (route === "/premium" || route === "/(tabs)/discover" || route === "/(tabs)/shorts") {
+  if (route === "/premium" || route === "/device-security" || route === "/(tabs)/discover" || route === "/(tabs)/shorts") {
     return { pathname: route };
   }
   if (route === "/stories/view" && event.entity_id) {
@@ -3384,7 +3384,7 @@ function ChatScreen() {
           const _senderSnap = _cachedSender
             ? { display_name: _cachedSender.display_name, avatar_url: _cachedSender.avatar_url ?? null, handle: _cachedSender.handle }
             : { display_name: "User", avatar_url: null, handle: "" };
-          const addNotificationData = async () => {
+          const fetchNotificationData = async () => {
             if (!isNotificationsChat || !user) return null;
             const { data: event } = await supabase
               .from("notification_events")
@@ -3394,12 +3394,30 @@ function ChatScreen() {
               .maybeSingle();
             return event ? ({ ...event } as NotificationMessageData) : undefined;
           };
-          const notificationData = await addNotificationData();
+          const notificationData = await fetchNotificationData();
           setMessages((prev) => {
             // Deduplicate — broadcast fast-path may have already inserted this message
             if (prev.some((m) => m.id === newMsg.id)) return prev;
             return [{ ...newMsg, sender: _senderSnap as any, reactions: [], status: undefined, _notification: notificationData }, ...prev];
           });
+          // The messages and notification_events rows are created in one
+          // transaction, but their realtime events can arrive in either order.
+          // Retry the metadata lookup so the CTA is not permanently lost when
+          // the message event wins the race.
+          if (isNotificationsChat && !notificationData && user) {
+            void (async () => {
+              for (const delay of [150, 400, 900]) {
+                await new Promise((resolve) => setTimeout(resolve, delay));
+                const latest = await fetchNotificationData();
+                if (latest) {
+                  setMessages((prev) => prev.map((m) =>
+                    m.id === newMsg.id ? { ...m, _notification: latest } : m
+                  ));
+                  return;
+                }
+              }
+            })();
+          }
           if (!_cachedSender) {
             supabase.from("profiles").select("display_name, avatar_url, handle").eq("id", newMsg.sender_id).single().then(({ data: _sp }) => {
               if (_sp) {
