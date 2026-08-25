@@ -56,7 +56,7 @@ $$;
 
 DROP TRIGGER IF EXISTS profiles_username_reservation_guard ON public.profiles;
 CREATE TRIGGER profiles_username_reservation_guard
-  BEFORE INSERT OR UPDATE OF handle ON public.profiles
+  AFTER INSERT OR UPDATE OF handle ON public.profiles
   FOR EACH ROW
   EXECUTE FUNCTION public.enforce_username_reservation();
 
