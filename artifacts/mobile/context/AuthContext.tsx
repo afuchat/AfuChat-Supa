@@ -13,9 +13,9 @@ import {
 } from "@/lib/accountStore";
 import {
   cacheProfile,
+  clearAccountCache,
   getCachedProfile,
   getCachedProfileSync,
-  clearAccountCache,
   isOnline,
   onConnectivityChange,
   setCachedUserId,
@@ -25,7 +25,7 @@ import {
 } from "@/lib/offlineStore";
 import { clearAllConversations } from "@/lib/storage/localConversations";
 import { invalidateConversationsPreload } from "@/lib/conversationsPreload";
-import { saveLocalProfile, deleteLocalProfile, getLocalProfile } from "@/lib/storage/localProfile";
+import { saveLocalProfile, getLocalProfile } from "@/lib/storage/localProfile";
 import { saveLocalSettings, deleteLocalSettings } from "@/lib/storage/localSettings";
 import { clearProfileCache } from "@/lib/profileCache";
 import { startOfflineSync, stopOfflineSync } from "@/lib/offlineSync";
@@ -101,14 +101,9 @@ type AuthContextType = {
   isPremium: boolean;
   equippedGoods: Set<string>;
   loading: boolean;
-  linkedAccounts: StoredAccount[];
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   patchProfile: (patch: Partial<Profile>) => void;
-  addAccount: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  switchAccount: (userId: string) => Promise<{ success: boolean; error?: string }>;
-  removeAccount: (userId: string) => Promise<void>;
-  refreshLinkedAccounts: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -119,14 +114,9 @@ const AuthContext = createContext<AuthContextType>({
   isPremium: false,
   equippedGoods: new Set(),
   loading: true,
-  linkedAccounts: [],
   signOut: async () => {},
   refreshProfile: async () => {},
   patchProfile: () => {},
-  addAccount: async () => ({ success: false }),
-  switchAccount: async () => ({ success: false }),
-  removeAccount: async () => {},
-  refreshLinkedAccounts: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -156,19 +146,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } as User)
       : null
   );
-  const [linkedAccounts, setLinkedAccounts] = useState<StoredAccount[]>([]);
   const [equippedGoods, setEquippedGoods] = useState<Set<string>>(new Set());
+  const [linkedAccounts, setLinkedAccounts] = useState<StoredAccount[]>([]);
 
   // ── Guard refs ──────────────────────────────────────────────────────────────
-  // Prevent saveCurrentSession from firing during an account switch or link
-  // operation — otherwise a race condition can write the wrong tokens.
+  // Kept for the legacy account-store migration path; no account-switch UI is
+  // exposed and the active session remains the only usable account.
   const isSwitchingRef = useRef(false);
   const isLinkingRef = useRef(false);
+  const switchOperationRef = useRef(0);
+  const linkedAccountsRequestRef = useRef(0);
   // Tracks explicit user-initiated sign-out so we can distinguish it from
   // involuntary sign-outs (expired token, server error, network failure).
   // onAuthStateChange ignores SIGNED_OUT unless this is true.
   const isUserSigningOut = useRef(false);
-  // Invalidates async bootstrap/account-switch work when auth identity changes.
+  // Invalidates async bootstrap work when auth identity changes.
   // Late completions must never restore an old user or navigate over a newer flow.
   const authGenerationRef = useRef(0);
   // Supabase may emit several SIGNED_OUT events while a refresh token is being
@@ -177,8 +169,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const sessionRestoreRef = useRef<Promise<void> | null>(null);
   const sessionNoticeShownRef = useRef(false);
   const signOutRef = useRef<(() => Promise<void>) | null>(null);
-  const switchOperationRef = useRef(0);
-  const linkedAccountsRequestRef = useRef(0);
 
   // ── Profile fetch ───────────────────────────────────────────────────────────
 
@@ -317,7 +307,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       accessToken: live.access_token,
       refreshToken: live.refresh_token,
     });
-    await refreshLinkedAccounts();
   }
 
   // ── Add Account ─────────────────────────────────────────────────────────────
@@ -864,11 +853,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!safetyFired) setLoading(false);
       });
 
-    const linkedAccountsTimer = setTimeout(() => {
-      if (!isCurrentBootstrap()) return;
-      refreshLinkedAccounts().catch(() => {});
-    }, 800);
-
     const { data: listener } = supabase.auth.onAuthStateChange((event, newSession) => {
       // Suppress all state mutations during a switch or link operation.
       // The switch function manages state directly; we don't want a race.
@@ -1003,7 +987,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       authGenerationRef.current += 1;
       if (offlineSyncTimer) clearTimeout(offlineSyncTimer);
       offlineSyncTask?.cancel?.();
-      clearTimeout(linkedAccountsTimer);
       listener.subscription.unsubscribe();
     };
   }, [notifyRevokedSession]);
@@ -1102,16 +1085,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isPremium,
       equippedGoods,
       loading,
-      linkedAccounts,
       signOut,
       refreshProfile,
       patchProfile,
-      addAccount,
-      switchAccount,
-      removeAccount: handleRemoveAccount,
-      refreshLinkedAccounts,
     }),
-    [session, user, profile, subscription, isPremium, equippedGoods, loading, linkedAccounts, signOut]
+    [session, user, profile, subscription, isPremium, equippedGoods, loading, signOut]
   );
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

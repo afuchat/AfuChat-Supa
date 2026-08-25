@@ -524,7 +524,7 @@ function waitForRequest<T>(
  */
 export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boolean; onOpenChat?: (item: ChatItem, chatId: string) => void } = {}) {
   const { colors, isDark } = useTheme();
-  const { user, session, profile, linkedAccounts, switchAccount, signOut, loading: authLoading } = useAuth();
+  const { user, session, profile, signOut, loading: authLoading } = useAuth();
   // AuthContext may expose a cached "synthetic" user during Android startup so
   // the shell can render immediately. That identity is not authorized for
   // Supabase requests until the real session has been restored.
@@ -559,7 +559,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
   const [searchOpen, setSearchOpen] = useState(false);
   const searchAnim = useRef(new Animated.Value(0)).current;
   const searchInputRef = useRef<TextInput>(null);
-  const [switchingId, setSwitchingId] = useState<string | null>(null);
   const [tabFilter, setTabFilter] = useState<ChatTabKey>("all");
   const [typingChatIds, setTypingChatIds] = useState<Record<string, boolean>>({});
   const typingTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -2568,32 +2567,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  accountStack: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 2,
-  },
-  stackAvatarWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  stackAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    overflow: "hidden",
-  },
-  stackExtra: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1.5,
-  },
-  stackExtraText: { fontSize: 10, fontFamily: "Inter_700Bold" },
 });

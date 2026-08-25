@@ -55,7 +55,7 @@ const WORD_ROUTES = [
 const HYPHEN_ROUTES = [
   "business-verification", "chat-info",
   "create-post", "device-security", "digital-events", "digital-id",
-  "file-manager", "language-settings", "linked-accounts", "mini-programs",
+  "file-manager", "language-settings", "mini-programs",
   "my-posts", "paid-communities", "phone-contacts", "profile-not-found",
   "profile-private", "qr-scanner", "red-envelope", "reset-password",
   "saved-posts", "update-password", "user-discovery", "username-market",

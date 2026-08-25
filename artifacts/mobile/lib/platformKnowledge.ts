@@ -134,7 +134,6 @@ export const PLATFORM_NAV_MAP = `
 |---|---|
 | /support | Contact support and view your tickets |
 | /qr-scanner | Scan any QR code (profiles, payments, links) |
-| /linked-accounts | Manage linked external accounts |
 | /device-security | Device-level security settings |
 | /status | Account and system status |
 

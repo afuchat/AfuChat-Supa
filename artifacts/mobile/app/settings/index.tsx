@@ -1,8 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import {
-  ActivityIndicator,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,7 +10,6 @@ import {
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "@/lib/haptics";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useTheme } from "@/hooks/useTheme";
@@ -111,46 +108,8 @@ function Row({
 export default function SettingsScreen() {
   const { colors, accent, isDark, themeMode, setThemeMode } = useTheme();
   const { langLabel, t } = useLanguage();
-  const { user, profile, isPremium, linkedAccounts, switchAccount } = useAuth();
+  const { user, profile, isPremium } = useAuth();
   const insets = useSafeAreaInsets();
-  const [switchingId, setSwitchingId] = useState<string | null>(null);
-
-  const activeAccount = linkedAccounts.find((a) => a.userId === user?.id);
-  const otherAccounts = linkedAccounts.filter((a) => a.userId !== user?.id);
-  const displayAccounts =
-    linkedAccounts.length === 0 && user && profile
-      ? [{ userId: user.id, displayName: profile.display_name, handle: profile.handle, avatarUrl: profile.avatar_url, email: user.email || "", accessToken: "", refreshToken: "" }]
-      : activeAccount
-      ? [activeAccount, ...otherAccounts]
-      : linkedAccounts;
-
-  async function handleSwitch(userId: string) {
-    if (userId === user?.id || switchingId) return;
-    showAlert(
-      t("Switch account?"),
-      t("Your current session will be saved."),
-      [
-        { text: t("Cancel"), style: "cancel" },
-        {
-            text: t("Switch"),
-          onPress: async () => {
-            setSwitchingId(userId);
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            try {
-              const result = await switchAccount(userId);
-              if (!result.success) {
-                showAlert(t("Switch Failed"), result.error || t("Could not switch account."));
-              }
-            } catch (_) {
-              showAlert(t("Switch Failed"), "Could not switch account. Please try again.");
-            } finally {
-              setSwitchingId(null);
-            }
-          },
-        },
-      ]
-    );
-  }
 
   const BRAND = Colors.brand;
 
@@ -158,22 +117,10 @@ export default function SettingsScreen() {
     <View style={[s.root, { backgroundColor: colors.backgroundSecondary }]}>
       <GlassHeader title={t("Settings")} />
 
-      {/* Switching overlay */}
-      {switchingId && (
-        <View style={s.overlay}>
-          <View style={[s.overlayCard, { backgroundColor: colors.surface }]}>
-            <ActivityIndicator size="large" color={accent} />
-            <Text style={[s.overlayTitle, { color: colors.text }]}>{t("Switching account…")}</Text>
-            <Text style={[s.overlaySub, { color: colors.textMuted }]}>{t("Loading your other account")}</Text>
-          </View>
-        </View>
-      )}
-
       <ScrollView
         contentContainerStyle={[s.body, { paddingBottom: insets.bottom + 56 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        style={{ pointerEvents: switchingId ? "none" : "auto" }}
       >
 
         {/* ── Profile card ──────────────────────────────────────────────── */}
@@ -210,92 +157,6 @@ export default function SettingsScreen() {
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
         </TouchableOpacity>
-
-        {/* ── Accounts ──────────────────────────────────────────────────── */}
-        {displayAccounts.length > 1 && (
-          <Section title={t("ACCOUNTS")} colors={colors}>
-            {displayAccounts.map((account, i) => {
-              const isCurrent = account.userId === user?.id;
-              const isSwitching = switchingId === account.userId;
-              return (
-                <React.Fragment key={account.userId}>
-                  <Pressable
-                    style={({ pressed }) => [
-                      s.accountRow,
-                      pressed && !isCurrent && !switchingId && { backgroundColor: colors.backgroundSecondary },
-                    ]}
-                    onPress={() => !isCurrent && !switchingId && handleSwitch(account.userId)}
-                    disabled={isCurrent || !!switchingId}
-                  >
-                    <View style={s.accountAvatarWrap}>
-                      <Avatar uri={account.avatarUrl} name={account.displayName} size={42} />
-                      {isCurrent && (
-                        <View style={[s.activeDot, { backgroundColor: accent, borderColor: colors.card }]}>
-                          <Ionicons name="checkmark" size={8} color="#fff" />
-                        </View>
-                      )}
-                    </View>
-                    <View style={s.accountInfo}>
-                      <Text style={[s.accountName, { color: colors.text }]} numberOfLines={1}>
-                        {account.displayName}
-                      </Text>
-                      <Text style={[s.accountHandle, { color: colors.textMuted }]} numberOfLines={1}>
-                        @{account.handle}
-                      </Text>
-                    </View>
-                    {isSwitching ? (
-                      <ActivityIndicator size="small" color={accent} />
-                    ) : isCurrent ? (
-                      <View style={[s.activePill, { backgroundColor: accent + "20" }]}>
-                          <Text style={[s.activePillText, { color: accent }]}>{t("Active")}</Text>
-                      </View>
-                    ) : (
-                      <TouchableOpacity
-                        style={[s.switchBtn, { backgroundColor: accent }]}
-                        onPress={() => handleSwitch(account.userId)}
-                        disabled={!!switchingId}
-                        activeOpacity={0.8}
-                      >
-                        <Ionicons name="swap-horizontal" size={12} color="#fff" />
-                        <Text style={s.switchBtnText}>{t("Switch")}</Text>
-                      </TouchableOpacity>
-                    )}
-                  </Pressable>
-                  {i < displayAccounts.length - 1 && (
-                    <View style={[s.divider, { backgroundColor: colors.separator }]} />
-                  )}
-                </React.Fragment>
-              );
-            })}
-            <View style={[s.divider, { backgroundColor: colors.separator }]} />
-            <TouchableOpacity
-              style={s.manageAccRow}
-              onPress={() => router.push("/linked-accounts")}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="person-add" size={15} color={colors.textMuted} />
-              <Text style={[s.manageAccText, { color: colors.textMuted }]}>
-                {otherAccounts.length > 0 ? t("Manage accounts") : t("Add another account")}
-              </Text>
-              <Ionicons name="chevron-forward" size={13} color={colors.textMuted} />
-            </TouchableOpacity>
-          </Section>
-        )}
-
-        {/* Show Manage Accounts link if only one account */}
-        {displayAccounts.length <= 1 && (
-          <Section colors={colors}>
-            <Row
-            icon="person-add"
-              label={t("Add Another Account")}
-              sublabel={t("Switch between multiple AfuChat accounts")}
-              onPress={() => router.push("/linked-accounts")}
-              last
-              colors={colors}
-              accent={accent}
-            />
-          </Section>
-        )}
 
         {/* ── Appearance ────────────────────────────────────────────────── */}
         <Section title={t("APPEARANCE")} colors={colors}>

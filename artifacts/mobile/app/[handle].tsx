@@ -32,7 +32,7 @@ const RESERVED_ROUTES = new Set([
   "register", "login", "reset-password", "404", "not-found", "about", "lab",
   "achievements", "watch-history", "prestige", "store", "premium", "status",
   "digital-id", "qr-scanner", "create-post", "followers", "saved-posts",
-  "collections", "language-settings", "linked-accounts", "device-security",
+  "collections", "language-settings", "device-security",
   "phone-contacts", "user-discovery", "username-market", "digital-events",
   "file-manager", "business", "business-verification", "paid-communities", "help",
 ]);

@@ -135,7 +135,6 @@ const ROUTE_MAP: Array<{ match: RegExp; name: string; summary: string }> = [
   { match: /^\/support/, name: "Support", summary: "Contact AfuChat support and view your open tickets." },
   { match: /^\/qr-scanner/, name: "QR Scanner", summary: "Scan any QR code — profiles, payments, or external links." },
   { match: /^\/language-settings/, name: "Language Settings", summary: "Change the app display language." },
-  { match: /^\/linked-accounts/, name: "Linked Accounts", summary: "Manage your linked external accounts." },
   { match: /^\/device-security/, name: "Device Security", summary: "Device-level security settings." },
   { match: /^\/status/, name: "Account Status", summary: "Your account and system status." },
   { match: /^\/business-verification/, name: "Business Verification", summary: "Apply for business account verification." },

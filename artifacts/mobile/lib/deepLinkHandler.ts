@@ -101,7 +101,7 @@ const SYSTEM_ROUTES = new Set([
   "support", "qr-scanner", "digital-id", "language-settings",
   "me", "call", "red-envelope", "p",
   "saved-posts", "my-posts", "profile", "followers", "user-discovery",
-  "linked-accounts", "device-security", "status", "contact", "group",
+  "device-security", "status", "contact", "group",
   "channel", "digital-events", "ref", "app", "download", "privacy",
   "terms", "about", "help", "feedback", "likes",
   "explore", "trending", "feed", "home", "index", "join",
