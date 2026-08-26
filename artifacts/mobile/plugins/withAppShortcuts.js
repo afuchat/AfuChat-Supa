@@ -13,6 +13,7 @@ const {
   withAndroidManifest,
   withDangerousMod,
   withAppDelegate,
+  withMainApplication,
 } = require("@expo/config-plugins");
 const fs = require("fs");
 const path = require("path");
@@ -73,6 +74,19 @@ const SHORTCUTS_XML = `<?xml version="1.0" encoding="utf-8"?>
             android:targetClass="com.afuchat.mobile.MainActivity"
             android:data="afuchat://discover" />
     </shortcut>
+    <!-- Dynamic conversation shortcuts are also eligible for Android Direct Share. -->
+    <share-target android:targetClass="com.afuchat.mobile.MainActivity">
+        <intent-filter>
+            <action android:name="android.intent.action.SEND" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <data android:mimeType="text/*" />
+            <data android:mimeType="image/*" />
+            <data android:mimeType="video/*" />
+            <data android:mimeType="audio/*" />
+            <data android:mimeType="application/*" />
+        </intent-filter>
+        <category android:name="android.shortcut.conversation" />
+    </share-target>
 </shortcuts>
 `;
 
@@ -140,6 +154,198 @@ function withShortcutResources(config) {
       return modConfig;
     },
   ]);
+}
+
+function withNativeShareShortcuts(config) {
+  return withDangerousMod(config, [
+    "android",
+    (modConfig) => {
+      const platformRoot = modConfig.modRequest.platformProjectRoot;
+      const packageDir = path.join(
+        platformRoot,
+        "app",
+        "src",
+        "main",
+        "java",
+        "com",
+        "afuchat",
+        "mobile",
+      );
+      fs.mkdirSync(packageDir, { recursive: true });
+
+      fs.writeFileSync(
+        path.join(packageDir, "AfuChatShareShortcutsModule.kt"),
+        `package com.afuchat.mobile
+
+import android.content.Context
+import android.content.Intent
+import android.content.pm.ShortcutInfo
+import android.content.pm.ShortcutManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.drawable.Icon
+import android.net.Uri
+import android.os.Build
+import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.ReadableArray
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReactContextBaseJavaModule
+import com.facebook.react.bridge.ReactMethod
+import java.net.URL
+
+class AfuChatShareShortcutsModule(
+  private val reactContext: ReactApplicationContext,
+) : ReactContextBaseJavaModule(reactContext) {
+  private val avatarCache = mutableMapOf<String, Bitmap>()
+
+  private data class ChatShortcut(
+    val chatId: String,
+    val label: String,
+    val avatarUrl: String?,
+  )
+
+  override fun getName(): String = "AfuChatShareShortcuts"
+
+  @ReactMethod
+  fun update(recipients: ReadableArray, promise: Promise) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N_MR1) {
+      promise.resolve(false)
+      return
+    }
+
+    val chats = mutableListOf<ChatShortcut>()
+    for (index in 0 until recipients.size()) {
+      val item = recipients.getMap(index) ?: continue
+      val chatId = if (item.hasKey("chatId") && !item.isNull("chatId")) item.getString("chatId") else null
+      val label = if (item.hasKey("label") && !item.isNull("label")) item.getString("label") else null
+      val avatarUrl = if (item.hasKey("avatarUrl") && !item.isNull("avatarUrl")) item.getString("avatarUrl") else null
+      if (!chatId.isNullOrBlank() && !label.isNullOrBlank()) {
+        chats.add(ChatShortcut(chatId, label, avatarUrl))
+      }
+      if (chats.size >= 8) break
+    }
+
+    val context = reactContext.applicationContext
+    Thread {
+      try {
+        val manager = context.getSystemService(Context.SHORTCUT_SERVICE) as? ShortcutManager
+        if (manager == null) {
+          promise.resolve(false)
+          return@Thread
+        }
+
+        val shortcuts = chats.map { chat ->
+          val icon = loadAvatarIcon(chat.avatarUrl)
+            ?: Icon.createWithResource(context, context.applicationInfo.icon)
+          val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "*/*"
+            data = Uri.parse("afuchat://share-chat?chatId=" + Uri.encode(chat.chatId))
+          }
+          ShortcutInfo.Builder(context, "share-chat-" + chat.chatId)
+            .setShortLabel(chat.label.take(25))
+            .setLongLabel(("Send to " + chat.label).take(80))
+            .setIcon(icon)
+            .setIntent(shareIntent)
+            .setCategories(setOf("android.shortcut.conversation"))
+            .build()
+        }
+        manager.setDynamicShortcuts(shortcuts)
+        promise.resolve(true)
+      } catch (error: Exception) {
+        promise.reject("SHARE_SHORTCUTS_UPDATE_FAILED", error)
+      }
+    }.start()
+  }
+
+  private fun loadAvatarIcon(avatarUrl: String?): Icon? {
+    if (avatarUrl.isNullOrBlank()) return null
+    synchronized(avatarCache) {
+      avatarCache[avatarUrl]?.let { return Icon.createWithBitmap(it) }
+    }
+    return try {
+      val connection = URL(avatarUrl).openConnection()
+      connection.connectTimeout = 4000
+      connection.readTimeout = 4000
+      connection.getInputStream().use { stream ->
+        val bitmap = BitmapFactory.decodeStream(stream) ?: return null
+        synchronized(avatarCache) {
+          avatarCache[avatarUrl] = bitmap
+        }
+        Icon.createWithBitmap(bitmap)
+      }
+    } catch (_: Exception) {
+      null
+    }
+  }
+}
+`,
+      );
+
+      fs.writeFileSync(
+        path.join(packageDir, "AfuChatShareShortcutsPackage.kt"),
+        `package com.afuchat.mobile
+
+import com.facebook.react.ReactPackage
+import com.facebook.react.bridge.NativeModule
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.uimanager.ViewManager
+
+class AfuChatShareShortcutsPackage : ReactPackage {
+  override fun createNativeModules(
+    reactContext: ReactApplicationContext,
+  ): List<NativeModule> = listOf(AfuChatShareShortcutsModule(reactContext))
+
+  override fun createViewManagers(
+    reactContext: ReactApplicationContext,
+  ): List<ViewManager<*, *>> = emptyList()
+}
+`,
+      );
+
+      return modConfig;
+    },
+  ]);
+}
+
+function withNativePackageRegistration(config) {
+  return withMainApplication(config, (applicationConfig) => {
+    let contents = applicationConfig.modResults.contents;
+    const importLine = "import com.afuchat.mobile.AfuChatShareShortcutsPackage";
+    const moduleMarker = "add(AfuChatShareShortcutsPackage())";
+
+    if (!contents.includes(importLine)) {
+      const configurationImport = "import android.content.res.Configuration";
+      if (contents.includes(configurationImport)) {
+        contents = contents.replace(
+          configurationImport,
+          `${configurationImport}\n\n${importLine}`,
+        );
+      } else {
+        contents = contents.replace(
+          /^(package [^\n]+)$/m,
+          `$1\n\n${importLine}`,
+        );
+      }
+    }
+
+    if (!contents.includes(moduleMarker)) {
+      const existingManualPackage = "add(AfuChatDataSyncPackage())";
+      if (contents.includes(existingManualPackage)) {
+        contents = contents.replace(
+          existingManualPackage,
+          `${existingManualPackage}\n          ${moduleMarker}`,
+        );
+      } else {
+        contents = contents.replace(
+          /(\s*\/\/ Packages that cannot be autolinked yet can be added manually here, for example:)/,
+          `\n          ${moduleMarker}$1`,
+        );
+      }
+    }
+
+    applicationConfig.modResults.contents = contents;
+    return applicationConfig;
+  });
 }
 
 function withIosShortcutRouting(config) {
@@ -210,6 +416,8 @@ function withIosShortcutRouting(config) {
 module.exports = function withAppShortcuts(config) {
   config = withShortcutManifest(config);
   config = withShortcutResources(config);
+  config = withNativeShareShortcuts(config);
+  config = withNativePackageRegistration(config);
   config = withIosShortcutRouting(config);
   return config;
 };

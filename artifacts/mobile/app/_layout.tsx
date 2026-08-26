@@ -225,6 +225,7 @@ function LanguageDirectionShell({ children }: { children: React.ReactNode }) {
 
 function IncomingShareGate({ navigationReady }: { navigationReady: boolean }) {
   const { hasShareIntent, isReady, shareIntent } = useShareIntentContext();
+  const pathname = usePathname();
   const routedShareRef = useRef("");
 
   useEffect(() => {
@@ -232,7 +233,7 @@ function IncomingShareGate({ navigationReady }: { navigationReady: boolean }) {
       routedShareRef.current = "";
       return;
     }
-    if (!isReady || !navigationReady || routedShareRef.current) return;
+    if (!isReady || !navigationReady || routedShareRef.current || pathname === "/share") return;
 
     const signature = [
       shareIntent.type ?? "",
@@ -244,7 +245,7 @@ function IncomingShareGate({ navigationReady }: { navigationReady: boolean }) {
 
     routedShareRef.current = signature;
     safeRouter.push("/share" as any);
-  }, [hasShareIntent, isReady, navigationReady, shareIntent]);
+  }, [hasShareIntent, isReady, navigationReady, pathname, shareIntent]);
 
   return null;
 }

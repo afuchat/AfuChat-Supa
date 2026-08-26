@@ -77,6 +77,7 @@ import PostUploadBannerShared from "@/components/ui/PostUploadBanner";
 import { usePhonebookNames } from "@/hooks/usePhonebookNames";
 import { setTotalUnread } from "@/lib/chatUnreadEvents";
 import { prefetchListImages } from "@/lib/storage/imagePrefetcher";
+import { updateNativeShareShortcuts } from "@/lib/nativeShareShortcuts";
 
 
 function stripMdPreview(s: string): string {
@@ -886,6 +887,23 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     });
 
     const finalItems: ChatItem[] = combined.map((item) => ({ ...item, draft: draftMap[item.id] || "" }));
+
+    // Keep Android's native Direct Share targets in lockstep with the same
+    // recent conversations rendered in this list. Groups use their chat
+    // avatar; DMs use the other participant's profile avatar.
+    updateNativeShareShortcuts(
+      finalItems
+        .filter((item) => item.kind !== "notes" && !item.is_archived)
+        .map((item) => ({
+          chatId: item.id,
+          label: item.is_group || item.is_channel
+            ? (item.name || "Group chat")
+            : (item.other_display_name || "Chat"),
+          avatarUrl: item.is_group || item.is_channel ? item.avatar_url : item.other_avatar,
+          isGroup: item.is_group,
+          isChannel: item.is_channel,
+        })),
+    );
 
     finalItems.forEach((item) => {
       if (item.unread_count === 0 && item.kind !== "notes") {

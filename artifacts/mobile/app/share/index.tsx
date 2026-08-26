@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useShareIntentContext } from "expo-share-intent";
@@ -23,12 +23,19 @@ import { showAlert } from "@/lib/alert";
 import { Avatar } from "@/components/ui/Avatar";
 import { isOnline } from "@/lib/offlineStore";
 import Colors from "@/constants/colors";
+import { getLocalConversations, type LocalConversation } from "@/lib/storage/localConversations";
+import { updateNativeShareShortcuts } from "@/lib/nativeShareShortcuts";
 
 type Contact = {
   id: string;
   display_name: string;
   handle: string;
   avatar_url: string | null;
+  /** Existing conversation ID. When present, sharing goes to this exact chat. */
+  chatId?: string;
+  isGroup?: boolean;
+  isChannel?: boolean;
+  subtitle?: string;
 };
 
 function ContactRow({
@@ -51,7 +58,9 @@ function ContactRow({
       <Avatar uri={contact.avatar_url} name={contact.display_name} size={42} />
       <View style={styles.contactInfo}>
         <Text style={[styles.contactName, { color: colors.text }]} numberOfLines={1}>{contact.display_name}</Text>
-        <Text style={[styles.contactHandle, { color: colors.textMuted }]} numberOfLines={1}>@{contact.handle}</Text>
+        <Text style={[styles.contactHandle, { color: colors.textMuted }]} numberOfLines={1}>
+          {contact.subtitle || (contact.handle ? `@${contact.handle}` : "AfuChat conversation")}
+        </Text>
       </View>
       {disabled ? (
         <ActivityIndicator size="small" color={accent} />
@@ -70,11 +79,15 @@ export default function ShareToAfuChatScreen() {
   const { colors, accent } = useTheme();
   const { isLowData } = useDataMode();
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ chatId?: string }>();
   const [showContacts, setShowContacts] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [recentChats, setRecentChats] = useState<Contact[]>([]);
+  const [loadingRecentChats, setLoadingRecentChats] = useState(false);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [sendingTo, setSendingTo] = useState<string | null>(null);
   const [contactQuery, setContactQuery] = useState("");
+  const autoShareChatRef = useRef<string | null>(null);
 
   const sharedText = (shareIntent.text || shareIntent.webUrl || "").trim();
   const sharedFiles = shareIntent.files ?? [];
@@ -89,6 +102,102 @@ export default function ShareToAfuChatScreen() {
   );
   const firstImage = imageFiles[0]?.path;
   const title = shareIntent.meta?.title || (shareIntent.webUrl ? "Shared link" : "Shared content");
+
+  function conversationToTarget(conversation: Partial<LocalConversation> & Record<string, any>): Contact | null {
+    if (!conversation.id || conversation.kind === "notes") return null;
+    const isGroup = !!conversation.is_group || !!conversation.is_channel;
+    const label = isGroup
+      ? (conversation.name || (conversation.is_channel ? "Channel" : "Group chat"))
+      : (conversation.other_display_name || "Unknown");
+    const avatar = isGroup ? conversation.avatar_url : conversation.other_avatar;
+    const otherId = conversation.other_id || conversation.id;
+    return {
+      id: isGroup ? conversation.id : otherId,
+      chatId: conversation.id,
+      display_name: label,
+      handle: conversation.other_handle || "",
+      avatar_url: avatar || null,
+      isGroup,
+      isChannel: !!conversation.is_channel,
+      subtitle: isGroup
+        ? (conversation.is_channel ? "Channel" : "Group chat")
+        : (conversation.other_handle ? `@${conversation.other_handle}` : "Recent chat"),
+    };
+  }
+
+  function serverRowToTarget(row: any): Contact | null {
+    return conversationToTarget({
+      id: row.chat_id,
+      name: row.chat_name,
+      is_group: row.is_group,
+      is_channel: row.is_channel,
+      other_id: row.other_id,
+      other_display_name: row.other_display_name,
+      other_handle: row.other_handle,
+      other_avatar: row.other_avatar,
+      avatar_url: row.avatar_url,
+    });
+  }
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    setLoadingRecentChats(true);
+
+    (async () => {
+      try {
+        const cached = await getLocalConversations();
+        const cachedTargets = cached
+          .map((conversation) => conversationToTarget(conversation as any))
+          .filter(Boolean) as Contact[];
+        if (!cancelled && cachedTargets.length > 0) {
+          setRecentChats(cachedTargets.slice(0, 8));
+          updateNativeShareShortcuts(
+            cachedTargets.slice(0, 8).map((chat) => ({
+              chatId: chat.chatId!,
+              label: chat.display_name,
+              avatarUrl: chat.avatar_url,
+              isGroup: chat.isGroup,
+              isChannel: chat.isChannel,
+            })),
+          );
+        }
+
+        // Refresh recent chats in the background so a newly-created
+        // conversation is available even before the chats tab is opened.
+        const { data } = await supabase.rpc(
+          "get_chat_list",
+          { p_unread_excluded_ids: [] },
+        );
+        if (cancelled) return;
+        const liveTargets = ((data ?? []) as any[])
+          .map(serverRowToTarget)
+          .filter(Boolean) as Contact[];
+        const uniqueTargets = liveTargets.filter(
+          (target, index, list) =>
+            list.findIndex((item) => item.chatId === target.chatId) === index,
+        );
+        if (uniqueTargets.length > 0) {
+          setRecentChats(uniqueTargets.slice(0, 8));
+          updateNativeShareShortcuts(
+            uniqueTargets.slice(0, 8).map((chat) => ({
+              chatId: chat.chatId!,
+              label: chat.display_name,
+              avatarUrl: chat.avatar_url,
+              isGroup: chat.isGroup,
+              isChannel: chat.isChannel,
+            })),
+          );
+        }
+      } catch {
+        // The durable local conversation cache is enough to keep sharing usable.
+      } finally {
+        if (!cancelled) setLoadingRecentChats(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   useEffect(() => {
     if (!showContacts || contacts.length > 0 || !user) return;
@@ -135,6 +244,20 @@ export default function ShareToAfuChatScreen() {
     } as any);
   }
 
+  function chatRouteParams(contact: Contact, chatId: string) {
+    return {
+      id: chatId,
+      otherName: contact.isGroup ? "" : contact.display_name,
+      otherAvatar: contact.isGroup ? "" : (contact.avatar_url || ""),
+      otherId: contact.isGroup ? "" : contact.id,
+      isGroup: contact.isGroup ? "true" : "false",
+      isChannel: contact.isChannel ? "true" : "false",
+      chatName: contact.isGroup ? contact.display_name : "",
+      chatAvatar: contact.isGroup ? (contact.avatar_url || "") : "",
+      ...(contact.handle ? { otherHandle: contact.handle } : {}),
+    };
+  }
+
   async function shareToContact(contact: Contact) {
     if (!user || sendingTo) return;
     if (!isOnline()) {
@@ -143,10 +266,16 @@ export default function ShareToAfuChatScreen() {
     }
     setSendingTo(contact.id);
     try {
-      const { data: chatId, error: chatError } = await supabase.rpc(
-        "get_or_create_direct_chat",
-        { other_user_id: contact.id },
-      );
+      let chatId: string | undefined = contact.chatId;
+      let chatError: { message?: string } | null = null;
+      if (!chatId) {
+        const result = await supabase.rpc(
+          "get_or_create_direct_chat",
+          { other_user_id: contact.id },
+        );
+        chatId = result.data as string | undefined;
+        chatError = result.error;
+      }
       if (chatError || !chatId) throw new Error("Could not open the conversation.");
 
       // Text and links can be delivered immediately. Media is passed to the
@@ -161,16 +290,14 @@ export default function ShareToAfuChatScreen() {
         resetShareIntent(false);
         safeRouter.replace({
           pathname: "/chat/[id]",
-          params: { id: chatId, otherName: contact.display_name, otherId: contact.id },
+          params: chatRouteParams(contact, chatId),
         } as any);
       } else {
         resetShareIntent(false);
         safeRouter.replace({
           pathname: "/chat/[id]",
           params: {
-            id: chatId,
-            otherName: contact.display_name,
-            otherId: contact.id,
+            ...chatRouteParams(contact, chatId),
             ...(sharedText ? { initialMessage: encodeURIComponent(sharedText) } : {}),
             ...(firstImage
               ? { sharedImageUri: firstImage }
@@ -193,6 +320,21 @@ export default function ShareToAfuChatScreen() {
       setSendingTo(null);
     }
   }
+
+  // Android Direct Share launches this screen with the selected chat ID.
+  // Send immediately so choosing a person in the system share sheet is a
+  // true one-tap action, while still leaving the in-app recent-chat rows
+  // available for people who open the share screen normally.
+  useEffect(() => {
+    const chatId = typeof params.chatId === "string" ? params.chatId : null;
+    if (!chatId || !shareIntent || !recentChats.length || sendingTo) return;
+    if (autoShareChatRef.current === chatId) return;
+    const target = recentChats.find((chat) => chat.chatId === chatId);
+    if (!target) return;
+    autoShareChatRef.current = chatId;
+    const timer = setTimeout(() => { shareToContact(target); }, 0);
+    return () => clearTimeout(timer);
+  }, [params.chatId, recentChats, sendingTo, shareIntent]);
 
   const visibleContacts = contactQuery.trim()
     ? contacts.filter((contact) =>
@@ -248,6 +390,27 @@ export default function ShareToAfuChatScreen() {
           <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </TouchableOpacity>
 
+        <Text style={[styles.subsectionLabel, { color: colors.textMuted }]}>RECENT CHATS</Text>
+        {loadingRecentChats && recentChats.length === 0 ? (
+          <ActivityIndicator color={accent} style={{ marginVertical: 18 }} />
+        ) : recentChats.length === 0 ? (
+          <View style={[styles.emptyRecent, { backgroundColor: colors.card }]}>
+            <Ionicons name="chatbubble-ellipses-outline" size={22} color={colors.textMuted} />
+            <Text style={[styles.emptyRecentText, { color: colors.textMuted }]}>Your recent chats will appear here</Text>
+          </View>
+        ) : (
+          <View style={styles.recentList}>
+            {recentChats.map((chat) => (
+              <ContactRow
+                key={chat.chatId}
+                contact={chat}
+                disabled={sendingTo !== null}
+                onPress={() => shareToContact(chat)}
+              />
+            ))}
+          </View>
+        )}
+
         <TouchableOpacity
           style={[styles.destinationCard, { backgroundColor: colors.card }, showContacts && { borderColor: accent, borderWidth: 1 }]}
           onPress={() => setShowContacts((value) => !value)}
@@ -257,8 +420,8 @@ export default function ShareToAfuChatScreen() {
             <Ionicons name="chatbubbles-outline" size={24} color="#34C759" />
           </View>
           <View style={styles.destinationText}>
-            <Text style={[styles.destinationTitle, { color: colors.text }]}>Send to a contact</Text>
-            <Text style={[styles.destinationSub, { color: colors.textMuted }]}>Choose an AfuChat conversation</Text>
+           <Text style={[styles.destinationTitle, { color: colors.text }]}>Find another contact</Text>
+           <Text style={[styles.destinationSub, { color: colors.textMuted }]}>Search people you follow</Text>
           </View>
           <Ionicons name={showContacts ? "chevron-up" : "chevron-down"} size={18} color={colors.textMuted} />
         </TouchableOpacity>
@@ -326,6 +489,10 @@ const styles = StyleSheet.create({
   destinationTitle: { fontSize: 15, fontFamily: "Inter_700Bold" },
   destinationSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 3 },
   contactsArea: { gap: 8, marginTop: 1 },
+  subsectionLabel: { fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 0.8, marginTop: 20, marginBottom: 8, paddingHorizontal: 4 },
+  recentList: { gap: 8 },
+  emptyRecent: { minHeight: 58, borderRadius: 16, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 16 },
+  emptyRecentText: { fontSize: 12, fontFamily: "Inter_400Regular" },
   searchBar: { height: 42, borderRadius: 13, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 13, marginBottom: 2 },
   searchInput: { flex: 1, fontSize: 13, fontFamily: "Inter_400Regular", outlineStyle: "none" as any },
   contactRow: { minHeight: 66, borderRadius: 16, flexDirection: "row", alignItems: "center", paddingHorizontal: 12, gap: 11 },

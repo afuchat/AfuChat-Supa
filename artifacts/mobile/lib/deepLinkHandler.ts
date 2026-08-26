@@ -177,6 +177,16 @@ export async function handleIncomingUrl(url: string | null | undefined): Promise
       return { type: "navigate", path: "/chat/[id]", params: { id: segments[1] } };
     }
 
+    // 2a. Android Direct Share target. The share payload is still delivered
+    // through expo-share-intent; this URL only tells the share screen which
+    // existing conversation should receive it.
+    if (segments.length === 1 && segments[0] === "share-chat") {
+      const chatId = parsed.searchParams.get("chatId");
+      if (chatId && isUUID(chatId)) {
+        return { type: "navigate", path: "/share", params: { chatId } };
+      }
+    }
+
     // 2b. /p/:shortId -- post detail (base-62 encoded UUID)
     if (segments.length === 2 && segments[0] === "p") {
       const code = segments[1];
