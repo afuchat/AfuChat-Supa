@@ -18,7 +18,10 @@ export type FullAppId =
   | "afuevents"
   | "afumatch"
   | "afucollections"
-  | "afuusernames";
+  | "afuusernames"
+  | "afuid"
+  | "afuqr"
+  | "afusaved";
 
 const NAV: Record<FullAppId, AppNavItem[]> = {
   afupay: [
@@ -29,13 +32,13 @@ const NAV: Record<FullAppId, AppNavItem[]> = {
   ],
   afumarket: [
     { key: "browse", label: "Browse", icon: "storefront-outline", href: "/app/afumarket" },
-    { key: "cart", label: "Cart", icon: "cart-outline", href: "/shop/cart" },
-    { key: "orders", label: "Orders", icon: "receipt-outline", href: "/shop/my-orders" },
+    { key: "cart", label: "Cart", icon: "cart-outline", href: "/app/afumarket?section=cart" },
+    { key: "orders", label: "Orders", icon: "receipt-outline", href: "/app/afumarket?section=orders" },
     { key: "sell", label: "Sell", icon: "pricetag-outline", href: "/app/afumarket?section=apply-seller" },
   ],
   afugames: [
-    { key: "games", label: "Games", icon: "game-controller-outline", href: "/games" },
-    { key: "progress", label: "My progress", icon: "trophy-outline", href: "/games/lifesim" },
+    { key: "games", label: "Games", icon: "game-controller-outline", href: "/app/afugames" },
+    { key: "progress", label: "My progress", icon: "trophy-outline", href: "/app/afugames?section=progress" },
   ],
   afubusiness: [
     { key: "home", label: "Overview", icon: "home-outline", href: "/app/afubusiness" },
@@ -54,9 +57,9 @@ const NAV: Record<FullAppId, AppNavItem[]> = {
   ],
   afuservices: [
     { key: "services", label: "Services", icon: "grid-outline", href: "/app/afuservices" },
-    { key: "bills", label: "Bills", icon: "receipt-outline", href: "/mini-programs/bills" },
-    { key: "airtime", label: "Airtime", icon: "phone-portrait-outline", href: "/mini-programs/airtime" },
-    { key: "wallet", label: "Wallet", icon: "wallet-outline", href: "/wallet" },
+    { key: "bills", label: "Bills", icon: "receipt-outline", href: "/app/afuservices?section=bills" },
+    { key: "airtime", label: "Airtime", icon: "phone-portrait-outline", href: "/app/afuservices?section=airtime" },
+    { key: "wallet", label: "Wallet", icon: "wallet-outline", href: "/app/afupay" },
   ],
   afufreelance: [
     { key: "browse", label: "Browse", icon: "search-outline", href: "/app/afufreelance" },
@@ -67,7 +70,7 @@ const NAV: Record<FullAppId, AppNavItem[]> = {
   ],
   afugifts: [
     { key: "gifts", label: "My gifts", icon: "gift-outline", href: "/app/afugifts" },
-    { key: "marketplace", label: "Marketplace", icon: "storefront-outline", href: "/gifts/marketplace" },
+    { key: "marketplace", label: "Marketplace", icon: "storefront-outline", href: "/app/afugifts?section=marketplace" },
   ],
   afumusic: [
     { key: "library", label: "Library", icon: "musical-notes-outline", href: "/app/afumusic" },
@@ -80,7 +83,7 @@ const NAV: Record<FullAppId, AppNavItem[]> = {
   afumatch: [
     { key: "discover", label: "Discover", icon: "heart-outline", href: "/app/afumatch" },
     { key: "matches", label: "My matches", icon: "people-outline", href: "/app/afumatch?section=matches" },
-    { key: "preferences", label: "Preferences", icon: "options-outline", href: "/match/preferences" },
+    { key: "preferences", label: "Preferences", icon: "options-outline", href: "/app/afumatch?section=preferences" },
   ],
   afucollections: [
     { key: "collections", label: "Collections", icon: "albums-outline", href: "/app/afucollections" },
@@ -89,6 +92,15 @@ const NAV: Record<FullAppId, AppNavItem[]> = {
     { key: "market", label: "Market", icon: "storefront-outline", href: "/app/afuusernames" },
     { key: "owned", label: "Owned", icon: "at-outline", href: "/app/afuusernames?section=owned" },
     { key: "mine", label: "My listings", icon: "pricetag-outline", href: "/app/afuusernames?section=mine" },
+  ],
+  afuid: [
+    { key: "card", label: "My ID", icon: "id-card-outline", href: "/app/afuid" },
+  ],
+  afuqr: [
+    { key: "scan", label: "Scan", icon: "qr-code-outline", href: "/app/afuqr" },
+  ],
+  afusaved: [
+    { key: "saved", label: "Saved", icon: "bookmark-outline", href: "/app/afusaved" },
   ],
 };
 

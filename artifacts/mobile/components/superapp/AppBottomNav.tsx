@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -24,7 +24,11 @@ export default function AppBottomNav({ items, activeKey }: Props) {
   const pathname = usePathname();
 
   return (
-    <View style={[styles.bar, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 8) }]}>
+    <View style={[styles.bar, {
+      backgroundColor: colors.surface,
+      paddingBottom: Platform.OS === "web" ? 34 : Math.max(insets.bottom, 8),
+      minHeight: Platform.OS === "web" ? 84 : 64,
+    }]}>
       {items.map((item) => {
         const active = activeKey === item.key || (!activeKey && pathname === item.href);
         return (
@@ -34,11 +38,16 @@ export default function AppBottomNav({ items, activeKey }: Props) {
             accessibilityState={{ selected: active }}
             accessibilityLabel={item.label}
             onPress={() => router.replace(item.href as any)}
-            style={({ pressed }) => [styles.item, { opacity: pressed ? 0.65 : 1 }]}
+            style={({ pressed }) => [
+              styles.item,
+              active && { backgroundColor: accent + "18" },
+              { opacity: pressed ? 0.65 : 1 },
+            ]}
           >
-            <Ionicons name={item.icon} size={21} color={active ? accent : colors.textMuted} />
-            <Text style={[styles.label, { color: active ? accent : colors.textMuted }]}>{item.label}</Text>
-            {active && <View style={[styles.dot, { backgroundColor: accent }]} />}
+            <View style={styles.itemContent}>
+              <Ionicons name={item.icon} size={21} color={active ? accent : colors.textMuted} />
+              <Text style={[styles.label, { color: active ? accent : colors.textMuted }]} numberOfLines={1}>{item.label}</Text>
+            </View>
           </Pressable>
         );
       })}
@@ -49,26 +58,27 @@ export default function AppBottomNav({ items, activeKey }: Props) {
 const styles = StyleSheet.create({
   bar: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-around",
     paddingTop: 9,
-    minHeight: 64,
-    borderTopWidth: 0.5,
   },
   item: {
-    minWidth: 58,
+    flex: 1,
+    maxWidth: 110,
     alignItems: "center",
+    justifyContent: "center",
+    minHeight: 46,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  itemContent: {
+    alignItems: "center",
+    justifyContent: "center",
     gap: 3,
-    paddingHorizontal: 5,
   },
   label: {
     fontSize: 10,
     fontFamily: "Inter_600SemiBold",
-  },
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    marginTop: 1,
   },
 });

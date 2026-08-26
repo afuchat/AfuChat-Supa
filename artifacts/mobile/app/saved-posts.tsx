@@ -1,15 +1,10 @@
 import { useEffect } from "react";
 import { View } from "react-native";
 import { router } from "expo-router";
-import { useSuperApp } from "@/lib/superapp/MiniAppRuntime";
 
 export default function SavedPostsPage() {
-  const { openApp } = useSuperApp();
-
   useEffect(() => {
-    openApp("afusaved");
-    router.replace("/(tabs)/apps");
+    router.replace("/app/afusaved" as any);
   }, []);
-
   return <View style={{ flex: 1 }} />;
 }
