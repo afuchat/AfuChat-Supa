@@ -90,14 +90,14 @@ export default function VerifiedBadge({
 
   const REASONS: { icon: string; label: string; premiumLink?: boolean }[] = isOrg
     ? [
-        { icon: "business",        label: "Confirmed authentic business, brand, or organization" },
-        { icon: "shield-checkmark", label: "Notable presence in its industry or community", premiumLink: true },
-        { icon: "document-text",   label: "Compliant with AfuChat's community guidelines" },
+        { icon: "storefront-outline",      label: "Business details confirmed" },
+        { icon: "ribbon-outline",           label: "Recognized in its field", premiumLink: true },
+        { icon: "shield-checkmark-outline", label: "Follows AfuChat's guidelines" },
       ]
     : [
-        { icon: "person-circle",   label: "Confirmed authentic identity as a real person" },
-        { icon: "star",            label: "Notable creator, public figure, or professional", premiumLink: true },
-        { icon: "checkmark-done",  label: "Compliant with AfuChat's community guidelines" },
+        { icon: "person-outline",          label: "Identity confirmed" },
+        { icon: "sparkles-outline",        label: "Recognized public presence", premiumLink: true },
+        { icon: "shield-checkmark-outline", label: "Follows AfuChat's guidelines" },
       ];
 
   return (
@@ -126,22 +126,24 @@ export default function VerifiedBadge({
 
             <View style={s.header}>
               <View style={[s.iconWrap, { backgroundColor: badgeColor + "18" }]}>
-                <BadgeShape size={44} color={badgeColor} />
+                <BadgeShape size={32} color={badgeColor} />
               </View>
-              <Text style={[s.title, { color: colors.text }]}>
-                {isOrg ? "Verified Organization" : "Verified Account"}
-              </Text>
-              <Text style={[s.subtitle, { color: colors.textSecondary }]}>
-                {isOrg
-                  ? "AfuChat has confirmed this is an authentic business, brand, or organization."
-                  : "AfuChat has confirmed this is an authentic account of a notable person or creator."}
-              </Text>
+              <View style={s.headerCopy}>
+                <Text style={[s.title, { color: colors.text }]}>
+                  {isOrg ? "Verified organization" : "Verified account"}
+                </Text>
+                <Text style={[s.subtitle, { color: colors.textSecondary }]}>
+                  {isOrg
+                    ? "AfuChat confirmed this organization is authentic."
+                    : "AfuChat confirmed this person is authentic."}
+                </Text>
+              </View>
             </View>
 
             <View style={[s.divider, { backgroundColor: colors.border }]} />
 
             <Text style={[s.sectionLabel, { color: colors.textMuted }]}>
-              VERIFICATION CRITERIA
+              WHY THIS BADGE
             </Text>
 
             {REASONS.map((r, i) =>
@@ -171,26 +173,13 @@ export default function VerifiedBadge({
               )
             )}
 
-            <View style={[s.divider, { backgroundColor: colors.border }]} />
-
-            <TouchableOpacity
-              style={[s.ctaBtn, { backgroundColor: badgeColor }]}
-              activeOpacity={0.85}
-              onPress={() => {
-                setVisible(false);
-                router.push(isOrg ? "/business-verification" : "/premium");
-              }}
-            >
-              <Ionicons name={isOrg ? "business" : "ribbon"} size={16} color="#fff" />
-              <Text style={s.ctaBtnText}>{isOrg ? "Apply for Verification" : "Get Verified"}</Text>
-            </TouchableOpacity>
-
             <TouchableOpacity
               style={s.dismissBtn}
               onPress={() => setVisible(false)}
               activeOpacity={0.6}
             >
-              <Text style={[s.dismissText, { color: colors.textMuted }]}>Done</Text>
+              <Ionicons name="close" size={16} color={colors.textMuted} />
+              <Text style={[s.dismissText, { color: colors.textMuted }]}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -209,34 +198,36 @@ const s = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    alignItems: "center",
+    paddingHorizontal: 16,
     paddingBottom: 16,
   },
   card: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 10,
-    paddingBottom: 8,
-    paddingHorizontal: 20,
+    width: "100%",
+    maxWidth: 370,
+    borderRadius: 22,
+    paddingTop: 9,
+    paddingBottom: 7,
+    paddingHorizontal: 16,
     ...Platform.select({
       web: { boxShadow: "0 -4px 16px rgba(0,0,0,0.12)" } as any,
       default: { shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 20 },
     }),
   },
-  handle: { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 20 },
-  header: { alignItems: "center", gap: 10, marginBottom: 20 },
-  iconWrap: { width: 76, height: 76, borderRadius: 38, alignItems: "center", justifyContent: "center", marginBottom: 4 },
-  title: { fontSize: 18, fontWeight: "700", textAlign: "center" },
-  subtitle: { fontSize: 13, lineHeight: 19, textAlign: "center" },
-  divider: { height: 0.5, marginVertical: 16 },
-  sectionLabel: { fontSize: 10, fontWeight: "600", letterSpacing: 0.8, marginBottom: 12 },
-  bulletRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 10 },
-  bulletRowTappable: { borderRadius: 10, borderWidth: 1, paddingVertical: 8, paddingHorizontal: 10, marginHorizontal: -4 },
-  bulletIcon: { width: 30, height: 30, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  bulletText: { flex: 1, fontSize: 13, lineHeight: 18 },
-  premiumPill: { flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 20 },
-  premiumPillText: { fontSize: 10, fontWeight: "600" },
-  ctaBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, borderRadius: 14, marginTop: 4 },
-  ctaBtnText: { color: "#fff", fontSize: 15, fontWeight: "600" },
-  dismissBtn: { alignItems: "center", paddingVertical: 14 },
-  dismissText: { fontSize: 14 },
+  handle: { width: 28, height: 3, borderRadius: 2, alignSelf: "center", marginBottom: 11 },
+  header: { flexDirection: "row", alignItems: "center", gap: 11, marginBottom: 13 },
+  iconWrap: { width: 52, height: 52, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  headerCopy: { flex: 1, gap: 3 },
+  title: { fontSize: 16, fontWeight: "700" },
+  subtitle: { fontSize: 12, lineHeight: 16 },
+  divider: { height: 0.5, marginVertical: 11 },
+  sectionLabel: { fontSize: 9, fontWeight: "700", letterSpacing: 0.8, marginBottom: 8 },
+  bulletRow: { flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 7 },
+  bulletRowTappable: { borderRadius: 10, borderWidth: 1, paddingVertical: 7, paddingHorizontal: 8, marginHorizontal: -3 },
+  bulletIcon: { width: 27, height: 27, borderRadius: 9, alignItems: "center", justifyContent: "center" },
+  bulletText: { flex: 1, fontSize: 12, lineHeight: 16 },
+  premiumPill: { flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 20 },
+  premiumPillText: { fontSize: 9, fontWeight: "600" },
+  dismissBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, paddingVertical: 8 },
+  dismissText: { fontSize: 12, fontWeight: "600" },
 });
