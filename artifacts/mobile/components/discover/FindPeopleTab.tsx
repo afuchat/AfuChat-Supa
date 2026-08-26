@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -32,6 +33,23 @@ type Person = {
 };
 
 type Filter = "all" | "online" | "recent";
+type PublicGroup = {
+  id: string;
+  name: string;
+  description: string | null;
+  avatar_url: string | null;
+  member_count: number;
+  is_member: boolean;
+};
+type PublicChannel = {
+  id: string;
+  name: string;
+  description: string | null;
+  avatar_url: string | null;
+  subscriber_count: number;
+  is_verified: boolean;
+  is_subscriber: boolean;
+};
 const ONLINE_WINDOW = 10 * 60_000;
 const RECENT_WINDOW = 24 * 60 * 60_000;
 
@@ -72,6 +90,9 @@ export default function FindPeopleTab() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [followBusy, setFollowBusy] = useState<string | null>(null);
+  const [joiningId, setJoiningId] = useState<string | null>(null);
+  const [groups, setGroups] = useState<PublicGroup[]>([]);
+  const [channels, setChannels] = useState<PublicChannel[]>([]);
   const [lastUpdated, setLastUpdated] = useState(Date.now());
 
   const loadPeople = useCallback(async (silent = false) => {
@@ -81,7 +102,15 @@ export default function FindPeopleTab() {
     try {
       // This is deliberately a live presence query, not a recommendation or
       // history query. last_seen is updated by the session heartbeat.
-      const [{ data, error: profileError }, { data: follows, error: followError }, { data: followers, error: followersError }] = await Promise.all([
+      const [
+        { data, error: profileError },
+        { data: follows, error: followError },
+        { data: followers, error: followersError },
+        { data: groupData, error: groupError },
+        { data: memberships, error: membershipError },
+        { data: channelData, error: channelError },
+        { data: subscriptions, error: subscriptionError },
+      ] = await Promise.all([
         supabase
           .from("profiles")
           .select("id, display_name, handle, avatar_url, bio, follower_count, is_verified, is_organization_verified, last_seen")
@@ -97,12 +126,34 @@ export default function FindPeopleTab() {
           .limit(100),
         supabase.from("follows").select("following_id").eq("follower_id", user.id),
         supabase.from("follows").select("follower_id").eq("following_id", user.id),
+        supabase
+          .from("chats")
+          .select("id, name, description, avatar_url, is_group, is_channel, is_public, chat_members(count)")
+          .eq("is_group", true)
+          .eq("is_channel", false)
+          .eq("is_public", true)
+          .order("updated_at", { ascending: false })
+          .limit(30),
+        supabase.from("chat_members").select("chat_id").eq("user_id", user.id),
+        supabase
+          .from("channels")
+          .select("id, name, description, avatar_url, subscriber_count, is_verified, is_public")
+          .eq("is_public", true)
+          .order("subscriber_count", { ascending: false })
+          .limit(30),
+        supabase.from("channel_subscriptions").select("channel_id").eq("user_id", user.id),
       ]);
       if (profileError) throw profileError;
       if (followError) throw followError;
       if (followersError) throw followersError;
+      if (groupError) throw groupError;
+      if (membershipError) throw membershipError;
+      if (channelError) throw channelError;
+      if (subscriptionError) throw subscriptionError;
       const followed = new Set((follows ?? []).map((row: any) => row.following_id));
       const followingMe = new Set((followers ?? []).map((row: any) => row.follower_id));
+      const memberSet = new Set((memberships ?? []).map((row: any) => row.chat_id));
+      const subscriptionSet = new Set((subscriptions ?? []).map((row: any) => row.channel_id));
       const completeProfiles = ((data ?? []) as any[]).filter((person) =>
         typeof person.handle === "string" && person.handle.trim().length > 0 &&
         typeof person.display_name === "string" && person.display_name.trim().length > 0 &&
@@ -139,6 +190,25 @@ export default function FindPeopleTab() {
           is_following: followed.has(person.id),
           is_following_me: followingMe.has(person.id),
         })));
+      setGroups(((groupData ?? []) as any[]).map((group) => ({
+        id: group.id,
+        name: group.name || "Unnamed group",
+        description: group.description || null,
+        avatar_url: group.avatar_url || null,
+        member_count: Array.isArray(group.chat_members) && group.chat_members[0]?.count != null
+          ? Number(group.chat_members[0].count)
+          : 0,
+        is_member: memberSet.has(group.id),
+      })));
+      setChannels(((channelData ?? []) as any[]).map((channel) => ({
+        id: channel.id,
+        name: channel.name || "Unnamed channel",
+        description: channel.description || null,
+        avatar_url: channel.avatar_url || null,
+        subscriber_count: Number(channel.subscriber_count || 0),
+        is_verified: !!channel.is_verified,
+        is_subscriber: subscriptionSet.has(channel.id),
+      })));
       setLastUpdated(Date.now());
     } catch {
       setError("Live users could not be loaded right now.");
@@ -164,6 +234,10 @@ export default function FindPeopleTab() {
     const channel = supabase
       .channel(`find-presence-${user.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => void loadPeople(true))
+      .on("postgres_changes", { event: "*", schema: "public", table: "chats" }, () => void loadPeople(true))
+      .on("postgres_changes", { event: "*", schema: "public", table: "channels" }, () => void loadPeople(true))
+      .on("postgres_changes", { event: "*", schema: "public", table: "chat_members" }, () => void loadPeople(true))
+      .on("postgres_changes", { event: "*", schema: "public", table: "channel_subscriptions" }, () => void loadPeople(true))
       .subscribe();
     return () => {
       clearInterval(heartbeatTimer);
@@ -181,6 +255,67 @@ export default function FindPeopleTab() {
       return matchesQuery && matchesFilter;
     }).sort((a, b) => Number(isOnline(b.last_seen)) - Number(isOnline(a.last_seen)));
   }, [filter, lastUpdated, people, query]);
+
+  const visibleGroups = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return groups.filter((group) =>
+      !needle ||
+      group.name.toLowerCase().includes(needle) ||
+      (group.description || "").toLowerCase().includes(needle)
+    );
+  }, [groups, query]);
+
+  const visibleChannels = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return channels.filter((channel) =>
+      !needle ||
+      channel.name.toLowerCase().includes(needle) ||
+      (channel.description || "").toLowerCase().includes(needle)
+    );
+  }, [channels, query]);
+
+  const joinGroup = useCallback(async (group: PublicGroup) => {
+    if (!user) return router.push("/(auth)/login" as any);
+    if (group.is_member) {
+      return router.push({ pathname: "/chat/[id]", params: { id: group.id } } as any);
+    }
+    setJoiningId(group.id);
+    const { error: joinError } = await supabase.from("chat_members").insert({
+      chat_id: group.id,
+      user_id: user.id,
+      is_admin: false,
+    });
+    if (!joinError) {
+      setGroups((current) => current.map((item) => item.id === group.id
+        ? { ...item, is_member: true, member_count: item.member_count + 1 }
+        : item));
+      router.push({ pathname: "/chat/[id]", params: { id: group.id } } as any);
+    } else {
+      setError("Could not join that group right now.");
+    }
+    setJoiningId(null);
+  }, [user]);
+
+  const joinChannel = useCallback(async (channel: PublicChannel) => {
+    if (!user) return router.push("/(auth)/login" as any);
+    if (channel.is_subscriber) {
+      return router.push({ pathname: "/channel/[id]", params: { id: channel.id } } as any);
+    }
+    setJoiningId(channel.id);
+    const { error: joinError } = await supabase
+      .from("channel_subscriptions")
+      .upsert({ channel_id: channel.id, user_id: user.id }, { onConflict: "channel_id,user_id" });
+    if (!joinError) {
+      await supabase.rpc("increment_channel_subscriber", { p_channel_id: channel.id });
+      setChannels((current) => current.map((item) => item.id === channel.id
+        ? { ...item, is_subscriber: true, subscriber_count: item.subscriber_count + 1 }
+        : item));
+      router.push({ pathname: "/channel/[id]", params: { id: channel.id } } as any);
+    } else {
+      setError("Could not join that channel right now.");
+    }
+    setJoiningId(null);
+  }, [user]);
 
   const toggleFollow = useCallback(async (person: Person) => {
     if (!user) return router.push("/(auth)/login" as any);
@@ -218,25 +353,112 @@ export default function FindPeopleTab() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
-        <View style={{ flex: 1 }}>
-          <View style={styles.headingRow}>
-            <Text style={[styles.title, { color: colors.text }]}>Find people</Text>
-            <View style={[styles.livePill, { backgroundColor: "#36C96F18" }]}>
-              <View style={styles.liveDot} /><Text style={styles.liveText}>LIVE</Text>
-            </View>
-          </View>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>Real people, active right now</Text>
+      <View style={styles.searchRow}>
+        <View style={[styles.searchBox, { backgroundColor: colors.surface, flex: 1 }]}>
+          <Ionicons name="search" size={18} color={colors.textMuted} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search people, groups, and channels"
+            placeholderTextColor={colors.textMuted}
+            style={[styles.searchInput, { color: colors.text }]}
+            returnKeyType="search"
+          />
+          {!!query && (
+            <TouchableOpacity onPress={() => setQuery("")}>
+              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+          )}
         </View>
         <TouchableOpacity style={[styles.refreshButton, { backgroundColor: accent + "14" }]} onPress={() => { setRefreshing(true); void loadPeople(); }} accessibilityLabel="Refresh live users">
           <Ionicons name="refresh" size={20} color={accent} />
         </TouchableOpacity>
       </View>
-      <View style={[styles.searchBox, { backgroundColor: colors.surface }]}>
-        <Ionicons name="search" size={18} color={colors.textMuted} />
-        <TextInput value={query} onChangeText={setQuery} placeholder="Search by name or username" placeholderTextColor={colors.textMuted} style={[styles.searchInput, { color: colors.text }]} returnKeyType="search" />
-        {!!query && <TouchableOpacity onPress={() => setQuery("")}><Ionicons name="close-circle" size={18} color={colors.textMuted} /></TouchableOpacity>}
-      </View>
+
+      {(visibleGroups.length > 0 || visibleChannels.length > 0) && (
+        <View style={styles.communitiesSection}>
+          <View style={styles.sectionHeading}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Communities</Text>
+            <Text style={[styles.sectionCaption, { color: colors.textMuted }]}>Public spaces to join</Text>
+          </View>
+          {visibleGroups.length > 0 && (
+            <>
+              <Text style={[styles.communityType, { color: colors.textMuted }]}>Groups</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.communityRail}>
+                {visibleGroups.map((group) => (
+                  <View key={group.id} style={[styles.communityCard, { backgroundColor: colors.surface }]}>
+                    <TouchableOpacity onPress={() => void joinGroup(group)} activeOpacity={0.75}>
+                      {group.avatar_url ? (
+                        <ExpoImage source={{ uri: group.avatar_url }} style={styles.communityAvatar} contentFit="cover" cachePolicy="memory-disk" />
+                      ) : (
+                        <View style={[styles.communityAvatar, styles.communityPlaceholder, { backgroundColor: accent + "18" }]}>
+                          <Ionicons name="people" size={25} color={accent} />
+                        </View>
+                      )}
+                      <Text style={[styles.communityName, { color: colors.text }]} numberOfLines={1}>{group.name}</Text>
+                      <Text style={[styles.communityDescription, { color: colors.textMuted }]} numberOfLines={2}>
+                        {group.description || "Public group"}
+                      </Text>
+                      <Text style={[styles.communityMeta, { color: accent }]}>
+                        {group.member_count.toLocaleString()} members
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.communityAction, { backgroundColor: group.is_member ? colors.inputBg : accent }]}
+                      onPress={() => void joinGroup(group)}
+                      disabled={joiningId === group.id}
+                    >
+                      {joiningId === group.id
+                        ? <ActivityIndicator size="small" color={group.is_member ? colors.textMuted : "#fff"} />
+                        : <Text style={{ color: group.is_member ? colors.textMuted : "#fff", fontFamily: "Inter_600SemiBold", fontSize: 12 }}>{group.is_member ? "Open" : "Join"}</Text>}
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            </>
+          )}
+          {visibleChannels.length > 0 && (
+            <>
+              <Text style={[styles.communityType, { color: colors.textMuted }]}>Channels</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.communityRail}>
+                {visibleChannels.map((channel) => (
+                  <View key={channel.id} style={[styles.communityCard, { backgroundColor: colors.surface }]}>
+                    <TouchableOpacity onPress={() => void joinChannel(channel)} activeOpacity={0.75}>
+                      {channel.avatar_url ? (
+                        <ExpoImage source={{ uri: channel.avatar_url }} style={styles.communityAvatar} contentFit="cover" cachePolicy="memory-disk" />
+                      ) : (
+                        <View style={[styles.communityAvatar, styles.communityPlaceholder, { backgroundColor: "#8B5CF618" }]}>
+                          <Ionicons name="megaphone" size={25} color="#8B5CF6" />
+                        </View>
+                      )}
+                      <View style={styles.communityNameRow}>
+                        <Text style={[styles.communityName, { color: colors.text, flex: 1 }]} numberOfLines={1}>{channel.name}</Text>
+                        {channel.is_verified && <Ionicons name="checkmark-circle" size={14} color="#8B5CF6" />}
+                      </View>
+                      <Text style={[styles.communityDescription, { color: colors.textMuted }]} numberOfLines={2}>
+                        {channel.description || "Public channel"}
+                      </Text>
+                      <Text style={[styles.communityMeta, { color: "#8B5CF6" }]}>
+                        {channel.subscriber_count.toLocaleString()} subscribers
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.communityAction, { backgroundColor: channel.is_subscriber ? colors.inputBg : "#8B5CF6" }]}
+                      onPress={() => void joinChannel(channel)}
+                      disabled={joiningId === channel.id}
+                    >
+                      {joiningId === channel.id
+                        ? <ActivityIndicator size="small" color={channel.is_subscriber ? colors.textMuted : "#fff"} />
+                        : <Text style={{ color: channel.is_subscriber ? colors.textMuted : "#fff", fontFamily: "Inter_600SemiBold", fontSize: 12 }}>{channel.is_subscriber ? "Open" : "Join"}</Text>}
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            </>
+          )}
+        </View>
+      )}
+
       <View style={styles.filterRow}>
         {([["all", "Everyone"], ["online", "Online now"], ["recent", "Active today"]] as const).map(([value, label]) => (
           <TouchableOpacity key={value} onPress={() => setFilter(value)} style={[styles.filterChip, { backgroundColor: filter === value ? accent : colors.surface }]}>
@@ -245,6 +467,7 @@ export default function FindPeopleTab() {
           </TouchableOpacity>
         ))}
       </View>
+      <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 10 }]}>People</Text>
       {loading && people.length === 0 ? <View style={styles.center}><ActivityIndicator color={accent} /></View> : error && people.length === 0 ? (
         <View style={styles.center}><Ionicons name="cloud-offline-outline" size={30} color={colors.textMuted} /><Text style={[styles.subtitle, { color: colors.textMuted }]}>{error}</Text><TouchableOpacity onPress={() => void loadPeople()}><Text style={{ color: accent, fontFamily: "Inter_600SemiBold" }}>Try again</Text></TouchableOpacity></View>
       ) : (
@@ -286,14 +509,24 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14, lineHeight: 20, textAlign: "center", maxWidth: 320 },
   primaryButton: { minHeight: 46, borderRadius: 23, paddingHorizontal: 24, justifyContent: "center" },
   primaryButtonText: { color: "#fff", fontSize: 14, fontFamily: "Inter_600SemiBold" },
-  header: { flexDirection: "row", alignItems: "center", paddingTop: 20, paddingBottom: 14 },
-  headingRow: { flexDirection: "row", alignItems: "center", gap: 9 },
-  livePill: { flexDirection: "row", alignItems: "center", gap: 5, borderRadius: 10, paddingHorizontal: 7, paddingVertical: 4 },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#36C96F" },
-  liveText: { color: "#36C96F", fontSize: 9, fontFamily: "Inter_700Bold", letterSpacing: 0.6 },
+  searchRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingTop: 14, paddingBottom: 10 },
   refreshButton: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
   searchBox: { height: 46, borderRadius: 14, paddingHorizontal: 13, flexDirection: "row", alignItems: "center", gap: 9 },
   searchInput: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular", paddingVertical: 0 },
+  communitiesSection: { paddingBottom: 10 },
+  sectionHeading: { flexDirection: "row", alignItems: "baseline", gap: 8, marginBottom: 9 },
+  sectionTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
+  sectionCaption: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  communityType: { fontSize: 12, fontFamily: "Inter_700Bold", marginBottom: 7, marginTop: 4 },
+  communityRail: { gap: 10, paddingBottom: 8 },
+  communityCard: { width: 190, minHeight: 214, borderRadius: 17, padding: 12 },
+  communityAvatar: { width: 58, height: 58, borderRadius: 16, marginBottom: 9 },
+  communityPlaceholder: { alignItems: "center", justifyContent: "center" },
+  communityNameRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  communityName: { fontSize: 14, fontFamily: "Inter_700Bold", marginBottom: 3 },
+  communityDescription: { fontSize: 11, lineHeight: 16, minHeight: 32 },
+  communityMeta: { fontSize: 11, fontFamily: "Inter_600SemiBold", marginTop: 5 },
+  communityAction: { height: 31, borderRadius: 16, alignItems: "center", justifyContent: "center", marginTop: 10 },
   filterRow: { flexDirection: "row", gap: 8, paddingVertical: 14 },
   filterChip: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 18 },
   filterText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
