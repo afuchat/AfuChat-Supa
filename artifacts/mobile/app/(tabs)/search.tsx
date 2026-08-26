@@ -1691,14 +1691,13 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
             style={[
               ss.lensInlineButton,
               {
-                backgroundColor: colors.text + "12",
-                borderColor: colors.text + "55",
+                backgroundColor: colors.text + "18",
               },
             ]}
           >
             {lensLoading
               ? <ActivityIndicator size="small" color={colors.text} />
-              : <Ionicons name="scan-outline" size={21} color={colors.text} />}
+              : <Ionicons name="scan" size={22} color={colors.text} />}
           </TouchableOpacity>
         </View>
         {!!lensError && (
@@ -1862,7 +1861,6 @@ const ss = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 16,
-    borderWidth: 1,
   },
 
   filterPill: {
