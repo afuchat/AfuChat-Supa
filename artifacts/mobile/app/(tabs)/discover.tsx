@@ -2816,7 +2816,6 @@ export default function DiscoverScreen() {
             zIndex: 3,
             width: "100%",
             backgroundColor: colors.background,
-            display: activeDiscoverTab === "find" ? "none" : "flex",
           }}
         >
           <StoriesRow
