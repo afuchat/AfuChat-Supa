@@ -15,7 +15,17 @@ function getTrackPlayer(): TrackPlayerModule | null {
   if (Platform.OS === "web") return null;
   if (!(NativeModules as Record<string, unknown>).TrackPlayerModule) return null;
   try {
-    return require("react-native-track-player").default as TrackPlayerModule;
+    const candidate = require("react-native-track-player").default as Partial<TrackPlayerModule> | null;
+    if (
+      !candidate ||
+      typeof candidate.setupPlayer !== "function" ||
+      typeof candidate.updateOptions !== "function" ||
+      typeof candidate.setQueue !== "function" ||
+      typeof candidate.play !== "function"
+    ) {
+      return null;
+    }
+    return candidate as TrackPlayerModule;
   } catch {
     return null;
   }
@@ -88,21 +98,27 @@ export async function setNativeMusicQueue(
   tracks: NativeMusicTrack[],
   activeIndex: number,
 ): Promise<boolean> {
-  const TrackPlayer = getTrackPlayer();
-  if (!TrackPlayer || !(await setupNativeMusicPlayer())) return false;
-  if (Platform.OS === "android") {
-    try {
-      const Notifications = require("expo-notifications");
-      const current = await Notifications.getPermissionsAsync();
-      if (current.status !== "granted") {
-        await Notifications.requestPermissionsAsync();
+  try {
+    const TrackPlayer = getTrackPlayer();
+    if (!TrackPlayer || !(await setupNativeMusicPlayer())) return false;
+    if (Platform.OS === "android") {
+      try {
+        const Notifications = require("expo-notifications");
+        const current = await Notifications.getPermissionsAsync();
+        if (current.status !== "granted") {
+          await Notifications.requestPermissionsAsync();
+        }
+      } catch (error) {
+        if (__DEV__) console.warn("[AfuMusic] notification permission unavailable", error);
       }
-    } catch (error) {
-      if (__DEV__) console.warn("[AfuMusic] notification permission unavailable", error);
     }
+    if (!tracks.length || activeIndex < 0 || activeIndex >= tracks.length) return false;
+    await TrackPlayer.setQueue(tracks);
+    await TrackPlayer.skip(activeIndex);
+    await TrackPlayer.play();
+    return true;
+  } catch (error) {
+    if (__DEV__) console.warn("[AfuMusic] native queue playback unavailable", error);
+    return false;
   }
-  await TrackPlayer.setQueue(tracks);
-  await TrackPlayer.skip(activeIndex);
-  await TrackPlayer.play();
-  return true;
 }

@@ -186,22 +186,37 @@ export default function AfuMusicScreen() {
     if (nativePlaybackAvailable) {
       const TrackPlayer = getNativeMusicPlayer();
       if (TrackPlayer) {
-        const { Event, State } = require("react-native-track-player");
-        void setupNativeMusicPlayer();
-        nativeSubscriptions = [
-          TrackPlayer.addEventListener(Event.PlaybackState, ({ state }: { state: string }) => {
-            if (mountedRef.current) setIsPlaying(state === State.Playing);
-          }),
-          TrackPlayer.addEventListener(
-            Event.PlaybackProgressUpdated,
+        let playerState: { Playing?: string } | null = null;
+        try {
+          const { Event, State } = require("react-native-track-player");
+          playerState = State;
+          void setupNativeMusicPlayer();
+
+          const addListener = (event: unknown, handler: (...args: any[]) => void) => {
+            if (event == null) return;
+            try {
+              const subscription = TrackPlayer.addEventListener(event as any, handler as any);
+              if (subscription && typeof subscription.remove === "function") {
+                nativeSubscriptions.push(subscription);
+              }
+            } catch (error) {
+              if (__DEV__) console.warn("[AfuMusic] playback event unavailable", error);
+            }
+          };
+
+          addListener(Event?.PlaybackState, ({ state }: { state: string }) => {
+            if (mountedRef.current) setIsPlaying(state === State?.Playing);
+          });
+          addListener(
+            Event?.PlaybackProgressUpdated,
             ({ position, duration }: { position: number; duration: number }) => {
               if (!mountedRef.current) return;
               setPositionMillis(position * 1000);
               setDurationMillis(duration * 1000);
             },
-          ),
-          TrackPlayer.addEventListener(
-            Event.PlaybackActiveTrackChanged,
+          );
+          addListener(
+            Event?.PlaybackActiveTrackChanged,
             ({ index }: { index?: number }) => {
               const nextTrack = index === undefined ? undefined : tracksRef.current[index];
               if (!mountedRef.current) return;
@@ -209,17 +224,19 @@ export default function AfuMusicScreen() {
               setPositionMillis(0);
               setDurationMillis((nextTrack?.duration ?? 0) * 1000);
             },
-          ),
-          TrackPlayer.addEventListener(Event.PlaybackQueueEnded, () => {
+          );
+          addListener(Event?.PlaybackQueueEnded, () => {
             if (mountedRef.current) setIsPlaying(false);
-          }),
-          TrackPlayer.addEventListener(Event.PlaybackError, () => {
+          });
+          addListener(Event?.PlaybackError, () => {
             if (mountedRef.current) {
               setIsPlaying(false);
               setError("This track couldn't be played. It may no longer be available offline.");
             }
-          }),
-        ];
+          });
+        } catch (error) {
+          if (__DEV__) console.warn("[AfuMusic] native playback events unavailable", error);
+        }
         void (async () => {
           try {
             const [activeIndex, progress, playbackState] = await Promise.all([
@@ -232,7 +249,7 @@ export default function AfuMusicScreen() {
             setCurrentTrackId(activeTrack?.id ?? null);
             setPositionMillis(progress.position * 1000);
             setDurationMillis(progress.duration * 1000 || (activeTrack?.duration ?? 0) * 1000);
-            setIsPlaying(playbackState.state === State.Playing);
+            setIsPlaying(playbackState.state === playerState?.Playing);
           } catch {}
         })();
       }
@@ -290,7 +307,11 @@ export default function AfuMusicScreen() {
         setCurrentTrackId(track.id);
         setPositionMillis(0);
         setDurationMillis(track.duration * 1000);
-        await setNativeMusicQueue(queue, index);
+        const started = await setNativeMusicQueue(queue, index);
+        if (!started && mountedRef.current) {
+          setIsPlaying(false);
+          setError("This track couldn't be played. It may no longer be available offline.");
+        }
       } catch {
         setIsPlaying(false);
         setError("This track couldn't be played. It may no longer be available offline.");
@@ -361,7 +382,14 @@ export default function AfuMusicScreen() {
     if (nativePlaybackAvailable) {
       const TrackPlayer = getNativeMusicPlayer();
       if (!TrackPlayer) return;
-      void (direction === 1 ? TrackPlayer.skipToNext() : TrackPlayer.skipToPrevious()).catch(() => {});
+      try {
+        void (direction === 1 ? TrackPlayer.skipToNext() : TrackPlayer.skipToPrevious()).catch(() => {});
+      } catch {
+        if (mountedRef.current) {
+          setIsPlaying(false);
+          setError("This track couldn't be changed right now. Please try again.");
+        }
+      }
       return;
     }
     const index = tracks.findIndex((track) => track.id === currentTrackId);
