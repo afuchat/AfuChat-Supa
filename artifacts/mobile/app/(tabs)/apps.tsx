@@ -366,7 +366,7 @@ export default function AppsScreen() {
     });
   }
 
-  function isVisible(a: AppItem) {
+  function isVisible(a: PlatformPage) {
     if (a.orgOnly && !isOrgVerified) return false;
     return true;
   }
@@ -382,7 +382,7 @@ export default function AppsScreen() {
       if (!searchQuery) return true;
       return a.label.toLowerCase().includes(searchQuery.toLowerCase());
     }),
-  })).filter((cat) => cat.apps.length > 0);
+  })).filter((cat) => cat.pages.length > 0);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -460,19 +460,19 @@ export default function AppsScreen() {
 
         {/* ── Category grids ── */}
         {filteredCategories.map((cat) => {
-          const padCount = cat.apps.length % COLS === 0 ? 0 : COLS - (cat.apps.length % COLS);
+          const padCount = cat.pages.length % COLS === 0 ? 0 : COLS - (cat.pages.length % COLS);
           return (
             <View key={cat.id} style={{ marginBottom: 24 }}>
               <Text style={[styles.sectionTitle, { color: colors.text, paddingHorizontal: H_PAD, marginBottom: 4 }]}>
                 {cat.title}
               </Text>
               <View style={[styles.grid, { paddingHorizontal: H_PAD }]}>
-                {cat.apps.map((app) => (
+                {cat.pages.map((page) => (
                   <PageTile
-                    key={app.id}
-                    page={app}
+                    key={page.id}
+                    page={page}
                     tileWidth={tileWidth}
-                    usageCount={usageCounts[app.id]}
+                    usageCount={usageCounts[page.id]}
                     onTap={trackTap}
                   />
                 ))}
@@ -487,7 +487,7 @@ export default function AppsScreen() {
         {filteredCategories.length === 0 ? (
           <View style={styles.emptyWrap}>
             <Ionicons name="search" size={40} color={colors.textMuted} />
-            <Text style={[styles.emptyText, { color: colors.textMuted }]}>No apps match "{searchQuery}"</Text>
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>No pages match "{searchQuery}"</Text>
           </View>
         ) : null}
       </ScrollView>

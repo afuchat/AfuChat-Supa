@@ -268,7 +268,7 @@ export default function MatchConversationScreen() {
       { text: "Unmatch", style: "destructive", onPress: async () => {
         await supabase.from("match_messages").delete().eq("match_id", id);
         await supabase.from("match_matches").delete().eq("id", id);
-        router.replace("/match" as any);
+        router.replace("/app/afumatch" as any);
       }},
     ]);
   }

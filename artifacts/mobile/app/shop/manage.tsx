@@ -553,7 +553,7 @@ export default function ShopManage() {
             <Ionicons name="checkmark-circle" size={18} color="#fff" />
             <Text style={{ fontSize: 15, fontFamily: "Inter_600SemiBold", color: "#fff" }}>Apply for Verification</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push("/store")}>
+          <TouchableOpacity onPress={() => router.push("/app/afumarket")}>
             <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: colors.accent }}>Browse Marketplace</Text>
           </TouchableOpacity>
         </View>

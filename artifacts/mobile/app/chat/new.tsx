@@ -401,7 +401,7 @@ export default function NewChatScreen() {
         </Text>
         <TouchableOpacity
           style={styles.backBtn}
-          onPress={() => router.push("/qr-scanner")}
+          onPress={() => router.push("/app/afuqr")}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons name="qr-code" size={22} color={accent} />

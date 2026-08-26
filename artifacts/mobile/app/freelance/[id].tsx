@@ -272,7 +272,7 @@ export default function FreelanceListingScreen() {
           </Text>
           <TouchableOpacity
             style={[st.browseBtn, { backgroundColor: accent }]}
-            onPress={() => safeRouter.push("/freelance" as any)}
+            onPress={() => safeRouter.push("/app/afufreelance" as any)}
           >
             <Text style={st.browseBtnText}>Browse Services</Text>
           </TouchableOpacity>

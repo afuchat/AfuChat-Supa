@@ -63,7 +63,7 @@ const NAV_ROUTES: Record<string, string> = {
   ai:                 "/ai",
   premium:            "/premium",
   prestige:           "/prestige",
-  store:              "/store",
+  store:              "/app/afumarket",
   support:            "/support",
   about:              "/about",
   terms:              "/terms",
@@ -76,16 +76,16 @@ const NAV_ROUTES: Record<string, string> = {
   stories:            "/stories/view",
   // ── Social ────────────────────────────────────────────────────────────────
   achievements:       "/achievements",
-  collections:        "/collections",
-  "saved-posts":      "/saved-posts",
+  collections:        "/app/afucollections",
+  "saved-posts":      "/app/afusaved",
   "my-posts":         "/my-posts",
   "watch-history":    "/watch-history",
   // ── Commerce & mini-apps ──────────────────────────────────────────────────
   shop:               "/shop",
-  games:              "/games",
-  freelance:          "/freelance",
-  gifts:              "/gifts",
-  business:           "/business",
+  games:              "/app/afugames",
+  freelance:          "/app/afufreelance",
+  gifts:              "/app/afugifts",
+  business:           "/app/afubusiness",
 };
 
 /**

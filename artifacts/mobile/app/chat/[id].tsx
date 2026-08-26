@@ -8484,7 +8484,7 @@ STRICT RULES:
                 <Text style={[st.giftRevealNote, { color: colors.textMuted }]}>This gift has been added to your Gift Gallery</Text>
               )}
               {giftReveal?.isReceiver ? (
-                <TouchableOpacity style={[st.giftRevealBtn, { backgroundColor: BRAND }]} onPress={() => { setGiftReveal(null); router.push("/gifts"); }}>
+                <TouchableOpacity style={[st.giftRevealBtn, { backgroundColor: BRAND }]} onPress={() => { setGiftReveal(null); router.push("/app/afugifts"); }}>
                   <Text style={st.giftRevealBtnText}>View Gift Gallery</Text>
                 </TouchableOpacity>
               ) : (

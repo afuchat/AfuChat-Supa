@@ -59,7 +59,7 @@ const NAV: Record<FullAppId, AppNavItem[]> = {
     { key: "post-gig", label: "Post a gig", icon: "add-circle-outline", href: "/app/afufreelance?section=post-gig" },
   ],
   afufiles: [
-    { key: "library", label: "Library", icon: "folder-outline", href: "/file-manager" },
+    { key: "library", label: "Library", icon: "folder-outline", href: "/app/afufiles" },
   ],
   afugifts: [
     { key: "gifts", label: "My gifts", icon: "gift-outline", href: "/app/afugifts" },
@@ -116,10 +116,12 @@ type Props = {
 
 export default function AppPageShell({ appId, activeKey, showNav = true, children }: Props) {
   const { colors } = useTheme();
+  const items = getAppNav(appId);
+  const shouldShowNav = showNav && items.length > 1;
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ flex: 1, position: "relative", overflow: "hidden" }}>{children}</View>
-      {showNav && <AppBottomNav items={getAppNav(appId)} activeKey={activeKey} />}
+      {shouldShowNav && <AppBottomNav items={items} activeKey={activeKey} />}
     </View>
   );
 }

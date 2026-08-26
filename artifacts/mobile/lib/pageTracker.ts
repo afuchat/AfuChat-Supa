@@ -48,7 +48,7 @@ const ROUTE_MAP: Array<{ match: RegExp; name: string; summary: string }> = [
   { match: /^\/post\//, name: "Post", summary: "A specific post and its comments." },
   { match: /^\/video\//, name: "Video", summary: "Full-screen video player." },
   { match: /^\/article\//, name: "Article", summary: "A long-form article." },
-  { match: /^\/saved-posts/, name: "Saved Posts", summary: "Posts you've bookmarked and saved for later." },
+  { match: /^\/app\/afusaved/, name: "Saved Posts", summary: "Posts you've bookmarked and saved for later." },
   { match: /^\/my-posts/, name: "My Posts", summary: "All posts you've published." },
 
   // Wallet
@@ -64,7 +64,7 @@ const ROUTE_MAP: Array<{ match: RegExp; name: string; summary: string }> = [
   { match: /^\/user-discovery/, name: "Discover People", summary: "Discover new people to follow based on interests and connections." },
   { match: /^\/digital-id/, name: "Digital ID", summary: "Your AfuChat digital identity card — a shareable QR code for your profile." },
   { match: /^\/prestige/, name: "Prestige Leaderboard", summary: "The XP-based prestige rankings: Newcomer → Bronze → Silver → Gold → Diamond → Legend." },
-  { match: /^\/username-market/, name: "Username Market", summary: "Browse, buy, or sell rare AfuChat usernames using ACoins." },
+  { match: /^\/app\/afuusernames/, name: "Username Market", summary: "Browse, buy, or sell rare AfuChat usernames using ACoins." },
   { match: /^\/match\/preferences/, name: "Match Preferences", summary: "Set your social matching preferences." },
   { match: /^\/match/, name: "Matching", summary: "AfuChat's social discovery feature — find compatible people." },
   { match: /^\/achievements/, name: "Achievements", summary: "Your AfuChat achievements and badges." },
@@ -83,7 +83,7 @@ const ROUTE_MAP: Array<{ match: RegExp; name: string; summary: string }> = [
 
   // Freelance
   { match: /^\/freelance\/[^/]+/, name: "Freelance Listing", summary: "A freelance service listing. You can view details, see the seller, and place an order with ACoins." },
-  { match: /^\/freelance/, name: "AfuFreelance", summary: "The AfuChat freelance marketplace — browse services, hire talent, or post your own gigs." },
+  { match: /^\/app\/afufreelance/, name: "AfuFreelance", summary: "The AfuChat freelance marketplace — browse services, hire talent, or post your own gigs." },
 
   // Wallet services
   { match: /^\/app\/afupay/, name: "Wallet", summary: "Manage money, transfers, payments, and built-in services in one place." },
@@ -102,8 +102,8 @@ const ROUTE_MAP: Array<{ match: RegExp; name: string; summary: string }> = [
   { match: /^\/channel\//, name: "Channel", summary: "A creator or brand's broadcast channel." },
   { match: /^\/group\//, name: "Group Chat", summary: "A group conversation." },
   { match: /^\/paid-communities/, name: "Paid Communities", summary: "Browse paid community memberships." },
-  { match: /^\/digital-events/, name: "Digital Events", summary: "Browse and join digital events." },
-  { match: /^\/collections/, name: "Collections", summary: "Your saved collections." },
+  { match: /^\/app\/afuevents/, name: "Digital Events", summary: "Browse and join digital events." },
+  { match: /^\/app\/afucollections/, name: "Collections", summary: "Your saved collections." },
 
   // Settings
   { match: /^\/settings\/two-factor/, name: "Two-Factor Auth", summary: "Enable or disable two-factor authentication for your account." },

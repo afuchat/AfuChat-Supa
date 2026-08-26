@@ -84,7 +84,7 @@ const NAV_TESTS: NavTest[] = [
   { url: "afuchat://ai",           expectedType: "navigate", expectedPath: "/ai",                description: "AfuAI" },
   { url: "afuchat://premium",      expectedType: "navigate", expectedPath: "/premium",           description: "Premium" },
   { url: "afuchat://prestige",     expectedType: "navigate", expectedPath: "/prestige",          description: "Prestige" },
-  { url: "afuchat://store",        expectedType: "navigate", expectedPath: "/store",             description: "Store" },
+  { url: "afuchat://store",        expectedType: "navigate", expectedPath: "/app/afumarket",     description: "Store" },
   { url: "afuchat://support",      expectedType: "navigate", expectedPath: "/support",           description: "Support" },
   { url: "afuchat://about",        expectedType: "navigate", expectedPath: "/about",             description: "About" },
   { url: "afuchat://terms",        expectedType: "navigate", expectedPath: "/terms",             description: "Terms" },
@@ -97,16 +97,16 @@ const NAV_TESTS: NavTest[] = [
   { url: "afuchat://stories",      expectedType: "navigate", expectedPath: "/stories/view",      description: "Stories" },
   // ── Social ──────────────────────────────────────────────────────────────
   { url: "afuchat://achievements", expectedType: "navigate", expectedPath: "/achievements",      description: "Achievements" },
-  { url: "afuchat://collections",  expectedType: "navigate", expectedPath: "/collections",       description: "Collections" },
-  { url: "afuchat://saved-posts",  expectedType: "navigate", expectedPath: "/saved-posts",       description: "Saved posts" },
+  { url: "afuchat://collections",  expectedType: "navigate", expectedPath: "/app/afucollections", description: "Collections" },
+  { url: "afuchat://saved-posts",  expectedType: "navigate", expectedPath: "/app/afusaved",       description: "Saved posts" },
   { url: "afuchat://my-posts",     expectedType: "navigate", expectedPath: "/my-posts",          description: "My posts" },
   { url: "afuchat://watch-history",expectedType: "navigate", expectedPath: "/watch-history",     description: "Watch history" },
   // ── Commerce & mini-apps ────────────────────────────────────────────────
   { url: "afuchat://shop",         expectedType: "navigate", expectedPath: "/shop",              description: "Shop" },
-  { url: "afuchat://games",        expectedType: "navigate", expectedPath: "/games",             description: "Games" },
-  { url: "afuchat://freelance",    expectedType: "navigate", expectedPath: "/freelance",         description: "Freelance" },
-  { url: "afuchat://gifts",        expectedType: "navigate", expectedPath: "/gifts",             description: "Gifts" },
-  { url: "afuchat://business",     expectedType: "navigate", expectedPath: "/business",          description: "Business" },
+  { url: "afuchat://games",        expectedType: "navigate", expectedPath: "/app/afugames",      description: "Games" },
+  { url: "afuchat://freelance",    expectedType: "navigate", expectedPath: "/app/afufreelance",  description: "Freelance" },
+  { url: "afuchat://gifts",        expectedType: "navigate", expectedPath: "/app/afugifts",      description: "Gifts" },
+  { url: "afuchat://business",     expectedType: "navigate", expectedPath: "/app/afubusiness",   description: "Business" },
   // ── Parameterised routes ─────────────────────────────────────────────────
   {
     url: "afuchat://chat/00000000-0000-0000-0000-000000000001",

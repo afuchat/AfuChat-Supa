@@ -23,8 +23,8 @@ let screensEnabled = false;
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { AppState, InteractionManager, Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
-import { Stack, usePathname, useRootNavigationState } from "expo-router";
+import { AppState, BackHandler, InteractionManager, Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
+import { router, Stack, usePathname, useRootNavigationState } from "expo-router";
 import { setCurrentPage, resolvePageInfo } from "@/lib/pageTracker";
 import { StatusBar } from "expo-status-bar";
 import * as Font from "expo-font";
@@ -166,6 +166,55 @@ function PageWatcher() {
   useEffect(() => {
     setCurrentPage(resolvePageInfo(pathname));
   }, [pathname]);
+  return null;
+}
+
+/**
+ * Keep Android back inside AfuChat's navigation tree.
+ *
+ * Platform pages are entered from the Apps page and some of their sections
+ * intentionally use replace() so the section switch does not create a second
+ * stack. A hardware back press must therefore have a safe platform fallback
+ * instead of allowing the Android activity to close the whole app.
+ */
+function HardwareBackGuard() {
+  const pathname = usePathname();
+  const { session, user } = useAuth();
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+
+    const primaryTabs = new Set([
+      "/",
+      "/(tabs)",
+      "/(tabs)/index",
+      "/(tabs)/chats",
+      "/(tabs)/discover",
+      "/(tabs)/shorts",
+      "/(tabs)/apps",
+      "/(tabs)/me",
+    ]);
+    const authRoute = pathname.startsWith("/(auth)") || pathname === "/welcome";
+
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (authRoute) return false;
+
+      // A primary tab is a navigation root. Do not pop it into an old page
+      // from a previous flow, and do not let Android close the activity.
+      if (primaryTabs.has(pathname)) return true;
+
+      if (router.canGoBack()) {
+        router.back();
+        return true;
+      }
+
+      router.replace((session || user) ? "/(tabs)/chats" : "/welcome");
+      return true;
+    });
+
+    return () => subscription.remove();
+  }, [pathname, session, user]);
+
   return null;
 }
 
@@ -436,6 +485,7 @@ export default function RootLayout() {
                     <CrashReporterUserSync />
                     <CrashSupportHandler />
                     <PageWatcher />
+                     <HardwareBackGuard />
                     <GlobalInboxListener />
                     <PushNotificationManager />
                     <UpdatePrompt />

@@ -460,7 +460,7 @@ export default function EditProfileScreen() {
         showAlert(
           "Username listed for sale",
           `@${listedHandle.username} is reserved and can only be used after purchase.`,
-          usernamePurchasePrompt(listedHandle.username, listedHandle.price, () => router.push("/username-market")),
+          usernamePurchasePrompt(listedHandle.username, listedHandle.price, () => router.push("/app/afuusernames")),
         );
         return;
       }
@@ -529,7 +529,7 @@ export default function EditProfileScreen() {
         showAlert(
           "Username listed for sale",
           `@${cleanHandle} is reserved and can only be used after purchase.`,
-          usernamePurchasePrompt(cleanHandle, listedHandle?.price, () => router.push("/username-market")),
+          usernamePurchasePrompt(cleanHandle, listedHandle?.price, () => router.push("/app/afuusernames")),
         );
       } else {
         showAlert("Username unavailable", claimError.message);

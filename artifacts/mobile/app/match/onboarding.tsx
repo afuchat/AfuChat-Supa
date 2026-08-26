@@ -260,7 +260,7 @@ export default function MatchOnboarding() {
     }
 
     setSaving(false);
-    router.replace("/match" as any);
+    router.replace("/app/afumatch" as any);
   }
 
   const progressWidth = progress.interpolate({

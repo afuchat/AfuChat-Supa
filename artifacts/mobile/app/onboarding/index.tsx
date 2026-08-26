@@ -392,7 +392,7 @@ export default function OnboardingScreen() {
         showAlert(
           "Username listed for sale",
           `@${cleanHandle} is reserved and can only be used after purchase.`,
-          usernamePurchasePrompt(cleanHandle, availability.price, () => router.push("/username-market")),
+          usernamePurchasePrompt(cleanHandle, availability.price, () => router.push("/app/afuusernames")),
         );
       } else if (availability?.status === "taken") {
         showAlert("Handle taken", "This handle is already in use. Please choose another one.");
@@ -447,7 +447,7 @@ export default function OnboardingScreen() {
           showAlert(
             "Username listed for sale",
             `@${cleanHandle} is reserved and can only be used after purchase.`,
-            usernamePurchasePrompt(cleanHandle, listedHandle?.price, () => router.push("/username-market")),
+            usernamePurchasePrompt(cleanHandle, listedHandle?.price, () => router.push("/app/afuusernames")),
           );
           setStep(1);
         } else {
@@ -458,7 +458,7 @@ export default function OnboardingScreen() {
           showAlert(
             "Username listed for sale",
             `@${cleanHandle} is reserved and can only be used after purchase.`,
-            usernamePurchasePrompt(cleanHandle, listedHandle?.price, () => router.push("/username-market")),
+            usernamePurchasePrompt(cleanHandle, listedHandle?.price, () => router.push("/app/afuusernames")),
           );
           setStep(1);
         } else {
@@ -477,7 +477,7 @@ export default function OnboardingScreen() {
         showAlert(
           "Username listed for sale",
           `@${cleanHandle} is reserved and can only be used after purchase.`,
-          usernamePurchasePrompt(cleanHandle, listedHandle?.price, () => router.push("/username-market")),
+            usernamePurchasePrompt(cleanHandle, listedHandle?.price, () => router.push("/app/afuusernames")),
         );
       } else {
         showAlert("Username unavailable", claimError.message);
@@ -590,7 +590,7 @@ export default function OnboardingScreen() {
                     Listed for {listedHandle.price} ACoin. Buy it first to use it.
                   </Text>
                 </View>
-                <TouchableOpacity style={[st.takenLoginBtn, { backgroundColor: colors.accent }]} onPress={() => router.push("/username-market")}>
+                <TouchableOpacity style={[st.takenLoginBtn, { backgroundColor: colors.accent }]} onPress={() => router.push("/app/afuusernames")}>
                   <Text style={{ color: "#fff", fontSize: 13, fontFamily: "Inter_600SemiBold" }}>Buy username</Text>
                 </TouchableOpacity>
               </View>

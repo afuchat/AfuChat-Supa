@@ -106,7 +106,7 @@ export default function MatchSettingsScreen() {
         await supabase.from("match_photos").delete().eq("user_id", user.id);
         await supabase.from("match_profiles").delete().eq("user_id", user.id);
         showAlert("Profile Deleted", "Your AfuMatch profile has been deleted.");
-        router.replace("/match" as any);
+        router.replace("/app/afumatch" as any);
       }},
     ]);
   }

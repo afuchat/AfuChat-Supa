@@ -581,7 +581,7 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
           id: p.id, kind: "freelance" as const, title: p.title, desc: p.description,
           emoji: p.emoji || "💼", image_url: null, price: p.price || 0,
           badge: "Freelance", seller_name: (p.profiles as any)?.display_name || "",
-          route: `/freelance`,
+          route: `/app/afufreelance`,
         })));
         if (comms.data) marketItems.push(...comms.data.map((p: any) => ({
           id: p.id, kind: "community" as const, title: p.name, desc: p.description,
@@ -987,7 +987,7 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
     const sold = ev.capacity > 0 ? Math.round((ev.tickets_sold / ev.capacity) * 100) : 0;
     return (
       <View >
-        <TouchableOpacity style={[ss.listRow, { backgroundColor: colors.surface }]} onPress={() => router.push("/digital-events" as any)} activeOpacity={0.75}>
+        <TouchableOpacity style={[ss.listRow, { backgroundColor: colors.surface }]} onPress={() => router.push("/app/afuevents" as any)} activeOpacity={0.75}>
           <View style={{ width: 48, height: 52, borderRadius: 12, backgroundColor: WARN + "1A", alignItems: "center", justifyContent: "center" }}>
             <Text style={{ color: WARN, fontSize: 9, fontFamily: "Inter_700Bold" }}>{d.toLocaleDateString("en-US", { month: "short" }).toUpperCase()}</Text>
             <Text style={{ color: WARN, fontSize: 20, fontFamily: "Inter_700Bold", lineHeight: 24 }}>{d.getDate()}</Text>

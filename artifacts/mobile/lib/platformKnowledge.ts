@@ -42,7 +42,7 @@ export const PLATFORM_NAV_MAP = `
 | /video/[id] | Full-screen video player |
 | /article/[id] | Read an article |
 | /p/[id] | Public/short link to any content |
-| /saved-posts | Posts you have bookmarked/saved |
+| /app/afusaved | Posts you have bookmarked/saved |
 | /my-posts | All posts you have created |
 
 ### WALLET & FINANCE
@@ -64,7 +64,7 @@ export const PLATFORM_NAV_MAP = `
 | /user-discovery | Discover new people to follow |
 | /digital-id | Your AfuChat digital identity card (shareable QR) |
 | /prestige | XP leaderboard and prestige rankings |
-| /username-market | Browse, buy, or sell rare usernames |
+| /app/afuusernames | Browse, buy, or sell rare usernames |
 | /match | Social matching — find compatible people |
 | /match/preferences | Set your matching preferences |
 | /match/onboarding | Set up your match profile |
@@ -205,7 +205,7 @@ export const USERNAME_MARKET_KNOWLEDGE = `
 ## USERNAME MARKETPLACE & BOUGHT USERNAMES
 
 ### What are bought usernames?
-Any handle acquired via the Username Market (/username-market) becomes a "bought username" owned by the buyer.  Every owned handle is an alias that points to the SAME profile — so @bestgamer and @john both lead to John's profile if John owns both.
+Any handle acquired via the Username Market (/app/afuusernames) becomes a "bought username" owned by the buyer.  Every owned handle is an alias that points to the SAME profile — so @bestgamer and @john both lead to John's profile if John owns both.
 
 ### Rarity tiers (by handle length)
 | Tier | Length | Badge |
@@ -224,8 +224,8 @@ Any handle acquired via the Username Market (/username-market) becomes a "bought
 ### AI instructions for username questions
 - "Where does @handle go?" → use [ACTION:View @handle:/@handle] to show the profile that owns it.
 - "Who owns @handle?" → use [ACTION:Look up @handle:/@handle]
-- "Buy a username" → use [ACTION:Username Market:/username-market]
-- "Sell my username" → use [ACTION:Username Market:/username-market]
+- "Buy a username" → use [ACTION:Username Market:/app/afuusernames]
+- "Sell my username" → use [ACTION:Username Market:/app/afuusernames]
 `;
 
 // ── Verification knowledge ───────────────────────────────────────────────────
@@ -291,9 +291,9 @@ export function buildNavigationContext(): string {
 export const ACTION_ROUTES_GUIDE = `
 Valid routes for [ACTION:Button label:/route] tags:
 /app/afupay | /app/afupay?section=topup | /app/afupay?section=requests | /app/afupay?section=services
-/premium | /monetize | /prestige | /username-market
+/premium | /monetize | /prestige | /app/afuusernames
 /profile/edit | /settings | /settings/security | /settings/privacy | /settings/blocked | /settings/two-factor
-/moments/create | /moments/create-video | /moments/create-article | /shorts | /saved-posts | /my-posts
+/moments/create | /moments/create-video | /moments/create-article | /shorts | /app/afusaved | /my-posts
 /search | /discover | /contacts | /communities | /me | /user-discovery
 /shop/cart | /shop/my-orders | /shop/manage | /shop/apply | /gifts/marketplace | /gifts
 /company | /company/manage | /freelance
@@ -336,10 +336,10 @@ export const NAV_INTENT_MAP: { patterns: RegExp; route: string; label: string }[
   { patterns: /\b(write\s+(an?\s+)?article|create\s+(an?\s+)?article)\b/i, route: "/moments/create-article", label: "Write Article" },
   { patterns: /\b(edit\s+(my\s+)?profile|update\s+profile|change\s+(bio|avatar|name|photo))\b/i, route: "/profile/edit", label: "Edit Profile" },
   { patterns: /\b(my\s+posts?|my\s+content)\b/i, route: "/my-posts", label: "My Posts" },
-  { patterns: /\bsaved\s+posts?\b/i, route: "/saved-posts", label: "Saved Posts" },
+  { patterns: /\bsaved\s+posts?\b/i, route: "/app/afusaved", label: "Saved Posts" },
   { patterns: /\b(prestige|leaderboard|rankings?|xp\s+rank)\b/i, route: "/prestige", label: "Prestige Leaderboard" },
   { patterns: /\b(digital\s+id|my\s+qr|identity\s+card)\b/i, route: "/digital-id", label: "Digital ID" },
-  { patterns: /\b(username\s+market|buy\s+username|sell\s+username|rare\s+username)\b/i, route: "/username-market", label: "Username Market" },
+  { patterns: /\b(username\s+market|buy\s+username|sell\s+username|rare\s+username)\b/i, route: "/app/afuusernames", label: "Username Market" },
   { patterns: /\b(discover|explore|trending)\b/i, route: "/discover", label: "Discover" },
   { patterns: /\b(communities|groups?)\b/i, route: "/communities", label: "Communities" },
   { patterns: /\b(contacts|friends?\s+list)\b/i, route: "/contacts", label: "Contacts" },

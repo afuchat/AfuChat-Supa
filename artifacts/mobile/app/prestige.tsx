@@ -447,7 +447,7 @@ export default function PrestigeScreen() {
               {[
                 { emoji: "💳", label: "Top-Up ACoin",         sub: "Buy AC directly from your wallet",            action: "/app/afupay?section=topup" },
                 { emoji: "🔄", label: "Convert Nexa → ACoin", sub: "Turn your XP into spendable ACoins",          action: "/app/afupay?section=exchange" },
-                { emoji: "🎁", label: "Send & Receive Gifts", sub: "Gifting earns both sender and receiver AC",    action: "/gifts" },
+                { emoji: "🎁", label: "Send & Receive Gifts", sub: "Gifting earns both sender and receiver AC",    action: "/app/afugifts" },
                 { emoji: "💬", label: "Stay Active",           sub: "Daily activity rewards keep your rank up",    action: null },
               ].map((row, i) => (
                 <View key={row.label}>

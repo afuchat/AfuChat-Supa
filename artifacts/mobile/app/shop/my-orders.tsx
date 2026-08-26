@@ -204,7 +204,7 @@ export default function MyOrdersScreen() {
       <GlassHeader
         title="My Orders"
         right={
-          <TouchableOpacity onPress={() => router.push("/store" as any)} hitSlop={8}>
+          <TouchableOpacity onPress={() => router.push("/app/afumarket" as any)} hitSlop={8}>
             <Ionicons name="storefront" size={20} color={BRAND} />
           </TouchableOpacity>
         }
@@ -274,7 +274,7 @@ export default function MyOrdersScreen() {
               {filter === "all" ? "Browse the marketplace and make your first purchase" : "Nothing here yet"}
             </Text>
             {filter === "all" && (
-              <TouchableOpacity style={[st.shopNowBtn, { backgroundColor: BRAND }]} onPress={() => router.push("/store" as any)}>
+              <TouchableOpacity style={[st.shopNowBtn, { backgroundColor: BRAND }]} onPress={() => router.push("/app/afumarket" as any)}>
                 <Text style={{ color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 14 }}>Browse Marketplace</Text>
               </TouchableOpacity>
             )}

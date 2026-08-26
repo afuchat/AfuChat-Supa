@@ -498,7 +498,7 @@ export default function ContactScreen() {
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[s.pillIconBtn, { backgroundColor: "#FF2D5518" }]}
-                    onPress={() => router.push({ pathname: "/gifts", params: { recipientHandle: profile.handle, recipientName: profile.display_name } } as any)}
+                    onPress={() => router.push({ pathname: "/app/afugifts", params: { recipientHandle: profile.handle, recipientName: profile.display_name } } as any)}
                     activeOpacity={0.8}>
                     <Ionicons name="gift" size={17} color="#FF2D55" />
                   </TouchableOpacity>

@@ -508,7 +508,7 @@ export default function MeScreen() {
           {[
             { icon: "create",    label: "Edit Profile", color: accent, onPress: () => router.push("/profile/edit") },
             { icon: "person",    label: "My Profile",   color: accent, onPress: () => profile?.handle && router.push(`/@${profile.handle}` as any) },
-            { icon: "qr-code",   label: "QR Code",      color: accent, onPress: () => router.push("/qr-scanner" as any) },
+            { icon: "qr-code",   label: "QR Code",      color: accent, onPress: () => router.push("/app/afuqr" as any) },
             { icon: "card",      label: "Digital ID",   color: accent, onPress: () => router.push("/digital-id" as any) },
           ].map((a) => (
             <TouchableOpacity key={a.label} style={s.quickBtn} onPress={a.onPress} activeOpacity={0.75}>
@@ -574,7 +574,7 @@ export default function MeScreen() {
               icon="bookmark"
               iconColor={accent}
               label="Saved Posts"
-              onPress={() => router.push("/saved-posts" as any)}
+              onPress={() => router.push("/app/afusaved" as any)}
               showSeparator
               colors={colors}
             />
