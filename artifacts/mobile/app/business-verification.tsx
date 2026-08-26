@@ -43,6 +43,9 @@ const INDUSTRIES = [
   "Sports & Recreation", "Fashion & Beauty", "Other",
 ];
 
+const TOTAL_STEPS = 4;
+const STEP_LABELS = ["Identity", "Registration", "Contact", "Presence"];
+
 type PageStatus = "loading" | "idle" | "pending" | "approved" | "rejected";
 
 type VerifApp = {
@@ -61,6 +64,7 @@ export default function BusinessVerificationScreen() {
   const [pageStatus, setPageStatus] = useState<PageStatus>("loading");
   const [existingApp, setExistingApp] = useState<VerifApp | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [step, setStep] = useState(1);
   const [showOrgTypePicker, setShowOrgTypePicker] = useState(false);
   const [showIndustryPicker, setShowIndustryPicker] = useState(false);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
@@ -112,14 +116,58 @@ export default function BusinessVerificationScreen() {
     setForm((prev) => ({ ...prev, [field]: val }));
   }
 
-  async function handleSubmit() {
-    if (!form.org_name.trim()) { showAlert("Required", "Organization name is required."); return; }
-    if (!form.org_type) { showAlert("Required", "Please select an organization type."); return; }
-    if (!form.phone.trim()) { showAlert("Required", "Business phone number is required."); return; }
-    if (!form.registration_country.trim()) { showAlert("Required", "Country of registration is required."); return; }
-    if (form.description.trim().length < 40) {
-      showAlert("Required", "Please write at least 40 characters about your organization."); return;
+  function handlePhoneChange(value: string) {
+    const compact = value.replace(/[^\d+]/g, "").replace(/(?!^)\+/g, "");
+    if (selectedCountry && compact.startsWith(selectedCountry.dial)) {
+      set("phone", compact.slice(selectedCountry.dial.length).replace(/^0+/, ""));
+      return;
     }
+    set("phone", compact.replace(/^\+/, ""));
+  }
+
+  function getInternationalPhone() {
+    if (!selectedCountry) return form.phone.trim();
+    const digits = form.phone.replace(/\D/g, "").replace(/^0+/, "");
+    return `${selectedCountry.dial} ${digits}`;
+  }
+
+  function validateStep(currentStep: number) {
+    if (currentStep === 1) {
+      if (!form.org_name.trim()) {
+        showAlert("Required", "Organization name is required.");
+        return false;
+      }
+      if (!form.org_type) {
+        showAlert("Required", "Please select an organization type.");
+        return false;
+      }
+    }
+    if (currentStep === 2 && !selectedCountry) {
+      showAlert("Required", "Please select the country where your organization is registered.");
+      return false;
+    }
+    if (currentStep === 3 && !form.phone.trim()) {
+      showAlert("Required", "Business phone number is required.");
+      return false;
+    }
+    if (currentStep === 4 && form.description.trim().length < 40) {
+      showAlert("Required", "Please write at least 40 characters about your organization.");
+      return false;
+    }
+    return true;
+  }
+
+  function goNext() {
+    if (!validateStep(step)) return;
+    if (step < TOTAL_STEPS) {
+      setStep((current) => current + 1);
+    } else {
+      handleSubmit();
+    }
+  }
+
+  async function handleSubmit() {
+    if (!validateStep(1) || !validateStep(2) || !validateStep(3) || !validateStep(4)) return;
     if (!user) return;
     setSubmitting(true);
     const social_links: Record<string, string> = {};
@@ -134,7 +182,7 @@ export default function BusinessVerificationScreen() {
       industry: form.industry.trim() || null,
       registration_number: form.registration_number.trim() || null,
       registration_country: form.registration_country.trim(),
-      phone: form.phone.trim(),
+      phone: getInternationalPhone(),
       business_address: form.business_address.trim() || null,
       website_url: form.website_url.trim() || null,
       contact_name: form.contact_name.trim() || null,
@@ -264,237 +312,283 @@ export default function BusinessVerificationScreen() {
     <View style={[st.root, { backgroundColor: colors.background }]}>
       <NavBar />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+        <View style={[st.progressWrap, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+          <View style={st.progressTopRow}>
+            <Text style={[st.progressStep, { color: GOLD }]}>STEP {step} OF {TOTAL_STEPS}</Text>
+            <Text style={[st.progressName, { color: colors.text }]}>{STEP_LABELS[step - 1]}</Text>
+          </View>
+          <View style={[st.progressTrack, { backgroundColor: colors.backgroundTertiary }]}>
+            <View style={[st.progressFill, { width: `${(step / TOTAL_STEPS) * 100}%`, backgroundColor: GOLD }]} />
+          </View>
+          <View style={st.progressLabels}>
+            {STEP_LABELS.map((label, index) => (
+              <Text key={label} style={[st.progressLabel, { color: index + 1 <= step ? GOLD : colors.textMuted }]}>
+                {label}
+              </Text>
+            ))}
+          </View>
+        </View>
         <ScrollView
           contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 60, gap: 14 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Hero */}
-          <View style={[st.heroCard, { backgroundColor: GOLD + "12", borderColor: GOLD + "40" }]}>
-            <View style={[st.heroIcon, { backgroundColor: GOLD + "22" }]}>
-              <Ionicons name="ribbon" size={30} color={GOLD} />
-            </View>
-            <Text style={[st.heroTitle, { color: colors.text }]}>Organization Verification</Text>
-            <Text style={[st.heroSub, { color: colors.textSecondary }]}>
-              Get the gold badge confirming your organization is authentic. We verify real business credentials and notable presence.
-            </Text>
-          </View>
-
-          {/* Criteria */}
-          <View style={[st.criteriaCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[st.sectionMicro, { color: colors.textMuted }]}>REQUIREMENTS</Text>
-            {[
-              { icon: "business", text: "Registered business, brand, or recognized organization" },
-              { icon: "call", text: "Valid business contact phone number" },
-              { icon: "document-text", text: "Registration number or official documentation" },
-              { icon: "shield-checkmark", text: "Notable presence — website, press, or industry recognition" },
-            ].map((c, i) => (
-              <View key={i} style={st.criteriaRow}>
-                <View style={[st.criteriaIconWrap, { backgroundColor: GOLD + "18" }]}>
-                  <Ionicons name={c.icon as any} size={14} color={GOLD} />
+          {step === 1 && (
+            <>
+              <View style={[st.heroCard, { backgroundColor: GOLD + "12", borderColor: GOLD + "40" }]}>
+                <View style={[st.heroIcon, { backgroundColor: GOLD + "22" }]}>
+                  <Ionicons name="ribbon" size={30} color={GOLD} />
                 </View>
-                <Text style={[st.criteriaText, { color: colors.textSecondary }]}>{c.text}</Text>
+                <Text style={[st.heroTitle, { color: colors.text }]}>Organization Verification</Text>
+                <Text style={[st.heroSub, { color: colors.textSecondary }]}>
+                  Tell us who your organization is. You can review everything before submitting.
+                </Text>
               </View>
-            ))}
-          </View>
-
-          {/* ── SECTION: Business Identity ── */}
-          <SectionHeader title="Business Identity" />
-
-          <Field label="Organization Name" required colors={colors}>
-            <TextInput style={[st.input, { color: colors.text }]} placeholder="Your official public name"
-              placeholderTextColor={colors.textMuted} value={form.org_name}
-              onChangeText={(v) => set("org_name", v)} maxLength={120} />
-          </Field>
-
-          <Field label="Legal / Registered Name" colors={colors} hint="If different from your display name">
-            <TextInput style={[st.input, { color: colors.text }]} placeholder="Legal name as registered"
-              placeholderTextColor={colors.textMuted} value={form.legal_name}
-              onChangeText={(v) => set("legal_name", v)} maxLength={120} />
-          </Field>
-
-          <Field label="Organization Type" required colors={colors}>
-            <TouchableOpacity
-              style={[st.pickerRow, { borderColor: form.org_type ? GOLD + "60" : colors.border, backgroundColor: form.org_type ? GOLD + "08" : "transparent" }]}
-              activeOpacity={0.75}
-              onPress={() => setShowOrgTypePicker(true)}
-            >
-              {selectedOrgType ? (
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
-                  <View style={[st.pickerIconWrap, { backgroundColor: GOLD + "22" }]}>
-                    <Ionicons name={selectedOrgType.icon as any} size={16} color={GOLD} />
+              <View style={[st.criteriaCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Text style={[st.sectionMicro, { color: colors.textMuted }]}>WHAT YOU'LL NEED</Text>
+                {[
+                  { icon: "business", text: "Your organization identity" },
+                  { icon: "document-text", text: "Registration details" },
+                  { icon: "call", text: "A business contact number" },
+                  { icon: "shield-checkmark", text: "Proof of notable presence" },
+                ].map((c, i) => (
+                  <View key={i} style={st.criteriaRow}>
+                    <View style={[st.criteriaIconWrap, { backgroundColor: GOLD + "18" }]}>
+                      <Ionicons name={c.icon as any} size={14} color={GOLD} />
+                    </View>
+                    <Text style={[st.criteriaText, { color: colors.textSecondary }]}>{c.text}</Text>
                   </View>
-                  <Text style={[st.pickerValue, { color: colors.text }]}>{selectedOrgType.label}</Text>
-                </View>
-              ) : (
-                <Text style={[st.pickerPlaceholder, { color: colors.textMuted }]}>Select organization type…</Text>
-              )}
-              <Ionicons name="chevron-down" size={16} color={form.org_type ? GOLD : colors.textMuted} />
-            </TouchableOpacity>
-          </Field>
-
-          <Field label="Industry / Sector" colors={colors}>
-            <TouchableOpacity
-              style={[st.pickerRow, { borderColor: colors.border }]}
-              activeOpacity={0.75}
-              onPress={() => setShowIndustryPicker(true)}
-            >
-              {form.industry ? (
-                <Text style={[st.pickerValue, { color: colors.text, flex: 1 }]}>{form.industry}</Text>
-              ) : (
-                <Text style={[st.pickerPlaceholder, { color: colors.textMuted, flex: 1 }]}>Select industry…</Text>
-              )}
-              <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
-            </TouchableOpacity>
-          </Field>
-
-          {/* ── SECTION: Registration ── */}
-          <SectionHeader title="Registration & Legal" />
-
-          <Field label="Business Registration Number" colors={colors} hint="Company or charity registration number">
-            <TextInput style={[st.input, { color: colors.text }]} placeholder="e.g. C123456 or BN/2020/001234"
-              placeholderTextColor={colors.textMuted} value={form.registration_number}
-              onChangeText={(v) => set("registration_number", v)} maxLength={80} autoCapitalize="characters" />
-          </Field>
-
-          <Field label="Country of Registration" required colors={colors}>
-            <TouchableOpacity
-              style={[st.pickerRow, { borderColor: selectedCountry ? GOLD + "60" : colors.border, backgroundColor: selectedCountry ? GOLD + "08" : "transparent" }]}
-              activeOpacity={0.75}
-              onPress={() => setShowCountryPicker(true)}
-            >
-              {selectedCountry ? (
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
-                  <Text style={st.countryFlag}>{selectedCountry.flag}</Text>
-                  <Text style={[st.pickerValue, { color: colors.text }]}>{selectedCountry.name}</Text>
-                </View>
-              ) : (
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 9, flex: 1 }}>
-                  <Ionicons name="globe-outline" size={18} color={colors.textMuted} />
-                  <Text style={[st.pickerPlaceholder, { color: colors.textMuted }]}>Select country…</Text>
-                </View>
-              )}
-              <Ionicons name="chevron-down" size={16} color={selectedCountry ? GOLD : colors.textMuted} />
-            </TouchableOpacity>
-          </Field>
-
-          <Field label="Business Address" colors={colors}>
-            <TextInput style={[st.input, { color: colors.text }]} placeholder="Physical office or registered address"
-              placeholderTextColor={colors.textMuted} value={form.business_address}
-              onChangeText={(v) => set("business_address", v)} maxLength={200} />
-          </Field>
-
-          {/* ── SECTION: Contact ── */}
-          <SectionHeader title="Contact Information" />
-
-          <Field label="Business Phone" required colors={colors} hint="Include country code, e.g. +254 712 345678">
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Ionicons name="call" size={16} color={colors.textMuted} />
-              <TextInput style={[st.input, { color: colors.text, flex: 1 }]} placeholder="+254 712 345 678"
-                placeholderTextColor={colors.textMuted} value={form.phone}
-                onChangeText={(v) => set("phone", v)} keyboardType="phone-pad" maxLength={30} />
-            </View>
-          </Field>
-
-          <Field label="Official Website" colors={colors}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Ionicons name="globe" size={16} color={colors.textMuted} />
-              <TextInput style={[st.input, { color: colors.text, flex: 1 }]} placeholder="https://yourorganization.com"
-                placeholderTextColor={colors.textMuted} value={form.website_url}
-                onChangeText={(v) => set("website_url", v)} autoCapitalize="none" keyboardType="url" maxLength={200} />
-            </View>
-          </Field>
-
-          <View style={{ flexDirection: "row", gap: 10 }}>
-            <View style={{ flex: 1 }}>
-              <Field label="Contact Person Name" colors={colors}>
-                <TextInput style={[st.input, { color: colors.text }]} placeholder="Full name"
-                  placeholderTextColor={colors.textMuted} value={form.contact_name}
-                  onChangeText={(v) => set("contact_name", v)} maxLength={80} />
-              </Field>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Field label="Job Title" colors={colors}>
-                <TextInput style={[st.input, { color: colors.text }]} placeholder="CEO, Director…"
-                  placeholderTextColor={colors.textMuted} value={form.contact_title}
-                  onChangeText={(v) => set("contact_title", v)} maxLength={60} />
-              </Field>
-            </View>
-          </View>
-
-          {/* ── SECTION: Presence ── */}
-          <SectionHeader title="Notable Presence" />
-
-          <Field label="Describe your organization and why it qualifies" required colors={colors}>
-            <TextInput style={[st.input, st.textarea, { color: colors.text }]}
-              placeholder="Tell us about your reach, achievements, and why you qualify for verification…"
-              placeholderTextColor={colors.textMuted} value={form.description}
-              onChangeText={(v) => set("description", v)} multiline numberOfLines={5} maxLength={1000} />
-            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 4 }}>
-              <Text style={[st.hint, { color: form.description.length < 40 ? "#FF9500" : colors.textMuted }]}>
-                {form.description.length < 40 ? `${40 - form.description.length} more chars needed` : "✓ Looks good"}
-              </Text>
-              <Text style={[st.hint, { color: colors.textMuted }]}>{form.description.length}/1000</Text>
-            </View>
-          </Field>
-
-          <Field label="Links to press, directories, or official registrations" colors={colors}>
-            <TextInput style={[st.input, st.textareaSm, { color: colors.text }]}
-              placeholder="News articles, Wikipedia, CAC registry, industry directories…"
-              placeholderTextColor={colors.textMuted} value={form.notable_links}
-              onChangeText={(v) => set("notable_links", v)} multiline numberOfLines={3}
-              maxLength={500} autoCapitalize="none" />
-          </Field>
-
-          {/* ── SECTION: Social Media ── */}
-          <SectionHeader title="Social Media" sub="optional" />
-
-          {[
-            { key: "ig", label: "Instagram", icon: "logo-instagram", placeholder: "@yourorg", color: "#E1306C" },
-            { key: "x_twitter", label: "X / Twitter", icon: "logo-twitter", placeholder: "@yourorg", color: "#1DA1F2" },
-            { key: "linkedin", label: "LinkedIn", icon: "logo-linkedin", placeholder: "linkedin.com/company/yourorg", color: "#0A66C2" },
-          ].map((s) => (
-            <Field key={s.key} label={s.label} colors={colors}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <Ionicons name={s.icon as any} size={16} color={s.color} />
-                <TextInput style={[st.input, { color: colors.text, flex: 1 }]} placeholder={s.placeholder}
-                  placeholderTextColor={colors.textMuted} value={(form as any)[s.key]}
-                  onChangeText={(v) => set(s.key, v)} autoCapitalize="none" maxLength={120} />
+                ))}
               </View>
-            </Field>
-          ))}
+              <SectionHeader title="Business Identity" />
+              <Field label="Organization Name" required colors={colors}>
+                <TextInput style={[st.input, { color: colors.text }]} placeholder="Your official public name"
+                  placeholderTextColor={colors.textMuted} value={form.org_name}
+                  onChangeText={(v) => set("org_name", v)} maxLength={120} />
+              </Field>
+              <Field label="Legal / Registered Name" colors={colors} hint="If different from your display name">
+                <TextInput style={[st.input, { color: colors.text }]} placeholder="Legal name as registered"
+                  placeholderTextColor={colors.textMuted} value={form.legal_name}
+                  onChangeText={(v) => set("legal_name", v)} maxLength={120} />
+              </Field>
+              <Field label="Organization Type" required colors={colors}>
+                <TouchableOpacity
+                  style={[st.pickerRow, { borderColor: form.org_type ? GOLD + "60" : colors.border, backgroundColor: form.org_type ? GOLD + "08" : "transparent" }]}
+                  activeOpacity={0.75}
+                  onPress={() => setShowOrgTypePicker(true)}
+                >
+                  {selectedOrgType ? (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+                      <View style={[st.pickerIconWrap, { backgroundColor: GOLD + "22" }]}>
+                        <Ionicons name={selectedOrgType.icon as any} size={16} color={GOLD} />
+                      </View>
+                      <Text style={[st.pickerValue, { color: colors.text }]}>{selectedOrgType.label}</Text>
+                    </View>
+                  ) : (
+                    <Text style={[st.pickerPlaceholder, { color: colors.textMuted }]}>Select organization type…</Text>
+                  )}
+                  <Ionicons name="chevron-down" size={16} color={form.org_type ? GOLD : colors.textMuted} />
+                </TouchableOpacity>
+              </Field>
+              <Field label="Industry / Sector" colors={colors}>
+                <TouchableOpacity
+                  style={[st.pickerRow, { borderColor: colors.border }]}
+                  activeOpacity={0.75}
+                  onPress={() => setShowIndustryPicker(true)}
+                >
+                  {form.industry ? (
+                    <Text style={[st.pickerValue, { color: colors.text, flex: 1 }]}>{form.industry}</Text>
+                  ) : (
+                    <Text style={[st.pickerPlaceholder, { color: colors.textMuted, flex: 1 }]}>Select industry…</Text>
+                  )}
+                  <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+              </Field>
+            </>
+          )}
 
-          {/* Premium tip */}
-          <TouchableOpacity style={[st.notableBanner, { backgroundColor: GOLD + "0E", borderColor: GOLD + "50" }]}
-            onPress={() => router.push("/premium")} activeOpacity={0.8}>
-            <View style={[st.bannerIconWrap, { backgroundColor: GOLD + "22" }]}>
-              <Ionicons name="diamond" size={14} color={GOLD} />
-            </View>
-            <Text style={[st.notableBannerText, { color: colors.textSecondary }]}>
-              <Text style={{ fontFamily: "Inter_600SemiBold", color: GOLD }}>Premium members</Text> get priority review and a dedicated support contact.
-            </Text>
-            <Ionicons name="chevron-forward" size={14} color={GOLD} />
-          </TouchableOpacity>
+          {step === 2 && (
+            <>
+              <StepIntro title="Registration details" subtitle="Help us confirm where your organization is legally registered." colors={colors} />
+              <SectionHeader title="Registration & Legal" />
+              <Field label="Business Registration Number" colors={colors} hint="Company or charity registration number">
+                <TextInput style={[st.input, { color: colors.text }]} placeholder="e.g. C123456 or BN/2020/001234"
+                  placeholderTextColor={colors.textMuted} value={form.registration_number}
+                  onChangeText={(v) => set("registration_number", v)} maxLength={80} autoCapitalize="characters" />
+              </Field>
+              <Field label="Country of Registration" required colors={colors} hint="This also sets your business phone country code.">
+                <TouchableOpacity
+                  style={[st.pickerRow, { borderColor: selectedCountry ? GOLD + "60" : colors.border, backgroundColor: selectedCountry ? GOLD + "08" : "transparent" }]}
+                  activeOpacity={0.75}
+                  onPress={() => setShowCountryPicker(true)}
+                >
+                  {selectedCountry ? (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+                      <Text style={st.countryFlag}>{selectedCountry.flag}</Text>
+                      <Text style={[st.pickerValue, { color: colors.text }]}>{selectedCountry.name}</Text>
+                    </View>
+                  ) : (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 9, flex: 1 }}>
+                      <Ionicons name="globe-outline" size={18} color={colors.textMuted} />
+                      <Text style={[st.pickerPlaceholder, { color: colors.textMuted }]}>Select country…</Text>
+                    </View>
+                  )}
+                  <Ionicons name="chevron-down" size={16} color={selectedCountry ? GOLD : colors.textMuted} />
+                </TouchableOpacity>
+              </Field>
+              <Field label="Business Address" colors={colors}>
+                <TextInput style={[st.input, { color: colors.text }]} placeholder="Physical office or registered address"
+                  placeholderTextColor={colors.textMuted} value={form.business_address}
+                  onChangeText={(v) => set("business_address", v)} maxLength={200} />
+              </Field>
+            </>
+          )}
 
-          {/* Submit */}
+          {step === 3 && (
+            <>
+              <StepIntro title="Contact information" subtitle="Give reviewers a reliable way to reach your organization." colors={colors} />
+              <SectionHeader title="Business Contact" />
+              <Field label="Business Phone" required colors={colors}>
+                <View style={[st.phoneRow, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}>
+                  <TouchableOpacity
+                    style={st.phonePrefix}
+                    onPress={() => setShowCountryPicker(true)}
+                    activeOpacity={0.7}
+                  >
+                    {selectedCountry ? (
+                      <>
+                        <Text style={st.phoneFlag}>{selectedCountry.flag}</Text>
+                        <Text style={[st.phoneDial, { color: colors.text }]}>{selectedCountry.dial}</Text>
+                      </>
+                    ) : (
+                      <Text style={[st.phoneDial, { color: colors.textMuted }]}>Country</Text>
+                    )}
+                    <Ionicons name="chevron-down" size={14} color={colors.textMuted} />
+                  </TouchableOpacity>
+                  <View style={[st.phoneDivider, { backgroundColor: colors.border }]} />
+                  <TextInput
+                    style={[st.phoneInput, { color: colors.text }]}
+                    placeholder={selectedCountry ? "712 345 678" : "Select country first"}
+                    placeholderTextColor={colors.textMuted}
+                    value={form.phone}
+                    onChangeText={handlePhoneChange}
+                    keyboardType="phone-pad"
+                    maxLength={20}
+                    editable={!!selectedCountry}
+                  />
+                </View>
+                {selectedCountry && form.phone ? (
+                  <Text style={[st.hint, { color: colors.textMuted, marginTop: 5 }]}>
+                    Saved as {getInternationalPhone()}
+                  </Text>
+                ) : null}
+              </Field>
+              <Field label="Official Website" colors={colors}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <Ionicons name="globe" size={16} color={colors.textMuted} />
+                  <TextInput style={[st.input, { color: colors.text, flex: 1 }]} placeholder="https://yourorganization.com"
+                    placeholderTextColor={colors.textMuted} value={form.website_url}
+                    onChangeText={(v) => set("website_url", v)} autoCapitalize="none" keyboardType="url" maxLength={200} />
+                </View>
+              </Field>
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <Field label="Contact Person Name" colors={colors}>
+                    <TextInput style={[st.input, { color: colors.text }]} placeholder="Full name"
+                      placeholderTextColor={colors.textMuted} value={form.contact_name}
+                      onChangeText={(v) => set("contact_name", v)} maxLength={80} />
+                  </Field>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Field label="Job Title" colors={colors}>
+                    <TextInput style={[st.input, { color: colors.text }]} placeholder="CEO, Director…"
+                      placeholderTextColor={colors.textMuted} value={form.contact_title}
+                      onChangeText={(v) => set("contact_title", v)} maxLength={60} />
+                  </Field>
+                </View>
+              </View>
+            </>
+          )}
+
+          {step === 4 && (
+            <>
+              <StepIntro title="Show your presence" subtitle="Share the details that help our team understand your organization's impact." colors={colors} />
+              <SectionHeader title="Notable Presence" />
+              <Field label="Describe your organization and why it qualifies" required colors={colors}>
+                <TextInput style={[st.input, st.textarea, { color: colors.text }]}
+                  placeholder="Tell us about your reach, achievements, and why you qualify for verification…"
+                  placeholderTextColor={colors.textMuted} value={form.description}
+                  onChangeText={(v) => set("description", v)} multiline numberOfLines={5} maxLength={1000} />
+                <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 4 }}>
+                  <Text style={[st.hint, { color: form.description.length < 40 ? "#FF9500" : colors.textMuted }]}>
+                    {form.description.length < 40 ? `${40 - form.description.length} more chars needed` : "✓ Looks good"}
+                  </Text>
+                  <Text style={[st.hint, { color: colors.textMuted }]}>{form.description.length}/1000</Text>
+                </View>
+              </Field>
+              <Field label="Links to press, directories, or official registrations" colors={colors}>
+                <TextInput style={[st.input, st.textareaSm, { color: colors.text }]}
+                  placeholder="News articles, Wikipedia, CAC registry, industry directories…"
+                  placeholderTextColor={colors.textMuted} value={form.notable_links}
+                  onChangeText={(v) => set("notable_links", v)} multiline numberOfLines={3}
+                  maxLength={500} autoCapitalize="none" />
+              </Field>
+              <SectionHeader title="Social Media" sub="optional" />
+              {[
+                { key: "ig", label: "Instagram", icon: "logo-instagram", placeholder: "@yourorg", color: "#E1306C" },
+                { key: "x_twitter", label: "X / Twitter", icon: "logo-twitter", placeholder: "@yourorg", color: "#1DA1F2" },
+                { key: "linkedin", label: "LinkedIn", icon: "logo-linkedin", placeholder: "linkedin.com/company/yourorg", color: "#0A66C2" },
+              ].map((s) => (
+                <Field key={s.key} label={s.label} colors={colors}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <Ionicons name={s.icon as any} size={16} color={s.color} />
+                    <TextInput style={[st.input, { color: colors.text, flex: 1 }]} placeholder={s.placeholder}
+                      placeholderTextColor={colors.textMuted} value={(form as any)[s.key]}
+                      onChangeText={(v) => set(s.key, v)} autoCapitalize="none" maxLength={120} />
+                  </View>
+                </Field>
+              ))}
+              <TouchableOpacity style={[st.notableBanner, { backgroundColor: GOLD + "0E", borderColor: GOLD + "50" }]}
+                onPress={() => router.push("/premium")} activeOpacity={0.8}>
+                <View style={[st.bannerIconWrap, { backgroundColor: GOLD + "22" }]}>
+                  <Ionicons name="diamond" size={14} color={GOLD} />
+                </View>
+                <Text style={[st.notableBannerText, { color: colors.textSecondary }]}>
+                  <Text style={{ fontFamily: "Inter_600SemiBold", color: GOLD }}>Premium members</Text> get priority review and a dedicated support contact.
+                </Text>
+                <Ionicons name="chevron-forward" size={14} color={GOLD} />
+              </TouchableOpacity>
+              <Text style={[st.disclaimer, { color: colors.textMuted }]}>
+                Submitting does not guarantee verification. Our team reviews all applications and will notify you within 3–5 business days. False information will result in permanent disqualification.
+              </Text>
+            </>
+          )}
+        </ScrollView>
+        <View style={[st.stepFooter, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 12) }]}>
           <TouchableOpacity
-            style={[st.submitBtn, { backgroundColor: GOLD, opacity: submitting ? 0.7 : 1, marginTop: 4 }]}
-            onPress={handleSubmit} disabled={submitting} activeOpacity={0.85}
+            style={[st.backBtn, { borderColor: colors.border, opacity: step === 1 ? 0.45 : 1 }]}
+            onPress={() => step === 1 ? router.back() : setStep((current) => current - 1)}
+            activeOpacity={0.75}
+          >
+            <Ionicons name={step === 1 ? "close" : "chevron-back"} size={18} color={colors.text} />
+            <Text style={[st.backBtnText, { color: colors.text }]}>{step === 1 ? "Cancel" : "Back"}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[st.nextBtn, { backgroundColor: GOLD, opacity: submitting ? 0.7 : 1 }]}
+            onPress={goNext}
+            disabled={submitting}
+            activeOpacity={0.85}
           >
             {submitting ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
               <>
-                <Ionicons name="ribbon" size={18} color="#fff" />
-                <Text style={st.submitBtnText}>Submit Verification Request</Text>
+                <Text style={st.nextBtnText}>{step === TOTAL_STEPS ? "Submit Request" : "Continue"}</Text>
+                <Ionicons name={step === TOTAL_STEPS ? "ribbon" : "chevron-forward"} size={18} color="#fff" />
               </>
             )}
           </TouchableOpacity>
-
-          <Text style={[st.disclaimer, { color: colors.textMuted }]}>
-            Submitting does not guarantee verification. Our team reviews all applications and will notify you within 3–5 business days. False information will result in permanent disqualification.
-          </Text>
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
 
       {/* Org Type Picker */}
@@ -619,6 +713,15 @@ function SectionHeader({ title, sub }: { title: string; sub?: string }) {
   );
 }
 
+function StepIntro({ title, subtitle, colors }: { title: string; subtitle: string; colors: any }) {
+  return (
+    <View style={st.stepIntro}>
+      <Text style={[st.stepTitle, { color: colors.text }]}>{title}</Text>
+      <Text style={[st.stepSubtitle, { color: colors.textMuted }]}>{subtitle}</Text>
+    </View>
+  );
+}
+
 function Field({ label, required, hint, children, colors }: {
   label: string; required?: boolean; hint?: string; children: React.ReactNode; colors: any;
 }) {
@@ -638,6 +741,17 @@ const st = StyleSheet.create({
   root: { flex: 1 },
   navBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 12 },
   navTitle: { fontSize: 17, fontFamily: "Inter_700Bold" },
+  progressWrap: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, borderBottomWidth: 0.5 },
+  progressTopRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  progressStep: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 0.8 },
+  progressName: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  progressTrack: { height: 5, borderRadius: 3, overflow: "hidden" },
+  progressFill: { height: "100%", borderRadius: 3 },
+  progressLabels: { flexDirection: "row", justifyContent: "space-between", marginTop: 6 },
+  progressLabel: { fontSize: 10, fontFamily: "Inter_500Medium" },
+  stepIntro: { gap: 5, marginBottom: 2 },
+  stepTitle: { fontSize: 22, fontFamily: "Inter_700Bold" },
+  stepSubtitle: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 20 },
   bigTitle: { fontSize: 22, fontFamily: "Inter_700Bold", textAlign: "center" },
   bigSub: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 21 },
   dateBadge: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
@@ -667,11 +781,22 @@ const st = StyleSheet.create({
   pickerValue: { fontSize: 14, fontFamily: "Inter_500Medium" },
   pickerPlaceholder: { fontSize: 14, fontFamily: "Inter_400Regular", flex: 1 },
   countryFlag: { fontSize: 22 },
+  phoneRow: { flexDirection: "row", alignItems: "center", minHeight: 46, borderRadius: 10, borderWidth: 1, paddingHorizontal: 10 },
+  phonePrefix: { flexDirection: "row", alignItems: "center", gap: 5, paddingVertical: 7, paddingRight: 8 },
+  phoneFlag: { fontSize: 19 },
+  phoneDial: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  phoneDivider: { width: 1, height: 24 },
+  phoneInput: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular", paddingVertical: 4, paddingHorizontal: 10 },
   notableBanner: { flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 14, borderWidth: 1, padding: 14, marginTop: 4 },
   bannerIconWrap: { width: 28, height: 28, borderRadius: 8, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   notableBannerText: { flex: 1, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
   submitBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 16, borderRadius: 999 },
   submitBtnText: { color: "#fff", fontSize: 16, fontFamily: "Inter_700Bold" },
+  stepFooter: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingTop: 10, borderTopWidth: 0.5 },
+  backBtn: { flex: 0.8, minHeight: 50, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, borderRadius: 999, borderWidth: 1 },
+  backBtnText: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  nextBtn: { flex: 1.5, minHeight: 50, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 999 },
+  nextBtnText: { color: "#fff", fontSize: 15, fontFamily: "Inter_700Bold" },
   disclaimer: { fontSize: 12, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 17, marginTop: 4 },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" },
   pickerSheet: { borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingTop: 12, paddingBottom: 40, maxHeight: "80%" },
