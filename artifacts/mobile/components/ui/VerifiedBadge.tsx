@@ -91,7 +91,7 @@ export default function VerifiedBadge({
   const REASONS: { icon: string; label: string; premiumLink?: boolean }[] = isOrg
     ? [
         { icon: "storefront-outline",      label: "Business details confirmed" },
-        { icon: "ribbon-outline",           label: "Recognized in its field", premiumLink: true },
+        { icon: "ribbon-outline",           label: "Recognized in its field" },
         { icon: "shield-checkmark-outline", label: "Follows AfuChat's guidelines" },
       ]
     : [
@@ -174,6 +174,18 @@ export default function VerifiedBadge({
             )}
 
             <TouchableOpacity
+              style={[s.ctaBtn, { backgroundColor: badgeColor }]}
+              activeOpacity={0.85}
+              onPress={() => {
+                setVisible(false);
+                router.push(isOrg ? "/business-verification" : "/premium");
+              }}
+            >
+              <Ionicons name={isOrg ? "storefront-outline" : "sparkles-outline"} size={15} color="#fff" />
+              <Text style={s.ctaBtnText}>{isOrg ? "Apply for Verification" : "Get Verified"}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={s.dismissBtn}
               onPress={() => setVisible(false)}
               activeOpacity={0.6}
@@ -228,6 +240,8 @@ const s = StyleSheet.create({
   bulletText: { flex: 1, fontSize: 12, lineHeight: 16 },
   premiumPill: { flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 20 },
   premiumPillText: { fontSize: 9, fontWeight: "600" },
+  ctaBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingVertical: 10, borderRadius: 12, marginTop: 5 },
+  ctaBtnText: { color: "#fff", fontSize: 13, fontWeight: "700" },
   dismissBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, paddingVertical: 8 },
   dismissText: { fontSize: 12, fontWeight: "600" },
 });
