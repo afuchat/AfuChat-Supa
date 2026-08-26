@@ -8,7 +8,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -337,74 +336,7 @@ export default function FileManagerScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.backgroundSecondary }]}>
-      <View style={[styles.headerArea, { backgroundColor: colors.background }]}>
-        <GlassHeader
-          title="File Manager"
-          style={styles.header}
-          right={Platform.OS !== "web" ? (
-            <Pressable
-              testID="file-manager-transfer"
-              accessibilityRole="button"
-              accessibilityLabel="Open offline transfer"
-              onPress={openTransfer}
-              style={styles.headerButton}
-            >
-              <Ionicons name="paper-plane-outline" size={21} color={colors.accent} />
-            </Pressable>
-          ) : undefined}
-        />
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filters}
-        >
-          {(["all", "image", "video", "audio"] as Filter[]).map((value) => {
-            const active = filter === value;
-            const label = value === "all"
-              ? "All"
-              : `${value[0].toUpperCase()}${value.slice(1)}${value === "audio" ? "" : "s"}`;
-            return (
-              <Pressable
-                key={value}
-                onPress={() => setFilter(value)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-                style={[styles.filter, { backgroundColor: active ? colors.accent : colors.surface }]}
-              >
-                <Text style={[styles.filterText, { color: active ? colors.background : colors.textMuted }]}>
-                  {label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      {galleryPermission !== "granted" && (
-        <View style={[styles.galleryAccessCard, { backgroundColor: colors.surface }]}>
-          <View style={[styles.galleryAccessIcon, { backgroundColor: colors.accent + "18" }]}>
-            <Ionicons name="images-outline" size={23} color={colors.accent} />
-          </View>
-          <View style={styles.galleryAccessCopy}>
-            <Text style={[styles.galleryAccessTitle, { color: colors.text }]}>Show your phone gallery</Text>
-            <Text style={[styles.galleryAccessDesc, { color: colors.textMuted }]}>
-              Allow AfuChat to display photos and videos already on this device. Nothing is uploaded.
-            </Text>
-          </View>
-          <Pressable
-            testID="file-manager-gallery-permission"
-            accessibilityRole="button"
-            onPress={requestGalleryAccess}
-            style={[styles.galleryAccessButton, { backgroundColor: colors.accent }]}
-          >
-            {galleryLoading ? <ActivityIndicator size="small" color={colors.background} /> : (
-              <Text style={[styles.galleryAccessButtonText, { color: colors.background }]}>
-                {galleryPermission === "checking" ? "Checking" : galleryCanAskAgain ? "Allow" : "Settings"}
-              </Text>
-            )}
-          </Pressable>
-        </View>
-      )}
+      <GlassHeader title="" style={styles.header} />
 
       {galleryLoading && galleryPermission === "checking" ? (
         <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>
@@ -420,7 +352,7 @@ export default function FileManagerScreen() {
           </Text>
           <Text style={[styles.emptyDesc, { color: colors.textMuted }]}>
             {galleryPermission !== "granted"
-              ? "Use the button above to show the photos and videos already saved on your phone."
+              ? "Use the button below to show the photos and videos already saved on your phone."
               : galleryFiles.length === 0
                 ? "Photos and videos from your phone will appear here."
                 : "Choose another category to browse your phone gallery."}
@@ -572,30 +504,18 @@ export default function FileManagerScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  headerArea: { paddingBottom: 2 },
   header: { borderBottomWidth: 0 },
-  headerButton: { width: 42, height: 42, alignItems: "center", justifyContent: "center" },
   summary: { flexDirection: "row", alignItems: "center", margin: 16, marginBottom: 10, padding: 14, borderRadius: 18, gap: 12 },
   summaryIcon: { width: 48, height: 48, borderRadius: 15, alignItems: "center", justifyContent: "center" },
   summaryCopy: { flex: 1 },
   summaryTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
   summaryMeta: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 3 },
-  filters: { paddingHorizontal: 16, paddingBottom: 12, gap: 8, alignItems: "center" },
-  filter: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 99 },
-  filterText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingHorizontal: 40 },
   emptyTitle: { fontSize: 18, fontFamily: "Inter_600SemiBold", textAlign: "center" },
   emptyDesc: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 20 },
   emptyAction: { flexDirection: "row", alignItems: "center", gap: 7, borderRadius: 12, paddingHorizontal: 15, paddingVertical: 11, marginTop: 4 },
   emptyActionText: { fontSize: 13, fontFamily: "Inter_700Bold" },
   fileRow: { minHeight: 72, marginHorizontal: 12, marginBottom: 8, paddingHorizontal: 14, borderRadius: 16, flexDirection: "row", alignItems: "center", gap: 13 },
-  galleryAccessCard: { flexDirection: "row", alignItems: "center", marginHorizontal: 16, marginBottom: 8, padding: 12, borderRadius: 16, gap: 10 },
-  galleryAccessIcon: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  galleryAccessCopy: { flex: 1 },
-  galleryAccessTitle: { fontSize: 13, fontFamily: "Inter_700Bold" },
-  galleryAccessDesc: { fontSize: 11, lineHeight: 15, fontFamily: "Inter_400Regular", marginTop: 2 },
-  galleryAccessButton: { borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 },
-  galleryAccessButtonText: { fontSize: 11, fontFamily: "Inter_700Bold" },
   thumbnail: { width: 48, height: 48, borderRadius: 13, backgroundColor: "rgba(128,128,128,0.15)" },
   fileIcon: { width: 43, height: 43, borderRadius: 13, alignItems: "center", justifyContent: "center" },
   fileCopy: { flex: 1 },
