@@ -39,16 +39,6 @@ export const SUPER_APP_REGISTRY: ModuleManifest[] = [
     keepAlive: false,
   },
   {
-    id: "afulens",
-    name: "AfuLab",
-    description: "Point your camera at anything for instant AI answers.",
-    version: "2.0.0",
-    icon: "scan",
-    gradient: ["#FF6B35", "#FF3B00"] as const,
-    keepAlive: false,
-    badge: "AI",
-  },
-  {
     id: "afusearch",
     name: "AfuSearch",
     description: "Find people, posts, channels, events and more.",

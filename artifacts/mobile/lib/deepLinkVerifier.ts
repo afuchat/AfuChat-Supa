@@ -43,7 +43,7 @@ const WORD_ROUTES = [
   "business", "channel", "chat", "collections", "company", "contact",
   // f–j
   "followers", "freelance", "games", "gifts", "group",
-  "help", "id", "join", "lab", "login",
+  "help", "id", "join", "login",
   // m–r
   "match", "moments", "onboarding", "p", "post", "premium", "prestige",
   "privacy", "profile", "register", "report",
@@ -90,7 +90,6 @@ const NAV_TESTS: NavTest[] = [
   { url: "afuchat://terms",        expectedType: "navigate", expectedPath: "/terms",             description: "Terms" },
   { url: "afuchat://help",         expectedType: "navigate", expectedPath: "/help",              description: "Help" },
   { url: "afuchat://privacy",      expectedType: "navigate", expectedPath: "/privacy",           description: "Privacy" },
-  { url: "afuchat://lab",          expectedType: "navigate", expectedPath: "/lab",               description: "Lab" },
   // ── Content creation ────────────────────────────────────────────────────
   { url: "afuchat://moments",      expectedType: "navigate", expectedPath: "/moments",           description: "Moments" },
   { url: "afuchat://create-post",  expectedType: "navigate", expectedPath: "/create-post",       description: "Create post" },

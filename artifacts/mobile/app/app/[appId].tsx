@@ -14,7 +14,6 @@ import AfuSavedApp from "@/modules/afusaved";
 import GamesScreen from "@/app/games";
 import PlayRouter from "@/app/games/play";
 import KampalaHustleGame from "@/app/games/lifesim";
-import LabScreen from "@/app/lab";
 import { SearchScreen } from "@/app/(tabs)/search";
 import FileManagerScreen from "@/app/file-manager";
 import GiftsScreen from "@/app/gifts";
@@ -44,7 +43,7 @@ import TransferScreen from "@/app/mini-programs/transfer";
 import MoneyRequestScreen from "@/app/wallet/request";
 
 const APP_IDS: FullAppId[] = [
-  "afupay", "afumarket", "afugames", "afubusiness", "afusearch", "afulens",
+  "afupay", "afumarket", "afugames", "afubusiness", "afusearch",
   "afufreelance", "afufiles", "afugifts", "afumusic",
   "afuevents", "afumatch", "afucollections", "afuusernames",
   "afuqr", "afusaved",
@@ -96,9 +95,7 @@ function AppContent({
     case "afubusiness":
       return <AfuBusinessApp initialScreen={section as any} />;
     case "afusearch":
-      return <SearchScreen initialTab={section as any} />;
-    case "afulens":
-      return <LabScreen />;
+      return <SearchScreen title="AfuSearch" initialTab={section as any} />;
     case "afufreelance":
       if (section === "detail") return <FreelanceDetailScreen />;
       return <AfuFreelanceApp initialScreen={section as any} />;

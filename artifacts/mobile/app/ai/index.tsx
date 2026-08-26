@@ -10,7 +10,7 @@ import { AiRedirectSkeleton } from "@/components/ui/Skeleton";
 
 const AI_CHAT_CACHE_KEY = "afuai_direct_chat_id";
 
-function goToAiChat(chatId: string, options?: { initialMessage?: string; lensIntro?: string }) {
+function goToAiChat(chatId: string, options?: { initialMessage?: string }) {
   router.replace({
     pathname: "/chat/[id]",
     params: {
@@ -21,7 +21,6 @@ function goToAiChat(chatId: string, options?: { initialMessage?: string; lensInt
       isChannel: "false",
       chatName: "",
       ...(options?.initialMessage ? { initialMessage: options.initialMessage } : {}),
-      ...(options?.lensIntro ? { lensIntro: options.lensIntro } : {}),
     },
   } as any);
 }
@@ -29,16 +28,12 @@ function goToAiChat(chatId: string, options?: { initialMessage?: string; lensInt
 export default function AiRedirect() {
   const { user } = useAuth();
   const { colors } = useTheme();
-  const { q, lensIntro } = useLocalSearchParams<{ q?: string; lensIntro?: string }>();
+  const { q } = useLocalSearchParams<{ q?: string }>();
 
   useEffect(() => {
     if (!user) return;
 
-    const opts = q
-      ? { initialMessage: q }
-      : lensIntro
-        ? { lensIntro }
-        : undefined;
+    const opts = q ? { initialMessage: q } : undefined;
 
     async function openAiChat() {
       // 1. Try validated cache first — avoids an RPC round-trip on repeat visits

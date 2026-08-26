@@ -69,7 +69,6 @@ const NAV_ROUTES: Record<string, string> = {
   terms:              "/terms",
   help:               "/help",
   privacy:            "/privacy",
-  lab:                "/lab",
   // ── Content creation ──────────────────────────────────────────────────────
   moments:            "/moments",
   "create-post":      "/create-post",
@@ -106,7 +105,7 @@ const SYSTEM_ROUTES = new Set([
   "channel", "digital-events", "ref", "app", "download", "privacy",
   "terms", "about", "help", "feedback", "likes",
   "explore", "trending", "feed", "home", "index", "join",
-  "lab", "achievements", "watch-history",
+  "achievements", "watch-history",
   "business", "collections", "games", "welcome",
   "store", "paid-communities", "phone-contacts", "file-manager",
   "create-post", "username-market", "user-discovery",

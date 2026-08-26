@@ -93,16 +93,6 @@ const CATEGORIES: Category[] = [
          route: "/app/afusearch",
         featuredSub: "Find people, posts, channels, events and more.",
       },
-      {
-        id: "afulens",
-        label: "AfuLab",
-        icon: "scan",
-        gradient: ["#FF6B35", "#FF3B00"],
-         route: "/app/afulens",
-        badge: "AI",
-        nativeOnly: true,
-        featuredSub: "Point your camera and get instant AI-powered answers.",
-      },
     ],
   },
   {

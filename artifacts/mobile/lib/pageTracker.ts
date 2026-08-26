@@ -121,8 +121,7 @@ const ROUTE_MAP: Array<{ match: RegExp; name: string; summary: string }> = [
   { match: /^\/settings\/chat/, name: "Chat Settings", summary: "Chat appearance and message preferences." },
   { match: /^\/settings/, name: "Settings", summary: "AfuChat account, privacy, and app settings." },
 
-  // Lab / AI
-  { match: /^\/lab/, name: "AfuChat Lab (AI Lens)", summary: "AfuChat Lab's AI Lens — point your camera at anything for instant AI-powered identification, facts, and answers." },
+  // AI
   { match: /^\/ai/, name: "AfuAI", summary: "The AfuAI assistant screen." },
 
   // Support & misc

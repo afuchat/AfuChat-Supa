@@ -12,9 +12,9 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Image as ExpoImage } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "@/components/ui/SafeGradient";
-import { AIBrandingBadge } from "@/components/ai/AIBranding";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import * as Haptics from "@/lib/haptics";
@@ -97,7 +97,15 @@ type EventResult   = { id:string; title:string; description:string|null; emoji:s
 type GiftResult    = { id:string; name:string; emoji:string; base_xp_cost:number; rarity:string; description:string|null };
 type MarketResult  = { id:string; kind:"product"|"freelance"|"community"; title:string; desc:string|null; emoji:string|null; image_url:string|null; price:number; badge:string|null; seller_name:string; route:string };
 type JobResult     = { id:string; title:string; job_type:string|null; location:string|null; description:string|null; apply_url:string|null; created_at:string; company_name:string; company_logo:string|null; company_slug:string|null };
-type AiInsight     = { summary:string; suggestions:string[]; intent:string; bestCategory:string; keyTerms:string[]; explanation:string; actions:string[]; navigateTo?:string; navigateLabel?:string; directAnswer?:string };
+type AiInsight = { summary:string; suggestions:string[]; intent:string; bestCategory:string; keyTerms:string[]; explanation:string; actions:string[]; navigateTo?:string; navigateLabel?:string; directAnswer?:string };
+type LensResult = {
+  title: string;
+  description: string;
+  facts?: string[];
+  category?: string;
+  confidence?: "high" | "medium" | "low";
+  answer?: string;
+};
 
 type AllResults = {
   people:   (PersonResult|OrgPageResult)[];
@@ -308,8 +316,6 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
   const [sortMode,     setSortMode]     = useState<SortMode>("relevance");
   const [dateRange,    setDateRange]    = useState<DateRange>("all");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [aiMode,       setAiMode]       = useState(false);
-
   const [loading,     setLoading]     = useState(false);
   const [results,     setResults]     = useState<AllResults>(EMPTY);
   const [hasSearched, setHasSearched] = useState(false);
@@ -328,9 +334,10 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
   const [trendingHashtags, setTrendingHashtags] = useState<{ tag: string; count: number }[]>([]);
   const [trendingVideos,   setTrendingVideos]   = useState<VideoResult[]>([]);
 
-  const [aiInsight, setAiInsight] = useState<AiInsight | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [insightExpanded, setInsightExpanded] = useState(false);
+  const [lensResult, setLensResult] = useState<LensResult | null>(null);
+  const [lensImageUri, setLensImageUri] = useState<string | null>(null);
+  const [lensLoading, setLensLoading] = useState(false);
+  const [lensError, setLensError] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -443,27 +450,12 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
     }
 
     const id = ++searchIdRef.current;
-    setLoading(true); setHasSearched(true); setAiInsight(null);
+    setLoading(true); setHasSearched(true);
     const pat = `%${trimmed}%`;
     const all = currentTab === "all";
     const cutoff = dateRangeCutoff(dr);
 
     try {
-      if (aiMode && trimmed.length >= 3) {
-        setAiLoading(true);
-        fetchAiInsight(trimmed).then((insight) => {
-          if (insight && id === searchIdRef.current) {
-            setAiInsight(insight);
-            // Auto-switch to the AI-recommended tab
-            const cat = insight.bestCategory as SearchTab;
-            const validTabs: SearchTab[] = ["all","people","posts","videos","channels","events","gifts","market","jobs"];
-            if (cat && validTabs.includes(cat) && cat !== "all") {
-              setTab(cat);
-            }
-          }
-        }).finally(() => setAiLoading(false));
-      }
-
       const wantsPeople   = all || currentTab === "people";
       const wantsPosts    = all || currentTab === "posts";
       const wantsVideos   = all || currentTab === "videos";
@@ -681,7 +673,7 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
     } catch {
       if (id === searchIdRef.current) setLoading(false);
     }
-  }, [aiMode]);
+  }, []);
 
   // ── Event handlers ───────────────────────────────────────────────────────────
 
@@ -730,15 +722,70 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
     else if (t === "videos" || t === "jobs") performSearch("", t, verifiedOnly, "popular", "all");
   }
 
-  function toggleAiMode() {
+  async function openLens() {
+    if (lensLoading) return;
     Haptics.selectionAsync();
-    const next = !aiMode;
-    setAiMode(next);
-    if (next && hasSearched && query.trim().length >= 3) {
-      setAiLoading(true);
-      fetchAiInsight(query.trim())
-        .then((i) => { if (i) setAiInsight(i); })
-        .finally(() => setAiLoading(false));
+    setLensError(null);
+
+    try {
+      let permission;
+      let pickerResult;
+      if (Platform.OS === "web") {
+        permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+          setLensError("Allow photo access to search with an image.");
+          return;
+        }
+        pickerResult = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ["images"] as any,
+          allowsEditing: false,
+          quality: 0.75,
+          base64: true,
+        });
+      } else {
+        permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          setLensError("Allow camera access to search with an image.");
+          return;
+        }
+        pickerResult = await ImagePicker.launchCameraAsync({
+          mediaTypes: ["images"] as any,
+          allowsEditing: false,
+          quality: 0.75,
+          base64: true,
+        });
+      }
+
+      if (pickerResult.canceled || !pickerResult.assets?.[0]) return;
+      const asset = pickerResult.assets[0];
+      if (!asset.base64) {
+        setLensError("That image could not be read. Please try another photo.");
+        return;
+      }
+
+      setLensImageUri(asset.uri);
+      setLensLoading(true);
+      const response = await fetch(`${getEdgeFnBase()}/ai-lens`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...edgeHeaders() },
+        body: JSON.stringify({ imageBase64: asset.base64, mimeType: asset.mimeType || "image/jpeg" }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload) {
+        throw new Error(payload?.error || "Image search failed");
+      }
+      setLensResult({
+        title: payload.title || payload.name || "Image result",
+        description: payload.description || payload.answer || "AfuSearch found information about this image.",
+        facts: Array.isArray(payload.facts) ? payload.facts : [],
+        category: payload.category,
+        confidence: payload.confidence,
+        answer: payload.answer,
+      });
+    } catch {
+      setLensError("Image search is unavailable right now. Please try again.");
+    } finally {
+      setLensLoading(false);
     }
   }
 
@@ -1117,177 +1164,49 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
     );
   }
 
-  // ─── AI Insight card ─────────────────────────────────────────────────────────
+  // ─── Lens result card ─────────────────────────────────────────────────────────
 
-  const INTENT_ICONS: Record<string, string> = {
-    person: "person", content: "document-text", video: "videocam",
-    topic: "pricetag", product: "bag", event: "calendar",
-    job: "briefcase", mixed: "search",
-  };
-  const CAT_LABELS: Record<string, string> = {
-    people: "People", posts: "Posts", videos: "Videos", channels: "Channels",
-    events: "Events", gifts: "Gifts", market: "Market", jobs: "Jobs", all: "All",
-  };
-
-  function AiCard() {
-    if (aiLoading) {
+  function LensCard() {
+    if (lensLoading) {
       return (
-        <View style={[ss.aiCard, { borderColor: PURPLE + "30", backgroundColor: PURPLE + "0A" }]}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <ActivityIndicator size="small" color={PURPLE} />
-            <Text style={{ color: PURPLE, fontSize: 13, fontFamily: "Inter_500Medium" }}>AI is analyzing your search…</Text>
-          </View>
+        <View style={[ss.lensCard, { borderColor: BRAND + "35", backgroundColor: BRAND + "0A" }]}>
+          <ActivityIndicator size="small" color={BRAND} />
+          <Text style={{ color: colors.textSecondary, fontSize: 13, fontFamily: "Inter_500Medium", flex: 1 }}>
+            Looking for matches in this image…
+          </Text>
         </View>
       );
     }
-    if (!aiInsight) return null;
-
-    const intentIcon = (INTENT_ICONS[aiInsight.intent] || "search") as any;
-    const catLabel   = CAT_LABELS[aiInsight.bestCategory] || aiInsight.bestCategory;
-
+    if (!lensResult) return null;
     return (
-      <View >
-        <LinearGradient
-          colors={isDark ? [PURPLE + "28", PURPLE + "0C"] : [PURPLE + "16", PURPLE + "06"]}
-          style={[ss.aiCard, { borderColor: PURPLE + "35" }]}
-        >
-          {/* Collapsed header — always visible, tap to expand */}
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => setInsightExpanded(v => !v)}
-            style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-          >
-            <LinearGradient colors={[PURPLE, "#A855F7"]} style={{ width: 30, height: 30, borderRadius: 9, alignItems: "center", justifyContent: "center" }}>
-              <Ionicons name="sparkles" size={15} color="#fff" />
-            </LinearGradient>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: PURPLE, fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 0.9 }}>AI SEARCH INSIGHT</Text>
-              {!insightExpanded && (
-                <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 1 }} numberOfLines={1}>
-                  {aiInsight.summary}
-                </Text>
-              )}
+      <View style={[ss.lensCard, { borderColor: BRAND + "35", backgroundColor: colors.surface }]}>
+        {lensImageUri && <ExpoImage source={{ uri: lensImageUri }} style={ss.lensImage} contentFit="cover" />}
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 5 }}>
+            <Ionicons name="scan-outline" size={16} color={BRAND} />
+            <Text style={{ color: BRAND, fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 0.7 }}>LENS RESULT</Text>
+          </View>
+          <Text style={{ color: colors.text, fontSize: 16, fontFamily: "Inter_700Bold", marginBottom: 4 }}>{lensResult.title}</Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 13, lineHeight: 19 }}>{lensResult.description}</Text>
+          {!!lensResult.facts?.length && (
+            <View style={{ marginTop: 9, gap: 5 }}>
+              {lensResult.facts.slice(0, 3).map((fact, i) => (
+                <View key={`${fact}-${i}`} style={{ flexDirection: "row", gap: 6 }}>
+                  <Text style={{ color: BRAND, fontSize: 13 }}>•</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12, lineHeight: 17, flex: 1 }}>{fact}</Text>
+                </View>
+              ))}
             </View>
-            {!insightExpanded && (
-              <View style={{ backgroundColor: PURPLE + "20", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3, flexDirection: "row", alignItems: "center", gap: 3 }}>
-                <Ionicons name={intentIcon} size={10} color={PURPLE} />
-                <Text style={{ color: PURPLE, fontSize: 10, fontFamily: "Inter_600SemiBold" }}>{catLabel}</Text>
-              </View>
-            )}
-            <Ionicons name={insightExpanded ? "chevron-up" : "chevron-down"} size={15} color={PURPLE} />
-          </TouchableOpacity>
-
-          {/* Expanded content */}
-          {insightExpanded && (
-            <>
-              <View style={{ height: 12 }} />
-
-              {/* Navigate button — shown when AI detects navigation intent */}
-              {aiInsight.navigateTo && (
-                <TouchableOpacity
-                  activeOpacity={0.82}
-                  onPress={() => { router.push(aiInsight.navigateTo as any); setInsightExpanded(false); }}
-                  style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: BRAND + "18", borderRadius: 10, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: BRAND + "40" }}
-                >
-                  <View style={{ width: 34, height: 34, borderRadius: 9, backgroundColor: BRAND, alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Ionicons name="navigate" size={17} color="#fff" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: BRAND, fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 0.5 }}>TAKE ME THERE</Text>
-                    <Text style={{ color: colors.text, fontSize: 13, fontFamily: "Inter_600SemiBold", marginTop: 1 }}>{aiInsight.navigateLabel || aiInsight.navigateTo}</Text>
-                  </View>
-                  <Ionicons name="arrow-forward-circle" size={22} color={BRAND} />
-                </TouchableOpacity>
-              )}
-
-              {/* Direct answer — shown when AI answers a how-to or feature question */}
-              {aiInsight.directAnswer && (
-                <View style={{ backgroundColor: isDark ? "#ffffff0A" : "#0000000A", borderRadius: 9, padding: 11, marginBottom: 10, borderLeftWidth: 3, borderLeftColor: PURPLE }}>
-                  <Text style={{ color: PURPLE, fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 0.5, marginBottom: 5 }}>ANSWER</Text>
-                  <Text style={{ color: colors.text, fontSize: 13, lineHeight: 19 }}>{aiInsight.directAnswer}</Text>
-                </View>
-              )}
-
-              {/* Summary */}
-              <Text style={{ color: colors.text, fontSize: 13, lineHeight: 19, marginBottom: 10 }}>{aiInsight.summary}</Text>
-
-              {/* Best category — tappable to switch tab */}
-              {aiInsight.explanation && aiInsight.intent !== "navigation" ? (
-                <TouchableOpacity
-                  activeOpacity={0.75}
-                  onPress={() => {
-                    const cat = aiInsight.bestCategory as SearchTab;
-                    const validTabs: SearchTab[] = ["all","people","posts","videos","channels","events","gifts","market","jobs"];
-                    if (cat && validTabs.includes(cat)) { setTab(cat); setInsightExpanded(false); }
-                  }}
-                  style={{ flexDirection: "row", alignItems: "flex-start", gap: 6, backgroundColor: PURPLE + "12", borderRadius: 8, padding: 8, marginBottom: 10 }}
-                >
-                  <Ionicons name="bulb" size={13} color={PURPLE} style={{ marginTop: 1 }} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: PURPLE, fontSize: 10, fontFamily: "Inter_700Bold", marginBottom: 2 }}>
-                      Best results in: <Text style={{ color: colors.text }}>{catLabel}</Text>
-                      <Text style={{ color: PURPLE, fontFamily: "Inter_400Regular" }}> — tap to switch</Text>
-                    </Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 11, lineHeight: 16 }}>{aiInsight.explanation}</Text>
-                  </View>
-                  <Ionicons name="arrow-forward-circle" size={16} color={PURPLE} style={{ alignSelf: "center" }} />
-                </TouchableOpacity>
-              ) : null}
-
-              {/* Actionable steps */}
-              {aiInsight.actions && aiInsight.actions.length > 0 && (
-                <View style={{ marginBottom: 10 }}>
-                  <Text style={{ color: colors.textMuted, fontSize: 10, fontFamily: "Inter_600SemiBold", letterSpacing: 0.5, marginBottom: 7 }}>WHAT TO DO</Text>
-                  {aiInsight.actions.map((a, i) => (
-                    <View key={i} style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, marginBottom: 6 }}>
-                      <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: PURPLE + "25", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
-                        <Text style={{ color: PURPLE, fontSize: 10, fontFamily: "Inter_700Bold" }}>{i + 1}</Text>
-                      </View>
-                      <Text style={{ color: colors.text, fontSize: 12, lineHeight: 18, flex: 1 }}>{a}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              {/* Key terms */}
-              {aiInsight.keyTerms.length > 0 && (
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5, marginBottom: 10 }}>
-                  {aiInsight.keyTerms.map((term, i) => (
-                    <TouchableOpacity
-                      key={i}
-                      style={{ backgroundColor: isDark ? "#ffffff14" : "#00000010", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, flexDirection: "row", alignItems: "center", gap: 4 }}
-                      onPress={() => onHistoryPress(term)}
-                    >
-                      <Ionicons name="key" size={9} color={colors.textMuted} />
-                      <Text style={{ color: colors.textSecondary, fontSize: 11, fontFamily: "Inter_500Medium" }}>{term}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-
-              {/* Suggestions */}
-              {aiInsight.suggestions.length > 0 && (
-                <>
-                  <Text style={{ color: colors.textMuted, fontSize: 10, fontFamily: "Inter_600SemiBold", letterSpacing: 0.5, marginBottom: 6 }}>TRY THESE SEARCHES</Text>
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
-                    {aiInsight.suggestions.map((s, i) => (
-                      <TouchableOpacity key={i} style={{ backgroundColor: PURPLE + "1A", borderColor: PURPLE + "30", borderWidth: 1, borderRadius: 20, paddingHorizontal: 11, paddingVertical: 5, flexDirection: "row", alignItems: "center", gap: 4 }} onPress={() => onHistoryPress(s)}>
-                        <Ionicons name="search" size={10} color={PURPLE} />
-                        <Text style={{ color: PURPLE, fontSize: 12, fontFamily: "Inter_500Medium" }}>{s}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </>
-              )}
-              <AIBrandingBadge compact style={{ marginTop: 8 }} />
-            </>
           )}
-        </LinearGradient>
+        </View>
+        <TouchableOpacity onPress={() => { setLensResult(null); setLensImageUri(null); }} hitSlop={10}>
+          <Ionicons name="close-circle" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
       </View>
     );
   }
 
-  // ─── No Results (AI-powered overlay) ─────────────────────────────────────────
+  // ─── No Results ──────────────────────────────────────────────────────────────
 
   function NoResults() {
     const tags = trendingHashtags.length > 0
@@ -1313,11 +1232,9 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
             {"\n"}Try different keywords or explore below.
           </Text>
 
-          {(aiInsight || aiLoading) && (
-            <View style={{ width: "100%", marginBottom: 16 }}>
-              <AiCard />
-            </View>
-          )}
+          <View style={{ width: "100%", marginBottom: 16 }}>
+            <LensCard />
+          </View>
 
           {/* Trending alternatives */}
           <View style={{ width: "100%", backgroundColor: colors.surface, borderRadius: 18, padding: 16, gap: 12, marginBottom: 14 }}>
@@ -1334,18 +1251,6 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
             </View>
           </View>
 
-          {!aiMode && (
-            <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: PURPLE + "10", borderRadius: 14, padding: 14, borderWidth: 1, borderColor: PURPLE + "25", width: "100%" }} onPress={toggleAiMode} activeOpacity={0.85}>
-              <LinearGradient colors={[PURPLE, "#A855F7"]} style={{ width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" }}>
-                <Ionicons name="sparkles" size={18} color="#fff" />
-              </LinearGradient>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: PURPLE, fontFamily: "Inter_600SemiBold", fontSize: 14 }}>Try AI-powered search</Text>
-                <Text style={{ color: colors.textMuted, fontSize: 12 }}>Get smart suggestions for your query</Text>
-              </View>
-              <Ionicons name="arrow-forward" size={16} color={PURPLE} />
-            </TouchableOpacity>
-          )}
         </View>
       </ScrollView>
     );
@@ -1377,17 +1282,9 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
               <Text style={{ fontFamily: "Inter_600SemiBold", color: BRAND }}>"{query.trim()}"</Text>
             </Text>
           </View>
-          {aiMode && (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: PURPLE + "18", borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 }}>
-              <Ionicons name="sparkles" size={11} color={PURPLE} />
-              <Text style={{ color: PURPLE, fontSize: 11, fontFamily: "Inter_600SemiBold" }}>AI</Text>
-            </View>
-          )}
         </View>
 
-        {aiMode && (aiInsight || aiLoading) && (
-          <View style={{ paddingHorizontal: 14, paddingTop: 14 }}><AiCard /></View>
-        )}
+        {(lensResult || lensLoading) && <View style={{ paddingHorizontal: 14, paddingTop: 14 }}><LensCard /></View>}
 
         {showPeople && (
           <View>
@@ -1755,26 +1652,24 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
       {/* Header */}
       <View style={[ss.header, { paddingTop: insets.top + 8, backgroundColor: colors.surface + "CC", borderBottomColor: colors.border }]}>
 
-        {/* Title + AI toggle */}
+        {/* Title + image search */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-            <TouchableOpacity onPress={() => safeRouter.back("/apps")} hitSlop={10} style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center", marginRight: 6 }} accessibilityRole="button" accessibilityLabel="Go back">
+            <TouchableOpacity onPress={() => safeRouter.back(title === "AfuSearch" ? "/apps" : "/(tabs)/discover")} hitSlop={10} style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center", marginRight: 6 }} accessibilityRole="button" accessibilityLabel="Go back">
               <Ionicons name="arrow-back" size={22} color={colors.text} />
             </TouchableOpacity>
             <Text style={{ fontSize: 24, fontFamily: "Inter_700Bold", color: colors.text, letterSpacing: -0.3 }}>{title}</Text>
           </View>
           <TouchableOpacity
-            style={[ss.aiToggle, aiMode && { backgroundColor: PURPLE + "18", borderColor: PURPLE + "44" }]}
-            onPress={toggleAiMode}
+            style={[ss.lensButton, { backgroundColor: BRAND + "14", borderColor: BRAND + "35" }]}
+            onPress={openLens}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={Platform.OS === "web" ? "Search with an image" : "Search with camera"}
           >
-            <LinearGradient
-              colors={aiMode ? [PURPLE, "#A855F7"] : ["transparent", "transparent"]}
-              style={{ width: 26, height: 26, borderRadius: 8, alignItems: "center", justifyContent: "center" }}
-            >
-              <Ionicons name="sparkles" size={14} color={aiMode ? "#fff" : colors.textMuted} />
-            </LinearGradient>
-            <Text style={{ color: aiMode ? PURPLE : colors.textMuted, fontSize: 11, fontFamily: "Inter_600SemiBold" }}>AI</Text>
+            {lensLoading
+              ? <ActivityIndicator size="small" color={BRAND} />
+              : <Ionicons name="scan-outline" size={20} color={BRAND} />}
           </TouchableOpacity>
         </View>
 
@@ -1797,6 +1692,15 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
             ? <TouchableOpacity onPress={clearSearch} hitSlop={8}><Ionicons name="close-circle" size={17} color={colors.textMuted} /></TouchableOpacity>
             : null}
         </View>
+        {!!lensError && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 7, paddingHorizontal: 4, paddingTop: 6 }}>
+            <Ionicons name="alert-circle-outline" size={15} color={RED} />
+            <Text style={{ color: RED, fontSize: 12, flex: 1 }}>{lensError}</Text>
+            <TouchableOpacity onPress={() => setLensError(null)} hitSlop={8}>
+              <Ionicons name="close" size={15} color={RED} />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Inline search suggestions — appear while typing, before submitting */}
         {query.length > 1 && !hasSearched && searchSuggestions.length > 0 && (
@@ -1882,6 +1786,12 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
         </View>
       )}
 
+      {(lensResult || lensLoading) && !hasSearched && (
+        <View style={{ paddingHorizontal: 14, paddingTop: 14 }}>
+          <LensCard />
+        </View>
+      )}
+
       {/* Content area */}
       {loading
         ? <View style={{ flex: 1 }}>
@@ -1910,15 +1820,14 @@ const ss = StyleSheet.create({
     overflow: "visible" as any,
   },
 
-  aiToggle: {
+  lensButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
     borderWidth: 1,
-    borderColor: "transparent",
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
+    borderRadius: 12,
+    width: 40,
+    height: 40,
+    justifyContent: "center",
   },
 
   searchBar: {
@@ -1972,10 +1881,18 @@ const ss = StyleSheet.create({
     paddingVertical: 10,
   },
 
-  aiCard: {
+  lensCard: {
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  lensImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 10,
   },
 
   listRow: {

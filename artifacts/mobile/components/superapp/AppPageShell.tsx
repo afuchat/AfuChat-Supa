@@ -1,11 +1,7 @@
 import React from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { View } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
 import AppBottomNav, { type AppNavItem } from "./AppBottomNav";
-import { safeRouter } from "@/lib/navUtils";
-import { findModule } from "@/lib/superapp/registry";
 
 export type FullAppId =
   | "afupay"
@@ -13,7 +9,6 @@ export type FullAppId =
   | "afugames"
   | "afubusiness"
   | "afusearch"
-  | "afulens"
   | "afufreelance"
   | "afufiles"
   | "afugifts"
@@ -55,9 +50,6 @@ const NAV: Record<FullAppId, AppNavItem[]> = {
     { key: "posts", label: "Posts", icon: "document-text-outline", href: "/app/afusearch?section=posts" },
     { key: "events", label: "Events", icon: "calendar-outline", href: "/app/afusearch?section=events" },
   ],
-  afulens: [
-    { key: "scan", label: "Scan", icon: "scan-outline", href: "/app/afulens" },
-  ],
   afufreelance: [
     { key: "browse", label: "Browse", icon: "search-outline", href: "/app/afufreelance" },
     { key: "post-gig", label: "Post a gig", icon: "add-circle-outline", href: "/app/afufreelance?section=post-gig" },
@@ -98,48 +90,9 @@ const NAV: Record<FullAppId, AppNavItem[]> = {
   ],
 };
 
-// Most app modules render their own in-flow header and back control. These
-// camera-first surfaces intentionally do not, so the shell supplies the same
-// control for them without stacking two headers above the camera.
-const APPS_WITH_SHELL_BACK: ReadonlySet<FullAppId> = new Set([
-  "afulens",
-  "afuqr",
-]);
-
-function AppShellBackHeader({ appId }: { appId: FullAppId }) {
-  const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
-
-  return (
-    <View
-      style={[
-        shellHeader.container,
-        {
-          paddingTop: topInset,
-          backgroundColor: colors.background,
-          borderBottomColor: colors.border,
-        },
-      ]}
-    >
-      <View style={shellHeader.row}>
-        <Pressable
-          style={shellHeader.backButton}
-          onPress={() => safeRouter.back("/apps")}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.accent} />
-        </Pressable>
-        <Text style={[shellHeader.title, { color: colors.text }]}>
-          {findModule(appId)?.name ?? appId}
-        </Text>
-        <View style={shellHeader.side} />
-      </View>
-    </View>
-  );
-}
+// App modules own their in-flow header and back control. The shell remains
+// responsible for the shared safe-area surface and app-level bottom nav, so
+// pages never become modal overlays or detached windows.
 
 export function getAppNav(appId: FullAppId) {
   return NAV[appId];
@@ -173,36 +126,8 @@ export default function AppPageShell({ appId, activeKey, showNav = true, childre
   );
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {APPS_WITH_SHELL_BACK.has(appId) && <AppShellBackHeader appId={appId} />}
       <View style={{ flex: 1, position: "relative" }}>{children}</View>
       {shouldShowNav && <AppBottomNav items={items} activeKey={activeKey} />}
     </View>
   );
 }
-
-const shellHeader = StyleSheet.create({
-  container: {
-    borderBottomWidth: 0.5,
-  },
-  row: {
-    minHeight: 56,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 8,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  title: {
-    flex: 1,
-    fontSize: 18,
-    fontFamily: "Inter_700Bold",
-    textAlign: "center",
-  },
-  side: {
-    width: 44,
-  },
-});
