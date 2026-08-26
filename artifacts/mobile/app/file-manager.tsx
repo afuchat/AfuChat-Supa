@@ -15,10 +15,13 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import * as MediaLibrary from "expo-media-library";
 import * as Network from "expo-network";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { useTheme } from "@/hooks/useTheme";
+import { GLASS, glassTokens } from "@/constants/glass";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   getPermissionStatus,
   requestPermission,
@@ -68,6 +71,90 @@ function permissionLabel(status: PermissionStatus): string {
   if (status === "blocked") return "Open Settings";
   if (Platform.OS === "ios" && status === "undetermined") return "Handled by iOS";
   return "Enable";
+}
+
+function FileManagerBottomNav({
+  filter,
+  transferOpen,
+  onFilterChange,
+  onTransfer,
+}: {
+  filter: Filter;
+  transferOpen: boolean;
+  onFilterChange: (filter: Filter) => void;
+  onTransfer: () => void;
+}) {
+  const { colors, isDark } = useTheme();
+  const { t } = useLanguage();
+  const insets = useSafeAreaInsets();
+  const glass = glassTokens(isDark);
+  const bottom = Math.max(insets.bottom, 8) + 6;
+  const activeColor = colors.accent;
+  const inactiveColor = isDark ? "rgba(255,255,255,0.52)" : "rgba(0,0,0,0.42)";
+  const glassTint = isDark ? "rgba(22,22,26,0.58)" : "rgba(255,255,255,0.58)";
+
+  const items: Array<{
+    key: Filter | "transfer";
+    label: string;
+    icon: keyof typeof Ionicons.glyphMap;
+  }> = [
+    { key: "all", label: "Library", icon: "folder-open-outline" },
+    { key: "image", label: "Images", icon: "images-outline" },
+    { key: "video", label: "Videos", icon: "videocam-outline" },
+    { key: "audio", label: "Audio", icon: "musical-notes-outline" },
+    { key: "transfer", label: "Transfer", icon: "swap-horizontal-outline" },
+  ];
+
+  return (
+    <View style={[styles.fmNavWrap, { bottom }]}>
+      <View
+        style={[
+          styles.fmNav,
+          {
+            borderColor: glass.border,
+            ...glass.shadowSoft,
+          },
+        ]}
+      >
+        <BlurView
+          intensity={Platform.OS === "web" ? GLASS.blur.medium : GLASS.blur.heavy}
+          tint={isDark ? "dark" : "light"}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={[StyleSheet.absoluteFill, styles.fmNavTint, { backgroundColor: glassTint }]} />
+        {items.map((item) => {
+          const active = item.key === "transfer"
+            ? transferOpen
+            : !transferOpen && filter === item.key;
+          const color = active ? activeColor : inactiveColor;
+          return (
+            <Pressable
+              key={item.key}
+              testID={`file-manager-nav-${item.key}`}
+              accessibilityRole="button"
+              accessibilityLabel={t(item.label)}
+              accessibilityState={{ selected: active }}
+              onPress={() => {
+                if (item.key === "transfer") {
+                  onTransfer();
+                } else {
+                  onFilterChange(item.key);
+                }
+              }}
+              style={styles.fmNavTab}
+            >
+              <View style={[styles.fmNavIcon, active && { backgroundColor: activeColor + "1C" }]}>
+                <Ionicons name={item.icon} size={20} color={color} />
+              </View>
+              <Text style={[styles.fmNavLabel, { color }]} numberOfLines={1}>
+                {t(item.label)}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
 }
 
 export default function FileManagerScreen() {
@@ -349,8 +436,9 @@ export default function FileManagerScreen() {
         <FlatList
           data={filteredFiles}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 28, paddingTop: 4 }}
+           contentContainerStyle={{ paddingBottom: insets.bottom + 132, paddingTop: 4 }}
           showsVerticalScrollIndicator={false}
+           removeClippedSubviews={false}
           renderItem={({ item }) => {
             const selected = selectedId === item.id;
             return (
@@ -389,13 +477,26 @@ export default function FileManagerScreen() {
           accessibilityRole="button"
           accessibilityLabel={`Send ${selectedFile.name} offline`}
           onPress={shareSelectedFile}
-          style={[styles.sendBar, { backgroundColor: colors.accent, bottom: insets.bottom + 14 }]}
+           style={[
+             styles.sendBar,
+             {
+               backgroundColor: colors.accent,
+               bottom: Math.max(insets.bottom, 8) + 76,
+             },
+           ]}
         >
           <Ionicons name="paper-plane" size={19} color={colors.background} />
           <Text style={[styles.sendBarText, { color: colors.background }]}>Send offline</Text>
           <Text style={[styles.sendBarHint, { color: colors.background + "BB" }]}>Bluetooth · Wi-Fi</Text>
         </Pressable>
       )}
+
+      <FileManagerBottomNav
+        filter={filter}
+        transferOpen={transferOpen}
+        onFilterChange={setFilter}
+        onTransfer={openTransfer}
+      />
 
       <Modal visible={transferOpen} transparent animationType="slide" onRequestClose={() => setTransferOpen(false)}>
         <View style={[styles.modalBackdrop, { backgroundColor: isDark ? "rgba(0,0,0,0.72)" : "rgba(0,0,0,0.38)" }]}>
@@ -503,6 +604,12 @@ const styles = StyleSheet.create({
   sendBar: { position: "absolute", left: 16, right: 16, minHeight: 52, borderRadius: 17, flexDirection: "row", alignItems: "center", paddingHorizontal: 17, gap: 9 },
   sendBarText: { fontSize: 14, fontFamily: "Inter_700Bold" },
   sendBarHint: { marginLeft: "auto", fontSize: 11, fontFamily: "Inter_500Medium" },
+  fmNavWrap: { position: "absolute", left: 20, right: 20, zIndex: 100, alignItems: "center" },
+  fmNav: { height: 62, width: "100%", borderRadius: 999, borderWidth: 1, paddingHorizontal: 6, flexDirection: "row", alignItems: "center", overflow: "hidden" },
+  fmNavTint: { borderRadius: 999 },
+  fmNavTab: { flex: 1, minWidth: 0, alignSelf: "stretch", alignItems: "center", justifyContent: "center" },
+  fmNavIcon: { width: 42, height: 29, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  fmNavLabel: { width: "100%", fontSize: 9, lineHeight: 11, fontFamily: "Inter_700Bold", textAlign: "center", marginTop: 1, includeFontPadding: false },
   modalBackdrop: { flex: 1, justifyContent: "flex-end" },
   transferSheet: { borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 18, paddingTop: 10, paddingBottom: 26 },
   sheetHandle: { width: 38, height: 4, borderRadius: 99, backgroundColor: "rgba(128,128,128,0.35)", alignSelf: "center", marginBottom: 16 },

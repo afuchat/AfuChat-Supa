@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { BlurView } from "expo-blur";
 import React, { useEffect, useRef, useState } from "react";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { Security2FABanner } from "@/components/ui/Security2FABanner";
@@ -25,6 +26,7 @@ import { supabase } from "@/lib/supabase";
 import { getTotalUnread, subscribeUnread } from "@/lib/chatUnreadEvents";
 import { Avatar } from "@/components/ui/Avatar";
 import { useLanguage } from "@/context/LanguageContext";
+import { GLASS, glassTokens } from "@/constants/glass";
 
 // Visible bottom bar tabs — Chat · Discover · Shorts · Apps · Me
 const BOTTOM_TABS = [
@@ -41,6 +43,7 @@ function normalizeTabPath(p: string): string {
   if (p === "/discover" || p === "/(tabs)/discover") return "/(tabs)/discover";
   if (p === "/shorts"   || p === "/(tabs)/shorts")   return "/(tabs)/shorts";
   if (p === "/apps"     || p === "/(tabs)/apps")     return "/(tabs)/apps";
+  if (p === "/file-manager")                         return "/(tabs)/apps";
   if (p === "/me"       || p === "/(tabs)/me")       return "/(tabs)/me";
   if (p === "/search"   || p === "/(tabs)/search")   return "/(tabs)/search";
   return p;
@@ -146,7 +149,7 @@ function useTotalUnread(userId: string | undefined): number {
 }
 
 // ── Floating pill tab bar ─────────────────────────────────────────────────────
-function CompactTabBar({
+export function CompactTabBar({
   userId,
   avatarUrl,
   displayName,
@@ -178,9 +181,9 @@ function CompactTabBar({
   const ACTIVE_ICON    = colors.accent;
   const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 6;
   const PILL_H         = 62;
-
-  const BAR_BG      = isDark ? "#1C1C1E" : "#FFFFFF";
-  const BAR_BORDER  = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)";
+  const glass          = glassTokens(isDark);
+  const BAR_BORDER     = glass.border;
+  const GLASS_TINT     = isDark ? "rgba(22,22,26,0.58)" : "rgba(255,255,255,0.58)";
   const ACTIVE_WRAP = isDark ? colors.accent + "22" : colors.accent + "18";
 
   function handleTabPress(route: string) {
@@ -208,7 +211,6 @@ function CompactTabBar({
             pill.bar,
             {
               height: PILL_H,
-              backgroundColor: BAR_BG,
               borderColor: BAR_BORDER,
               ...Platform.select({
                 ios: {
@@ -223,6 +225,14 @@ function CompactTabBar({
             },
           ]}
         >
+          <BlurView
+            intensity={Platform.OS === "web" ? GLASS.blur.medium : GLASS.blur.heavy}
+            tint={isDark ? "dark" : "light"}
+            style={StyleSheet.absoluteFill}
+          />
+          <View
+            style={[StyleSheet.absoluteFill, pill.glassTint, { backgroundColor: GLASS_TINT }]}
+          />
           {BOTTOM_TABS.map((tab) => {
             const focused   = active === tab.route;
             const iconColor = focused ? ACTIVE_ICON : INACTIVE_ICON;
@@ -380,6 +390,10 @@ const pill = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 6,
     width: "100%",
+    overflow: "hidden",
+  },
+  glassTint: {
+    borderRadius: 999,
   },
   tab: {
     flex: 1,

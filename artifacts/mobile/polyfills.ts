@@ -38,6 +38,29 @@ if (typeof FinalizationRegistry === "undefined") {
 }
 
 /**
+ * Fabric safety: React Native enables removeClippedSubviews by default on
+ * Android. With large, dynamic lists this can race view recycling and make
+ * Fabric attach a child that still belongs to the previous clipping parent:
+ * "The specified child already has a parent."
+ *
+ * The app already uses bounded list windows and explicit pagination. Disabling
+ * native clipping is the safer choice for release builds; it avoids a fatal
+ * native exception while keeping virtualization active.
+ */
+try {
+  const ReactNative = require("react-native") as typeof import("react-native");
+  for (const ListComponent of [ReactNative.FlatList, ReactNative.SectionList]) {
+    const component = ListComponent as typeof ListComponent & {
+      defaultProps?: Record<string, unknown>;
+    };
+    component.defaultProps = {
+      ...component.defaultProps,
+      removeClippedSubviews: false,
+    };
+  }
+} catch {}
+
+/**
  * Global JS error handler — catches fatal JS errors that occur outside of
  * React's render cycle (i.e. in event handlers, setInterval, native callbacks)
  * and are NOT caught by the <ErrorBoundary>. Without this, those errors

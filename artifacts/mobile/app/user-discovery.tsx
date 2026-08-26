@@ -1001,7 +1001,7 @@ export default function UserDiscoveryScreen() {
             tab === "nearby" ? renderNearbyEmpty() : renderDiscoverEmpty()
           }
           keyboardShouldPersistTaps="handled"
-          removeClippedSubviews={true}
+          removeClippedSubviews={false}
         />
       )}
     </View>

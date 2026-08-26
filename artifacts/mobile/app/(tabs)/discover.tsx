@@ -2867,7 +2867,7 @@ export default function DiscoverScreen() {
                   maxToRenderPerBatch={4}
                   windowSize={5}
                   updateCellsBatchingPeriod={30}
-                  removeClippedSubviews={Platform.OS !== "web"}
+                  removeClippedSubviews={false}
 
                   refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
@@ -2931,7 +2931,7 @@ export default function DiscoverScreen() {
                   maxToRenderPerBatch={4}
                   windowSize={5}
                   updateCellsBatchingPeriod={30}
-                  removeClippedSubviews={Platform.OS !== "web"}
+                   removeClippedSubviews={false}
 
                   refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />
@@ -2997,7 +2997,7 @@ export default function DiscoverScreen() {
               maxToRenderPerBatch={4}
               windowSize={5}
             updateCellsBatchingPeriod={30}
-            removeClippedSubviews={Platform.OS !== "web"}
+            removeClippedSubviews={false}
 
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={() => { revealHeader(); setRefreshing(true); setHasMore(true); _resetPill(false); loadPosts(feedTab); }} tintColor={colors.accent} />

@@ -271,7 +271,7 @@ function EmojiScrollPanel({ onEmojiSelected, onScrollDown, onScrollUp, onSelect 
           initialNumToRender={16}
           maxToRenderPerBatch={10}
           windowSize={10}
-          removeClippedSubviews
+          removeClippedSubviews={false}
           contentContainerStyle={{ paddingBottom: 56 }}
           style={{ flex: 1 }}
           onScroll={handleScroll}
@@ -501,7 +501,7 @@ function StickerScrollPanel({ onSendSticker, onScrollDown, onScrollUp, onSelect 
           initialNumToRender={16}
           maxToRenderPerBatch={10}
           windowSize={10}
-          removeClippedSubviews
+           removeClippedSubviews={false}
           contentContainerStyle={{ paddingBottom: 56 }}
           style={{ flex: 1 }}
           onScroll={handleScroll}
