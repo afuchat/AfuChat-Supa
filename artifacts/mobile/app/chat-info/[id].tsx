@@ -456,9 +456,7 @@ export default function ChatInfoScreen() {
 
   const subtitle = React.useMemo(() => {
     if (isChannel) {
-      const handle = meta?.channel_handle ? `@${meta.channel_handle} · ` : "";
-      const count = channelStats ? ` · ${fmtNum(channelStats.subscriber_count)} subscribers` : "";
-      return `${handle}${meta?.channel_is_public === false ? "private channel" : "public channel"}${count}`;
+      return meta?.channel_is_public === false ? "Private" : "Public";
     }
     if (isGroup) {
       const total   = members.length;

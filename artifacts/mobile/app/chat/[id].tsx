@@ -6626,7 +6626,7 @@ STRICT RULES:
       : (phonebookName || chatInfo?.other_name || "Chat");
   const headerAvatar = chatInfo?.is_group || chatInfo?.is_channel ? chatInfo?.avatar_url : isSelfChat ? null : chatInfo?.other_avatar;
   const headerSubtitle = chatInfo?.is_channel
-    ? `${chatInfo.channel_handle ? `@${chatInfo.channel_handle} · ` : ""}${iAmChatAdmin ? "Admin" : "View only"}`
+    ? (chatInfo.channel_is_public === false ? "Private" : "Public")
     : null;
   const canOpenDirectProfile = !!chatInfo?.other_id && !chatInfo.is_group && !chatInfo.is_channel && !isSelfChat && !isNotificationsChat;
   const canOpenChatInfo = !!chatInfo?.is_group || !!chatInfo?.is_channel;
@@ -6788,7 +6788,7 @@ STRICT RULES:
               <Text style={[st.headerSub, { color: "#FF9500" }]}>Waiting for network...</Text>
              ) : chatInfo?.is_channel ? (
               <Text style={[st.headerSub, { color: colors.textMuted }]}>
-                 {headerSubtitle ? `📢 ${headerSubtitle}` : (iAmChatAdmin ? "📢 Channel · Admin" : "📢 Channel · View only")}
+                {headerSubtitle ?? "Public"}
               </Text>
             ) : chatInfo?.is_group ? (
               <Text style={[st.headerSub, { color: colors.textMuted }]}>Group chat</Text>
