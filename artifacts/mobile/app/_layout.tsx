@@ -1,10 +1,12 @@
 import "@/polyfills";
 import "react-native-gesture-handler";
 import "@/lib/navigationGuard";
+import { registerMusicPlaybackService } from "@/lib/musicService";
 import * as SplashScreen from "expo-splash-screen";
 
 // Keep the native splash visible until we explicitly hide it
 SplashScreen.preventAutoHideAsync().catch(() => {});
+registerMusicPlaybackService();
 import { enableScreens } from "react-native-screens";
 import { initCrashReporter, setCrashReporterUserId, setCrashNotificationHandler } from "@/lib/crashReporter";
 import { showAlert } from "@/lib/alert";
