@@ -285,7 +285,7 @@ export default function MyOrdersScreen() {
               <OrderCard
                 key={order.id}
                 order={order}
-                onPress={() => { Haptics.selectionAsync(); router.push(`/shop/order/${order.id}` as any); }}
+                onPress={() => { Haptics.selectionAsync(); router.push({ pathname: "/app/afumarket", params: { section: "order", id: order.id } } as any); }}
               />
             ))}
           </View>

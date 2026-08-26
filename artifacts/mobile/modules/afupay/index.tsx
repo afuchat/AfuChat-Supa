@@ -29,6 +29,7 @@ import * as Clipboard from "expo-clipboard";
 import QRCode from "@/components/ui/QRCode";
 import Colors from "@/constants/colors";
 import AfuServicesApp from "@/modules/afuservices";
+import { safeRouter } from "@/lib/navUtils";
 
 type AppView = "home" | "history" | "topup" | "send" | "receive" | "exchange" | "requests" | "services";
 type TxFilter = "all" | "acoin" | "nexa" | "gifts";
@@ -204,7 +205,7 @@ export default function AfuPayApp({
   const nexa = profile?.xp ?? 0;
   const handleHomeBack = useCallback(() => {
     if (router.canGoBack()) router.back();
-    else router.replace("/apps" as any);
+    else safeRouter.replace("/apps" as any);
   }, []);
 
   const loadTransactions = useCallback(async () => {

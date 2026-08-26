@@ -291,7 +291,7 @@ export default function MatchConversationScreen() {
         </Pressable>
         <Pressable
           style={styles.headerProfile}
-          onPress={() => router.push({ pathname: "/match/view-profile", params: { userId: otherProfile?.user_id } } as any)}
+          onPress={() => router.push({ pathname: "/app/afumatch", params: { section: "view-profile", userId: otherProfile?.user_id } } as any)}
         >
           {otherProfile?.primary_photo ? (
             <Image source={{ uri: otherProfile.primary_photo }} style={styles.headerAvatar} />

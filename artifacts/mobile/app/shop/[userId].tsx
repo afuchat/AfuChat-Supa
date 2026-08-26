@@ -140,7 +140,7 @@ export default function StoreStorefront() {
         <TouchableOpacity style={[st.floatBtn, { backgroundColor: "rgba(0,0,0,0.35)" }]} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
-        <TouchableOpacity style={[st.floatBtn, { backgroundColor: "rgba(0,0,0,0.35)" }]} onPress={() => router.push("/shop/cart")}>
+        <TouchableOpacity style={[st.floatBtn, { backgroundColor: "rgba(0,0,0,0.35)" }]} onPress={() => router.push("/app/afumarket?section=cart" as any)}>
           <Ionicons name="cart" size={20} color="#fff" />
           {cartCount > 0 && (
             <View style={[st.cartBadge, { backgroundColor: colors.accent }]}>
@@ -172,7 +172,7 @@ export default function StoreStorefront() {
               <ProductCard
                 item={item}
                 cardW={cardW}
-                onPress={() => router.push({ pathname: "/shop/product/[id]", params: { id: item.id } })}
+                onPress={() => router.push({ pathname: "/app/afumarket", params: { section: "product", id: item.id } } as any)}
                 onAddCart={() => handleAddToCart(item)}
                 adding={addingId === item.id}
               />

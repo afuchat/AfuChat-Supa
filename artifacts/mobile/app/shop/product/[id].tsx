@@ -158,7 +158,7 @@ export default function ProductDetailScreen() {
           <Ionicons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
         <View style={{ flexDirection: "row", gap: 8 }}>
-          <TouchableOpacity style={[st.topBarBtn, { backgroundColor: "rgba(0,0,0,0.35)" }]} onPress={() => router.push("/shop/cart")}>
+          <TouchableOpacity style={[st.topBarBtn, { backgroundColor: "rgba(0,0,0,0.35)" }]} onPress={() => router.push("/app/afumarket?section=cart" as any)}>
             <Ionicons name="cart" size={20} color="#fff" />
             {cartCount > 0 && (
               <View style={[st.cartBadge, { backgroundColor: colors.accent }]}>
@@ -269,7 +269,7 @@ export default function ProductDetailScreen() {
             <Text style={[st.storeCardTitle, { color: colors.textSecondary }]}>Sold by</Text>
             <TouchableOpacity
               style={st.storeRow}
-              onPress={() => router.push({ pathname: "/shop/[userId]", params: { userId: shop.seller_id } })}
+              onPress={() => router.push({ pathname: "/app/afumarket", params: { section: "storefront", userId: shop.seller_id } } as any)}
               activeOpacity={0.8}
             >
               <Avatar uri={seller.avatar_url} name={seller.display_name} size={48} />
@@ -325,7 +325,7 @@ export default function ProductDetailScreen() {
         <View style={[st.ctaBar, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: insets.bottom + 8, justifyContent: "center", alignItems: "center", gap: 6 }]}>
           <Ionicons name="storefront" size={20} color={colors.textMuted} />
           <Text style={{ fontFamily: "Inter_500Medium", fontSize: 14, color: colors.textMuted }}>This is your listing</Text>
-          <TouchableOpacity onPress={() => router.push("/shop/manage" as any)}>
+          <TouchableOpacity onPress={() => router.push("/app/afumarket?section=manage" as any)}>
             <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 13, color: colors.accent }}>Go to Store Manager</Text>
           </TouchableOpacity>
         </View>

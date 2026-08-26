@@ -1,10 +1,11 @@
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
 import AppBottomNav, { type AppNavItem } from "./AppBottomNav";
 import { safeRouter } from "@/lib/navUtils";
+import { findModule } from "@/lib/superapp/registry";
 
 export type FullAppId =
   | "afupay"
@@ -97,38 +98,25 @@ const NAV: Record<FullAppId, AppNavItem[]> = {
   ],
 };
 
-// Only these product surfaces use the shared floating bottom navigation.
-// File Manager has its own dedicated filter/transfer navigation inside the
-// screen, so it remains available without rendering this shared bar.
-const APPS_WITH_BOTTOM_NAV: ReadonlySet<FullAppId> = new Set([
-  "afumarket",
-  "afubusiness",
-  "afugifts",
-  "afuevents",
-]);
-
-// These camera surfaces do not have a content header of their own. Keep their
-// back control in normal page flow so the camera never renders underneath it.
+// Most app modules render their own in-flow header and back control. These
+// camera-first surfaces intentionally do not, so the shell supplies the same
+// control for them without stacking two headers above the camera.
 const APPS_WITH_SHELL_BACK: ReadonlySet<FullAppId> = new Set([
   "afulens",
   "afuqr",
 ]);
 
-const APP_TITLES: Partial<Record<FullAppId, string>> = {
-  afulens: "AfuLab",
-  afuqr: "AfuQR",
-};
-
 function AppShellBackHeader({ appId }: { appId: FullAppId }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const topInset = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
 
   return (
     <View
       style={[
         shellHeader.container,
         {
-          paddingTop: insets.top,
+          paddingTop: topInset,
           backgroundColor: colors.background,
           borderBottomColor: colors.border,
         },
@@ -145,7 +133,7 @@ function AppShellBackHeader({ appId }: { appId: FullAppId }) {
           <Ionicons name="arrow-back" size={24} color={colors.accent} />
         </Pressable>
         <Text style={[shellHeader.title, { color: colors.text }]}>
-          {APP_TITLES[appId]}
+          {findModule(appId)?.name ?? appId}
         </Text>
         <View style={shellHeader.side} />
       </View>
@@ -159,6 +147,7 @@ export function getAppNav(appId: FullAppId) {
 
 export function normalizeAppNavKey(section?: string) {
   if (section === "apply-seller") return "sell";
+  if (section === "apply" || section === "manage" || section === "storefront" || section === "product" || section === "order") return "browse";
   if (section === "post-gig") return "post-gig";
   if (["airtime", "data-bundles", "bills", "transfer", "hotels", "tickets", "fee-details"].includes(section ?? "")) {
     return "services";
@@ -176,7 +165,12 @@ type Props = {
 export default function AppPageShell({ appId, activeKey, showNav = true, children }: Props) {
   const { colors } = useTheme();
   const items = getAppNav(appId);
-  const shouldShowNav = showNav && APPS_WITH_BOTTOM_NAV.has(appId) && items.length > 1;
+  const shouldShowNav = showNav && items.length > 1 && (
+    appId === "afumarket" ||
+    appId === "afubusiness" ||
+    appId === "afugifts" ||
+    appId === "afuevents"
+  );
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {APPS_WITH_SHELL_BACK.has(appId) && <AppShellBackHeader appId={appId} />}
@@ -188,7 +182,7 @@ export default function AppPageShell({ appId, activeKey, showNav = true, childre
 
 const shellHeader = StyleSheet.create({
   container: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 0.5,
   },
   row: {
     minHeight: 56,

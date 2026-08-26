@@ -5,6 +5,7 @@ import AfuPayApp from "@/modules/afupay";
 import AfuMarketApp from "@/modules/afumarket";
 import AfuBusinessApp from "@/modules/afubusiness";
 import AfuFreelanceApp from "@/modules/afufreelance";
+import FreelanceDetailScreen from "@/app/freelance/[id]";
 import AfuCollectionsApp from "@/modules/afucollections";
 import AfuEventsApp from "@/modules/afuevents";
 import AfuUsernamesApp from "@/modules/afuusernames";
@@ -23,6 +24,16 @@ import MatchScreen from "@/app/match";
 import MatchPreferencesScreen from "@/app/match/preferences";
 import CartScreen from "@/app/shop/cart";
 import MyOrdersScreen from "@/app/shop/my-orders";
+import ShopManageScreen from "@/app/shop/manage";
+import SellerApplyScreen from "@/app/shop/apply";
+import StoreStorefrontScreen from "@/app/shop/[userId]";
+import ProductDetailScreen from "@/app/shop/product/[id]";
+import OrderDetailScreen from "@/app/shop/order/[id]";
+import MatchConversationScreen from "@/app/match/[id]";
+import MatchOnboardingScreen from "@/app/match/onboarding";
+import MatchProfileScreen from "@/app/match/profile";
+import MatchSettingsScreen from "@/app/match/settings";
+import MatchViewProfileScreen from "@/app/match/view-profile";
 import BillsScreen from "@/app/mini-programs/bills";
 import AirtimeScreen from "@/app/mini-programs/airtime";
 import DataBundlesScreen from "@/app/mini-programs/data-bundles";
@@ -72,6 +83,11 @@ function AppContent({
     case "afumarket":
       if (section === "cart") return <CartScreen />;
       if (section === "orders") return <MyOrdersScreen />;
+      if (section === "manage") return <ShopManageScreen />;
+      if (section === "apply") return <SellerApplyScreen />;
+      if (section === "storefront") return <StoreStorefrontScreen />;
+      if (section === "product") return <ProductDetailScreen />;
+      if (section === "order") return <OrderDetailScreen />;
       return <AfuMarketApp initialScreen={section as any} />;
     case "afugames":
       if (section === "progress") return <KampalaHustleGame />;
@@ -84,6 +100,7 @@ function AppContent({
     case "afulens":
       return <LabScreen />;
     case "afufreelance":
+      if (section === "detail") return <FreelanceDetailScreen />;
       return <AfuFreelanceApp initialScreen={section as any} />;
     case "afufiles":
       return <FileManagerScreen />;
@@ -96,6 +113,11 @@ function AppContent({
       return <AfuEventsApp initialTab={section as any} />;
     case "afumatch":
       if (section === "preferences") return <MatchPreferencesScreen />;
+      if (section === "settings") return <MatchSettingsScreen />;
+      if (section === "profile") return <MatchProfileScreen />;
+      if (section === "onboarding") return <MatchOnboardingScreen />;
+      if (section === "view-profile") return <MatchViewProfileScreen />;
+      if (section === "conversation") return <MatchConversationScreen />;
       return <MatchScreen initialTab={section as any} />;
     case "afucollections":
       return <AfuCollectionsApp />;

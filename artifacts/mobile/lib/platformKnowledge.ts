@@ -65,25 +65,25 @@ export const PLATFORM_NAV_MAP = `
 | /digital-id | Your AfuChat digital identity card (shareable QR) |
 | /prestige | XP leaderboard and prestige rankings |
 | /app/afuusernames | Browse, buy, or sell rare usernames |
-| /match | Social matching — find compatible people |
-| /match/preferences | Set your matching preferences |
-| /match/onboarding | Set up your match profile |
+| /app/afumatch | Social matching — find compatible people |
+| /app/afumatch?section=preferences | Set your matching preferences |
+| /app/afumatch?section=onboarding | Set up your match profile |
 
 ### GIFTS
 | Route | What it does |
 |---|---|
-| /gifts | Your gift overview and received gifts |
-| /gifts/marketplace | Browse and buy virtual gifts to send to creators |
+| /app/afugifts | Your gift overview and received gifts |
+| /app/afugifts?section=marketplace | Browse and buy virtual gifts to send to creators |
 
 ### COMMERCE & SHOPPING
 | Route | What it does |
 |---|---|
-| /shop/[userId] | Browse a specific user's shop |
-| /shop/product/[id] | View a product listing |
-| /shop/cart | Your shopping cart |
-| /shop/my-orders | Track your past orders |
-| /shop/manage | Set up and manage your own shop |
-| /shop/apply | Apply to become a verified seller |
+| /app/afumarket?section=storefront&userId=... | Browse a specific user's shop |
+| /app/afumarket?section=product&id=... | View a product listing |
+| /app/afumarket?section=cart | Your shopping cart |
+| /app/afumarket?section=orders | Track your past orders |
+| /app/afumarket?section=manage | Set up and manage your own shop |
+| /app/afumarket?section=apply | Apply to become a verified seller |
 
 ### COMPANY & PROFESSIONAL
 | Route | What it does |
@@ -91,7 +91,7 @@ export const PLATFORM_NAV_MAP = `
 | /company | Browse all company/organisation pages |
 | /company/[slug] | View a specific company page |
 | /company/manage | Manage your own company page |
-| /freelance | Browse freelance opportunities and gigs |
+| /app/afufreelance | Browse freelance opportunities and gigs |
 
 ### WALLET SERVICES (built-in utilities — all inside Wallet)
 | Route | What it does |
@@ -295,8 +295,8 @@ Valid routes for [ACTION:Button label:/route] tags:
 /profile/edit | /settings | /settings/security | /settings/privacy | /settings/blocked | /settings/two-factor
 /moments/create | /moments/create-video | /moments/create-article | /shorts | /app/afusaved | /my-posts
 /search | /discover | /contacts | /communities | /me | /user-discovery
-/shop/cart | /shop/my-orders | /shop/manage | /shop/apply | /gifts/marketplace | /gifts
-/company | /company/manage | /freelance
+/app/afumarket?section=cart | /app/afumarket?section=orders | /app/afumarket?section=manage | /app/afumarket?section=apply
+/app/afugifts | /app/afugifts?section=marketplace | /company | /company/manage | /app/afufreelance
 /app/afupay?section=airtime | /app/afupay?section=bills | /app/afupay?section=data-bundles | /app/afupay?section=hotels | /app/afupay?section=tickets | /app/afupay?section=transfer | /app/afupay?section=fee-details
 /support | /chat/new | /qr-scanner | /digital-id | /language-settings
 
@@ -345,11 +345,11 @@ export const NAV_INTENT_MAP: { patterns: RegExp; route: string; label: string }[
   { patterns: /\b(contacts|friends?\s+list)\b/i, route: "/contacts", label: "Contacts" },
   { patterns: /\b(my\s+profile|view\s+profile|my\s+page)\b/i, route: "/me", label: "My Profile" },
   { patterns: /\b(new\s+chat|start\s+chat|send\s+(a\s+)?message)\b/i, route: "/chat/new", label: "New Chat" },
-  { patterns: /\b(my\s+orders?|order\s+history|purchases?)\b/i, route: "/shop/my-orders", label: "My Orders" },
-  { patterns: /\b(my\s+shop|manage\s+shop)\b/i, route: "/shop/manage", label: "Manage Shop" },
-  { patterns: /\b(sell|become\s+(a\s+)?seller|seller\s+application)\b/i, route: "/shop/apply", label: "Apply as Seller" },
-  { patterns: /\b(shopping\s+cart|cart)\b/i, route: "/shop/cart", label: "Shopping Cart" },
-  { patterns: /\b(buy\s+gifts?|gift\s+marketplace|send\s+gift)\b/i, route: "/gifts/marketplace", label: "Gift Marketplace" },
+  { patterns: /\b(my\s+orders?|order\s+history|purchases?)\b/i, route: "/app/afumarket?section=orders", label: "My Orders" },
+  { patterns: /\b(my\s+shop|manage\s+shop)\b/i, route: "/app/afumarket?section=manage", label: "Manage Shop" },
+  { patterns: /\b(sell|become\s+(a\s+)?seller|seller\s+application)\b/i, route: "/app/afumarket?section=apply", label: "Apply as Seller" },
+  { patterns: /\b(shopping\s+cart|cart)\b/i, route: "/app/afumarket?section=cart", label: "Shopping Cart" },
+  { patterns: /\b(buy\s+gifts?|gift\s+marketplace|send\s+gift)\b/i, route: "/app/afugifts?section=marketplace", label: "Gift Marketplace" },
   { patterns: /\b(airtime|buy\s+airtime|mobile\s+top.?up|mtn|airtel|vodacom)\b/i, route: "/app/afupay?section=airtime", label: "Buy Airtime" },
   { patterns: /\b(pay\s+(bills?|electricity|water|tv|dstv|gotv)|utility\s+bills?)\b/i, route: "/app/afupay?section=bills", label: "Pay Bills" },
   { patterns: /\b(data\s+bundles?|internet\s+data|buy\s+data)\b/i, route: "/app/afupay?section=data-bundles", label: "Data Bundles" },
@@ -357,14 +357,14 @@ export const NAV_INTENT_MAP: { patterns: RegExp; route: string; label: string }[
   { patterns: /\b(event\s+tickets?|buy\s+tickets?|concert)\b/i, route: "/app/afupay?section=tickets", label: "Event Tickets" },
   { patterns: /\b(send\s+money|money\s+transfer|transfer\s+funds?|bank\s+transfer)\b/i, route: "/app/afupay?section=transfer", label: "Money Transfer" },
   { patterns: /\b(monetize|earn\s+money|creator\s+fund|get\s+paid)\b/i, route: "/monetize", label: "Monetise" },
-  { patterns: /\b(freelance|gigs?|find\s+work|hire)\b/i, route: "/freelance", label: "Freelance" },
+  { patterns: /\b(freelance|gigs?|find\s+work|hire)\b/i, route: "/app/afufreelance", label: "Freelance" },
   { patterns: /\b(company\s+page|my\s+company|manage\s+company|business\s+page)\b/i, route: "/company/manage", label: "Company Page" },
   { patterns: /\b(browse\s+companies|companies|organisations?)\b/i, route: "/company", label: "Companies" },
   { patterns: /\b(support|help|contact\s+us|report\s+(an?\s+)?issue|submit\s+(a\s+)?ticket)\b/i, route: "/support", label: "Support" },
   { patterns: /\b(qr\s+(scanner|scan)|scan\s+qr)\b/i, route: "/qr-scanner", label: "QR Scanner" },
   { patterns: /\b(language|change\s+language|app\s+language)\b/i, route: "/language-settings", label: "Language Settings" },
   { patterns: /\b(discover\s+people|find\s+people|find\s+new\s+people|user\s+discovery)\b/i, route: "/user-discovery", label: "Discover People" },
-  { patterns: /\b(match(ing)?|find\s+(a\s+)?(match|partner|connection))\b/i, route: "/match", label: "Matching" },
+  { patterns: /\b(match(ing)?|find\s+(a\s+)?(match|partner|connection))\b/i, route: "/app/afumatch", label: "Matching" },
   { patterns: /\b(shorts?|reels?|short\s+videos?)\b/i, route: "/shorts", label: "Shorts" },
   { patterns: /\b(search|look\s+for|find\s+(someone|something|a\s+user))\b/i, route: "/search", label: "Search" },
 ];

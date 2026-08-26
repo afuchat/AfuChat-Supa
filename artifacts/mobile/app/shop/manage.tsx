@@ -308,7 +308,7 @@ export default function ShopManage() {
               </View>
             </LinearGradient>
 
-            <TouchableOpacity style={[styles.viewShopBtn, { backgroundColor: colors.accent }]} onPress={() => router.push({ pathname: "/shop/[userId]", params: { userId: user!.id } })}>
+            <TouchableOpacity style={[styles.viewShopBtn, { backgroundColor: colors.accent }]} onPress={() => router.push({ pathname: "/app/afumarket", params: { section: "storefront", userId: user!.id } } as any)}>
               <Ionicons name="eye" size={16} color="#fff" />
               <Text style={styles.viewShopBtnText}>Preview My Store</Text>
             </TouchableOpacity>
@@ -482,7 +482,7 @@ export default function ShopManage() {
                 <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
                   <TouchableOpacity
                     style={[styles.processBtn, { backgroundColor: "#5856D6" + "20", paddingHorizontal: 10 }]}
-                    onPress={() => router.push(`/shop/order/${order.id}` as any)}
+                    onPress={() => router.push({ pathname: "/app/afumarket", params: { section: "order", id: order.id } } as any)}
                   >
                     <Ionicons name="chatbubble" size={14} color="#5856D6" />
                   </TouchableOpacity>
@@ -548,7 +548,7 @@ export default function ShopManage() {
           </Text>
           <TouchableOpacity
             style={{ backgroundColor: colors.accent, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14, flexDirection: "row", alignItems: "center", gap: 8 }}
-            onPress={() => router.push("/shop/apply" as any)}
+            onPress={() => router.push("/app/afumarket?section=apply" as any)}
           >
             <Ionicons name="checkmark-circle" size={18} color="#fff" />
             <Text style={{ fontSize: 15, fontFamily: "Inter_600SemiBold", color: "#fff" }}>Apply for Verification</Text>
@@ -583,7 +583,7 @@ export default function ShopManage() {
           </Text>
           <TouchableOpacity
             style={{ backgroundColor: colors.accent, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14, marginTop: 8 }}
-            onPress={() => router.replace("/shop/apply")}
+            onPress={() => router.replace("/app/afumarket?section=apply" as any)}
           >
             <Text style={{ color: "#fff", fontSize: 15, fontFamily: "Inter_700Bold" }}>Apply to Become a Seller</Text>
           </TouchableOpacity>
@@ -603,7 +603,7 @@ export default function ShopManage() {
         <Text style={[styles.headerTitle, { color: colors.text }]}>Store Manager</Text>
         <View style={styles.headerSide}>
           {shop && (
-            <TouchableOpacity onPress={() => router.push({ pathname: "/shop/[userId]", params: { userId: user!.id } })} hitSlop={10}>
+            <TouchableOpacity onPress={() => router.push({ pathname: "/app/afumarket", params: { section: "storefront", userId: user!.id } } as any)} hitSlop={10}>
               <Ionicons name="eye" size={22} color={colors.accent} />
             </TouchableOpacity>
           )}

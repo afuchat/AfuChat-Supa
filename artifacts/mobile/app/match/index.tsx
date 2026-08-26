@@ -517,7 +517,7 @@ function MatchesTab() {
           <Pressable
             key={m.id}
             style={[styles.matchRow, { backgroundColor: colors.surface }]}
-            onPress={() => router.push(`/match/${m.id}` as any)}
+            onPress={() => router.push({ pathname: "/app/afumatch", params: { section: "conversation", id: m.id } } as any)}
           >
             <View style={styles.matchAvatarWrap}>
               {m.other.primary_photo ? (
@@ -770,7 +770,7 @@ export default function MatchScreen({ initialTab }: { initialTab?: "discover" | 
             </View>
           ))}
         </View>
-        <Pressable style={styles.createProfileBtn} onPress={() => router.push("/match/onboarding" as any)}>
+        <Pressable style={styles.createProfileBtn} onPress={() => router.push("/app/afumatch?section=onboarding" as any)}>
           <Ionicons name="heart" size={18} color="#fff" />
           <Text style={styles.createProfileText}>Create My Dating Profile</Text>
         </Pressable>
@@ -787,7 +787,7 @@ export default function MatchScreen({ initialTab }: { initialTab?: "discover" | 
           <LinearGradient colors={[BRAND, "#FF6B6B"]} style={styles.headerLogo}><Ionicons name="heart" size={16} color="#fff" /></LinearGradient>
           <Text style={[styles.headerTitle, { color: colors.text }]}>AfuMatch</Text>
         </View>
-        <Pressable style={styles.headerBtn} onPress={() => router.push("/match/settings" as any)}><Ionicons name="settings" size={22} color={colors.textMuted} /></Pressable>
+          <Pressable style={styles.headerBtn} onPress={() => router.push("/app/afumatch?section=settings" as any)}><Ionicons name="settings" size={22} color={colors.textMuted} /></Pressable>
       </View>
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32 }}>
         <View style={[styles.pausedIcon, { backgroundColor: "#FF950022" }]}><Ionicons name="pause-circle" size={56} color="#FF9500" /></View>
@@ -827,10 +827,10 @@ export default function MatchScreen({ initialTab }: { initialTab?: "discover" | 
             <Ionicons name="logo-bitcoin" size={13} color="#FFD60A" />
             <Text style={styles.acoinBadgeText}>{acoinBalance}</Text>
           </Pressable>
-          <Pressable style={styles.headerBtn} onPress={() => router.push("/match/preferences" as any)} hitSlop={{ top: 8, left: 8, bottom: 8, right: 8 }}>
+          <Pressable style={styles.headerBtn} onPress={() => router.push("/app/afumatch?section=preferences" as any)} hitSlop={{ top: 8, left: 8, bottom: 8, right: 8 }}>
             <Ionicons name="options" size={22} color={colors.textMuted} />
           </Pressable>
-          <Pressable style={styles.headerBtn} onPress={() => router.push("/match/settings" as any)} hitSlop={{ top: 8, left: 8, bottom: 8, right: 8 }}>
+          <Pressable style={styles.headerBtn} onPress={() => router.push("/app/afumatch?section=settings" as any)} hitSlop={{ top: 8, left: 8, bottom: 8, right: 8 }}>
             <Ionicons name="settings" size={20} color={colors.textMuted} />
           </Pressable>
         </View>
@@ -938,7 +938,7 @@ export default function MatchScreen({ initialTab }: { initialTab?: "discover" | 
         <MatchModal
           match={matchResult}
           onClose={() => setMatchResult(null)}
-          onMessage={() => { const id = matchResult.id; setMatchResult(null); router.push(`/match/${id}` as any); }}
+          onMessage={() => { const id = matchResult.id; setMatchResult(null); router.push({ pathname: "/app/afumatch", params: { section: "conversation", id } } as any); }}
         />
       )}
     </View>

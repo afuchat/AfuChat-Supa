@@ -505,7 +505,7 @@ export default function ContactScreen() {
                   {isOrg && (
                     <TouchableOpacity
                       style={[s.pillIconBtn, { backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)" }]}
-                      onPress={() => router.push({ pathname: "/shop/[userId]", params: { userId: id } } as any)}
+                      onPress={() => router.push({ pathname: "/app/afumarket", params: { section: "storefront", userId: id } } as any)}
                       activeOpacity={0.8}>
                       <Ionicons name="storefront" size={17} color={colors.text} />
                     </TouchableOpacity>

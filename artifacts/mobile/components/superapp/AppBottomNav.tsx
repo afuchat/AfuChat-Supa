@@ -22,10 +22,10 @@ export default function AppBottomNav({ items, activeKey }: Props) {
   const { colors, accent, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
-  const bottom = Math.max(insets.bottom, 8) + 6;
+  const bottomInset = Platform.OS === "web" ? Math.max(insets.bottom, 34) : insets.bottom;
 
   return (
-    <View style={[styles.rowWrap, { bottom, pointerEvents: "box-none" }]}>
+    <View style={[styles.rowWrap, { paddingBottom: bottomInset + 8 }]}>
       <View
         style={[
           styles.bar,
@@ -89,11 +89,9 @@ export default function AppBottomNav({ items, activeKey }: Props) {
 
 const styles = StyleSheet.create({
   rowWrap: {
-    position: "absolute",
-    left: 20,
-    right: 20,
-    zIndex: 100,
     alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 8,
   },
   bar: {
     flexDirection: "row",

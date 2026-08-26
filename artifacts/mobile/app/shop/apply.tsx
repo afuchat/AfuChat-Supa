@@ -153,7 +153,7 @@ export default function SellerApplyScreen() {
           </Text>
           <TouchableOpacity
             style={{ backgroundColor: colors.accent, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14, marginTop: 8 }}
-            onPress={() => router.replace("/shop/manage")}
+            onPress={() => router.replace("/app/afumarket?section=manage" as any)}
           >
             <Text style={{ color: "#fff", fontSize: 15, fontFamily: "Inter_700Bold" }}>Go to My Store</Text>
           </TouchableOpacity>

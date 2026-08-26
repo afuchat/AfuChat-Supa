@@ -24,6 +24,7 @@ let screensEnabled = false;
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AppState, BackHandler, InteractionManager, Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router, Stack, usePathname, useRootNavigationState } from "expo-router";
 import { setCurrentPage, resolvePageInfo } from "@/lib/pageTracker";
 import { StatusBar } from "expo-status-bar";
@@ -463,42 +464,44 @@ export default function RootLayout() {
         {!splashDone && Platform.OS !== "web" && (
           <SplashScreenView ready={fontsLoaded || !!fontError} onDone={handleSplashDone} />
         )}
-        <ThemeProvider>
-          <ThemedRoot>
-            <AppAccentProvider>
-              <ThemedStatusBar />
-              {/* OOM guard: cancels all animations on app-background / memory-pressure */}
-              <AnimationGuardInit />
-              <DataModeProvider>
-                <AuthProvider>
-                  <ActivityTrackerSync />
-                    <CrashReporterUserSync />
-                    <CrashSupportHandler />
-                    <PageWatcher />
-                     <HardwareBackGuard />
-                    <GlobalInboxListener />
-                    <PushNotificationManager />
-                    <UpdatePrompt />
-                    <LanguageProvider>
-                      <LanguageDirectionShell>
-                        <AdvancedFeaturesProvider>
-                          <ChatPreferencesProvider>
-                            <MiniAppRuntimeProvider>
-                              <IncomingShareGate navigationReady={!!rootNavigationState?.key} />
-                              <NativeShareShortcutSync />
-                              <AppNavigationStack />
-                              <ToastContainer />
-                              <AlertModal />
-                            </MiniAppRuntimeProvider>
-                          </ChatPreferencesProvider>
-                        </AdvancedFeaturesProvider>
-                      </LanguageDirectionShell>
-                    </LanguageProvider>
-                </AuthProvider>
-              </DataModeProvider>
-            </AppAccentProvider>
-          </ThemedRoot>
-        </ThemeProvider>
+        <SafeAreaProvider>
+          <ThemeProvider>
+            <ThemedRoot>
+              <AppAccentProvider>
+                <ThemedStatusBar />
+                {/* OOM guard: cancels all animations on app-background / memory-pressure */}
+                <AnimationGuardInit />
+                <DataModeProvider>
+                  <AuthProvider>
+                    <ActivityTrackerSync />
+                      <CrashReporterUserSync />
+                      <CrashSupportHandler />
+                      <PageWatcher />
+                       <HardwareBackGuard />
+                      <GlobalInboxListener />
+                      <PushNotificationManager />
+                      <UpdatePrompt />
+                      <LanguageProvider>
+                        <LanguageDirectionShell>
+                          <AdvancedFeaturesProvider>
+                            <ChatPreferencesProvider>
+                              <MiniAppRuntimeProvider>
+                                <IncomingShareGate navigationReady={!!rootNavigationState?.key} />
+                                <NativeShareShortcutSync />
+                                <AppNavigationStack />
+                                <ToastContainer />
+                                <AlertModal />
+                              </MiniAppRuntimeProvider>
+                            </ChatPreferencesProvider>
+                          </AdvancedFeaturesProvider>
+                        </LanguageDirectionShell>
+                      </LanguageProvider>
+                  </AuthProvider>
+                </DataModeProvider>
+              </AppAccentProvider>
+            </ThemedRoot>
+          </ThemeProvider>
+        </SafeAreaProvider>
 
         </GestureHandlerRootView>
       </ErrorBoundary>

@@ -240,12 +240,12 @@ export async function handleIncomingUrl(url: string | null | undefined): Promise
 
     // 2h. /freelance/:id -- freelance listing
     if (segments.length === 2 && segments[0] === "freelance" && isUUID(segments[1])) {
-      return { type: "navigate", path: "/freelance/[id]", params: { id: segments[1] } };
+      return { type: "navigate", path: "/app/afufreelance", params: { section: "detail", id: segments[1] } };
     }
 
     // 2i. /shop/:userId -- user shop
     if (segments.length === 2 && segments[0] === "shop" && isUUID(segments[1])) {
-      return { type: "navigate", path: "/shop/[userId]", params: { userId: segments[1] } };
+      return { type: "navigate", path: "/app/afumarket", params: { section: "storefront", userId: segments[1] } };
     }
 
     // 2j. /stories/:userId -- story viewer

@@ -576,7 +576,7 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
         if (prods.data) marketItems.push(...prods.data.map((p: any) => ({
           id: p.id, kind: "product" as const, title: p.name, desc: p.description,
           emoji: null, image_url: (p.images?.[0] || null), price: p.price_acoin || 0,
-          badge: "Shop", seller_name: "", route: `/shop/product/${p.id}`,
+          badge: "Shop", seller_name: "", route: `/app/afumarket?section=product&id=${p.id}`,
         })));
         if (frees.data) marketItems.push(...frees.data.map((p: any) => ({
           id: p.id, kind: "freelance" as const, title: p.title, desc: p.description,
@@ -1020,7 +1020,7 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
           const rc = RARITY_COLORS[g.rarity] || "#9E9E9E";
           return (
             <View key={g.id} >
-              <TouchableOpacity onPress={() => router.push("/gifts/marketplace" as any)} activeOpacity={0.8} style={{ width: GIFT_W, backgroundColor: colors.surface, borderRadius: 14, padding: 10, alignItems: "center", gap: 4, borderWidth: 1, borderColor: rc + "30" }}>
+              <TouchableOpacity onPress={() => router.push("/app/afugifts?section=marketplace" as any)} activeOpacity={0.8} style={{ width: GIFT_W, backgroundColor: colors.surface, borderRadius: 14, padding: 10, alignItems: "center", gap: 4, borderWidth: 1, borderColor: rc + "30" }}>
                 <Text style={{ fontSize: 26 }}>{g.emoji}</Text>
                 <Text style={{ fontSize: 10, fontFamily: "Inter_600SemiBold", color: colors.text, textAlign: "center" }} numberOfLines={2}>{g.name}</Text>
                 <View style={{ backgroundColor: rc + "1A", borderRadius: 5, paddingHorizontal: 5, paddingVertical: 1 }}>

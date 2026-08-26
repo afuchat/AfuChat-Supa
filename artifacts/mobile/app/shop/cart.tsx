@@ -173,7 +173,7 @@ export default function CartScreen() {
                 <View key={shopId} style={[styles.shopGroup, { backgroundColor: colors.surface }]}>
                   <TouchableOpacity
                     style={styles.shopGroupHeader}
-                    onPress={() => shop?.seller_id && router.push({ pathname: "/shop/[userId]", params: { userId: shop.seller_id } })}
+                    onPress={() => shop?.seller_id && router.push({ pathname: "/app/afumarket", params: { section: "storefront", userId: shop.seller_id } } as any)}
                   >
                     {shop?.logo_url ? (
                       <Image source={{ uri: shop.logo_url }} style={styles.shopGroupLogo} />

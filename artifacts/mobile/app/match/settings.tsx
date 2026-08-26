@@ -176,14 +176,14 @@ export default function MatchSettingsScreen() {
               icon="create" iconBg={BRAND}
               label="Edit Dating Profile"
               description="Update photos, bio, interests and more"
-              onPress={() => router.push("/match/profile" as any)}
+              onPress={() => router.push("/app/afumatch?section=profile" as any)}
             />
             <View style={[styles.sep, { backgroundColor: colors.border }]} />
             <NavRow
               icon="options" iconBg="#AF52DE"
               label="Match Preferences"
               description="Set age range, gender, and who you see"
-              onPress={() => router.push("/match/preferences" as any)}
+              onPress={() => router.push("/app/afumatch?section=preferences" as any)}
             />
           </View>
 
