@@ -170,49 +170,29 @@ function PageWatcher() {
 }
 
 /**
- * Keep Android back inside AfuChat's navigation tree.
+ * Make Android Back follow the real navigation stack.
  *
- * Platform pages are entered from the Apps page and some of their sections
- * intentionally use replace() so the section switch does not create a second
- * stack. A hardware back press must therefore have a safe platform fallback
- * instead of allowing the Android activity to close the whole app.
+ * The listener stays mounted while the route changes so there is no gap
+ * during a transition. Returning false when there is no stack entry is
+ * intentional: Android may close the activity only after the user has backed
+ * through every page they actually entered.
  */
 function HardwareBackGuard() {
-  const pathname = usePathname();
-  const { session, user } = useAuth();
-
   useEffect(() => {
     if (Platform.OS === "web") return;
 
-    const primaryTabs = new Set([
-      "/",
-      "/(tabs)",
-      "/(tabs)/index",
-      "/(tabs)/chats",
-      "/(tabs)/discover",
-      "/(tabs)/shorts",
-      "/(tabs)/me",
-    ]);
-    const authRoute = pathname.startsWith("/(auth)") || pathname === "/welcome";
-
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
-      if (authRoute) return false;
+      // Let Android close the activity only when Expo Router confirms that
+      // there is no page left to pop. This preserves every entered page,
+      // including app pages and modal-like stack routes.
+      if (!router.canGoBack()) return false;
 
-      // A primary tab is a navigation root. Do not pop it into an old page
-      // from a previous flow, and do not let Android close the activity.
-      if (primaryTabs.has(pathname)) return true;
-
-      if (router.canGoBack()) {
-        router.back();
-        return true;
-      }
-
-      router.replace((session || user) ? "/(tabs)/chats" : "/welcome");
+      router.back();
       return true;
     });
 
     return () => subscription.remove();
-  }, [pathname, session, user]);
+  }, []);
 
   return null;
 }

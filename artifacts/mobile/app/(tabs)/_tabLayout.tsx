@@ -26,11 +26,12 @@ import { getTotalUnread, subscribeUnread } from "@/lib/chatUnreadEvents";
 import { Avatar } from "@/components/ui/Avatar";
 import { useLanguage } from "@/context/LanguageContext";
 
-// Visible bottom bar tabs — Chat · Discover · Shorts · Me
+// Visible bottom bar tabs — Chat · Discover · Shorts · Apps · Me
 const BOTTOM_TABS = [
   { route: "/(tabs)/chats",    icon: "chatbubbles",        label: "Chat"     },
   { route: "/(tabs)/discover", icon: "compass",            label: "Discover" },
   { route: "/(tabs)/shorts",   icon: "play-circle",        label: "Shorts"   },
+  { route: "/(tabs)/apps",     icon: "grid",               label: "Apps"     },
   { route: "/(tabs)/me",       icon: "person-circle",      label: "ME"       },
 ] as const;
 
@@ -39,6 +40,7 @@ function normalizeTabPath(p: string): string {
   if (p === "/chats"    || p === "/(tabs)/chats")    return "/(tabs)/chats";
   if (p === "/discover" || p === "/(tabs)/discover") return "/(tabs)/discover";
   if (p === "/shorts"   || p === "/(tabs)/shorts")   return "/(tabs)/shorts";
+  if (p === "/apps"     || p === "/(tabs)/apps")     return "/(tabs)/apps";
   if (p === "/me"       || p === "/(tabs)/me")       return "/(tabs)/me";
   if (p === "/search"   || p === "/(tabs)/search")   return "/(tabs)/search";
   return p;
@@ -508,9 +510,7 @@ function ClassicTabLayout({ isLoggedIn }: { isLoggedIn: boolean }) {
       <Tabs.Screen name="search"        options={{ href: null }} />
       <Tabs.Screen name="contacts"      options={{ href: null }} />
       <Tabs.Screen name="communities"   options={{ href: null }} />
-      {/* The Apps directory is a normal stack page at /apps. Keep the old
-          nested route hidden so old links cannot add a fifth tab. */}
-      <Tabs.Screen name="apps"          options={{ href: null }} />
+      <Tabs.Screen name="apps"          options={{ href: isLoggedIn ? undefined : null, lazy: true }} />
       <Tabs.Screen name="me"            options={{ href: isLoggedIn ? undefined : null, lazy: true }} />
     </Tabs>
   );
