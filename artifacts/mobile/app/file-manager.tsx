@@ -17,7 +17,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as MediaLibrary from "expo-media-library";
 import * as Network from "expo-network";
-import * as Sharing from "expo-sharing";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { useTheme } from "@/hooks/useTheme";
 import {
@@ -45,6 +44,17 @@ type TransferPermissions = {
   wifi: PermissionStatus;
   location: PermissionStatus;
 };
+
+type NativeSharingModule = typeof import("expo-sharing");
+
+function getNativeSharing(): NativeSharingModule | null {
+  if (Platform.OS === "web") return null;
+  try {
+    return require("expo-sharing") as NativeSharingModule;
+  } catch {
+    return null;
+  }
+}
 
 function typeIcon(type: FileType): keyof typeof Ionicons.glyphMap {
   if (type === "image") return "image-outline";
@@ -168,6 +178,13 @@ export default function FileManagerScreen() {
   const selectedFile = filteredFiles.find((file) => file.id === selectedId) ?? filteredFiles[0];
 
   const openTransfer = useCallback(async () => {
+    if (Platform.OS === "web") {
+      Alert.alert(
+        "Native sharing only",
+        "Open AfuChat on an Android or iOS device to share with paired devices.",
+      );
+      return;
+    }
     setTransferOpen(true);
     setTransferLoading(true);
     try {
@@ -186,17 +203,33 @@ export default function FileManagerScreen() {
   }, []);
 
   const shareSelectedFile = useCallback(async () => {
+    if (Platform.OS === "web") {
+      Alert.alert(
+        "Native sharing only",
+        "Paired-device sharing is available in the Android and iOS app.",
+      );
+      return;
+    }
     if (!selectedFile) {
       Alert.alert("Choose a file first", "Add a file from your device, then select it to send.");
       return;
     }
+    const sharing = getNativeSharing();
+    const localUri = selectedFile.uri.trim();
+    if (!sharing || !/^(?:file|content|ph):\/\//i.test(localUri)) {
+      Alert.alert(
+        "Native sharing is unavailable",
+        "This file is not available as a local native file. Choose a file from your device and try again.",
+      );
+      return;
+    }
     try {
-      const available = await Sharing.isAvailableAsync();
+      const available = await sharing.isAvailableAsync();
       if (!available) {
         Alert.alert("Sharing is unavailable", "This device does not expose a system file-sharing sheet.");
         return;
       }
-      await Sharing.shareAsync(selectedFile.uri, {
+      await sharing.shareAsync(localUri, {
         dialogTitle: `Send ${selectedFile.name}`,
         mimeType: selectedFile.mimeType ?? "application/octet-stream",
         UTI: selectedFile.mimeType ?? "public.data",
@@ -221,7 +254,7 @@ export default function FileManagerScreen() {
         <GlassHeader
           title="File Manager"
           style={styles.header}
-          right={
+          right={Platform.OS !== "web" ? (
             <Pressable
               testID="file-manager-transfer"
               accessibilityRole="button"
@@ -231,7 +264,7 @@ export default function FileManagerScreen() {
             >
               <Ionicons name="paper-plane-outline" size={21} color={colors.accent} />
             </Pressable>
-          }
+          ) : undefined}
         />
         <ScrollView
           horizontal
@@ -350,7 +383,7 @@ export default function FileManagerScreen() {
         />
       )}
 
-      {selectedFile && (
+      {Platform.OS !== "web" && selectedFile && (
         <Pressable
           testID="file-manager-send"
           accessibilityRole="button"
@@ -427,7 +460,7 @@ export default function FileManagerScreen() {
               </Text>
             </Pressable>
             <Text style={[styles.transferNote, { color: colors.textMuted }]}>
-              Android and iOS show the system share sheet here. Choose Bluetooth, Quick Share, AirDrop, or another nearby device option; the file stays on-device and does not need AfuChat’s servers.
+              AfuChat uses the native Android or iOS share sheet only. Choose a paired device through Quick Share, AirDrop, Bluetooth, or another nearby option. The local file never passes through AfuChat’s servers; the operating system handles the encrypted device-to-device handoff.
             </Text>
           </View>
         </View>
