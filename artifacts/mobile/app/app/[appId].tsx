@@ -30,6 +30,7 @@ import FeeDetailsScreen from "@/app/mini-programs/fee-details";
 import HotelsScreen from "@/app/mini-programs/hotels";
 import TicketsScreen from "@/app/mini-programs/tickets";
 import TransferScreen from "@/app/mini-programs/transfer";
+import MoneyRequestScreen from "@/app/wallet/request";
 
 const APP_IDS: FullAppId[] = [
   "afupay", "afumarket", "afugames", "afubusiness", "afusearch", "afulens",
@@ -60,6 +61,7 @@ function AppContent({
       if (section === "hotels") return <HotelsScreen />;
       if (section === "tickets") return <TicketsScreen />;
       if (section === "transfer") return <TransferScreen />;
+      if (section === "request") return <MoneyRequestScreen />;
       return (
         <AfuPayApp
           initialView={section as any}

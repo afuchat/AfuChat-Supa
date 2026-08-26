@@ -17,14 +17,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "@/lib/haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
-import { isOnline } from "@/lib/offlineStore";
-import { showToast } from "@/lib/toast";
 
 const USAGE_KEY = "afu_app_usage";
 const COLS = 4;
 const H_PAD = 16;
 
-type AppItem = {
+type PlatformPage = {
   id: string;
   label: string;
   icon: React.ComponentProps<typeof Ionicons>["name"];
@@ -33,38 +31,35 @@ type AppItem = {
   badge?: string;
   featuredSub?: string;
   orgOnly?: boolean;
-  miniApp?: boolean;
   nativeOnly?: boolean;
 };
 
 type Category = {
   id: string;
   title: string;
-  apps: AppItem[];
+  pages: PlatformPage[];
 };
 
 const CATEGORIES: Category[] = [
   {
-    id: "super",
-    title: "Super Apps",
-    apps: [
+    id: "core",
+    title: "Core Platform",
+    pages: [
       {
         id: "afupay",
-        label: "AfuPay",
+         label: "Wallet",
         icon: "wallet",
         gradient: ["#34C759", "#00C781"],
-        route: "/app/afupay",
-        miniApp: true,
-        featuredSub: "Send, receive and manage your ACoins & Nexa.",
+         route: "/app/afupay",
+         featuredSub: "Send, receive, top up and pay from one Wallet.",
       },
       {
         id: "afumarket",
         label: "AfuMarket",
         icon: "storefront",
         gradient: ["#AF52DE", "#BF5AF2"],
-        route: "/store",
+         route: "/app/afumarket",
         badge: "NEW",
-        miniApp: true,
         featuredSub: "Shop from verified stores and sellers.",
       },
       {
@@ -72,7 +67,7 @@ const CATEGORIES: Category[] = [
         label: "AfuGames",
         icon: "game-controller",
         gradient: ["#FF3B30", "#FF6B35"],
-        route: "/games",
+         route: "/app/afugames",
         featuredSub: "Play mini games and compete with friends.",
       },
       {
@@ -80,8 +75,7 @@ const CATEGORIES: Category[] = [
         label: "AfuBusiness",
         icon: "briefcase",
         gradient: ["#1C1C1E", "#3A3A3C"],
-        route: "/business",
-        miniApp: true,
+         route: "/app/afubusiness",
         orgOnly: true,
         featuredSub: "Tools and analytics for your business.",
       },
@@ -90,14 +84,13 @@ const CATEGORIES: Category[] = [
   {
     id: "ai",
     title: "Intelligence",
-    apps: [
+    pages: [
       {
         id: "afusearch",
         label: "Search",
         icon: "search",
         gradient: ["#5856D6", "#6E6CD3"],
-        route: "/search",
-        miniApp: true,
+         route: "/app/afusearch",
         featuredSub: "Find people, posts, channels, events and more.",
       },
       {
@@ -105,9 +98,8 @@ const CATEGORIES: Category[] = [
         label: "AfuLab",
         icon: "scan",
         gradient: ["#FF6B35", "#FF3B00"],
-        route: "/lab",
+         route: "/app/afulens",
         badge: "AI",
-        miniApp: true,
         nativeOnly: true,
         featuredSub: "Point your camera and get instant AI-powered answers.",
       },
@@ -116,15 +108,14 @@ const CATEGORIES: Category[] = [
   {
     id: "finance",
     title: "Finance",
-    apps: [
+    pages: [
       {
         id: "afufreelance",
         label: "Freelance",
         icon: "briefcase",
         gradient: ["#34C759", "#30D158"],
-        route: "/freelance",
+         route: "/app/afufreelance",
         badge: "NEW",
-        miniApp: true,
         featuredSub: "Hire talent or find work on AfuFreelance.",
       },
     ],
@@ -132,13 +123,13 @@ const CATEGORIES: Category[] = [
   {
     id: "tools",
     title: "Tools",
-    apps: [
+    pages: [
       {
         id: "afufiles",
         label: "Files",
         icon: "folder",
         gradient: ["#5856D6", "#6E6CD3"],
-        route: "/file-manager",
+         route: "/app/afufiles",
         featuredSub: "Browse your shared media and files in one place.",
       },
       {
@@ -146,7 +137,7 @@ const CATEGORIES: Category[] = [
         label: "QR Scanner",
         icon: "qr-code",
         gradient: ["#1C1C1E", "#3A3A3C"],
-        route: "/qr-scanner",
+         route: "/app/afuqr",
         nativeOnly: true,
         featuredSub: "Scan links, Wi-Fi, contacts and more.",
       },
@@ -155,7 +146,7 @@ const CATEGORIES: Category[] = [
         label: "Saved",
         icon: "bookmark",
         gradient: ["#FF6B35", "#FF8C00"],
-        route: "/saved-posts",
+         route: "/app/afusaved",
         featuredSub: "Keep saved posts and starred messages close.",
       },
     ],
@@ -163,13 +154,13 @@ const CATEGORIES: Category[] = [
   {
     id: "entertainment",
     title: "Entertainment",
-    apps: [
+    pages: [
       {
         id: "afugifts",
         label: "Gifts",
         icon: "gift",
         gradient: ["#FF3B30", "#FF453A"],
-        route: "/gifts",
+         route: "/app/afugifts",
         featuredSub: "Send animated gifts to people you love.",
       },
       {
@@ -177,7 +168,7 @@ const CATEGORIES: Category[] = [
         label: "AfuMusic",
         icon: "musical-notes",
         gradient: ["#1018D8", "#5AC8FA"],
-        route: "/afumusic",
+         route: "/app/afumusic",
         badge: "NEW",
         featuredSub: "Play the music already on your device — offline.",
       },
@@ -186,8 +177,7 @@ const CATEGORIES: Category[] = [
         label: "Events",
         icon: "calendar",
         gradient: ["#FF9500", "#FFCC00"],
-        route: "/digital-events",
-        miniApp: true,
+         route: "/app/afuevents",
         featuredSub: "Discover local and online events near you.",
       },
     ],
@@ -195,13 +185,13 @@ const CATEGORIES: Category[] = [
   {
     id: "community",
     title: "Community",
-    apps: [
+    pages: [
       {
         id: "afumatch",
         label: "AfuMatch",
         icon: "heart",
         gradient: ["#FF2D55", "#FF375F"],
-        route: "/match",
+         route: "/app/afumatch",
         featuredSub: "Meet new people and find meaningful connections.",
       },
       {
@@ -209,8 +199,7 @@ const CATEGORIES: Category[] = [
         label: "Collections",
         icon: "albums",
         gradient: ["#BF5AF2", "#AF52DE"],
-        route: "/collections",
-        miniApp: true,
+         route: "/app/afucollections",
         featuredSub: "Curate and share themed collections.",
       },
       {
@@ -218,37 +207,30 @@ const CATEGORIES: Category[] = [
         label: "Handles",
         icon: "at",
         gradient: ["#007AFF", "#5AC8FA"],
-        route: "/username-market",
-        miniApp: true,
+         route: "/app/afuusernames",
         featuredSub: "Buy and sell premium @handles.",
       },
     ],
   },
 ];
 
-const ALL_APPS = CATEGORIES.flatMap((c) => c.apps);
+const ALL_PAGES = CATEGORIES.flatMap((c) => c.pages);
 const FEATURED_IDS = ["afupay", "afumarket", "afugames", "afumusic", "afumatch", "afufreelance"];
 
 function resolveGradient(gradient: [string, string], accent: string): [string, string] {
   return gradient.map((c) => (c === "#1018D8" ? accent : c)) as [string, string];
 }
 
-function openAppItem(app: AppItem) {
-  const needsNetwork = app.miniApp;
-  if (needsNetwork && !isOnline()) {
-    showToast(`${app.label} requires an internet connection`, { type: "info", icon: "wifi" });
-  }
-  // Every app gets a normal route. The app route owns its content and
-  // app-specific bottom navigation; it never opens the old overlay runtime.
-  safeRouter.push(`/app/${app.id}` as any);
+function openPlatformPage(page: PlatformPage) {
+  safeRouter.push(page.route as any);
 }
 
-function FeaturedCard({
-  app,
+function FeaturedPageCard({
+  page,
   accent,
   onTap,
 }: {
-  app: AppItem;
+  page: PlatformPage;
   accent: string;
   onTap: (id: string) => void;
 }) {
@@ -262,11 +244,11 @@ function FeaturedCard({
   }
   function handlePress() {
     Haptics.selectionAsync();
-    onTap(app.id);
-    openAppItem(app);
+    onTap(page.id);
+    openPlatformPage(page);
   }
 
-  const [c0, c1] = resolveGradient(app.gradient, accent);
+  const [c0, c1] = resolveGradient(page.gradient, accent);
 
   return (
     <Animated.View style={{ transform: [{ scale }], marginRight: 12 }}>
@@ -274,17 +256,17 @@ function FeaturedCard({
         <LinearGradient colors={[c0, c1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.featCard}>
           <View style={styles.featCardInner}>
             <View style={styles.featIconRing}>
-              <Ionicons name={app.icon} size={28} color="#fff" />
+            <Ionicons name={page.icon} size={28} color="#fff" />
             </View>
-            {app.badge ? (
+            {page.badge ? (
               <View style={styles.featBadge}>
-                <Text style={styles.featBadgeText}>{app.badge}</Text>
+                <Text style={styles.featBadgeText}>{page.badge}</Text>
               </View>
             ) : null}
           </View>
-          <Text style={styles.featLabel} numberOfLines={1}>{app.label}</Text>
-          {app.featuredSub ? (
-            <Text style={styles.featSub} numberOfLines={2}>{app.featuredSub}</Text>
+          <Text style={styles.featLabel} numberOfLines={1}>{page.label}</Text>
+          {page.featuredSub ? (
+            <Text style={styles.featSub} numberOfLines={2}>{page.featuredSub}</Text>
           ) : null}
           <View style={styles.featOpenBtn}>
             <Text style={styles.featOpenText}>Open</Text>
@@ -295,13 +277,13 @@ function FeaturedCard({
   );
 }
 
-function AppTile({
-  app,
+function PageTile({
+  page,
   tileWidth,
   usageCount,
   onTap,
 }: {
-  app: AppItem;
+  page: PlatformPage;
   tileWidth: number;
   usageCount?: number;
   onTap: (id: string) => void;
@@ -317,8 +299,8 @@ function AppTile({
   }
   function handlePress() {
     Haptics.selectionAsync();
-    onTap(app.id);
-    openAppItem(app);
+    onTap(page.id);
+    openPlatformPage(page);
   }
 
   return (
@@ -331,21 +313,21 @@ function AppTile({
       >
         <View style={styles.iconWrapper}>
           <LinearGradient
-            colors={resolveGradient(app.gradient, accent)}
+            colors={resolveGradient(page.gradient, accent)}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.iconGradient}
           >
-            <Ionicons name={app.icon} size={26} color="#fff" />
+            <Ionicons name={page.icon} size={26} color="#fff" />
           </LinearGradient>
-          {app.badge ? (
-            <View style={[styles.badge, app.badge === "AI" ? styles.badgeAI : app.badge === "NEW" ? styles.badgeNew : styles.badgeDefault]}>
-              <Text style={styles.badgeText}>{app.badge}</Text>
+          {page.badge ? (
+            <View style={[styles.badge, page.badge === "AI" ? styles.badgeAI : page.badge === "NEW" ? styles.badgeNew : styles.badgeDefault]}>
+              <Text style={styles.badgeText}>{page.badge}</Text>
             </View>
           ) : null}
         </View>
         <Text style={[styles.tileLabel, { color: colors.text }]} numberOfLines={1}>
-          {app.label}
+          {page.label}
         </Text>
         {usageCount && usageCount > 0 ? (
           <Text style={[styles.usageText, { color: colors.textMuted }]}>
@@ -390,12 +372,12 @@ export default function AppsScreen() {
   }
 
   const featuredApps = FEATURED_IDS
-    .map((id) => ALL_APPS.find((a) => a.id === id))
-    .filter((a): a is AppItem => !!a && isVisible(a));
+    .map((id) => ALL_PAGES.find((a) => a.id === id))
+    .filter((a): a is PlatformPage => !!a && isVisible(a));
 
   const filteredCategories = CATEGORIES.map((cat) => ({
     ...cat,
-    apps: cat.apps.filter((a) => {
+    pages: cat.pages.filter((a) => {
       if (!isVisible(a)) return false;
       if (!searchQuery) return true;
       return a.label.toLowerCase().includes(searchQuery.toLowerCase());
@@ -417,7 +399,7 @@ export default function AppsScreen() {
         {/* ── Header ── */}
         <View style={[styles.header, { paddingHorizontal: H_PAD }]}>
           <View style={styles.headerLeft}>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>{"Apps"}</Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>{"Pages"}</Text>
             {isPremium ? (
               <View style={[styles.premiumPill, { backgroundColor: colors.backgroundSecondary }]}>
                 <Ionicons name="diamond" size={11} color="#FFD60A" />
@@ -433,7 +415,7 @@ export default function AppsScreen() {
             <Ionicons name="search" size={16} color={colors.textMuted} />
             <TextInput
               style={[styles.searchInput, { color: colors.text }]}
-              placeholder="Search apps…"
+              placeholder="Search pages…"
               placeholderTextColor={colors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -464,10 +446,10 @@ export default function AppsScreen() {
               snapToInterval={172}
               snapToAlignment="start"
             >
-              {featuredApps.map((app) => (
-                <FeaturedCard
-                  key={app.id}
-                  app={app}
+              {featuredApps.map((page) => (
+                <FeaturedPageCard
+                  key={page.id}
+                  page={page}
                   accent={accent}
                   onTap={trackTap}
                 />
@@ -486,9 +468,9 @@ export default function AppsScreen() {
               </Text>
               <View style={[styles.grid, { paddingHorizontal: H_PAD }]}>
                 {cat.apps.map((app) => (
-                  <AppTile
+                  <PageTile
                     key={app.id}
-                    app={app}
+                    page={app}
                     tileWidth={tileWidth}
                     usageCount={usageCounts[app.id]}
                     onTap={trackTap}

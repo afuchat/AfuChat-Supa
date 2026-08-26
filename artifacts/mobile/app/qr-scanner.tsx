@@ -161,14 +161,20 @@ function ResultSheet({
     const res = await resolveAfuChatId();
     if (!res) return;
     onClose();
-    router.push({ pathname: "/wallet/scan" as any, params: { prefill_afu_id: res.afuId } });
+    router.push({
+      pathname: "/app/[appId]" as any,
+      params: { appId: "afupay", section: "send", initialRecipientId: res.profile.id },
+    });
   }
 
   async function handleRequestMoney() {
     const res = await resolveAfuChatId();
     if (!res) return;
     onClose();
-    router.push({ pathname: "/wallet/request" as any, params: { afu_id: res.afuId } });
+    router.push({
+      pathname: "/app/[appId]" as any,
+      params: { appId: "afupay", section: "request", afu_id: res.afuId },
+    });
   }
 
   async function handleAfuChatUrl() {

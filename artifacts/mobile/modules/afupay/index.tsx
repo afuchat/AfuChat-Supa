@@ -165,7 +165,7 @@ function WalletHeader({ colors, insets, onBack }: { colors: any; insets: { top: 
         </TouchableOpacity>
         <View style={s.walletHeaderTitleWrap}>
           <Text style={[s.walletHeaderTitle, { color: colors.text }]}>Wallet</Text>
-          <Text style={[s.walletHeaderSubtitle, { color: colors.textMuted }]}>AfuPay</Text>
+           <Text style={[s.walletHeaderSubtitle, { color: colors.textMuted }]}>Money and services in one place</Text>
         </View>
         <View style={s.backBtn} />
       </View>

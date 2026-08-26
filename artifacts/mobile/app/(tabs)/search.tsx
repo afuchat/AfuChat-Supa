@@ -188,7 +188,7 @@ IMPORTANT — detect the query type:
 Reply ONLY with a single JSON object — no markdown, no code fences, no explanation outside JSON:
 {"summary":"1-2 sentences on what the user wants","intent":"navigation|question|person|content|video|topic|product|service|event|job|gift|community|mixed","bestCategory":"people|posts|videos|channels|events|gifts|market|jobs|all","keyTerms":["term1","term2"],"suggestions":["refined search 1","related search 2"],"explanation":"one sentence on why bestCategory is best","actions":["specific step 1","specific step 2","specific step 3"],"navigateTo":"","navigateLabel":"","directAnswer":""}
 
-- navigateTo: exact route path like /app/afupay or /mini-programs/airtime (empty string if not a nav query)
+- navigateTo: exact route path like /app/afupay or /app/afupay?section=airtime (empty string if not a nav query)
 - navigateLabel: short human name for the destination (empty if no nav)
 - directAnswer: concise answer if this is a how-to or feature question (empty if pure content search)
 - actions: 2-3 concrete steps the user should take in AfuChat`,

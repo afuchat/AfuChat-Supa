@@ -17,7 +17,7 @@ export const PLATFORM_NAV_MAP = `
 | /discover | Discover | Trending content, hashtags, new people to follow |
 | /communities | Communities | Groups/communities to join and chat in |
 | /contacts | Contacts | Your contacts and friend list |
-| /apps | Mini-Programs | Airtime, bills, hotels, tickets, bank transfer, data bundles |
+| /apps | Apps | Wallet, marketplace, games, music, events, and other AfuChat tools |
 | /search | Search | Find people, posts, videos, jobs, events, gifts, market items |
 | /me | My Profile | Your personal profile and stats |
 
@@ -51,7 +51,8 @@ export const PLATFORM_NAV_MAP = `
 | /app/afupay | Main wallet — ACoins balance, transaction history |
 | /app/afupay?section=topup | Add ACoins to your wallet (buy credits) |
 | /app/afupay?section=requests | View and manage payment requests |
-| /wallet/scan | Legacy QR payment handoff |
+| /app/afupay?section=send | Send ACoin or Nexa to another user |
+| /app/afupay?section=receive | Show your Wallet QR and AfuPay ID |
 | /red-envelope/[id] | Send or receive a red envelope (group money gift) |
 
 ### SOCIAL & DISCOVERY
@@ -92,16 +93,16 @@ export const PLATFORM_NAV_MAP = `
 | /company/manage | Manage your own company page |
 | /freelance | Browse freelance opportunities and gigs |
 
-### MINI-PROGRAMS (built-in utilities — no need to leave AfuChat)
+### WALLET SERVICES (built-in utilities — all inside Wallet)
 | Route | What it does |
 |---|---|
-| /mini-programs/airtime | Buy mobile airtime/top-up |
-| /mini-programs/bills | Pay electricity, water, TV bills |
-| /mini-programs/data-bundles | Buy internet data bundles |
-| /mini-programs/hotels | Book hotel rooms |
-| /mini-programs/tickets | Buy event/concert tickets |
-| /mini-programs/transfer | Send money to another person or bank |
-| /mini-programs/fee-details | View transaction fee schedules |
+| /app/afupay?section=airtime | Buy mobile airtime/top-up |
+| /app/afupay?section=bills | Pay electricity, water, TV bills |
+| /app/afupay?section=data-bundles | Buy internet data bundles |
+| /app/afupay?section=hotels | Book hotel rooms |
+| /app/afupay?section=tickets | Buy event/concert tickets |
+| /app/afupay?section=transfer | Send money to another person or bank |
+| /app/afupay?section=fee-details | View transaction fee schedules |
 
 ### PREMIUM & MONETISATION
 | Route | What it does |
@@ -173,7 +174,7 @@ export const PLATFORM_FEATURES_GUIDE = `
 - **Follow/Following** — follow people to see their posts in your feed
 - **Gifts** — send virtual gifts (animated stickers worth ACoins) to creators during lives or on posts
 - **Gift Vault** — where received gifts are collected
-- **Mini-Programs** — built-in utility apps (airtime, bills, hotels, tickets, transfers, data) — no external apps needed
+- **Wallet Services** — built-in airtime, bills, hotels, tickets, transfers, and data tools inside Wallet
 - **Matching** — algorithm-based social discovery to find compatible people
 - **QR Scanner** — scan any AfuChat profile QR, payment QR, or external link
 
@@ -184,15 +185,15 @@ export const PLATFORM_FEATURES_GUIDE = `
 - **To create a post**: Tap the + icon or go to Moments → Create
 - **To find people**: Go to Search → People tab and type a name or @handle
 - **To send a gift**: Visit someone's profile or post and tap the gift icon
-- **To pay bills**: Go to Mini-Programs → Bills
-- **To buy airtime**: Go to Mini-Programs → Airtime
+- **To pay bills**: Open Wallet → Services → Bills & Utilities
+- **To buy airtime**: Open Wallet → Services → Airtime
 `;
 
 // ── Platform identity & founder ──────────────────────────────────────────────
 export const FOUNDER_AND_IDENTITY = `
 ## AFUCHAT PLATFORM IDENTITY & FOUNDER
 
-- **Platform**: AfuChat — Uganda's social super-app. Combines messaging, social networking, AI, digital wallet, freelance marketplace, e-commerce, mini-programs, and community tools in a single app.
+- **Platform**: AfuChat — Uganda's social super-app. Combines messaging, social networking, AI, Wallet services, freelance marketplace, e-commerce, and community tools in a single app.
 - **Founded in**: Uganda 🇺🇬 — built to serve Africa's social, payment, and communication needs.
 - **Founder & CEO**: **Amkaweesi** — the founder and CEO of AfuChat. AfuChat handle: @amkaweesi.
   - To view the founder's profile use [ACTION:View @amkaweesi:/@amkaweesi]
@@ -289,14 +290,14 @@ export function buildNavigationContext(): string {
  */
 export const ACTION_ROUTES_GUIDE = `
 Valid routes for [ACTION:Button label:/route] tags:
-/app/afupay | /app/afupay?section=topup | /app/afupay?section=requests
+/app/afupay | /app/afupay?section=topup | /app/afupay?section=requests | /app/afupay?section=services
 /premium | /monetize | /prestige | /username-market
 /profile/edit | /settings | /settings/security | /settings/privacy | /settings/blocked | /settings/two-factor
 /moments/create | /moments/create-video | /moments/create-article | /shorts | /saved-posts | /my-posts
 /search | /discover | /contacts | /communities | /me | /user-discovery
 /shop/cart | /shop/my-orders | /shop/manage | /shop/apply | /gifts/marketplace | /gifts
 /company | /company/manage | /freelance
-/mini-programs/airtime | /mini-programs/bills | /mini-programs/data-bundles | /mini-programs/hotels | /mini-programs/tickets | /mini-programs/transfer
+/app/afupay?section=airtime | /app/afupay?section=bills | /app/afupay?section=data-bundles | /app/afupay?section=hotels | /app/afupay?section=tickets | /app/afupay?section=transfer | /app/afupay?section=fee-details
 /support | /chat/new | /qr-scanner | /digital-id | /language-settings
 
 SEARCH WITH PRE-FILLED QUERY — open the search screen with text already entered:
@@ -349,12 +350,12 @@ export const NAV_INTENT_MAP: { patterns: RegExp; route: string; label: string }[
   { patterns: /\b(sell|become\s+(a\s+)?seller|seller\s+application)\b/i, route: "/shop/apply", label: "Apply as Seller" },
   { patterns: /\b(shopping\s+cart|cart)\b/i, route: "/shop/cart", label: "Shopping Cart" },
   { patterns: /\b(buy\s+gifts?|gift\s+marketplace|send\s+gift)\b/i, route: "/gifts/marketplace", label: "Gift Marketplace" },
-  { patterns: /\b(airtime|buy\s+airtime|mobile\s+top.?up|mtn|airtel|vodacom)\b/i, route: "/mini-programs/airtime", label: "Buy Airtime" },
-  { patterns: /\b(pay\s+(bills?|electricity|water|tv|dstv|gotv)|utility\s+bills?)\b/i, route: "/mini-programs/bills", label: "Pay Bills" },
-  { patterns: /\b(data\s+bundles?|internet\s+data|buy\s+data)\b/i, route: "/mini-programs/data-bundles", label: "Data Bundles" },
-  { patterns: /\b(book\s+(a\s+)?hotel|find\s+hotel|accommodation)\b/i, route: "/mini-programs/hotels", label: "Book Hotel" },
-  { patterns: /\b(event\s+tickets?|buy\s+tickets?|concert)\b/i, route: "/mini-programs/tickets", label: "Event Tickets" },
-  { patterns: /\b(send\s+money|money\s+transfer|transfer\s+funds?|bank\s+transfer)\b/i, route: "/mini-programs/transfer", label: "Money Transfer" },
+  { patterns: /\b(airtime|buy\s+airtime|mobile\s+top.?up|mtn|airtel|vodacom)\b/i, route: "/app/afupay?section=airtime", label: "Buy Airtime" },
+  { patterns: /\b(pay\s+(bills?|electricity|water|tv|dstv|gotv)|utility\s+bills?)\b/i, route: "/app/afupay?section=bills", label: "Pay Bills" },
+  { patterns: /\b(data\s+bundles?|internet\s+data|buy\s+data)\b/i, route: "/app/afupay?section=data-bundles", label: "Data Bundles" },
+  { patterns: /\b(book\s+(a\s+)?hotel|find\s+hotel|accommodation)\b/i, route: "/app/afupay?section=hotels", label: "Book Hotel" },
+  { patterns: /\b(event\s+tickets?|buy\s+tickets?|concert)\b/i, route: "/app/afupay?section=tickets", label: "Event Tickets" },
+  { patterns: /\b(send\s+money|money\s+transfer|transfer\s+funds?|bank\s+transfer)\b/i, route: "/app/afupay?section=transfer", label: "Money Transfer" },
   { patterns: /\b(monetize|earn\s+money|creator\s+fund|get\s+paid)\b/i, route: "/monetize", label: "Monetise" },
   { patterns: /\b(freelance|gigs?|find\s+work|hire)\b/i, route: "/freelance", label: "Freelance" },
   { patterns: /\b(company\s+page|my\s+company|manage\s+company|business\s+page)\b/i, route: "/company/manage", label: "Company Page" },

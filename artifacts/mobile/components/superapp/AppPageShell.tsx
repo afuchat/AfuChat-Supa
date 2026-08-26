@@ -101,6 +101,9 @@ export function getAppNav(appId: FullAppId) {
 export function normalizeAppNavKey(section?: string) {
   if (section === "apply-seller") return "sell";
   if (section === "post-gig") return "post-gig";
+  if (["airtime", "data-bundles", "bills", "transfer", "hotels", "tickets", "fee-details"].includes(section ?? "")) {
+    return "services";
+  }
   return section;
 }
 

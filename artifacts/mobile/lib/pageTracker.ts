@@ -85,13 +85,8 @@ const ROUTE_MAP: Array<{ match: RegExp; name: string; summary: string }> = [
   { match: /^\/freelance\/[^/]+/, name: "Freelance Listing", summary: "A freelance service listing. You can view details, see the seller, and place an order with ACoins." },
   { match: /^\/freelance/, name: "AfuFreelance", summary: "The AfuChat freelance marketplace — browse services, hire talent, or post your own gigs." },
 
-  // Mini-programs
-  { match: /^\/mini-programs\/airtime/, name: "Buy Airtime", summary: "Buy mobile airtime/top-up for MTN, Airtel, and other networks." },
-  { match: /^\/mini-programs\/bills/, name: "Pay Bills", summary: "Pay electricity, water, TV, and utility bills." },
-  { match: /^\/mini-programs\/data-bundles/, name: "Data Bundles", summary: "Buy internet data bundles for your phone." },
-  { match: /^\/mini-programs\/hotels/, name: "Book Hotel", summary: "Search and book hotel rooms." },
-  { match: /^\/mini-programs\/tickets/, name: "Event Tickets", summary: "Buy event and concert tickets." },
-  { match: /^\/mini-programs\/transfer/, name: "Money Transfer", summary: "Send money to another person or a bank account." },
+  // Wallet services
+  { match: /^\/app\/afupay/, name: "Wallet", summary: "Manage money, transfers, payments, and built-in services in one place." },
 
   // Premium & monetisation
   { match: /^\/premium/, name: "Premium Plans", summary: "View AfuChat Gold and Platinum subscription plans and subscribe." },
@@ -145,7 +140,7 @@ const ROUTE_MAP: Array<{ match: RegExp; name: string; summary: string }> = [
   // Tabs (catch-all after specific routes)
   { match: /^\/discover/, name: "Discover", summary: "Trending content, hashtags, and new people to follow." },
   { match: /^\/contacts/, name: "Contacts", summary: "Your contacts and friends list." },
-  { match: /^\/(tabs\/)?apps/, name: "Mini-Programs", summary: "Access all of AfuChat's built-in mini-programs and apps." },
+  { match: /^\/(tabs\/)?apps/, name: "Apps", summary: "Access Wallet and AfuChat's other built-in apps." },
   { match: /^\/me$/, name: "My Profile", summary: "Your personal AfuChat profile, posts, followers, and stats." },
   { match: /^\/search/, name: "Search", summary: "Find people, posts, videos, jobs, events, and more across AfuChat." },
 
