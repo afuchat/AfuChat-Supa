@@ -80,3 +80,4 @@
 - [Android package identity migration](android-package-identity.md) — changing the application ID requires matching Firebase config and refreshed App Links signing fingerprints.
 - [Public legal pages](public-legal-pages.md) — public policy routes share one web renderer; keep canonical URLs stable and render contact emails as real links.
 - [Supabase Storage cleanup](supabase-storage-cleanup.md) — storage.objects cannot be deleted from SQL; scheduled expiry cleanup must call the Storage API from an Edge Function.
+- [Local Android Gradle verification](android-gradle-toolchain.md) — this Replit container can fail before Kotlin compilation because Gradle 9's Foojay resolver references a missing IBM_SEMERU field; verify native changes with EAS.
