@@ -31,6 +31,7 @@ type GroupInfo = {
   name: string;
   description: string | null;
   avatar_url: string | null;
+  handle: string | null;
   is_channel: boolean;
   member_count: number;
 };
@@ -63,27 +64,33 @@ export default function JoinGroupScreen() {
     try {
       const { data: chat, error: chatErr } = await supabase
         .from("chats")
-        .select("id, name, description, avatar_url, is_channel")
+        .select("id, name, description, avatar_url, is_group, is_channel")
         .eq("id", chatId)
-        .eq("is_group", true)
+        .or("is_group.eq.true,is_channel.eq.true")
         .maybeSingle();
 
       if (chatErr || !chat) {
-        setError("This group doesn't exist or the link is no longer valid.");
+        setError("This group or channel doesn't exist, or the link is no longer valid.");
         setLoading(false);
         return;
       }
 
-      const { count } = await supabase
-        .from("chat_members")
-        .select("*", { count: "exact", head: true })
-        .eq("chat_id", chatId);
+      const [{ count }, { data: channelProfile }] = await Promise.all([
+        supabase
+          .from("chat_members")
+          .select("*", { count: "exact", head: true })
+          .eq("chat_id", chatId),
+        chat.is_channel
+          ? supabase.from("channels").select("handle").eq("id", chatId).maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
 
       setGroup({
         id:           chat.id,
         name:         chat.name ?? "Unnamed Group",
         description:  chat.description ?? null,
         avatar_url:   chat.avatar_url ?? null,
+         handle:       channelProfile?.handle ?? null,
         is_channel:   !!chat.is_channel,
         member_count: count ?? 0,
       });
@@ -125,14 +132,21 @@ export default function JoinGroupScreen() {
         throw insertErr;
       }
 
-      // Insert a system message into the group
-      await supabase.from("messages").insert({
-        chat_id:           group.id,
-        sender_id:         user.id,
-        encrypted_content: `joined via invite link`,
-        type:              "system",
-        sent_at:           new Date().toISOString(),
-      }).then(() => {}, () => {});
+       if (group.is_channel) {
+         const { error: subscriptionError } = await supabase
+           .from("channel_subscriptions")
+           .upsert({ channel_id: group.id, user_id: user.id }, { onConflict: "channel_id,user_id" });
+         if (subscriptionError) throw subscriptionError;
+         await supabase.rpc("increment_channel_subscriber", { p_channel_id: group.id });
+       } else {
+         await supabase.from("messages").insert({
+           chat_id:           group.id,
+           sender_id:         user.id,
+           encrypted_content: `joined via invite link`,
+           type:              "system",
+           sent_at:           new Date().toISOString(),
+         }).then(() => {}, () => {});
+       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setJoined(true);
@@ -193,7 +207,7 @@ export default function JoinGroupScreen() {
       {loading ? (
         <View style={st.center}>
           <ActivityIndicator size="large" color={BRAND} />
-          <Text style={[st.loadingText, { color: mutedColor }]}>Loading group info…</Text>
+           <Text style={[st.loadingText, { color: mutedColor }]}>Loading {group?.is_channel ? "channel" : "group"} info…</Text>
         </View>
       ) : error ? (
         <View style={st.center}>
@@ -240,15 +254,20 @@ export default function JoinGroupScreen() {
             </View>
           </View>
 
-          {/* Group name */}
+           {/* Group or channel identity */}
           <Text style={[st.groupName, { color: labelColor }]}>{group.name}</Text>
+           {group.is_channel && group.handle ? (
+             <Text style={[st.alreadyMember, { color: mutedColor, marginTop: 4 }]}>@{group.handle}</Text>
+           ) : null}
 
           {/* Type + member count */}
           <View style={st.metaRow}>
             <View style={[st.metaChip, { backgroundColor: surfaceColor, borderColor }]}>
               <Ionicons name="people" size={13} color={mutedColor} style={{ marginRight: 5 }} />
               <Text style={[st.metaText, { color: mutedColor }]}>
-                {group.member_count.toLocaleString()} {group.member_count === 1 ? "member" : "members"}
+                 {group.member_count.toLocaleString()} {group.is_channel
+                   ? (group.member_count === 1 ? "subscriber" : "subscribers")
+                   : (group.member_count === 1 ? "member" : "members")}
               </Text>
             </View>
             <View style={[st.metaChip, { backgroundColor: surfaceColor, borderColor }]}>
@@ -303,7 +322,7 @@ export default function JoinGroupScreen() {
                 <Text style={st.joinBtnText}>Open Chat</Text>
               </TouchableOpacity>
               <Text style={[st.alreadyMember, { color: mutedColor }]}>
-                You are already a member of this group.
+                 You are already a member of this {group.is_channel ? "channel" : "group"}.
               </Text>
             </>
           ) : (
@@ -318,7 +337,7 @@ export default function JoinGroupScreen() {
               ) : (
                 <Ionicons name="enter" size={18} color="#fff" style={{ marginRight: 8 }} />
               )}
-              <Text style={st.joinBtnText}>{joining ? "Joining…" : "Join Group"}</Text>
+               <Text style={st.joinBtnText}>{joining ? "Joining…" : group.is_channel ? "Subscribe" : "Join Group"}</Text>
             </TouchableOpacity>
           )}
 

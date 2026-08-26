@@ -51,6 +51,10 @@ type ChatMeta = {
   other_avatar: string | null;
   other_is_verified: boolean;
   other_is_organization_verified: boolean;
+  channel_handle: string | null;
+  channel_is_public: boolean | null;
+  channel_owner_id: string | null;
+  channel_subscriber_count: number | null;
 };
 
 type Member = {
@@ -252,7 +256,7 @@ export default function ChatInfoScreen() {
 
   // Tab definitions by type
   const TABS = isChannel
-    ? ["Posts", "Media", "Files", "Links"]
+    ? ["Members", "Media", "Files", "Links"]
     : isGroup
     ? ["Members", "Media", "Links"]
     : ["Posts", "Media", "Links", "Groups"];
@@ -273,6 +277,13 @@ export default function ChatInfoScreen() {
 
     if (chatRes.data) {
       const c = chatRes.data as any;
+      const channel = c.is_channel
+        ? (await supabase
+            .from("channels")
+            .select("handle, description, is_public, owner_id, subscriber_count")
+            .eq("id", id)
+            .maybeSingle()).data
+        : null;
       const mems: any[] = c.chat_members ?? [];
       const other = mems.find((m: any) => m.user_id !== user.id);
       const op = other?.profiles ?? null;
@@ -280,13 +291,17 @@ export default function ChatInfoScreen() {
       setMeta({
         is_group: !!c.is_group, is_channel: !!c.is_channel,
         name: c.name ?? "Chat",
-        description: c.description ?? null,
+         description: channel?.description ?? c.description ?? null,
         avatar_url: c.avatar_url ?? null,
         other_id: op?.id ?? null,
         other_name: op?.display_name ?? null,
         other_avatar: op?.avatar_url ?? null,
         other_is_verified: !!op?.is_verified,
         other_is_organization_verified: !!op?.is_organization_verified,
+         channel_handle: channel?.handle ?? null,
+         channel_is_public: channel?.is_public ?? null,
+         channel_owner_id: channel?.owner_id ?? null,
+         channel_subscriber_count: channel?.subscriber_count ?? null,
       });
 
       // Members for group/channel
@@ -413,7 +428,11 @@ export default function ChatInfoScreen() {
   // ── Subtitle ─────────────────────────────────────────────────────────────────
 
   const subtitle = React.useMemo(() => {
-    if (isChannel) return "public channel";
+    if (isChannel) {
+      const handle = meta?.channel_handle ? `@${meta.channel_handle} · ` : "";
+      const count = channelStats ? ` · ${fmtNum(channelStats.subscriber_count)} subscribers` : "";
+      return `${handle}${meta?.channel_is_public === false ? "private channel" : "public channel"}${count}`;
+    }
     if (isGroup) {
       const total   = members.length;
       const online  = members.filter((m) => isOnline(m.last_seen)).length;
@@ -652,6 +671,15 @@ export default function ChatInfoScreen() {
         <View style={s.cardsSection}>
           {/* Description + invite */}
           <InfoCard colors={colors}>
+            {meta?.channel_handle ? (
+              <>
+                <View style={s.bioRow}>
+                  <Text style={[s.bioText, { color: colors.text }]}>@{meta.channel_handle}</Text>
+                  <Text style={[s.bioLabel, { color: colors.textMuted }]}>Username</Text>
+                </View>
+                <View style={[s.cardDivider, { backgroundColor: colors.border }]} />
+              </>
+            ) : null}
             {meta?.description ? (
               <>
                 <View style={s.bioRow}>

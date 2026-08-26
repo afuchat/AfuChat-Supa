@@ -177,9 +177,18 @@ export default function CreateChannelScreen() {
       return;
     }
 
-    await supabase
+    const { error: subscriptionError } = await supabase
       .from("channel_subscriptions")
       .insert({ channel_id: channel.id, user_id: user.id });
+    if (subscriptionError && !subscriptionError.message?.toLowerCase().includes("duplicate")) {
+      await supabase.from("chat_members").delete().eq("chat_id", channel.id);
+      await supabase.from("chats").delete().eq("id", channel.id);
+      await supabase.from("channels").delete().eq("id", channel.id);
+      showAlert("Error", "Could not finish setting up the channel.");
+      setCreating(false);
+      return;
+    }
+    await supabase.rpc("increment_channel_subscriber", { p_channel_id: channel.id });
 
     try {
       const { rewardXp } = await import("../../lib/rewardXp");

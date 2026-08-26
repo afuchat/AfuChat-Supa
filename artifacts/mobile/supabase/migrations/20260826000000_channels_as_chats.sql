@@ -86,11 +86,27 @@ FROM public.channels c
 WHERE c.owner_id IS NOT NULL
 ON CONFLICT (chat_id, user_id) DO UPDATE SET is_admin = true;
 
+-- Owners are subscribers as well. This keeps the legacy subscription table,
+-- denormalized counts, and the canonical chat membership table aligned for
+-- channels created before this migration.
+INSERT INTO public.channel_subscriptions (channel_id, user_id)
+SELECT c.id, c.owner_id
+FROM public.channels c
+WHERE c.owner_id IS NOT NULL
+ON CONFLICT (channel_id, user_id) DO NOTHING;
+
 INSERT INTO public.chat_members (chat_id, user_id, is_admin)
 SELECT s.channel_id, s.user_id, false
 FROM public.channel_subscriptions s
 JOIN public.chats c ON c.id = s.channel_id AND c.is_channel = true
 ON CONFLICT (chat_id, user_id) DO NOTHING;
+
+UPDATE public.channels c
+SET subscriber_count = (
+  SELECT count(*)::integer
+  FROM public.channel_subscriptions s
+  WHERE s.channel_id = c.id
+);
 
 -- Preserve existing text broadcasts in the normal message timeline. Media
 -- posts remain available in the legacy posts table, while new broadcasts use
@@ -130,6 +146,13 @@ BEGIN
       WHERE id = NEW.channel_id AND is_channel = true
     )
     ON CONFLICT (chat_id, user_id) DO NOTHING;
+    UPDATE public.channels
+    SET subscriber_count = (
+      SELECT count(*)::integer
+      FROM public.channel_subscriptions
+      WHERE channel_id = NEW.channel_id
+    )
+    WHERE id = NEW.channel_id;
     RETURN NEW;
   END IF;
 
@@ -137,6 +160,13 @@ BEGIN
   WHERE chat_id = OLD.channel_id
     AND user_id = OLD.user_id
     AND coalesce(is_admin, false) = false;
+  UPDATE public.channels
+  SET subscriber_count = (
+    SELECT count(*)::integer
+    FROM public.channel_subscriptions
+    WHERE channel_id = OLD.channel_id
+  )
+  WHERE id = OLD.channel_id;
   RETURN OLD;
 END;
 $$;

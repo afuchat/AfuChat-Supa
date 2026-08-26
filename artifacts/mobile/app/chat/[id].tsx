@@ -372,6 +372,11 @@ type ChatInfo = {
   other_last_seen?: string | null;
   other_show_online_status?: boolean;
   other_handle?: string | null;
+  channel_handle?: string | null;
+  channel_description?: string | null;
+  channel_is_public?: boolean;
+  channel_owner_id?: string | null;
+  channel_subscriber_count?: number | null;
 };
 
 function NativeAttachmentIcon({
@@ -2214,7 +2219,9 @@ function ChatScreen() {
     otherName,
     otherAvatar,
     otherId,
-  otherHandle,
+     otherHandle,
+     channelHandle,
+     channelDescription,
     isGroup,
     isChannel,
     chatName,
@@ -2234,6 +2241,8 @@ function ChatScreen() {
     otherAvatar?: string;
     otherId?: string;
     otherHandle?: string;
+     channelHandle?: string;
+     channelDescription?: string;
     isGroup?: string;
     isChannel?: string;
     chatName?: string;
@@ -2378,6 +2387,8 @@ function ChatScreen() {
         other_avatar: otherAvatar || chatAvatar || null,
         other_id: otherId || "",
         other_handle: otherHandle || null,
+        channel_handle: channelHandle || null,
+        channel_description: channelDescription || null,
         member_ids: otherId ? [otherId] : [],
         avatar_url: chatAvatar || null,
       };
@@ -2801,11 +2812,18 @@ function ChatScreen() {
     if (!isOnline()) return;
     const { data: chat } = await supabase
       .from("chats")
-      .select(`is_group, is_channel, name, avatar_url, chat_members(user_id, is_admin, profiles(id, display_name, avatar_url, handle, is_verified, is_organization_verified, last_seen, show_online_status))`)
+      .select(`is_group, is_channel, name, description, avatar_url, chat_members(user_id, is_admin, profiles(id, display_name, avatar_url, handle, is_verified, is_organization_verified, last_seen, show_online_status))`)
       .eq("id", id)
       .single();
 
     if (chat) {
+      const channel = chat.is_channel
+        ? (await supabase
+            .from("channels")
+            .select("handle, description, is_public, owner_id, subscriber_count")
+            .eq("id", id)
+            .maybeSingle()).data
+        : null;
       const allMembers = (chat.chat_members || []) as any[];
       const me = allMembers.find((m: any) => m.user_id === user.id);
       setIAmChatAdmin(!!(me?.is_admin));
@@ -2826,6 +2844,11 @@ function ChatScreen() {
         other_id: isSelf ? user.id : (other?.id || ""),
         member_ids: memberIds,
         avatar_url: chat.avatar_url,
+        channel_handle: channel?.handle || null,
+        channel_description: channel?.description ?? chat.description ?? null,
+        channel_is_public: channel?.is_public ?? undefined,
+        channel_owner_id: channel?.owner_id || null,
+        channel_subscriber_count: channel?.subscriber_count ?? null,
         is_verified: isSelf ? false : !!other?.is_verified,
         is_organization_verified: isSelf ? false : !!other?.is_organization_verified,
         other_last_seen: isSelf ? null : (other?.last_seen || null),
@@ -6602,7 +6625,11 @@ STRICT RULES:
       ? "My Notes"
       : (phonebookName || chatInfo?.other_name || "Chat");
   const headerAvatar = chatInfo?.is_group || chatInfo?.is_channel ? chatInfo?.avatar_url : isSelfChat ? null : chatInfo?.other_avatar;
+  const headerSubtitle = chatInfo?.is_channel
+    ? `${chatInfo.channel_handle ? `@${chatInfo.channel_handle} · ` : ""}${iAmChatAdmin ? "Admin" : "View only"}`
+    : null;
   const canOpenDirectProfile = !!chatInfo?.other_id && !chatInfo.is_group && !chatInfo.is_channel && !isSelfChat && !isNotificationsChat;
+  const canOpenChatInfo = !!chatInfo?.is_group || !!chatInfo?.is_channel;
   const handleOpenDirectProfile = useCallback(() => {
     if (!canOpenDirectProfile || !chatInfo?.other_id) return;
     router.push({
@@ -6717,8 +6744,20 @@ STRICT RULES:
         )}
         <TouchableOpacity
           style={st.headerProfile}
-          onPress={handleOpenDirectProfile}
-          disabled={!canOpenDirectProfile}
+           onPress={() => {
+             if (canOpenChatInfo) {
+               router.push({ pathname: "/chat-info/[id]", params: {
+                 id: id as string,
+                 name: headerTitle,
+                 avatar: headerAvatar ?? "",
+                 isGroup: chatInfo?.is_group ? "1" : "0",
+                 isChannel: chatInfo?.is_channel ? "1" : "0",
+               } } as any);
+             } else {
+               handleOpenDirectProfile();
+             }
+           }}
+           disabled={!canOpenDirectProfile && !canOpenChatInfo}
           activeOpacity={0.7}
         >
           <Avatar uri={headerAvatar} name={headerTitle} size={38} square={!!(chatInfo?.is_organization_verified)} userId={(!chatInfo?.is_group && !chatInfo?.is_channel) ? chatInfo?.other_id : undefined} />
@@ -6747,9 +6786,9 @@ STRICT RULES:
               <Text style={[st.headerSub, { color: colors.textMuted }]}>Private · stored on this device</Text>
             ) : !networkOnline ? (
               <Text style={[st.headerSub, { color: "#FF9500" }]}>Waiting for network...</Text>
-            ) : chatInfo?.is_channel ? (
+             ) : chatInfo?.is_channel ? (
               <Text style={[st.headerSub, { color: colors.textMuted }]}>
-                {iAmChatAdmin ? "📢 Channel · Admin" : "📢 Channel · View only"}
+                 {headerSubtitle ? `📢 ${headerSubtitle}` : (iAmChatAdmin ? "📢 Channel · Admin" : "📢 Channel · View only")}
               </Text>
             ) : chatInfo?.is_group ? (
               <Text style={[st.headerSub, { color: colors.textMuted }]}>Group chat</Text>
