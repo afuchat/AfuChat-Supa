@@ -556,20 +556,24 @@ function MatchesTab() {
 }
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
-export default function MatchScreen() {
+export default function MatchScreen({ initialTab }: { initialTab?: "discover" | "matches" } = {}) {
   const { colors, isDark } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
 
   const [myProfile, setMyProfile] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(true);
-  const [tab, setTab] = useState<"discover" | "matches">("discover");
+  const [tab, setTab] = useState<"discover" | "matches">(initialTab ?? "discover");
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [matchResult, setMatchResult] = useState<MatchRecord | null>(null);
   const [detailCandidate, setDetailCandidate] = useState<Candidate | null>(null);
   const [undoStack, setUndoStack] = useState<Candidate[]>([]);
   const [acoinBalance, setAcoinBalance] = useState(0);
+
+  useEffect(() => {
+    if (initialTab) setTab(initialTab);
+  }, [initialTab]);
 
   // Check if user has a dating profile
   useEffect(() => { checkProfile(); }, []);

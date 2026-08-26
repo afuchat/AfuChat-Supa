@@ -36,12 +36,16 @@ function formatEventDate(iso: string) {
   return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-export default function AfuEventsApp() {
+export default function AfuEventsApp({ initialTab }: { initialTab?: "upcoming" | "online" | "free" }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"upcoming" | "online" | "free">("upcoming");
+
+  useEffect(() => {
+    if (initialTab) setTab(initialTab);
+  }, [initialTab]);
 
   const load = useCallback(async () => {
     setLoading(true);

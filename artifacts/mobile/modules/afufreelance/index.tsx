@@ -73,7 +73,7 @@ function toListing(l: any): Gig {
   };
 }
 
-export default function AfuFreelanceApp() {
+export default function AfuFreelanceApp({ initialScreen }: { initialScreen?: Screen }) {
   const { colors, accent } = useTheme();
   const { user, profile } = useAuth();
   const insets = useSafeAreaInsets();
@@ -97,6 +97,10 @@ export default function AfuFreelanceApp() {
   const [fCat, setFCat] = useState("Design");
   const [fEmoji, setFEmoji] = useState("💼");
   const [posting, setPosting] = useState(false);
+
+  useEffect(() => {
+    if (initialScreen) setScreen(initialScreen);
+  }, [initialScreen]);
 
   const load = useCallback(async () => {
     setLoading(true);

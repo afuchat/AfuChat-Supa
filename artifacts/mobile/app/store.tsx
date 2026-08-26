@@ -1,15 +1,6 @@
-import { useEffect } from "react";
-import { View } from "react-native";
-import { router } from "expo-router";
-import { useSuperApp } from "@/lib/superapp/MiniAppRuntime";
+import AppPageShell from "@/components/superapp/AppPageShell";
+import AfuMarketApp from "@/modules/afumarket";
 
 export default function StorePage() {
-  const { openApp } = useSuperApp();
-
-  useEffect(() => {
-    openApp("afumarket");
-    router.replace("/(tabs)/apps");
-  }, []);
-
-  return <View style={{ flex: 1 }} />;
+  return <AppPageShell appId="afumarket"><AfuMarketApp /></AppPageShell>;
 }

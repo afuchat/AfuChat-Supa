@@ -149,9 +149,11 @@ function SubHeader({ title, onBack, colors }: { title: string; onBack: () => voi
 export default function AfuPayApp({
   initialRecipientId,
   paymentReference,
+  initialView,
 }: {
   initialRecipientId?: string;
   paymentReference?: string;
+  initialView?: AppView;
 }) {
   const { colors } = useTheme();
   const { user, profile, refreshProfile } = useAuth();
@@ -166,7 +168,8 @@ export default function AfuPayApp({
 
   useEffect(() => {
     if (initialRecipientId) setView("send");
-  }, [initialRecipientId]);
+    else if (initialView) setView(initialView);
+  }, [initialRecipientId, initialView]);
 
   const acoin = profile?.acoin ?? 0;
   const nexa = profile?.xp ?? 0;

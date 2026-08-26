@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -51,13 +51,17 @@ const CATEGORY_FILTERS = ["All", ...Array.from(new Set(SERVICES.map((s) => s.cat
 
 type Screen = "list" | "pay";
 
-export default function AfuServicesApp() {
+export default function AfuServicesApp({ initialScreen }: { initialScreen?: Screen }) {
   const { colors } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const [selectedCat, setSelectedCat] = useState("All");
   const [screen, setScreen] = useState<Screen>("list");
   const [activeService, setActiveService] = useState<Service | null>(null);
+
+  useEffect(() => {
+    if (initialScreen) setScreen(initialScreen);
+  }, [initialScreen]);
   const [accountNo, setAccountNo] = useState("");
   const [amount, setAmount] = useState("");
   const [paying, setPaying] = useState(false);

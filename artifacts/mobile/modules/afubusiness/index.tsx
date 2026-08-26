@@ -115,7 +115,7 @@ const TOOLS = [
   { icon: "people"    as const,   label: "Audience",  color: "#34C759", screen: "audience"  as Screen },
 ];
 
-export default function AfuBusinessApp() {
+export default function AfuBusinessApp({ initialScreen }: { initialScreen?: Screen }) {
   const { colors, accent } = useTheme();
   const { user, profile } = useAuth();
   const insets = useSafeAreaInsets();
@@ -152,6 +152,10 @@ export default function AfuBusinessApp() {
   const [prodUnlimited, setProdUnlimited] = useState(false);
   const [prodAvailable, setProdAvailable] = useState(true);
   const [prodSaving, setProdSaving] = useState(false);
+
+  useEffect(() => {
+    if (initialScreen) setScreen(initialScreen);
+  }, [initialScreen]);
 
   useEffect(() => {
     if (!user) return;

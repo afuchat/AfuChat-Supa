@@ -1,5 +1,6 @@
-import AfuUsernamesApp from "../modules/afuusernames/index";
+import AppPageShell from "@/components/superapp/AppPageShell";
+import AfuUsernamesApp from "@/modules/afuusernames";
 
 export default function UsernameMarketPage() {
-  return <AfuUsernamesApp />;
+  return <AppPageShell appId="afuusernames"><AfuUsernamesApp /></AppPageShell>;
 }

@@ -494,7 +494,7 @@ function PurchaseSheet({
   );
 }
 
-export default function AfuUsernamesApp() {
+export default function AfuUsernamesApp({ initialTab }: { initialTab?: "market" | "owned" | "mine" }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user, profile, refreshProfile } = useAuth();
@@ -511,6 +511,10 @@ export default function AfuUsernamesApp() {
   const [selected, setSelected] = useState<Listing | null>(null);
   const [selectedBid, setSelectedBid] = useState<Listing | null>(null);
   const [selectedFeature, setSelectedFeature] = useState<Listing | null>(null);
+
+  useEffect(() => {
+    if (initialTab) setTab(initialTab);
+  }, [initialTab]);
   const [listVisible, setListVisible] = useState(false);
 
   useEffect(() => {

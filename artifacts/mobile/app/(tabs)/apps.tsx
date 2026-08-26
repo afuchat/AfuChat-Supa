@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,7 +15,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "@/lib/haptics";
-import { useSuperApp } from "@/lib/superapp/MiniAppRuntime";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import { isOnline } from "@/lib/offlineStore";
@@ -227,31 +225,24 @@ function resolveGradient(gradient: [string, string], accent: string): [string, s
   return gradient.map((c) => (c === "#1018D8" ? accent : c)) as [string, string];
 }
 
-function openAppItem(app: AppItem, openApp: (id: string) => void) {
+function openAppItem(app: AppItem) {
   const needsNetwork = app.miniApp;
   if (needsNetwork && !isOnline()) {
     showToast(`${app.label} requires an internet connection`, { type: "info", icon: "wifi" });
   }
-  // On web the mini-app overlay uses native animations and native-only modules
-  // (e.g. react-native-webview) that aren't available. Fall back to the standard
-  // Expo Router route which works on all platforms.
-  if (app.miniApp && Platform.OS !== "web") {
-    openApp(app.id);
-  } else {
-    safeRouter.push(app.route as any);
-  }
+  // Every app gets a normal route. The app route owns its content and
+  // app-specific bottom navigation; it never opens the old overlay runtime.
+  safeRouter.push(`/app/${app.id}` as any);
 }
 
 function FeaturedCard({
   app,
   accent,
   onTap,
-  openApp,
 }: {
   app: AppItem;
   accent: string;
   onTap: (id: string) => void;
-  openApp: (id: string) => void;
 }) {
   const scale = useRef(new Animated.Value(1)).current;
 
@@ -264,7 +255,7 @@ function FeaturedCard({
   function handlePress() {
     Haptics.selectionAsync();
     onTap(app.id);
-    openAppItem(app, openApp);
+    openAppItem(app);
   }
 
   const [c0, c1] = resolveGradient(app.gradient, accent);
@@ -301,13 +292,11 @@ function AppTile({
   tileWidth,
   usageCount,
   onTap,
-  openApp,
 }: {
   app: AppItem;
   tileWidth: number;
   usageCount?: number;
   onTap: (id: string) => void;
-  openApp: (id: string) => void;
 }) {
   const { colors, accent } = useTheme();
   const scale = useRef(new Animated.Value(1)).current;
@@ -321,7 +310,7 @@ function AppTile({
   function handlePress() {
     Haptics.selectionAsync();
     onTap(app.id);
-    openAppItem(app, openApp);
+    openAppItem(app);
   }
 
   return (
@@ -368,7 +357,6 @@ export default function AppsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const { isPremium, profile } = useAuth();
   const isOrgVerified = !!profile?.is_organization_verified;
-  const { openApp } = useSuperApp();
 
   const tileWidth = Math.floor((SW - H_PAD * 2) / COLS);
 
@@ -470,7 +458,6 @@ export default function AppsScreen() {
                   app={app}
                   accent={accent}
                   onTap={trackTap}
-                  openApp={openApp}
                 />
               ))}
             </ScrollView>
@@ -493,7 +480,6 @@ export default function AppsScreen() {
                     tileWidth={tileWidth}
                     usageCount={usageCounts[app.id]}
                     onTap={trackTap}
-                    openApp={openApp}
                   />
                 ))}
                 {Array.from({ length: padCount }).map((_, i) => (

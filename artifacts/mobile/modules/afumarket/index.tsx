@@ -97,7 +97,7 @@ type Screen = "browse" | "product" | "apply-seller";
 
 const PAGE = 20;
 
-export default function AfuMarketApp() {
+export default function AfuMarketApp({ initialScreen }: { initialScreen?: Screen }) {
   const { colors, accent } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
@@ -125,6 +125,10 @@ export default function AfuMarketApp() {
   const [sellerDesc, setSellerDesc] = useState("");
   const [sellerCat, setSellerCat] = useState(CATEGORIES[0]);
   const [sellerSaving, setSellerSaving] = useState(false);
+
+  useEffect(() => {
+    if (initialScreen) setScreen(initialScreen);
+  }, [initialScreen]);
 
   const CARD_W = Math.floor((width - 16 * 2 - 12) / 2);
 

@@ -1,15 +1,6 @@
-import { useEffect } from "react";
-import { View } from "react-native";
-import { useSuperApp } from "@/lib/superapp/MiniAppRuntime";
-import { safeRouter } from "@/lib/navUtils";
+import AppPageShell from "@/components/superapp/AppPageShell";
+import AfuFreelanceApp from "@/modules/afufreelance";
 
 export default function FreelancePage() {
-  const { openApp } = useSuperApp();
-
-  useEffect(() => {
-    openApp("afufreelance");
-    safeRouter.replace("/(tabs)/apps");
-  }, []);
-
-  return <View style={{ flex: 1 }} />;
+  return <AppPageShell appId="afufreelance"><AfuFreelanceApp /></AppPageShell>;
 }

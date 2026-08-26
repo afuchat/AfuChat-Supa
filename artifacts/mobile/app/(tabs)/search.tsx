@@ -272,7 +272,7 @@ function RowSkeleton({ bg }: { bg: string }) {
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
-export function SearchScreen({ title = "Search" }: { title?: string } = {}) {
+export function SearchScreen({ title = "Search", initialTab }: { title?: string; initialTab?: SearchTab } = {}) {
   const { user } = useAuth();
   const { colors, isDark } = useTheme();
   // Shadow the module-level BRAND constant so every reference inside this
@@ -303,7 +303,7 @@ export function SearchScreen({ title = "Search" }: { title?: string } = {}) {
   const searchIdRef = useRef(0);
 
   const [query,        setQuery]        = useState("");
-  const [tab,          setTab]          = useState<SearchTab>("all");
+  const [tab,          setTab]          = useState<SearchTab>(initialTab ?? "all");
   const [sortMode,     setSortMode]     = useState<SortMode>("relevance");
   const [dateRange,    setDateRange]    = useState<DateRange>("all");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
@@ -318,6 +318,10 @@ export function SearchScreen({ title = "Search" }: { title?: string } = {}) {
   const [saved,            setSaved]            = useState<SavedSearch[]>([]);
   const [personalizedTags, setPersonalizedTags] = useState<string[]>([]);
   const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (initialTab) setTab(initialTab);
+  }, [initialTab]);
 
   const [trendingPeople,   setTrendingPeople]   = useState<PersonResult[]>([]);
   const [trendingHashtags, setTrendingHashtags] = useState<{ tag: string; count: number }[]>([]);
