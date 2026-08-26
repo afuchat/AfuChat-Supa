@@ -106,10 +106,6 @@ export default function FindPeopleTab() {
         { data, error: profileError },
         { data: follows, error: followError },
         { data: followers, error: followersError },
-        { data: groupData, error: groupError },
-        { data: memberships, error: membershipError },
-        { data: channelData, error: channelError },
-        { data: subscriptions, error: subscriptionError },
       ] = await Promise.all([
         supabase
           .from("profiles")
@@ -126,11 +122,21 @@ export default function FindPeopleTab() {
           .limit(100),
         supabase.from("follows").select("following_id").eq("follower_id", user.id),
         supabase.from("follows").select("follower_id").eq("following_id", user.id),
+      ]);
+      if (profileError) throw profileError;
+      if (followError) throw followError;
+      if (followersError) throw followersError;
+
+      const [
+        { data: groupData, error: groupError },
+        { data: memberships, error: membershipError },
+        { data: channelData, error: channelError },
+        { data: subscriptions, error: subscriptionError },
+      ] = await Promise.all([
         supabase
           .from("chats")
           .select("id, name, description, avatar_url, is_group, is_channel, is_public, chat_members(count)")
           .eq("is_group", true)
-          .eq("is_channel", false)
           .eq("is_public", true)
           .order("updated_at", { ascending: false })
           .limit(30),
@@ -143,13 +149,6 @@ export default function FindPeopleTab() {
           .limit(30),
         supabase.from("channel_subscriptions").select("channel_id").eq("user_id", user.id),
       ]);
-      if (profileError) throw profileError;
-      if (followError) throw followError;
-      if (followersError) throw followersError;
-      if (groupError) throw groupError;
-      if (membershipError) throw membershipError;
-      if (channelError) throw channelError;
-      if (subscriptionError) throw subscriptionError;
       const followed = new Set((follows ?? []).map((row: any) => row.following_id));
       const followingMe = new Set((followers ?? []).map((row: any) => row.follower_id));
       const memberSet = new Set((memberships ?? []).map((row: any) => row.chat_id));
@@ -161,10 +160,9 @@ export default function FindPeopleTab() {
         typeof person.bio === "string" && person.bio.trim().length > 0
       );
       const profileIds = completeProfiles.map((person) => person.id);
-      const { data: followerRows, error: followerError } = profileIds.length
+      const { data: followerRows } = profileIds.length
         ? await supabase.from("follows").select("following_id").in("following_id", profileIds)
-        : { data: [], error: null };
-      if (followerError) throw followerError;
+        : { data: [] as any[] };
       const followerCounts = new Map<string, number>();
       (followerRows ?? []).forEach((row: any) => {
         followerCounts.set(row.following_id, (followerCounts.get(row.following_id) ?? 0) + 1);
@@ -190,25 +188,29 @@ export default function FindPeopleTab() {
           is_following: followed.has(person.id),
           is_following_me: followingMe.has(person.id),
         })));
-      setGroups(((groupData ?? []) as any[]).map((group) => ({
-        id: group.id,
-        name: group.name || "Unnamed group",
-        description: group.description || null,
-        avatar_url: group.avatar_url || null,
-        member_count: Array.isArray(group.chat_members) && group.chat_members[0]?.count != null
-          ? Number(group.chat_members[0].count)
-          : 0,
-        is_member: memberSet.has(group.id),
-      })));
-      setChannels(((channelData ?? []) as any[]).map((channel) => ({
-        id: channel.id,
-        name: channel.name || "Unnamed channel",
-        description: channel.description || null,
-        avatar_url: channel.avatar_url || null,
-        subscriber_count: Number(channel.subscriber_count || 0),
-        is_verified: !!channel.is_verified,
-        is_subscriber: subscriptionSet.has(channel.id),
-      })));
+      if (!groupError && !membershipError) {
+        setGroups(((groupData ?? []) as any[]).map((group) => ({
+          id: group.id,
+          name: group.name || "Unnamed group",
+          description: group.description || null,
+          avatar_url: group.avatar_url || null,
+          member_count: Array.isArray(group.chat_members) && group.chat_members[0]?.count != null
+            ? Number(group.chat_members[0].count)
+            : 0,
+          is_member: memberSet.has(group.id),
+        })));
+      }
+      if (!channelError && !subscriptionError) {
+        setChannels(((channelData ?? []) as any[]).map((channel) => ({
+          id: channel.id,
+          name: channel.name || "Unnamed channel",
+          description: channel.description || null,
+          avatar_url: channel.avatar_url || null,
+          subscriber_count: Number(channel.subscriber_count || 0),
+          is_verified: !!channel.is_verified,
+          is_subscriber: subscriptionSet.has(channel.id),
+        })));
+      }
       setLastUpdated(Date.now());
     } catch {
       setError("Live users could not be loaded right now.");

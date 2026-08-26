@@ -2801,21 +2801,24 @@ export default function DiscoverScreen() {
         {/* Stories move into the top-bar space when the tabs collapse. Keep
             this layer above the collapsing chrome and give it its own opaque
             background so the feed never shows through during the handoff. */}
-        {activeDiscoverTab !== "find" && (
-          <View
-            onLayout={(e) => {
-              const nextHeight = Math.round(e.nativeEvent.layout.height);
-              setStoriesHeight((current) => current === nextHeight ? current : nextHeight);
-            }}
-            style={{ zIndex: 3, width: "100%", backgroundColor: colors.background }}
-          >
-            <StoriesRow
-              userId={user?.id ?? null}
-              avatarUrl={profile?.avatar_url ?? null}
-              displayName={profile?.display_name ?? null}
-            />
-          </View>
-        )}
+        <View
+          onLayout={(e) => {
+            const nextHeight = Math.round(e.nativeEvent.layout.height);
+            setStoriesHeight((current) => current === nextHeight ? current : nextHeight);
+          }}
+          style={{
+            zIndex: 3,
+            width: "100%",
+            backgroundColor: colors.background,
+            display: activeDiscoverTab === "find" ? "none" : "flex",
+          }}
+        >
+          <StoriesRow
+            userId={user?.id ?? null}
+            avatarUrl={profile?.avatar_url ?? null}
+            displayName={profile?.display_name ?? null}
+          />
+        </View>
       </View>
       {/* ────────────────────────────────────────────────────────────────── */}
 
