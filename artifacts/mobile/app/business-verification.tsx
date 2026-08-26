@@ -18,6 +18,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { supabase } from "@/lib/supabase";
 import { showAlert } from "@/lib/alert";
+import { COUNTRIES, type Country } from "@/constants/countries";
 
 const GOLD = "#D4A853";
 
@@ -62,6 +63,8 @@ export default function BusinessVerificationScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [showOrgTypePicker, setShowOrgTypePicker] = useState(false);
   const [showIndustryPicker, setShowIndustryPicker] = useState(false);
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
 
   const [form, setForm] = useState({
     org_name: "",
@@ -150,6 +153,14 @@ export default function BusinessVerificationScreen() {
   }
 
   const selectedOrgType = ORG_TYPES.find((t) => t.label === form.org_type);
+  const selectedCountry = COUNTRIES.find((country) => country.name === form.registration_country);
+  const filteredCountries = COUNTRIES.filter((country) => {
+    const query = countrySearch.trim().toLowerCase();
+    return !query
+      || country.name.toLowerCase().includes(query)
+      || country.code.toLowerCase().includes(query)
+      || country.dial.includes(query);
+  });
 
   const NavBar = () => (
     <View style={[st.navBar, { paddingTop: headerTopPad, backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
@@ -347,9 +358,24 @@ export default function BusinessVerificationScreen() {
           </Field>
 
           <Field label="Country of Registration" required colors={colors}>
-            <TextInput style={[st.input, { color: colors.text }]} placeholder="e.g. Kenya, Nigeria, United States"
-              placeholderTextColor={colors.textMuted} value={form.registration_country}
-              onChangeText={(v) => set("registration_country", v)} maxLength={80} />
+            <TouchableOpacity
+              style={[st.pickerRow, { borderColor: selectedCountry ? GOLD + "60" : colors.border, backgroundColor: selectedCountry ? GOLD + "08" : "transparent" }]}
+              activeOpacity={0.75}
+              onPress={() => setShowCountryPicker(true)}
+            >
+              {selectedCountry ? (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+                  <Text style={st.countryFlag}>{selectedCountry.flag}</Text>
+                  <Text style={[st.pickerValue, { color: colors.text }]}>{selectedCountry.name}</Text>
+                </View>
+              ) : (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 9, flex: 1 }}>
+                  <Ionicons name="globe-outline" size={18} color={colors.textMuted} />
+                  <Text style={[st.pickerPlaceholder, { color: colors.textMuted }]}>Select country…</Text>
+                </View>
+              )}
+              <Ionicons name="chevron-down" size={16} color={selectedCountry ? GOLD : colors.textMuted} />
+            </TouchableOpacity>
           </Field>
 
           <Field label="Business Address" colors={colors}>
@@ -519,6 +545,67 @@ export default function BusinessVerificationScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Country Picker */}
+      <Modal visible={showCountryPicker} transparent animationType="none" onRequestClose={() => { setShowCountryPicker(false); setCountrySearch(""); }}>
+        <TouchableOpacity
+          style={st.modalOverlay}
+          activeOpacity={1}
+          onPress={() => { setShowCountryPicker(false); setCountrySearch(""); }}
+        >
+          <View style={[st.pickerSheet, { backgroundColor: colors.surface }]}>
+            <View style={[st.pickerSheetHandle, { backgroundColor: colors.border }]} />
+            <View style={st.pickerSheetTitleRow}>
+              <Text style={[st.pickerSheetTitle, { color: colors.text }]}>Country of Registration</Text>
+              <TouchableOpacity
+                onPress={() => { setShowCountryPicker(false); setCountrySearch(""); }}
+                hitSlop={8}
+              >
+                <Ionicons name="close" size={20} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+            <View style={[st.countrySearchBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
+              <Ionicons name="search" size={17} color={colors.textMuted} />
+              <TextInput
+                style={[st.countrySearchInput, { color: colors.text }]}
+                placeholder="Search countries"
+                placeholderTextColor={colors.textMuted}
+                value={countrySearch}
+                onChangeText={setCountrySearch}
+                autoFocus
+              />
+            </View>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {filteredCountries.map((country: Country) => {
+                const selected = selectedCountry?.code === country.code;
+                return (
+                  <TouchableOpacity
+                    key={country.code}
+                    style={[st.countryOption, { borderBottomColor: colors.border, backgroundColor: selected ? GOLD + "12" : "transparent" }]}
+                    onPress={() => {
+                      set("registration_country", country.name);
+                      setShowCountryPicker(false);
+                      setCountrySearch("");
+                    }}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={st.countryOptionFlag}>{country.flag}</Text>
+                    <Text style={[st.countryOptionName, { color: selected ? GOLD : colors.text }]}>{country.name}</Text>
+                    <Text style={[st.countryOptionDial, { color: colors.textMuted }]}>{country.dial}</Text>
+                    {selected && <Ionicons name="checkmark-circle" size={19} color={GOLD} />}
+                  </TouchableOpacity>
+                );
+              })}
+              {filteredCountries.length === 0 && (
+                <Text style={[st.countryEmpty, { color: colors.textMuted }]}>No countries found</Text>
+              )}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -579,6 +666,7 @@ const st = StyleSheet.create({
   pickerIconWrap: { width: 28, height: 28, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   pickerValue: { fontSize: 14, fontFamily: "Inter_500Medium" },
   pickerPlaceholder: { fontSize: 14, fontFamily: "Inter_400Regular", flex: 1 },
+  countryFlag: { fontSize: 22 },
   notableBanner: { flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 14, borderWidth: 1, padding: 14, marginTop: 4 },
   bannerIconWrap: { width: 28, height: 28, borderRadius: 8, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   notableBannerText: { flex: 1, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
@@ -589,6 +677,14 @@ const st = StyleSheet.create({
   pickerSheet: { borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingTop: 12, paddingBottom: 40, maxHeight: "80%" },
   pickerSheetHandle: { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 14 },
   pickerSheetTitle: { fontSize: 16, fontFamily: "Inter_700Bold", paddingHorizontal: 20, marginBottom: 8 },
+  pickerSheetTitleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingRight: 20 },
+  countrySearchBox: { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 20, marginBottom: 8, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1 },
+  countrySearchInput: { flex: 1, minHeight: 40, fontSize: 14, fontFamily: "Inter_400Regular" },
+  countryOption: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 20, paddingVertical: 11, borderBottomWidth: 0.5 },
+  countryOptionFlag: { fontSize: 21, width: 30 },
+  countryOptionName: { flex: 1, fontSize: 14, fontFamily: "Inter_500Medium" },
+  countryOptionDial: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  countryEmpty: { textAlign: "center", fontSize: 14, paddingVertical: 28 },
   pickerOption: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 20, paddingVertical: 14 },
   pickerOptionIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   pickerOptionText: { fontSize: 14, flex: 1 },
