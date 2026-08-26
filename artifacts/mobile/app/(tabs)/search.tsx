@@ -1660,17 +1660,6 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
             </TouchableOpacity>
             <Text style={{ fontSize: 24, fontFamily: "Inter_700Bold", color: colors.text, letterSpacing: -0.3 }}>{title}</Text>
           </View>
-          <TouchableOpacity
-            style={[ss.lensButton, { backgroundColor: BRAND + "14", borderColor: BRAND + "35" }]}
-            onPress={openLens}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel={Platform.OS === "web" ? "Search with an image" : "Search with camera"}
-          >
-            {lensLoading
-              ? <ActivityIndicator size="small" color={BRAND} />
-              : <Ionicons name="scan-outline" size={20} color={BRAND} />}
-          </TouchableOpacity>
         </View>
 
         {/* Search bar */}
@@ -1691,6 +1680,18 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
           {query.length > 0
             ? <TouchableOpacity onPress={clearSearch} hitSlop={8}><Ionicons name="close-circle" size={17} color={colors.textMuted} /></TouchableOpacity>
             : null}
+          <TouchableOpacity
+            onPress={openLens}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={Platform.OS === "web" ? "Search with an image" : "Search with camera"}
+            hitSlop={8}
+            style={ss.lensInlineButton}
+          >
+            {lensLoading
+              ? <ActivityIndicator size="small" color={colors.textMuted} />
+              : <Ionicons name="scan-outline" size={19} color={colors.textMuted} />}
+          </TouchableOpacity>
         </View>
         {!!lensError && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 7, paddingHorizontal: 4, paddingTop: 6 }}>
@@ -1820,16 +1821,6 @@ const ss = StyleSheet.create({
     overflow: "visible" as any,
   },
 
-  lensButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 12,
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-  },
-
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -1848,6 +1839,12 @@ const ss = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     paddingVertical: 0,
+  },
+  lensInlineButton: {
+    width: 24,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   filterPill: {
