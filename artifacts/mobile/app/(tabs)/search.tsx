@@ -18,6 +18,7 @@ import { AIBrandingBadge } from "@/components/ai/AIBranding";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import * as Haptics from "@/lib/haptics";
+import { safeRouter } from "@/lib/navUtils";
 
 
 import { useTheme } from "@/hooks/useTheme";
@@ -1756,7 +1757,12 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
 
         {/* Title + AI toggle */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <Text style={{ fontSize: 24, fontFamily: "Inter_700Bold", color: colors.text, letterSpacing: -0.3 }}>{title}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+            <TouchableOpacity onPress={() => safeRouter.back("/apps")} hitSlop={10} style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center", marginRight: 6 }} accessibilityRole="button" accessibilityLabel="Go back">
+              <Ionicons name="arrow-back" size={22} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={{ fontSize: 24, fontFamily: "Inter_700Bold", color: colors.text, letterSpacing: -0.3 }}>{title}</Text>
+          </View>
           <TouchableOpacity
             style={[ss.aiToggle, aiMode && { backgroundColor: PURPLE + "18", borderColor: PURPLE + "44" }]}
             onPress={toggleAiMode}

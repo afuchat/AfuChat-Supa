@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
+import { safeRouter } from "@/lib/navUtils";
 import { supabase } from "@/lib/supabase";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -821,6 +822,13 @@ export default function AfuBusinessApp({ initialScreen }: { initialScreen?: Scre
       contentContainerStyle={{ paddingBottom: insets.bottom + 28 }}
       showsVerticalScrollIndicator={false}
     >
+      <View style={[st.homeHeader, { backgroundColor: colors.surface, borderBottomColor: colors.border, paddingTop: insets.top + 10 }]}>
+        <Pressable onPress={() => safeRouter.back("/apps")} hitSlop={10} style={st.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </Pressable>
+        <Text style={[st.homeTitle, { color: colors.text }]}>AfuBusiness</Text>
+        <View style={{ width: 34 }} />
+      </View>
       <LinearGradient colors={["#1C1C1E", "#3A3A3C"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.profileCard}>
         <View style={st.profileRow}>
           <View style={[st.profileAvatar, { backgroundColor: accent + "33" }]}>
@@ -909,6 +917,8 @@ const st = StyleSheet.create({
   toolIcon: { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   toolLabel: { fontSize: 11, fontFamily: "Inter_500Medium", textAlign: "center" },
   subHeader: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 12, gap: 10, borderBottomWidth: 0.5 },
+  homeHeader: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, borderBottomWidth: 0.5 },
+  homeTitle: { flex: 1, fontSize: 18, fontFamily: "Inter_700Bold", textAlign: "center" },
   backBtn: { padding: 4, width: 34 },
   subTitle: { flex: 1, fontSize: 16, fontFamily: "Inter_600SemiBold", textAlign: "center" },
   headerAction: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },

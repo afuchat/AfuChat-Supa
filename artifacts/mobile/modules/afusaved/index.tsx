@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
+import { safeRouter } from "@/lib/navUtils";
 import { supabase } from "@/lib/supabase";
 import Colors from "@/constants/colors";
 import { PostSkeleton } from "@/components/ui/Skeleton";
@@ -114,6 +115,9 @@ export default function AfuSavedApp() {
   return (
     <View style={[s.root, { backgroundColor: colors.background }]}>
       <View style={[s.headerBar, { borderBottomColor: colors.border, paddingTop: insets.top + 14 }]}>
+        <TouchableOpacity onPress={() => safeRouter.back("/apps")} hitSlop={10} style={{ width: 34, height: 40, alignItems: "center", justifyContent: "center" }} accessibilityRole="button" accessibilityLabel="Go back">
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </TouchableOpacity>
         <Text style={[s.headerTitle, { color: colors.text }]}>Saved Posts</Text>
         <Text style={[s.headerCount, { color: colors.textMuted }]}>{saved.length} item{saved.length !== 1 ? "s" : ""}</Text>
       </View>

@@ -327,7 +327,10 @@ export default function AfuMarketApp({ initialScreen }: { initialScreen?: Screen
     <>
       {/* Top bar */}
        <View style={[s.topBar, { borderBottomColor: colors.border, paddingTop: insets.top + 14 }]}>
-        <View>
+         <Pressable onPress={() => safeRouter.back("/apps")} hitSlop={10} style={{ width: 34, height: 40, alignItems: "center", justifyContent: "center" }} accessibilityRole="button" accessibilityLabel="Go back">
+           <Ionicons name="arrow-back" size={22} color={colors.text} />
+         </Pressable>
+         <View style={{ flex: 1 }}>
           <Text style={[s.topTitle, { color: colors.text }]}>AfuMarket</Text>
           <Text style={[s.topSub, { color: colors.textMuted }]}>Shop from verified stores</Text>
         </View>

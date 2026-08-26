@@ -171,14 +171,8 @@ export default function MiniAppWindow({ app, onClose, onMinimize, children }: Pr
 
   return (
     <View style={[styles.container, { pointerEvents: showing ? "box-none" : "none" } as any]}>
-      {/* Backdrop */}
-      <Animated.View
-        style={[styles.backdrop, { opacity: backdropOpacity, pointerEvents: "box-none" } as any]}
-      >
-        <Pressable style={StyleSheet.absoluteFill} onPress={handleMinimize} />
-      </Animated.View>
-
-      {/* Sliding window */}
+      {/* Full-page app surface. Mini-apps are not modal windows and never
+          dim or leave the previous screen visible underneath them. */}
       <Animated.View
         style={[
           styles.window,
@@ -254,20 +248,10 @@ export default function MiniAppWindow({ app, onClose, onMinimize, children }: Pr
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 9999,
-    elevation: 9999,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#000",
+    flex: 1,
   },
   window: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flex: 1,
   },
   fullScreenWindow: {
     borderRadius: 0,

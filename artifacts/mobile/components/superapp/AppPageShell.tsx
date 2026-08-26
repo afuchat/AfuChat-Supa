@@ -1,7 +1,10 @@
 import React from "react";
-import { View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
 import AppBottomNav, { type AppNavItem } from "./AppBottomNav";
+import { safeRouter } from "@/lib/navUtils";
 
 export type FullAppId =
   | "afupay"
@@ -104,6 +107,52 @@ const APPS_WITH_BOTTOM_NAV: ReadonlySet<FullAppId> = new Set([
   "afuevents",
 ]);
 
+// These camera surfaces do not have a content header of their own. Keep their
+// back control in normal page flow so the camera never renders underneath it.
+const APPS_WITH_SHELL_BACK: ReadonlySet<FullAppId> = new Set([
+  "afulens",
+  "afuqr",
+]);
+
+const APP_TITLES: Partial<Record<FullAppId, string>> = {
+  afulens: "AfuLab",
+  afuqr: "AfuQR",
+};
+
+function AppShellBackHeader({ appId }: { appId: FullAppId }) {
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View
+      style={[
+        shellHeader.container,
+        {
+          paddingTop: insets.top,
+          backgroundColor: colors.background,
+          borderBottomColor: colors.border,
+        },
+      ]}
+    >
+      <View style={shellHeader.row}>
+        <Pressable
+          style={shellHeader.backButton}
+          onPress={() => safeRouter.back("/apps")}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.accent} />
+        </Pressable>
+        <Text style={[shellHeader.title, { color: colors.text }]}>
+          {APP_TITLES[appId]}
+        </Text>
+        <View style={shellHeader.side} />
+      </View>
+    </View>
+  );
+}
+
 export function getAppNav(appId: FullAppId) {
   return NAV[appId];
 }
@@ -130,8 +179,36 @@ export default function AppPageShell({ appId, activeKey, showNav = true, childre
   const shouldShowNav = showNav && APPS_WITH_BOTTOM_NAV.has(appId) && items.length > 1;
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={{ flex: 1, position: "relative", overflow: "hidden" }}>{children}</View>
+      {APPS_WITH_SHELL_BACK.has(appId) && <AppShellBackHeader appId={appId} />}
+      <View style={{ flex: 1, position: "relative" }}>{children}</View>
       {shouldShowNav && <AppBottomNav items={items} activeKey={activeKey} />}
     </View>
   );
 }
+
+const shellHeader = StyleSheet.create({
+  container: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  row: {
+    minHeight: 56,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  title: {
+    flex: 1,
+    fontSize: 18,
+    fontFamily: "Inter_700Bold",
+    textAlign: "center",
+  },
+  side: {
+    width: 44,
+  },
+});
