@@ -14,12 +14,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
 import * as MediaLibrary from "expo-media-library";
 import * as Network from "expo-network";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { useTheme } from "@/hooks/useTheme";
-import { GLASS, glassTokens } from "@/constants/glass";
 import { useLanguage } from "@/context/LanguageContext";
 import {
   getPermissionStatus,
@@ -86,22 +84,20 @@ function FileManagerBottomNav({
   const { colors, isDark } = useTheme();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
-  const glass = glassTokens(isDark);
   const bottom = Math.max(insets.bottom, 8) + 6;
   const activeColor = colors.accent;
   const inactiveColor = isDark ? "rgba(255,255,255,0.52)" : "rgba(0,0,0,0.42)";
-  const glassTint = isDark ? "rgba(22,22,26,0.58)" : "rgba(255,255,255,0.58)";
 
   const items: Array<{
     key: Filter | "transfer";
     label: string;
     icon: keyof typeof Ionicons.glyphMap;
   }> = [
-    { key: "all", label: "Library", icon: "folder-open-outline" },
-    { key: "image", label: "Images", icon: "images-outline" },
-    { key: "video", label: "Videos", icon: "videocam-outline" },
-    { key: "audio", label: "Audio", icon: "musical-notes-outline" },
-    { key: "transfer", label: "Transfer", icon: "swap-horizontal-outline" },
+    { key: "all", label: "Library", icon: "folder" },
+    { key: "image", label: "Images", icon: "images" },
+    { key: "video", label: "Videos", icon: "videocam" },
+    { key: "audio", label: "Audio", icon: "musical-notes" },
+    { key: "transfer", label: "Transfer", icon: "swap-horizontal" },
   ];
 
   return (
@@ -110,22 +106,16 @@ function FileManagerBottomNav({
         style={[
           styles.fmNav,
           {
-            borderColor: glass.border,
-            ...glass.shadowSoft,
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
           },
         ]}
       >
-        <BlurView
-          intensity={Platform.OS === "web" ? GLASS.blur.medium : GLASS.blur.heavy}
-          tint={isDark ? "dark" : "light"}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={[StyleSheet.absoluteFill, styles.fmNavTint, { backgroundColor: glassTint }]} />
         {items.map((item) => {
           const active = item.key === "transfer"
             ? transferOpen
             : !transferOpen && filter === item.key;
-          const color = active ? activeColor : inactiveColor;
+          const color = active ? colors.background : inactiveColor;
           return (
             <Pressable
               key={item.key}
@@ -147,7 +137,7 @@ function FileManagerBottomNav({
                   <View
                     style={[
                       styles.fmNavActiveOval,
-                      { backgroundColor: activeColor + "1C", pointerEvents: "none" },
+                      { backgroundColor: activeColor, pointerEvents: "none" },
                     ]}
                   />
                 )}
@@ -537,12 +527,11 @@ const styles = StyleSheet.create({
   sendBarText: { fontSize: 14, fontFamily: "Inter_700Bold" },
   sendBarHint: { marginLeft: "auto", fontSize: 11, fontFamily: "Inter_500Medium" },
   fmNavWrap: { position: "absolute", left: 20, right: 20, zIndex: 100, alignItems: "center" },
-  fmNav: { height: 62, width: "100%", borderRadius: 999, borderWidth: 1, paddingHorizontal: 6, flexDirection: "row", alignItems: "center", overflow: "hidden" },
-  fmNavTint: { borderRadius: 999 },
+  fmNav: { height: 56, width: "100%", borderRadius: 999, borderWidth: 1, paddingHorizontal: 6, flexDirection: "row", alignItems: "center", overflow: "hidden" },
   fmNavTab: { flex: 1, minWidth: 0, alignSelf: "stretch", alignItems: "center", justifyContent: "center" },
-  fmNavIcon: { width: 48, height: 36, alignItems: "center", justifyContent: "center", position: "relative" },
+  fmNavIcon: { width: 44, height: 30, alignItems: "center", justifyContent: "center", position: "relative" },
   fmNavActiveOval: { ...StyleSheet.absoluteFillObject, borderRadius: 9999 },
-  fmNavLabel: { width: "100%", fontSize: 9, lineHeight: 11, fontFamily: "Inter_700Bold", textAlign: "center", marginTop: 1, includeFontPadding: false },
+  fmNavLabel: { width: "100%", fontSize: 9, lineHeight: 10, fontFamily: "Inter_700Bold", fontWeight: "700", textAlign: "center", marginTop: 0, includeFontPadding: false },
   modalBackdrop: { flex: 1, justifyContent: "flex-end" },
   transferSheet: { borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 18, paddingTop: 10, paddingBottom: 26 },
   sheetHandle: { width: 38, height: 4, borderRadius: 99, backgroundColor: "rgba(128,128,128,0.35)", alignSelf: "center", marginBottom: 16 },

@@ -1,7 +1,6 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { BlurView } from "expo-blur";
 import React, { useEffect, useRef, useState } from "react";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { Security2FABanner } from "@/components/ui/Security2FABanner";
@@ -26,7 +25,6 @@ import { supabase } from "@/lib/supabase";
 import { getTotalUnread, subscribeUnread } from "@/lib/chatUnreadEvents";
 import { Avatar } from "@/components/ui/Avatar";
 import { useLanguage } from "@/context/LanguageContext";
-import { GLASS, glassTokens } from "@/constants/glass";
 
 // Visible bottom bar tabs — Chat · Discover · Shorts · Apps · Me
 const BOTTOM_TABS = [
@@ -180,11 +178,9 @@ export function CompactTabBar({
   const INACTIVE_ICON  = isDark ? "rgba(255,255,255,0.50)" : "rgba(0,0,0,0.38)";
   const ACTIVE_ICON    = colors.accent;
   const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 6;
-  const PILL_H         = 62;
-  const glass          = glassTokens(isDark);
-  const BAR_BORDER     = glass.border;
-  const GLASS_TINT     = isDark ? "rgba(22,22,26,0.58)" : "rgba(255,255,255,0.58)";
-  const ACTIVE_WRAP = isDark ? colors.accent + "22" : colors.accent + "18";
+  const PILL_H         = 56;
+  const BAR_BORDER     = colors.border;
+  const ACTIVE_WRAP    = colors.accent;
 
   function handleTabPress(route: string) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -211,6 +207,7 @@ export function CompactTabBar({
             pill.bar,
             {
               height: PILL_H,
+              backgroundColor: colors.surface,
               borderColor: BAR_BORDER,
               ...Platform.select({
                 ios: {
@@ -225,17 +222,9 @@ export function CompactTabBar({
             },
           ]}
         >
-          <BlurView
-            intensity={Platform.OS === "web" ? GLASS.blur.medium : GLASS.blur.heavy}
-            tint={isDark ? "dark" : "light"}
-            style={StyleSheet.absoluteFill}
-          />
-          <View
-            style={[StyleSheet.absoluteFill, pill.glassTint, { backgroundColor: GLASS_TINT }]}
-          />
           {BOTTOM_TABS.map((tab) => {
             const focused   = active === tab.route;
-            const iconColor = focused ? ACTIVE_ICON : INACTIVE_ICON;
+            const iconColor = focused ? colors.background : INACTIVE_ICON;
 
             return (
               <TouchableOpacity
@@ -397,9 +386,6 @@ const pill = StyleSheet.create({
     width: "100%",
     overflow: "hidden",
   },
-  glassTint: {
-    borderRadius: 999,
-  },
   tab: {
     flex: 1,
     flexBasis: 0,
@@ -412,8 +398,8 @@ const pill = StyleSheet.create({
     paddingVertical: 0,
   },
   iconWrap: {
-    width: 48,
-    height: 36,
+    width: 44,
+    height: 30,
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
@@ -425,10 +411,11 @@ const pill = StyleSheet.create({
   label: {
     width: "100%",
     fontSize: 9,
-    lineHeight: 11,
+    lineHeight: 10,
     fontFamily: "Inter_700Bold",
+    fontWeight: "700",
     letterSpacing: 0.2,
-    marginTop: 1,
+    marginTop: 0,
     textAlign: "center",
     includeFontPadding: false,
     textTransform: "uppercase",
