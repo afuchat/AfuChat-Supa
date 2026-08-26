@@ -94,6 +94,16 @@ const NAV: Record<FullAppId, AppNavItem[]> = {
   ],
 };
 
+// Only these product surfaces use the shared floating bottom navigation.
+// File Manager has its own dedicated filter/transfer navigation inside the
+// screen, so it remains available without rendering this shared bar.
+const APPS_WITH_BOTTOM_NAV: ReadonlySet<FullAppId> = new Set([
+  "afumarket",
+  "afubusiness",
+  "afugifts",
+  "afuevents",
+]);
+
 export function getAppNav(appId: FullAppId) {
   return NAV[appId];
 }
@@ -117,7 +127,7 @@ type Props = {
 export default function AppPageShell({ appId, activeKey, showNav = true, children }: Props) {
   const { colors } = useTheme();
   const items = getAppNav(appId);
-  const shouldShowNav = showNav && items.length > 1;
+  const shouldShowNav = showNav && APPS_WITH_BOTTOM_NAV.has(appId) && items.length > 1;
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ flex: 1, position: "relative", overflow: "hidden" }}>{children}</View>
