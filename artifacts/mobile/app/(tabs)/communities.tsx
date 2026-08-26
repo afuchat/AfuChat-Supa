@@ -239,7 +239,13 @@ export default function CommunitiesScreen() {
   async function subscribeOrOpenChannel(item: Channel) {
     if (!user) return;
     if (item.am_subscriber) {
-      safeRouter.push({ pathname: "/chat/[id]", params: { id: item.id, isChannel: "true", chatName: item.name, chatAvatar: item.avatar_url || "" } } as any);
+      safeRouter.push({ pathname: "/chat/[id]", params: {
+        id: item.id,
+        isChannel: "true",
+        chatName: item.name,
+        chatAvatar: item.avatar_url || "",
+        channelHandle: item.handle || "",
+      } } as any);
       return;
     }
     if (!isOnline()) { showAlert("No internet", "An internet connection is required to subscribe."); return; }
@@ -266,7 +272,13 @@ export default function CommunitiesScreen() {
       return updated;
     });
     setJoiningId(null);
-    safeRouter.push({ pathname: "/chat/[id]", params: { id: item.id, isChannel: "true", chatName: item.name, chatAvatar: item.avatar_url || "" } } as any);
+    safeRouter.push({ pathname: "/chat/[id]", params: {
+      id: item.id,
+      isChannel: "true",
+      chatName: item.name,
+      chatAvatar: item.avatar_url || "",
+      channelHandle: item.handle || "",
+    } } as any);
   }
 
   function GroupCard({ item }: { item: Group }) {

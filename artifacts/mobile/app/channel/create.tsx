@@ -124,78 +124,37 @@ export default function CreateChannelScreen() {
       } catch (_) {}
     }
 
-    const { data: channel, error } = await supabase
-      .from("channels")
-      .insert({
-        name: channelName.trim(),
-        description: description.trim() || null,
-        handle: normalizedHandle || null,
-        avatar_url: avatarUrl,
-        owner_id: user.id,
-        is_public: isPublic,
-        subscriber_count: 0,
-      })
-      .select("id")
-      .single();
+    const { data: channelId, error } = await supabase.rpc("create_channel_chat", {
+      p_name: channelName.trim(),
+      p_description: description.trim() || null,
+      p_handle: normalizedHandle || null,
+      p_avatar_url: avatarUrl,
+      p_is_public: isPublic,
+    });
 
-    if (error || !channel) {
-      showAlert("Error", "Could not create channel. Please try again.");
+    if (error || !channelId) {
+      const message = error?.message?.toLowerCase() || "";
+      if (message.includes("channel_handle_taken") || message.includes("duplicate")) {
+        showAlert("Username unavailable", "That channel username is already in use. Please choose another.");
+      } else {
+        showAlert("Error", "Could not create the channel. Please try again.");
+      }
       setCreating(false);
       return;
     }
-
-    const { error: chatError } = await supabase
-      .from("chats")
-      .insert({
-        id: channel.id,
-        name: channelName.trim(),
-        description: description.trim() || null,
-        avatar_url: avatarUrl,
-        is_group: false,
-        is_channel: true,
-        is_public: isPublic,
-        created_by: user.id,
-        user_id: user.id,
-      });
-
-    if (chatError) {
-      await supabase.from("channels").delete().eq("id", channel.id);
-      showAlert("Error", "Could not create the channel chat. Please try again.");
-      setCreating(false);
-      return;
-    }
-
-    const { error: memberError } = await supabase
-      .from("chat_members")
-      .insert({ chat_id: channel.id, user_id: user.id, is_admin: true });
-
-    if (memberError) {
-      await supabase.from("chats").delete().eq("id", channel.id);
-      await supabase.from("channels").delete().eq("id", channel.id);
-      showAlert("Error", "Could not finish setting up the channel.");
-      setCreating(false);
-      return;
-    }
-
-    const { error: subscriptionError } = await supabase
-      .from("channel_subscriptions")
-      .insert({ channel_id: channel.id, user_id: user.id });
-    if (subscriptionError && !subscriptionError.message?.toLowerCase().includes("duplicate")) {
-      await supabase.from("chat_members").delete().eq("chat_id", channel.id);
-      await supabase.from("chats").delete().eq("id", channel.id);
-      await supabase.from("channels").delete().eq("id", channel.id);
-      showAlert("Error", "Could not finish setting up the channel.");
-      setCreating(false);
-      return;
-    }
-    await supabase.rpc("increment_channel_subscriber", { p_channel_id: channel.id });
 
     try {
       const { rewardXp } = await import("../../lib/rewardXp");
       rewardXp("channel_created");
     } catch (_) {}
 
-    router.replace({ pathname: "/chat/[id]", params: { id: channel.id, isChannel: "true", chatName: channelName.trim(), chatAvatar: avatarUrl || "" } });
+    router.replace({ pathname: "/chat/[id]", params: {
+      id: channelId,
+      isChannel: "true",
+      chatName: channelName.trim(),
+      chatAvatar: avatarUrl || "",
+      channelHandle: normalizedHandle,
+    } });
     setCreating(false);
   }
 

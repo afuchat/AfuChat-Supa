@@ -4403,7 +4403,7 @@ function ChatScreen() {
                 await supabase.from("chat_members").delete().eq("chat_id", chatId).eq("user_id", user.id);
               } else {
                 await supabase.from("messages").delete().eq("chat_id", chatId);
-                await supabase.from("conversations").delete().eq("id", chatId);
+                await supabase.from("chats").delete().eq("id", chatId);
               }
               if (router.canGoBack()) router.back(); else router.replace("/(tabs)/chats" as any);
             } catch {

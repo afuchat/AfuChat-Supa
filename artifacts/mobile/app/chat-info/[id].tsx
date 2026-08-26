@@ -268,7 +268,7 @@ export default function ChatInfoScreen() {
 
     const [chatRes, muteRes] = await Promise.all([
       supabase
-        .from("conversations")
+        .from("chats")
         .select("is_group, is_channel, name, description, avatar_url, chat_members!inner(user_id, is_admin, profiles(display_name, avatar_url, id, handle, is_verified, is_organization_verified, last_seen, show_online_status))")
         .eq("id", id).single(),
       supabase.from("chat_mutes").select("muted_until")
@@ -404,6 +404,17 @@ export default function ChatInfoScreen() {
             if (error) {
               showAlert("Could not leave", error.message || "Please try again.");
               return;
+            }
+            if (isChannel) {
+              const { error: subscriptionError } = await supabase
+                .from("channel_subscriptions")
+                .delete()
+                .eq("channel_id", id)
+                .eq("user_id", user.id);
+              if (subscriptionError) {
+                showAlert("Could not leave", subscriptionError.message || "Please try again.");
+                return;
+              }
             }
             router.replace("/(tabs)/chats");
           },

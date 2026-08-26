@@ -947,7 +947,11 @@ export function SearchScreen({ title = "Search" }: { title?: string } = {}) {
   function ChannelCard({ ch, i }: { ch: ChannelResult; i: number }) {
     return (
       <View >
-        <TouchableOpacity style={[ss.listRow, { backgroundColor: colors.surface }]} onPress={() => router.push(`/channel/${ch.id}` as any)} activeOpacity={0.75}>
+        <TouchableOpacity
+          style={[ss.listRow, { backgroundColor: colors.surface }]}
+          onPress={() => router.push({ pathname: "/channel/[id]", params: { id: ch.id } } as any)}
+          activeOpacity={0.75}
+        >
           <View style={{ width: 48, height: 48, borderRadius: 14, overflow: "hidden" }}>
             {ch.avatar_url
               ? <ExpoImage source={{ uri: ch.avatar_url }} style={{ width: 48, height: 48 }} contentFit="cover" cachePolicy="memory-disk" />

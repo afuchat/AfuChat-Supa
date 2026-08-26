@@ -160,11 +160,19 @@ export default function ChatDangerScreen() {
                 const { error } = await supabase.from("chat_members").delete()
                   .eq("chat_id", id).eq("user_id", user.id);
                 if (error) throw error;
+                if (isChannel) {
+                  const { error: subscriptionError } = await supabase
+                    .from("channel_subscriptions")
+                    .delete()
+                    .eq("channel_id", id)
+                    .eq("user_id", user.id);
+                  if (subscriptionError) throw subscriptionError;
+                }
               } else {
                 const { error: messagesError } = await supabase.from("messages").delete().eq("chat_id", id);
                 if (messagesError) throw messagesError;
-                const { error: conversationError } = await supabase.from("conversations").delete().eq("id", id);
-                if (conversationError) throw conversationError;
+                const { error: chatError } = await supabase.from("chats").delete().eq("id", id);
+                if (chatError) throw chatError;
               }
               router.replace("/(tabs)/chats" as any);
             } catch {

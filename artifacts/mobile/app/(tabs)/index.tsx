@@ -132,10 +132,8 @@ type ChatItem = {
   name: string | null;
   is_group: boolean;
   is_channel: boolean;
-  /** "notes" = explicitly-created local Notes; "channel_broadcast" = subscribed broadcast channel */
-  kind?: "notes" | "channel_broadcast";
-  /** For kind === "channel_broadcast": the real ID in the `channels` table */
-  channel_id?: string;
+  /** "notes" = explicitly-created local Notes. */
+  kind?: "notes";
   /** Profile handle for stable route classification before chat metadata loads. */
   other_handle?: string | null;
   other_display_name: string;
@@ -763,35 +761,8 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     }
 
     // The RPC includes chat membership, profile metadata, latest message,
-    // delivery/read state, unread count, mute state, and subscribed channel
-    // broadcasts in one server query.
+    // delivery/read state, unread count, and mute state in one server query.
     const items: ChatItem[] = (chatRows as any[]).map((row: any): ChatItem => {
-      if (row.kind === "channel_broadcast") {
-        return {
-          id: row.channel_id || row.chat_id,
-          channel_id: row.channel_id,
-          kind: "channel_broadcast" as const,
-          name: row.chat_name || "Channel",
-          is_group: false,
-          is_channel: true,
-          other_display_name: row.chat_name || "Channel",
-          other_avatar: null,
-          other_id: "",
-          last_message: row.last_message ? stripMdPreview(row.last_message) : "No posts yet",
-          last_message_at: row.last_message_at || "",
-          last_message_is_mine: false,
-          last_message_status: "sent" as const,
-          is_pinned: false,
-          is_archived: false,
-          avatar_url: row.avatar_url || null,
-          unread_count: 0,
-          is_verified: !!row.is_verified,
-          is_organization_verified: false,
-          other_last_seen: null,
-          other_show_online: false,
-        };
-      }
-
       const isSelfChat = !row.is_group && !row.is_channel && row.other_id === user.id;
       return {
         id: row.chat_id,
@@ -917,7 +888,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     const finalItems: ChatItem[] = combined.map((item) => ({ ...item, draft: draftMap[item.id] || "" }));
 
     finalItems.forEach((item) => {
-      if (item.unread_count === 0 && item.kind !== "notes" && item.kind !== "channel_broadcast") {
+      if (item.unread_count === 0 && item.kind !== "notes") {
         clearChatVisited(item.id);
       }
     });
@@ -1422,9 +1393,9 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
 
   const tabFiltered = chats.filter((c) => {
     if (tabFilter === "unread") return c.unread_count > 0;
-    if (tabFilter === "personal") return !c.is_group && !c.is_channel && c.kind !== "channel_broadcast";
+    if (tabFilter === "personal") return !c.is_group && !c.is_channel;
     if (tabFilter === "groups") return c.is_group && !c.is_channel;
-    if (tabFilter === "channels") return c.is_channel || c.kind === "channel_broadcast";
+    if (tabFilter === "channels") return c.is_channel;
     return true;
   });
 
@@ -1436,9 +1407,9 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     : tabFiltered;
 
   const totalUnread = chats.reduce((sum, c) => sum + c.unread_count, 0);
-  const personalCount = chats.filter((c) => !c.is_group && !c.is_channel && c.kind !== "channel_broadcast").length;
+    const personalCount = chats.filter((c) => !c.is_group && !c.is_channel).length;
   const groupsCount = chats.filter((c) => c.is_group && !c.is_channel).length;
-  const channelsCount = chats.filter((c) => c.is_channel || c.kind === "channel_broadcast").length;
+    const channelsCount = chats.filter((c) => c.is_channel).length;
 
   const TABS: { key: ChatTabKey; label: string; icon: keyof typeof Ionicons.glyphMap; count: number }[] = [
     { key: "all", label: "All chats", icon: "chatbubbles", count: chats.length },
@@ -1499,9 +1470,9 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       let result = chats;
       if ("filter" in page) {
         if (page.filter === "unread")   result = chats.filter((c) => c.unread_count > 0);
-        else if (page.filter === "personal") result = chats.filter((c) => !c.is_group && !c.is_channel && c.kind !== "channel_broadcast");
+        else if (page.filter === "personal") result = chats.filter((c) => !c.is_group && !c.is_channel);
         else if (page.filter === "groups")   result = chats.filter((c) => c.is_group && !c.is_channel);
-        else if (page.filter === "channels") result = chats.filter((c) => c.is_channel || c.kind === "channel_broadcast");
+        else if (page.filter === "channels") result = chats.filter((c) => c.is_channel);
       }
       if (search) {
         result = result.filter((c) => {

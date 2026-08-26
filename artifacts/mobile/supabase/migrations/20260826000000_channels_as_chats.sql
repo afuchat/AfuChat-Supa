@@ -59,7 +59,8 @@ INSERT INTO public.chats (
   avatar_url,
   is_group,
   is_channel,
-  is_public,
+  is_private,
+  who_can_send,
   created_by,
   user_id
 )
@@ -70,13 +71,31 @@ SELECT
   c.avatar_url,
   false,
   true,
-  coalesce(c.is_public, true),
+  NOT coalesce(c.is_public, true),
+  'admins',
   c.owner_id,
   c.owner_id
 FROM public.channels c
 WHERE NOT EXISTS (
   SELECT 1 FROM public.chats existing WHERE existing.id = c.id
 );
+
+-- A channel may already have a chat row from an earlier partial rollout.
+-- Normalize those rows as well so all channels use the same chat permissions
+-- and identity as newly-created channels.
+UPDATE public.chats chat
+SET
+  name = channel.name,
+  description = channel.description,
+  avatar_url = channel.avatar_url,
+  is_group = false,
+  is_channel = true,
+  is_private = NOT coalesce(channel.is_public, true),
+  who_can_send = 'admins',
+  created_by = channel.owner_id,
+  user_id = channel.owner_id
+FROM public.channels channel
+WHERE chat.id = channel.id;
 
 -- The owner is the channel's administrator and every existing subscriber is
 -- a normal chat member. This is what makes channels appear in get_chat_list.
@@ -329,6 +348,39 @@ $$;
 
 REVOKE ALL ON FUNCTION public.get_chat_list(uuid[]) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_chat_list(uuid[]) TO authenticated;
+
+-- The old policy allowed any chat member to insert a message, which would
+-- bypass a channel's owner/admin-only broadcast rule. Keep DMs unrestricted
+-- while requiring an admin member for channels.
+DROP POLICY IF EXISTS "Send own messages" ON public.messages;
+CREATE POLICY "Send own messages"
+  ON public.messages
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    sender_id = auth.uid()
+    AND EXISTS (
+      SELECT 1
+      FROM public.chat_members member
+      JOIN public.chats chat ON chat.id = member.chat_id
+      WHERE member.chat_id = messages.chat_id
+        AND member.user_id = auth.uid()
+        AND (
+          (coalesce(chat.is_channel, false) AND coalesce(member.is_admin, false))
+          OR (
+            coalesce(chat.is_group, false)
+            AND (
+              chat.who_can_send = 'everyone'
+              OR coalesce(member.is_admin, false)
+            )
+          )
+          OR (
+            NOT coalesce(chat.is_group, false)
+            AND NOT coalesce(chat.is_channel, false)
+          )
+        )
+    )
+  );
 
 CREATE INDEX IF NOT EXISTS chat_members_user_chat_idx
   ON public.chat_members (user_id, chat_id);
