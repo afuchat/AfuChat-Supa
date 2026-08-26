@@ -69,8 +69,10 @@ import { initActivityTracker } from "@/lib/activityTracker";
 import { MiniAppRuntimeProvider } from "@/lib/superapp/MiniAppRuntime";
 import { AnimationGuardInit } from "@/components/AnimationGuardInit";
 import { SplashScreenView } from "@/components/ui/SplashScreenView";
+import NativeShareShortcutSync from "@/components/NativeShareShortcutSync";
 import { safeRouter } from "@/lib/navUtils";
 import { ShareIntentProvider, useShareIntentContext } from "expo-share-intent";
+import { getNativeShareChatId } from "@/lib/nativeShareShortcuts";
 
 // NOTE: react-native-mmkv has been downgraded to v3 (stable JSI bridge) and
 // react-native-nitro-modules has been removed.  v4/Nitro caused an unrecoverable
@@ -235,16 +237,30 @@ function IncomingShareGate({ navigationReady }: { navigationReady: boolean }) {
     }
     if (!isReady || !navigationReady || routedShareRef.current || pathname === "/share") return;
 
-    const signature = [
-      shareIntent.type ?? "",
-      shareIntent.text ?? "",
-      shareIntent.webUrl ?? "",
-      ...(shareIntent.files ?? []).map((file) => file.path),
-    ].join("|");
-    if (!signature) return;
+    let cancelled = false;
+    void (async () => {
+      const signature = [
+        shareIntent.type ?? "",
+        shareIntent.text ?? "",
+        shareIntent.webUrl ?? "",
+        ...(shareIntent.files ?? []).map((file) => file.path),
+      ].join("|");
+      if (!signature || cancelled) return;
 
-    routedShareRef.current = signature;
-    safeRouter.push("/share" as any);
+      // Android Direct Share carries the selected conversation in the
+      // shortcut intent. Read it before routing so the share screen can send
+      // to that exact chat without asking the user to pick it again.
+      const chatId = await getNativeShareChatId();
+      if (cancelled) return;
+      routedShareRef.current = signature;
+      safeRouter.push(
+        chatId
+          ? { pathname: "/share", params: { chatId } } as any
+          : "/share" as any,
+      );
+    })();
+
+    return () => { cancelled = true; };
   }, [hasShareIntent, isReady, navigationReady, pathname, shareIntent]);
 
   return null;
@@ -426,6 +442,7 @@ export default function RootLayout() {
                           <ChatPreferencesProvider>
                             <MiniAppRuntimeProvider>
                               <IncomingShareGate navigationReady={!!rootNavigationState?.key} />
+                              <NativeShareShortcutSync />
                               <AppNavigationStack />
                               <ToastContainer />
                               <AlertModal />

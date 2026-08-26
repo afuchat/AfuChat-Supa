@@ -10,6 +10,7 @@ export type ShareShortcutChat = {
 
 type ShareShortcutsModule = {
   update?: (chats: ShareShortcutChat[]) => Promise<boolean> | void;
+  getInitialChatId?: () => Promise<string | null>;
 };
 
 /**
@@ -34,5 +35,22 @@ export function updateNativeShareShortcuts(chats: ShareShortcutChat[]): void {
   } catch {
     // Native modules can throw synchronously while a standalone build is
     // starting; sharing in the app must remain usable in that case.
+  }
+}
+
+/**
+ * Reads the chat ID attached to an Android Direct Share launch. The custom
+ * native module is absent in Expo Go and on web, so callers can safely use
+ * the null result as the normal fallback.
+ */
+export async function getNativeShareChatId(): Promise<string | null> {
+  if (Platform.OS !== "android") return null;
+  const native = NativeModules.AfuChatShareShortcuts as ShareShortcutsModule | undefined;
+  if (!native?.getInitialChatId) return null;
+  try {
+    const chatId = await native.getInitialChatId();
+    return typeof chatId === "string" && chatId.length > 0 ? chatId : null;
+  } catch {
+    return null;
   }
 }

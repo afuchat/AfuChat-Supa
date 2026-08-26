@@ -181,6 +181,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
+import android.app.Person
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.drawable.Icon
@@ -234,20 +235,28 @@ class AfuChatShareShortcutsModule(
           return@Thread
         }
 
-        val shortcuts = chats.map { chat ->
+        val shortcuts = chats.mapIndexed { rank, chat ->
           val icon = loadAvatarIcon(chat.avatarUrl)
-            ?: Icon.createWithResource(context, context.applicationInfo.icon)
+            ?: createInitialIcon(context, chat.label)
           val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "*/*"
             data = Uri.parse("afuchat://share-chat?chatId=" + Uri.encode(chat.chatId))
+            putExtra("afuchat_chat_id", chat.chatId)
           }
-          ShortcutInfo.Builder(context, "share-chat-" + chat.chatId)
+          val builder = ShortcutInfo.Builder(context, "share-chat-" + chat.chatId)
             .setShortLabel(chat.label.take(25))
             .setLongLabel(("Send to " + chat.label).take(80))
             .setIcon(icon)
             .setIntent(shareIntent)
+            .setRank(rank)
             .setCategories(setOf("android.shortcut.conversation"))
-            .build()
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
+            builder.setLongLived(true)
+          }
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            builder.setPerson(Person.Builder().setName(chat.label).setIcon(icon).build())
+          }
+          builder.build()
         }
         manager.setDynamicShortcuts(shortcuts)
         promise.resolve(true)
@@ -275,6 +284,36 @@ class AfuChatShareShortcutsModule(
       }
     } catch (_: Exception) {
       null
+    }
+  }
+
+  private fun createInitialIcon(context: Context, label: String): Icon {
+    val size = 192
+    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    val canvas = android.graphics.Canvas(bitmap)
+    val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+    paint.color = android.graphics.Color.rgb(20, 31, 190)
+    canvas.drawColor(paint.color)
+    paint.color = android.graphics.Color.WHITE
+    paint.textAlign = android.graphics.Paint.Align.CENTER
+    paint.textSize = 78f
+    paint.typeface = android.graphics.Typeface.DEFAULT_BOLD
+    val initial = label.trim().firstOrNull()?.uppercase() ?: "A"
+    val baseline = size / 2f - (paint.ascent() + paint.descent()) / 2f
+    canvas.drawText(initial, size / 2f, baseline, paint)
+    return Icon.createWithBitmap(bitmap)
+  }
+
+  @ReactMethod
+  fun getInitialChatId(promise: Promise) {
+    try {
+      val intent = currentActivity?.intent
+      val fromData = intent?.data?.getQueryParameter("chatId")
+      val fromExtra = intent?.getStringExtra("afuchat_chat_id")
+      val chatId = fromData ?: fromExtra
+      promise.resolve(chatId)
+    } catch (error: Exception) {
+      promise.reject("SHARE_CHAT_ID_READ_FAILED", error)
     }
   }
 }

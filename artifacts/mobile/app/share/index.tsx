@@ -88,6 +88,8 @@ export default function ShareToAfuChatScreen() {
   const [sendingTo, setSendingTo] = useState<string | null>(null);
   const [contactQuery, setContactQuery] = useState("");
   const autoShareChatRef = useRef<string | null>(null);
+  const recentTargetsRef = useRef<Contact[]>([]);
+  const exactTargetLoadingRef = useRef<string | null>(null);
 
   const sharedText = (shareIntent.text || shareIntent.webUrl || "").trim();
   const sharedFiles = shareIntent.files ?? [];
@@ -139,6 +141,13 @@ export default function ShareToAfuChatScreen() {
     });
   }
 
+  function prioritizeTarget(targets: Contact[], chatId?: string): Contact[] {
+    if (!chatId) return targets;
+    const selected = targets.find((target) => target.chatId === chatId);
+    if (!selected) return targets;
+    return [selected, ...targets.filter((target) => target.chatId !== chatId)];
+  }
+
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
@@ -150,17 +159,20 @@ export default function ShareToAfuChatScreen() {
         const cachedTargets = cached
           .map((conversation) => conversationToTarget(conversation as any))
           .filter(Boolean) as Contact[];
-        if (!cancelled && cachedTargets.length > 0) {
-          setRecentChats(cachedTargets.slice(0, 8));
-          updateNativeShareShortcuts(
-            cachedTargets.slice(0, 8).map((chat) => ({
-              chatId: chat.chatId!,
-              label: chat.display_name,
-              avatarUrl: chat.avatar_url,
-              isGroup: chat.isGroup,
-              isChannel: chat.isChannel,
-            })),
-          );
+        const uniqueCachedTargets = cachedTargets.filter(
+          (target, index, list) =>
+            list.findIndex((item) => item.chatId === target.chatId) === index,
+        );
+        if (!cancelled) {
+          recentTargetsRef.current = uniqueCachedTargets;
+          setRecentChats(prioritizeTarget(uniqueCachedTargets, typeof params.chatId === "string" ? params.chatId : undefined).slice(0, 8));
+          updateNativeShareShortcuts(uniqueCachedTargets.map((chat) => ({
+            chatId: chat.chatId!,
+            label: chat.display_name,
+            avatarUrl: chat.avatar_url,
+            isGroup: chat.isGroup,
+            isChannel: chat.isChannel,
+          })));
         }
 
         // Refresh recent chats in the background so a newly-created
@@ -171,24 +183,27 @@ export default function ShareToAfuChatScreen() {
         );
         if (cancelled) return;
         const liveTargets = ((data ?? []) as any[])
+          .filter((row) => !row.is_archived)
+          .sort((a, b) => {
+            const aTime = new Date(a.last_message_at || a.chat_updated_at || 0).getTime();
+            const bTime = new Date(b.last_message_at || b.chat_updated_at || 0).getTime();
+            return bTime - aTime;
+          })
           .map(serverRowToTarget)
           .filter(Boolean) as Contact[];
         const uniqueTargets = liveTargets.filter(
           (target, index, list) =>
             list.findIndex((item) => item.chatId === target.chatId) === index,
         );
-        if (uniqueTargets.length > 0) {
-          setRecentChats(uniqueTargets.slice(0, 8));
-          updateNativeShareShortcuts(
-            uniqueTargets.slice(0, 8).map((chat) => ({
-              chatId: chat.chatId!,
-              label: chat.display_name,
-              avatarUrl: chat.avatar_url,
-              isGroup: chat.isGroup,
-              isChannel: chat.isChannel,
-            })),
-          );
-        }
+        recentTargetsRef.current = uniqueTargets;
+        setRecentChats(prioritizeTarget(uniqueTargets, typeof params.chatId === "string" ? params.chatId : undefined).slice(0, 8));
+        updateNativeShareShortcuts(uniqueTargets.map((chat) => ({
+          chatId: chat.chatId!,
+          label: chat.display_name,
+          avatarUrl: chat.avatar_url,
+          isGroup: chat.isGroup,
+          isChannel: chat.isChannel,
+        })));
       } catch {
         // The durable local conversation cache is enough to keep sharing usable.
       } finally {
@@ -197,7 +212,53 @@ export default function ShareToAfuChatScreen() {
     })();
 
     return () => { cancelled = true; };
-  }, [user?.id]);
+  }, [user?.id, params.chatId]);
+
+  // A direct-share shortcut can point to a chat outside the visible eight
+  // recent rows, or to a chat that has not reached SQLite yet. Resolve that
+  // exact membership before the one-tap send effect runs.
+  useEffect(() => {
+    const chatId = typeof params.chatId === "string" ? params.chatId : null;
+    if (!chatId || !user || recentTargetsRef.current.some((target) => target.chatId === chatId)) return;
+    if (exactTargetLoadingRef.current === chatId) return;
+    exactTargetLoadingRef.current = chatId;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const { data: chat } = await supabase
+          .from("chats")
+          .select(`id, name, is_group, is_channel, avatar_url, chat_members(user_id, profiles(id, display_name, avatar_url, handle))`)
+          .eq("id", chatId)
+          .single();
+        if (cancelled || !chat) return;
+        const members = (chat.chat_members || []) as any[];
+        const other = members.find((member) => member.user_id !== user.id);
+        const target = conversationToTarget({
+          id: chat.id,
+          name: chat.name,
+          is_group: chat.is_group,
+          is_channel: chat.is_channel,
+          avatar_url: chat.avatar_url,
+          other_id: other?.profiles?.id || other?.user_id,
+          other_display_name: other?.profiles?.display_name,
+          other_handle: other?.profiles?.handle,
+          other_avatar: other?.profiles?.avatar_url,
+        });
+        if (!target) return;
+        recentTargetsRef.current = [
+          target,
+          ...recentTargetsRef.current.filter((item) => item.chatId !== chatId),
+        ];
+        setRecentChats(prioritizeTarget(recentTargetsRef.current, chatId).slice(0, 8));
+      } catch {
+        // The shortcut will remain available for a future retry if its chat
+        // becomes visible through the normal chat-list refresh.
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [params.chatId, user?.id, recentChats.length]);
 
   useEffect(() => {
     if (!showContacts || contacts.length > 0 || !user) return;
@@ -327,14 +388,15 @@ export default function ShareToAfuChatScreen() {
   // available for people who open the share screen normally.
   useEffect(() => {
     const chatId = typeof params.chatId === "string" ? params.chatId : null;
-    if (!chatId || !shareIntent || !recentChats.length || sendingTo) return;
+    if (!chatId || !shareIntent || sendingTo) return;
     if (autoShareChatRef.current === chatId) return;
-    const target = recentChats.find((chat) => chat.chatId === chatId);
+    const target = recentChats.find((chat) => chat.chatId === chatId)
+      || recentTargetsRef.current.find((chat) => chat.chatId === chatId);
     if (!target) return;
     autoShareChatRef.current = chatId;
     const timer = setTimeout(() => { shareToContact(target); }, 0);
     return () => clearTimeout(timer);
-  }, [params.chatId, recentChats, sendingTo, shareIntent]);
+  }, [params.chatId, recentChats, sendingTo, shareIntent, user?.id]);
 
   const visibleContacts = contactQuery.trim()
     ? contacts.filter((contact) =>
