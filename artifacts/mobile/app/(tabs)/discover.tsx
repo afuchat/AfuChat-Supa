@@ -2827,11 +2827,11 @@ export default function DiscoverScreen() {
           onPageScroll={handleDiscoverPageScroll}
           onPageSelected={handleDiscoverPageSelected}
           overdrag={false}
-          scrollEnabled={false}
+            scrollEnabled
         >
           {/* Page 0: For You */}
           <View key="for_you" style={{ flex: 1 }}>
-            {feedTab === "for_you" ? (
+            {(
               loading ? (
                   <View style={{ padding: 8, gap: 8 }}>
                   {[1,2,3,4,5,6,7,8].map(i => <PostSkeleton key={i} />)}
@@ -2873,13 +2873,11 @@ export default function DiscoverScreen() {
                   }
                 />
               )
-            ) : (
-              <View style={{ flex: 1 }} />
             )}
           </View>
           {/* Page 1: Following */}
           <View key="following" style={{ flex: 1 }}>
-            {feedTab === "following" ? (
+            {(
               !user ? (
                 <View style={[styles.center, { paddingTop: 80 }]}>
                   <Ionicons name="lock-closed" size={56} color={colors.textMuted} />
@@ -2939,16 +2937,12 @@ export default function DiscoverScreen() {
                   }
                 />
               )
-            ) : (
-              <View style={{ padding: 8, gap: 8 }}>
-                {[1,2,3,4,5,6,7,8].map(i => <PostSkeleton key={i} />)}
-              </View>
             )}
           </View>
           {/* Page 2: Find — kept in the same pager so switching tabs does not
               replace the feed container or jump the surrounding layout. */}
           <View key="find" style={{ flex: 1 }}>
-            {activeDiscoverTab === "find" ? <FindPeopleTab /> : null}
+            <FindPeopleTab />
           </View>
         </_PagerView>
       ) : (
