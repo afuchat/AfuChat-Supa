@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
@@ -59,13 +58,13 @@ export default function FileManagerScreen() {
     if (!user) return;
     setLoading(true);
     try {
-      const { data: posts } = await supabase
+      const { data: posts, error } = await supabase
         .from("posts")
         .select("id, image_url, video_url, post_type, created_at")
         .eq("author_id", user.id)
-        .not("image_url", "is", null)
         .order("created_at", { ascending: false })
         .limit(100);
+      if (error) throw error;
 
       const items: FileItem[] = (posts ?? []).flatMap((p: any) => {
         const result: FileItem[] = [];

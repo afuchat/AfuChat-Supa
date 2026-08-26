@@ -141,6 +141,20 @@ const CATEGORIES: Category[] = [
     ],
   },
   {
+    id: "tools",
+    title: "Tools",
+    apps: [
+      {
+        id: "afufiles",
+        label: "Files",
+        icon: "folder",
+        gradient: ["#5856D6", "#6E6CD3"],
+        route: "/file-manager",
+        featuredSub: "Browse your shared media and files in one place.",
+      },
+    ],
+  },
+  {
     id: "entertainment",
     title: "Entertainment",
     apps: [
