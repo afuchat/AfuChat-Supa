@@ -82,3 +82,4 @@
 - [Public legal pages](public-legal-pages.md) — public policy routes share one web renderer; keep canonical URLs stable and render contact emails as real links.
 - [Supabase Storage cleanup](supabase-storage-cleanup.md) — storage.objects cannot be deleted from SQL; scheduled expiry cleanup must call the Storage API from an Edge Function.
 - [Local Android Gradle verification](android-gradle-toolchain.md) — this Replit container can fail before Kotlin compilation because Gradle 9's Foojay resolver references a missing IBM_SEMERU field; verify native changes with EAS.
+- [Track Player web bundle shim](track-player-web-bundle.md) — RNTP's browser entry can pull optional Shaka into Metro; keep native loading lazy and resolve RNTP to a no-op web shim.

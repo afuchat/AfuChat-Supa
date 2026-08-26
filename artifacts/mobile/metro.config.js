@@ -14,6 +14,7 @@ config.projectRoot = __dirname;
 const WEB_SHIMS = {
   "react-native-pager-view": path.resolve(__dirname, "lib/pager-view-web-shim.js"),
   "@shopify/flash-list":     path.resolve(__dirname, "lib/flash-list-web-shim.js"),
+  "react-native-track-player": path.resolve(__dirname, "lib/track-player-web-shim.js"),
 };
 
 // Keep Metro focused on the mobile app and away from generated sandbox files.
