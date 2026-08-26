@@ -248,11 +248,16 @@ export function CompactTabBar({
                 accessibilityState={{ selected: focused }}
               >
                 <View
-                  style={[
-                    pill.iconWrap,
-                    focused && { backgroundColor: ACTIVE_WRAP, borderRadius: 999 },
-                  ]}
+                  style={pill.iconWrap}
                 >
+                  {focused && (
+                    <View
+                      style={[
+                        pill.activeIconOval,
+                        { backgroundColor: ACTIVE_WRAP, pointerEvents: "none" },
+                      ]}
+                    />
+                  )}
                   {tab.route === "/(tabs)/me" ? (
                     <Avatar
                       uri={avatarUrl}
@@ -409,9 +414,13 @@ const pill = StyleSheet.create({
   iconWrap: {
     width: 48,
     height: 36,
-    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
+    position: "relative",
+  },
+  activeIconOval: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 9999,
   },
   label: {
     width: "100%",

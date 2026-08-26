@@ -142,7 +142,15 @@ function FileManagerBottomNav({
               }}
               style={styles.fmNavTab}
             >
-              <View style={[styles.fmNavIcon, active && { backgroundColor: activeColor + "1C" }]}>
+              <View style={styles.fmNavIcon}>
+                {active && (
+                  <View
+                    style={[
+                      styles.fmNavActiveOval,
+                      { backgroundColor: activeColor + "1C", pointerEvents: "none" },
+                    ]}
+                  />
+                )}
                 <Ionicons name={item.icon} size={20} color={color} />
               </View>
               <Text style={[styles.fmNavLabel, { color }]} numberOfLines={1}>
@@ -532,7 +540,8 @@ const styles = StyleSheet.create({
   fmNav: { height: 62, width: "100%", borderRadius: 999, borderWidth: 1, paddingHorizontal: 6, flexDirection: "row", alignItems: "center", overflow: "hidden" },
   fmNavTint: { borderRadius: 999 },
   fmNavTab: { flex: 1, minWidth: 0, alignSelf: "stretch", alignItems: "center", justifyContent: "center" },
-  fmNavIcon: { width: 48, height: 36, borderRadius: 999, alignItems: "center", justifyContent: "center" },
+  fmNavIcon: { width: 48, height: 36, alignItems: "center", justifyContent: "center", position: "relative" },
+  fmNavActiveOval: { ...StyleSheet.absoluteFillObject, borderRadius: 9999 },
   fmNavLabel: { width: "100%", fontSize: 9, lineHeight: 11, fontFamily: "Inter_700Bold", textAlign: "center", marginTop: 1, includeFontPadding: false },
   modalBackdrop: { flex: 1, justifyContent: "flex-end" },
   transferSheet: { borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 18, paddingTop: 10, paddingBottom: 26 },
