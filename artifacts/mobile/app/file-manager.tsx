@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Linking,
   Modal,
   Platform,
@@ -16,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
+import * as MediaLibrary from "expo-media-library";
 import * as Network from "expo-network";
 import * as Sharing from "expo-sharing";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -38,6 +40,7 @@ type FileItem = {
   mimeType?: string;
   uri: string;
   addedAt: string;
+  isGallery: boolean;
 };
 
 type TransferPermissions = {
@@ -89,9 +92,13 @@ export default function FileManagerScreen() {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const [files, setFiles] = useState<FileItem[]>([]);
+  const [galleryFiles, setGalleryFiles] = useState<FileItem[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [galleryLoading, setGalleryLoading] = useState(true);
+  const [galleryPermission, setGalleryPermission] = useState<"checking" | "granted" | "denied">("checking");
+  const [galleryCanAskAgain, setGalleryCanAskAgain] = useState(true);
   const [importing, setImporting] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [transferLoading, setTransferLoading] = useState(false);
@@ -117,6 +124,88 @@ export default function FileManagerScreen() {
   useEffect(() => {
     loadFiles();
   }, [loadFiles]);
+
+  const loadGallery = useCallback(async (activeFilter: Filter = filter) => {
+    if (Platform.OS === "web") {
+      setGalleryPermission("denied");
+      setGalleryLoading(false);
+      return;
+    }
+    setGalleryLoading(true);
+    try {
+      const current = await MediaLibrary.getPermissionsAsync();
+      const hasAccess = current.granted || current.status === "granted";
+      setGalleryCanAskAgain(current.canAskAgain !== false);
+      if (!hasAccess) {
+        setGalleryPermission("denied");
+        setGalleryFiles([]);
+        return;
+      }
+
+      const mediaType = activeFilter === "image"
+        ? [MediaLibrary.MediaType.photo]
+        : activeFilter === "video"
+          ? [MediaLibrary.MediaType.video]
+          : activeFilter === "audio"
+            ? [MediaLibrary.MediaType.audio]
+            : [MediaLibrary.MediaType.photo, MediaLibrary.MediaType.video];
+      const result = await MediaLibrary.getAssetsAsync({
+        mediaType,
+        first: 300,
+        sortBy: [[MediaLibrary.SortBy.creationTime, false]],
+      });
+      setGalleryFiles(result.assets.map((asset) => ({
+        id: `gallery-${asset.id}`,
+        name: asset.filename || `${asset.mediaType}-${asset.id}`,
+        size: 0,
+        type: asset.mediaType === MediaLibrary.MediaType.photo
+          ? "image"
+          : asset.mediaType === MediaLibrary.MediaType.video
+            ? "video"
+            : "audio",
+        mimeType: asset.mediaType === MediaLibrary.MediaType.photo
+          ? "image/*"
+          : asset.mediaType === MediaLibrary.MediaType.video
+            ? "video/*"
+            : "audio/*",
+        uri: asset.uri,
+        addedAt: new Date(asset.creationTime || Date.now()).toISOString(),
+        isGallery: true,
+      })));
+      setGalleryPermission("granted");
+    } catch {
+      setGalleryPermission("denied");
+      setGalleryFiles([]);
+    } finally {
+      setGalleryLoading(false);
+    }
+  }, [filter]);
+
+  useEffect(() => {
+    loadGallery(filter);
+  }, [filter, loadGallery]);
+
+  const requestGalleryAccess = useCallback(async () => {
+    if (galleryPermission === "denied" && !galleryCanAskAgain && Platform.OS !== "web") {
+      await Linking.openSettings();
+      return;
+    }
+    setGalleryLoading(true);
+    try {
+      const result = await MediaLibrary.requestPermissionsAsync();
+      setGalleryCanAskAgain(result.canAskAgain !== false);
+      if (result.granted || result.status === "granted") {
+        setGalleryPermission("granted");
+        await loadGallery(filter);
+      } else {
+        setGalleryPermission("denied");
+      }
+    } catch {
+      setGalleryPermission("denied");
+    } finally {
+      setGalleryLoading(false);
+    }
+  }, [filter, galleryCanAskAgain, galleryPermission, loadGallery]);
 
   const persistFiles = useCallback(async (next: FileItem[]) => {
     setFiles(next);
@@ -147,6 +236,7 @@ export default function FileManagerScreen() {
           mimeType: asset.mimeType,
           uri: destination,
           addedAt: new Date().toISOString(),
+          isGallery: false,
         });
       }
       await persistFiles([...imported, ...files]);
@@ -169,10 +259,14 @@ export default function FileManagerScreen() {
   }, [files, persistFiles, selectedId]);
 
   const filteredFiles = useMemo(
-    () => filter === "all" ? files : files.filter((file) => file.type === filter),
-    [files, filter],
+    () => {
+      const combined = [...galleryFiles, ...files];
+      return (filter === "all" ? combined : combined.filter((file) => file.type === filter))
+        .sort((a, b) => b.addedAt.localeCompare(a.addedAt));
+    },
+    [files, filter, galleryFiles],
   );
-  const selectedFile = files.find((file) => file.id === selectedId) ?? files[0];
+  const selectedFile = filteredFiles.find((file) => file.id === selectedId) ?? filteredFiles[0];
   const totalSize = files.reduce((sum, file) => sum + file.size, 0);
 
   const openTransfer = useCallback(async () => {
@@ -261,7 +355,8 @@ export default function FileManagerScreen() {
         <View style={styles.summaryCopy}>
           <Text style={[styles.summaryTitle, { color: colors.text }]}>On this device</Text>
           <Text style={[styles.summaryMeta, { color: colors.textMuted }]}>
-            {files.length} {files.length === 1 ? "file" : "files"} · {formatBytes(totalSize)}
+            {galleryFiles.length + files.length} {galleryFiles.length + files.length === 1 ? "file" : "files"}
+            {totalSize ? ` · ${formatBytes(totalSize)} stored` : " · Phone gallery included"}
           </Text>
         </View>
         <Pressable
@@ -273,7 +368,7 @@ export default function FileManagerScreen() {
           style={[styles.importButton, { backgroundColor: colors.accent }]}
         >
           {importing ? <ActivityIndicator size="small" color={colors.background} /> : <Ionicons name="add" size={20} color={colors.background} />}
-          <Text style={[styles.importLabel, { color: colors.background }]}>Add files</Text>
+          <Text style={[styles.importLabel, { color: colors.background }]}>Add documents</Text>
         </Pressable>
       </View>
 
@@ -296,25 +391,62 @@ export default function FileManagerScreen() {
         })}
       </ScrollView>
 
-      {loading ? (
+      {galleryPermission !== "granted" && (
+        <View style={[styles.galleryAccessCard, { backgroundColor: colors.surface }]}>
+          <View style={[styles.galleryAccessIcon, { backgroundColor: colors.accent + "18" }]}>
+            <Ionicons name="images-outline" size={23} color={colors.accent} />
+          </View>
+          <View style={styles.galleryAccessCopy}>
+            <Text style={[styles.galleryAccessTitle, { color: colors.text }]}>Show your phone gallery</Text>
+            <Text style={[styles.galleryAccessDesc, { color: colors.textMuted }]}>
+              Allow AfuChat to display photos and videos already on this device. Nothing is uploaded.
+            </Text>
+          </View>
+          <Pressable
+            testID="file-manager-gallery-permission"
+            accessibilityRole="button"
+            onPress={requestGalleryAccess}
+            style={[styles.galleryAccessButton, { backgroundColor: colors.accent }]}
+          >
+            {galleryLoading ? <ActivityIndicator size="small" color={colors.background} /> : (
+              <Text style={[styles.galleryAccessButtonText, { color: colors.background }]}>
+                {galleryPermission === "checking" ? "Checking" : galleryCanAskAgain ? "Allow" : "Settings"}
+              </Text>
+            )}
+          </Pressable>
+        </View>
+      )}
+
+      {loading || (galleryLoading && galleryPermission === "checking") ? (
         <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>
       ) : filteredFiles.length === 0 ? (
         <View style={styles.center}>
-          <Ionicons name="folder-open-outline" size={52} color={colors.textMuted} />
+          <Ionicons name={galleryPermission === "granted" ? "images-outline" : "folder-open-outline"} size={52} color={colors.textMuted} />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>
-            {files.length === 0 ? "Your device files live here" : "No files in this filter"}
+            {galleryPermission !== "granted"
+              ? "Gallery access is needed"
+              : files.length === 0 && galleryFiles.length === 0
+                ? "Your device gallery is empty"
+                : "No files in this filter"}
           </Text>
           <Text style={[styles.emptyDesc, { color: colors.textMuted }]}>
-            {files.length === 0
-              ? "Add files to keep a persistent, offline copy that you can send to nearby devices."
-              : "Choose another category or add a file from the device."}
+            {galleryPermission !== "granted"
+              ? "Use the button above to show the photos and videos already saved on your phone."
+              : files.length === 0 && galleryFiles.length === 0
+                ? "Photos and videos from your phone will appear here. You can also add documents separately."
+                : "Choose another category or add a document from the device."}
           </Text>
-          {files.length === 0 && (
+          {galleryPermission !== "granted" ? (
+            <Pressable onPress={requestGalleryAccess} style={[styles.emptyAction, { backgroundColor: colors.accent }]}>
+              <Ionicons name="images-outline" size={18} color={colors.background} />
+              <Text style={[styles.emptyActionText, { color: colors.background }]}>Allow gallery access</Text>
+            </Pressable>
+          ) : files.length === 0 && galleryFiles.length === 0 ? (
             <Pressable onPress={importFiles} style={[styles.emptyAction, { backgroundColor: colors.accent }]}>
               <Ionicons name="folder-open-outline" size={18} color={colors.background} />
-              <Text style={[styles.emptyActionText, { color: colors.background }]}>Browse device</Text>
+              <Text style={[styles.emptyActionText, { color: colors.background }]}>Add a document</Text>
             </Pressable>
-          )}
+          ) : null}
         </View>
       ) : (
         <FlatList
@@ -328,19 +460,23 @@ export default function FileManagerScreen() {
               <Pressable
                 testID={`file-row-${item.id}`}
                 onPress={() => setSelectedId(selected ? null : item.id)}
-                onLongPress={() => Alert.alert(item.name, "Remove this local copy?", [
+                onLongPress={item.isGallery ? undefined : () => Alert.alert(item.name, "Remove this local copy?", [
                   { text: "Cancel", style: "cancel" },
                   { text: "Remove", style: "destructive", onPress: () => removeFile(item) },
                 ])}
                 style={[styles.fileRow, { backgroundColor: colors.surface }, selected && { borderColor: colors.accent, borderWidth: 1 }]}
               >
-                <View style={[styles.fileIcon, { backgroundColor: colors.accent + "18" }]}>
-                  <Ionicons name={typeIcon(item.type)} size={22} color={colors.accent} />
-                </View>
+                {item.type === "image" ? (
+                  <Image source={{ uri: item.uri }} style={styles.thumbnail} />
+                ) : (
+                  <View style={[styles.fileIcon, { backgroundColor: colors.accent + "18" }]}>
+                    <Ionicons name={typeIcon(item.type)} size={22} color={colors.accent} />
+                  </View>
+                )}
                 <View style={styles.fileCopy}>
                   <Text style={[styles.fileName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
                   <Text style={[styles.fileMeta, { color: colors.textMuted }]}>
-                    {item.type} · {formatBytes(item.size)}
+                    {item.isGallery ? "Phone gallery" : item.type} · {item.size ? formatBytes(item.size) : "Size unavailable"}
                   </Text>
                 </View>
                 {selected ? (
@@ -459,6 +595,14 @@ const styles = StyleSheet.create({
   emptyAction: { flexDirection: "row", alignItems: "center", gap: 7, borderRadius: 12, paddingHorizontal: 15, paddingVertical: 11, marginTop: 4 },
   emptyActionText: { fontSize: 13, fontFamily: "Inter_700Bold" },
   fileRow: { minHeight: 72, marginHorizontal: 12, marginBottom: 8, paddingHorizontal: 14, borderRadius: 16, flexDirection: "row", alignItems: "center", gap: 13 },
+  galleryAccessCard: { flexDirection: "row", alignItems: "center", marginHorizontal: 16, marginBottom: 8, padding: 12, borderRadius: 16, gap: 10 },
+  galleryAccessIcon: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  galleryAccessCopy: { flex: 1 },
+  galleryAccessTitle: { fontSize: 13, fontFamily: "Inter_700Bold" },
+  galleryAccessDesc: { fontSize: 11, lineHeight: 15, fontFamily: "Inter_400Regular", marginTop: 2 },
+  galleryAccessButton: { borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 },
+  galleryAccessButtonText: { fontSize: 11, fontFamily: "Inter_700Bold" },
+  thumbnail: { width: 48, height: 48, borderRadius: 13, backgroundColor: "rgba(128,128,128,0.15)" },
   fileIcon: { width: 43, height: 43, borderRadius: 13, alignItems: "center", justifyContent: "center" },
   fileCopy: { flex: 1 },
   fileName: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
