@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,6 +17,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { supabase } from "@/lib/supabase";
 import { showAlert } from "@/lib/alert";
 import { COUNTRIES, type Country } from "@/constants/countries";
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 
 const GOLD = "#D4A853";
 
@@ -310,7 +309,16 @@ export default function BusinessVerificationScreen() {
   return (
     <View style={[st.root, { backgroundColor: colors.background }]}>
       <NavBar />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <KeyboardAwareScrollViewCompat
+        style={{ flex: 1 }}
+        contentContainerStyle={[
+          st.formScrollContent,
+          { paddingBottom: Math.max(insets.bottom, 12) + 24 },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        bottomOffset={24}
+      >
         <View style={st.formPage}>
           {step === 1 && (
             <>
@@ -540,7 +548,7 @@ export default function BusinessVerificationScreen() {
             )}
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollViewCompat>
 
       {/* Org Type Picker */}
       <Modal visible={showOrgTypePicker} transparent animationType="none" onRequestClose={() => setShowOrgTypePicker(false)}>
@@ -683,7 +691,8 @@ const st = StyleSheet.create({
   root: { flex: 1 },
   navBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 12 },
   navTitle: { fontSize: 17, fontFamily: "Inter_700Bold" },
-  formPage: { flex: 1, padding: 16, gap: 14 },
+  formScrollContent: { flexGrow: 1 },
+  formPage: { padding: 16, gap: 14 },
   bigTitle: { fontSize: 22, fontFamily: "Inter_700Bold", textAlign: "center" },
   bigSub: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 21 },
   dateBadge: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
