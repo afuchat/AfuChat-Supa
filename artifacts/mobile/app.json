@@ -35,6 +35,13 @@
         "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.BLUETOOTH_SCAN",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.BLUETOOTH_ADVERTISE",
+        "android.permission.ACCESS_WIFI_STATE",
+        "android.permission.CHANGE_WIFI_STATE",
+        "android.permission.NEARBY_WIFI_DEVICES",
+        "android.permission.CHANGE_NETWORK_STATE",
         "android.permission.READ_CONTACTS",
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT",
@@ -208,6 +215,10 @@
       "bundleIdentifier": "com.afuchat.mobile",
       "googleServicesFile": "./GoogleService-Info.plist",
       "buildNumber": "1",
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "AfuChat uses Bluetooth when you choose to send files to a nearby device.",
+        "NSLocalNetworkUsageDescription": "AfuChat uses the local network when you choose to send files to a nearby device over Wi-Fi."
+      },
       "associatedDomains": [
         "applinks:afuchat.com",
         "applinks:www.afuchat.com"

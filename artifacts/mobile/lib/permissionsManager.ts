@@ -24,7 +24,9 @@ export type PermissionType =
   | "microphone"
   | "mediaLibrary"
   | "contacts"
-  | "location";
+  | "location"
+  | "bluetooth"
+  | "wifi";
 
 /** mirrors Expo's status strings */
 export type PermissionStatus =
@@ -105,6 +107,8 @@ export async function requestPermission(type: PermissionType): Promise<Permissio
       case "mediaLibrary":  return await _requestMediaLibrary();
       case "contacts":      return await _requestContacts();
       case "location":      return await _requestLocation();
+      case "bluetooth":     return await _requestBluetooth();
+      case "wifi":          return await _requestWifi();
       default:              return "undetermined";
     }
   } catch {
@@ -125,6 +129,8 @@ export async function checkPermission(type: PermissionType): Promise<PermissionS
       case "mediaLibrary":  return await _checkMediaLibrary();
       case "contacts":      return await _checkContacts();
       case "location":      return await _checkLocation();
+      case "bluetooth":     return await _checkBluetooth();
+      case "wifi":          return await _checkWifi();
       default:              return "undetermined";
     }
   } catch {
@@ -248,4 +254,87 @@ async function _checkLocation(): Promise<PermissionStatus> {
     const { status } = await Location.getForegroundPermissionsAsync();
     return _norm(status, "location");
   } catch { return getPermissionStatus("location"); }
+}
+
+// ─── Internal: nearby device access ───────────────────────────────────────────
+//
+// Android 12+ splits Bluetooth discovery into scan/connect/advertise runtime
+// permissions. Android 13+ also exposes nearby Wi-Fi devices. These are kept
+// here instead of being requested on app startup because they are only needed
+// after the user explicitly opens the offline transfer flow.
+
+function _androidPermission(name: string): string {
+  const permissions = require("react-native").PermissionsAndroid.PERMISSIONS;
+  return permissions[name] ?? `android.permission.${name}`;
+}
+
+async function _requestAndroidPermissions(
+  type: "bluetooth" | "wifi",
+  names: string[],
+): Promise<PermissionStatus> {
+  if (Platform.OS !== "android") return getPermissionStatus(type);
+  try {
+    const { PermissionsAndroid } = require("react-native") as typeof import("react-native");
+    const requested = names.map(_androidPermission) as any[];
+    const result = await PermissionsAndroid.requestMultiple(requested) as Record<string, string>;
+    const allGranted = requested.every((permission: string) => result[permission] === PermissionsAndroid.RESULTS.GRANTED);
+    const permanentlyDenied = requested.some((permission: string) =>
+      result[permission] === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN,
+    );
+    const status = allGranted ? "granted" : permanentlyDenied ? "blocked" : "denied";
+    setPermissionStatus(type, status);
+    return status;
+  } catch {
+    return getPermissionStatus(type);
+  }
+}
+
+async function _requestBluetooth(): Promise<PermissionStatus> {
+  if (Platform.OS !== "android") return getPermissionStatus("bluetooth");
+  const names = Number(Platform.Version) >= 31
+    ? ["BLUETOOTH_SCAN", "BLUETOOTH_CONNECT", "BLUETOOTH_ADVERTISE"]
+    : ["ACCESS_FINE_LOCATION"];
+  return _requestAndroidPermissions("bluetooth", names);
+}
+
+async function _checkBluetooth(): Promise<PermissionStatus> {
+  if (Platform.OS !== "android") return getPermissionStatus("bluetooth");
+  try {
+    const { PermissionsAndroid } = require("react-native") as typeof import("react-native");
+    const names = Number(Platform.Version) >= 31
+      ? ["BLUETOOTH_SCAN", "BLUETOOTH_CONNECT"]
+      : ["ACCESS_FINE_LOCATION"];
+    const requested = names.map(_androidPermission) as any[];
+    const checks = await Promise.all(requested.map((permission: any) => PermissionsAndroid.check(permission)));
+    const status = checks.every(Boolean) ? "granted" : "denied";
+    setPermissionStatus("bluetooth", status);
+    return status;
+  } catch {
+    return getPermissionStatus("bluetooth");
+  }
+}
+
+async function _requestWifi(): Promise<PermissionStatus> {
+  if (Platform.OS !== "android") return getPermissionStatus("wifi");
+  const names = Number(Platform.Version) >= 33
+    ? ["NEARBY_WIFI_DEVICES"]
+    : ["ACCESS_FINE_LOCATION"];
+  return _requestAndroidPermissions("wifi", names);
+}
+
+async function _checkWifi(): Promise<PermissionStatus> {
+  if (Platform.OS !== "android") return getPermissionStatus("wifi");
+  try {
+    const { PermissionsAndroid } = require("react-native") as typeof import("react-native");
+    const names = Number(Platform.Version) >= 33
+      ? ["NEARBY_WIFI_DEVICES"]
+      : ["ACCESS_FINE_LOCATION"];
+    const requested = names.map(_androidPermission) as any[];
+    const checks = await Promise.all(requested.map((permission: any) => PermissionsAndroid.check(permission)));
+    const status = checks.every(Boolean) ? "granted" : "denied";
+    setPermissionStatus("wifi", status);
+    return status;
+  } catch {
+    return getPermissionStatus("wifi");
+  }
 }
