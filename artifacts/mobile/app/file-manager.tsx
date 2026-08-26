@@ -260,18 +260,6 @@ export default function FileManagerScreen() {
         </ScrollView>
       </View>
 
-      <View style={[styles.summary, { backgroundColor: colors.surface }]}>
-        <View style={[styles.summaryIcon, { backgroundColor: colors.accent + "18" }]}>
-          <Ionicons name="folder-open-outline" size={25} color={colors.accent} />
-        </View>
-        <View style={styles.summaryCopy}>
-          <Text style={[styles.summaryTitle, { color: colors.text }]}>On this device</Text>
-          <Text style={[styles.summaryMeta, { color: colors.textMuted }]}>
-            {galleryFiles.length} {galleryFiles.length === 1 ? "item" : "items"} · Phone gallery
-          </Text>
-        </View>
-      </View>
-
       {galleryPermission !== "granted" && (
         <View style={[styles.galleryAccessCard, { backgroundColor: colors.surface }]}>
           <View style={[styles.galleryAccessIcon, { backgroundColor: colors.accent + "18" }]}>
