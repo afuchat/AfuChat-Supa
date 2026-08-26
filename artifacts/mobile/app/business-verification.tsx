@@ -44,7 +44,6 @@ const INDUSTRIES = [
 ];
 
 const TOTAL_STEPS = 4;
-const STEP_LABELS = ["Identity", "Registration", "Contact", "Presence"];
 
 type PageStatus = "loading" | "idle" | "pending" | "approved" | "rejected";
 
@@ -312,54 +311,9 @@ export default function BusinessVerificationScreen() {
     <View style={[st.root, { backgroundColor: colors.background }]}>
       <NavBar />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-        <View style={[st.progressWrap, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-          <View style={st.progressTopRow}>
-            <Text style={[st.progressStep, { color: GOLD }]}>STEP {step} OF {TOTAL_STEPS}</Text>
-            <Text style={[st.progressName, { color: colors.text }]}>{STEP_LABELS[step - 1]}</Text>
-          </View>
-          <View style={[st.progressTrack, { backgroundColor: colors.backgroundTertiary }]}>
-            <View style={[st.progressFill, { width: `${(step / TOTAL_STEPS) * 100}%`, backgroundColor: GOLD }]} />
-          </View>
-          <View style={st.progressLabels}>
-            {STEP_LABELS.map((label, index) => (
-              <Text key={label} style={[st.progressLabel, { color: index + 1 <= step ? GOLD : colors.textMuted }]}>
-                {label}
-              </Text>
-            ))}
-          </View>
-        </View>
-        <ScrollView
-          contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 60, gap: 14 }}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
+        <View style={st.formPage}>
           {step === 1 && (
             <>
-              <View style={[st.heroCard, { backgroundColor: GOLD + "12", borderColor: GOLD + "40" }]}>
-                <View style={[st.heroIcon, { backgroundColor: GOLD + "22" }]}>
-                  <Ionicons name="ribbon" size={30} color={GOLD} />
-                </View>
-                <Text style={[st.heroTitle, { color: colors.text }]}>Organization Verification</Text>
-                <Text style={[st.heroSub, { color: colors.textSecondary }]}>
-                  Tell us who your organization is. You can review everything before submitting.
-                </Text>
-              </View>
-              <View style={[st.criteriaCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Text style={[st.sectionMicro, { color: colors.textMuted }]}>WHAT YOU'LL NEED</Text>
-                {[
-                  { icon: "business", text: "Your organization identity" },
-                  { icon: "document-text", text: "Registration details" },
-                  { icon: "call", text: "A business contact number" },
-                  { icon: "shield-checkmark", text: "Proof of notable presence" },
-                ].map((c, i) => (
-                  <View key={i} style={st.criteriaRow}>
-                    <View style={[st.criteriaIconWrap, { backgroundColor: GOLD + "18" }]}>
-                      <Ionicons name={c.icon as any} size={14} color={GOLD} />
-                    </View>
-                    <Text style={[st.criteriaText, { color: colors.textSecondary }]}>{c.text}</Text>
-                  </View>
-                ))}
-              </View>
               <SectionHeader title="Business Identity" />
               <Field label="Organization Name" required colors={colors}>
                 <TextInput style={[st.input, { color: colors.text }]} placeholder="Your official public name"
@@ -409,7 +363,6 @@ export default function BusinessVerificationScreen() {
 
           {step === 2 && (
             <>
-              <StepIntro title="Registration details" subtitle="Help us confirm where your organization is legally registered." colors={colors} />
               <SectionHeader title="Registration & Legal" />
               <Field label="Business Registration Number" colors={colors} hint="Company or charity registration number">
                 <TextInput style={[st.input, { color: colors.text }]} placeholder="e.g. C123456 or BN/2020/001234"
@@ -446,7 +399,6 @@ export default function BusinessVerificationScreen() {
 
           {step === 3 && (
             <>
-              <StepIntro title="Contact information" subtitle="Give reviewers a reliable way to reach your organization." colors={colors} />
               <SectionHeader title="Business Contact" />
               <Field label="Business Phone" required colors={colors}>
                 <View style={[st.phoneRow, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}>
@@ -512,7 +464,6 @@ export default function BusinessVerificationScreen() {
 
           {step === 4 && (
             <>
-              <StepIntro title="Show your presence" subtitle="Share the details that help our team understand your organization's impact." colors={colors} />
               <SectionHeader title="Notable Presence" />
               <Field label="Describe your organization and why it qualifies" required colors={colors}>
                 <TextInput style={[st.input, st.textarea, { color: colors.text }]}
@@ -563,7 +514,7 @@ export default function BusinessVerificationScreen() {
               </Text>
             </>
           )}
-        </ScrollView>
+        </View>
         <View style={[st.stepFooter, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 12) }]}>
           <TouchableOpacity
             style={[st.backBtn, { borderColor: colors.border, opacity: step === 1 ? 0.45 : 1 }]}
@@ -713,15 +664,6 @@ function SectionHeader({ title, sub }: { title: string; sub?: string }) {
   );
 }
 
-function StepIntro({ title, subtitle, colors }: { title: string; subtitle: string; colors: any }) {
-  return (
-    <View style={st.stepIntro}>
-      <Text style={[st.stepTitle, { color: colors.text }]}>{title}</Text>
-      <Text style={[st.stepSubtitle, { color: colors.textMuted }]}>{subtitle}</Text>
-    </View>
-  );
-}
-
 function Field({ label, required, hint, children, colors }: {
   label: string; required?: boolean; hint?: string; children: React.ReactNode; colors: any;
 }) {
@@ -741,17 +683,7 @@ const st = StyleSheet.create({
   root: { flex: 1 },
   navBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingBottom: 12 },
   navTitle: { fontSize: 17, fontFamily: "Inter_700Bold" },
-  progressWrap: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, borderBottomWidth: 0.5 },
-  progressTopRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
-  progressStep: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 0.8 },
-  progressName: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
-  progressTrack: { height: 5, borderRadius: 3, overflow: "hidden" },
-  progressFill: { height: "100%", borderRadius: 3 },
-  progressLabels: { flexDirection: "row", justifyContent: "space-between", marginTop: 6 },
-  progressLabel: { fontSize: 10, fontFamily: "Inter_500Medium" },
-  stepIntro: { gap: 5, marginBottom: 2 },
-  stepTitle: { fontSize: 22, fontFamily: "Inter_700Bold" },
-  stepSubtitle: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 20 },
+  formPage: { flex: 1, padding: 16, gap: 14 },
   bigTitle: { fontSize: 22, fontFamily: "Inter_700Bold", textAlign: "center" },
   bigSub: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 21 },
   dateBadge: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
