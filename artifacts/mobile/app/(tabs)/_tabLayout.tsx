@@ -175,7 +175,7 @@ export function CompactTabBar({
     { icon: "document-text", label: "Article", route: "/moments/create-article", color: accentColor },
   ];
 
-  const INACTIVE_ICON  = isDark ? "rgba(255,255,255,0.50)" : "rgba(0,0,0,0.38)";
+  const INACTIVE_ICON  = colors.textSecondary;
   const ACTIVE_ICON    = colors.accent;
   const PILL_BOTTOM    = Math.max(insets.bottom, 8) + 6;
   const PILL_H         = 56;
@@ -224,7 +224,7 @@ export function CompactTabBar({
         >
           {BOTTOM_TABS.map((tab) => {
             const focused   = active === tab.route;
-            const iconColor = focused ? colors.background : INACTIVE_ICON;
+            const iconColor = focused ? colors.bubbleText : INACTIVE_ICON;
 
             return (
               <TouchableOpacity

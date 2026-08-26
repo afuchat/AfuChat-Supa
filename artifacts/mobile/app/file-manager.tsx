@@ -81,12 +81,12 @@ function FileManagerBottomNav({
   onFilterChange: (filter: Filter) => void;
   onTransfer: () => void;
 }) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const bottom = Math.max(insets.bottom, 8) + 6;
   const activeColor = colors.accent;
-  const inactiveColor = isDark ? "rgba(255,255,255,0.52)" : "rgba(0,0,0,0.42)";
+  const inactiveColor = colors.textSecondary;
 
   const items: Array<{
     key: Filter | "transfer";
@@ -115,7 +115,8 @@ function FileManagerBottomNav({
           const active = item.key === "transfer"
             ? transferOpen
             : !transferOpen && filter === item.key;
-          const color = active ? colors.background : inactiveColor;
+          const iconColor = active ? colors.bubbleText : inactiveColor;
+          const labelColor = active ? activeColor : inactiveColor;
           return (
             <Pressable
               key={item.key}
@@ -141,9 +142,9 @@ function FileManagerBottomNav({
                     ]}
                   />
                 )}
-                <Ionicons name={item.icon} size={20} color={color} />
+                <Ionicons name={item.icon} size={21} color={iconColor} />
               </View>
-              <Text style={[styles.fmNavLabel, { color }]} numberOfLines={1}>
+              <Text style={[styles.fmNavLabel, { color: labelColor }]} numberOfLines={1}>
                 {t(item.label)}
               </Text>
             </Pressable>
