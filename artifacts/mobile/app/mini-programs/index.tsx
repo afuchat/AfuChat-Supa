@@ -8,7 +8,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { router } from "expo-router";
+import { safeRouter } from "@/lib/navUtils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
@@ -57,7 +57,7 @@ function ServiceIcon({ item }: { item: ServiceItem }) {
     <TouchableOpacity
       style={[styles.serviceItem, { width: ITEM_SIZE }]}
       activeOpacity={0.6}
-      onPress={() => router.push(item.route as any)}
+      onPress={() => safeRouter.replace(`/app/afuservices?section=${item.route.split("/").pop()}` as any)}
     >
       <View style={[styles.iconCircle, { backgroundColor: item.color + "15" }]}>
         <Ionicons name={item.icon} size={26} color={item.color} />
@@ -83,7 +83,7 @@ export default function PayAndServicesScreen() {
       <GlassHeader
         title="Pay and Services"
         right={
-          <TouchableOpacity hitSlop={12} onPress={() => router.push({ pathname: "/mini-programs/fee-details" as any, params: { service: "airtime", amount: "100", fee: "2", total: "102" } })}>
+          <TouchableOpacity hitSlop={12} onPress={() => safeRouter.replace({ pathname: "/app/afuservices", params: { section: "fee-details", service: "airtime", amount: "100", fee: "2", total: "102" } } as any)}>
             <Ionicons name="ellipsis-horizontal" size={22} color={colors.text} />
           </TouchableOpacity>
         }
@@ -91,13 +91,13 @@ export default function PayAndServicesScreen() {
 
       <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]} showsVerticalScrollIndicator={false}>
         <View style={[styles.topBanner, { backgroundColor: colors.accent }]}>
-          <TouchableOpacity style={styles.topBtn} activeOpacity={0.7} onPress={() => router.push("/mini-programs/transfer" as any)}>
+          <TouchableOpacity style={styles.topBtn} activeOpacity={0.7} onPress={() => safeRouter.replace("/app/afuservices?section=transfer" as any)}>
             <View style={styles.topIconWrap}>
               <Ionicons name="swap-horizontal" size={28} color="#fff" />
             </View>
             <Text style={styles.topLabel}>Money</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.topBtn} activeOpacity={0.7} onPress={() => router.push("/wallet" as any)}>
+          <TouchableOpacity style={styles.topBtn} activeOpacity={0.7} onPress={() => safeRouter.replace("/app/afupay" as any)}>
             <View style={styles.topIconWrap}>
               <Ionicons name="wallet" size={28} color="#fff" />
             </View>

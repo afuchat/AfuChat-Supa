@@ -113,7 +113,7 @@ export default function AfuSavedApp() {
 
   return (
     <View style={[s.root, { backgroundColor: colors.background }]}>
-      <View style={[s.headerBar, { borderBottomColor: colors.border }]}>
+      <View style={[s.headerBar, { borderBottomColor: colors.border, paddingTop: insets.top + 14 }]}>
         <Text style={[s.headerTitle, { color: colors.text }]}>Saved Posts</Text>
         <Text style={[s.headerCount, { color: colors.textMuted }]}>{saved.length} item{saved.length !== 1 ? "s" : ""}</Text>
       </View>
@@ -130,6 +130,7 @@ export default function AfuSavedApp() {
           renderItem={renderItem}
           contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32, gap: 12 }}
           showsVerticalScrollIndicator={false}
+          bounces={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
         />
       )}

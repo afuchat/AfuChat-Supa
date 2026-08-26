@@ -11,7 +11,8 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
+import { safeRouter } from "@/lib/navUtils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "@/lib/haptics";
@@ -370,11 +371,11 @@ export default function GiftsScreen() {
         sideWidth={isOwnProfile ? 132 : 52}
         right={isOwnProfile ? (
           <View style={styles.headerActions}>
-            <TouchableOpacity onPress={() => router.push("/gifts/marketplace")} style={styles.marketplaceBtn}>
+            <TouchableOpacity onPress={() => safeRouter.replace("/app/afugifts?section=marketplace" as any)} style={styles.marketplaceBtn}>
               <Ionicons name="storefront" size={14} color="#FF9500" />
               <Text style={styles.marketplaceBtnText}>Market</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push("/wallet")} style={styles.walletButton}>
+            <TouchableOpacity onPress={() => safeRouter.replace("/app/afupay" as any)} style={styles.walletButton}>
               <View style={styles.acoinBadge}>
                 <Ionicons name="diamond" size={14} color="#fff" />
                 <Text style={styles.acoinText}>{formatCompactAmount(profile?.acoin)}</Text>

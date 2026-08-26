@@ -2,9 +2,9 @@ import React from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { router } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
 import { usePathname } from "expo-router";
+import { safeRouter } from "@/lib/navUtils";
 
 export type AppNavItem = {
   key: string;
@@ -57,7 +57,7 @@ export default function AppBottomNav({ items, activeKey }: Props) {
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
               accessibilityLabel={item.label}
-              onPress={() => router.replace(item.href as any)}
+              onPress={() => safeRouter.replace(item.href as any)}
               style={({ pressed }) => [
                 styles.item,
                 { opacity: pressed ? 0.65 : 1 },

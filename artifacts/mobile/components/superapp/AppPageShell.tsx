@@ -125,7 +125,7 @@ export default function AppPageShell({ appId, activeKey, showNav = true, childre
   const { colors } = useTheme();
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={{ flex: 1, position: "relative" }}>{children}</View>
+      <View style={{ flex: 1, position: "relative", overflow: "hidden" }}>{children}</View>
       {showNav && <AppBottomNav items={getAppNav(appId)} activeKey={activeKey} />}
     </View>
   );

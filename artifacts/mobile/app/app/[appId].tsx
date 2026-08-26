@@ -13,6 +13,7 @@ import AfuIDApp from "@/modules/afuid";
 import AfuQRApp from "@/modules/afuqr";
 import AfuSavedApp from "@/modules/afusaved";
 import GamesScreen from "@/app/games";
+import PlayRouter from "@/app/games/play";
 import KampalaHustleGame from "@/app/games/lifesim";
 import LabScreen from "@/app/lab";
 import { SearchScreen } from "@/app/(tabs)/search";
@@ -26,6 +27,11 @@ import CartScreen from "@/app/shop/cart";
 import MyOrdersScreen from "@/app/shop/my-orders";
 import BillsScreen from "@/app/mini-programs/bills";
 import AirtimeScreen from "@/app/mini-programs/airtime";
+import DataBundlesScreen from "@/app/mini-programs/data-bundles";
+import FeeDetailsScreen from "@/app/mini-programs/fee-details";
+import HotelsScreen from "@/app/mini-programs/hotels";
+import TicketsScreen from "@/app/mini-programs/tickets";
+import TransferScreen from "@/app/mini-programs/transfer";
 
 const APP_IDS: FullAppId[] = [
   "afupay", "afumarket", "afugames", "afubusiness", "afusearch", "afulens",
@@ -62,6 +68,7 @@ function AppContent({
       return <AfuMarketApp initialScreen={section as any} />;
     case "afugames":
       if (section === "progress") return <KampalaHustleGame />;
+      if (section === "play") return <PlayRouter />;
       return <GamesScreen />;
     case "afubusiness":
       return <AfuBusinessApp initialScreen={section as any} />;
@@ -72,6 +79,11 @@ function AppContent({
     case "afuservices":
       if (section === "bills") return <BillsScreen />;
       if (section === "airtime") return <AirtimeScreen />;
+      if (section === "data-bundles") return <DataBundlesScreen />;
+      if (section === "fee-details") return <FeeDetailsScreen />;
+      if (section === "hotels") return <HotelsScreen />;
+      if (section === "tickets") return <TicketsScreen />;
+      if (section === "transfer") return <TransferScreen />;
       return <AfuServicesApp initialScreen={section as any} />;
     case "afufreelance":
       return <AfuFreelanceApp initialScreen={section as any} />;

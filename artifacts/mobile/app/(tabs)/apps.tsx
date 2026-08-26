@@ -428,6 +428,8 @@ export default function AppsScreen() {
           paddingTop: insets.top + 12,
           paddingBottom: insets.bottom + 100,
         }}
+        bounces={false}
+        alwaysBounceVertical={false}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Header ── */}
@@ -473,6 +475,8 @@ export default function AppsScreen() {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
+              bounces={false}
+              alwaysBounceHorizontal={false}
               contentContainerStyle={{ paddingHorizontal: H_PAD, paddingBottom: 4 }}
               decelerationRate="fast"
               snapToInterval={172}

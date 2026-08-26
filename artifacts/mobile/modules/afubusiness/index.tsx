@@ -362,7 +362,7 @@ export default function AfuBusinessApp({ initialScreen }: { initialScreen?: Scre
 
   function renderHeader(title: string, rightAction?: { label: string; onPress: () => void }) {
     return (
-      <View style={[st.subHeader, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+      <View style={[st.subHeader, { backgroundColor: colors.surface, borderBottomColor: colors.border, paddingTop: insets.top + 12 }]}>
         <Pressable onPress={() => setScreen("home")} hitSlop={12} style={st.backBtn}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>

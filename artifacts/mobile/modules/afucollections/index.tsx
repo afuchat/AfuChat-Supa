@@ -73,7 +73,7 @@ export default function AfuCollectionsApp() {
 
   return (
     <View style={[s.root, { backgroundColor: colors.background }]}>
-      <View style={[s.header, { borderBottomColor: colors.border }]}>
+      <View style={[s.header, { borderBottomColor: colors.border, paddingTop: insets.top + 14 }]}>
         <Text style={[s.headerTitle, { color: colors.text }]}>Collections</Text>
         <TouchableOpacity style={[s.addBtn, { backgroundColor: "#BF5AF2" }]} onPress={() => showAlert("New Collection", "Collection creation coming soon!")}>
           <Ionicons name="add" size={18} color="#fff" />
@@ -101,6 +101,7 @@ export default function AfuCollectionsApp() {
           columnWrapperStyle={{ gap: 10, paddingHorizontal: 16 }}
           contentContainerStyle={{ paddingTop: 12, paddingBottom: insets.bottom + 32, gap: 10 }}
           showsVerticalScrollIndicator={false}
+          bounces={false}
         />
       )}
     </View>

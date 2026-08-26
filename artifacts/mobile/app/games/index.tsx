@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { safeRouter } from "@/lib/navUtils";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { useTheme } from "@/hooks/useTheme";
@@ -54,7 +54,7 @@ export default function GamesScreen() {
         <Pressable
           onPressIn={onPressIn}
           onPressOut={onPressOut}
-          onPress={() => router.push({ pathname: "/games/play", params: { id: "kampala" } } as any)}
+          onPress={() => safeRouter.replace({ pathname: "/app/afugames", params: { section: "play", id: "kampala" } } as any)}
         >
           <Animated.View style={{ transform: [{ scale }] }}>
             <LinearGradient

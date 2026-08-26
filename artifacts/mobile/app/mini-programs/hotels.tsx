@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { showAlert } from "@/lib/alert";
 import { GlassHeader } from "@/components/ui/GlassHeader";
-import { router } from "expo-router";
+import { safeRouter } from "@/lib/navUtils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
@@ -62,7 +62,7 @@ export default function HotelsScreen() {
       if (result.success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         showAlert("Booked!", `${hotel.name} - ${room.name} room for ${numNights} night(s)`, [
-          { text: "OK", onPress: () => router.back() },
+          { text: "OK", onPress: () => safeRouter.back() },
         ]);
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -164,10 +164,10 @@ export default function HotelsScreen() {
             <View style={styles.feeRow}>
               <TouchableOpacity
                 style={styles.feeLink}
-                onPress={() => router.push({
-                  pathname: "/mini-programs/fee-details" as any,
-                  params: { service: "hotel_booking", amount: fee.subtotal.toString(), fee: fee.feeAmount.toString(), total: fee.total.toString() },
-                })}
+                onPress={() => safeRouter.replace({
+                  pathname: "/app/afuservices" as any,
+                  params: { section: "fee-details", service: "hotel_booking", amount: fee.subtotal.toString(), fee: fee.feeAmount.toString(), total: fee.total.toString() },
+                } as any)}
               >
                 <Text style={[styles.feeLinkText, { color: colors.accent }]}>Booking Fee ({fee.feePercent}%)</Text>
                 <Ionicons name="information-circle" size={14} color={colors.accent} />

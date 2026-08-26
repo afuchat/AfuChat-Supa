@@ -25,7 +25,6 @@ import { SUPABASE_EDGE_URL } from "@/lib/env";
 import { showAlert } from "@/lib/alert";
 import * as Haptics from "@/lib/haptics";
 import * as Clipboard from "expo-clipboard";
-import { router } from "expo-router";
 import QRCode from "@/components/ui/QRCode";
 import Colors from "@/constants/colors";
 
@@ -285,12 +284,12 @@ export default function AfuPayApp({
           { icon: "paper-plane" as const, label: "Send", color: "#FF9500", view: "send" as AppView },
           { icon: "qr-code" as const, label: "Receive", color: Colors.brand, view: "receive" as AppView },
           { icon: "swap-horizontal" as const, label: "Convert", color: "#7B61FF", view: "exchange" as AppView },
-          { icon: "receipt-outline" as const, label: "Requests", color: "#AF52DE", view: "requests" as AppView, onPress: () => router.push("/wallet/incoming-requests" as any) },
+          { icon: "receipt-outline" as const, label: "Requests", color: "#AF52DE", view: "requests" as AppView },
           { icon: "time-outline" as const, label: "History", color: "#FF6B35", view: "history" as AppView },
         ].map((a) => {
           const badge = a.label === "Requests" && pendingRequestCount > 0 ? pendingRequestCount : 0;
           return (
-            <TouchableOpacity key={a.label} style={s.actionItem} onPress={() => { Haptics.selectionAsync(); (a as any).onPress ? (a as any).onPress() : setView(a.view); }} activeOpacity={0.75}>
+            <TouchableOpacity key={a.label} style={s.actionItem} onPress={() => { Haptics.selectionAsync(); setView(a.view); }} activeOpacity={0.75}>
               <View style={{ position: "relative" }}>
                 <View style={[s.actionIcon, { backgroundColor: a.color + "18" }]}>
                   <Ionicons name={a.icon} size={22} color={a.color} />

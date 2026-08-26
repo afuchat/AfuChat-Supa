@@ -190,6 +190,9 @@ function AppNavigationStack() {
       <Stack.Screen name="welcome"    options={{ animation: "slide_from_right", gestureEnabled: false }} />
       <Stack.Screen name="(auth)"     options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="(tabs)"     options={{ animation: "slide_from_right" }} />
+      {/* Product surfaces own their internal navigation. Avoid a second native
+          slide/gesture on every product tab change, which feels like a bounce. */}
+      <Stack.Screen name="app/[appId]" options={{ animation: "none", gestureEnabled: false }} />
       <Stack.Screen name="+not-found" />
     </Stack>
   );

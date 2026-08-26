@@ -204,7 +204,7 @@ export default function AfuFreelanceApp({ initialScreen }: { initialScreen?: Scr
   if (screen === "post-gig") {
     return (
       <KeyboardAvoidingView style={[s.root, { backgroundColor: colors.background }]} behavior="height">
-        <View style={[s.subHeader, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <View style={[s.subHeader, { backgroundColor: colors.surface, borderBottomColor: colors.border, paddingTop: insets.top + 12 }]}>
           <Pressable onPress={() => setScreen("browse")} hitSlop={12} style={s.backBtn}>
             <Ionicons name="chevron-back" size={22} color={colors.text} />
           </Pressable>
@@ -276,7 +276,7 @@ export default function AfuFreelanceApp({ initialScreen }: { initialScreen?: Scr
     const own = g.seller_id === user?.id;
     return (
       <View style={[s.root, { backgroundColor: colors.background }]}>
-        <View style={[s.subHeader, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <View style={[s.subHeader, { backgroundColor: colors.surface, borderBottomColor: colors.border, paddingTop: insets.top + 12 }]}>
           <Pressable onPress={() => setScreen("browse")} hitSlop={12} style={s.backBtn}>
             <Ionicons name="chevron-back" size={22} color={colors.text} />
           </Pressable>
@@ -404,7 +404,7 @@ export default function AfuFreelanceApp({ initialScreen }: { initialScreen?: Scr
   return (
     <View style={[s.root, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <LinearGradient colors={["#0A1628", "#0F2040"]} style={s.hero}>
+      <LinearGradient colors={["#0A1628", "#0F2040"]} style={[s.hero, { paddingTop: insets.top + 20 }]}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <View>
             <Text style={s.heroH1}>AfuFreelance</Text>

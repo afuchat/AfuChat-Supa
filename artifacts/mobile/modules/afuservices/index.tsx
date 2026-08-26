@@ -126,7 +126,7 @@ export default function AfuServicesApp({ initialScreen }: { initialScreen?: Scre
         style={[s.root, { backgroundColor: colors.background }]}
         behavior={undefined}
       >
-        <View style={[s.payHeader, { borderBottomColor: colors.border }]}>
+         <View style={[s.payHeader, { borderBottomColor: colors.border, paddingTop: insets.top + 12 }]}>
           <TouchableOpacity style={s.backBtn} onPress={() => setScreen("list")}>
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </TouchableOpacity>
@@ -234,7 +234,7 @@ export default function AfuServicesApp({ initialScreen }: { initialScreen?: Scre
   return (
     <ScrollView
       style={[s.root, { backgroundColor: colors.background }]}
-      contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+       contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 32 }}
       showsVerticalScrollIndicator={false}
     >
       <LinearGradient colors={["#1A0A2E", "#0D0517"]} style={s.hero}>

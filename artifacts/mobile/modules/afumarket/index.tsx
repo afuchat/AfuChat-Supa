@@ -14,12 +14,12 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
+import { safeRouter } from "@/lib/navUtils";
 import { supabase } from "@/lib/supabase";
 import { formatShopAcoin, addToCart, getOrCreateCart } from "@/lib/shop";
 import { Avatar } from "@/components/ui/Avatar";
@@ -326,14 +326,14 @@ export default function AfuMarketApp({ initialScreen }: { initialScreen?: Screen
   const header = (
     <>
       {/* Top bar */}
-      <View style={[s.topBar, { borderBottomColor: colors.border }]}>
+       <View style={[s.topBar, { borderBottomColor: colors.border, paddingTop: insets.top + 14 }]}>
         <View>
           <Text style={[s.topTitle, { color: colors.text }]}>AfuMarket</Text>
           <Text style={[s.topSub, { color: colors.textMuted }]}>Shop from verified stores</Text>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <TouchableOpacity
-            onPress={() => router.push("/shop/my-orders" as any)}
+             onPress={() => safeRouter.replace("/app/afumarket?section=orders" as any)}
             style={[s.cartBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
           >
             <Ionicons name="receipt-outline" size={20} color={colors.text} />

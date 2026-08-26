@@ -113,7 +113,7 @@ export default function AfuEventsApp({ initialTab }: { initialTab?: "upcoming" |
 
   return (
     <View style={[s.root, { backgroundColor: colors.background }]}>
-      <View style={[s.header, { borderBottomColor: colors.border }]}>
+        <View style={[s.header, { borderBottomColor: colors.border, paddingTop: insets.top + 14 }]}>
         <Text style={[s.headerTitle, { color: colors.text }]}>Events</Text>
         <TouchableOpacity style={[s.createBtn, { backgroundColor: "#FF9500" }]} onPress={() => showAlert("Create Event", "Event creation coming soon!")}>
           <Ionicons name="add" size={18} color="#fff" />
@@ -143,6 +143,7 @@ export default function AfuEventsApp({ initialTab }: { initialTab?: "upcoming" |
           renderItem={renderEvent}
           contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32, gap: 12 }}
           showsVerticalScrollIndicator={false}
+          bounces={false}
         />
       )}
     </View>

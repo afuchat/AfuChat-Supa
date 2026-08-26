@@ -12,7 +12,6 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "@/lib/haptics";
@@ -21,6 +20,7 @@ import { supabase } from "@/lib/supabase";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
+import { safeRouter } from "@/lib/navUtils";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import Colors from "@/constants/colors";
 import { showAlert } from "@/lib/alert";
@@ -329,7 +329,7 @@ export default function GiftMarketplaceScreen() {
         title="Gift Marketplace"
         sideWidth={76}
         right={
-          <TouchableOpacity onPress={() => router.push("/wallet")} style={styles.walletButton}>
+          <TouchableOpacity onPress={() => safeRouter.replace("/app/afupay" as any)} style={styles.walletButton}>
             <View style={styles.acoinBadge}>
               <Ionicons name="diamond" size={14} color="#fff" />
               <Text style={styles.acoinText}>{formatCompactAmount(profile?.acoin)}</Text>

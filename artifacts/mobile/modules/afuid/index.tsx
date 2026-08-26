@@ -209,7 +209,7 @@ export default function AfuIDApp() {
       showsVerticalScrollIndicator={false}
     >
       {/* TITLE */}
-      <View style={[r.titleRow, { paddingTop: 20 }]}>
+      <View style={[r.titleRow, { paddingTop: insets.top + 20 }]}>
         <View>
           <Text style={[r.pageTitle, { color: colors.text }]}>Digital ID</Text>
           <Text style={[r.pageSub, { color: colors.textMuted }]}>Your verifiable AfuChat identity</Text>

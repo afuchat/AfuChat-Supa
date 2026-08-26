@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { showAlert } from "@/lib/alert";
 import { GlassHeader } from "@/components/ui/GlassHeader";
-import { router } from "expo-router";
+import { safeRouter } from "@/lib/navUtils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
@@ -58,7 +58,7 @@ export default function TicketsScreen() {
       if (result.success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         showAlert("Ticket Purchased!", `${quantity}× ${ticket.name} for ${event.name}`, [
-          { text: "OK", onPress: () => router.back() },
+          { text: "OK", onPress: () => safeRouter.back() },
         ]);
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -147,10 +147,10 @@ export default function TicketsScreen() {
             <View style={styles.feeRow}>
               <TouchableOpacity
                 style={styles.feeLink}
-                onPress={() => router.push({
-                  pathname: "/mini-programs/fee-details" as any,
-                  params: { service: "event_ticket", amount: fee.subtotal.toString(), fee: fee.feeAmount.toString(), total: fee.total.toString() },
-                })}
+                onPress={() => safeRouter.replace({
+                  pathname: "/app/afuservices" as any,
+                  params: { section: "fee-details", service: "event_ticket", amount: fee.subtotal.toString(), fee: fee.feeAmount.toString(), total: fee.total.toString() },
+                } as any)}
               >
                 <Text style={[styles.feeLinkText, { color: colors.accent }]}>Service Fee ({fee.feePercent}%)</Text>
                 <Ionicons name="information-circle" size={14} color={colors.accent} />
