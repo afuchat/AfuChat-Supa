@@ -249,6 +249,7 @@ export default function ChatInfoScreen() {
   const isGroup   = meta?.is_group   ?? isGroupParam   === "1";
   const isChannel = meta?.is_channel ?? isChannelParam === "1";
   const isDM      = !isGroup && !isChannel;
+  const isChannelOwner = isChannel && meta?.channel_owner_id === user?.id;
   const otherId   = meta?.other_id   ?? otherIdParam ?? null;
 
   const displayName = meta
@@ -707,7 +708,7 @@ export default function ChatInfoScreen() {
                     accessibilityLabel={`Copy channel username @${meta.channel_handle}`}
                   >
                     <Text style={[s.bioText, { color: colors.text }]}>@{meta.channel_handle}</Text>
-                    <Text style={[s.bioLabel, { color: colors.textMuted }]}>Username · Tap to copy</Text>
+                    <Text style={[s.bioLabel, { color: colors.textMuted }]}>Username</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => setShowChannelQr((visible) => !visible)}
@@ -747,6 +748,25 @@ export default function ChatInfoScreen() {
               </>
             ) : null}
           </InfoCard>
+
+          {isChannelOwner && (
+            <InfoCard colors={colors}>
+              <TouchableOpacity
+                style={s.settingsRow}
+                onPress={() => router.push({ pathname: "/group/[id]", params: { id } } as any)}
+                activeOpacity={0.65}
+                accessibilityRole="button"
+                accessibilityLabel="Edit channel"
+              >
+                <Ionicons name="create-outline" size={20} color={BRAND} />
+                <View style={s.editChannelCopy}>
+                  <Text style={[s.settingsLabel, { color: colors.text }]}>Edit Channel</Text>
+                  <Text style={[s.editChannelHint, { color: colors.textMuted }]}>Photo, name, description and members</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+              </TouchableOpacity>
+            </InfoCard>
+          )}
 
           {/* Stats */}
           <InfoCard colors={colors}>
@@ -1012,6 +1032,15 @@ const s = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontFamily: "Inter_500Medium",
+  },
+  editChannelCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  editChannelHint: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    marginTop: 2,
   },
   infoRow: {
     flexDirection: "row",
