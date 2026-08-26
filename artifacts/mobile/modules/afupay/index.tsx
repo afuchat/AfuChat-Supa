@@ -28,8 +28,9 @@ import * as Haptics from "@/lib/haptics";
 import * as Clipboard from "expo-clipboard";
 import QRCode from "@/components/ui/QRCode";
 import Colors from "@/constants/colors";
+import AfuServicesApp from "@/modules/afuservices";
 
-type AppView = "home" | "history" | "topup" | "send" | "receive" | "exchange" | "requests";
+type AppView = "home" | "history" | "topup" | "send" | "receive" | "exchange" | "requests" | "services";
 type TxFilter = "all" | "acoin" | "nexa" | "gifts";
 
 type Tx = {
@@ -184,7 +185,7 @@ export default function AfuPayApp({
   const { colors } = useTheme();
   const { user, profile, refreshProfile } = useAuth();
   const insets = useSafeAreaInsets();
-  const [view, setView] = useState<AppView>("home");
+  const [view, setView] = useState<AppView>(() => initialRecipientId ? "send" : initialView ?? "home");
   const [transactions, setTransactions] = useState<Tx[]>([]);
   const [txLoading, setTxLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -289,6 +290,7 @@ export default function AfuPayApp({
   if (view === "receive") return <ReceiveView colors={colors} insets={insets} profile={profile} onBack={() => setView("home")} />;
   if (view === "exchange") return <ExchangeView colors={colors} insets={insets} user={user} profile={profile} currSettings={currSettings} onBack={() => setView("home")} onSuccess={() => { loadTransactions(); refreshProfile?.(); setView("home"); }} />;
   if (view === "requests") return <RequestsView colors={colors} insets={insets} user={user} onBack={() => setView("home")} />;
+  if (view === "services") return <AfuServicesApp embedded onBack={() => setView("home")} />;
 
   const recentTx = transactions.slice(0, 6);
 

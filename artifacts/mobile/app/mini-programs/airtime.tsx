@@ -138,7 +138,7 @@ export default function AirtimeScreen() {
               <TouchableOpacity
                 style={styles.feeLink}
                 onPress={() => safeRouter.replace({
-                  pathname: "/app/afuservices" as any,
+                  pathname: "/app/afupay" as any,
                   params: { section: "fee-details", service: "airtime", amount: fee.subtotal.toString(), fee: fee.feeAmount.toString(), total: fee.total.toString() },
                 } as any)}
               >

@@ -4,7 +4,6 @@ import AppPageShell, { normalizeAppNavKey, type FullAppId } from "@/components/s
 import AfuPayApp from "@/modules/afupay";
 import AfuMarketApp from "@/modules/afumarket";
 import AfuBusinessApp from "@/modules/afubusiness";
-import AfuServicesApp from "@/modules/afuservices";
 import AfuFreelanceApp from "@/modules/afufreelance";
 import AfuCollectionsApp from "@/modules/afucollections";
 import AfuEventsApp from "@/modules/afuevents";
@@ -34,7 +33,7 @@ import TransferScreen from "@/app/mini-programs/transfer";
 
 const APP_IDS: FullAppId[] = [
   "afupay", "afumarket", "afugames", "afubusiness", "afusearch", "afulens",
-  "afuservices", "afufreelance", "afufiles", "afugifts", "afumusic",
+  "afufreelance", "afufiles", "afugifts", "afumusic",
   "afuevents", "afumatch", "afucollections", "afuusernames",
   "afuqr", "afusaved",
 ];
@@ -54,6 +53,13 @@ function AppContent({
 }) {
   switch (appId) {
     case "afupay":
+      if (section === "bills") return <BillsScreen />;
+      if (section === "airtime") return <AirtimeScreen />;
+      if (section === "data-bundles") return <DataBundlesScreen />;
+      if (section === "fee-details") return <FeeDetailsScreen />;
+      if (section === "hotels") return <HotelsScreen />;
+      if (section === "tickets") return <TicketsScreen />;
+      if (section === "transfer") return <TransferScreen />;
       return (
         <AfuPayApp
           initialView={section as any}
@@ -75,15 +81,6 @@ function AppContent({
       return <SearchScreen initialTab={section as any} />;
     case "afulens":
       return <LabScreen />;
-    case "afuservices":
-      if (section === "bills") return <BillsScreen />;
-      if (section === "airtime") return <AirtimeScreen />;
-      if (section === "data-bundles") return <DataBundlesScreen />;
-      if (section === "fee-details") return <FeeDetailsScreen />;
-      if (section === "hotels") return <HotelsScreen />;
-      if (section === "tickets") return <TicketsScreen />;
-      if (section === "transfer") return <TransferScreen />;
-      return <AfuServicesApp initialScreen={section as any} />;
     case "afufreelance":
       return <AfuFreelanceApp initialScreen={section as any} />;
     case "afufiles":

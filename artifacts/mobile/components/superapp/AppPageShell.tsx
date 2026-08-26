@@ -10,7 +10,6 @@ export type FullAppId =
   | "afubusiness"
   | "afusearch"
   | "afulens"
-  | "afuservices"
   | "afufreelance"
   | "afufiles"
   | "afugifts"
@@ -28,6 +27,7 @@ const NAV: Record<FullAppId, AppNavItem[]> = {
     { key: "history", label: "Activity", icon: "receipt-outline", href: "/app/afupay?section=history" },
     { key: "topup", label: "Top up", icon: "add-circle-outline", href: "/app/afupay?section=topup" },
     { key: "requests", label: "Requests", icon: "arrow-down-circle-outline", href: "/app/afupay?section=requests" },
+    { key: "services", label: "Services", icon: "grid-outline", href: "/app/afupay?section=services" },
   ],
   afumarket: [
     { key: "browse", label: "Browse", icon: "storefront-outline", href: "/app/afumarket" },
@@ -53,12 +53,6 @@ const NAV: Record<FullAppId, AppNavItem[]> = {
   ],
   afulens: [
     { key: "scan", label: "Scan", icon: "scan-outline", href: "/app/afulens" },
-  ],
-  afuservices: [
-    { key: "services", label: "Services", icon: "grid-outline", href: "/app/afuservices" },
-    { key: "bills", label: "Bills", icon: "receipt-outline", href: "/app/afuservices?section=bills" },
-    { key: "airtime", label: "Airtime", icon: "phone-portrait-outline", href: "/app/afuservices?section=airtime" },
-    { key: "wallet", label: "Wallet", icon: "wallet-outline", href: "/app/afupay" },
   ],
   afufreelance: [
     { key: "browse", label: "Browse", icon: "search-outline", href: "/app/afufreelance" },

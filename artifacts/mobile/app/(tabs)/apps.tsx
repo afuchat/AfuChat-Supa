@@ -118,15 +118,6 @@ const CATEGORIES: Category[] = [
     title: "Finance",
     apps: [
       {
-        id: "afuservices",
-        label: "Services",
-        icon: "card",
-        gradient: ["#AF52DE", "#BF5AF2"],
-        route: "/mini-programs",
-        miniApp: true,
-        featuredSub: "Pay bills, top up, and access local services.",
-      },
-      {
         id: "afufreelance",
         label: "Freelance",
         icon: "briefcase",

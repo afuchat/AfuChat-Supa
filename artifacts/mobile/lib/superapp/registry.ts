@@ -58,15 +58,6 @@ export const SUPER_APP_REGISTRY: ModuleManifest[] = [
     keepAlive: false,
   },
   {
-    id: "afuservices",
-    name: "AfuServices",
-    description: "Pay bills, top up airtime, and access local services.",
-    version: "1.0.0",
-    icon: "card",
-    gradient: ["#AF52DE", "#BF5AF2"] as const,
-    keepAlive: false,
-  },
-  {
     id: "afufreelance",
     name: "AfuFreelance",
     description: "Hire talent or find work on AfuFreelance.",

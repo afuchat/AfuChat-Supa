@@ -51,7 +51,15 @@ const CATEGORY_FILTERS = ["All", ...Array.from(new Set(SERVICES.map((s) => s.cat
 
 type Screen = "list" | "pay";
 
-export default function AfuServicesApp({ initialScreen }: { initialScreen?: Screen }) {
+export default function AfuServicesApp({
+  initialScreen,
+  embedded = false,
+  onBack,
+}: {
+  initialScreen?: Screen;
+  embedded?: boolean;
+  onBack?: () => void;
+}) {
   const { colors } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
@@ -234,9 +242,21 @@ export default function AfuServicesApp({ initialScreen }: { initialScreen?: Scre
   return (
     <ScrollView
       style={[s.root, { backgroundColor: colors.background }]}
-       contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 32 }}
+       contentContainerStyle={{ paddingTop: embedded ? 0 : insets.top + 12, paddingBottom: insets.bottom + 32 }}
       showsVerticalScrollIndicator={false}
     >
+      {embedded && (
+        <View style={[s.embeddedHeader, { backgroundColor: colors.surface, borderBottomColor: colors.border, paddingTop: Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top }]}>
+          <TouchableOpacity style={s.embeddedBackBtn} onPress={onBack} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back to wallet">
+            <Ionicons name="chevron-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <View>
+            <Text style={[s.embeddedTitle, { color: colors.text }]}>Services</Text>
+            <Text style={[s.embeddedSubtitle, { color: colors.textMuted }]}>Pay from your wallet</Text>
+          </View>
+          <View style={s.embeddedBackBtn} />
+        </View>
+      )}
       <LinearGradient colors={["#1A0A2E", "#0D0517"]} style={s.hero}>
         <Ionicons name="card" size={32} color="#AF52DE" />
         <Text style={s.heroTitle}>AfuServices</Text>
@@ -289,6 +309,10 @@ const s = StyleSheet.create({
   serviceLabel: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   serviceDesc: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 17 },
   payHeader: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 14 },
+  embeddedHeader: { minHeight: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12, borderBottomWidth: 0.5 },
+  embeddedBackBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
+  embeddedTitle: { fontSize: 18, fontFamily: "Inter_700Bold", textAlign: "center" },
+  embeddedSubtitle: { fontSize: 11, fontFamily: "Inter_500Medium", textAlign: "center", marginTop: 1 },
   backBtn: { padding: 4 },
   payHeaderIcon: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   payHeaderTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },

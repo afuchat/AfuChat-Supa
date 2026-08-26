@@ -112,7 +112,7 @@ export default function TransferScreen() {
               <TouchableOpacity
                 style={styles.feeLink}
                 onPress={() => safeRouter.replace({
-                  pathname: "/app/afuservices" as any,
+                  pathname: "/app/afupay" as any,
                   params: { section: "fee-details", service: "money_transfer", amount: fee.subtotal.toString(), fee: fee.feeAmount.toString(), total: fee.total.toString() },
                 } as any)}
               >

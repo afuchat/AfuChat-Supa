@@ -134,7 +134,7 @@ export default function DataBundlesScreen() {
               <TouchableOpacity
                 style={styles.feeLink}
                 onPress={() => safeRouter.replace({
-                  pathname: "/app/afuservices" as any,
+                  pathname: "/app/afupay" as any,
                   params: { section: "fee-details", service: "data_bundle", amount: fee.subtotal.toString(), fee: fee.feeAmount.toString(), total: fee.total.toString() },
                 } as any)}
               >
