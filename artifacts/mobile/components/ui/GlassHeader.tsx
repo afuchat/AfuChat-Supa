@@ -8,10 +8,12 @@ import {
   type ViewStyle,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import { safeRouter } from "@/lib/navUtils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
 import { T } from "@/constants/theme";
+import { GLASS, glassTokens } from "@/constants/glass";
 import { useLanguage } from "@/context/LanguageContext";
 
 export interface GlassHeaderProps {
@@ -24,6 +26,7 @@ export interface GlassHeaderProps {
   subtitle?: string;
   largeTitle?: boolean;
   sideWidth?: number;
+  glassBackButton?: boolean;
 }
 
 export function GlassHeader({
@@ -36,10 +39,12 @@ export function GlassHeader({
   subtitle,
   largeTitle = false,
   sideWidth = 52,
+  glassBackButton = false,
 }: GlassHeaderProps) {
   const { colors, isDark } = useTheme();
   const { t, isRTL } = useLanguage();
   const insets = useSafeAreaInsets();
+  const glass = glassTokens(isDark);
 
   function handleBack() {
     if (onBack) { onBack(); return; }
@@ -71,7 +76,31 @@ export function GlassHeader({
         {/* Left — back button */}
         <View style={[styles.side, { width: sideWidth }]}>
           {showBack && (
-            <View style={styles.backBtnClip}>
+            <View
+              style={[
+                styles.backBtnClip,
+                glassBackButton && styles.glassBackBtnClip,
+                glassBackButton && {
+                  borderColor: glass.border,
+                  ...glass.shadowSoft,
+                },
+              ]}
+            >
+              {glassBackButton && (
+                <>
+                  <BlurView
+                    intensity={Platform.OS === "web" ? GLASS.blur.medium : GLASS.blur.heavy}
+                    tint={isDark ? "dark" : "light"}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View
+                    style={[
+                      StyleSheet.absoluteFill,
+                      { backgroundColor: glass.fillSubtle },
+                    ]}
+                  />
+                </>
+              )}
               <Pressable
                 android_ripple={backRipple}
                 style={styles.backBtn}
@@ -146,6 +175,9 @@ const styles = StyleSheet.create({
   backBtnClip: {
     borderRadius: T.radius.pill,
     overflow: "hidden",
+  },
+  glassBackBtnClip: {
+    borderWidth: 1,
   },
   backBtn: {
     width: 44,
