@@ -768,7 +768,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     const items: ChatItem[] = (chatRows as any[]).map((row: any): ChatItem => {
       if (row.kind === "channel_broadcast") {
         return {
-          id: row.chat_id,
+          id: row.channel_id || row.chat_id,
           channel_id: row.channel_id,
           kind: "channel_broadcast" as const,
           name: row.chat_name || "Channel",
@@ -823,7 +823,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         muted_until: row.is_muted ? (row.muted_until || null) : undefined,
       };
     }).filter((item) =>
-      item.kind === "channel_broadcast" ||
       item.is_group ||
       item.is_channel ||
       Boolean(item.other_id)
@@ -833,7 +832,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     // instead of resurfacing the old auto-created version.
     const regularItems = items.filter(
       (item) =>
-        item.kind !== "channel_broadcast" &&
         !((!item.is_group && !item.is_channel && item.other_id === user.id))
     );
 
@@ -883,12 +881,10 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     // ── Load local unsent drafts ──────────────────────────────────────────────
     // Read all draft keys at once so we can (a) show "Draft:" labels and
     // (b) sort drafted chats above non-drafted ones.
-    const channelItems = items.filter((item) => item.kind === "channel_broadcast");
     const notesItem = localNotes ? localNotesToChatItem(localNotes) : null;
     const combined = [
       ...regularItems,
       ...(notesItem ? [notesItem] : []),
-      ...channelItems,
     ];
     const allCombinedIds = combined.map((c) => c.id).filter(Boolean);
     let draftMap: Record<string, string> = {};
@@ -994,10 +990,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
     ) => {
       if (action === "open") {
         Haptics.selectionAsync();
-        if (item.kind === "channel_broadcast" && item.channel_id) {
-          safeRouter.push({ pathname: "/channel/[id]", params: { id: item.channel_id } } as any);
-          return;
-        }
         let chatId = item.id;
         safeRouter.push({
           pathname: "/chat/[id]",
@@ -1015,9 +1007,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         });
         return;
       }
-      // Broadcast-only channel rows are not real chat records. Local Notes
-      // uses the same user-controlled pin/archive/delete actions as any chat.
-      if (item.kind === "channel_broadcast") return;
       if (action === "togglePin") {
         const next = !item.is_pinned;
         setChats((prev) =>
@@ -1089,11 +1078,11 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         return;
       }
       if (action === "delete") {
-        const isGroup = item.is_group && !item.is_channel;
+        const isGroup = item.is_group || item.is_channel;
         const ok = await confirmAlert(
-          isGroup ? "Leave group?" : "Delete chat?",
+          isGroup ? (item.is_channel ? "Leave channel?" : "Leave group?") : "Delete chat?",
           isGroup
-            ? "You will leave this group. You can be added back by an admin."
+            ? `You will leave this ${item.is_channel ? "channel" : "group"}. You can join again later.`
             : "This will permanently delete this conversation for everyone.",
           { confirmText: isGroup ? "Leave" : "Delete", destructive: true },
         );
@@ -1114,6 +1103,12 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
           if (error) {
             showAlert("Couldn't leave group", error.message);
             loadChats(true);
+          } else if (item.is_channel) {
+            await supabase
+              .from("channel_subscriptions")
+              .delete()
+              .eq("channel_id", item.id)
+              .eq("user_id", user!.id);
           }
         } else {
           const { error } = await supabase
@@ -1170,10 +1165,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
       markChatVisited(item.id);
       setChats((prev) => prev.map((c) => c.id === item.id ? { ...c, unread_count: 0 } : c));
       clearUnread(item.id).catch(() => {});
-    }
-    if (item.kind === "channel_broadcast" && item.channel_id) {
-      safeRouter.push({ pathname: "/channel/[id]", params: { id: item.channel_id } } as any);
-      return;
     }
     if (onOpenChat) { onOpenChat(item, item.id); return; }
     safeRouter.push({

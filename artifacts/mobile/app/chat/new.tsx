@@ -556,7 +556,7 @@ export default function NewChatScreen() {
                 groups={groups}
                 channels={channels}
                 onGroupPress={(g) => router.push({ pathname: "/chat/[id]", params: { id: g.id } } as any)}
-                onChannelPress={(c) => router.push({ pathname: "/channel/[id]", params: { id: c.id } } as any)}
+                onChannelPress={(c) => router.push({ pathname: "/chat/[id]", params: { id: c.id, isChannel: "true", chatName: c.name, chatAvatar: c.avatar_url || "" } } as any)}
                 onNotesPress={openMyNotes}
               />
             }

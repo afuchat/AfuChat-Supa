@@ -212,7 +212,7 @@ export async function handleIncomingUrl(url: string | null | undefined): Promise
       if (resolvedId) return { type: "navigate", path: "/article/[id]", params: { id: resolvedId } };
     }
 
-    // 2e. /channel/:id -- channel page
+    // 2e. /channel/:id -- legacy channel link; the route bridges into chat
     if (segments.length === 2 && segments[0] === "channel" && isUUID(segments[1])) {
       return { type: "navigate", path: "/channel/[id]", params: { id: segments[1] } };
     }

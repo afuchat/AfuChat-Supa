@@ -47,6 +47,7 @@ type Group = {
 type Channel = {
   id: string;
   name: string;
+  handle: string | null;
   description: string | null;
   avatar_url: string | null;
   subscriber_count: number;
@@ -132,7 +133,7 @@ export default function CommunitiesScreen() {
         supabase
           .from("channels")
           .select(
-            "id, name, description, avatar_url, subscriber_count, is_verified, is_public, profiles!channels_owner_id_fkey(display_name, handle)"
+            "id, name, handle, description, avatar_url, subscriber_count, is_verified, is_public, profiles!channels_owner_id_fkey(display_name, handle)"
           )
           .eq("is_public", true)
           .order("subscriber_count", { ascending: false })
@@ -143,6 +144,7 @@ export default function CommunitiesScreen() {
       return (channelsData || []).map((c: any) => ({
         id: c.id,
         name: c.name || "Unnamed",
+        handle: c.handle || null,
         description: c.description || null,
         avatar_url: c.avatar_url || null,
         subscriber_count: c.subscriber_count ?? 0,
@@ -237,14 +239,22 @@ export default function CommunitiesScreen() {
   async function subscribeOrOpenChannel(item: Channel) {
     if (!user) return;
     if (item.am_subscriber) {
-      safeRouter.push({ pathname: "/channel/[id]", params: { id: item.id } } as any);
+      safeRouter.push({ pathname: "/chat/[id]", params: { id: item.id, isChannel: "true", chatName: item.name, chatAvatar: item.avatar_url || "" } } as any);
       return;
     }
     if (!isOnline()) { showAlert("No internet", "An internet connection is required to subscribe."); return; }
     setJoiningId(item.id);
-    await supabase
+    const { error: memberError } = await supabase
+      .from("chat_members")
+      .upsert({ chat_id: item.id, user_id: user.id, is_admin: false }, { onConflict: "chat_id,user_id" });
+    const { error: subscriptionError } = await supabase
       .from("channel_subscriptions")
       .upsert({ channel_id: item.id, user_id: user.id }, { onConflict: "channel_id,user_id" });
+    if (memberError || subscriptionError) {
+      setJoiningId(null);
+      showAlert("Couldn't join channel", "Please try again.");
+      return;
+    }
     await supabase.rpc("increment_channel_subscriber", { p_channel_id: item.id });
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     // Optimistic update + cache write
@@ -256,7 +266,7 @@ export default function CommunitiesScreen() {
       return updated;
     });
     setJoiningId(null);
-    safeRouter.push({ pathname: "/channel/[id]", params: { id: item.id } } as any);
+    safeRouter.push({ pathname: "/chat/[id]", params: { id: item.id, isChannel: "true", chatName: item.name, chatAvatar: item.avatar_url || "" } } as any);
   }
 
   function GroupCard({ item }: { item: Group }) {
@@ -319,7 +329,7 @@ export default function CommunitiesScreen() {
       <View>
         <TouchableOpacity
           style={[ss.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          onPress={() => safeRouter.push({ pathname: "/channel/[id]", params: { id: item.id } } as any)}
+          onPress={() => subscribeOrOpenChannel(item)}
           activeOpacity={0.75}
         >
           <View style={ss.cardAvatarWrap}>
@@ -348,6 +358,11 @@ export default function CommunitiesScreen() {
                 by @{item.owner.handle}
               </Text>
             )}
+            {item.handle ? (
+              <Text style={[ss.cardMeta, { color: PURPLE, marginBottom: 2 }]} numberOfLines={1}>
+                @{item.handle}
+              </Text>
+            ) : null}
             {item.description ? (
               <Text style={[ss.cardDesc, { color: colors.textMuted }]} numberOfLines={1}>{item.description}</Text>
             ) : null}

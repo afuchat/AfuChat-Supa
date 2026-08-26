@@ -44,6 +44,7 @@ type PublicGroup = {
 type PublicChannel = {
   id: string;
   name: string;
+  handle: string | null;
   description: string | null;
   avatar_url: string | null;
   subscriber_count: number;
@@ -143,7 +144,7 @@ export default function FindPeopleTab() {
         supabase.from("chat_members").select("chat_id").eq("user_id", user.id),
         supabase
           .from("channels")
-          .select("id, name, description, avatar_url, subscriber_count, is_verified, is_public")
+          .select("id, name, handle, description, avatar_url, subscriber_count, is_verified, is_public")
           .eq("is_public", true)
           .order("subscriber_count", { ascending: false })
           .limit(30),
@@ -204,6 +205,7 @@ export default function FindPeopleTab() {
         setChannels(((channelData ?? []) as any[]).map((channel) => ({
           id: channel.id,
           name: channel.name || "Unnamed channel",
+          handle: channel.handle || null,
           description: channel.description || null,
           avatar_url: channel.avatar_url || null,
           subscriber_count: Number(channel.subscriber_count || 0),
@@ -272,6 +274,7 @@ export default function FindPeopleTab() {
     return channels.filter((channel) =>
       !needle ||
       channel.name.toLowerCase().includes(needle) ||
+      (channel.handle || "").toLowerCase().includes(needle) ||
       (channel.description || "").toLowerCase().includes(needle)
     );
   }, [channels, query]);
@@ -301,18 +304,21 @@ export default function FindPeopleTab() {
   const joinChannel = useCallback(async (channel: PublicChannel) => {
     if (!user) return router.push("/(auth)/login" as any);
     if (channel.is_subscriber) {
-      return router.push({ pathname: "/channel/[id]", params: { id: channel.id } } as any);
+      return router.push({ pathname: "/chat/[id]", params: { id: channel.id, isChannel: "true", chatName: channel.name } } as any);
     }
     setJoiningId(channel.id);
+    const { error: memberError } = await supabase
+      .from("chat_members")
+      .upsert({ chat_id: channel.id, user_id: user.id, is_admin: false }, { onConflict: "chat_id,user_id" });
     const { error: joinError } = await supabase
       .from("channel_subscriptions")
       .upsert({ channel_id: channel.id, user_id: user.id }, { onConflict: "channel_id,user_id" });
-    if (!joinError) {
+    if (!memberError && !joinError) {
       await supabase.rpc("increment_channel_subscriber", { p_channel_id: channel.id });
       setChannels((current) => current.map((item) => item.id === channel.id
         ? { ...item, is_subscriber: true, subscriber_count: item.subscriber_count + 1 }
         : item));
-      router.push({ pathname: "/channel/[id]", params: { id: channel.id } } as any);
+      router.push({ pathname: "/chat/[id]", params: { id: channel.id, isChannel: "true", chatName: channel.name } } as any);
     } else {
       setError("Could not join that channel right now.");
     }
@@ -437,6 +443,9 @@ export default function FindPeopleTab() {
                         <Text style={[styles.communityName, { color: colors.text, flex: 1 }]} numberOfLines={1}>{channel.name}</Text>
                         {channel.is_verified && <Ionicons name="checkmark-circle" size={14} color="#8B5CF6" />}
                       </View>
+                      {channel.handle ? (
+                        <Text style={[styles.communityMeta, { color: colors.textMuted }]} numberOfLines={1}>@{channel.handle}</Text>
+                      ) : null}
                       <Text style={[styles.communityDescription, { color: colors.textMuted }]} numberOfLines={2}>
                         {channel.description || "Public channel"}
                       </Text>

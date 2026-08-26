@@ -90,7 +90,7 @@ type PersonResult  = { id:string; handle:string; display_name:string; avatar_url
 type OrgPageResult = { id:string; name:string; slug:string; logo_url:string|null; description:string|null; kind:"org" };
 type PostResult    = { id:string; content:string; image_url:string|null; author_id:string; author_handle:string; author_name:string; author_avatar:string|null; view_count:number; created_at:string; post_type:string; article_title:string|null };
 type VideoResult   = { id:string; content:string; video_url:string; image_url:string|null; author_id:string; author_handle:string; author_name:string; author_avatar:string|null; view_count:number; created_at:string; audio_name:string|null; duration_seconds:number|null };
-type ChannelResult = { id:string; name:string; description:string|null; avatar_url:string|null; subscriber_count:number; owner_handle:string|null; owner_name:string|null };
+type ChannelResult = { id:string; name:string; handle:string|null; description:string|null; avatar_url:string|null; subscriber_count:number; owner_handle:string|null; owner_name:string|null };
 type GroupResult   = { id:string; name:string; description:string|null; avatar_url:string|null; member_count:number };
 type EventResult   = { id:string; title:string; description:string|null; emoji:string; price:number; event_date:string; capacity:number; tickets_sold:number; category:string|null; creator_name:string; creator_handle:string };
 type GiftResult    = { id:string; name:string; emoji:string; base_xp_cost:number; rarity:string; description:string|null };
@@ -518,8 +518,8 @@ export function SearchScreen({ title = "Search" }: { title?: string } = {}) {
 
           wantsChannels
             ? supabase.from("channels")
-                .select("id, name, description, avatar_url, subscriber_count, owner_id, profiles!channels_owner_id_fkey(display_name, handle)")
-                .or(`name.ilike.${pat},description.ilike.${pat}`)
+                .select("id, name, handle, description, avatar_url, subscriber_count, owner_id, profiles!channels_owner_id_fkey(display_name, handle)")
+                .or(`name.ilike.${pat},handle.ilike.${pat},description.ilike.${pat}`)
                 .not("owner_id", "is", null)
                 .order("subscriber_count", { ascending: false })
                 .limit(all ? 4 : 20)
@@ -625,6 +625,7 @@ export function SearchScreen({ title = "Search" }: { title?: string } = {}) {
         return {
           id: ch.id,
           name: ch.name,
+          handle: ch.handle || null,
           description: ch.description || null,
           avatar_url: ch.avatar_url || null,
           subscriber_count: ch.subscriber_count || 0,
@@ -954,6 +955,7 @@ export function SearchScreen({ title = "Search" }: { title?: string } = {}) {
           </View>
           <View style={{ flex: 1, gap: 3 }}>
             <Text style={[ss.rowTitle, { color: colors.text }]} numberOfLines={1}>{ch.name}</Text>
+            {ch.handle ? <Text style={[ss.rowSub, { color: PURPLE }]} numberOfLines={1}>@{ch.handle}</Text> : null}
             {ch.owner_name
               ? <Text style={[ss.rowSub, { color: colors.textMuted }]} numberOfLines={1}>by {ch.owner_name}{ch.owner_handle ? ` @${ch.owner_handle}` : ""}</Text>
               : ch.description

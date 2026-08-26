@@ -39,6 +39,7 @@ export default function CreateChannelScreen() {
     return () => { show.remove(); hide.remove(); };
   }, []);
   const [channelName, setChannelName] = useState("");
+  const [channelHandle, setChannelHandle] = useState("");
   const [description, setDescription] = useState("");
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [isPublic, setIsPublic] = useState(true);
@@ -70,6 +71,15 @@ export default function CreateChannelScreen() {
     }
     if (!channelName.trim()) {
       showAlert("Channel name required", "Please enter a name for your channel.");
+      return;
+    }
+    const normalizedHandle = channelHandle.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+    if (isPublic && !normalizedHandle) {
+      showAlert("Username required", "Public channels need a username so people can find and share them.");
+      return;
+    }
+    if (normalizedHandle && normalizedHandle.length < 3) {
+      showAlert("Username too short", "Channel usernames must be at least 3 characters.");
       return;
     }
     if (!user) return;
@@ -119,6 +129,7 @@ export default function CreateChannelScreen() {
       .insert({
         name: channelName.trim(),
         description: description.trim() || null,
+        handle: normalizedHandle || null,
         avatar_url: avatarUrl,
         owner_id: user.id,
         is_public: isPublic,
@@ -133,6 +144,39 @@ export default function CreateChannelScreen() {
       return;
     }
 
+    const { error: chatError } = await supabase
+      .from("chats")
+      .insert({
+        id: channel.id,
+        name: channelName.trim(),
+        description: description.trim() || null,
+        avatar_url: avatarUrl,
+        is_group: false,
+        is_channel: true,
+        is_public: isPublic,
+        created_by: user.id,
+        user_id: user.id,
+      });
+
+    if (chatError) {
+      await supabase.from("channels").delete().eq("id", channel.id);
+      showAlert("Error", "Could not create the channel chat. Please try again.");
+      setCreating(false);
+      return;
+    }
+
+    const { error: memberError } = await supabase
+      .from("chat_members")
+      .insert({ chat_id: channel.id, user_id: user.id, is_admin: true });
+
+    if (memberError) {
+      await supabase.from("chats").delete().eq("id", channel.id);
+      await supabase.from("channels").delete().eq("id", channel.id);
+      showAlert("Error", "Could not finish setting up the channel.");
+      setCreating(false);
+      return;
+    }
+
     await supabase
       .from("channel_subscriptions")
       .insert({ channel_id: channel.id, user_id: user.id });
@@ -142,7 +186,7 @@ export default function CreateChannelScreen() {
       rewardXp("channel_created");
     } catch (_) {}
 
-    router.replace({ pathname: "/channel/[id]", params: { id: channel.id } });
+    router.replace({ pathname: "/chat/[id]", params: { id: channel.id, isChannel: "true", chatName: channelName.trim(), chatAvatar: avatarUrl || "" } });
     setCreating(false);
   }
 
@@ -192,6 +236,18 @@ export default function CreateChannelScreen() {
             value={channelName}
             onChangeText={setChannelName}
             autoFocus
+            returnKeyType="next"
+            onSubmitEditing={() => descRef.current?.focus()}
+          />
+          <TextInput
+            style={[styles.handleInput, { color: colors.text, borderBottomColor: PURPLE }]}
+            placeholder={isPublic ? "Channel username" : "Username (optional)"}
+            placeholderTextColor={colors.textMuted}
+            value={channelHandle}
+            onChangeText={(value) => setChannelHandle(value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 30))}
+            autoCapitalize="none"
+            autoCorrect={false}
+            maxLength={30}
             returnKeyType="next"
             onSubmitEditing={() => descRef.current?.focus()}
           />
@@ -304,6 +360,14 @@ const styles = StyleSheet.create({
     padding: 0,
     borderBottomWidth: 1.5,
     paddingBottom: 6,
+  },
+  handleInput: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    padding: 0,
+    paddingTop: 10,
+    paddingBottom: 5,
+    borderBottomWidth: 1,
   },
 
   descSection: {
