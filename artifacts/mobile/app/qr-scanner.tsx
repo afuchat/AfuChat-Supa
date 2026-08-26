@@ -51,8 +51,11 @@ type QRResult = {
 function parseQR(raw: string): QRResult {
   const s = raw.trim();
 
-  // AfuChat ID — native deep link OR universal web URL
-  if (s.startsWith("afuchat://id/") || /^https?:\/\/afuchat\.com\/id\/\d{8}/.test(s)) {
+  // AfuChat ID — native deep link OR universal web URL. Accept www,
+  // mixed-case hosts, and IDs shorter than eight digits (they are padded
+  // during lookup, matching the receive QR format).
+  if (/^afuchat:\/\/id\/\d{1,8}(?:[/?#]|$)/i.test(s) ||
+      /^https?:\/\/(?:www\.)?afuchat\.com\/id\/\d{1,8}(?:[/?#]|$)/i.test(s)) {
     return { raw, type: "afuchat_id", label: "AfuChat User ID", icon: "person-circle", color: Colors.brand };
   }
 
@@ -134,10 +137,9 @@ function ResultSheet({
   const [resolvedProfile, setResolvedProfile] = useState<{ id: string } | null>(null);
 
   async function resolveAfuChatId() {
-    const rawAfuId = result.raw
-      .replace(/^afuchat:\/\/id\//, "")
-      .replace(/^https?:\/\/afuchat\.com\/id\//, "")
-      .replace(/\s/g, "");
+    const nativeMatch = result.raw.match(/^afuchat:\/\/id\/([^/?#]+)/i);
+    const webMatch = result.raw.match(/^https?:\/\/(?:www\.)?afuchat\.com\/id\/([^/?#]+)/i);
+    const rawAfuId = (nativeMatch?.[1] || webMatch?.[1] || "").replace(/\s/g, "");
     const afuId = rawAfuId.padStart(8, "0");
     if (!/^\d{8}$/.test(afuId)) { showAlert("Invalid QR", "Not a valid AfuChat ID."); return null; }
     if (!user) { router.push("/(auth)/login" as any); return null; }

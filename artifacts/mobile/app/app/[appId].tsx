@@ -8,7 +8,7 @@ import AfuFreelanceApp from "@/modules/afufreelance";
 import AfuCollectionsApp from "@/modules/afucollections";
 import AfuEventsApp from "@/modules/afuevents";
 import AfuUsernamesApp from "@/modules/afuusernames";
-import AfuQRApp from "@/modules/afuqr";
+import QRScannerScreen from "@/app/qr-scanner";
 import AfuSavedApp from "@/modules/afusaved";
 import GamesScreen from "@/app/games";
 import PlayRouter from "@/app/games/play";
@@ -102,7 +102,10 @@ function AppContent({
     case "afuusernames":
       return <AfuUsernamesApp initialTab={section as any} />;
     case "afuqr":
-      return <AfuQRApp />;
+      // Keep the Apps-directory scanner in sync with the standalone scanner.
+      // The canonical screen resolves AfuChat QR codes to native profile,
+      // Send Money, and Request Money actions instead of opening the web URL.
+      return <QRScannerScreen />;
     case "afusaved":
       return <AfuSavedApp />;
   }

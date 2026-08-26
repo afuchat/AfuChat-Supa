@@ -49,12 +49,14 @@ type Tx = {
 type PayRequest = {
   id: string;
   requester_id: string;
+  target_id: string;
   currency: "nexa" | "acoin";
   amount: number;
-  message: string | null;
+  note: string | null;
   status: string;
   created_at: string;
   requester: { handle: string; display_name: string } | null;
+  target: { handle: string; display_name: string } | null;
 };
 
 const PACKAGES = [
@@ -931,14 +933,43 @@ function RequestsView({ colors, insets, user, onBack }: any) {
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const { data } = await supabase.from("transaction_requests").select("*,requester:requester_id(handle,display_name)").or(`owner_id.eq.${user.id},requester_id.eq.${user.id}`).order("created_at", { ascending: false }).limit(30);
-    setRequests((data as PayRequest[]) || []);
+    const { data, error } = await supabase
+      .from("money_requests")
+      .select("id,requester_id,target_id,currency,amount,note,status,created_at")
+      .or(`target_id.eq.${user.id},requester_id.eq.${user.id}`)
+      .order("created_at", { ascending: false })
+      .limit(30);
+
+    if (error || !data) {
+      setRequests([]);
+      setLoading(false);
+      return;
+    }
+
+    const profileIds = Array.from(new Set(
+      data.flatMap((request: any) => [request.requester_id, request.target_id]),
+    ));
+    const { data: profiles } = profileIds.length > 0
+      ? await supabase.from("profiles").select("id,handle,display_name").in("id", profileIds)
+      : { data: [] };
+    const profileMap = new Map(
+      (profiles || []).map((p: any) => [
+        p.id,
+        { handle: p.handle, display_name: p.display_name },
+      ]),
+    );
+
+    setRequests(data.map((request: any) => ({
+      ...request,
+      requester: profileMap.get(request.requester_id) || null,
+      target: profileMap.get(request.target_id) || null,
+    })) as PayRequest[]);
     setLoading(false);
   }, [user]);
 
   useEffect(() => { load(); }, [load]);
 
-  const shown = requests.filter(r => tab === "incoming" ? r.requester_id !== user?.id : r.requester_id === user?.id);
+  const shown = requests.filter(r => tab === "incoming" ? r.target_id === user?.id : r.requester_id === user?.id);
 
   return (
     <View style={[s.root, { backgroundColor: colors.background }]}>
@@ -960,13 +991,15 @@ function RequestsView({ colors, insets, user, onBack }: any) {
           ) : shown.map(r => (
             <View key={r.id} style={[s.requestCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                <Text style={[s.txLabel, { color: colors.text }]}>@{r.requester?.handle || "unknown"}</Text>
+                <Text style={[s.txLabel, { color: colors.text }]}>
+                  {tab === "incoming" ? "From" : "To"} @{(tab === "incoming" ? r.requester : r.target)?.handle || "unknown"}
+                </Text>
                 <View style={[s.statusBadge, { backgroundColor: r.status === "pending" ? "#FF950018" : r.status === "completed" ? "#34C75918" : "#FF3B3018" }]}>
                   <Text style={[s.statusText, { color: r.status === "pending" ? "#FF9500" : r.status === "completed" ? "#34C759" : "#FF3B30" }]}>{r.status}</Text>
                 </View>
               </View>
               <Text style={[s.txAmt, { color: Colors.brand, marginTop: 4 }]}>{fmtAmt(r.amount)} {r.currency === "acoin" ? "ACoin" : "Nexa"}</Text>
-              {r.message && <Text style={[s.txSub, { color: colors.textMuted, marginTop: 4 }]}>{r.message}</Text>}
+              {r.note && <Text style={[s.txSub, { color: colors.textMuted, marginTop: 4 }]}>{r.note}</Text>}
               <Text style={[s.txSub, { color: colors.textMuted, marginTop: 4 }]}>{timeAgo(r.created_at)}</Text>
             </View>
           ))}
