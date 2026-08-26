@@ -1668,12 +1668,14 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
           <TextInput
             ref={inputRef}
             style={[ss.searchInput, { color: colors.text }]}
-            placeholder="Search people, posts, videos, jobs…"
+            placeholder="Search…"
             placeholderTextColor={colors.textMuted}
             value={query}
             onChangeText={onChangeText}
             onSubmitEditing={onSubmit}
             returnKeyType="search"
+            numberOfLines={1}
+            ellipsizeMode="tail"
             autoCorrect={false}
             autoCapitalize="none"
           />
@@ -1843,8 +1845,16 @@ const ss = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
+    minWidth: 0,
     fontSize: 15,
     paddingVertical: 0,
+    ...Platform.select({
+      web: {
+        overflow: "hidden",
+        whiteSpace: "nowrap",
+        textOverflow: "ellipsis",
+      } as any,
+    }),
   },
   lensInlineButton: {
     width: 32,
