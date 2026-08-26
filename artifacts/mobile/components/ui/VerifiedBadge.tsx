@@ -88,7 +88,7 @@ export default function VerifiedBadge({
 
   const badgeColor = isOrg ? "#F5A623" : accent;
 
-  const REASONS: { icon: string; label: string; premiumLink?: boolean }[] = isOrg
+  const REASONS: { icon: string; label: string }[] = isOrg
     ? [
         { icon: "storefront-outline",      label: "Business details confirmed" },
         { icon: "ribbon-outline",           label: "Recognized in its field" },
@@ -96,7 +96,7 @@ export default function VerifiedBadge({
       ]
     : [
         { icon: "person-outline",          label: "Identity confirmed" },
-        { icon: "sparkles-outline",        label: "Recognized public presence", premiumLink: true },
+        { icon: "sparkles-outline",        label: "Recognized public presence" },
         { icon: "shield-checkmark-outline", label: "Follows AfuChat's guidelines" },
       ];
 
@@ -146,32 +146,14 @@ export default function VerifiedBadge({
               WHY THIS BADGE
             </Text>
 
-            {REASONS.map((r, i) =>
-              r.premiumLink ? (
-                <TouchableOpacity
-                  key={i}
-                  style={[s.bulletRow, s.bulletRowTappable, { borderColor: badgeColor + "30", backgroundColor: badgeColor + "0C" }]}
-                  activeOpacity={0.75}
-                  onPress={() => { setVisible(false); router.push("/premium"); }}
-                >
-                  <View style={[s.bulletIcon, { backgroundColor: badgeColor + "28" }]}>
-                    <Ionicons name={r.icon as any} size={15} color={badgeColor} />
-                  </View>
-                  <Text style={[s.bulletText, { color: colors.textSecondary, flex: 1 }]}>{r.label}</Text>
-                  <View style={[s.premiumPill, { backgroundColor: badgeColor + "22" }]}>
-                    <Ionicons name="diamond" size={10} color={badgeColor} />
-                    <Text style={[s.premiumPillText, { color: badgeColor }]}>Premium</Text>
-                  </View>
-                </TouchableOpacity>
-              ) : (
-                <View key={i} style={s.bulletRow}>
-                  <View style={[s.bulletIcon, { backgroundColor: badgeColor + "18" }]}>
-                    <Ionicons name={r.icon as any} size={15} color={badgeColor} />
-                  </View>
-                  <Text style={[s.bulletText, { color: colors.textSecondary }]}>{r.label}</Text>
+            {REASONS.map((r, i) => (
+              <View key={i} style={s.bulletRow}>
+                <View style={[s.bulletIcon, { backgroundColor: badgeColor + "18" }]}>
+                  <Ionicons name={r.icon as any} size={15} color={badgeColor} />
                 </View>
-              )
-            )}
+                <Text style={[s.bulletText, { color: colors.textSecondary }]}>{r.label}</Text>
+              </View>
+            ))}
 
             <TouchableOpacity
               style={[s.ctaBtn, { backgroundColor: badgeColor }]}
@@ -185,14 +167,6 @@ export default function VerifiedBadge({
               <Text style={s.ctaBtnText}>{isOrg ? "Apply for Verification" : "Get Verified"}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={s.dismissBtn}
-              onPress={() => setVisible(false)}
-              activeOpacity={0.6}
-            >
-              <Ionicons name="close" size={16} color={colors.textMuted} />
-              <Text style={[s.dismissText, { color: colors.textMuted }]}>Close</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -211,37 +185,32 @@ const s = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
     paddingBottom: 16,
   },
   card: {
     width: "100%",
-    maxWidth: 370,
-    borderRadius: 22,
-    paddingTop: 9,
-    paddingBottom: 7,
-    paddingHorizontal: 16,
+    maxWidth: 340,
+    borderRadius: 26,
+    paddingTop: 8,
+    paddingBottom: 9,
+    paddingHorizontal: 14,
     ...Platform.select({
       web: { boxShadow: "0 -4px 16px rgba(0,0,0,0.12)" } as any,
       default: { shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 20 },
     }),
   },
-  handle: { width: 28, height: 3, borderRadius: 2, alignSelf: "center", marginBottom: 11 },
-  header: { flexDirection: "row", alignItems: "center", gap: 11, marginBottom: 13 },
-  iconWrap: { width: 52, height: 52, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  handle: { width: 26, height: 3, borderRadius: 2, alignSelf: "center", marginBottom: 9 },
+  header: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
+  iconWrap: { width: 46, height: 46, borderRadius: 15, alignItems: "center", justifyContent: "center" },
   headerCopy: { flex: 1, gap: 3 },
   title: { fontSize: 16, fontWeight: "700" },
   subtitle: { fontSize: 12, lineHeight: 16 },
-  divider: { height: 0.5, marginVertical: 11 },
-  sectionLabel: { fontSize: 9, fontWeight: "700", letterSpacing: 0.8, marginBottom: 8 },
-  bulletRow: { flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 7 },
-  bulletRowTappable: { borderRadius: 10, borderWidth: 1, paddingVertical: 7, paddingHorizontal: 8, marginHorizontal: -3 },
+  divider: { height: 0.5, marginVertical: 9 },
+  sectionLabel: { fontSize: 9, fontWeight: "700", letterSpacing: 0.8, marginBottom: 7 },
+  bulletRow: { flexDirection: "row", alignItems: "center", gap: 9, marginBottom: 6 },
   bulletIcon: { width: 27, height: 27, borderRadius: 9, alignItems: "center", justifyContent: "center" },
   bulletText: { flex: 1, fontSize: 12, lineHeight: 16 },
-  premiumPill: { flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 20 },
-  premiumPillText: { fontSize: 9, fontWeight: "600" },
-  ctaBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingVertical: 10, borderRadius: 12, marginTop: 5 },
+  ctaBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, paddingVertical: 9, borderRadius: 11, marginTop: 4 },
   ctaBtnText: { color: "#fff", fontSize: 13, fontWeight: "700" },
-  dismissBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, paddingVertical: 8 },
-  dismissText: { fontSize: 12, fontWeight: "600" },
 });
