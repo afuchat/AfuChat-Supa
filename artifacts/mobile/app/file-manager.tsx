@@ -15,12 +15,9 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library";
 import * as Network from "expo-network";
 import * as Sharing from "expo-sharing";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { useTheme } from "@/hooks/useTheme";
 import {
@@ -30,7 +27,7 @@ import {
 } from "@/lib/permissionsManager";
 
 type FileType = "image" | "video" | "audio" | "document";
-type Filter = "all" | FileType;
+type Filter = "all" | "image" | "video" | "audio";
 
 type FileItem = {
   id: string;
@@ -49,36 +46,11 @@ type TransferPermissions = {
   location: PermissionStatus;
 };
 
-const FILES_KEY = "device_file_manager_files_v1";
-const FILES_DIR = `${FileSystem.documentDirectory ?? ""}afuchat_files/`;
-
-function formatBytes(bytes: number): string {
-  if (!bytes) return "Size unavailable";
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-}
-
-function getFileType(name: string, mimeType?: string): FileType {
-  const mime = (mimeType ?? "").toLowerCase();
-  const extension = name.split(".").pop()?.toLowerCase() ?? "";
-  if (mime.startsWith("image/") || ["jpg", "jpeg", "png", "gif", "webp", "heic"].includes(extension)) return "image";
-  if (mime.startsWith("video/") || ["mp4", "mov", "mkv", "webm"].includes(extension)) return "video";
-  if (mime.startsWith("audio/") || ["mp3", "m4a", "wav", "aac", "flac", "ogg"].includes(extension)) return "audio";
-  return "document";
-}
-
 function typeIcon(type: FileType): keyof typeof Ionicons.glyphMap {
   if (type === "image") return "image-outline";
   if (type === "video") return "videocam-outline";
   if (type === "audio") return "musical-notes-outline";
   return "document-text-outline";
-}
-
-function safeFileName(name: string): string {
-  const cleaned = name.replace(/[^a-zA-Z0-9._-]/g, "_").replace(/^\\.+/, "");
-  return cleaned || `file_${Date.now()}`;
 }
 
 function permissionLabel(status: PermissionStatus): string {
@@ -91,15 +63,12 @@ function permissionLabel(status: PermissionStatus): string {
 export default function FileManagerScreen() {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
-  const [files, setFiles] = useState<FileItem[]>([]);
   const [galleryFiles, setGalleryFiles] = useState<FileItem[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [galleryLoading, setGalleryLoading] = useState(true);
   const [galleryPermission, setGalleryPermission] = useState<"checking" | "granted" | "denied">("checking");
   const [galleryCanAskAgain, setGalleryCanAskAgain] = useState(true);
-  const [importing, setImporting] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [transferLoading, setTransferLoading] = useState(false);
   const [networkLabel, setNetworkLabel] = useState("Checking connection…");
@@ -109,21 +78,6 @@ export default function FileManagerScreen() {
     wifi: getPermissionStatus("wifi"),
     location: getPermissionStatus("location"),
   });
-
-  const loadFiles = useCallback(async () => {
-    try {
-      const raw = await AsyncStorage.getItem(FILES_KEY);
-      if (raw) setFiles(JSON.parse(raw) as FileItem[]);
-    } catch {
-      setFiles([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadFiles();
-  }, [loadFiles]);
 
   const loadGallery = useCallback(async (activeFilter: Filter = filter) => {
     if (Platform.OS === "web") {
@@ -207,67 +161,11 @@ export default function FileManagerScreen() {
     }
   }, [filter, galleryCanAskAgain, galleryPermission, loadGallery]);
 
-  const persistFiles = useCallback(async (next: FileItem[]) => {
-    setFiles(next);
-    await AsyncStorage.setItem(FILES_KEY, JSON.stringify(next));
-  }, []);
-
-  const importFiles = useCallback(async () => {
-    setImporting(true);
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: "*/*",
-        multiple: true,
-        copyToCacheDirectory: true,
-      });
-      if (result.canceled) return;
-      await FileSystem.makeDirectoryAsync(FILES_DIR, { intermediates: true });
-
-      const imported: FileItem[] = [];
-      for (const asset of result.assets) {
-        const id = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        const destination = `${FILES_DIR}${id}_${safeFileName(asset.name)}`;
-        await FileSystem.copyAsync({ from: asset.uri, to: destination });
-        imported.push({
-          id,
-          name: asset.name,
-          size: asset.size ?? 0,
-          type: getFileType(asset.name, asset.mimeType),
-          mimeType: asset.mimeType,
-          uri: destination,
-          addedAt: new Date().toISOString(),
-          isGallery: false,
-        });
-      }
-      await persistFiles([...imported, ...files]);
-      if (imported[0]) setSelectedId(imported[0].id);
-    } catch {
-      Alert.alert("Could not add files", "The selected file could not be copied into AfuChat storage.");
-    } finally {
-      setImporting(false);
-    }
-  }, [files, persistFiles]);
-
-  const removeFile = useCallback(async (item: FileItem) => {
-    try {
-      await FileSystem.deleteAsync(item.uri, { idempotent: true });
-    } catch {
-      // The metadata should still be removable if the OS already removed the file.
-    }
-    await persistFiles(files.filter((file) => file.id !== item.id));
-    if (selectedId === item.id) setSelectedId(null);
-  }, [files, persistFiles, selectedId]);
-
   const filteredFiles = useMemo(
-    () => {
-      const combined = [...galleryFiles, ...files];
-      return (filter === "all" ? combined : combined.filter((file) => file.type === filter))
-        .sort((a, b) => b.addedAt.localeCompare(a.addedAt));
-    },
-    [files, filter, galleryFiles],
+    () => galleryFiles.slice().sort((a, b) => b.addedAt.localeCompare(a.addedAt)),
+    [galleryFiles],
   );
   const selectedFile = filteredFiles.find((file) => file.id === selectedId) ?? filteredFiles[0];
-  const totalSize = files.reduce((sum, file) => sum + file.size, 0);
 
   const openTransfer = useCallback(async () => {
     setTransferOpen(true);
@@ -282,20 +180,6 @@ export default function FileManagerScreen() {
     } catch {
       setNetworkLabel("Network status unavailable");
       setIpAddress(null);
-    } finally {
-      setTransferLoading(false);
-    }
-  }, []);
-
-  const enableNearbyAccess = useCallback(async () => {
-    setTransferLoading(true);
-    try {
-      const [bluetooth, wifi, location] = await Promise.all([
-        requestPermission("bluetooth"),
-        requestPermission("wifi"),
-        requestPermission("location"),
-      ]);
-      setPermissions({ bluetooth, wifi, location });
     } finally {
       setTransferLoading(false);
     }
@@ -333,20 +217,48 @@ export default function FileManagerScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.backgroundSecondary }]}>
-      <GlassHeader
-        title="File Manager"
-        right={
-          <Pressable
-            testID="file-manager-transfer"
-            accessibilityRole="button"
-            accessibilityLabel="Open offline transfer"
-            onPress={openTransfer}
-            style={styles.headerButton}
-          >
-            <Ionicons name="paper-plane-outline" size={21} color={colors.accent} />
-          </Pressable>
-        }
-      />
+      <View style={[styles.headerArea, { backgroundColor: colors.background }]}>
+        <GlassHeader
+          title="File Manager"
+          style={styles.header}
+          right={
+            <Pressable
+              testID="file-manager-transfer"
+              accessibilityRole="button"
+              accessibilityLabel="Open offline transfer"
+              onPress={openTransfer}
+              style={styles.headerButton}
+            >
+              <Ionicons name="paper-plane-outline" size={21} color={colors.accent} />
+            </Pressable>
+          }
+        />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filters}
+        >
+          {(["all", "image", "video", "audio"] as Filter[]).map((value) => {
+            const active = filter === value;
+            const label = value === "all"
+              ? "All"
+              : `${value[0].toUpperCase()}${value.slice(1)}${value === "audio" ? "" : "s"}`;
+            return (
+              <Pressable
+                key={value}
+                onPress={() => setFilter(value)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                style={[styles.filter, { backgroundColor: active ? colors.accent : colors.surface }]}
+              >
+                <Text style={[styles.filterText, { color: active ? colors.background : colors.textMuted }]}>
+                  {label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       <View style={[styles.summary, { backgroundColor: colors.surface }]}>
         <View style={[styles.summaryIcon, { backgroundColor: colors.accent + "18" }]}>
@@ -355,41 +267,10 @@ export default function FileManagerScreen() {
         <View style={styles.summaryCopy}>
           <Text style={[styles.summaryTitle, { color: colors.text }]}>On this device</Text>
           <Text style={[styles.summaryMeta, { color: colors.textMuted }]}>
-            {galleryFiles.length + files.length} {galleryFiles.length + files.length === 1 ? "file" : "files"}
-            {totalSize ? ` · ${formatBytes(totalSize)} stored` : " · Phone gallery included"}
+            {galleryFiles.length} {galleryFiles.length === 1 ? "item" : "items"} · Phone gallery
           </Text>
         </View>
-        <Pressable
-          testID="file-manager-import"
-          accessibilityRole="button"
-          accessibilityLabel="Browse device files"
-          onPress={importFiles}
-          disabled={importing}
-          style={[styles.importButton, { backgroundColor: colors.accent }]}
-        >
-          {importing ? <ActivityIndicator size="small" color={colors.background} /> : <Ionicons name="add" size={20} color={colors.background} />}
-          <Text style={[styles.importLabel, { color: colors.background }]}>Add documents</Text>
-        </Pressable>
       </View>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
-        {(["all", "image", "video", "audio", "document"] as Filter[]).map((value) => {
-          const active = filter === value;
-          return (
-            <Pressable
-              key={value}
-              onPress={() => setFilter(value)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-              style={[styles.filter, { backgroundColor: active ? colors.accent : colors.surface }]}
-            >
-              <Text style={[styles.filterText, { color: active ? colors.background : colors.textMuted }]}>
-                {value === "all" ? "All files" : `${value[0].toUpperCase()}${value.slice(1)}s`}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
 
       {galleryPermission !== "granted" && (
         <View style={[styles.galleryAccessCard, { backgroundColor: colors.surface }]}>
@@ -417,7 +298,7 @@ export default function FileManagerScreen() {
         </View>
       )}
 
-      {loading || (galleryLoading && galleryPermission === "checking") ? (
+      {galleryLoading && galleryPermission === "checking" ? (
         <View style={styles.center}><ActivityIndicator color={colors.accent} /></View>
       ) : filteredFiles.length === 0 ? (
         <View style={styles.center}>
@@ -425,26 +306,21 @@ export default function FileManagerScreen() {
           <Text style={[styles.emptyTitle, { color: colors.text }]}>
             {galleryPermission !== "granted"
               ? "Gallery access is needed"
-              : files.length === 0 && galleryFiles.length === 0
+              : galleryFiles.length === 0
                 ? "Your device gallery is empty"
                 : "No files in this filter"}
           </Text>
           <Text style={[styles.emptyDesc, { color: colors.textMuted }]}>
             {galleryPermission !== "granted"
               ? "Use the button above to show the photos and videos already saved on your phone."
-              : files.length === 0 && galleryFiles.length === 0
-                ? "Photos and videos from your phone will appear here. You can also add documents separately."
-                : "Choose another category or add a document from the device."}
+              : galleryFiles.length === 0
+                ? "Photos and videos from your phone will appear here."
+                : "Choose another category to browse your phone gallery."}
           </Text>
           {galleryPermission !== "granted" ? (
             <Pressable onPress={requestGalleryAccess} style={[styles.emptyAction, { backgroundColor: colors.accent }]}>
               <Ionicons name="images-outline" size={18} color={colors.background} />
               <Text style={[styles.emptyActionText, { color: colors.background }]}>Allow gallery access</Text>
-            </Pressable>
-          ) : files.length === 0 && galleryFiles.length === 0 ? (
-            <Pressable onPress={importFiles} style={[styles.emptyAction, { backgroundColor: colors.accent }]}>
-              <Ionicons name="folder-open-outline" size={18} color={colors.background} />
-              <Text style={[styles.emptyActionText, { color: colors.background }]}>Add a document</Text>
             </Pressable>
           ) : null}
         </View>
@@ -460,10 +336,6 @@ export default function FileManagerScreen() {
               <Pressable
                 testID={`file-row-${item.id}`}
                 onPress={() => setSelectedId(selected ? null : item.id)}
-                onLongPress={item.isGallery ? undefined : () => Alert.alert(item.name, "Remove this local copy?", [
-                  { text: "Cancel", style: "cancel" },
-                  { text: "Remove", style: "destructive", onPress: () => removeFile(item) },
-                ])}
                 style={[styles.fileRow, { backgroundColor: colors.surface }, selected && { borderColor: colors.accent, borderWidth: 1 }]}
               >
                 {item.type === "image" ? (
@@ -476,7 +348,7 @@ export default function FileManagerScreen() {
                 <View style={styles.fileCopy}>
                   <Text style={[styles.fileName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
                   <Text style={[styles.fileMeta, { color: colors.textMuted }]}>
-                    {item.isGallery ? "Phone gallery" : item.type} · {item.size ? formatBytes(item.size) : "Size unavailable"}
+                    {item.type} · Phone gallery
                   </Text>
                 </View>
                 {selected ? (
@@ -578,14 +450,14 @@ export default function FileManagerScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  headerArea: { paddingBottom: 2 },
+  header: { borderBottomWidth: 0 },
   headerButton: { width: 42, height: 42, alignItems: "center", justifyContent: "center" },
   summary: { flexDirection: "row", alignItems: "center", margin: 16, marginBottom: 10, padding: 14, borderRadius: 18, gap: 12 },
   summaryIcon: { width: 48, height: 48, borderRadius: 15, alignItems: "center", justifyContent: "center" },
   summaryCopy: { flex: 1 },
   summaryTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
   summaryMeta: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 3 },
-  importButton: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 12, paddingHorizontal: 11, paddingVertical: 10 },
-  importLabel: { fontSize: 12, fontFamily: "Inter_700Bold" },
   filters: { paddingHorizontal: 16, paddingBottom: 12, gap: 8, alignItems: "center" },
   filter: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 99 },
   filterText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
