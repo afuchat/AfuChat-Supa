@@ -250,7 +250,7 @@ export function CompactTabBar({
                 <View
                   style={[
                     pill.iconWrap,
-                    focused && { backgroundColor: ACTIVE_WRAP, borderRadius: 18 },
+                    focused && { backgroundColor: ACTIVE_WRAP, borderRadius: 999 },
                   ]}
                 >
                   {tab.route === "/(tabs)/me" ? (
@@ -407,8 +407,9 @@ const pill = StyleSheet.create({
     paddingVertical: 0,
   },
   iconWrap: {
-    width: 44,
-    height: 30,
+    width: 48,
+    height: 36,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
   },
