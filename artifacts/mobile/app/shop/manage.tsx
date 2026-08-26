@@ -345,7 +345,7 @@ export default function ShopManage() {
                 { icon: "add-circle", label: "Add Product", color: "#34C759", action: () => { setEditingProduct({ is_available: true, is_unlimited_stock: false, stock: 10, price_acoin: 50, category: "General", images: [] }); setProductModal(true); } },
                 { icon: "list", label: "Manage Products", color: colors.accent, action: () => setTab("products") },
                 { icon: "receipt", label: "View Orders", color: "#FF9500", action: () => setTab("orders") },
-                { icon: "wallet", label: "My Wallet", color: "#AF52DE", action: () => router.push("/wallet" as any) },
+                { icon: "wallet", label: "My Wallet", color: "#AF52DE", action: () => router.push("/app/afupay" as any) },
               ].map((a) => (
                 <TouchableOpacity key={a.label} style={styles.quickAction} onPress={a.action}>
                   <View style={[styles.quickActionIcon, { backgroundColor: a.color + "18" }]}>

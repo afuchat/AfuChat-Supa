@@ -432,7 +432,7 @@ export default function ProductDetailScreen() {
                   <Text style={[st.walletBalance, { color: colors.textMuted }]}>Wallet: {formatShopAcoin(balance)}</Text>
                 </View>
                 {!canAfford && (
-                  <TouchableOpacity onPress={() => { setShowCheckout(false); router.push("/wallet"); }}>
+                  <TouchableOpacity onPress={() => { setShowCheckout(false); router.push("/app/afupay?section=topup" as any); }}>
                     <Text style={[st.topUpText, { color: colors.accent }]}>Top Up</Text>
                   </TouchableOpacity>
                 )}

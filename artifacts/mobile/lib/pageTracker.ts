@@ -52,11 +52,10 @@ const ROUTE_MAP: Array<{ match: RegExp; name: string; summary: string }> = [
   { match: /^\/my-posts/, name: "My Posts", summary: "All posts you've published." },
 
   // Wallet
-  { match: /^\/wallet\/topup/, name: "Top Up Wallet", summary: "Add ACoins to your wallet by purchasing credits." },
-  { match: /^\/wallet\/requests/, name: "Payment Requests", summary: "View and manage incoming payment requests." },
+  { match: /^\/app\/afupay\?section=topup/, name: "Top Up Wallet", summary: "Add ACoins to your wallet by purchasing credits." },
+  { match: /^\/app\/afupay\?section=requests/, name: "Payment Requests", summary: "View and manage incoming payment requests." },
   { match: /^\/wallet\/scan/, name: "QR Payment", summary: "Scan a QR code to make a payment." },
-  { match: /^\/wallet\/gift-vault/, name: "Gift Vault", summary: "Virtual gifts you've received from other users." },
-  { match: /^\/wallet/, name: "Wallet", summary: "Your AfuChat wallet — ACoins balance, transaction history, top-up, and payment options." },
+  { match: /^\/app\/afupay/, name: "Wallet", summary: "Your AfuChat wallet — ACoins balance, transaction history, top-up, and payment options." },
   { match: /^\/red-envelope\//, name: "Red Envelope", summary: "Send or receive a red envelope — a fun group money gift." },
 
   // Social / Profile

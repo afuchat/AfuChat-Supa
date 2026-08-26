@@ -48,11 +48,10 @@ export const PLATFORM_NAV_MAP = `
 ### WALLET & FINANCE
 | Route | What it does |
 |---|---|
-| /wallet | Main wallet — ACoins balance, transaction history |
-| /wallet/topup | Add ACoins to your wallet (buy credits) |
-| /wallet/requests | View and manage payment requests |
-| /wallet/scan | QR code scanner for payments |
-| /wallet/gift-vault | Virtual gifts you have received |
+| /app/afupay | Main wallet — ACoins balance, transaction history |
+| /app/afupay?section=topup | Add ACoins to your wallet (buy credits) |
+| /app/afupay?section=requests | View and manage payment requests |
+| /wallet/scan | Legacy QR payment handoff |
 | /red-envelope/[id] | Send or receive a red envelope (group money gift) |
 
 ### SOCIAL & DISCOVERY
@@ -290,7 +289,7 @@ export function buildNavigationContext(): string {
  */
 export const ACTION_ROUTES_GUIDE = `
 Valid routes for [ACTION:Button label:/route] tags:
-/wallet | /wallet/topup | /wallet/requests | /wallet/gift-vault
+/app/afupay | /app/afupay?section=topup | /app/afupay?section=requests
 /premium | /monetize | /prestige | /username-market
 /profile/edit | /settings | /settings/security | /settings/privacy | /settings/blocked | /settings/two-factor
 /moments/create | /moments/create-video | /moments/create-article | /shorts | /saved-posts | /my-posts
@@ -322,10 +321,9 @@ PROFILE NAVIGATION — link directly to any user's profile:
  * Used by search to auto-navigate without needing AI round-trip.
  */
 export const NAV_INTENT_MAP: { patterns: RegExp; route: string; label: string }[] = [
-  { patterns: /\b(open|go\s+to|show|take\s+me\s+to|navigate\s+to)?\s*(my\s+)?wallet\b/i, route: "/wallet", label: "Wallet" },
-  { patterns: /\b(top\s*up|add\s+(coins?|acoin|credits?|money)|recharge|load\s+(money|credits?))\b/i, route: "/wallet/topup", label: "Top Up Wallet" },
-  { patterns: /\b(payment\s+requests?|money\s+requests?)\b/i, route: "/wallet/requests", label: "Payment Requests" },
-  { patterns: /\bgift\s+vault\b/i, route: "/wallet/gift-vault", label: "Gift Vault" },
+  { patterns: /\b(open|go\s+to|show|take\s+me\s+to|navigate\s+to)?\s*(my\s+)?wallet\b/i, route: "/app/afupay", label: "Wallet" },
+  { patterns: /\b(top\s*up|add\s+(coins?|acoin|credits?|money)|recharge|load\s+(money|credits?))\b/i, route: "/app/afupay?section=topup", label: "Top Up Wallet" },
+  { patterns: /\b(payment\s+requests?|money\s+requests?)\b/i, route: "/app/afupay?section=requests", label: "Payment Requests" },
   { patterns: /\b(premium|upgrade|subscription|platinum|gold\s+plan)\b/i, route: "/premium", label: "Premium Plans" },
   { patterns: /\b(settings|account\s+settings)\b/i, route: "/settings", label: "Settings" },
   { patterns: /\bsecurity\b/i, route: "/settings/security", label: "Security Settings" },

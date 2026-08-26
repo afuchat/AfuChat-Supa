@@ -80,7 +80,7 @@ const NAV_TESTS: NavTest[] = [
   { url: "afuchat://followers",    expectedType: "navigate", expectedPath: "/followers",         description: "Followers" },
   // ── Core screens ────────────────────────────────────────────────────────
   { url: "afuchat://settings",     expectedType: "navigate", expectedPath: "/settings",          description: "Settings" },
-  { url: "afuchat://wallet",       expectedType: "navigate", expectedPath: "/wallet",            description: "Wallet" },
+  { url: "afuchat://wallet",       expectedType: "navigate", expectedPath: "/app/afupay",        description: "Wallet" },
   { url: "afuchat://ai",           expectedType: "navigate", expectedPath: "/ai",                description: "AfuAI" },
   { url: "afuchat://premium",      expectedType: "navigate", expectedPath: "/premium",           description: "Premium" },
   { url: "afuchat://prestige",     expectedType: "navigate", expectedPath: "/prestige",          description: "Prestige" },

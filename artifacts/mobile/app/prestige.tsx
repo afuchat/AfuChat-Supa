@@ -170,7 +170,7 @@ export default function PrestigeScreen() {
   async function purchaseGood(item: typeof ALL_GOODS[0]) {
     if (!user || !profile) return;
     if (ownedIds.has(item.id)) { showAlert("Already Owned", `You already own ${item.emoji} ${item.name}.`); return; }
-    if (acoin < item.acoin)    { showAlert("Not Enough ACoin", `You need ${item.acoin.toLocaleString()} AC but have ${acoin.toLocaleString()} AC.\n\nTop up your wallet to purchase this item.`, [{ text: "Top Up", onPress: () => router.push("/wallet") }, { text: "Cancel", style: "cancel" }]); return; }
+    if (acoin < item.acoin)    { showAlert("Not Enough ACoin", `You need ${item.acoin.toLocaleString()} AC but have ${acoin.toLocaleString()} AC.\n\nTop up your wallet to purchase this item.`, [{ text: "Top Up", onPress: () => router.push("/app/afupay") }, { text: "Cancel", style: "cancel" }]); return; }
     const tierIdx = tierIndex(tier.id);
     const reqIdx  = tierIndex(item.tier);
     if (tierIdx < reqIdx) {
@@ -246,7 +246,7 @@ export default function PrestigeScreen() {
               <Ionicons name="chevron-back" size={22} color="#fff" />
             </TouchableOpacity>
             <Text style={s.navTitle}>Prestige</Text>
-            <TouchableOpacity style={s.navBtn} onPress={() => router.push("/wallet")} hitSlop={12}>
+            <TouchableOpacity style={s.navBtn} onPress={() => router.push("/app/afupay")} hitSlop={12}>
               <Ionicons name="wallet" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -445,8 +445,8 @@ export default function PrestigeScreen() {
             <SectionHeader title="EARN MORE ACOIN" subtitle="Climb the tiers faster" colors={colors} />
             <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               {[
-                { emoji: "💳", label: "Top-Up ACoin",         sub: "Buy AC directly from your wallet",            action: "/wallet" },
-                { emoji: "🔄", label: "Convert Nexa → ACoin", sub: "Turn your XP into spendable ACoins",          action: "/wallet" },
+                { emoji: "💳", label: "Top-Up ACoin",         sub: "Buy AC directly from your wallet",            action: "/app/afupay?section=topup" },
+                { emoji: "🔄", label: "Convert Nexa → ACoin", sub: "Turn your XP into spendable ACoins",          action: "/app/afupay?section=exchange" },
                 { emoji: "🎁", label: "Send & Receive Gifts", sub: "Gifting earns both sender and receiver AC",    action: "/gifts" },
                 { emoji: "💬", label: "Stay Active",           sub: "Daily activity rewards keep your rank up",    action: null },
               ].map((row, i) => (
@@ -716,7 +716,7 @@ export default function PrestigeScreen() {
                 <Ionicons name="receipt" size={44} color={colors.textMuted} />
                 <Text style={[s.emptyTitle, { color: colors.text }]}>No transactions yet</Text>
                 <Text style={[s.emptySub, { color: colors.textMuted }]}>Purchase Status Goods or top up to see activity here</Text>
-                <TouchableOpacity style={[s.emptyBtn, { backgroundColor: tier.color }]} onPress={() => router.push("/wallet")}>
+                <TouchableOpacity style={[s.emptyBtn, { backgroundColor: tier.color }]} onPress={() => router.push("/app/afupay")}>
                   <Text style={s.emptyBtnText}>Go to Wallet</Text>
                 </TouchableOpacity>
               </View>

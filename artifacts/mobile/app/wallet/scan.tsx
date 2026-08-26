@@ -147,7 +147,7 @@ export default function WalletScanPage() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       refreshProfile?.();
       showAlert("Sent!", `${fmtAmt(amt)} ${currency === "acoin" ? "ACoin" : "Nexa"} sent to ${recipient.display_name}`);
-      router.replace("/wallet");
+      router.replace("/app/afupay" as any);
     } catch {
       showAlert("Error", "Network error. Please try again.");
     }

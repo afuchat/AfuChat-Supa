@@ -207,7 +207,7 @@ export default function FreelanceListingScreen() {
         "Not enough ACoin",
         `Need ${gig.price} ACoin, you have ${profile.acoin ?? 0}.`,
         [
-          { text: "Top Up", onPress: () => safeRouter.push("/wallet/topup" as any) },
+          { text: "Top Up", onPress: () => safeRouter.push("/app/afupay?section=topup" as any) },
           { text: "Cancel" },
         ]
       );

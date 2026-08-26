@@ -53,7 +53,7 @@ const CATEGORIES: Category[] = [
         label: "AfuPay",
         icon: "wallet",
         gradient: ["#34C759", "#00C781"],
-        route: "/wallet",
+        route: "/app/afupay",
         miniApp: true,
         featuredSub: "Send, receive and manage your ACoins & Nexa.",
       },

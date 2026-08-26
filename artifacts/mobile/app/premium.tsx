@@ -295,7 +295,7 @@ export default function PremiumScreen() {
     if ((profile.acoin || 0) < selectedPlan.acoin_price) {
       showAlert("Insufficient ACoin", `You need ${selectedPlan.acoin_price} AC but have ${profile.acoin || 0}. Top up your wallet.`, [
         { text: "Cancel", style: "cancel" },
-        { text: "Top Up", onPress: () => router.push("/wallet") },
+        { text: "Top Up", onPress: () => router.push("/app/afupay?section=topup" as any) },
       ]);
       return;
     }
@@ -532,7 +532,7 @@ export default function PremiumScreen() {
           {/* Wallet link */}
           <TouchableOpacity
             style={[s.walletRow, { borderColor: sep }]}
-            onPress={() => router.push("/wallet")}
+            onPress={() => router.push("/app/afupay?section=topup" as any)}
             activeOpacity={0.7}
           >
             <Ionicons name="wallet" size={15} color={colors.accent} />

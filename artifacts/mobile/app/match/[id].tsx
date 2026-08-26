@@ -177,7 +177,7 @@ export default function MatchConversationScreen() {
     const result = await sendMatchGiftFromDb(user.id, otherUserId, gift.id, gift.name, gift.emoji, price, id);
     if (!result.success) {
       showAlert("Insufficient ACoins", result.error ?? "Could not send gift.", [
-        { text: "Top Up Wallet", onPress: () => router.push("/wallet/topup" as any) },
+        { text: "Top Up Wallet", onPress: () => router.push("/app/afupay?section=topup" as any) },
         { text: "Cancel", style: "cancel" },
       ]);
       setSending(false);

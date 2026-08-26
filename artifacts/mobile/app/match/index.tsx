@@ -682,7 +682,7 @@ export default function MatchScreen({ initialTab }: { initialTab?: "discover" | 
     const result = await chargeMatchSuperLike(user.id, top.name);
     if (!result.success) {
       showAlert("Insufficient ACoins", `${result.error}\n\nSuper Likes cost ${MATCH_PRICES.SUPER_LIKE} AC after your 3 free daily ones. Top up your wallet to continue.`, [
-        { text: "Top Up Wallet", onPress: () => router.push("/wallet/topup" as any) },
+        { text: "Top Up Wallet", onPress: () => router.push("/app/afupay?section=topup" as any) },
         { text: "Cancel", style: "cancel" },
       ]);
       return;
@@ -708,7 +708,7 @@ export default function MatchScreen({ initialTab }: { initialTab?: "discover" | 
           const result = await chargeProfileBoost(user.id);
           if (!result.success) {
             showAlert("Insufficient ACoins", `${result.error}\n\nTop up your AfuChat wallet to use Boost.`, [
-              { text: "Top Up Wallet", onPress: () => router.push("/wallet/topup" as any) },
+              { text: "Top Up Wallet", onPress: () => router.push("/app/afupay?section=topup" as any) },
               { text: "Cancel", style: "cancel" },
             ]);
           } else {
@@ -821,7 +821,7 @@ export default function MatchScreen({ initialTab }: { initialTab?: "discover" | 
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
           <Pressable
             style={styles.acoinBadge}
-            onPress={() => router.push("/wallet" as any)}
+            onPress={() => router.push("/app/afupay" as any)}
             hitSlop={{ top: 8, left: 8, bottom: 8, right: 8 }}
           >
             <Ionicons name="logo-bitcoin" size={13} color="#FFD60A" />

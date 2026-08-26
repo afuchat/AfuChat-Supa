@@ -128,7 +128,7 @@ export const Navigate = {
   // ── Wallet / payments ─────────────────────────────────────────────────────────
 
   toWallet() {
-    safeRouter.push("/wallet" as any);
+    safeRouter.push("/app/afupay" as any);
   },
 
   // ── Utilities ─────────────────────────────────────────────────────────────────

@@ -17,6 +17,7 @@ import {
 import { WebView } from "react-native-webview";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
@@ -134,13 +135,39 @@ function timeAgo(iso: string) {
 }
 
 function SubHeader({ title, onBack, colors }: { title: string; onBack: () => void; colors: any }) {
+  const insets = useSafeAreaInsets();
+  const topInset = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
   return (
-    <View style={[s.subHeader, { borderBottomColor: colors.border }]}>
+    <View style={[s.subHeader, { borderBottomColor: colors.border, paddingTop: topInset + 8 }]}>
       <TouchableOpacity onPress={onBack} hitSlop={12} style={s.backBtn}>
         <Ionicons name="chevron-back" size={22} color={colors.text} />
       </TouchableOpacity>
       <Text style={[s.subHeaderTitle, { color: colors.text }]}>{title}</Text>
       <View style={{ width: 36 }} />
+    </View>
+  );
+}
+
+function WalletHeader({ colors, insets, onBack }: { colors: any; insets: { top: number }; onBack: () => void }) {
+  const topInset = Platform.OS === "web" ? Math.max(insets.top, 67) : insets.top;
+  return (
+    <View style={[s.walletHeader, { backgroundColor: colors.surface, borderBottomColor: colors.border, paddingTop: topInset }]}>
+      <View style={s.walletHeaderRow}>
+        <TouchableOpacity
+          onPress={onBack}
+          hitSlop={12}
+          style={s.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Text style={[s.walletBackGlyph, { color: colors.text }]}>‹</Text>
+        </TouchableOpacity>
+        <View style={s.walletHeaderTitleWrap}>
+          <Text style={[s.walletHeaderTitle, { color: colors.text }]}>Wallet</Text>
+          <Text style={[s.walletHeaderSubtitle, { color: colors.textMuted }]}>AfuPay</Text>
+        </View>
+        <View style={s.backBtn} />
+      </View>
     </View>
   );
 }
@@ -172,6 +199,10 @@ export default function AfuPayApp({
 
   const acoin = profile?.acoin ?? 0;
   const nexa = profile?.xp ?? 0;
+  const handleHomeBack = useCallback(() => {
+    if (router.canGoBack()) router.back();
+    else router.replace("/(tabs)/apps" as any);
+  }, []);
 
   const loadTransactions = useCallback(async () => {
     if (!user) return;
@@ -262,90 +293,93 @@ export default function AfuPayApp({
   const recentTx = transactions.slice(0, 6);
 
   return (
-    <ScrollView style={[s.root, { backgroundColor: colors.background }]} contentContainerStyle={{ paddingBottom: insets.bottom + 32 }} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadTransactions(); refreshProfile?.(); }} />}>
-      <LinearGradient colors={["#0A2E1F", "#062218"]} style={s.heroCard}>
-        <View style={s.heroRow}>
-          <View>
-            <Text style={s.heroLabel}>ACoin Balance</Text>
-            <Text style={s.heroAmount}>{fmtAmt(acoin)} <Text style={s.heroCurrency}>AC</Text></Text>
+    <View style={[s.root, { backgroundColor: colors.background }]}>
+      <WalletHeader colors={colors} insets={insets} onBack={handleHomeBack} />
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 96 }} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadTransactions(); refreshProfile?.(); }} />}>
+        <LinearGradient colors={["#0A2E1F", "#062218"]} style={s.heroCard}>
+          <View style={s.heroRow}>
+            <View>
+              <Text style={s.heroLabel}>ACoin Balance</Text>
+              <Text style={s.heroAmount}>{fmtAmt(acoin)} <Text style={s.heroCurrency}>AC</Text></Text>
+            </View>
+            <View style={s.heroRight}>
+              <Text style={[s.heroLabel, { textAlign: "right" }]}>Nexa (XP)</Text>
+              <Text style={[s.heroAmount, { color: "#FF9500", fontSize: 22 }]}>{fmtAmt(nexa)}</Text>
+            </View>
           </View>
-          <View style={s.heroRight}>
-            <Text style={[s.heroLabel, { textAlign: "right" }]}>Nexa (XP)</Text>
-            <Text style={[s.heroAmount, { color: "#FF9500", fontSize: 22 }]}>{fmtAmt(nexa)}</Text>
-          </View>
-        </View>
-        <View style={[s.heroDivider, { backgroundColor: "rgba(255,255,255,0.12)" }]} />
-        <Text style={s.heroSub}>AfuPay · Secure · Fast · Global</Text>
-      </LinearGradient>
+          <View style={[s.heroDivider, { backgroundColor: "rgba(255,255,255,0.12)" }]} />
+          <Text style={s.heroSub}>AfuPay · Secure · Fast · Global</Text>
+        </LinearGradient>
 
-      <View style={s.actionsRow}>
-        {[
-          { icon: "add-circle" as const, label: "Buy", color: "#34C759", view: "topup" as AppView },
-          { icon: "paper-plane" as const, label: "Send", color: "#FF9500", view: "send" as AppView },
-          { icon: "qr-code" as const, label: "Receive", color: Colors.brand, view: "receive" as AppView },
-          { icon: "swap-horizontal" as const, label: "Convert", color: "#7B61FF", view: "exchange" as AppView },
-          { icon: "receipt-outline" as const, label: "Requests", color: "#AF52DE", view: "requests" as AppView },
-          { icon: "time-outline" as const, label: "History", color: "#FF6B35", view: "history" as AppView },
-        ].map((a) => {
-          const badge = a.label === "Requests" && pendingRequestCount > 0 ? pendingRequestCount : 0;
-          return (
-            <TouchableOpacity key={a.label} style={s.actionItem} onPress={() => { Haptics.selectionAsync(); setView(a.view); }} activeOpacity={0.75}>
-              <View style={{ position: "relative" }}>
-                <View style={[s.actionIcon, { backgroundColor: a.color + "18" }]}>
-                  <Ionicons name={a.icon} size={22} color={a.color} />
-                </View>
-                {badge > 0 && (
-                  <View style={{ position: "absolute", top: -4, right: -4, backgroundColor: "#FF3B30", borderRadius: 8, minWidth: 16, height: 16, alignItems: "center", justifyContent: "center", paddingHorizontal: 3 }}>
-                    <Text style={{ color: "#fff", fontSize: 9, fontFamily: "Inter_700Bold" }}>{badge > 99 ? "99+" : badge}</Text>
+        <View style={s.actionsRow}>
+          {[
+            { icon: "add-circle" as const, label: "Buy", color: "#34C759", view: "topup" as AppView },
+            { icon: "paper-plane" as const, label: "Send", color: "#FF9500", view: "send" as AppView },
+            { icon: "qr-code" as const, label: "Receive", color: Colors.brand, view: "receive" as AppView },
+            { icon: "swap-horizontal" as const, label: "Convert", color: "#7B61FF", view: "exchange" as AppView },
+            { icon: "receipt-outline" as const, label: "Requests", color: "#AF52DE", view: "requests" as AppView },
+            { icon: "time-outline" as const, label: "History", color: "#FF6B35", view: "history" as AppView },
+          ].map((a) => {
+            const badge = a.label === "Requests" && pendingRequestCount > 0 ? pendingRequestCount : 0;
+            return (
+              <TouchableOpacity key={a.label} style={s.actionItem} onPress={() => { Haptics.selectionAsync(); setView(a.view); }} activeOpacity={0.75}>
+                <View style={{ position: "relative" }}>
+                  <View style={[s.actionIcon, { backgroundColor: a.color + "18" }]}>
+                    <Ionicons name={a.icon} size={22} color={a.color} />
                   </View>
-                )}
-              </View>
-              <Text style={[s.actionLabel, { color: colors.textSecondary }]}>{a.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+                  {badge > 0 && (
+                    <View style={{ position: "absolute", top: -4, right: -4, backgroundColor: "#FF3B30", borderRadius: 8, minWidth: 16, height: 16, alignItems: "center", justifyContent: "center", paddingHorizontal: 3 }}>
+                      <Text style={{ color: "#fff", fontSize: 9, fontFamily: "Inter_700Bold" }}>{badge > 99 ? "99+" : badge}</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={[s.actionLabel, { color: colors.textSecondary }]}>{a.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-      {txLoading && transactions.length === 0 ? (
-        <ActivityIndicator color={Colors.brand} style={{ marginTop: 32 }} />
-      ) : recentTx.length > 0 ? (
-        <View style={s.section}>
-          <View style={s.sectionRow}>
-            <Text style={[s.sectionTitle, { color: colors.textSecondary }]}>RECENT ACTIVITY</Text>
-            <TouchableOpacity onPress={() => setView("history")}>
-              <Text style={[s.seeAll, { color: Colors.brand }]}>See all</Text>
+        {txLoading && transactions.length === 0 ? (
+          <ActivityIndicator color={Colors.brand} style={{ marginTop: 32 }} />
+        ) : recentTx.length > 0 ? (
+          <View style={s.section}>
+            <View style={s.sectionRow}>
+              <Text style={[s.sectionTitle, { color: colors.textSecondary }]}>RECENT ACTIVITY</Text>
+              <TouchableOpacity onPress={() => setView("history")}>
+                <Text style={[s.seeAll, { color: Colors.brand }]}>See all</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={[s.txCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              {recentTx.map((tx, i) => (
+                <View key={tx.id}>
+                  {i > 0 && <View style={[s.sep, { backgroundColor: colors.border }]} />}
+                  <View style={s.txRow}>
+                    <View style={[s.txIcon, { backgroundColor: tx.color + "18" }]}>
+                      <Ionicons name={tx.icon as any} size={16} color={tx.color} />
+                    </View>
+                    <View style={s.txInfo}>
+                      <Text style={[s.txLabel, { color: colors.text }]} numberOfLines={1}>{tx.label}</Text>
+                      <Text style={[s.txSub, { color: colors.textMuted }]}>{tx.counterparty ? `${tx.counterparty} · ` : ""}{timeAgo(tx.created_at)}</Text>
+                    </View>
+                    <Text style={[s.txAmt, { color: tx.amount > 0 ? "#34C759" : "#FF3B30" }]}>
+                      {tx.amount > 0 ? "+" : ""}{fmtAmt(Math.abs(tx.amount))} {tx.currency === "acoin" ? "AC" : tx.currency === "nexa" ? "NX" : ""}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : (
+          <View style={s.emptyWrap}>
+            <Ionicons name="wallet-outline" size={48} color={colors.textMuted} />
+            <Text style={[s.emptyText, { color: colors.textMuted }]}>No transactions yet</Text>
+            <TouchableOpacity style={[s.emptyBtn, { backgroundColor: Colors.brand }]} onPress={() => setView("topup")}>
+              <Text style={s.emptyBtnText}>Buy ACoin to get started</Text>
             </TouchableOpacity>
           </View>
-          <View style={[s.txCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            {recentTx.map((tx, i) => (
-              <View key={tx.id}>
-                {i > 0 && <View style={[s.sep, { backgroundColor: colors.border }]} />}
-                <View style={s.txRow}>
-                  <View style={[s.txIcon, { backgroundColor: tx.color + "18" }]}>
-                    <Ionicons name={tx.icon as any} size={16} color={tx.color} />
-                  </View>
-                  <View style={s.txInfo}>
-                    <Text style={[s.txLabel, { color: colors.text }]} numberOfLines={1}>{tx.label}</Text>
-                    <Text style={[s.txSub, { color: colors.textMuted }]}>{tx.counterparty ? `${tx.counterparty} · ` : ""}{timeAgo(tx.created_at)}</Text>
-                  </View>
-                  <Text style={[s.txAmt, { color: tx.amount > 0 ? "#34C759" : "#FF3B30" }]}>
-                    {tx.amount > 0 ? "+" : ""}{fmtAmt(Math.abs(tx.amount))} {tx.currency === "acoin" ? "AC" : tx.currency === "nexa" ? "NX" : ""}
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-      ) : (
-        <View style={s.emptyWrap}>
-          <Ionicons name="wallet-outline" size={48} color={colors.textMuted} />
-          <Text style={[s.emptyText, { color: colors.textMuted }]}>No transactions yet</Text>
-          <TouchableOpacity style={[s.emptyBtn, { backgroundColor: Colors.brand }]} onPress={() => setView("topup")}>
-            <Text style={s.emptyBtnText}>Buy ACoin to get started</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </ScrollView>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -942,6 +976,12 @@ function RequestsView({ colors, insets, user, onBack }: any) {
 const W = Dimensions.get("window").width;
 const s = StyleSheet.create({
   root: { flex: 1 },
+  walletHeader: { borderBottomWidth: 0.5 },
+  walletHeaderRow: { height: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12 },
+  walletHeaderTitleWrap: { alignItems: "center" },
+  walletHeaderTitle: { fontSize: 18, fontFamily: "Inter_700Bold" },
+  walletHeaderSubtitle: { fontSize: 11, fontFamily: "Inter_500Medium", marginTop: 1 },
+  walletBackGlyph: { fontSize: 34, lineHeight: 34, fontFamily: "Inter_400Regular", marginTop: -2 },
   heroCard: { margin: 16, borderRadius: 20, padding: 20 },
   heroRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   heroLabel: { color: "rgba(255,255,255,0.7)", fontSize: 12, fontFamily: "Inter_500Medium", marginBottom: 4 },

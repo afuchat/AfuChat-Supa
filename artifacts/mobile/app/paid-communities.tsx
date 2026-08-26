@@ -99,7 +99,7 @@ export default function PaidCommunitiesScreen() {
     if (community.is_member) return;
     if ((profile.acoin || 0) < community.price) {
       showAlert("Not enough ACoin", `You need ${community.price} ACoin to join. Top up your wallet.`, [
-        { text: "Go to Wallet", onPress: () => router.push("/wallet") },
+        { text: "Go to Wallet", onPress: () => router.push("/app/afupay") },
         { text: "Cancel" },
       ]);
       return;

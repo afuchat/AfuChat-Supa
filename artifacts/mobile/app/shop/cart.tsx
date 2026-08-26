@@ -79,7 +79,7 @@ export default function CartScreen() {
     if (!canAfford) {
       showAlert("Insufficient Balance", `You need ${formatShopAcoin(total)} but have ${formatShopAcoin(balance)}. Top up your AfuPay wallet.`, [
         { text: "Cancel" },
-        { text: "Top Up", onPress: () => router.push("/wallet" as any) },
+        { text: "Top Up", onPress: () => router.push("/app/afupay?section=topup" as any) },
       ]);
       return;
     }
@@ -286,7 +286,7 @@ export default function CartScreen() {
               )}
             </TouchableOpacity>
             {!canAfford && items.length > 0 && (
-              <TouchableOpacity onPress={() => router.push("/wallet" as any)} style={styles.topUpLink}>
+              <TouchableOpacity onPress={() => router.push("/app/afupay?section=topup" as any)} style={styles.topUpLink}>
                 <Text style={[styles.topUpText, { color: colors.accent }]}>Insufficient balance — Top up wallet</Text>
               </TouchableOpacity>
             )}

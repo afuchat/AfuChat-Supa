@@ -145,7 +145,7 @@ export default function AfuFreelanceApp({ initialScreen }: { initialScreen?: Scr
     if (selectedGig.seller_id === user.id) { showAlert("Oops", "You can't order your own service."); return; }
     if ((profile.acoin || 0) < selectedGig.price) {
       showAlert("Not enough ACoin", `Need ${selectedGig.price} ACoin, you have ${profile.acoin || 0}.`, [
-        { text: "Top Up", onPress: () => navigateOutside("/wallet/topup") }, { text: "Cancel" },
+        { text: "Top Up", onPress: () => navigateOutside("/app/afupay?section=topup") }, { text: "Cancel" },
       ]); return;
     }
     showAlert("Confirm Order", `Pay ${selectedGig.price} ACoin to @${selectedGig.seller?.handle}?`, [

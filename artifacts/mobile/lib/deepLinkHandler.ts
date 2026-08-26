@@ -5,7 +5,7 @@
  *
  * Supported URL formats:
  *   afuchat://settings              -> open Settings screen
- *   afuchat://wallet                -> open Wallet screen
+ *   afuchat://wallet                -> open the AfuPay wallet screen
  *   afuchat://chat/:id              -> open a specific chat
  *   afuchat://profile               -> open My Profile tab
  *   afuchat://discover              -> open Discover tab
@@ -59,7 +59,7 @@ const NAV_ROUTES: Record<string, string> = {
   followers:          "/followers",
   // ── Core screens ──────────────────────────────────────────────────────────
   settings:           "/settings",
-  wallet:             "/wallet",
+  wallet:             "/app/afupay",
   ai:                 "/ai",
   premium:            "/premium",
   prestige:           "/prestige",
