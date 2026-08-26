@@ -48,6 +48,7 @@ const NAV_ROUTES: Record<string, string> = {
   chats:              "/(tabs)/chats",
   chat:               "/(tabs)/chats",
   search:             "/(tabs)/search",
+  "new-chat":         "/chat/new",
   communities:        "/(tabs)/communities",
   contacts:           "/(tabs)/contacts",
   apps:               "/(tabs)/apps",

@@ -142,6 +142,7 @@
       ],
       "./plugins/withDataSyncForegroundService",
       "./plugins/withFlexibleMlKitScanner",
+      "./plugins/withAppShortcuts",
       [
         "expo-media-library",
         {
@@ -226,6 +227,40 @@
         "NSLocalNetworkUsageDescription": "AfuChat uses the local network when you choose to send files to a nearby device over Wi-Fi.",
         "UIBackgroundModes": [
           "audio"
+        ],
+        "UIApplicationShortcutItems": [
+          {
+            "UIApplicationShortcutItemType": "com.afuchat.new-chat",
+            "UIApplicationShortcutItemTitle": "New chat",
+            "UIApplicationShortcutItemIconType": "UIApplicationShortcutIconTypeCompose",
+            "UIApplicationShortcutItemUserInfo": {
+              "url": "afuchat://new-chat"
+            }
+          },
+          {
+            "UIApplicationShortcutItemType": "com.afuchat.create-post",
+            "UIApplicationShortcutItemTitle": "Create post",
+            "UIApplicationShortcutItemIconType": "UIApplicationShortcutIconTypeCompose",
+            "UIApplicationShortcutItemUserInfo": {
+              "url": "afuchat://create-post"
+            }
+          },
+          {
+            "UIApplicationShortcutItemType": "com.afuchat.search",
+            "UIApplicationShortcutItemTitle": "Search",
+            "UIApplicationShortcutItemIconType": "UIApplicationShortcutIconTypeSearch",
+            "UIApplicationShortcutItemUserInfo": {
+              "url": "afuchat://search"
+            }
+          },
+          {
+            "UIApplicationShortcutItemType": "com.afuchat.discover",
+            "UIApplicationShortcutItemTitle": "Discover",
+            "UIApplicationShortcutItemIconType": "UIApplicationShortcutIconTypeFavorite",
+            "UIApplicationShortcutItemUserInfo": {
+              "url": "afuchat://discover"
+            }
+          }
         ]
       },
       "associatedDomains": [
