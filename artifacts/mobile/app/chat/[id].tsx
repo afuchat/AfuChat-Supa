@@ -8535,10 +8535,26 @@ STRICT RULES:
               {(chatInfo?.is_group || chatInfo?.is_channel) && (
                 <DdRow colors={colors} icon="people"
                   label={chatInfo?.is_channel ? "Channel Info" : "Group Info & Members"}
-                  onPress={() => { setShowChatOptions(false); router.push({ pathname: "/group/[id]", params: { id: id as string } }); }} />
+                  onPress={() => {
+                    setShowChatOptions(false);
+                    if (chatInfo?.is_channel) {
+                      router.push({
+                        pathname: "/chat-info/[id]",
+                        params: {
+                          id: id as string,
+                          name: headerTitle,
+                          avatar: headerAvatar ?? "",
+                          isGroup: "0",
+                          isChannel: "1",
+                        },
+                      } as any);
+                    } else {
+                      router.push({ pathname: "/group/[id]", params: { id: id as string } });
+                    }
+                  }} />
               )}
               {/* Invite via link — group admins only */}
-              {(chatInfo?.is_group || chatInfo?.is_channel) && iAmChatAdmin && (
+              {chatInfo?.is_group && iAmChatAdmin && (
                 <DdRow colors={colors} icon="link"
                   label="Invite via Link"
                   onPress={() => { setShowChatOptions(false); setShowInviteLink(true); }} />

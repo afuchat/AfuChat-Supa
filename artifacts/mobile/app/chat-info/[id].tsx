@@ -15,6 +15,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Clipboard from "expo-clipboard";
 
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
@@ -24,7 +25,9 @@ import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import Colors from "@/constants/colors";
 import * as Haptics from "@/lib/haptics";
 import { showAlert } from "@/lib/alert";
+import { showToast } from "@/lib/toast";
 import { generateGroupInviteLink } from "@/lib/groupInvite";
+import QRCode from "@/components/ui/QRCode";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -236,6 +239,7 @@ export default function ChatInfoScreen() {
   const [members,      setMembers]      = useState<Member[]>([]);
   const [channelStats, setChannelStats] = useState<ChannelStats | null>(null);
   const [gridPosts,    setGridPosts]    = useState<GridPost[]>([]);
+  const [showChannelQr, setShowChannelQr] = useState(false);
 
   // ── Tab state ────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState(0);
@@ -426,6 +430,18 @@ export default function ChatInfoScreen() {
   async function handleShareInvite() {
     const link = generateGroupInviteLink(id);
     await Share.share({ message: `Join "${displayName}" on AfuChat:\n${link}`, url: link });
+  }
+
+  async function handleCopyChannelUsername() {
+    const handle = meta?.channel_handle;
+    if (!handle) return;
+    try {
+      await Clipboard.setStringAsync(`@${handle}`);
+      Haptics.selectionAsync();
+      showToast("Channel username copied", { type: "success", icon: "copy-outline" });
+    } catch {
+      showToast("Could not copy username", { type: "error" });
+    }
   }
 
   function openChat() {
@@ -680,15 +696,48 @@ export default function ChatInfoScreen() {
       {/* ── Channel info cards ── */}
       {isChannel && (
         <View style={s.cardsSection}>
-          {/* Description + invite */}
+          {/* Description + username + QR */}
           <InfoCard colors={colors}>
             {meta?.channel_handle ? (
               <>
-                <View style={s.bioRow}>
-                  <Text style={[s.bioText, { color: colors.text }]}>@{meta.channel_handle}</Text>
-                  <Text style={[s.bioLabel, { color: colors.textMuted }]}>Username</Text>
+                <View style={s.inviteRow}>
+                  <TouchableOpacity
+                    style={s.channelUsername}
+                    onPress={handleCopyChannelUsername}
+                    activeOpacity={0.65}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Copy channel username @${meta.channel_handle}`}
+                  >
+                    <Text style={[s.bioText, { color: colors.text }]}>@{meta.channel_handle}</Text>
+                    <Text style={[s.bioLabel, { color: colors.textMuted }]}>Username · Tap to copy</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setShowChannelQr((visible) => !visible)}
+                    style={[s.qrBtn, { backgroundColor: colors.background }]}
+                    activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel={showChannelQr ? "Hide channel QR code" : "Show channel QR code"}
+                  >
+                    <Ionicons name="qr-code" size={20} color={showChannelQr ? BRAND : colors.textMuted} />
+                  </TouchableOpacity>
                 </View>
-                <View style={[s.cardDivider, { backgroundColor: colors.border }]} />
+                {showChannelQr && (
+                  <View style={[s.channelQrPanel, { borderTopColor: colors.border }]}>
+                    <View style={s.channelQrFrame}>
+                      <QRCode value={generateGroupInviteLink(id)} size={220} color="#0a1628" backgroundColor="#ffffff" />
+                    </View>
+                    <Text style={[s.channelQrHint, { color: colors.textMuted }]}>Scan to join this channel</Text>
+                    <Text
+                      style={[s.channelQrUrl, { color: colors.text }]}
+                      selectable
+                      numberOfLines={2}
+                      ellipsizeMode="middle"
+                    >
+                      {generateGroupInviteLink(id)}
+                    </Text>
+                  </View>
+                )}
+                {meta?.description ? <View style={[s.cardDivider, { backgroundColor: colors.border }]} /> : null}
               </>
             ) : null}
             {meta?.description ? (
@@ -697,20 +746,8 @@ export default function ChatInfoScreen() {
                   <Text style={[s.bioText, { color: colors.text }]}>{meta.description}</Text>
                   <Text style={[s.bioLabel, { color: colors.textMuted }]}>Description</Text>
                 </View>
-                <View style={[s.cardDivider, { backgroundColor: colors.border }]} />
               </>
             ) : null}
-            <View style={[s.inviteRow, { borderColor: colors.border }]}>
-              <View style={{ flex: 1 }}>
-                <Text style={[s.inviteLink, { color: colors.text }]}>
-                  {generateGroupInviteLink(id)}
-                </Text>
-                <Text style={[s.inviteLabel, { color: colors.textMuted }]}>Invite Link</Text>
-              </View>
-              <TouchableOpacity onPress={handleShareInvite} style={[s.qrBtn, { backgroundColor: colors.background }]}>
-                <Ionicons name="qr-code" size={20} color={colors.textMuted} />
-              </TouchableOpacity>
-            </View>
           </InfoCard>
 
           {/* Stats */}
@@ -930,12 +967,41 @@ const s = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     marginTop: 2,
   },
+  channelUsername: {
+    flex: 1,
+    minWidth: 0,
+  },
   qrBtn: {
     width: 36,
     height: 36,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
+  },
+  channelQrPanel: {
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 18,
+    borderTopWidth: 0.5,
+  },
+  channelQrFrame: {
+    padding: 10,
+    borderRadius: 14,
+    backgroundColor: "#fff",
+  },
+  channelQrHint: {
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  channelQrUrl: {
+    maxWidth: "100%",
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: "Inter_500Medium",
+    textAlign: "center",
   },
   settingsRow: {
     flexDirection: "row",
