@@ -151,15 +151,6 @@ const CATEGORIES: Category[] = [
         featuredSub: "Browse your shared media and files in one place.",
       },
       {
-        id: "afuid",
-        label: "Digital ID",
-        icon: "id-card",
-        gradient: ["#1E3A5F", "#2C5282"],
-        route: "/id",
-        badge: "3D",
-        featuredSub: "Keep your verifiable AfuChat identity ready to share.",
-      },
-      {
         id: "afuqr",
         label: "QR Scanner",
         icon: "qr-code",

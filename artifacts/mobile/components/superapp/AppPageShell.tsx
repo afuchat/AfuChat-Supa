@@ -19,7 +19,6 @@ export type FullAppId =
   | "afumatch"
   | "afucollections"
   | "afuusernames"
-  | "afuid"
   | "afuqr"
   | "afusaved";
 
@@ -92,9 +91,6 @@ const NAV: Record<FullAppId, AppNavItem[]> = {
     { key: "market", label: "Market", icon: "storefront-outline", href: "/app/afuusernames" },
     { key: "owned", label: "Owned", icon: "at-outline", href: "/app/afuusernames?section=owned" },
     { key: "mine", label: "My listings", icon: "pricetag-outline", href: "/app/afuusernames?section=mine" },
-  ],
-  afuid: [
-    { key: "card", label: "My ID", icon: "id-card-outline", href: "/app/afuid" },
   ],
   afuqr: [
     { key: "scan", label: "Scan", icon: "qr-code-outline", href: "/app/afuqr" },

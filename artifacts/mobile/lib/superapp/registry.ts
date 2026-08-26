@@ -86,16 +86,6 @@ export const SUPER_APP_REGISTRY: ModuleManifest[] = [
     keepAlive: false,
   },
   {
-    id: "afuid",
-    name: "Digital ID",
-    description: "Your verifiable digital identity card.",
-    version: "1.0.0",
-    icon: "id-card",
-    gradient: ["#1E3A5F", "#2C5282"] as const,
-    keepAlive: false,
-    badge: "3D",
-  },
-  {
     id: "afuqr",
     name: "QR Scanner",
     description: "Scan any QR code — links, Wi-Fi, contacts and more.",

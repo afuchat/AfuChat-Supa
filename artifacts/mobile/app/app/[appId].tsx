@@ -9,7 +9,6 @@ import AfuFreelanceApp from "@/modules/afufreelance";
 import AfuCollectionsApp from "@/modules/afucollections";
 import AfuEventsApp from "@/modules/afuevents";
 import AfuUsernamesApp from "@/modules/afuusernames";
-import AfuIDApp from "@/modules/afuid";
 import AfuQRApp from "@/modules/afuqr";
 import AfuSavedApp from "@/modules/afusaved";
 import GamesScreen from "@/app/games";
@@ -37,7 +36,7 @@ const APP_IDS: FullAppId[] = [
   "afupay", "afumarket", "afugames", "afubusiness", "afusearch", "afulens",
   "afuservices", "afufreelance", "afufiles", "afugifts", "afumusic",
   "afuevents", "afumatch", "afucollections", "afuusernames",
-  "afuid", "afuqr", "afusaved",
+  "afuqr", "afusaved",
 ];
 
 function isAppId(value: string): value is FullAppId {
@@ -103,8 +102,6 @@ function AppContent({
       return <AfuCollectionsApp />;
     case "afuusernames":
       return <AfuUsernamesApp initialTab={section as any} />;
-    case "afuid":
-      return <AfuIDApp />;
     case "afuqr":
       return <AfuQRApp />;
     case "afusaved":
