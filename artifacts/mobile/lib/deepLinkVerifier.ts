@@ -73,7 +73,7 @@ const NAV_TESTS: NavTest[] = [
   { url: "afuchat://shorts",       expectedType: "navigate", expectedPath: "/(tabs)/shorts",     description: "Shorts tab" },
   { url: "afuchat://communities",  expectedType: "navigate", expectedPath: "/(tabs)/communities",description: "Communities tab" },
   { url: "afuchat://contacts",     expectedType: "navigate", expectedPath: "/(tabs)/contacts",   description: "Contacts tab" },
-  { url: "afuchat://apps",         expectedType: "navigate", expectedPath: "/(tabs)/apps",       description: "Apps tab" },
+  { url: "afuchat://apps",         expectedType: "navigate", expectedPath: "/apps",             description: "Apps page" },
   // ── Profile ─────────────────────────────────────────────────────────────
   { url: "afuchat://profile",      expectedType: "navigate", expectedPath: "/(tabs)/me",         description: "Profile tab" },
   { url: "afuchat://me",           expectedType: "navigate", expectedPath: "/(tabs)/me",         description: "Me tab (alias)" },

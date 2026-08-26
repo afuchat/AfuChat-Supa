@@ -202,7 +202,7 @@ export default function AfuPayApp({
   const nexa = profile?.xp ?? 0;
   const handleHomeBack = useCallback(() => {
     if (router.canGoBack()) router.back();
-    else router.replace("/(tabs)/apps" as any);
+    else router.replace("/apps" as any);
   }, []);
 
   const loadTransactions = useCallback(async () => {

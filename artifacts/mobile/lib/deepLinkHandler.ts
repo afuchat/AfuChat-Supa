@@ -51,7 +51,7 @@ const NAV_ROUTES: Record<string, string> = {
   "new-chat":         "/chat/new",
   communities:        "/(tabs)/communities",
   contacts:           "/(tabs)/contacts",
-  apps:               "/(tabs)/apps",
+  apps:               "/apps",
   shorts:             "/(tabs)/shorts",
   // ── Profile ────────────────────────────────────────────────────────────────
   profile:            "/(tabs)/me",

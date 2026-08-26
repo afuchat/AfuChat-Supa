@@ -15,7 +15,7 @@
  *
  *   // Exact same API as Pressable / TouchableOpacity — just swap the import.
  *   <SafePressable onPress={() => safeRouter.push("/profile")} style={...} />
- *   <SafeTouchableOpacity onPress={() => navigate("/(tabs)/apps")} activeOpacity={0.8} />
+ *   <SafeTouchableOpacity onPress={() => navigate("/apps")} activeOpacity={0.8} />
  */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
