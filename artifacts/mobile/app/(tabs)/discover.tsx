@@ -1119,6 +1119,7 @@ export default function DiscoverScreen() {
   // ?tab=shorts is forwarded there so existing links keep working.
   const [feedTab, setFeedTab] = useState<"for_you" | "following">("for_you");
   const [activeDiscoverTab, setActiveDiscoverTab] = useState<"for_you" | "following" | "find">("for_you");
+  const activeDiscoverTabRef = useRef<"for_you" | "following" | "find">("for_you");
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -1472,6 +1473,10 @@ export default function DiscoverScreen() {
 
   useEffect(() => { postsRef.current = posts; }, [posts]);
   useEffect(() => { feedTabRef.current = feedTab; }, [feedTab]);
+  useEffect(() => {
+    activeDiscoverTabRef.current = activeDiscoverTab;
+    if (activeDiscoverTab === "find") _resetPill(false);
+  }, [activeDiscoverTab]);
   useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
 
   // Keep newestPostAtRef pointed at the latest post currently rendered in the feed.
@@ -2375,6 +2380,7 @@ export default function DiscoverScreen() {
 
     const poll = async () => {
       if (pollInFlightRef.current) return;
+      if (activeDiscoverTabRef.current === "find") return;
       if (!isOnline()) return;
       const newestAt = newestPostAtRef.current;
       if (!newestAt) return;
@@ -3070,6 +3076,7 @@ export default function DiscoverScreen() {
       </Animated.View>
 
       {/* ── Floating "new posts" pill ── */}
+      {activeDiscoverTab !== "find" && (
       <Animated.View
         style={[
           styles.newPostsFloatingWrap,
@@ -3146,6 +3153,7 @@ export default function DiscoverScreen() {
           </Text>
         </Pressable>
       </Animated.View>
+      )}
     </View>
   );
 }
