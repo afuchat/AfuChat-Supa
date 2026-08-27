@@ -54,6 +54,7 @@ import {
 } from "@expo-google-fonts/inter";
 
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { CallProvider } from "@/context/CallContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AppAccentProvider } from "@/context/AppAccentContext";
 import { LanguageProvider, useLanguage } from "@/context/LanguageContext";
@@ -64,6 +65,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastContainer } from "@/components/ui/ToastContainer";
 import AlertModal from "@/components/ui/AlertModal";
 import { GlobalInboxListener } from "@/components/GlobalInboxListener";
+import { IncomingCallModal } from "@/components/IncomingCallModal";
 import PushNotificationManager from "@/components/PushNotificationManager";
 import UpdatePrompt from "@/components/UpdatePrompt";
 import { initActivityTracker } from "@/lib/activityTracker";
@@ -473,6 +475,7 @@ export default function RootLayout() {
                 <AnimationGuardInit />
                 <DataModeProvider>
                   <AuthProvider>
+                    <CallProvider>
                     <ActivityTrackerSync />
                       <CrashReporterUserSync />
                       <CrashSupportHandler />
@@ -489,6 +492,7 @@ export default function RootLayout() {
                                 <IncomingShareGate navigationReady={!!rootNavigationState?.key} />
                                 <NativeShareShortcutSync />
                                 <AppNavigationStack />
+                                <IncomingCallModal />
                                 <ToastContainer />
                                 <AlertModal />
                               </MiniAppRuntimeProvider>
@@ -496,6 +500,7 @@ export default function RootLayout() {
                           </AdvancedFeaturesProvider>
                         </LanguageDirectionShell>
                       </LanguageProvider>
+                    </CallProvider>
                   </AuthProvider>
                 </DataModeProvider>
               </AppAccentProvider>

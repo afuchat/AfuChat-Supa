@@ -128,6 +128,7 @@ import MiniProfilePopup from "@/components/chat/MiniProfilePopup";
 import { VoiceWaveform } from "@/components/chat/VoiceWaveform";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { audioFocus } from "@/lib/audioFocus";
+import { useCall } from "@/context/CallContext";
 
 const ChatFontSizeCtx = React.createContext<number>(14);
 
@@ -2256,6 +2257,7 @@ function ChatScreen() {
   }>();
   const isDraft = id === "new";
   const { user, profile, isPremium, subscription, refreshProfile, equippedGoods } = useAuth();
+  const { status: callStatus, startCall: callStart } = useCall();
   const { openApp } = useSuperApp();
   const { colors, isDark } = useTheme();
   const { appearance: chatAppearance, updateAppearance: updateChatAppearance } = useChatAppearance(id as string | undefined);
@@ -6804,7 +6806,7 @@ STRICT RULES:
               <Ionicons name="person-add" size={20} color={colors.text} />
             </TouchableOpacity>
           )}
-          {/* Calls are currently unavailable, but keep the icon visible. */}
+          {/* Voice calls are available for direct AfuChat conversations. */}
           {chatInfo &&
             !chatInfo.is_group &&
             !chatInfo.is_channel &&
@@ -6813,11 +6815,22 @@ STRICT RULES:
             !isAfuAiDirectChat &&
             !isNotificationsChat &&
             chatInfo.other_id &&
+            callStatus === "idle" &&
             (
             <TouchableOpacity
               hitSlop={12}
               activeOpacity={0.5}
-              onPress={() => showAlert("Calls", "Coming soon")}
+              onPress={() => {
+                const targetId = chatInfo.other_id;
+                void callStart({
+                  calleeId: targetId,
+                  calleeName: chatInfo.other_name ?? "AfuChat user",
+                  calleeAvatar: chatInfo.other_avatar ?? null,
+                  chatId: (isDraft ? realChatId : id as string) ?? null,
+                }).then((callId) => {
+                  router.push({ pathname: "/call/[id]", params: { id: callId } } as any);
+                }).catch(() => {});
+              }}
             >
               <Ionicons
                 name="call-outline"
