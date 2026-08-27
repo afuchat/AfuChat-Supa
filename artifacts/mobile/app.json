@@ -23,7 +23,6 @@
         "android.permission.VIBRATE",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.WAKE_LOCK",
@@ -240,27 +239,27 @@
             }
           },
           {
+            "UIApplicationShortcutItemType": "com.afuchat.chats",
+            "UIApplicationShortcutItemTitle": "Chats",
+            "UIApplicationShortcutItemIconType": "UIApplicationShortcutIconTypeMessage",
+            "UIApplicationShortcutItemUserInfo": {
+              "url": "afuchat://chats"
+            }
+          },
+          {
+            "UIApplicationShortcutItemType": "com.afuchat.contacts",
+            "UIApplicationShortcutItemTitle": "Contacts",
+            "UIApplicationShortcutItemIconType": "UIApplicationShortcutIconTypePeople",
+            "UIApplicationShortcutItemUserInfo": {
+              "url": "afuchat://contacts"
+            }
+          },
+          {
             "UIApplicationShortcutItemType": "com.afuchat.create-post",
             "UIApplicationShortcutItemTitle": "Create post",
             "UIApplicationShortcutItemIconType": "UIApplicationShortcutIconTypeCompose",
             "UIApplicationShortcutItemUserInfo": {
               "url": "afuchat://create-post"
-            }
-          },
-          {
-            "UIApplicationShortcutItemType": "com.afuchat.search",
-            "UIApplicationShortcutItemTitle": "Search",
-            "UIApplicationShortcutItemIconType": "UIApplicationShortcutIconTypeSearch",
-            "UIApplicationShortcutItemUserInfo": {
-              "url": "afuchat://search"
-            }
-          },
-          {
-            "UIApplicationShortcutItemType": "com.afuchat.discover",
-            "UIApplicationShortcutItemTitle": "Discover",
-            "UIApplicationShortcutItemIconType": "UIApplicationShortcutIconTypeFavorite",
-            "UIApplicationShortcutItemUserInfo": {
-              "url": "afuchat://discover"
             }
           }
         ]

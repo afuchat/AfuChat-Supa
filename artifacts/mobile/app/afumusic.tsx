@@ -16,13 +16,6 @@ import { GlassHeader } from "@/components/ui/GlassHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { showAlert } from "@/lib/alert";
-import {
-  getNativeMusicPlayer,
-  hasNativeMusicPlayer,
-  setNativeMusicQueue,
-  setupNativeMusicPlayer,
-  type NativeMusicTrack,
-} from "@/lib/musicPlayer";
 
 type LocalTrack = {
   id: string;
@@ -128,7 +121,6 @@ function TrackRow({
 export default function AfuMusicScreen() {
   const { colors, accent } = useTheme();
   const insets = useSafeAreaInsets();
-  const nativePlaybackAvailable = hasNativeMusicPlayer();
   const [permission, requestPermission] = MediaLibrary.usePermissions({
     granularPermissions: ["audio"],
   });
@@ -142,8 +134,6 @@ export default function AfuMusicScreen() {
   const soundRef = useRef<PlaybackSound | null>(null);
   const playRequestRef = useRef(0);
   const mountedRef = useRef(true);
-  const tracksRef = useRef<LocalTrack[]>([]);
-  tracksRef.current = tracks;
 
   const loadTracks = useCallback(async () => {
     if (Platform.OS === "web" || !permission?.granted) return;
@@ -182,89 +172,13 @@ export default function AfuMusicScreen() {
     if (permission?.granted) void loadTracks();
     else if (permission && !permission.granted) setLoading(false);
 
-    let nativeSubscriptions: Array<{ remove: () => void }> = [];
-    if (nativePlaybackAvailable) {
-      const TrackPlayer = getNativeMusicPlayer();
-      if (TrackPlayer) {
-        let playerState: { Playing?: string } | null = null;
-        try {
-          const { Event, State } = require("react-native-track-player");
-          playerState = State;
-          void setupNativeMusicPlayer();
-
-          const addListener = (event: unknown, handler: (...args: any[]) => void) => {
-            if (event == null) return;
-            try {
-              const subscription = TrackPlayer.addEventListener(event as any, handler as any);
-              if (subscription && typeof subscription.remove === "function") {
-                nativeSubscriptions.push(subscription);
-              }
-            } catch (error) {
-              if (__DEV__) console.warn("[AfuMusic] playback event unavailable", error);
-            }
-          };
-
-          addListener(Event?.PlaybackState, ({ state }: { state: string }) => {
-            if (mountedRef.current) setIsPlaying(state === State?.Playing);
-          });
-          addListener(
-            Event?.PlaybackProgressUpdated,
-            ({ position, duration }: { position: number; duration: number }) => {
-              if (!mountedRef.current) return;
-              setPositionMillis(position * 1000);
-              setDurationMillis(duration * 1000);
-            },
-          );
-          addListener(
-            Event?.PlaybackActiveTrackChanged,
-            ({ index }: { index?: number }) => {
-              const nextTrack = index === undefined ? undefined : tracksRef.current[index];
-              if (!mountedRef.current) return;
-              setCurrentTrackId(nextTrack?.id ?? null);
-              setPositionMillis(0);
-              setDurationMillis((nextTrack?.duration ?? 0) * 1000);
-            },
-          );
-          addListener(Event?.PlaybackQueueEnded, () => {
-            if (mountedRef.current) setIsPlaying(false);
-          });
-          addListener(Event?.PlaybackError, () => {
-            if (mountedRef.current) {
-              setIsPlaying(false);
-              setError("This track couldn't be played. It may no longer be available offline.");
-            }
-          });
-        } catch (error) {
-          if (__DEV__) console.warn("[AfuMusic] native playback events unavailable", error);
-        }
-        void (async () => {
-          try {
-            const [activeIndex, progress, playbackState] = await Promise.all([
-              TrackPlayer.getActiveTrackIndex(),
-              TrackPlayer.getProgress(),
-              TrackPlayer.getPlaybackState(),
-            ]);
-            if (!mountedRef.current) return;
-            const activeTrack = activeIndex === undefined ? undefined : tracksRef.current[activeIndex];
-            setCurrentTrackId(activeTrack?.id ?? null);
-            setPositionMillis(progress.position * 1000);
-            setDurationMillis(progress.duration * 1000 || (activeTrack?.duration ?? 0) * 1000);
-            setIsPlaying(playbackState.state === playerState?.Playing);
-          } catch {}
-        })();
-      }
-    }
-
     return () => {
       mountedRef.current = false;
-      nativeSubscriptions.forEach((subscription) => subscription.remove());
-      if (!nativePlaybackAvailable) {
-        const sound = soundRef.current;
-        soundRef.current = null;
-        if (sound) void sound.unloadAsync().catch(() => {});
-      }
+      const sound = soundRef.current;
+      soundRef.current = null;
+      if (sound) void sound.unloadAsync().catch(() => {});
     };
-  }, [permission?.granted, loadTracks, nativePlaybackAvailable]);
+  }, [permission?.granted, loadTracks]);
 
   const currentTrack = useMemo(
     () => tracks.find((track) => track.id === currentTrackId) ?? null,
@@ -272,53 +186,6 @@ export default function AfuMusicScreen() {
   );
 
   async function handleTrackPress(track: LocalTrack) {
-    if (nativePlaybackAvailable) {
-      const TrackPlayer = getNativeMusicPlayer();
-      if (!TrackPlayer) return;
-      try {
-        const index = tracks.findIndex((item) => item.id === track.id);
-        if (index < 0 || !(await setupNativeMusicPlayer())) return;
-
-        const activeIndex = await TrackPlayer.getActiveTrackIndex();
-        const { State } = require("react-native-track-player");
-        const playbackState = await TrackPlayer.getPlaybackState();
-        if (activeIndex === index) {
-          if (playbackState.state === State.Playing) {
-            await TrackPlayer.pause();
-            return;
-          }
-          if (playbackState.state === State.Ended) await TrackPlayer.seekTo(0);
-          await TrackPlayer.play();
-          return;
-        }
-
-        const info = await MediaLibrary.getAssetInfoAsync(track.id, {
-          shouldDownloadFromNetwork: false,
-        });
-        const selectedUri = info.localUri ?? info.uri ?? track.uri;
-        const queue: NativeMusicTrack[] = tracks.map((item, itemIndex) => ({
-          id: item.id,
-          url: itemIndex === index ? selectedUri : item.uri,
-          title: displayName(item.filename),
-          artist: "On this device",
-          album: "AfuMusic",
-          duration: item.duration,
-        }));
-        setCurrentTrackId(track.id);
-        setPositionMillis(0);
-        setDurationMillis(track.duration * 1000);
-        const started = await setNativeMusicQueue(queue, index);
-        if (!started && mountedRef.current) {
-          setIsPlaying(false);
-          setError("This track couldn't be played. It may no longer be available offline.");
-        }
-      } catch {
-        setIsPlaying(false);
-        setError("This track couldn't be played. It may no longer be available offline.");
-      }
-      return;
-    }
-
     const Audio = getAudioModule();
     if (!Audio) return;
 
@@ -379,19 +246,6 @@ export default function AfuMusicScreen() {
 
   function skipTrack(direction: -1 | 1) {
     if (!currentTrackId || tracks.length === 0) return;
-    if (nativePlaybackAvailable) {
-      const TrackPlayer = getNativeMusicPlayer();
-      if (!TrackPlayer) return;
-      try {
-        void (direction === 1 ? TrackPlayer.skipToNext() : TrackPlayer.skipToPrevious()).catch(() => {});
-      } catch {
-        if (mountedRef.current) {
-          setIsPlaying(false);
-          setError("This track couldn't be changed right now. Please try again.");
-        }
-      }
-      return;
-    }
     const index = tracks.findIndex((track) => track.id === currentTrackId);
     const next = tracks[(index + direction + tracks.length) % tracks.length];
     if (next) void handleTrackPress(next);

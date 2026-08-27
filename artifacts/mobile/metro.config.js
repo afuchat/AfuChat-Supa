@@ -14,7 +14,6 @@ config.projectRoot = __dirname;
 const WEB_SHIMS = {
   "react-native-pager-view": path.resolve(__dirname, "lib/pager-view-web-shim.js"),
   "@shopify/flash-list":     path.resolve(__dirname, "lib/flash-list-web-shim.js"),
-  "react-native-track-player": path.resolve(__dirname, "lib/track-player-web-shim.js"),
 };
 
 // Keep Metro focused on the mobile app and away from generated sandbox files.
@@ -31,12 +30,9 @@ config.resolver = {
   },
   resolveRequest: (context, moduleName, platform) => {
     // Metro may omit the platform while walking a CommonJS require from the
-    // web entrypoint. Match that case too, and also catch package subpaths so
-    // Track Player's optional browser implementation cannot pull Shaka in.
+    // web entrypoint. Match that case too.
     const shim = WEB_SHIMS[moduleName] ??
-      (moduleName.startsWith("react-native-track-player/")
-        ? WEB_SHIMS["react-native-track-player"]
-        : undefined);
+      undefined;
     if ((platform === "web" || platform == null) && shim) {
       return { filePath: shim, type: "sourceFile" };
     }

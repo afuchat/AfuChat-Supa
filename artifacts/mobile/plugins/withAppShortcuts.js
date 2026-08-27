@@ -39,6 +39,30 @@ const SHORTCUTS_XML = `<?xml version="1.0" encoding="utf-8"?>
             android:data="afuchat://new-chat" />
     </shortcut>
     <shortcut
+        android:shortcutId="chats"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_chats"
+        android:shortcutLongLabel="@string/shortcut_chats_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.afuchat.mobile"
+            android:targetClass="com.afuchat.mobile.MainActivity"
+            android:data="afuchat://chats" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="contacts"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_contacts"
+        android:shortcutLongLabel="@string/shortcut_contacts_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.afuchat.mobile"
+            android:targetClass="com.afuchat.mobile.MainActivity"
+            android:data="afuchat://contacts" />
+    </shortcut>
+    <shortcut
         android:shortcutId="create-post"
         android:enabled="true"
         android:icon="@mipmap/ic_launcher"
@@ -49,30 +73,6 @@ const SHORTCUTS_XML = `<?xml version="1.0" encoding="utf-8"?>
             android:targetPackage="com.afuchat.mobile"
             android:targetClass="com.afuchat.mobile.MainActivity"
             android:data="afuchat://create-post" />
-    </shortcut>
-    <shortcut
-        android:shortcutId="search"
-        android:enabled="true"
-        android:icon="@mipmap/ic_launcher"
-        android:shortcutShortLabel="@string/shortcut_search"
-        android:shortcutLongLabel="@string/shortcut_search_long">
-        <intent
-            android:action="android.intent.action.VIEW"
-            android:targetPackage="com.afuchat.mobile"
-            android:targetClass="com.afuchat.mobile.MainActivity"
-            android:data="afuchat://search" />
-    </shortcut>
-    <shortcut
-        android:shortcutId="discover"
-        android:enabled="true"
-        android:icon="@mipmap/ic_launcher"
-        android:shortcutShortLabel="@string/shortcut_discover"
-        android:shortcutLongLabel="@string/shortcut_discover_long">
-        <intent
-            android:action="android.intent.action.VIEW"
-            android:targetPackage="com.afuchat.mobile"
-            android:targetClass="com.afuchat.mobile.MainActivity"
-            android:data="afuchat://discover" />
     </shortcut>
     <!-- Dynamic conversation shortcuts are also eligible for Android Direct Share. -->
     <share-target android:targetClass="com.afuchat.mobile.MainActivity">
@@ -93,12 +93,12 @@ const SHORTCUTS_XML = `<?xml version="1.0" encoding="utf-8"?>
 const SHORTCUT_STRINGS = `    <!-- ${ANDROID_MARKER} -->
     <string name="shortcut_new_chat">New chat</string>
     <string name="shortcut_new_chat_long">Start a new conversation</string>
+    <string name="shortcut_chats">Chats</string>
+    <string name="shortcut_chats_long">Open your conversations</string>
+    <string name="shortcut_contacts">Contacts</string>
+    <string name="shortcut_contacts_long">Find people and contacts</string>
     <string name="shortcut_create_post">Create post</string>
     <string name="shortcut_create_post_long">Share something new</string>
-    <string name="shortcut_search">Search</string>
-    <string name="shortcut_search_long">Search AfuChat</string>
-    <string name="shortcut_discover">Discover</string>
-    <string name="shortcut_discover_long">Explore AfuChat</string>
 `;
 
 function withShortcutManifest(config) {
