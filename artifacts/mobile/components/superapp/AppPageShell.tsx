@@ -12,7 +12,6 @@ export type FullAppId =
   | "afufreelance"
   | "afufiles"
   | "afugifts"
-  | "afumusic"
   | "afuevents"
   | "afumatch"
   | "afucollections"
@@ -60,9 +59,6 @@ const NAV: Record<FullAppId, AppNavItem[]> = {
   afugifts: [
     { key: "gifts", label: "My gifts", icon: "gift-outline", href: "/app/afugifts" },
     { key: "marketplace", label: "Marketplace", icon: "storefront-outline", href: "/app/afugifts?section=marketplace" },
-  ],
-  afumusic: [
-    { key: "library", label: "Library", icon: "musical-notes-outline", href: "/app/afumusic" },
   ],
   afuevents: [
     { key: "upcoming", label: "Upcoming", icon: "calendar-outline", href: "/app/afuevents" },

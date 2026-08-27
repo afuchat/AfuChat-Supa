@@ -18,7 +18,6 @@ import { SearchScreen } from "@/app/(tabs)/search";
 import FileManagerScreen from "@/app/file-manager";
 import GiftsScreen from "@/app/gifts";
 import GiftMarketplaceScreen from "@/app/gifts/marketplace";
-import AfuMusicScreen from "@/app/afumusic";
 import MatchScreen from "@/app/match";
 import MatchPreferencesScreen from "@/app/match/preferences";
 import CartScreen from "@/app/shop/cart";
@@ -44,7 +43,7 @@ import MoneyRequestScreen from "@/app/wallet/request";
 
 const APP_IDS: FullAppId[] = [
   "afupay", "afumarket", "afugames", "afubusiness", "afusearch",
-  "afufreelance", "afufiles", "afugifts", "afumusic",
+  "afufreelance", "afufiles", "afugifts",
   "afuevents", "afumatch", "afucollections", "afuusernames",
   "afuqr", "afusaved",
 ];
@@ -104,8 +103,6 @@ function AppContent({
     case "afugifts":
       if (section === "marketplace") return <GiftMarketplaceScreen />;
       return <GiftsScreen />;
-    case "afumusic":
-      return <AfuMusicScreen />;
     case "afuevents":
       return <AfuEventsApp initialTab={section as any} />;
     case "afumatch":
