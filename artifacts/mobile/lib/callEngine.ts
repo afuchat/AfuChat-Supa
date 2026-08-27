@@ -72,7 +72,9 @@ function setStatus(next: CallStatus) {
 }
 
 function detectRtc(): RtcBridge | null {
-  if (rtc !== undefined) return rtc;
+  // A native module can appear a moment after the first JS effect on Android.
+  // Cache only a successful bridge; a transient null must remain retryable.
+  if (rtc) return rtc;
 
   if (Platform.OS === "web") {
     const g = globalThis as any;
@@ -92,8 +94,7 @@ function detectRtc(): RtcBridge | null {
   // react-native-webrtc is not included in Expo Go. Keep this require lazy so
   // its native module cannot crash the app during bundle evaluation.
   if (isExpoGo()) {
-    rtc = null;
-    return rtc;
+    return null;
   }
   try {
     if (!NativeModules.WebRTCModule && TurboModuleRegistry?.get) {
@@ -103,8 +104,7 @@ function detectRtc(): RtcBridge | null {
     }
     const webrtc = require("react-native-webrtc");
     if (!webrtc?.RTCPeerConnection || !webrtc?.mediaDevices?.getUserMedia) {
-      rtc = null;
-      return rtc;
+      return null;
     }
     rtc = {
       RTCPeerConnection: webrtc.RTCPeerConnection,
@@ -113,7 +113,7 @@ function detectRtc(): RtcBridge | null {
       mediaDevices: webrtc.mediaDevices,
     };
   } catch {
-    rtc = null;
+    return null;
   }
   return rtc;
 }

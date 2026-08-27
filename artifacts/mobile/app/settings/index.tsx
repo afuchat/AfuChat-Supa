@@ -19,6 +19,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { AfuLogo } from "@/components/ui/AfuLogo";
 import Colors from "@/constants/colors";
 import { openAppReview } from "@/lib/appReview";
+import { requestNativeWidgetPin } from "@/lib/nativeShareShortcuts";
 
 // ─── Theme toggle options ──────────────────────────────────────────────────────
 // ─── Reusable row primitives ───────────────────────────────────────────────────
@@ -207,12 +208,15 @@ export default function SettingsScreen() {
               icon="grid-outline"
               label="Add AfuChat widget"
               sublabel="Show your recent chats on the home screen"
-              onPress={() =>
-                showAlert(
-                  "Add AfuChat to your home screen",
-                  "On your Android home screen, touch and hold an empty space, tap Widgets, find AfuChat, then drag the Recent chats widget onto your home screen.",
-                )
-              }
+              onPress={async () => {
+                const pinned = await requestNativeWidgetPin();
+                if (!pinned) {
+                  showAlert(
+                    "Add AfuChat to your home screen",
+                    "On your Android home screen, touch and hold an empty space, tap Widgets, find AfuChat, then drag the Recent chats widget onto your home screen.",
+                  );
+                }
+              }}
               last
               colors={colors}
               accent={accent}

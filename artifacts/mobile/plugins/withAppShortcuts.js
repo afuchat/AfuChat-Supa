@@ -313,6 +313,8 @@ function withNativeShareShortcuts(config) {
 
 import android.content.Context
 import android.content.Intent
+ import android.appwidget.AppWidgetManager
+ import android.content.ComponentName
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import android.app.Person
@@ -457,12 +459,40 @@ class AfuChatShareShortcutsModule(
   fun getInitialChatId(promise: Promise) {
     try {
       val intent = reactApplicationContext.currentActivity?.intent
-      val fromData = intent?.data?.getQueryParameter("chatId")
+      val data = intent?.data
+      val fromData = data?.getQueryParameter("chatId")
+        ?: if (data?.host == "chat") data.pathSegments.firstOrNull() else null
       val fromExtra = intent?.getStringExtra("afuchat_chat_id")
-      val chatId = fromData ?: fromExtra
+      val shortcutId = intent?.getStringExtra("android.intent.extra.shortcut.ID")
+      val fromShortcut = shortcutId
+        ?.takeIf { it.startsWith("share-chat-") }
+        ?.removePrefix("share-chat-")
+      val chatId = fromData ?: fromExtra ?: fromShortcut
       promise.resolve(chatId)
     } catch (error: Exception) {
       promise.reject("SHARE_CHAT_ID_READ_FAILED", error)
+    }
+  }
+
+  @ReactMethod
+  fun requestWidgetPin(promise: Promise) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+      promise.resolve(false)
+      return
+    }
+
+    try {
+      val context = reactApplicationContext.applicationContext
+      val manager = context.getSystemService(Context.APPWIDGET_SERVICE) as? AppWidgetManager
+      if (manager == null || !manager.isRequestPinAppWidgetSupported) {
+        promise.resolve(false)
+        return
+      }
+
+      val provider = ComponentName(context, AfuChatWidgetProvider::class.java)
+      promise.resolve(manager.requestPinAppWidget(provider, null, null))
+    } catch (error: Exception) {
+      promise.reject("WIDGET_PIN_REQUEST_FAILED", error)
     }
   }
 }

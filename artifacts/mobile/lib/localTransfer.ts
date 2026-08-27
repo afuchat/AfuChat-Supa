@@ -82,13 +82,12 @@ function emitProgress(progress: LocalTransferProgress): void {
 }
 
 function detectRtc(): RtcBridge | null {
-  if (rtc !== undefined) return rtc;
+  if (rtc) return rtc;
 
   if (Platform.OS === "web") {
     const g = globalThis as any;
     if (!g.RTCPeerConnection) {
-      rtc = null;
-      return rtc;
+      return null;
     }
     rtc = {
       RTCPeerConnection: g.RTCPeerConnection,
@@ -99,8 +98,7 @@ function detectRtc(): RtcBridge | null {
   }
 
   if (isExpoGo()) {
-    rtc = null;
-    return rtc;
+    return null;
   }
 
   try {
@@ -111,8 +109,7 @@ function detectRtc(): RtcBridge | null {
     }
     const webrtc = require("react-native-webrtc");
     if (!webrtc?.RTCPeerConnection) {
-      rtc = null;
-      return rtc;
+      return null;
     }
     rtc = {
       RTCPeerConnection: webrtc.RTCPeerConnection,
@@ -120,7 +117,7 @@ function detectRtc(): RtcBridge | null {
       RTCIceCandidate: webrtc.RTCIceCandidate,
     };
   } catch {
-    rtc = null;
+    return null;
   }
   return rtc;
 }

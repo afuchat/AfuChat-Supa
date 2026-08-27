@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { AppState } from "react-native";
 import { useAuth } from "@/context/AuthContext";
 import { showToast } from "@/lib/toast";
 import {
@@ -70,14 +71,32 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   profileRef.current = profile;
 
   useEffect(() => {
-    setIsAvailable(getWebRTCAvailable());
+    let disposed = false;
+    const refreshAvailability = () => {
+      if (!disposed) setIsAvailable(getWebRTCAvailable());
+    };
+    // Android can finish registering the native module just after the first
+    // React effect. A transient false result must not disable calling for the
+    // entire session.
+    refreshAvailability();
+    const retryTimers = [250, 1000, 2500].map((delay) =>
+      setTimeout(refreshAvailability, delay),
+    );
+    const appStateSubscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") setTimeout(refreshAvailability, 100);
+    });
+
     if (!user?.id) {
       setStatus("idle");
       setCallInfo(null);
       setIncomingNotice(null);
-      return;
+      return () => {
+        disposed = true;
+        retryTimers.forEach(clearTimeout);
+        appStateSubscription.remove();
+      };
     }
-    let disposed = false;
+
     const removeListener = addCallEngineListener((event) => {
       if (disposed) return;
       if (event.type === "status") {
@@ -95,6 +114,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     const cleanupPromise = initCallEngine(user.id);
     return () => {
       disposed = true;
+      retryTimers.forEach(clearTimeout);
+      appStateSubscription.remove();
       removeListener();
       cleanupPromise.then((cleanup) => cleanup()).catch(() => {});
     };

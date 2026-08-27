@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as MediaLibrary from "expo-media-library";
+import * as FileSystem from "expo-file-system/legacy";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import NearbyTransferSheet from "@/components/nearby/NearbyTransferSheet";
 import { useTheme } from "@/hooks/useTheme";
@@ -23,6 +24,7 @@ type Filter = "all" | "image" | "video" | "audio";
 
 type FileItem = {
   id: string;
+  assetId?: string;
   name: string;
   size: number;
   type: FileType;
@@ -134,6 +136,7 @@ export default function FileManagerScreen() {
   const [galleryPermission, setGalleryPermission] = useState<"checking" | "granted" | "denied">("checking");
   const [galleryCanAskAgain, setGalleryCanAskAgain] = useState(true);
   const [transferOpen, setTransferOpen] = useState(false);
+  const [transferFile, setTransferFile] = useState<FileItem | null>(null);
 
   const loadGallery = useCallback(async (activeFilter: Filter = filter) => {
     if (Platform.OS === "web") {
@@ -166,6 +169,7 @@ export default function FileManagerScreen() {
       });
       setGalleryFiles(result.assets.map((asset) => ({
         id: `gallery-${asset.id}`,
+        assetId: asset.id,
         name: asset.filename || `${asset.mediaType}-${asset.id}`,
         size: Number((asset as any).fileSize) || 0,
         type: asset.mediaType === MediaLibrary.MediaType.photo
@@ -223,9 +227,40 @@ export default function FileManagerScreen() {
   );
   const selectedFile = filteredFiles.find((file) => file.id === selectedId) ?? filteredFiles[0];
 
-  const openTransfer = useCallback(() => {
+  const openTransfer = useCallback(async () => {
+    if (!selectedFile) {
+      setTransferOpen(true);
+      return;
+    }
+
+    // MediaLibrary may return a content URI and a zero fileSize for a
+    // gallery row. Resolve the asset before opening nearby transfer so the
+    // sender has a readable local URI and an accurate byte count.
+    let prepared = selectedFile;
+    if (Platform.OS !== "web" && selectedFile.assetId) {
+      try {
+        const info = await MediaLibrary.getAssetInfoAsync(selectedFile.assetId);
+        const localUri = (info as any).localUri || selectedFile.uri;
+        let resolvedSize = Number((info as any).fileSize);
+        if ((!Number.isFinite(resolvedSize) || resolvedSize <= 0) && localUri) {
+          const fileInfo = await FileSystem.getInfoAsync(localUri);
+          resolvedSize = Number((fileInfo as any).size);
+        }
+        prepared = {
+          ...selectedFile,
+          uri: localUri,
+          size: Number.isFinite(resolvedSize) && resolvedSize > 0
+            ? resolvedSize
+            : selectedFile.size,
+        };
+      } catch {
+        // The transfer screen will report a readable-file error if the
+        // provider cannot resolve this gallery item.
+      }
+    }
+    setTransferFile(prepared);
     setTransferOpen(true);
-  }, []);
+  }, [selectedFile]);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.backgroundSecondary }]}>
@@ -329,13 +364,16 @@ export default function FileManagerScreen() {
 
       <NearbyTransferSheet
         visible={transferOpen}
-        file={selectedFile ? {
-          uri: selectedFile.uri,
-          name: selectedFile.name,
-          size: selectedFile.size,
-          mimeType: selectedFile.mimeType,
+        file={transferFile ? {
+          uri: transferFile.uri,
+          name: transferFile.name,
+          size: transferFile.size,
+          mimeType: transferFile.mimeType,
         } : null}
-        onClose={() => setTransferOpen(false)}
+        onClose={() => {
+          setTransferOpen(false);
+          setTransferFile(null);
+        }}
       />
     </View>
   );

@@ -32,7 +32,9 @@ function serverRowToShortcut(row: any): ShareShortcutChat | null {
     other_display_name: row.other_display_name,
     other_avatar: row.other_avatar,
     avatar_url: row.avatar_url,
-    last_message_at: row.last_message_at || row.chat_updated_at,
+    // A chat updated by membership/pin changes is not a recent conversation.
+    // Shortcuts must represent chats with an actual message only.
+    last_message_at: row.last_message_at,
   });
 }
 
@@ -72,7 +74,7 @@ export default function NativeShareShortcutSync() {
             if (cancelled) return;
             updateNativeShareShortcuts(
               ((data ?? []) as any[])
-                 .filter((row) => !row.is_archived && (row.last_message_at || row.chat_updated_at))
+                 .filter((row) => !row.is_archived && row.last_message_at)
                 .sort((a, b) => {
                   const aTime = new Date(a.last_message_at || a.chat_updated_at || 0).getTime();
                   const bTime = new Date(b.last_message_at || b.chat_updated_at || 0).getTime();

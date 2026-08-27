@@ -309,6 +309,67 @@ function IncomingShareGate({ navigationReady }: { navigationReady: boolean }) {
   return null;
 }
 
+/**
+ * Keep launcher/widget destinations alive until auth restoration has finished.
+ * A cold start can otherwise let app/index.tsx replace a valid chat target
+ * with the chats tab before the deep-link event is delivered.
+ */
+function DeepLinkGate({ navigationReady }: { navigationReady: boolean }) {
+  const { session, loading, user } = useAuth();
+  const pendingActionRef = useRef<any>(null);
+  const [pendingVersion, setPendingVersion] = useState(0);
+
+  const routeAction = useCallback((action: any) => {
+    if (action?.type === "join_group") {
+      safeRouter.push({ pathname: "/join/[code]", params: { code: action.code } } as any);
+      return;
+    }
+    if (action?.type === "navigate") {
+      if (action.params) {
+        safeRouter.push({ pathname: action.path as any, params: action.params });
+      } else {
+        safeRouter.push(action.path as any);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!navigationReady) return;
+    let cancelled = false;
+
+    const processUrl = async (url: string | null) => {
+      const action = await handleIncomingUrl(url);
+      if (cancelled || !action) return;
+
+      const isChatDestination = action.type === "navigate" && action.path === "/chat/[id]";
+      if (isChatDestination && (loading || !session?.user?.id && !user?.id)) {
+        pendingActionRef.current = action;
+        setPendingVersion((version) => version + 1);
+        return;
+      }
+      routeAction(action);
+    };
+
+    Linking.getInitialURL().then(processUrl).catch(() => {});
+    const subscription = Linking.addEventListener("url", ({ url }) => {
+      processUrl(url).catch(() => {});
+    });
+    return () => {
+      cancelled = true;
+      subscription.remove();
+    };
+  }, [loading, navigationReady, routeAction, session?.user?.id, user?.id]);
+
+  useEffect(() => {
+    const action = pendingActionRef.current;
+    if (!action || loading || (!session?.user?.id && !user?.id)) return;
+    pendingActionRef.current = null;
+    routeAction(action);
+  }, [loading, pendingVersion, routeAction, session?.user?.id, user?.id]);
+
+  return null;
+}
+
 export default function RootLayout() {
   const rootNavigationState = useRootNavigationState();
   const [fontsLoaded, fontError] = Font.useFonts({
@@ -390,35 +451,6 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    // Deep-link events can arrive before Expo Router has mounted its root
-    // navigator. Waiting for the navigation key prevents a push into an
-    // unmounted tree during cold starts and auth restoration.
-    if (!rootNavigationState?.key) return;
-
-    async function handleUrl(url: string | null) {
-      const action = await handleIncomingUrl(url);
-      if (!action) return;
-
-      if (action.type === "join_group") {
-        safeRouter.push({ pathname: "/join/[code]", params: { code: action.code } } as any);
-        return;
-      }
-
-      if (action.type === "navigate") {
-        if (action.params) {
-          safeRouter.push({ pathname: action.path as any, params: action.params });
-        } else {
-          safeRouter.push(action.path as any);
-        }
-        return;
-      }
-    }
-    Linking.getInitialURL().then(handleUrl).catch(() => {});
-    const sub = Linking.addEventListener("url", ({ url }) => handleUrl(url));
-    return () => sub.remove();
-  }, [rootNavigationState?.key]);
-
-  useEffect(() => {
     if (!rootNavigationState?.key) return;
     // Do not compete with the first route for the JS/native bridge. Auth starts
     // sync only after identity restoration, while storage maintenance is delayed
@@ -487,6 +519,7 @@ export default function RootLayout() {
                           <AdvancedFeaturesProvider>
                             <ChatPreferencesProvider>
                               <MiniAppRuntimeProvider>
+                                 <DeepLinkGate navigationReady={!!rootNavigationState?.key} />
                                 <IncomingShareGate navigationReady={!!rootNavigationState?.key} />
                                 <NativeShareShortcutSync />
                                 <AppNavigationStack />

@@ -12,6 +12,7 @@ export type ShareShortcutChat = {
 type ShareShortcutsModule = {
   update?: (chats: ShareShortcutChat[]) => Promise<boolean> | void;
   getInitialChatId?: () => Promise<string | null>;
+  requestWidgetPin?: () => Promise<boolean> | void;
 };
 
 /**
@@ -59,5 +60,21 @@ export async function getNativeShareChatId(): Promise<string | null> {
     return typeof chatId === "string" && chatId.length > 0 ? chatId : null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Ask a supported Android launcher to place the AfuChat widget directly on
+ * the home screen. Older launchers return false and the settings screen
+ * keeps its manual-install instructions as the fallback.
+ */
+export async function requestNativeWidgetPin(): Promise<boolean> {
+  if (Platform.OS !== "android") return false;
+  const native = NativeModules.AfuChatShareShortcuts as ShareShortcutsModule | undefined;
+  if (!native?.requestWidgetPin) return false;
+  try {
+    return (await native.requestWidgetPin()) === true;
+  } catch {
+    return false;
   }
 }

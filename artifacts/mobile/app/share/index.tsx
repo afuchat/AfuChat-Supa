@@ -187,13 +187,13 @@ export default function ShareToAfuChatScreen() {
         );
         if (cancelled) return;
         const liveTargets = ((data ?? []) as any[])
-          .filter((row) => !row.is_archived && (row.last_message_at || row.chat_updated_at))
+           .filter((row) => !row.is_archived && row.last_message_at)
           .sort((a, b) => {
             const aTime = new Date(a.last_message_at || a.chat_updated_at || 0).getTime();
             const bTime = new Date(b.last_message_at || b.chat_updated_at || 0).getTime();
             return bTime - aTime;
           })
-          .map(serverRowToTarget)
+       .map(serverRowToTarget)
           .filter(Boolean) as Contact[];
         const uniqueTargets = liveTargets.filter(
           (target, index, list) =>

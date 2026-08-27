@@ -81,11 +81,10 @@ function makeId(prefix: string): string {
 }
 
 function detectRtc(): RtcBridge | null {
-  if (rtc !== undefined) return rtc;
+  if (rtc) return rtc;
 
   if (Platform.OS === "web" || isExpoGo()) {
-    rtc = null;
-    return rtc;
+    return null;
   }
 
   try {
@@ -98,15 +97,14 @@ function detectRtc(): RtcBridge | null {
     }
     const webrtc = require("react-native-webrtc");
     if (!webrtc?.RTCPeerConnection) {
-      rtc = null;
-      return rtc;
+      return null;
     }
     rtc = {
       RTCPeerConnection: webrtc.RTCPeerConnection,
       RTCSessionDescription: webrtc.RTCSessionDescription,
     };
   } catch {
-    rtc = null;
+    return null;
   }
   return rtc;
 }
