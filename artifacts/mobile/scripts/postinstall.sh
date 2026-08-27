@@ -131,7 +131,7 @@ PYEOF
 TRACK_PLAYER_FILE="node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt"
 patch_track_player "$TRACK_PLAYER_FILE"
 
-if [ -f "$TRACK_PLAYER_FILE" ] && ! rg -q \
+if [ -f "$TRACK_PLAYER_FILE" ] && ! grep -Eq \
   'originalItem \?: Bundle\(\)' "$TRACK_PLAYER_FILE"; then
   echo "[postinstall] ERROR: RNTP nullable Bundle patch DID NOT APPLY." >&2
   echo "  $TRACK_PLAYER_FILE" >&2
