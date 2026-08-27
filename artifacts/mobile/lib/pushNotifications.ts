@@ -8,12 +8,21 @@ type PushResponse = {
   actionIdentifier: string;
   userText?: string;
   notification?: { request?: { identifier?: string; content?: { data?: Record<string, unknown> } } };
+  data?: Record<string, unknown>;
 };
 
 export const PUSH_ACTION_REPLY = "reply";
+export const PUSH_ACTION_REPLY_THANKS = "reply_thanks";
+export const PUSH_ACTION_REPLY_OKAY = "reply_okay";
 export const PUSH_ACTION_MARK_READ = "mark_read";
 export const PUSH_ACTION_OPEN = "open";
+export const PUSH_ACTION_ACCEPT_CALL = "accept_call";
+export const PUSH_ACTION_DECLINE_CALL = "decline_call";
+export const PUSH_ACTION_DEFAULT = "expo.modules.notifications.actions.DEFAULT";
 export const PUSH_CATEGORY_MESSAGE = "message";
+export const PUSH_CATEGORY_CALL = "call";
+export const PUSH_CATEGORY_SOCIAL = "social";
+export const PUSH_CATEGORY_COMMERCE = "commerce";
 export const PUSH_BACKGROUND_TASK = "AFUCHAT_NOTIFICATION_ACTION_TASK";
 
 // Android channel sound settings are immutable after a channel is created.
@@ -57,11 +66,35 @@ function getNotifications(): NotificationsModule | null {
   return moduleCache;
 }
 
+function getNotificationData(response: PushResponse): Record<string, unknown> {
+  const contentData = response.notification?.request?.content?.data ?? {};
+  const taskData = response.data ?? {};
+  let serializedTaskData: Record<string, unknown> = {};
+  const dataString = typeof taskData.dataString === "string" ? taskData.dataString : "";
+  if (dataString) {
+    try {
+      const parsed = JSON.parse(dataString);
+      if (parsed && typeof parsed === "object") serializedTaskData = parsed;
+    } catch {}
+  }
+  return { ...serializedTaskData, ...taskData, ...contentData };
+}
+
 function getTarget(response: PushResponse) {
-  const data = response.notification?.request?.content?.data ?? {};
+  const data = getNotificationData(response);
+  const stringValue = (value: unknown) =>
+    typeof value === "string" && value.length > 0 ? value : null;
   return {
-    chatId: typeof data.chatId === "string" ? data.chatId : typeof data.chat_id === "string" ? data.chat_id : null,
-    messageId: typeof data.messageId === "string" ? data.messageId : typeof data.message_id === "string" ? data.message_id : null,
+    categoryId: stringValue(data.categoryId ?? data.category_id),
+    chatId: stringValue(data.chatId ?? data.chat_id),
+    messageId: stringValue(data.messageId ?? data.message_id),
+    notificationId: stringValue(data.notificationId ?? data.notification_id),
+    route: stringValue(data.route),
+    entityId: stringValue(data.entityId ?? data.entity_id),
+    callId: stringValue(data.callId ?? data.call_id),
+    callerId: stringValue(data.callerId ?? data.caller_id),
+    callerName: stringValue(data.callerName ?? data.caller_name),
+    callerAvatar: stringValue(data.callerAvatar ?? data.caller_avatar),
   };
 }
 
@@ -85,15 +118,19 @@ async function markRead(response: PushResponse, userId: string) {
   }
 }
 
-export async function handleNotificationResponse(response: PushResponse, userId: string) {
-  if (response.actionIdentifier === PUSH_ACTION_MARK_READ) {
-    await markRead(response, userId);
-    return;
-  }
-  if (response.actionIdentifier !== PUSH_ACTION_REPLY) return;
-  const text = response.userText?.trim();
+async function markNotificationRead(response: PushResponse, userId: string) {
+  const { notificationId } = getTarget(response);
+  if (!notificationId) return;
+  await supabase
+    .from("notification_events")
+    .update({ read_at: new Date().toISOString() })
+    .eq("id", notificationId)
+    .eq("recipient_id", userId);
+}
+
+async function sendSuggestedReply(response: PushResponse, userId: string, text: string) {
   const { chatId, messageId } = getTarget(response);
-  if (!text || !chatId) return;
+  if (!chatId) return;
   await supabase.from("messages").insert({
     chat_id: chatId,
     sender_id: userId,
@@ -103,13 +140,74 @@ export async function handleNotificationResponse(response: PushResponse, userId:
   await markRead(response, userId);
 }
 
+async function handleCallAction(
+  response: PushResponse,
+  userId: string,
+  userName: string,
+  userAvatar: string | null,
+) {
+  const { callId, callerId, callerName, callerAvatar, chatId } = getTarget(response);
+  if (!callId || !callerId) return;
+  const { handleCallNotificationAction } = await import("@/lib/callEngine");
+  await handleCallNotificationAction(
+    response.actionIdentifier as "accept_call" | "decline_call",
+    {
+      callId,
+      callerId,
+      callerName: callerName ?? "AfuChat user",
+      callerAvatar: callerAvatar ?? null,
+      chatId,
+    },
+    { myId: userId, myName: userName || "AfuChat user", myAvatar: userAvatar },
+  );
+}
+
+export async function handleNotificationResponse(
+  response: PushResponse,
+  userId: string,
+  userName = "AfuChat user",
+  userAvatar: string | null = null,
+) {
+  if (response.actionIdentifier === PUSH_ACTION_MARK_READ) {
+    const { categoryId } = getTarget(response);
+    if (categoryId === PUSH_CATEGORY_MESSAGE) await markRead(response, userId);
+    else await markNotificationRead(response, userId);
+    return;
+  }
+  if (response.actionIdentifier === PUSH_ACTION_REPLY) {
+    const text = response.userText?.trim();
+    if (text) await sendSuggestedReply(response, userId, text);
+    return;
+  }
+  if (response.actionIdentifier === PUSH_ACTION_REPLY_THANKS) {
+    await sendSuggestedReply(response, userId, "Thanks!");
+    return;
+  }
+  if (response.actionIdentifier === PUSH_ACTION_REPLY_OKAY) {
+    await sendSuggestedReply(response, userId, "Okay");
+    return;
+  }
+  if (
+    response.actionIdentifier === PUSH_ACTION_ACCEPT_CALL ||
+    response.actionIdentifier === PUSH_ACTION_DECLINE_CALL
+  ) {
+    await handleCallAction(response, userId, userName, userAvatar);
+  }
+}
+
 function defineBackgroundTask() {
   if (Platform.OS === "web") return;
   try {
     const TaskManager = require("expo-task-manager") as typeof import("expo-task-manager");
     TaskManager.defineTask(PUSH_BACKGROUND_TASK, async ({ data, error }: any) => {
       if (error || !data || !data.actionIdentifier) return;
-      if (data.actionIdentifier !== PUSH_ACTION_REPLY && data.actionIdentifier !== PUSH_ACTION_MARK_READ) return;
+      if (
+        data.actionIdentifier !== PUSH_ACTION_REPLY &&
+        data.actionIdentifier !== PUSH_ACTION_REPLY_THANKS &&
+        data.actionIdentifier !== PUSH_ACTION_REPLY_OKAY &&
+        data.actionIdentifier !== PUSH_ACTION_MARK_READ &&
+        data.actionIdentifier !== PUSH_ACTION_DECLINE_CALL
+      ) return;
       const { data: sessionData } = await supabase.auth.getSession();
       const userId = sessionData.session?.user?.id;
       if (userId) await handleNotificationResponse(data as PushResponse, userId);
@@ -153,11 +251,28 @@ export function configurePushNotifications() {
       shouldSetBadge: true,
     }),
   });
-  notifications.setNotificationCategoryAsync(PUSH_CATEGORY_MESSAGE, [
-    { identifier: PUSH_ACTION_REPLY, buttonTitle: "Reply", textInput: { submitButtonTitle: "Send", placeholder: "Reply..." }, options: { opensAppToForeground: false } },
-    { identifier: PUSH_ACTION_MARK_READ, buttonTitle: "Mark as read", options: { opensAppToForeground: false } },
-    { identifier: PUSH_ACTION_OPEN, buttonTitle: "Open", options: { opensAppToForeground: true, isDestructive: false } },
-  ]).catch(() => {});
+  const categories = [
+    notifications.setNotificationCategoryAsync(PUSH_CATEGORY_MESSAGE, [
+      { identifier: PUSH_ACTION_REPLY, buttonTitle: "Reply", textInput: { submitButtonTitle: "Send", placeholder: "Reply..." }, options: { opensAppToForeground: false } },
+      { identifier: PUSH_ACTION_REPLY_THANKS, buttonTitle: "Thanks!", options: { opensAppToForeground: false } },
+      { identifier: PUSH_ACTION_REPLY_OKAY, buttonTitle: "Okay", options: { opensAppToForeground: false } },
+      { identifier: PUSH_ACTION_MARK_READ, buttonTitle: "Mark as read", options: { opensAppToForeground: false } },
+    ]),
+    notifications.setNotificationCategoryAsync(PUSH_CATEGORY_CALL, [
+      { identifier: PUSH_ACTION_ACCEPT_CALL, buttonTitle: "Answer", options: { opensAppToForeground: true } },
+      { identifier: PUSH_ACTION_DECLINE_CALL, buttonTitle: "Decline", options: { opensAppToForeground: false, isDestructive: true } },
+      { identifier: PUSH_ACTION_OPEN, buttonTitle: "Open", options: { opensAppToForeground: true } },
+    ]),
+    notifications.setNotificationCategoryAsync(PUSH_CATEGORY_SOCIAL, [
+      { identifier: PUSH_ACTION_MARK_READ, buttonTitle: "Mark as read", options: { opensAppToForeground: false } },
+      { identifier: PUSH_ACTION_OPEN, buttonTitle: "View", options: { opensAppToForeground: true } },
+    ]),
+    notifications.setNotificationCategoryAsync(PUSH_CATEGORY_COMMERCE, [
+      { identifier: PUSH_ACTION_MARK_READ, buttonTitle: "Mark as read", options: { opensAppToForeground: false } },
+      { identifier: PUSH_ACTION_OPEN, buttonTitle: "View", options: { opensAppToForeground: true } },
+    ]),
+  ];
+  void Promise.all(categories).catch(() => {});
   if (Platform.OS === "android") {
     const importance = {
       MAX: notifications.AndroidImportance.MAX,
@@ -242,4 +357,40 @@ export async function notifyChatRecipients(params: NotifyChatRecipientsParams) {
     },
   });
   if (error && __DEV__) console.warn("[push] delivery request failed", error.message);
+}
+
+export type NotifyCallRecipientParams = {
+  recipientId: string;
+  senderId: string;
+  callerName: string;
+  callerAvatar?: string | null;
+  callId: string;
+  chatId?: string | null;
+};
+
+export async function notifyCallRecipient(params: NotifyCallRecipientParams) {
+  if (!params.recipientId || !params.senderId || params.recipientId === params.senderId) return;
+  const { error } = await supabase.functions.invoke("send-push-notification", {
+    body: {
+      recipientUserIds: [params.recipientId],
+      senderId: params.senderId,
+      senderName: params.callerName,
+      senderAvatarUrl: params.callerAvatar ?? null,
+      title: "Incoming voice call",
+      body: `${params.callerName || "Someone"} is calling you`,
+      callId: params.callId,
+      chatId: params.chatId ?? null,
+      categoryId: PUSH_CATEGORY_CALL,
+      channelId: PUSH_ANDROID_CHANNELS.calls.id,
+      data: {
+        callId: params.callId,
+        callerId: params.senderId,
+        callerName: params.callerName,
+        callerAvatar: params.callerAvatar ?? "",
+        chatId: params.chatId ?? "",
+        categoryId: PUSH_CATEGORY_CALL,
+      },
+    },
+  });
+  if (error && __DEV__) console.warn("[push] call delivery request failed", error.message);
 }

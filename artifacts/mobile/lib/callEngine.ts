@@ -1,6 +1,7 @@
 import { NativeModules, Platform, TurboModuleRegistry } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { isExpoGo } from "@/lib/expoEnvironment";
+import { notifyCallRecipient } from "@/lib/pushNotifications";
 
 export type CallStatus =
   | "idle"
@@ -409,6 +410,14 @@ export async function startCall(params: {
       calleeAvatar: params.calleeAvatar,
       chatId: params.chatId,
     });
+    void notifyCallRecipient({
+      recipientId: params.calleeId,
+      senderId: params.myId,
+      callerName: params.myName,
+      callerAvatar: params.myAvatar,
+      callId: params.callId,
+      chatId: params.chatId,
+    });
   } catch (error) {
     await finishCall(false);
     throw error;
@@ -447,6 +456,36 @@ export function declineCall(notice: IncomingCallNotice) {
   stopPeer();
   removeSignalChannel();
   setStatus("idle");
+}
+
+export async function handleCallNotificationAction(
+  action: "accept_call" | "decline_call",
+  notice: IncomingCallNotice,
+  params: { myId: string; myName: string; myAvatar: string | null },
+) {
+  currentUserId = params.myId;
+  if (!info || info.callId !== notice.callId) {
+    if (status !== "idle") return;
+    info = {
+      callId: notice.callId,
+      callerId: notice.callerId,
+      calleeId: params.myId,
+      callerName: notice.callerName,
+      callerAvatar: notice.callerAvatar,
+      calleeName: params.myName,
+      calleeAvatar: params.myAvatar,
+      chatId: notice.chatId,
+      startedAt: Date.now(),
+      answeredAt: null,
+      isCaller: false,
+    };
+    setStatus("incoming_ringing");
+  }
+  if (action === "decline_call") {
+    declineCall(notice);
+    return;
+  }
+  await acceptCall(notice, params);
 }
 
 export async function endCall() {

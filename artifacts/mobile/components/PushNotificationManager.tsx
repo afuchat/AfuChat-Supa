@@ -10,11 +10,13 @@ import {
   getNotificationTarget,
   handleNotificationResponse,
   registerPushToken,
+  PUSH_ACTION_ACCEPT_CALL,
+  PUSH_ACTION_DEFAULT,
   PUSH_ACTION_OPEN,
 } from "@/lib/pushNotifications";
 
 export default function PushNotificationManager() {
-  const { user, session } = useAuth();
+  const { user, session, profile } = useAuth();
 
   useEffect(() => {
     if (Platform.OS === "web" || !user?.id || session?.user?.id !== user.id) return;
@@ -23,12 +25,28 @@ export default function PushNotificationManager() {
     const handleResponse = async (response: any) => {
       if (!active) return;
       try {
-        await handleNotificationResponse(response, user.id);
-        const { chatId } = getNotificationTarget(response);
-        if (response.actionIdentifier === PUSH_ACTION_OPEN && chatId) {
-          // Navigate only after the action has been handled. Reply and
-          // mark-as-read must remain background-only and never open the chat.
-          safeRouter.push({ pathname: "/chat/[id]", params: { id: chatId } } as any);
+        await handleNotificationResponse(
+          response,
+          user.id,
+          profile?.display_name ?? "AfuChat user",
+          profile?.avatar_url ?? null,
+        );
+        const target = getNotificationTarget(response);
+        const shouldOpen =
+          response.actionIdentifier === PUSH_ACTION_OPEN ||
+          response.actionIdentifier === PUSH_ACTION_DEFAULT ||
+          response.actionIdentifier === PUSH_ACTION_ACCEPT_CALL;
+        if (shouldOpen) {
+          if (response.actionIdentifier === PUSH_ACTION_ACCEPT_CALL && target.callId) {
+            safeRouter.push({ pathname: "/call/[id]", params: { id: target.callId } } as any);
+          } else if (target.chatId) {
+            safeRouter.push({ pathname: "/chat/[id]", params: { id: target.chatId } } as any);
+          } else if (target.route) {
+            safeRouter.push({
+              pathname: target.route as any,
+              params: target.entityId ? { id: target.entityId } : undefined,
+            } as any);
+          }
         }
       } finally {
         clearLastNotificationResponse();
@@ -55,7 +73,7 @@ export default function PushNotificationManager() {
       subscription.remove();
       responseSubscription?.remove();
     };
-  }, [user?.id, session?.user?.id]);
+  }, [user?.id, session?.user?.id, profile?.display_name, profile?.avatar_url]);
 
   return null;
 }
