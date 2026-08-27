@@ -5,6 +5,7 @@ const headers = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Content-Type": "application/json",
 };
+const ANDROID_NOTIFICATION_CHANNEL_ID = "messages_notifications_v1";
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers });
 
 function encode(value: string | Uint8Array) {
@@ -138,7 +139,10 @@ Deno.serve(async (request) => {
           android: {
             priority: "HIGH",
             notification: {
-              channel_id: "messages_v2",
+              channel_id: ANDROID_NOTIFICATION_CHANNEL_ID,
+              // Use the system notification sound. The channel above is
+              // intentionally separate from older channels whose sound may
+              // have been changed to a ringtone on an existing device.
               sound: "default",
               // Expo Notifications reads categoryId from the FCM data
               // payload and applies the registered Reply/Mark as read/Open

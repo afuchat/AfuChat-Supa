@@ -15,6 +15,10 @@ export const PUSH_ACTION_MARK_READ = "mark_read";
 export const PUSH_ACTION_OPEN = "open";
 export const PUSH_CATEGORY_MESSAGE = "message";
 export const PUSH_BACKGROUND_TASK = "AFUCHAT_NOTIFICATION_ACTION_TASK";
+// Android channel sound settings are immutable after a channel is created.
+// Keep this separate from older channels that may have been configured with
+// a ringtone by the OS or an earlier app build.
+export const PUSH_ANDROID_CHANNEL_ID = "messages_notifications_v1";
 
 let moduleCache: NotificationsModule | null | undefined;
 let backgroundTaskRegistration: Promise<void> | null = null;
@@ -131,10 +135,11 @@ export function configurePushNotifications() {
     { identifier: PUSH_ACTION_OPEN, buttonTitle: "Open", options: { opensAppToForeground: true, isDestructive: false } },
   ]).catch(() => {});
   if (Platform.OS === "android") {
-    notifications.setNotificationChannelAsync("messages_v2", {
-      name: "Messages",
+    notifications.setNotificationChannelAsync(PUSH_ANDROID_CHANNEL_ID, {
+      name: "Message notifications",
       importance: notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
+      // "default" resolves to the device notification sound, not its ringtone.
       sound: "default",
     }).catch(() => {});
   }
