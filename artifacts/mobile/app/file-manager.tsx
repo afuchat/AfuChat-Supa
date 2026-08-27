@@ -1,11 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Image,
   Linking,
-  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -15,15 +13,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as MediaLibrary from "expo-media-library";
-import * as Network from "expo-network";
 import { GlassHeader } from "@/components/ui/GlassHeader";
+import NearbyTransferSheet from "@/components/nearby/NearbyTransferSheet";
 import { useTheme } from "@/hooks/useTheme";
 import { useLanguage } from "@/context/LanguageContext";
-import {
-  getPermissionStatus,
-  requestPermission,
-  type PermissionStatus,
-} from "@/lib/permissionsManager";
 
 type FileType = "image" | "video" | "audio" | "document";
 type Filter = "all" | "image" | "video" | "audio";
@@ -39,35 +32,11 @@ type FileItem = {
   isGallery: boolean;
 };
 
-type TransferPermissions = {
-  bluetooth: PermissionStatus;
-  wifi: PermissionStatus;
-  location: PermissionStatus;
-};
-
-type NativeSharingModule = typeof import("expo-sharing");
-
-function getNativeSharing(): NativeSharingModule | null {
-  if (Platform.OS === "web") return null;
-  try {
-    return require("expo-sharing") as NativeSharingModule;
-  } catch {
-    return null;
-  }
-}
-
 function typeIcon(type: FileType): keyof typeof Ionicons.glyphMap {
   if (type === "image") return "image-outline";
   if (type === "video") return "videocam-outline";
   if (type === "audio") return "musical-notes-outline";
   return "document-text-outline";
-}
-
-function permissionLabel(status: PermissionStatus): string {
-  if (status === "granted") return "Ready";
-  if (status === "blocked") return "Open Settings";
-  if (Platform.OS === "ios" && status === "undetermined") return "Handled by iOS";
-  return "Enable";
 }
 
 function FileManagerBottomNav({
@@ -156,7 +125,7 @@ function FileManagerBottomNav({
 }
 
 export default function FileManagerScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [galleryFiles, setGalleryFiles] = useState<FileItem[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
@@ -165,14 +134,6 @@ export default function FileManagerScreen() {
   const [galleryPermission, setGalleryPermission] = useState<"checking" | "granted" | "denied">("checking");
   const [galleryCanAskAgain, setGalleryCanAskAgain] = useState(true);
   const [transferOpen, setTransferOpen] = useState(false);
-  const [transferLoading, setTransferLoading] = useState(false);
-  const [networkLabel, setNetworkLabel] = useState("Checking connection…");
-  const [ipAddress, setIpAddress] = useState<string | null>(null);
-  const [permissions, setPermissions] = useState<TransferPermissions>({
-    bluetooth: getPermissionStatus("bluetooth"),
-    wifi: getPermissionStatus("wifi"),
-    location: getPermissionStatus("location"),
-  });
 
   const loadGallery = useCallback(async (activeFilter: Filter = filter) => {
     if (Platform.OS === "web") {
@@ -206,7 +167,7 @@ export default function FileManagerScreen() {
       setGalleryFiles(result.assets.map((asset) => ({
         id: `gallery-${asset.id}`,
         name: asset.filename || `${asset.mediaType}-${asset.id}`,
-        size: 0,
+        size: Number((asset as any).fileSize) || 0,
         type: asset.mediaType === MediaLibrary.MediaType.photo
           ? "image"
           : asset.mediaType === MediaLibrary.MediaType.video
@@ -262,76 +223,9 @@ export default function FileManagerScreen() {
   );
   const selectedFile = filteredFiles.find((file) => file.id === selectedId) ?? filteredFiles[0];
 
-  const openTransfer = useCallback(async () => {
-    if (Platform.OS === "web") {
-      Alert.alert(
-        "Native sharing only",
-        "Open AfuChat on an Android or iOS device to share with paired devices.",
-      );
-      return;
-    }
+  const openTransfer = useCallback(() => {
     setTransferOpen(true);
-    setTransferLoading(true);
-    try {
-      const [state, address] = await Promise.all([
-        Network.getNetworkStateAsync(),
-        Network.getIpAddressAsync().catch(() => null),
-      ]);
-      setNetworkLabel(state.type === Network.NetworkStateType.WIFI ? "Wi-Fi connected" : state.isConnected ? "Connected, not Wi-Fi" : "Offline");
-      setIpAddress(address);
-    } catch {
-      setNetworkLabel("Network status unavailable");
-      setIpAddress(null);
-    } finally {
-      setTransferLoading(false);
-    }
   }, []);
-
-  const shareSelectedFile = useCallback(async () => {
-    if (Platform.OS === "web") {
-      Alert.alert(
-        "Native sharing only",
-        "Paired-device sharing is available in the Android and iOS app.",
-      );
-      return;
-    }
-    if (!selectedFile) {
-      Alert.alert("Choose a file first", "Add a file from your device, then select it to send.");
-      return;
-    }
-    const sharing = getNativeSharing();
-    const localUri = selectedFile.uri.trim();
-    if (!sharing || !/^(?:file|content|ph):\/\//i.test(localUri)) {
-      Alert.alert(
-        "Native sharing is unavailable",
-        "This file is not available as a local native file. Choose a file from your device and try again.",
-      );
-      return;
-    }
-    try {
-      const available = await sharing.isAvailableAsync();
-      if (!available) {
-        Alert.alert("Sharing is unavailable", "This device does not expose a system file-sharing sheet.");
-        return;
-      }
-      await sharing.shareAsync(localUri, {
-        dialogTitle: `Send ${selectedFile.name}`,
-        mimeType: selectedFile.mimeType ?? "application/octet-stream",
-        UTI: selectedFile.mimeType ?? "public.data",
-      });
-    } catch {
-      // Cancelling the native share sheet is not an error to surface.
-    }
-  }, [selectedFile]);
-
-  const handlePermissionAction = useCallback(async (type: keyof TransferPermissions) => {
-    if (permissions[type] === "blocked") {
-      if (Platform.OS !== "web") await Linking.openSettings();
-      return;
-    }
-    const status = await requestPermission(type);
-    setPermissions((current) => ({ ...current, [type]: status }));
-  }, [permissions]);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.backgroundSecondary }]}>
@@ -411,7 +305,7 @@ export default function FileManagerScreen() {
           testID="file-manager-send"
           accessibilityRole="button"
           accessibilityLabel={`Send ${selectedFile.name} offline`}
-          onPress={shareSelectedFile}
+          onPress={openTransfer}
            style={[
              styles.sendBar,
              {
@@ -422,7 +316,7 @@ export default function FileManagerScreen() {
         >
           <Ionicons name="paper-plane" size={19} color={colors.background} />
           <Text style={[styles.sendBarText, { color: colors.background }]}>Send offline</Text>
-          <Text style={[styles.sendBarHint, { color: colors.background + "BB" }]}>Bluetooth · Wi-Fi</Text>
+          <Text style={[styles.sendBarHint, { color: colors.background + "BB" }]}>Direct Wi-Fi</Text>
         </Pressable>
       )}
 
@@ -433,74 +327,16 @@ export default function FileManagerScreen() {
         onTransfer={openTransfer}
       />
 
-      <Modal visible={transferOpen} transparent animationType="slide" onRequestClose={() => setTransferOpen(false)}>
-        <View style={[styles.modalBackdrop, { backgroundColor: isDark ? "rgba(0,0,0,0.72)" : "rgba(0,0,0,0.38)" }]}>
-          <View style={[styles.transferSheet, { backgroundColor: colors.background }]}>
-            <View style={styles.sheetHandle} />
-            <View style={styles.sheetHeader}>
-              <View>
-                <Text style={[styles.sheetTitle, { color: colors.text }]}>Offline transfer</Text>
-                <Text style={[styles.sheetSubtitle, { color: colors.textMuted }]}>Use your device’s nearby sharing options</Text>
-              </View>
-              <Pressable onPress={() => setTransferOpen(false)} hitSlop={12}>
-                <Ionicons name="close" size={24} color={colors.textMuted} />
-              </Pressable>
-            </View>
-
-            <View style={[styles.networkCard, { backgroundColor: colors.surface }]}>
-              <Ionicons
-                name={networkLabel === "Offline" ? "cloud-offline-outline" : "wifi-outline"}
-                size={22}
-                color={colors.accent}
-              />
-              <View style={styles.networkCopy}>
-                <Text style={[styles.networkTitle, { color: colors.text }]}>{networkLabel}</Text>
-                <Text style={[styles.networkMeta, { color: colors.textMuted }]}>
-                  {ipAddress ? `Local address ${ipAddress}` : "Internet is not required for nearby sharing"}
-                </Text>
-              </View>
-            </View>
-
-            <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>Nearby access</Text>
-            {([
-              ["bluetooth", "Bluetooth", "Discover nearby devices and send through Bluetooth or Nearby Share", "bluetooth-outline"],
-              ["wifi", "Wi-Fi nearby", "Allow local Wi-Fi discovery for faster offline sharing", "wifi-outline"],
-              ["location", "GPS / location", "Required by older Android versions for Bluetooth and Wi-Fi discovery", "location-outline"],
-            ] as const).map(([type, title, description, icon]) => (
-              <View key={type} style={[styles.permissionRow, { backgroundColor: colors.surface }]}>
-                <View style={[styles.permissionIcon, { backgroundColor: colors.accent + "18" }]}>
-                  <Ionicons name={icon} size={20} color={colors.accent} />
-                </View>
-                <View style={styles.permissionCopy}>
-                  <Text style={[styles.permissionTitle, { color: colors.text }]}>{title}</Text>
-                  <Text style={[styles.permissionDesc, { color: colors.textMuted }]} numberOfLines={2}>{description}</Text>
-                </View>
-                <Pressable
-                  onPress={() => handlePermissionAction(type)}
-                  style={[styles.permissionButton, { borderColor: colors.accent }]}
-                >
-                  <Text style={[styles.permissionButtonText, { color: colors.accent }]}>{permissionLabel(permissions[type])}</Text>
-                </Pressable>
-              </View>
-            ))}
-
-            <Pressable
-              testID="file-manager-share-nearby"
-              onPress={shareSelectedFile}
-              disabled={transferLoading || !selectedFile}
-              style={[styles.nearbyButton, { backgroundColor: colors.accent, opacity: transferLoading || !selectedFile ? 0.55 : 1 }]}
-            >
-              {transferLoading ? <ActivityIndicator color={colors.background} /> : <Ionicons name="paper-plane-outline" size={20} color={colors.background} />}
-              <Text style={[styles.nearbyButtonText, { color: colors.background }]}>
-                {selectedFile ? `Send ${selectedFile.name}` : "Select a file to send"}
-              </Text>
-            </Pressable>
-            <Text style={[styles.transferNote, { color: colors.textMuted }]}>
-              AfuChat uses the native Android or iOS share sheet only. Choose a paired device through Quick Share, AirDrop, Bluetooth, or another nearby option. The local file never passes through AfuChat’s servers; the operating system handles the encrypted device-to-device handoff.
-            </Text>
-          </View>
-        </View>
-      </Modal>
+      <NearbyTransferSheet
+        visible={transferOpen}
+        file={selectedFile ? {
+          uri: selectedFile.uri,
+          name: selectedFile.name,
+          size: selectedFile.size,
+          mimeType: selectedFile.mimeType,
+        } : null}
+        onClose={() => setTransferOpen(false)}
+      />
     </View>
   );
 }
@@ -533,25 +369,4 @@ const styles = StyleSheet.create({
   fmNavIcon: { width: 44, height: 30, alignItems: "center", justifyContent: "center", position: "relative" },
   fmNavActiveOval: { ...StyleSheet.absoluteFillObject, borderRadius: 9999 },
   fmNavLabel: { width: "100%", fontSize: 9, lineHeight: 10, fontFamily: "Inter_700Bold", fontWeight: "700", textAlign: "center", marginTop: 0, includeFontPadding: false },
-  modalBackdrop: { flex: 1, justifyContent: "flex-end" },
-  transferSheet: { borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 18, paddingTop: 10, paddingBottom: 26 },
-  sheetHandle: { width: 38, height: 4, borderRadius: 99, backgroundColor: "rgba(128,128,128,0.35)", alignSelf: "center", marginBottom: 16 },
-  sheetHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18 },
-  sheetTitle: { fontSize: 22, fontFamily: "Inter_700Bold" },
-  sheetSubtitle: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 4 },
-  networkCard: { flexDirection: "row", alignItems: "center", padding: 13, borderRadius: 16, gap: 11, marginBottom: 18 },
-  networkCopy: { flex: 1 },
-  networkTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
-  networkMeta: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 3 },
-  sectionLabel: { fontSize: 11, fontFamily: "Inter_700Bold", textTransform: "uppercase", letterSpacing: 0.7, marginBottom: 8 },
-  permissionRow: { minHeight: 68, borderRadius: 15, padding: 10, flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 7 },
-  permissionIcon: { width: 37, height: 37, borderRadius: 11, alignItems: "center", justifyContent: "center" },
-  permissionCopy: { flex: 1 },
-  permissionTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
-  permissionDesc: { fontSize: 10.5, lineHeight: 14, fontFamily: "Inter_400Regular", marginTop: 2 },
-  permissionButton: { borderWidth: 1, borderRadius: 9, paddingHorizontal: 9, paddingVertical: 7 },
-  permissionButtonText: { fontSize: 10.5, fontFamily: "Inter_700Bold" },
-  nearbyButton: { minHeight: 51, borderRadius: 15, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, marginTop: 10 },
-  nearbyButtonText: { fontSize: 14, fontFamily: "Inter_700Bold" },
-  transferNote: { fontSize: 11, lineHeight: 16, textAlign: "center", marginTop: 11, paddingHorizontal: 8 },
 });

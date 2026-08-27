@@ -27,6 +27,11 @@ export async function getDB(): Promise<DB> {
     await runMigrations(db);
     _db = db;
     return db;
+  }).catch((error) => {
+    // A failed migration must not poison every later caller with the same
+    // rejected promise. The next sync/bootstrap pass can retry cleanly.
+    _initPromise = null;
+    throw error;
   });
   return _initPromise;
 }

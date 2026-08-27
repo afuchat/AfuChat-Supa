@@ -38,6 +38,7 @@ import { migrateOfflineCacheV2toV3 } from "../videoCache";
 import { cleanupTempCache, _sweepOrphanedRecordings } from "./tempCache";
 
 let _initialized = false;
+let _initializationPromise: Promise<void> | null = null;
 
 /**
  * Call once from the root _layout.tsx on app start.
@@ -58,11 +59,12 @@ let _initialized = false;
  */
 export async function initDeviceStorage(): Promise<void> {
   if (_initialized) return;
-  _initialized = true;
+  if (_initializationPromise) return _initializationPromise;
 
-  try {
+  _initializationPromise = (async () => {
     // Open DB and run all schema migrations (creates all tables if first launch)
     await getDB();
+    _initialized = true;
     // Migrate old AsyncStorage video registry into SQLite
     migrateOfflineCacheV2toV3().catch(() => {});
     // Start listening for network changes to drain the offline action queue
@@ -71,7 +73,11 @@ export async function initDeviceStorage(): Promise<void> {
     cleanupTempCache().catch(() => {});
     // Sweep orphaned expo-av recording files from root of cacheDirectory
     // (voice recordings left behind by previous app versions before the
-    //  post-upload deleteAsync fix was added — pattern: "Recording-*.m4a")
+    // post-upload deleteAsync fix was added — pattern: "Recording-*.m4a")
     _sweepOrphanedRecordings().catch(() => {});
-  } catch {}
+  })().finally(() => {
+    _initializationPromise = null;
+  });
+
+  return _initializationPromise;
 }

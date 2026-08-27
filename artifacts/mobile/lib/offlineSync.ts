@@ -13,10 +13,6 @@ import {
   getLocalMessageCount,
   saveMessages,
 } from "./storage/localMessages";
-import {
-  startForegroundDataSync,
-  stopForegroundDataSync,
-} from "./foregroundDataSync";
 
 let syncing = false;
 const MAX_ITEMS_PER_SYNC = 10;
@@ -24,7 +20,6 @@ const MAX_ITEMS_PER_SYNC = 10;
 export async function syncPendingMessages(): Promise<void> {
   if (syncing || !isOnline()) return;
   syncing = true;
-  startForegroundDataSync();
 
   try {
     // 1. Sync legacy AsyncStorage pending messages
@@ -108,7 +103,6 @@ export async function syncPendingMessages(): Promise<void> {
   } finally {
     // Never leave the global lock held after a SQLite or network exception.
     syncing = false;
-    stopForegroundDataSync();
   }
 }
 
