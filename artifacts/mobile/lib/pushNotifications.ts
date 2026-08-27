@@ -15,10 +15,34 @@ export const PUSH_ACTION_MARK_READ = "mark_read";
 export const PUSH_ACTION_OPEN = "open";
 export const PUSH_CATEGORY_MESSAGE = "message";
 export const PUSH_BACKGROUND_TASK = "AFUCHAT_NOTIFICATION_ACTION_TASK";
+
 // Android channel sound settings are immutable after a channel is created.
-// Keep this separate from older channels that may have been configured with
-// a ringtone by the OS or an earlier app build.
-export const PUSH_ANDROID_CHANNEL_ID = "messages_notifications_v1";
+// Versioned IDs let us correct an old channel without inheriting its stored
+// ringtone-style sound setting.
+export const PUSH_ANDROID_CHANNELS = {
+  messages: {
+    id: "messages_notifications_v1",
+    name: "Message notifications",
+    importance: "MAX",
+  },
+  calls: {
+    id: "calls_notifications_v1",
+    name: "Call notifications",
+    importance: "MAX",
+  },
+  social: {
+    id: "social_notifications_v1",
+    name: "Social activity",
+    importance: "DEFAULT",
+  },
+  commerce: {
+    id: "commerce_notifications_v1",
+    name: "Payments and orders",
+    importance: "DEFAULT",
+  },
+} as const;
+
+export const PUSH_ANDROID_CHANNEL_ID = PUSH_ANDROID_CHANNELS.messages.id;
 
 let moduleCache: NotificationsModule | null | undefined;
 let backgroundTaskRegistration: Promise<void> | null = null;
@@ -135,13 +159,19 @@ export function configurePushNotifications() {
     { identifier: PUSH_ACTION_OPEN, buttonTitle: "Open", options: { opensAppToForeground: true, isDestructive: false } },
   ]).catch(() => {});
   if (Platform.OS === "android") {
-    notifications.setNotificationChannelAsync(PUSH_ANDROID_CHANNEL_ID, {
-      name: "Message notifications",
-      importance: notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      // "default" resolves to the device notification sound, not its ringtone.
-      sound: "default",
-    }).catch(() => {});
+    const importance = {
+      MAX: notifications.AndroidImportance.MAX,
+      DEFAULT: notifications.AndroidImportance.DEFAULT,
+    } as const;
+    for (const channel of Object.values(PUSH_ANDROID_CHANNELS)) {
+      notifications.setNotificationChannelAsync(channel.id, {
+        name: channel.name,
+        importance: importance[channel.importance],
+        vibrationPattern: [0, 250, 250, 250],
+        // "default" resolves to the device notification sound, not its ringtone.
+        sound: "default",
+      }).catch(() => {});
+    }
   }
 }
 

@@ -5,7 +5,13 @@ const headers = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Content-Type": "application/json",
 };
-const ANDROID_NOTIFICATION_CHANNEL_ID = "messages_notifications_v1";
+const ANDROID_NOTIFICATION_CHANNELS = new Set([
+  "messages_notifications_v1",
+  "calls_notifications_v1",
+  "social_notifications_v1",
+  "commerce_notifications_v1",
+]);
+const DEFAULT_ANDROID_NOTIFICATION_CHANNEL_ID = "messages_notifications_v1";
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers });
 
 function encode(value: string | Uint8Array) {
@@ -119,6 +125,10 @@ Deno.serve(async (request) => {
 
   const serviceAccount = JSON.parse(firebaseJson);
   const bearer = await accessToken(serviceAccount);
+  const requestedChannelId = typeof body.channelId === "string" ? body.channelId : "";
+  const androidChannelId = ANDROID_NOTIFICATION_CHANNELS.has(requestedChannelId)
+    ? requestedChannelId
+    : DEFAULT_ANDROID_NOTIFICATION_CHANNEL_ID;
   const data = Object.fromEntries(Object.entries({
     ...(body.data ?? {}),
     categoryId: body.categoryId ?? "message",
@@ -139,7 +149,7 @@ Deno.serve(async (request) => {
           android: {
             priority: "HIGH",
             notification: {
-              channel_id: ANDROID_NOTIFICATION_CHANNEL_ID,
+              channel_id: androidChannelId,
               // Use the system notification sound. The channel above is
               // intentionally separate from older channels whose sound may
               // have been changed to a ringtone on an existing device.

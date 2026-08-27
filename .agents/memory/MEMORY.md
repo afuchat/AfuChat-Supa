@@ -85,3 +85,4 @@
 - [Local Android Gradle verification](android-gradle-toolchain.md) — this Replit container can fail before Kotlin compilation because Gradle 9's Foojay resolver references a missing IBM_SEMERU field; verify native changes with EAS.
 - [Track Player web bundle shim](track-player-web-bundle.md) — RNTP's browser entry can pull optional Shaka into Metro; keep native loading lazy and resolve RNTP to a no-op web shim.
 - [Native direct-share targets](native-direct-share-targets.md) — sync Android shortcuts from authenticated app state and bridge the exact selected chat ID into one-tap sharing.
+- [Android notification channels](android-notification-channels.md) — channel sound settings persist on-device; use a new channel ID when correcting a ringtone/notification sound and ship the client before sender rollout.
