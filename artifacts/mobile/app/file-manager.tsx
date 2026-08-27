@@ -4,6 +4,7 @@ import {
   FlatList,
   Image,
   Linking,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -12,14 +13,18 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import * as MediaLibrary from "expo-media-library";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { GlassHeader } from "@/components/ui/GlassHeader";
+import AudioPlayer from "@/components/AudioPlayer";
+import VideoPreview from "@/components/ui/VideoPreview";
 import NearbyTransferSheet from "@/components/nearby/NearbyTransferSheet";
 import { useTheme } from "@/hooks/useTheme";
 import { useLanguage } from "@/context/LanguageContext";
 import { showAlert } from "@/lib/alert";
+import { isExpoGo } from "@/lib/expoEnvironment";
 
 type FileType = "image" | "video" | "audio" | "document";
 type Filter = "all" | "image" | "video" | "audio";
@@ -46,11 +51,13 @@ function typeIcon(type: FileType): keyof typeof Ionicons.glyphMap {
 function FileManagerBottomNav({
   filter,
   transferOpen,
+  showTransfer,
   onFilterChange,
   onTransfer,
 }: {
   filter: Filter;
   transferOpen: boolean;
+  showTransfer: boolean;
   onFilterChange: (filter: Filter) => void;
   onTransfer: () => void;
 }) {
@@ -70,7 +77,9 @@ function FileManagerBottomNav({
     { key: "image", label: "Images", icon: "images" },
     { key: "video", label: "Videos", icon: "videocam" },
     { key: "audio", label: "Audio", icon: "musical-notes" },
-    { key: "transfer", label: "Transfer", icon: "swap-horizontal" },
+    ...(showTransfer
+      ? [{ key: "transfer" as const, label: "Transfer", icon: "swap-horizontal" as const }]
+      : []),
   ];
 
   return (
@@ -133,12 +142,14 @@ export default function FileManagerScreen() {
   const insets = useSafeAreaInsets();
   const [galleryFiles, setGalleryFiles] = useState<FileItem[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   const [galleryLoading, setGalleryLoading] = useState(true);
   const [galleryPermission, setGalleryPermission] = useState<"checking" | "granted" | "denied">("checking");
   const [galleryCanAskAgain, setGalleryCanAskAgain] = useState(true);
   const [transferOpen, setTransferOpen] = useState(false);
   const [transferFile, setTransferFile] = useState<FileItem | null>(null);
+  const transferSupported = Platform.OS !== "web" && !isExpoGo();
 
   const loadGallery = useCallback(async (activeFilter: Filter = filter) => {
     if (Platform.OS === "web") {
@@ -224,10 +235,43 @@ export default function FileManagerScreen() {
   }, [filter, galleryCanAskAgain, galleryPermission, loadGallery]);
 
   const filteredFiles = useMemo(
-    () => galleryFiles.slice().sort((a, b) => b.addedAt.localeCompare(a.addedAt)),
-    [galleryFiles],
+    () => galleryFiles
+      .filter((file) => filter === "all" || file.type === filter)
+      .sort((a, b) => b.addedAt.localeCompare(a.addedAt)),
+    [filter, galleryFiles],
   );
-  const selectedFile = filteredFiles.find((file) => file.id === selectedId) ?? filteredFiles[0];
+  const selectedFiles = useMemo(
+    () => galleryFiles.filter((file) => selectedIds.has(file.id)),
+    [galleryFiles, selectedIds],
+  );
+  const selectedFile = selectedFiles[0] ?? null;
+  const isGrid = filter !== "audio";
+
+  const toggleSelected = useCallback((fileId: string) => {
+    setSelectedIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(fileId)) next.delete(fileId);
+      else next.add(fileId);
+      return next;
+    });
+  }, []);
+
+  const changeFilter = useCallback((nextFilter: Filter) => {
+    setFilter(nextFilter);
+    setSelectedIds(new Set());
+  }, []);
+
+  const resolveLocalUri = useCallback(async (file: FileItem): Promise<FileItem> => {
+    if (Platform.OS === "web" || !file.assetId) return file;
+    try {
+      const info = await MediaLibrary.getAssetInfoAsync(file.assetId, {
+        shouldDownloadFromNetwork: false,
+      });
+      return { ...file, uri: (info as any).localUri || info.uri || file.uri };
+    } catch {
+      return file;
+    }
+  }, []);
 
   const openTransfer = useCallback(async () => {
     if (!selectedFile) {
@@ -293,26 +337,40 @@ export default function FileManagerScreen() {
     setTransferOpen(true);
   }, [selectedFile]);
 
-  const shareSelectedFile = useCallback(async () => {
-    if (!selectedFile || Platform.OS === "web") return;
+  const shareSelectedFiles = useCallback(async () => {
+    if (selectedFiles.length === 0 || Platform.OS === "web") return;
     try {
-      let uri = selectedFile.uri;
-      if (selectedFile.assetId) {
-        const info = await MediaLibrary.getAssetInfoAsync(selectedFile.assetId);
-        uri = (info as any).localUri || info.uri || uri;
+      const prepared = await Promise.all(selectedFiles.map(resolveLocalUri));
+
+      // Keep multiple media items together when sharing inside AfuChat. The
+      // share screen then lets the user choose a chat and review all items.
+      if (prepared.length > 1) {
+        router.push({
+          pathname: "/share",
+          params: {
+            files: JSON.stringify(prepared.map((file) => ({
+              path: file.uri,
+              name: file.name,
+              mimeType: file.mimeType,
+              type: file.type,
+            }))),
+          },
+        } as any);
+        return;
       }
-      if (!uri) throw new Error("This file is not available on the device.");
+      const file = prepared[0];
+      if (!file?.uri) throw new Error("This file is not available on the device.");
       const available = await Sharing.isAvailableAsync();
       if (!available) throw new Error("System sharing is not available on this device.");
-      await Sharing.shareAsync(uri, {
-        mimeType: selectedFile.mimeType || "application/octet-stream",
-        dialogTitle: `Share ${selectedFile.name}`,
-        UTI: selectedFile.mimeType || "public.data",
+      await Sharing.shareAsync(file.uri, {
+        mimeType: file.mimeType || "application/octet-stream",
+        dialogTitle: `Share ${file.name}`,
+        UTI: file.mimeType || "public.data",
       });
     } catch (error: any) {
       showAlert("Share failed", error?.message || "Could not open the system share sheet.");
     }
-  }, [selectedFile]);
+  }, [resolveLocalUri, selectedFiles]);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.backgroundSecondary }]}>
@@ -352,52 +410,89 @@ export default function FileManagerScreen() {
         <FlatList
           data={filteredFiles}
           keyExtractor={(item) => item.id}
-           contentContainerStyle={{ paddingBottom: insets.bottom + 132, paddingTop: 4 }}
+          key={`file-manager-${isGrid ? "grid" : "list"}`}
+          numColumns={isGrid ? 3 : 1}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 132, paddingTop: 4, paddingHorizontal: isGrid ? 2 : 0 }}
+          columnWrapperStyle={isGrid ? styles.gridRow : undefined}
           showsVerticalScrollIndicator={false}
-           removeClippedSubviews={false}
+          removeClippedSubviews={false}
           renderItem={({ item }) => {
-            const selected = selectedId === item.id;
+            const selected = selectedIds.has(item.id);
+            if (isGrid) {
+              return (
+                <Pressable
+                  testID={`file-tile-${item.id}`}
+                  onPress={() => setPreviewFile(item)}
+                  style={({ pressed }) => [styles.gridTile, { opacity: pressed ? 0.82 : 1 }]}
+                >
+                  {item.type === "image" ? (
+                    <Image source={{ uri: item.uri }} style={styles.gridImage} />
+                  ) : (
+                    <View style={[styles.gridVideo, { backgroundColor: colors.surface }]}>
+                      <Image source={{ uri: item.uri }} style={styles.gridImage} />
+                      <View style={styles.gridVideoShade} />
+                      <Ionicons name="play-circle" size={32} color="#fff" />
+                    </View>
+                  )}
+                  <Pressable
+                    testID={`file-select-${item.id}`}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: selected }}
+                    accessibilityLabel={selected ? "Remove from selection" : "Add to selection"}
+                    onPress={() => toggleSelected(item.id)}
+                    hitSlop={8}
+                    style={[styles.selectionBadge, selected && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+                  >
+                    {selected && <Ionicons name="checkmark" size={14} color={colors.background} />}
+                  </Pressable>
+                </Pressable>
+              );
+            }
             return (
               <Pressable
                 testID={`file-row-${item.id}`}
-                onPress={() => setSelectedId(selected ? null : item.id)}
+                onPress={() => setPreviewFile(item)}
                 style={[styles.fileRow, { backgroundColor: colors.surface }, selected && { borderColor: colors.accent, borderWidth: 1 }]}
               >
-                {item.type === "image" ? (
-                  <Image source={{ uri: item.uri }} style={styles.thumbnail} />
-                ) : (
-                  <View style={[styles.fileIcon, { backgroundColor: colors.accent + "18" }]}>
-                    <Ionicons name={typeIcon(item.type)} size={22} color={colors.accent} />
-                  </View>
-                )}
+                <View style={[styles.fileIcon, { backgroundColor: colors.accent + "18" }]}>
+                  <Ionicons name={typeIcon(item.type)} size={22} color={colors.accent} />
+                </View>
                 <View style={styles.fileCopy}>
                   <Text style={[styles.fileName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
                   <Text style={[styles.fileMeta, { color: colors.textMuted }]}>
-                    {item.type} · Phone gallery
+                    {item.type} · Phone gallery · tap to play
                   </Text>
                 </View>
-                {selected ? (
-                  <Ionicons name="checkmark-circle" size={23} color={colors.accent} />
-                ) : (
-                  <Ionicons name="ellipsis-horizontal" size={20} color={colors.textMuted} />
-                )}
+                <Pressable
+                  testID={`file-select-${item.id}`}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: selected }}
+                  accessibilityLabel={selected ? "Remove from selection" : "Add to selection"}
+                  onPress={() => toggleSelected(item.id)}
+                  hitSlop={8}
+                  style={[styles.selectionBadge, selected && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+                >
+                  {selected && <Ionicons name="checkmark" size={14} color={colors.background} />}
+                </Pressable>
               </Pressable>
             );
           }}
         />
       )}
 
-      {Platform.OS !== "web" && selectedFile && (
+      {Platform.OS !== "web" && selectedFiles.length > 0 && (
         <View style={[styles.actionBar, { bottom: Math.max(insets.bottom, 8) + 76 }]}>
           <Pressable
             testID="file-manager-share"
             accessibilityRole="button"
-            accessibilityLabel={`Share ${selectedFile.name}`}
-            onPress={shareSelectedFile}
+            accessibilityLabel={`Share ${selectedFiles.length} selected files`}
+            onPress={shareSelectedFiles}
             style={[styles.sendBar, { backgroundColor: colors.surface, borderColor: colors.accent }]}
           >
             <Ionicons name="share-outline" size={19} color={colors.accent} />
-            <Text style={[styles.sendBarText, { color: colors.accent }]}>Share file</Text>
+            <Text style={[styles.sendBarText, { color: colors.accent }]}>
+              Share {selectedFiles.length > 1 ? `${selectedFiles.length} files` : "file"}
+            </Text>
           </Pressable>
           <Pressable
             testID="file-manager-send"
@@ -415,9 +510,61 @@ export default function FileManagerScreen() {
       <FileManagerBottomNav
         filter={filter}
         transferOpen={transferOpen}
-        onFilterChange={setFilter}
+        showTransfer={transferSupported}
+        onFilterChange={changeFilter}
         onTransfer={openTransfer}
       />
+
+      <Modal
+        visible={!!previewFile}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPreviewFile(null)}
+      >
+        <View style={styles.previewRoot}>
+          <View style={styles.previewHeader}>
+            <Pressable
+              onPress={() => setPreviewFile(null)}
+              hitSlop={12}
+              accessibilityLabel="Close preview"
+              style={styles.previewClose}
+            >
+              <Ionicons name="close" size={26} color="#fff" />
+            </Pressable>
+            <Text style={styles.previewTitle} numberOfLines={1}>
+              {previewFile?.type === "audio" ? previewFile.name : "Preview"}
+            </Text>
+            <View style={styles.previewClose} />
+          </View>
+          {previewFile?.type === "image" && (
+            <Image source={{ uri: previewFile.uri }} style={styles.fullImage} resizeMode="contain" />
+          )}
+          {previewFile?.type === "video" && (
+            <VideoPreview
+              uri={previewFile.uri}
+              style={styles.fullVideo}
+              contentFit="contain"
+              shouldPlay
+              isLooping={false}
+              nativeControls
+            />
+          )}
+          {previewFile?.type === "audio" && (
+            <View style={styles.fullAudio}>
+              <View style={styles.audioArtwork}>
+                <Ionicons name="musical-notes" size={54} color={colors.accent} />
+              </View>
+              <Text style={styles.fullAudioName} numberOfLines={2}>{previewFile.name}</Text>
+              <AudioPlayer
+                uri={previewFile.uri}
+                tintColor="#fff"
+                waveColor={colors.accent}
+                backgroundColor="rgba(255,255,255,0.1)"
+              />
+            </View>
+          )}
+        </View>
+      </Modal>
 
       <NearbyTransferSheet
         visible={transferOpen}
@@ -439,11 +586,6 @@ export default function FileManagerScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   header: { borderBottomWidth: 0 },
-  summary: { flexDirection: "row", alignItems: "center", margin: 16, marginBottom: 10, padding: 14, borderRadius: 18, gap: 12 },
-  summaryIcon: { width: 48, height: 48, borderRadius: 15, alignItems: "center", justifyContent: "center" },
-  summaryCopy: { flex: 1 },
-  summaryTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
-  summaryMeta: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 3 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingHorizontal: 40 },
   actionBar: { position: "absolute", left: 16, right: 16, flexDirection: "row", gap: 10 },
   emptyTitle: { fontSize: 18, fontFamily: "Inter_600SemiBold", textAlign: "center" },
@@ -456,6 +598,12 @@ const styles = StyleSheet.create({
   fileCopy: { flex: 1 },
   fileName: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   fileMeta: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 4 },
+  gridRow: { gap: 2 },
+  gridTile: { flex: 1, aspectRatio: 1, margin: 1, position: "relative", overflow: "hidden", borderRadius: 4, backgroundColor: "#222" },
+  gridImage: { width: "100%", height: "100%" },
+  gridVideo: { flex: 1, alignItems: "center", justifyContent: "center" },
+  gridVideoShade: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.24)" },
+  selectionBadge: { position: "absolute", top: 7, right: 7, width: 23, height: 23, borderRadius: 12, borderWidth: 2, borderColor: "#fff", backgroundColor: "rgba(0,0,0,0.25)", alignItems: "center", justifyContent: "center" },
   sendBar: { flex: 1, minHeight: 52, borderRadius: 17, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingHorizontal: 12, gap: 9 },
   sendBarText: { fontSize: 14, fontFamily: "Inter_700Bold" },
   sendBarHint: { marginLeft: "auto", fontSize: 11, fontFamily: "Inter_500Medium" },
@@ -465,4 +613,13 @@ const styles = StyleSheet.create({
   fmNavIcon: { width: 44, height: 30, alignItems: "center", justifyContent: "center", position: "relative" },
   fmNavActiveOval: { ...StyleSheet.absoluteFillObject, borderRadius: 9999 },
   fmNavLabel: { width: "100%", fontSize: 9, lineHeight: 10, fontFamily: "Inter_700Bold", fontWeight: "700", textAlign: "center", marginTop: 0, includeFontPadding: false },
+  previewRoot: { flex: 1, backgroundColor: "#000", alignItems: "center", justifyContent: "center" },
+  previewHeader: { position: "absolute", top: 50, left: 16, right: 16, zIndex: 2, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  previewClose: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
+  previewTitle: { flex: 1, color: "#fff", textAlign: "center", fontSize: 15, fontFamily: "Inter_600SemiBold", paddingHorizontal: 12 },
+  fullImage: { width: "100%", height: "100%" },
+  fullVideo: { width: "100%", height: "78%" },
+  fullAudio: { width: "100%", alignItems: "center", paddingHorizontal: 22 },
+  audioArtwork: { width: 150, height: 150, borderRadius: 36, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.1)", marginBottom: 24 },
+  fullAudioName: { color: "#fff", fontSize: 17, lineHeight: 23, textAlign: "center", fontFamily: "Inter_700Bold", marginBottom: 20 },
 });

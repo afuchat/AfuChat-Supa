@@ -80,7 +80,7 @@ export default function ShareToAfuChatScreen() {
   const { colors, accent } = useTheme();
   const { isLowData } = useDataMode();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ chatId?: string }>();
+  const params = useLocalSearchParams<{ chatId?: string; files?: string }>();
   const [showContacts, setShowContacts] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [recentChats, setRecentChats] = useState<Contact[]>([]);
@@ -93,13 +93,34 @@ export default function ShareToAfuChatScreen() {
   const exactTargetRef = useRef<Contact | null>(null);
   const exactTargetLoadingRef = useRef<string | null>(null);
 
+  const localFiles = useMemo(() => {
+    if (!params.files) return [];
+    try {
+      const parsed = JSON.parse(params.files as string);
+      return Array.isArray(parsed)
+        ? parsed.filter((file) => file?.path).map((file) => ({
+            path: String(file.path),
+            mimeType: file.mimeType ? String(file.mimeType) : undefined,
+            fileName: file.name ? String(file.name) : undefined,
+          }))
+        : [];
+    } catch {
+      return [];
+    }
+  }, [params.files]);
   const sharedText = (shareIntent.text || shareIntent.webUrl || "").trim();
-  const sharedFiles = shareIntent.files ?? [];
+  const sharedFiles = useMemo(
+    () => [...localFiles, ...(shareIntent.files ?? [])],
+    [localFiles, shareIntent.files],
+  );
   const imageFiles = useMemo(
     () => sharedFiles.filter((file) => file.mimeType?.startsWith("image/")),
     [sharedFiles],
   );
-  const nonImageFile = sharedFiles.find((file) => !file.mimeType?.startsWith("image/"));
+  const nonImageFiles = useMemo(
+    () => sharedFiles.filter((file) => !file.mimeType?.startsWith("image/")),
+    [sharedFiles],
+  );
   const sharedImageUris = useMemo(
     () => imageFiles.map((file) => file.path).filter(Boolean).slice(0, 9),
     [imageFiles],
@@ -342,7 +363,7 @@ export default function ShareToAfuChatScreen() {
 
       // Text and links can be delivered immediately. Media is passed to the
       // composer so the user can review it before uploading and sending.
-      if (sharedText && !firstImage) {
+       if (sharedText && sharedFiles.length === 0) {
         const { error } = await supabase.from("messages").insert({
           chat_id: chatId,
           sender_id: user.id,
@@ -361,15 +382,22 @@ export default function ShareToAfuChatScreen() {
           params: {
             ...chatRouteParams(contact, chatId),
             ...(sharedText ? { initialMessage: encodeURIComponent(sharedText) } : {}),
-            ...(firstImage
-              ? { sharedImageUri: firstImage }
-              : nonImageFile?.path
+            ...(sharedFiles.length > 0
+              ? {
+                  sharedFilesJson: JSON.stringify(sharedFiles.map((file) => ({
+                    path: file.path,
+                    name: (file as any).fileName || (file as any).name || "Shared file",
+                    mimeType: file.mimeType || "application/octet-stream",
+                  })).filter((file) => file.path).slice(0, 6)),
+                }
+              : {}),
+            ...(sharedFiles.length === 0 && nonImageFiles[0]?.path
                 ? {
-                    sharedFileUri: nonImageFile.path,
-                    sharedFileType: nonImageFile.mimeType || "application/octet-stream",
+                    sharedFileUri: nonImageFiles[0].path,
+                    sharedFileType: nonImageFiles[0].mimeType || "application/octet-stream",
                     sharedFileName:
-                      (nonImageFile as any).fileName ||
-                      (nonImageFile as any).name ||
+                      (nonImageFiles[0] as any).fileName ||
+                      (nonImageFiles[0] as any).name ||
                       "Shared file",
                   }
                 : {}),

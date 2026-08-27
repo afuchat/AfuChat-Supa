@@ -2229,6 +2229,8 @@ function ChatScreen() {
     chatAvatar,
     initialMessage,
     sharedImageUri,
+    sharedImageUris,
+    sharedFilesJson,
     sharedFileUri,
     sharedFileType,
     sharedFileName,
@@ -2250,6 +2252,8 @@ function ChatScreen() {
     chatAvatar?: string;
     initialMessage?: string;
     sharedImageUri?: string;
+    sharedImageUris?: string;
+    sharedFilesJson?: string;
     sharedFileUri?: string;
     sharedFileType?: string;
     sharedFileName?: string;
@@ -2257,7 +2261,7 @@ function ChatScreen() {
   }>();
   const isDraft = id === "new";
   const { user, profile, isPremium, subscription, refreshProfile, equippedGoods } = useAuth();
-  const { status: callStatus, startCall: callStart } = useCall();
+  const { status: callStatus, startCall: callStart, isAvailable: callAvailable } = useCall();
   const callStartingRef = useRef(false);
   const { openApp } = useSuperApp();
   const { colors, isDark } = useTheme();
@@ -3819,17 +3823,55 @@ function ChatScreen() {
   // Incoming shares open the normal composer with the media ready for review.
   // The user still controls the final upload by tapping Send.
   useEffect(() => {
-    if (!sharedImageUri || sharedImageInjectedRef.current) return;
+    if (sharedFilesJson && !sharedImageInjectedRef.current) {
+      try {
+        const parsed = JSON.parse(sharedFilesJson as string);
+        if (Array.isArray(parsed)) {
+          const files = parsed
+            .filter((file) => file?.path)
+            .slice(0, 6)
+            .map((file) => {
+              const mimeType = String(file.mimeType || "application/octet-stream");
+              return {
+                uri: String(file.path),
+                type: mimeType.startsWith("image/")
+                  ? "image"
+                  : mimeType.startsWith("video/")
+                    ? "video"
+                    : "file",
+                name: file.name ? String(file.name) : "Shared file",
+                mimeType,
+              };
+            });
+          if (files.length > 0) {
+            sharedImageInjectedRef.current = true;
+            setSelectedImages(files);
+            return;
+          }
+        }
+      } catch {}
+    }
+    if ((!sharedImageUri && !sharedImageUris) || sharedImageInjectedRef.current) return;
     sharedImageInjectedRef.current = true;
-    setSelectedImages([{
-      uri: decodeURIComponent(sharedImageUri as string),
+    let uris: string[] = [];
+    try {
+      if (sharedImageUris) {
+        const parsed = JSON.parse(sharedImageUris as string);
+        if (Array.isArray(parsed)) uris = parsed.filter((uri) => typeof uri === "string");
+      }
+    } catch {}
+    if (uris.length === 0 && sharedImageUri) {
+      uris = [decodeURIComponent(sharedImageUri as string)];
+    }
+    setSelectedImages(uris.slice(0, 6).map((uri) => ({
+      uri,
       type: "image",
       mimeType: "image/jpeg",
-    }]);
-  }, [sharedImageUri]);
+    })));
+  }, [sharedImageUri, sharedImageUris, sharedFilesJson]);
 
   useEffect(() => {
-    if (!sharedFileUri || sharedImageUri || sharedImageInjectedRef.current) return;
+    if (!sharedFileUri || sharedImageUri || sharedImageUris || sharedFilesJson || sharedImageInjectedRef.current) return;
     sharedImageInjectedRef.current = true;
     const mimeType = decodeURIComponent((sharedFileType as string) || "application/octet-stream");
     const isVideo = mimeType.startsWith("video/");
@@ -3839,7 +3881,7 @@ function ChatScreen() {
       name: sharedFileName ? decodeURIComponent(sharedFileName as string) : "Shared file",
       mimeType,
     });
-  }, [sharedFileUri, sharedFileType, sharedFileName, sharedImageUri]);
+  }, [sharedFileUri, sharedFileType, sharedFileName, sharedImageUri, sharedImageUris]);
 
   // Auto-send a pre-filled message (e.g. from AI Lens "Ask AfuAI" button).
   // Fires once after the chat finishes loading and only for AfuAI direct chats.
@@ -5654,9 +5696,8 @@ STRICT RULES:
     const activeChatId = await getOrCreateChatId();
     if (!activeChatId) return;
 
-    // Upload the selected images, then store their URLs in one message row so
-    // the whole selection appears as a single grouped gallery in the chat.
-    if (selectedImages.length > 0) {
+    // Upload an all-image selection as one grouped gallery in the chat.
+    if (selectedImages.length > 0 && selectedImages.every((image) => image.type === "image")) {
       const images = selectedImages.slice(0, 6);
       const caption = input.trim();
       const tempId = `pending-${Date.now()}`;
@@ -5709,6 +5750,83 @@ STRICT RULES:
       } catch (error: any) {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         showAlert("Upload failed", error?.message || "Could not upload images. Please try again.");
+      }
+      return;
+    }
+
+    // Shares can contain a mix of images, videos, audio, and documents. Keep
+    // every selected item instead of silently reducing the selection to one
+    // non-image attachment.
+    if (selectedImages.length > 0) {
+      const attachments = selectedImages.slice(0, 6);
+      const caption = input.trim();
+      const pendingIds = attachments.map((_, index) => `pending-${Date.now()}-${index}`);
+      setMessages((prev) => [
+        ...attachments.map((attachment, index) => ({
+          id: pendingIds[index],
+          chat_id: activeChatId,
+          sender_id: user.id,
+          encrypted_content: caption || (
+            attachment.type === "video"
+              ? "Video"
+              : attachment.type === "file"
+                ? `File · ${attachment.name || "Shared file"}`
+                : "Shared media"
+          ),
+          sent_at: new Date().toISOString(),
+          sender: { display_name: profile?.display_name || "You", avatar_url: profile?.avatar_url || null, handle: profile?.handle || "" },
+          attachment_url: attachment.uri,
+          attachment_type: attachment.type,
+          _pending: true,
+          reactions: [],
+        })),
+        ...prev,
+      ]);
+      setSelectedImages([]);
+      setInput("");
+      saveDraft("");
+
+      try {
+        const uploaded = await Promise.all(attachments.map(async (attachment) => {
+          const result = await uploadChatMedia(
+            "chat-attachments",
+            activeChatId,
+            user.id,
+            attachment.uri,
+            attachment.name || undefined,
+            attachment.mimeType,
+          );
+          if (result.error || !result.publicUrl) {
+            throw new Error(result.error || "Could not upload one of the shared files.");
+          }
+          return result.publicUrl;
+        }));
+        await Promise.all(uploaded.map(async (publicUrl, index) => {
+          const attachment = attachments[index];
+          const label = caption || (
+            attachment.type === "video"
+              ? "Video"
+              : attachment.type === "file"
+                ? `File · ${attachment.name || "Shared file"}`
+                : "Shared media"
+          );
+          const { data: inserted, error: insertError } = await supabase.from("messages").insert({
+            chat_id: activeChatId,
+            sender_id: user.id,
+            encrypted_content: label,
+            attachment_url: publicUrl,
+            attachment_type: attachment.type,
+          }).select("id").single();
+          if (insertError) throw insertError;
+          setMessages((prev) => prev.map((message) =>
+            message.id === pendingIds[index]
+              ? { ...message, id: inserted?.id || pendingIds[index], attachment_url: publicUrl, _pending: false }
+              : message
+          ));
+        }));
+      } catch (error: any) {
+        setMessages((prev) => prev.filter((message) => !pendingIds.includes(message.id)));
+        showAlert("Upload failed", error?.message || "Could not upload the shared files.");
       }
       return;
     }
@@ -6816,19 +6934,15 @@ STRICT RULES:
             !isAfuAiDirectChat &&
             !isNotificationsChat &&
             chatInfo.other_id &&
+            Platform.OS !== "web" &&
+            !isExpoGo() &&
+            callAvailable &&
             callStatus === "idle" &&
             (
             <TouchableOpacity
               hitSlop={12}
               activeOpacity={0.5}
               onPress={() => {
-                if (Platform.OS === "web") {
-                  showAlert(
-                    "Voice calls need the app build",
-                    "Install AfuChat on Android or iPhone to call from this chat.",
-                  );
-                  return;
-                }
                 if (callStartingRef.current) return;
                 callStartingRef.current = true;
                 const targetId = chatInfo.other_id;
@@ -7158,9 +7272,24 @@ STRICT RULES:
                     key={`${image.uri}-${index}`}
                     style={st.multiAttachItem}
                     activeOpacity={0.85}
-                    onPress={() => setEditingImageIndex(index)}
+                    onPress={() => {
+                      if (image.type === "image") setEditingImageIndex(index);
+                    }}
                   >
-                    <Image source={{ uri: image.uri }} style={st.attachPreviewImg} />
+                    {image.type === "image" ? (
+                      <Image source={{ uri: image.uri }} style={st.attachPreviewImg} />
+                    ) : (
+                      <View style={[st.attachPreviewFile, { backgroundColor: isDark ? "#1C1C1E" : colors.inputBg }]}>
+                        <Ionicons
+                          name={image.type === "video" ? "videocam" : "document"}
+                          size={22}
+                          color={isDark ? "#fff" : "#000"}
+                        />
+                        <Text style={[st.attachPreviewName, { color: isDark ? "#fff" : "#000" }]} numberOfLines={2}>
+                          {image.name || (image.type === "video" ? "Video" : "Shared file")}
+                        </Text>
+                      </View>
+                    )}
                     <TouchableOpacity
                       style={st.multiAttachRemove}
                       onPress={(event) => {
