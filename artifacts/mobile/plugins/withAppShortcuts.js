@@ -351,6 +351,14 @@ function withNativePackageRegistration(config) {
     let contents = applicationConfig.modResults.contents;
     const importLine = "import com.afuchat.mobile.AfuChatShareShortcutsPackage";
     const moduleMarker = "add(AfuChatShareShortcutsPackage())";
+    const staleDataSyncImport = "import com.afuchat.mobile.AfuChatDataSyncPackage";
+
+    if (contents.includes(staleDataSyncImport)) {
+      contents = contents.replace(
+        new RegExp(`\\s*${staleDataSyncImport.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*`, "g"),
+        "\n",
+      );
+    }
 
     if (!contents.includes(importLine)) {
       const configurationImport = "import android.content.res.Configuration";
@@ -371,15 +379,14 @@ function withNativePackageRegistration(config) {
       const existingManualPackage = "add(AfuChatDataSyncPackage())";
       if (contents.includes(existingManualPackage)) {
         contents = contents.replace(
-          existingManualPackage,
-          `${existingManualPackage}\n          ${moduleMarker}`,
-        );
-      } else {
-        contents = contents.replace(
-          /(\s*\/\/ Packages that cannot be autolinked yet can be added manually here, for example:)/,
-          `\n          ${moduleMarker}$1`,
+          new RegExp(`\\s*${existingManualPackage.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*`, "g"),
+          "\n",
         );
       }
+      contents = contents.replace(
+        /(\s*\/\/ Packages that cannot be autolinked yet can be added manually here, for example:)/,
+        `\n          ${moduleMarker}$1`,
+      );
     }
 
     applicationConfig.modResults.contents = contents;

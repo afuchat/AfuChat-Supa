@@ -5,10 +5,6 @@
 import { getDB } from "./db";
 import { supabase } from "@/lib/supabase";
 import { isOnline, onConnectivityChange } from "@/lib/offlineStore";
-import {
-  startForegroundDataSync,
-  stopForegroundDataSync,
-} from "@/lib/foregroundDataSync";
 
 export type QueueActionType =
   | "send_message"
@@ -45,7 +41,6 @@ export async function enqueue(
        VALUES (?, ?, ?, ?, 0, NULL)`,
       [id, actionType, JSON.stringify(payload), Date.now()],
     );
-    if (isOnline()) startForegroundDataSync();
   } catch {}
   return id;
 }
@@ -67,7 +62,6 @@ function scheduleRetry(retryCount: number): void {
 export async function drainQueue(maxItems = 50): Promise<void> {
   if (_draining || !isOnline()) return;
   _draining = true;
-  startForegroundDataSync();
 
   try {
     const db = await getDB();
@@ -103,9 +97,6 @@ export async function drainQueue(maxItems = 50): Promise<void> {
   } catch {
   } finally {
     _draining = false;
-    // The queue is durable in SQLite. Stop the notification after this bounded
-    // pass; a later retry or reconnect will start a fresh foreground window.
-    stopForegroundDataSync();
   }
 }
 

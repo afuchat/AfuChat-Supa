@@ -75,6 +75,7 @@
 - [Phone contact display and matching](phone-contact-display-order.md) — preserve raw device rows for display/order; normalize only the separate value used for account matching.
 - [Concurrent media upload keys](concurrent-media-upload-keys.md) — parallel uploads must use unique object names; timestamp-only names collide and duplicate/overwrite grouped images.
 - [TypeScript typecheck heap](typescript-typecheck-heap.md) — full mobile typechecks need a larger Node heap than the default in this workspace.
+- [Foreground sync service risk](foreground-sync-service-risk.md) — keep offline sync durable in SQLite; do not start a custom Android foreground service for ordinary retry callbacks.
 - [Conservative dead-code audits](cleanup-audit.md) — trace indirect runtime imports and registries before deleting modules that look unreferenced.
 - [Username reservation security](username-reservation-security.md) — database claim RPC and profile trigger are authoritative; client availability checks are advisory only.
 - [Profile username trigger timing](profile-username-trigger-timing.md) — ownership reservation must run after profile insert because owned_usernames references profiles.
