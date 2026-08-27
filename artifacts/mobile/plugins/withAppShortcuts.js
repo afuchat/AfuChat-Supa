@@ -334,6 +334,7 @@ function withNativeShareShortcuts(config) {
 import android.content.Context
 import android.content.Intent
  import android.appwidget.AppWidgetManager
+ import android.appwidget.AppWidgetHost
  import android.content.ComponentName
  import android.media.AudioManager
  import android.os.Handler
@@ -524,7 +525,8 @@ class AfuChatShareShortcutsModule(
         // Older launchers do not support the pin API, but can still open the
         // system widget picker. This gives Settings a usable install action
         // instead of requiring users to discover the widget manually.
-        val widgetId = manager.allocateAppWidgetId(provider)
+         val host = AppWidgetHost(context, 0xAF01)
+         val widgetId = host.allocateAppWidgetId()
         val picker = Intent(AppWidgetManager.ACTION_APPWIDGET_PICK).apply {
           putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
           putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, provider)
@@ -649,7 +651,7 @@ class AfuChatWidgetProvider : AppWidgetProvider() {
 
   private fun pendingIntent(context: Context, url: String, requestCode: Int): PendingIntent {
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-      setClassName(context, context.packageName, "com.afuchat.mobile.MainActivity")
+      setClassName(context, "com.afuchat.mobile.MainActivity")
       addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
     }
     return PendingIntent.getActivity(
