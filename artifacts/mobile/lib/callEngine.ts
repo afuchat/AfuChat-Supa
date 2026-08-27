@@ -50,6 +50,7 @@ let status: CallStatus = "idle";
 let info: CallInfo | null = null;
 let currentUserId: string | null = null;
 let localStream: any = null;
+let remoteAudio: any = null;
 let peer: any = null;
 let signalChannel: any = null;
 let inboxChannel: any = null;
@@ -171,6 +172,12 @@ function stopPeer() {
   pendingCandidates = [];
   remoteDescriptionReady = false;
   try { localStream?.getTracks?.().forEach((track: any) => track.stop()); } catch {}
+  if (remoteAudio) {
+    try { remoteAudio.pause?.(); } catch {}
+    try { remoteAudio.srcObject = null; } catch {}
+    try { remoteAudio.remove?.(); } catch {}
+    remoteAudio = null;
+  }
   try { peer?.close?.(); } catch {}
   localStream = null;
   peer = null;
@@ -233,9 +240,24 @@ function configurePeer(callId: string, isCaller: boolean) {
       setStatus("active");
     }
   };
-  // The remote audio track is intentionally not rendered. WebRTC routes it
-  // through the native audio session, like a normal voice call.
-  peer.ontrack = () => {};
+  peer.ontrack = (event: any) => {
+    // Native WebRTC routes an audio track through its audio session. On web,
+    // the track must be attached to an HTMLAudioElement or the call connects
+    // silently with no audible remote participant.
+    if (Platform.OS !== "web" || !event?.streams?.[0]) return;
+    try {
+      if (!remoteAudio) {
+        remoteAudio = document.createElement("audio");
+        remoteAudio.autoplay = true;
+        remoteAudio.playsInline = true;
+        remoteAudio.setAttribute("aria-hidden", "true");
+        remoteAudio.style.display = "none";
+        document.body.appendChild(remoteAudio);
+      }
+      remoteAudio.srcObject = event.streams[0];
+      void remoteAudio.play?.().catch(() => {});
+    } catch {}
+  };
   return isCaller;
 }
 

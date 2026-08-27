@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Avatar } from "@/components/ui/Avatar";
 import { useCall } from "@/context/CallContext";
 import { useTheme } from "@/hooks/useTheme";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function formatDuration(seconds: number) {
   return `${Math.floor(seconds / 60).toString().padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
@@ -13,6 +14,7 @@ function formatDuration(seconds: number) {
 export default function CallScreen() {
   const { colors } = useTheme();
   const { status, callInfo, isMuted, isSpeaker, toggleMute, toggleSpeaker, endCall } = useCall();
+  const insets = useSafeAreaInsets();
   const [seconds, setSeconds] = useState(0);
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export default function CallScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <View style={styles.top}>
+      <View style={[styles.top, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={() => { void endCall(); }} hitSlop={12}>
           <Ionicons name="chevron-down" size={28} color={colors.text} />
         </TouchableOpacity>
@@ -49,7 +51,7 @@ export default function CallScreen() {
         <Text style={[styles.status, { color: colors.textMuted }]}>{label}</Text>
         {status === "connecting" && <ActivityIndicator color={colors.accent} style={{ marginTop: 16 }} />}
       </View>
-      <View style={styles.controls}>
+      <View style={[styles.controls, { paddingBottom: insets.bottom + 20 }]}>
         <TouchableOpacity style={[styles.control, { backgroundColor: colors.surface }]} onPress={toggleMute}>
           <Ionicons name={isMuted ? "mic-off" : "mic"} size={24} color={colors.text} />
           <Text style={[styles.controlLabel, { color: colors.text }]}>{isMuted ? "Unmute" : "Mute"}</Text>
@@ -68,12 +70,12 @@ export default function CallScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, paddingHorizontal: 24 },
-  top: { paddingTop: 60, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  top: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   topTitle: { fontSize: 16, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", paddingBottom: 80 },
   name: { fontSize: 25, fontWeight: "700", marginTop: 20, maxWidth: "90%" },
   status: { fontSize: 15, marginTop: 8 },
-  controls: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 24, paddingBottom: 42 },
+  controls: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 24 },
   control: { width: 66, height: 66, borderRadius: 33, alignItems: "center", justifyContent: "center" },
   controlLabel: { fontSize: 10, marginTop: 3 },
   hangup: { width: 72, height: 72, borderRadius: 36, backgroundColor: "#D92D3F", alignItems: "center", justifyContent: "center" },
