@@ -1,8 +1,8 @@
 /**
  * Adds AfuChat's launcher shortcuts to native builds.
  *
- * Android reads static shortcuts from res/xml and shows them when the user
- * long-presses the AfuChat icon. iOS shortcut definitions live in app.json;
+ * Android receives dynamic recent-chat shortcuts from the app and reads the
+ * widget provider from res/xml. iOS shortcut definitions live in app.json;
  * this plugin forwards their URL payload through Expo's normal URL delegate.
  *
  * Expo Go cannot install launcher shortcuts because it does not contain the
@@ -26,55 +26,9 @@ const IOS_LAUNCH_MARKER = "// AfuChat launcher shortcut cold-start forwarding";
 
 const SHORTCUTS_XML = `<?xml version="1.0" encoding="utf-8"?>
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
-    <shortcut
-        android:shortcutId="new-chat"
-        android:enabled="true"
-        android:icon="@mipmap/ic_launcher"
-        android:shortcutShortLabel="@string/shortcut_new_chat"
-        android:shortcutLongLabel="@string/shortcut_new_chat_long">
-        <intent
-            android:action="android.intent.action.VIEW"
-            android:targetPackage="com.afuchat.mobile"
-            android:targetClass="com.afuchat.mobile.MainActivity"
-            android:data="afuchat://new-chat" />
-    </shortcut>
-    <shortcut
-        android:shortcutId="chats"
-        android:enabled="true"
-        android:icon="@mipmap/ic_launcher"
-        android:shortcutShortLabel="@string/shortcut_chats"
-        android:shortcutLongLabel="@string/shortcut_chats_long">
-        <intent
-            android:action="android.intent.action.VIEW"
-            android:targetPackage="com.afuchat.mobile"
-            android:targetClass="com.afuchat.mobile.MainActivity"
-            android:data="afuchat://chats" />
-    </shortcut>
-    <shortcut
-        android:shortcutId="contacts"
-        android:enabled="true"
-        android:icon="@mipmap/ic_launcher"
-        android:shortcutShortLabel="@string/shortcut_contacts"
-        android:shortcutLongLabel="@string/shortcut_contacts_long">
-        <intent
-            android:action="android.intent.action.VIEW"
-            android:targetPackage="com.afuchat.mobile"
-            android:targetClass="com.afuchat.mobile.MainActivity"
-            android:data="afuchat://contacts" />
-    </shortcut>
-    <shortcut
-        android:shortcutId="create-post"
-        android:enabled="true"
-        android:icon="@mipmap/ic_launcher"
-        android:shortcutShortLabel="@string/shortcut_create_post"
-        android:shortcutLongLabel="@string/shortcut_create_post_long">
-        <intent
-            android:action="android.intent.action.VIEW"
-            android:targetPackage="com.afuchat.mobile"
-            android:targetClass="com.afuchat.mobile.MainActivity"
-            android:data="afuchat://create-post" />
-    </shortcut>
-    <!-- Dynamic conversation shortcuts are also eligible for Android Direct Share. -->
+    <!-- Launcher shortcuts are dynamic and contain only the eight most recent
+         conversations. This file intentionally has no static shortcuts. -->
+    <!-- Android Direct Share remains available through the generic share target. -->
     <share-target android:targetClass="com.afuchat.mobile.MainActivity">
         <intent-filter>
             <action android:name="android.intent.action.SEND" />
@@ -91,14 +45,141 @@ const SHORTCUTS_XML = `<?xml version="1.0" encoding="utf-8"?>
 `;
 
 const SHORTCUT_STRINGS = `    <!-- ${ANDROID_MARKER} -->
-    <string name="shortcut_new_chat">New chat</string>
-    <string name="shortcut_new_chat_long">Start a new conversation</string>
-    <string name="shortcut_chats">Chats</string>
-    <string name="shortcut_chats_long">Open your conversations</string>
-    <string name="shortcut_contacts">Contacts</string>
-    <string name="shortcut_contacts_long">Find people and contacts</string>
-    <string name="shortcut_create_post">Create post</string>
-    <string name="shortcut_create_post_long">Share something new</string>
+`;
+
+const WIDGET_INFO_XML = `<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="140dp"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/afuchat_widget"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen" />
+`;
+
+const WIDGET_LAYOUT_XML = `<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@drawable/afuchat_widget_background">
+    <TextView
+        android:id="@+id/widget_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/widget_title"
+        android:textColor="#FFFFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:maxLines="1" />
+    <TextView
+        android:id="@+id/widget_empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:text="@string/widget_empty"
+        android:textColor="#CCFFFFFF"
+        android:textSize="13sp"
+        android:visibility="gone" />
+    <LinearLayout
+        android:id="@+id/widget_row_1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+        <TextView
+            android:id="@+id/widget_row_1_initial"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:gravity="center"
+            android:textColor="#FFFFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:background="@drawable/afuchat_widget_avatar" />
+        <TextView
+            android:id="@+id/widget_row_1_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:textColor="#FFFFFFFF"
+            android:textSize="14sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/widget_row_2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+        <TextView
+            android:id="@+id/widget_row_2_initial"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:gravity="center"
+            android:textColor="#FFFFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:background="@drawable/afuchat_widget_avatar" />
+        <TextView
+            android:id="@+id/widget_row_2_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:textColor="#FFFFFFFF"
+            android:textSize="14sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/widget_row_3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+        <TextView
+            android:id="@+id/widget_row_3_initial"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:gravity="center"
+            android:textColor="#FFFFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:background="@drawable/afuchat_widget_avatar" />
+        <TextView
+            android:id="@+id/widget_row_3_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:textColor="#FFFFFFFF"
+            android:textSize="14sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+</LinearLayout>
+`;
+
+const WIDGET_BACKGROUND_XML = `<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#1018D8" />
+    <corners android:radius="24dp" />
+</shape>
+`;
+
+const WIDGET_AVATAR_XML = `<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <solid android:color="#35FFFFFF" />
+</shape>
 `;
 
 function withShortcutManifest(config) {
@@ -117,6 +198,36 @@ function withShortcutManifest(config) {
     };
     if (!existing) metadata.push(shortcutMetadata);
 
+    const receivers = application.receiver ?? (application.receiver = []);
+    const widgetReceiverName = ".AfuChatWidgetProvider";
+    const existingReceiver = receivers.find(
+      (item) => item.$?.["android:name"] === widgetReceiverName,
+    );
+    if (!existingReceiver) {
+      receivers.push({
+        $: {
+          "android:name": widgetReceiverName,
+          "android:exported": "true",
+          "android:label": "@string/widget_title",
+        },
+        "intent-filter": [
+          {
+            action: [
+              { $: { "android:name": "android.appwidget.action.APPWIDGET_UPDATE" } },
+            ],
+          },
+        ],
+        "meta-data": [
+          {
+            $: {
+              "android:name": "android.appwidget.provider",
+              "android:resource": "@xml/afuchat_widget_info",
+            },
+          },
+        ],
+      });
+    }
+
     return manifestConfig;
   });
 }
@@ -133,13 +244,27 @@ function withShortcutResources(config) {
         "res",
       );
       const xmlDir = path.join(resDir, "xml");
+      const layoutDir = path.join(resDir, "layout");
+      const drawableDir = path.join(resDir, "drawable");
       const valuesDir = path.join(resDir, "values");
       fs.mkdirSync(xmlDir, { recursive: true });
+      fs.mkdirSync(layoutDir, { recursive: true });
+      fs.mkdirSync(drawableDir, { recursive: true });
       fs.mkdirSync(valuesDir, { recursive: true });
 
       fs.writeFileSync(
         path.join(xmlDir, `${SHORTCUTS_RESOURCE}.xml`),
         SHORTCUTS_XML,
+      );
+      fs.writeFileSync(path.join(xmlDir, "afuchat_widget_info.xml"), WIDGET_INFO_XML);
+      fs.writeFileSync(path.join(layoutDir, "afuchat_widget.xml"), WIDGET_LAYOUT_XML);
+      fs.writeFileSync(
+        path.join(drawableDir, "afuchat_widget_background.xml"),
+        WIDGET_BACKGROUND_XML,
+      );
+      fs.writeFileSync(
+        path.join(drawableDir, "afuchat_widget_avatar.xml"),
+        WIDGET_AVATAR_XML,
       );
 
       const stringsPath = path.join(valuesDir, "strings.xml");
@@ -148,6 +273,15 @@ function withShortcutResources(config) {
         : '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n</resources>\n';
       if (!strings.includes(ANDROID_MARKER)) {
         strings = strings.replace("</resources>", `${SHORTCUT_STRINGS}</resources>`);
+        fs.writeFileSync(stringsPath, strings);
+      }
+      if (!strings.includes('name="widget_title"')) {
+        strings = strings.replace(
+          "</resources>",
+          `    <string name="widget_title">Recent chats</string>
+    <string name="widget_empty">Open AfuChat to see your recent chats</string>
+</resources>`,
+        );
         fs.writeFileSync(stringsPath, strings);
       }
 
@@ -192,6 +326,8 @@ import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+ import org.json.JSONArray
+ import org.json.JSONObject
 import java.net.URL
 
 class AfuChatShareShortcutsModule(
@@ -235,19 +371,31 @@ class AfuChatShareShortcutsModule(
           return@Thread
         }
 
+         val widgetRows = JSONArray()
+         chats.take(8).forEach { chat ->
+           widgetRows.put(JSONObject().apply {
+             put("chatId", chat.chatId)
+             put("label", chat.label)
+           })
+         }
+         context.getSharedPreferences("afuchat_widget", Context.MODE_PRIVATE)
+           .edit()
+           .putString("recent_chats", widgetRows.toString())
+           .apply()
+
         val shortcuts = chats.mapIndexed { rank, chat ->
           val icon = loadAvatarIcon(chat.avatarUrl)
             ?: createInitialIcon(context, chat.label)
-          val shareIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "*/*"
-            data = Uri.parse("afuchat://share-chat?chatId=" + Uri.encode(chat.chatId))
+           val chatIntent = Intent(Intent.ACTION_VIEW).apply {
+             data = Uri.parse("afuchat://chat/" + Uri.encode(chat.chatId))
+             setPackage(context.packageName)
             putExtra("afuchat_chat_id", chat.chatId)
           }
           val builder = ShortcutInfo.Builder(context, "share-chat-" + chat.chatId)
             .setShortLabel(chat.label.take(25))
-            .setLongLabel(("Send to " + chat.label).take(80))
+             .setLongLabel(("Open " + chat.label).take(80))
             .setIcon(icon)
-            .setIntent(shareIntent)
+             .setIntent(chatIntent)
             .setRank(rank)
             .setCategories(setOf("android.shortcut.conversation"))
           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
@@ -259,6 +407,7 @@ class AfuChatShareShortcutsModule(
           builder.build()
         }
         manager.setDynamicShortcuts(shortcuts)
+         AfuChatWidgetProvider.updateAll(context)
         promise.resolve(true)
       } catch (error: Exception) {
         promise.reject("SHARE_SHORTCUTS_UPDATE_FAILED", error)
@@ -314,6 +463,115 @@ class AfuChatShareShortcutsModule(
       promise.resolve(chatId)
     } catch (error: Exception) {
       promise.reject("SHARE_CHAT_ID_READ_FAILED", error)
+    }
+  }
+}
+`,
+      );
+
+      fs.writeFileSync(
+        path.join(packageDir, "AfuChatWidgetProvider.kt"),
+        `package com.afuchat.mobile
+
+import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.view.View
+import android.widget.RemoteViews
+import org.json.JSONArray
+
+class AfuChatWidgetProvider : AppWidgetProvider() {
+  override fun onUpdate(
+    context: Context,
+    appWidgetManager: AppWidgetManager,
+    appWidgetIds: IntArray,
+  ) {
+    appWidgetIds.forEach { appWidgetId ->
+      updateWidget(context, appWidgetManager, appWidgetId)
+    }
+  }
+
+  private fun updateWidget(
+    context: Context,
+    manager: AppWidgetManager,
+    appWidgetId: Int,
+  ) {
+    val views = RemoteViews(context.packageName, R.layout.afuchat_widget)
+    val raw = context
+      .getSharedPreferences("afuchat_widget", Context.MODE_PRIVATE)
+      .getString("recent_chats", "[]")
+    val chats = try {
+      JSONArray(raw ?: "[]")
+    } catch (_: Exception) {
+      JSONArray()
+    }
+
+    val rowIds = intArrayOf(R.id.widget_row_1, R.id.widget_row_2, R.id.widget_row_3)
+    val initialIds = intArrayOf(
+      R.id.widget_row_1_initial,
+      R.id.widget_row_2_initial,
+      R.id.widget_row_3_initial,
+    )
+    val labelIds = intArrayOf(
+      R.id.widget_row_1_label,
+      R.id.widget_row_2_label,
+      R.id.widget_row_3_label,
+    )
+
+    views.setViewVisibility(
+      R.id.widget_empty,
+      if (chats.length() == 0) View.VISIBLE else View.GONE,
+    )
+    views.setOnClickPendingIntent(
+      R.id.widget_title,
+      pendingIntent(context, "afuchat://chats", 9000),
+    )
+
+    for (index in rowIds.indices) {
+      if (index >= chats.length()) {
+        views.setViewVisibility(rowIds[index], View.GONE)
+        continue
+      }
+
+      val chat = chats.optJSONObject(index) ?: continue
+      val chatId = chat.optString("chatId")
+      val label = chat.optString("label", "Chat")
+      views.setViewVisibility(rowIds[index], View.VISIBLE)
+      views.setTextViewText(initialIds[index], label.trim().firstOrNull()?.uppercase() ?: "A")
+      views.setTextViewText(labelIds[index], label)
+      views.setOnClickPendingIntent(
+        rowIds[index],
+        pendingIntent(context, "afuchat://chat/" + Uri.encode(chatId), index + 9001),
+      )
+    }
+
+    manager.updateAppWidget(appWidgetId, views)
+  }
+
+  private fun pendingIntent(context: Context, url: String, requestCode: Int): PendingIntent {
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+      setClassName(context, context.packageName, "com.afuchat.mobile.MainActivity")
+      addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+    }
+    return PendingIntent.getActivity(
+      context,
+      requestCode,
+      intent,
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+  }
+
+  companion object {
+    fun updateAll(context: Context) {
+      val manager = AppWidgetManager.getInstance(context)
+      val component = ComponentName(context, AfuChatWidgetProvider::class.java)
+      manager.getAppWidgetIds(component).forEach { appWidgetId ->
+        AfuChatWidgetProvider().updateWidget(context, manager, appWidgetId)
+      }
     }
   }
 }

@@ -6,7 +6,7 @@ import { getLocalConversations, type LocalConversation } from "@/lib/storage/loc
 import { updateNativeShareShortcuts, type ShareShortcutChat } from "@/lib/nativeShareShortcuts";
 
 function conversationToShortcut(conversation: Partial<LocalConversation> & Record<string, any>): ShareShortcutChat | null {
-  if (!conversation.id || conversation.kind === "notes") return null;
+  if (!conversation.id || conversation.kind === "notes" || !conversation.last_message_at) return null;
   const isGroup = !!conversation.is_group || !!conversation.is_channel;
   const label = isGroup
     ? (conversation.name || (conversation.is_channel ? "Channel" : "Group chat"))
@@ -14,6 +14,7 @@ function conversationToShortcut(conversation: Partial<LocalConversation> & Recor
   return {
     chatId: String(conversation.id),
     label,
+    lastMessageAt: conversation.last_message_at,
     // Direct chats use the other participant's profile image. Group/channel
     // chats use their conversation image.
     avatarUrl: isGroup ? (conversation.avatar_url || null) : (conversation.other_avatar || null),
@@ -31,6 +32,7 @@ function serverRowToShortcut(row: any): ShareShortcutChat | null {
     other_display_name: row.other_display_name,
     other_avatar: row.other_avatar,
     avatar_url: row.avatar_url,
+    last_message_at: row.last_message_at || row.chat_updated_at,
   });
 }
 
@@ -58,6 +60,8 @@ export default function NativeShareShortcutSync() {
             if (cancelled) return;
             updateNativeShareShortcuts(
               cached
+                 .filter((conversation) => !!conversation.last_message_at)
+                 .sort((a, b) => Date.parse(b.last_message_at || "") - Date.parse(a.last_message_at || ""))
                 .map((conversation) => conversationToShortcut(conversation))
                 .filter(Boolean) as ShareShortcutChat[],
             );
@@ -68,7 +72,7 @@ export default function NativeShareShortcutSync() {
             if (cancelled) return;
             updateNativeShareShortcuts(
               ((data ?? []) as any[])
-                .filter((row) => !row.is_archived)
+                 .filter((row) => !row.is_archived && (row.last_message_at || row.chat_updated_at))
                 .sort((a, b) => {
                   const aTime = new Date(a.last_message_at || a.chat_updated_at || 0).getTime();
                   const bTime = new Date(b.last_message_at || b.chat_updated_at || 0).getTime();

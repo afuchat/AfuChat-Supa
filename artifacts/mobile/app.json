@@ -224,40 +224,7 @@
         "UIBackgroundModes": [
           "audio"
         ],
-        "UIApplicationShortcutItems": [
-          {
-            "UIApplicationShortcutItemType": "com.afuchat.new-chat",
-            "UIApplicationShortcutItemTitle": "New chat",
-            "UIApplicationShortcutItemIconType": "UIApplicationShortcutIconTypeCompose",
-            "UIApplicationShortcutItemUserInfo": {
-              "url": "afuchat://new-chat"
-            }
-          },
-          {
-            "UIApplicationShortcutItemType": "com.afuchat.chats",
-            "UIApplicationShortcutItemTitle": "Chats",
-            "UIApplicationShortcutItemIconType": "UIApplicationShortcutIconTypeMessage",
-            "UIApplicationShortcutItemUserInfo": {
-              "url": "afuchat://chats"
-            }
-          },
-          {
-            "UIApplicationShortcutItemType": "com.afuchat.contacts",
-            "UIApplicationShortcutItemTitle": "Contacts",
-            "UIApplicationShortcutItemIconType": "UIApplicationShortcutIconTypePeople",
-            "UIApplicationShortcutItemUserInfo": {
-              "url": "afuchat://contacts"
-            }
-          },
-          {
-            "UIApplicationShortcutItemType": "com.afuchat.create-post",
-            "UIApplicationShortcutItemTitle": "Create post",
-            "UIApplicationShortcutItemIconType": "UIApplicationShortcutIconTypeCompose",
-            "UIApplicationShortcutItemUserInfo": {
-              "url": "afuchat://create-post"
-            }
-          }
-        ]
+        "UIApplicationShortcutItems": []
       },
       "associatedDomains": [
         "applinks:afuchat.com",

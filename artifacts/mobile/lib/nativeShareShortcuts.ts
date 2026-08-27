@@ -4,6 +4,7 @@ export type ShareShortcutChat = {
   chatId: string;
   label: string;
   avatarUrl?: string | null;
+  lastMessageAt?: string | null;
   isGroup?: boolean;
   isChannel?: boolean;
 };
@@ -28,6 +29,12 @@ export function updateNativeShareShortcuts(chats: ShareShortcutChat[]): void {
   const unique = chats
     .filter((chat) => chat.chatId && chat.label)
     .filter((chat, index, list) => list.findIndex((item) => item.chatId === chat.chatId) === index)
+    .filter((chat) => !!chat.lastMessageAt)
+    .sort((a, b) => {
+      const aTime = Date.parse(a.lastMessageAt || "");
+      const bTime = Date.parse(b.lastMessageAt || "");
+      return (Number.isFinite(bTime) ? bTime : 0) - (Number.isFinite(aTime) ? aTime : 0);
+    })
     .slice(0, 8);
 
   try {

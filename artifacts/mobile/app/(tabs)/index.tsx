@@ -900,6 +900,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
             ? (item.name || "Group chat")
             : (item.other_display_name || "Chat"),
           avatarUrl: item.is_group || item.is_channel ? item.avatar_url : item.other_avatar,
+          lastMessageAt: item.last_message_at,
           isGroup: item.is_group,
           isChannel: item.is_channel,
         })),

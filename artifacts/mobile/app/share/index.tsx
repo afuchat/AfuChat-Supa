@@ -33,6 +33,7 @@ type Contact = {
   avatar_url: string | null;
   /** Existing conversation ID. When present, sharing goes to this exact chat. */
   chatId?: string;
+  lastMessageAt?: string | null;
   isGroup?: boolean;
   isChannel?: boolean;
   subtitle?: string;
@@ -116,6 +117,7 @@ export default function ShareToAfuChatScreen() {
     return {
       id: isGroup ? conversation.id : otherId,
       chatId: conversation.id,
+      lastMessageAt: conversation.last_message_at,
       display_name: label,
       handle: conversation.other_handle || "",
       avatar_url: avatar || null,
@@ -138,6 +140,7 @@ export default function ShareToAfuChatScreen() {
       other_handle: row.other_handle,
       other_avatar: row.other_avatar,
       avatar_url: row.avatar_url,
+       last_message_at: row.last_message_at || row.chat_updated_at,
     });
   }
 
@@ -170,6 +173,7 @@ export default function ShareToAfuChatScreen() {
             chatId: chat.chatId!,
             label: chat.display_name,
             avatarUrl: chat.avatar_url,
+             lastMessageAt: chat.lastMessageAt,
             isGroup: chat.isGroup,
             isChannel: chat.isChannel,
           })));
@@ -183,7 +187,7 @@ export default function ShareToAfuChatScreen() {
         );
         if (cancelled) return;
         const liveTargets = ((data ?? []) as any[])
-          .filter((row) => !row.is_archived)
+          .filter((row) => !row.is_archived && (row.last_message_at || row.chat_updated_at))
           .sort((a, b) => {
             const aTime = new Date(a.last_message_at || a.chat_updated_at || 0).getTime();
             const bTime = new Date(b.last_message_at || b.chat_updated_at || 0).getTime();
@@ -201,6 +205,7 @@ export default function ShareToAfuChatScreen() {
           chatId: chat.chatId!,
           label: chat.display_name,
           avatarUrl: chat.avatar_url,
+           lastMessageAt: chat.lastMessageAt,
           isGroup: chat.isGroup,
           isChannel: chat.isChannel,
         })));

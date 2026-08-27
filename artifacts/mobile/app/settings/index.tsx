@@ -201,6 +201,25 @@ export default function SettingsScreen() {
           />
         </Section>
 
+        {Platform.OS === "android" && (
+          <Section title="HOME SCREEN" colors={colors}>
+            <Row
+              icon="grid-outline"
+              label="Add AfuChat widget"
+              sublabel="Show your recent chats on the home screen"
+              onPress={() =>
+                showAlert(
+                  "Add AfuChat to your home screen",
+                  "On your Android home screen, touch and hold an empty space, tap Widgets, find AfuChat, then drag the Recent chats widget onto your home screen.",
+                )
+              }
+              last
+              colors={colors}
+              accent={accent}
+            />
+          </Section>
+        )}
+
         {/* ── Messaging ─────────────────────────────────────────────────── */}
         <Section title={t("MESSAGING")} colors={colors}>
           <Row
