@@ -2258,6 +2258,7 @@ function ChatScreen() {
   const isDraft = id === "new";
   const { user, profile, isPremium, subscription, refreshProfile, equippedGoods } = useAuth();
   const { status: callStatus, startCall: callStart, isAvailable: callsAvailable } = useCall();
+  const callStartingRef = useRef(false);
   const { openApp } = useSuperApp();
   const { colors, isDark } = useTheme();
   const { appearance: chatAppearance, updateAppearance: updateChatAppearance } = useChatAppearance(id as string | undefined);
@@ -6815,13 +6816,23 @@ STRICT RULES:
             !isAfuAiDirectChat &&
             !isNotificationsChat &&
             chatInfo.other_id &&
-             callsAvailable &&
             callStatus === "idle" &&
             (
             <TouchableOpacity
               hitSlop={12}
               activeOpacity={0.5}
               onPress={() => {
+                if (!callsAvailable) {
+                  showAlert(
+                    "Voice calls need the app build",
+                    Platform.OS === "web"
+                      ? "Install AfuChat on Android or iPhone to call from this chat."
+                      : "Update AfuChat to the latest native build to enable voice calls.",
+                  );
+                  return;
+                }
+                if (callStartingRef.current) return;
+                callStartingRef.current = true;
                 const targetId = chatInfo.other_id;
                 void callStart({
                   calleeId: targetId,
@@ -6830,8 +6841,12 @@ STRICT RULES:
                   chatId: (isDraft ? realChatId : id as string) ?? null,
                 }).then((callId) => {
                   router.push({ pathname: "/call/[id]", params: { id: callId } } as any);
-                }).catch(() => {});
+                }).catch(() => {}).finally(() => {
+                  callStartingRef.current = false;
+                });
               }}
+              accessibilityRole="button"
+              accessibilityLabel={`Call ${chatInfo.other_name ?? "this user"}`}
             >
               <Ionicons
                 name="call-outline"

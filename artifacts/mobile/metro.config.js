@@ -30,9 +30,15 @@ config.resolver = {
     "react-native-web": path.resolve(__dirname, "node_modules/react-native-web"),
   },
   resolveRequest: (context, moduleName, platform) => {
-    // Apply web shims only for the web platform bundle.
-    if (platform === "web" && WEB_SHIMS[moduleName]) {
-      return { filePath: WEB_SHIMS[moduleName], type: "sourceFile" };
+    // Metro may omit the platform while walking a CommonJS require from the
+    // web entrypoint. Match that case too, and also catch package subpaths so
+    // Track Player's optional browser implementation cannot pull Shaka in.
+    const shim = WEB_SHIMS[moduleName] ??
+      (moduleName.startsWith("react-native-track-player/")
+        ? WEB_SHIMS["react-native-track-player"]
+        : undefined);
+    if ((platform === "web" || platform == null) && shim) {
+      return { filePath: shim, type: "sourceFile" };
     }
     // Fall through to default Metro resolution for all other cases.
     return context.resolveRequest(context, moduleName, platform);

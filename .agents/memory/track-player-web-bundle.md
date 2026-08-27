@@ -8,3 +8,8 @@ description: react-native-track-player 4.1.x pulls an optional Shaka browser mod
 **Why:** A root layout import causes Metro to statically inspect reachable `require()` targets; the runtime platform guard alone does not prevent web bundle resolution.
 
 **How to apply:** Preserve the native `NativeModules.TrackPlayerModule` guard and the web resolver shim whenever Track Player is imported by a module reachable from the root layout.
+
+Metro can also invoke the resolver with a null platform while it walks a
+CommonJS `require` from the web entrypoint. Match the null-platform case and
+Track Player subpaths in the resolver; matching only the literal `"web"` case
+can still allow the Shaka import to be traversed.
