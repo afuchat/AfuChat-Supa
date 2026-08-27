@@ -1675,7 +1675,6 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
             onSubmitEditing={onSubmit}
             returnKeyType="search"
             numberOfLines={1}
-            ellipsizeMode="tail"
             autoCorrect={false}
             autoCapitalize="none"
           />

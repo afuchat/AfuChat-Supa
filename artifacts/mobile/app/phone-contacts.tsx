@@ -17,7 +17,7 @@ import { supabase } from "@/lib/supabase";
 import { Avatar } from "@/components/ui/Avatar";
 import { PrestigeBadge } from "@/components/ui/PrestigeBadge";
 import { usePhoneContacts } from "@/lib/usePhoneContacts";
-import { isValidInternationalPhoneNumber, sendPhoneInvite } from "@/lib/phoneContacts";
+import { callPhoneNumber, isValidInternationalPhoneNumber, sendPhoneInvite } from "@/lib/phoneContacts";
 import { isOnline } from "@/lib/offlineStore";
 import { getLocalConversations } from "@/lib/storage/localConversations";
 import { showAlert } from "@/lib/alert";
@@ -49,6 +49,13 @@ export default function PhoneContactsScreen() {
   const [onAfuChat, setOnAfuChat] = useState<AfuContact[]>([]);
   const [notOnAfuChat, setNotOnAfuChat] = useState<NonAfuContact[]>([]);
   const [inviteTarget, setInviteTarget] = useState<NonAfuContact | null>(null);
+
+  const handleCall = useCallback(async (phone: string) => {
+    const opened = await callPhoneNumber(phone);
+    if (!opened) {
+      showAlert("Unable to call", "Your phone could not open the dialer for this number.");
+    }
+  }, []);
 
   const findContacts = useCallback(async () => {
     setState(permission === "denied" ? "denied" : "done");
@@ -161,20 +168,34 @@ export default function PhoneContactsScreen() {
                     </Text>
                   </View>
                   {onAfuChat.map((item) => (
-                    <TouchableOpacity
+                    <View
                       key={`${item.id}:${item.phone_number}`}
                       style={[styles.card, { backgroundColor: colors.surface }]}
-                      onPress={() => router.push({ pathname: "/contact/[id]", params: { id: item.id } })}
-                      activeOpacity={0.85}
                     >
-                      <Avatar uri={item.avatar_url} name={item.display_name} size={48} />
-                      <View style={{ flex: 1 }}>
-                        <View style={styles.nameRow}>
-                          <Text style={[styles.displayName, { color: colors.text }]}>{item.display_name}</Text>
-                          <PrestigeBadge acoin={item.acoin} size="sm" />
+                      <TouchableOpacity
+                        style={styles.contactMain}
+                        onPress={() => router.push({ pathname: "/contact/[id]", params: { id: item.id } })}
+                        activeOpacity={0.85}
+                      >
+                        <Avatar uri={item.avatar_url} name={item.display_name} size={48} />
+                        <View style={{ flex: 1 }}>
+                          <View style={styles.nameRow}>
+                            <Text style={[styles.displayName, { color: colors.text }]} numberOfLines={1}>{item.display_name}</Text>
+                            <PrestigeBadge acoin={item.acoin} size="sm" />
+                          </View>
+                          <Text style={[styles.handle, { color: colors.textMuted }]} numberOfLines={1}>@{item.handle}</Text>
+                          <Text style={[styles.phoneNumber, { color: colors.textMuted }]} numberOfLines={1}>{item.phone_number}</Text>
                         </View>
-                        <Text style={[styles.handle, { color: colors.textMuted }]}>@{item.handle}</Text>
-                      </View>
+                      </TouchableOpacity>
+                      <View style={styles.actionGroup}>
+                        <TouchableOpacity
+                          style={[styles.actionBtn, { backgroundColor: "#34C759" }]}
+                          onPress={() => void handleCall(item.phone_number)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Call ${item.display_name}`}
+                        >
+                          <Ionicons name="call" size={16} color="#fff" />
+                        </TouchableOpacity>
                       <TouchableOpacity
                         style={[styles.actionBtn, { backgroundColor: colors.accent }]}
                         onPress={async () => {
@@ -192,10 +213,13 @@ export default function PhoneContactsScreen() {
                           const { data } = await supabase.rpc("get_or_create_direct_chat", { other_user_id: item.id });
                           if (data) router.push({ pathname: "/chat/[id]", params: { id: data } });
                         }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Message ${item.display_name}`}
                       >
                         <Ionicons name="chatbubble" size={16} color="#fff" />
                       </TouchableOpacity>
-                    </TouchableOpacity>
+                      </View>
+                    </View>
                   ))}
                 </>
               )}
@@ -224,13 +248,23 @@ export default function PhoneContactsScreen() {
                         <Text style={[styles.displayName, { color: colors.text }]}>{item.name}</Text>
                         <Text style={[styles.handle, { color: colors.textMuted }]}>{item.phone}</Text>
                       </View>
-                      <TouchableOpacity
-                        style={[styles.inviteButton, { backgroundColor: colors.accent }]}
-                        onPress={() => setInviteTarget(item)}
-                      >
-                        <Ionicons name="paper-plane" size={15} color="#fff" />
-                        <Text style={styles.inviteButtonText}>Invite</Text>
-                      </TouchableOpacity>
+                      <View style={styles.actionGroup}>
+                        <TouchableOpacity
+                          style={[styles.actionBtn, { backgroundColor: "#34C759" }]}
+                          onPress={() => void handleCall(item.normalized_phone)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Call ${item.name}`}
+                        >
+                          <Ionicons name="call" size={16} color="#fff" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.inviteButton, { backgroundColor: colors.accent }]}
+                          onPress={() => setInviteTarget(item)}
+                        >
+                          <Ionicons name="paper-plane" size={15} color="#fff" />
+                          <Text style={styles.inviteButtonText}>Invite</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   ))}
                 </>
@@ -290,10 +324,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
   },
+  contactMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, minWidth: 0 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
   displayName: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
   handle: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  phoneNumber: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2 },
   phonebookName: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2 },
+  actionGroup: { flexDirection: "row", alignItems: "center", gap: 8 },
   actionBtn: {
     width: 38,
     height: 38,

@@ -44,6 +44,32 @@ export function isValidInternationalPhoneNumber(value: string): boolean {
     && normalizePhoneNumber(normalized) === normalized;
 }
 
+/**
+ * Opens the system dialer for a validated contact number.
+ *
+ * This intentionally uses the user-confirmed dialer flow instead of placing
+ * a call silently. It works without CALL_PHONE and keeps the call under the
+ * phone OS's control.
+ */
+export async function callPhoneNumber(phone: string): Promise<boolean> {
+  if (!isValidInternationalPhoneNumber(phone)) return false;
+
+  const url = `tel:${phone}`;
+  try {
+    if (await Linking.canOpenURL(url)) {
+      await Linking.openURL(url);
+      return true;
+    }
+  } catch {}
+
+  try {
+    await Linking.openURL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function readDevicePhoneContacts(): Promise<{
   contacts: DevicePhoneContact[];
   permission: "granted" | "denied" | "unavailable";
