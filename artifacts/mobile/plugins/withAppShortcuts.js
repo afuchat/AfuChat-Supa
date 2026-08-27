@@ -187,7 +187,18 @@ function withShortcutManifest(config) {
     const application = manifestConfig.modResults.manifest.application?.[0];
     if (!application) return manifestConfig;
 
-    const metadata = application["meta-data"] ?? (application["meta-data"] = []);
+    // android.app.shortcuts belongs on the launcher activity, not on the
+    // application element. Android silently ignores the resource otherwise,
+    // so dynamic conversation shortcuts never appear in the Sharesheet.
+    const activities = application.activity ?? (application.activity = []);
+    const mainActivity =
+      activities.find((item) => {
+        const name = item.$?.["android:name"] || "";
+        return name === ".MainActivity" || name.endsWith(".MainActivity");
+      }) || activities[0];
+    if (!mainActivity) return manifestConfig;
+
+    const metadata = mainActivity["meta-data"] ?? (mainActivity["meta-data"] = []);
     const existing = metadata.find(
       (item) => item.$?.["android:name"] === MANIFEST_META_NAME,
     );
@@ -197,6 +208,15 @@ function withShortcutManifest(config) {
       "android:resource": `@xml/${SHORTCUTS_RESOURCE}`,
     };
     if (!existing) metadata.push(shortcutMetadata);
+
+    // Migrate manifests produced by older versions of this plugin, which
+    // incorrectly placed the metadata under <application>.
+    if (Array.isArray(application["meta-data"])) {
+      application["meta-data"] = application["meta-data"].filter(
+        (item) => item.$?.["android:name"] !== MANIFEST_META_NAME,
+      );
+      if (application["meta-data"].length === 0) delete application["meta-data"];
+    }
 
     const receivers = application.receiver ?? (application.receiver = []);
     const widgetReceiverName = ".AfuChatWidgetProvider";

@@ -11,6 +11,7 @@ import {
   initCallEngine,
   startCall as engineStart,
   toggleMute as engineMute,
+  toggleSpeaker as engineSpeaker,
   type CallInfo,
   type CallStatus,
   type IncomingCallNotice,
@@ -104,6 +105,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         setCallInfo(event.info);
         if (event.status === "idle" || event.status === "ended") {
           setIncomingNotice(null);
+          setIsSpeaker(false);
         }
       } else if (event.type === "incoming") {
         setIncomingNotice(event.notice);
@@ -174,7 +176,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleMute = useCallback(() => setIsMuted(engineMute()), []);
-  const toggleSpeaker = useCallback(() => setIsSpeaker((value) => !value), []);
+  const toggleSpeaker = useCallback(() => setIsSpeaker(engineSpeaker()), []);
 
   return (
     <CallContext.Provider value={{

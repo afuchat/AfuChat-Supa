@@ -456,7 +456,7 @@ const styles = StyleSheet.create({
   fileCopy: { flex: 1 },
   fileName: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   fileMeta: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 4 },
-  sendBar: { position: "absolute", left: 16, right: 16, minHeight: 52, borderRadius: 17, flexDirection: "row", alignItems: "center", paddingHorizontal: 17, gap: 9 },
+  sendBar: { flex: 1, minHeight: 52, borderRadius: 17, flexDirection: "row", alignItems: "center", justifyContent: "center", paddingHorizontal: 12, gap: 9 },
   sendBarText: { fontSize: 14, fontFamily: "Inter_700Bold" },
   sendBarHint: { marginLeft: "auto", fontSize: 11, fontFamily: "Inter_500Medium" },
   fmNavWrap: { position: "absolute", left: 20, right: 20, zIndex: 100, alignItems: "center" },
