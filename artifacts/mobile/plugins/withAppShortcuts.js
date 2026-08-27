@@ -315,6 +315,8 @@ import android.content.Context
 import android.content.Intent
  import android.appwidget.AppWidgetManager
  import android.content.ComponentName
+ import android.os.Handler
+ import android.os.Looper
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import android.app.Person
@@ -481,18 +483,37 @@ class AfuChatShareShortcutsModule(
       return
     }
 
-    try {
-      val context = reactApplicationContext.applicationContext
-      val manager = context.getSystemService(Context.APPWIDGET_SERVICE) as? AppWidgetManager
-      if (manager == null || !manager.isRequestPinAppWidgetSupported) {
-        promise.resolve(false)
-        return
-      }
+    // Launcher widget APIs must be called on the main thread. React Native
+    // native methods run on a module queue, which made the old request fail
+    // silently on some Android launchers.
+    Handler(Looper.getMainLooper()).post {
+      try {
+        val context = reactApplicationContext.applicationContext
+        val manager = context.getSystemService(Context.APPWIDGET_SERVICE) as? AppWidgetManager
+        val provider = ComponentName(context, AfuChatWidgetProvider::class.java)
+        if (manager == null) {
+          promise.resolve(false)
+          return@post
+        }
+        if (manager.isRequestPinAppWidgetSupported) {
+          promise.resolve(manager.requestPinAppWidget(provider, null, null))
+          return@post
+        }
 
-      val provider = ComponentName(context, AfuChatWidgetProvider::class.java)
-      promise.resolve(manager.requestPinAppWidget(provider, null, null))
-    } catch (error: Exception) {
-      promise.reject("WIDGET_PIN_REQUEST_FAILED", error)
+        // Older launchers do not support the pin API, but can still open the
+        // system widget picker. This gives Settings a usable install action
+        // instead of requiring users to discover the widget manually.
+        val widgetId = manager.allocateAppWidgetId(provider)
+        val picker = Intent(AppWidgetManager.ACTION_APPWIDGET_PICK).apply {
+          putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
+          putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, provider)
+          addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(picker)
+        promise.resolve(true)
+      } catch (error: Exception) {
+        promise.reject("WIDGET_PIN_REQUEST_FAILED", error)
+      }
     }
   }
 }

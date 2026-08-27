@@ -2257,7 +2257,7 @@ function ChatScreen() {
   }>();
   const isDraft = id === "new";
   const { user, profile, isPremium, subscription, refreshProfile, equippedGoods } = useAuth();
-  const { status: callStatus, startCall: callStart, isAvailable: callsAvailable } = useCall();
+  const { status: callStatus, startCall: callStart } = useCall();
   const callStartingRef = useRef(false);
   const { openApp } = useSuperApp();
   const { colors, isDark } = useTheme();
@@ -6822,12 +6822,10 @@ STRICT RULES:
               hitSlop={12}
               activeOpacity={0.5}
               onPress={() => {
-                if (!callsAvailable) {
+                if (Platform.OS === "web") {
                   showAlert(
                     "Voice calls need the app build",
-                    Platform.OS === "web"
-                      ? "Install AfuChat on Android or iPhone to call from this chat."
-                      : "Update AfuChat to the latest native build to enable voice calls.",
+                    "Install AfuChat on Android or iPhone to call from this chat.",
                   );
                   return;
                 }

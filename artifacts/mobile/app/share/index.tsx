@@ -90,6 +90,7 @@ export default function ShareToAfuChatScreen() {
   const [contactQuery, setContactQuery] = useState("");
   const autoShareChatRef = useRef<string | null>(null);
   const recentTargetsRef = useRef<Contact[]>([]);
+  const exactTargetRef = useRef<Contact | null>(null);
   const exactTargetLoadingRef = useRef<string | null>(null);
 
   const sharedText = (shareIntent.text || shareIntent.webUrl || "").trim();
@@ -246,15 +247,10 @@ export default function ShareToAfuChatScreen() {
           other_avatar: other?.profiles?.avatar_url,
         });
         if (!target) return;
-        recentTargetsRef.current = [
-          target,
-          ...recentTargetsRef.current.filter((item) => item.chatId !== chatId),
-        ];
-        // Keep the resolved direct-share target available without promoting a
-        // stale conversation into the recent-chat list.
-        if (!recentTargetsRef.current.some((item) => item.chatId === chatId)) {
-          recentTargetsRef.current = recentTargetsRef.current.filter((item) => item.chatId !== chatId);
-        }
+        // Keep a direct-share target separate. It may be valid but older than
+        // the recent list, and must not be promoted into the eight visible
+        // recent chats just because Android selected it.
+        exactTargetRef.current = target;
         setRecentChats(recentTargetsRef.current.slice(0, 8));
       } catch {
         // The shortcut will remain available for a future retry if its chat
@@ -396,7 +392,8 @@ export default function ShareToAfuChatScreen() {
     if (!chatId || !shareIntent || sendingTo) return;
     if (autoShareChatRef.current === chatId) return;
     const target = recentChats.find((chat) => chat.chatId === chatId)
-      || recentTargetsRef.current.find((chat) => chat.chatId === chatId);
+      || recentTargetsRef.current.find((chat) => chat.chatId === chatId)
+      || (exactTargetRef.current?.chatId === chatId ? exactTargetRef.current : null);
     if (!target) return;
     autoShareChatRef.current = chatId;
     const timer = setTimeout(() => { shareToContact(target); }, 0);

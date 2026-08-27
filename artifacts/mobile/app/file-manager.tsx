@@ -243,8 +243,13 @@ export default function FileManagerScreen() {
         const localUri = (info as any).localUri || selectedFile.uri;
         let resolvedSize = Number((info as any).fileSize);
         if ((!Number.isFinite(resolvedSize) || resolvedSize <= 0) && localUri) {
-          const fileInfo = await FileSystem.getInfoAsync(localUri);
-          resolvedSize = Number((fileInfo as any).size);
+          try {
+            const fileInfo = await FileSystem.getInfoAsync(localUri);
+            resolvedSize = Number((fileInfo as any).size);
+          } catch {
+            // Some Android content providers reject getInfoAsync even though
+            // copyAsync can still resolve the underlying document.
+          }
         }
         prepared = {
           ...selectedFile,
@@ -253,6 +258,30 @@ export default function FileManagerScreen() {
             ? resolvedSize
             : selectedFile.size,
         };
+
+        // Android gallery providers often expose content:// URIs that the
+        // WebRTC file reader cannot seek, while also reporting size 0. Copy
+        // the asset into AfuChat's private storage so the transfer always
+        // receives a normal file:// URI and a real byte count.
+        const needsPrivateCopy =
+          /^content:\/\//i.test(localUri) ||
+          !Number.isFinite(Number(prepared.size)) ||
+          Number(prepared.size) <= 0;
+        if (needsPrivateCopy && FileSystem.documentDirectory) {
+          const directory = `${FileSystem.documentDirectory}afuchat-transfer/`;
+          await FileSystem.makeDirectoryAsync(directory, { intermediates: true }).catch(() => {});
+          const safeName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, "_") || "shared-file";
+          const destination = `${directory}${selectedFile.assetId}-${safeName}`;
+          let copiedInfo = await FileSystem.getInfoAsync(destination).catch(() => ({ exists: false }));
+          if (!copiedInfo.exists || Number((copiedInfo as any).size) <= 0) {
+            await FileSystem.copyAsync({ from: localUri, to: destination });
+            copiedInfo = await FileSystem.getInfoAsync(destination);
+          }
+          const copiedSize = Number((copiedInfo as any).size);
+          if (copiedInfo.exists && Number.isFinite(copiedSize) && copiedSize > 0) {
+            prepared = { ...prepared, uri: destination, size: copiedSize };
+          }
+        }
       } catch {
         // The transfer screen will report a readable-file error if the
         // provider cannot resolve this gallery item.
