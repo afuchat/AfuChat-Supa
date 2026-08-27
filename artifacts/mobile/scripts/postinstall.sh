@@ -76,3 +76,65 @@ if [ "$WORKLETS_PATCHED" -eq 0 ]; then
   exit 1
 fi
 echo "[postinstall] WorkletsModule SoLoader patch verified OK."
+
+# ─── Patch: RNTP nullable Bundle arguments for RN 0.83 ───────────────────────
+# react-native-track-player 4.1.2 declares Track.originalItem as Bundle?, while
+# React Native 0.83 exposes Arguments.fromBundle as accepting Bundle (non-null).
+# Kotlin 2.x therefore rejects the upstream source during release compilation.
+# Keep the JS-visible behavior stable by converting an absent item to an empty
+# Bundle before handing it to React Native.
+
+patch_track_player() {
+  local FILE="$1"
+  if [ ! -f "$FILE" ]; then
+    return
+  fi
+
+  python3 - "$FILE" <<'PYEOF'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+txt = path.read_text()
+
+replacements = [
+    (
+        "Arguments.fromBundle(musicService.tracks[index].originalItem)",
+        "Arguments.fromBundle(musicService.tracks[index].originalItem ?: Bundle())",
+    ),
+    (
+        "musicService.tracks.map { it.originalItem }",
+        "musicService.tracks.map { it.originalItem ?: Bundle() }",
+    ),
+    (
+        "musicService.tracks[musicService.getCurrentTrackIndex()].originalItem\n"
+        "            )",
+        "musicService.tracks[musicService.getCurrentTrackIndex()].originalItem ?: Bundle()\n"
+        "            )",
+    ),
+]
+
+changed = False
+for old, new in replacements:
+    if old in txt:
+        txt = txt.replace(old, new, 1)
+        changed = True
+
+if changed:
+    path.write_text(txt)
+    print("[postinstall] RNTP nullable Bundle patch applied:", path)
+else:
+    print("[postinstall] RNTP nullable Bundle patch already applied or source changed:", path)
+PYEOF
+}
+
+TRACK_PLAYER_FILE="node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt"
+patch_track_player "$TRACK_PLAYER_FILE"
+
+if [ -f "$TRACK_PLAYER_FILE" ] && ! rg -q \
+  'originalItem \?: Bundle\(\)' "$TRACK_PLAYER_FILE"; then
+  echo "[postinstall] ERROR: RNTP nullable Bundle patch DID NOT APPLY." >&2
+  echo "  $TRACK_PLAYER_FILE" >&2
+  exit 1
+fi
+echo "[postinstall] RNTP nullable Bundle patch verified OK."

@@ -1,0 +1,721 @@
+Running 'gradlew :app:bundleRelease' in /home/expo/workingdir/build/artifacts/mobile/android
+Welcome to Gradle 9.0.0!
+Here are the highlights of this release:
+- Configuration Cache is the recommended execution mode
+ - Gradle requires JVM 17 or higher to run
+ - Build scripts use Kotlin 2.2 and Groovy 4.0
+ - Improved Kotlin DSL script compilation avoidance
+For more details see https://docs.gradle.org/9.0.0/release-notes.html
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.0.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:settings-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:pluginDescriptors
+> Task :gradle-plugin:settings-plugin:pluginDescriptors
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:processResources
+> Task :gradle-plugin:settings-plugin:processResources
+> Task :gradle-plugin:shared:processResources
+NO-SOURCE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:processResources NO-SOURCE
+> Task :gradle-plugin:shared:compileKotlin
+> Task :gradle-plugin:shared:compileJava NO-SOURCE
+> Task :gradle-plugin:shared:classes UP-TO-DATE
+> Task :gradle-plugin:shared:jar
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:compileKotlin
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:classes UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:jar
+> Task :gradle-plugin:settings-plugin:compileKotlin
+> Task :gradle-plugin:settings-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:settings-plugin:classes
+> Task :gradle-plugin:settings-plugin:jar
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:compileKotlin
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:classes
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:jar
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-gradle-plugin:expo-autolinking-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:react-native-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-dev-launcher-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-dev-launcher-gradle-plugin:pluginDescriptors
+> Task :expo-dev-launcher-gradle-plugin:processResources
+> Task :expo-module-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-module-gradle-plugin:pluginDescriptors
+> Task :expo-gradle-plugin:expo-autolinking-plugin:pluginDescriptors
+> Task :expo-module-gradle-plugin:processResources
+> Task :expo-gradle-plugin:expo-autolinking-plugin:processResources
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:pluginDescriptors
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:processResources
+> Task :gradle-plugin:react-native-gradle-plugin:pluginDescriptors
+> Task :gradle-plugin:react-native-gradle-plugin:processResources
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:compileKotlin
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:classes
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:jar
+> Task :expo-gradle-plugin:expo-autolinking-plugin:compileKotlin
+> Task :expo-gradle-plugin:expo-autolinking-plugin:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-autolinking-plugin:classes
+> Task :expo-gradle-plugin:expo-autolinking-plugin:jar
+> Task :gradle-plugin:react-native-gradle-plugin:compileKotlin
+> Task :gradle-plugin:react-native-gradle-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:react-native-gradle-plugin:classes
+> Task :gradle-plugin:react-native-gradle-plugin:jar
+> Task :expo-dev-launcher-gradle-plugin:compileKotlin
+> Task :expo-dev-launcher-gradle-plugin:compileJava NO-SOURCE
+> Task :expo-dev-launcher-gradle-plugin:classes
+> Task :expo-dev-launcher-gradle-plugin:jar
+> Task :expo-module-gradle-plugin:compileKotlin
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-modules-core@55.0.25_react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0_dae4fc5c6ae239ac7dfe0e4c3edd6f5b/node_modules/expo-modules-core/expo-module-gradle-plugin/src/main/kotlin/expo/modules/plugin/android/AndroidLibraryExtension.kt:9:24 'var targetSdk: Int?' is deprecated. Will be removed from library DSL in v9.0. Use testOptions.targetSdk or/and lint.targetSdk instead.
+> Task :expo-module-gradle-plugin:compileJava NO-SOURCE
+> Task :expo-module-gradle-plugin:classes
+> Task :expo-module-gradle-plugin:jar
+> Configure project :
+[32m[ExpoRootProject][0m Using the following versions:
+  - buildTools:  [32m36.0.0[0m
+  - minSdk:      [32m24[0m
+  - compileSdk:  [32m36[0m
+  - targetSdk:   [32m36[0m
+  - ndk:         [32m27.1.12297006[0m
+  - kotlin:      [32m2.1.21[0m
+  - ksp:         [32m2.1.21-2.0.2[0m
+> Configure project :app
+ℹ️  [33mApplying gradle plugin[0m '[32mexpo-max-sdk-override-plugin[0m'
+  [expo-max-sdk-override-plugin] This plugin will find all permissions declared with `android:maxSdkVersion`. If there exists a declaration with the `android:maxSdkVersion` annotation and another one without, the plugin will remove the annotation from the final merged manifest. In order to see a log with the changes run a clean build of the app.
+ ℹ️  [33mApplying gradle plugin[0m '[32mexpo-dev-launcher-gradle-plugin[0m'
+> Configure project :expo
+Using expo modules
+  - [32mexpo-log-box[0m (55.0.13)
+  - [32mexpo-constants[0m (55.0.17)
+  - [32mexpo-dev-client[0m (55.0.37)
+- [32mexpo-dev-launcher[0m (55.0.38)
+- [32mexpo-dev-menu[0m (55.0.32)
+- [32mexpo-dev-menu-interface[0m (55.0.2)
+- [32mexpo-json-utils[0m (55.0.2)
+- [32mexpo-manifests[0m (55.0.19)
+> Configure project :expo-modules-core
+Linking react-native-worklets native libs into expo-modules-core build tasks
+task ':react-native-worklets:mergeDebugNativeLibs'
+task ':react-native-worklets:mergeReleaseNativeLibs'
+> Configure project :expo
+  - [32mexpo-modules-core[0m (55.0.25)
+- [32mexpo-share-intent[0m (6.0.0)
+- [32mexpo-updates-interface[0m (55.1.6)
+- [33m[📦][0m [32mexpo-dom-webview[0m (55.0.6)
+  - [33m[📦][0m [32mexpo-application[0m (55.0.17)
+  - [33m[📦][0m [32mexpo-asset[0m (55.0.18)
+  - [33m[📦][0m [32mexpo-av[0m (16.0.8)
+  - [33m[📦][0m [32mexpo-blur[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-camera[0m (55.0.21)
+  - [33m[📦][0m [32mexpo-clipboard[0m (55.0.15)
+  - [33m[📦][0m [32mexpo-contacts[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-crypto[0m (55.0.17)
+  - [33m[📦][0m [32mexpo-device[0m (55.0.19)
+  - [33m[📦][0m [32mexpo-document-picker[0m (55.0.15)
+  - [33m[📦][0m [32mexpo-file-system[0m (55.0.24)
+  - [33m[📦][0m [32mexpo-font[0m (55.0.8)
+  - [33m[📦][0m [32mexpo-haptics[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-image[0m (55.0.11)
+  - [33m[📦][0m [32mexpo-image-loader[0m (55.0.1)
+  - [33m[📦][0m [32mexpo-image-manipulator[0m (55.0.19)
+  - [33m[📦][0m [32mexpo-image-picker[0m (55.0.22)
+  - [33m[📦][0m [32mexpo-keep-awake[0m (55.0.8)
+  - [33m[📦][0m [32mexpo-linear-gradient[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-linking[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-local-authentication[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-location[0m (55.1.12)
+  - [33m[📦][0m [32mexpo-media-library[0m (55.0.19)
+  - [33m[📦][0m [32mexpo-network[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-notifications[0m (55.0.26)
+  - [33m[📦][0m [32mexpo-router[0m (55.0.17)
+  - [33m[📦][0m [32mexpo-screen-capture[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-secure-store[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-sharing[0m (55.0.22)
+  - [33m[📦][0m [32mexpo-speech[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-splash-screen[0m (55.0.23)
+  - [33m[📦][0m [32mexpo-sqlite[0m (55.0.18)
+  - [33m[📦][0m [32mexpo-system-ui[0m (55.0.20)
+  - [33m[📦][0m [32mexpo-task-manager[0m (55.0.18)
+  - [33m[📦][0m [32mexpo-video[0m (55.0.19)
+  - [33m[📦][0m [32mexpo-video-thumbnails[0m (55.0.17)
+  - [33m[📦][0m [32mexpo-web-browser[0m (55.0.18)
+  - [33m[📦][0m [32munimodules-app-loader[0m (55.0.5)
+> Configure project :react-native-mmkv
+[react-native-mmkv] Thank you for using react-native-mmkv ❤️
+[react-native-mmkv] If you enjoy using react-native-mmkv, please consider sponsoring this project: https://github.com/sponsors/mrousavy
+> Task :expo-dev-client:preBuild UP-TO-DATE
+> Task :expo-dev-launcher:preBuild UP-TO-DATE
+> Task :expo-dev-menu:preBuild UP-TO-DATE
+> Task :expo-dev-menu-interface:preBuild UP-TO-DATE
+> Task :expo-json-utils:preBuild UP-TO-DATE
+> Task :expo-log-box:preBuild UP-TO-DATE
+> Task :expo:generatePackagesList
+> Task :expo:preBuild
+> Task :expo-modules-core:preBuild UP-TO-DATE
+> Task :expo-share-intent:preBuild UP-TO-DATE
+> Task :expo-manifests:preBuild UP-TO-DATE
+> Task :expo-updates-interface:preBuild UP-TO-DATE
+> Task :react-native-async-storage_async-storage:generateCodegenSchemaFromJavaScript
+> Task :react-native-community_netinfo:generateCodegenSchemaFromJavaScript
+> Task :react-native-async-storage_async-storage:generateCodegenArtifactsFromSchema
+> Task :react-native-async-storage_async-storage:preBuild
+> Task :expo-constants:createExpoConfig
+> Task :expo-constants:preBuild
+The NODE_ENV environment variable is required but was not specified. Ensure the project is bundled with Expo CLI or NODE_ENV is set. Using only .env.local and .env
+> Task :react-native-community_netinfo:generateCodegenArtifactsFromSchema
+> Task :react-native-community_netinfo:preBuild
+> Task :react-native-compressor:generateCodegenSchemaFromJavaScript
+> Task :react-native-gesture-handler:generateCodegenSchemaFromJavaScript
+> Task :react-native-google-signin_google-signin:generateCodegenSchemaFromJavaScript
+> Task :react-native-compressor:generateCodegenArtifactsFromSchema
+> Task :react-native-compressor:preBuild
+> Task :react-native-mmkv:generateCodegenSchemaFromJavaScript
+> Task :react-native-gesture-handler:generateCodegenArtifactsFromSchema
+> Task :react-native-gesture-handler:preBuild
+> Task :react-native-google-signin_google-signin:generateCodegenArtifactsFromSchema
+> Task :react-native-google-signin_google-signin:preBuild
+> Task :react-native-reanimated:assertMinimalReactNativeVersionTask
+> Task :react-native-reanimated:assertNewArchitectureEnabledTask SKIPPED
+> Task :react-native-mmkv:generateCodegenArtifactsFromSchema
+> Task :react-native-mmkv:preBuild
+> Task :react-native-pager-view:generateCodegenSchemaFromJavaScript
+> Task :react-native-reanimated:assertWorkletsVersionTask
+> Task :react-native-safe-area-context:generateCodegenSchemaFromJavaScript
+> Task :app:createBundleReleaseJsAndAssets
+Expo Autolinking module resolution enabled
+> Task :react-native-reanimated:generateCodegenSchemaFromJavaScript
+> Task :react-native-pager-view:generateCodegenArtifactsFromSchema
+> Task :react-native-pager-view:preBuild
+> Task :react-native-safe-area-context:generateCodegenArtifactsFromSchema
+> Task :react-native-safe-area-context:preBuild
+> Task :react-native-reanimated:generateCodegenArtifactsFromSchema
+> Task :react-native-screens:generateCodegenSchemaFromJavaScript
+> Task :react-native-reanimated:prepareReanimatedHeadersForPrefabs
+> Task :react-native-reanimated:preBuild
+> Task :react-native-track-player:preBuild UP-TO-DATE
+> Task :react-native-svg:generateCodegenSchemaFromJavaScript
+> Task :react-native-view-shot:generateCodegenSchemaFromJavaScript
+> Task :react-native-screens:generateCodegenArtifactsFromSchema
+> Task :react-native-screens:preBuild
+> Task :react-native-webrtc:preBuild UP-TO-DATE
+> Task :react-native-svg:generateCodegenArtifactsFromSchema
+> Task :react-native-svg:preBuild
+> Task :react-native-worklets:assertMinimalReactNativeVersionTask
+> Task :react-native-worklets:assertNewArchitectureEnabledTask
+SKIPPED
+> Task :react-native-webview:generateCodegenSchemaFromJavaScript
+> Task :react-native-view-shot:generateCodegenArtifactsFromSchema
+> Task :react-native-view-shot:preBuild
+> Task :expo:preReleaseBuild
+> Task :expo:generateReleaseResValues
+> Task :expo:generateReleaseResources
+> Task :react-native-worklets:generateCodegenSchemaFromJavaScript
+> Task :expo:packageReleaseResources
+> Task :expo-constants:preReleaseBuild
+> Task :expo-constants:generateReleaseResValues
+> Task :expo-constants:generateReleaseResources
+> Task :expo-constants:packageReleaseResources
+> Task :expo-dev-client:preReleaseBuild UP-TO-DATE
+> Task :expo-dev-client:generateReleaseResValues
+> Task :expo-dev-client:generateReleaseResources
+> Task :expo-dev-client:packageReleaseResources
+> Task :expo-dev-launcher:preReleaseBuild UP-TO-DATE
+> Task :expo-dev-launcher:generateReleaseResValues
+> Task :expo-dev-launcher:generateReleaseResources
+> Task :expo-dev-launcher:packageReleaseResources
+> Task :expo-dev-menu:preReleaseBuild UP-TO-DATE
+> Task :expo-dev-menu:generateReleaseResValues
+> Task :react-native-webview:generateCodegenArtifactsFromSchema
+> Task :react-native-webview:preBuild
+> Task :expo-dev-menu-interface:preReleaseBuild UP-TO-DATE
+> Task :expo-dev-menu-interface:generateReleaseResValues
+> Task :expo-dev-menu:generateReleaseResources
+> Task :expo-dev-menu-interface:generateReleaseResources
+> Task :expo-dev-menu:packageReleaseResources
+> Task :expo-json-utils:preReleaseBuild UP-TO-DATE
+> Task :expo-dev-menu-interface:packageReleaseResources
+> Task :expo-log-box:preReleaseBuild UP-TO-DATE
+> Task :expo-json-utils:generateReleaseResValues
+> Task :expo-log-box:generateReleaseResValues
+> Task :expo-json-utils:generateReleaseResources
+> Task :expo-log-box:generateReleaseResources
+> Task :expo-json-utils:packageReleaseResources
+> Task :expo-manifests:preReleaseBuild UP-TO-DATE
+> Task :expo-log-box:packageReleaseResources
+> Task :expo-modules-core:preReleaseBuild UP-TO-DATE
+> Task :expo-manifests:generateReleaseResValues
+> Task :expo-modules-core:generateReleaseResValues
+> Task :expo-modules-core:generateReleaseResources
+> Task :expo-manifests:generateReleaseResources
+> Task :expo-modules-core:packageReleaseResources
+> Task :expo-share-intent:preReleaseBuild UP-TO-DATE
+> Task :expo-manifests:packageReleaseResources
+> Task :expo-updates-interface:preReleaseBuild UP-TO-DATE
+> Task :expo-share-intent:generateReleaseResValues
+> Task :expo-updates-interface:generateReleaseResValues
+> Task :expo-share-intent:generateReleaseResources
+> Task :expo-updates-interface:generateReleaseResources
+> Task :expo-updates-interface:packageReleaseResources
+> Task :react-native-async-storage_async-storage:preReleaseBuild
+> Task :react-native-async-storage_async-storage:generateReleaseResValues
+> Task :expo-share-intent:packageReleaseResources
+> Task :react-native-community_netinfo:preReleaseBuild
+> Task :react-native-async-storage_async-storage:generateReleaseResources
+> Task :react-native-community_netinfo:generateReleaseResValues
+> Task :react-native-community_netinfo:generateReleaseResources
+> Task :react-native-async-storage_async-storage:packageReleaseResources
+> Task :react-native-compressor:preReleaseBuild
+> Task :react-native-compressor:generateReleaseResValues
+> Task :react-native-community_netinfo:packageReleaseResources
+> Task :react-native-gesture-handler:preReleaseBuild
+> Task :react-native-compressor:generateReleaseResources
+> Task :react-native-gesture-handler:generateReleaseResValues
+> Task :react-native-gesture-handler:generateReleaseResources
+> Task :react-native-gesture-handler:packageReleaseResources
+> Task :react-native-google-signin_google-signin:preReleaseBuild
+> Task :react-native-compressor:packageReleaseResources
+> Task :react-native-mmkv:preReleaseBuild
+> Task :react-native-mmkv:generateReleaseResValues
+> Task :react-native-google-signin_google-signin:generateReleaseResValues
+> Task :react-native-worklets:generateCodegenArtifactsFromSchema
+> Task :react-native-mmkv:generateReleaseResources
+> Task :react-native-google-signin_google-signin:generateReleaseResources
+> Task :react-native-google-signin_google-signin:packageReleaseResources
+> Task :react-native-pager-view:preReleaseBuild
+> Task :react-native-pager-view:generateReleaseResValues
+> Task :react-native-mmkv:packageReleaseResources
+> Task :react-native-reanimated:preReleaseBuild
+> Task :react-native-pager-view:generateReleaseResources
+> Task :react-native-reanimated:generateReleaseResValues
+> Task :react-native-pager-view:packageReleaseResources
+> Task :react-native-safe-area-context:preReleaseBuild
+> Task :react-native-worklets:prepareWorkletsHeadersForPrefabs
+> Task :react-native-worklets:preBuild
+> Task :react-native-screens:preReleaseBuild
+> Task :react-native-reanimated:generateReleaseResources
+> Task :react-native-safe-area-context:generateReleaseResValues
+> Task :react-native-screens:generateReleaseResValues
+> Task :react-native-reanimated:packageReleaseResources
+> Task :react-native-svg:preReleaseBuild
+> Task :react-native-svg:generateReleaseResValues
+> Task :react-native-safe-area-context:generateReleaseResources
+> Task :react-native-svg:generateReleaseResources
+> Task :react-native-safe-area-context:packageReleaseResources
+> Task :react-native-track-player:preReleaseBuild UP-TO-DATE
+> Task :react-native-screens:generateReleaseResources
+> Task :react-native-track-player:generateReleaseResValues
+> Task :react-native-svg:packageReleaseResources
+> Task :react-native-view-shot:preReleaseBuild
+> Task :react-native-track-player:generateReleaseResources
+> Task :react-native-view-shot:generateReleaseResValues
+> Task :react-native-view-shot:generateReleaseResources
+> Task :react-native-view-shot:packageReleaseResources
+> Task :react-native-webrtc:preReleaseBuild UP-TO-DATE
+> Task :react-native-webrtc:generateReleaseResValues
+> Task :react-native-webrtc:generateReleaseResources
+> Task :react-native-webrtc:packageReleaseResources
+> Task :react-native-webview:preReleaseBuild
+> Task :react-native-track-player:packageReleaseResources
+> Task :react-native-worklets:preReleaseBuild
+> Task :react-native-webview:generateReleaseResValues
+> Task :react-native-worklets:generateReleaseResValues
+> Task :react-native-worklets:generateReleaseResources
+> Task :react-native-webview:generateReleaseResources
+> Task :react-native-screens:packageReleaseResources
+> Task :react-native-webview:packageReleaseResources
+> Task :react-native-worklets:packageReleaseResources
+> Task :expo:extractDeepLinksRelease
+> Task :expo-constants:extractDeepLinksRelease
+> Task :expo-dev-client:extractDeepLinksRelease
+> Task :expo-constants:processReleaseManifest
+> Task :expo-dev-client:processReleaseManifest
+> Task :expo:processReleaseManifest
+> Task :expo-dev-launcher:extractDeepLinksRelease
+> Task :expo-dev-menu-interface:extractDeepLinksRelease
+> Task :expo-dev-menu:extractDeepLinksRelease
+> Task :expo-dev-menu:processReleaseManifest
+> Task :expo-dev-launcher:processReleaseManifest
+> Task :expo-dev-menu-interface:processReleaseManifest
+> Task :expo-json-utils:extractDeepLinksRelease
+> Task :expo-manifests:extractDeepLinksRelease
+> Task :expo-log-box:extractDeepLinksRelease
+> Task :expo-json-utils:processReleaseManifest
+> Task :expo-manifests:processReleaseManifest
+> Task :expo-log-box:processReleaseManifest
+> Task :expo-modules-core:extractDeepLinksRelease
+> Task :expo-share-intent:extractDeepLinksRelease
+> Task :expo-updates-interface:extractDeepLinksRelease
+> Task :expo-share-intent:processReleaseManifest
+> Task :react-native-async-storage_async-storage:extractDeepLinksRelease
+> Task :expo-updates-interface:processReleaseManifest
+> Task :expo-modules-core:processReleaseManifest
+/home/expo/workingdir/build/node_modules/.pnpm/expo-modules-core@55.0.25_react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0_dae4fc5c6ae239ac7dfe0e4c3edd6f5b/node_modules/expo-modules-core/android/src/main/AndroidManifest.xml:8:9-11:45 Warning:
+	meta-data#com.facebook.soloader.enabled@android:value was tagged at AndroidManifest.xml:8 to replace other declarations but no other declaration present
+> Task :react-native-community_netinfo:extractDeepLinksRelease
+> Task :react-native-compressor:extractDeepLinksRelease
+> Task :react-native-async-storage_async-storage:processReleaseManifest
+package="com.reactnativecommunity.asyncstorage" found in source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/@react-native-async-storage+async-storage@2.2.0_react-native@0.83.10_@babel+core@7.29.7_7aa2597352334081991bd9d9339e1f68/node_modules/@react-native-async-storage/async-storage/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.reactnativecommunity.asyncstorage" from the source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/@react-native-async-storage+async-storage@2.2.0_react-native@0.83.10_@babel+core@7.29.7_7aa2597352334081991bd9d9339e1f68/node_modules/@react-native-async-storage/async-storage/android/src/main/AndroidManifest.xml.
+> Task :react-native-community_netinfo:processReleaseManifest
+package="com.reactnativecommunity.netinfo" found in source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/@react-native-community+netinfo@11.5.2_react-native@0.83.10_@babel+core@7.29.7_@types+r_bbd2806faba43d1b47a788478578465a/node_modules/@react-native-community/netinfo/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.reactnativecommunity.netinfo" from the source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/@react-native-community+netinfo@11.5.2_react-native@0.83.10_@babel+core@7.29.7_@types+r_bbd2806faba43d1b47a788478578465a/node_modules/@react-native-community/netinfo/android/src/main/AndroidManifest.xml.
+> Task :react-native-gesture-handler:extractDeepLinksRelease
+> Task :react-native-google-signin_google-signin:extractDeepLinksRelease
+> Task :react-native-compressor:processReleaseManifest
+> Task :react-native-gesture-handler:processReleaseManifest
+> Task :react-native-mmkv:extractDeepLinksRelease
+> Task :react-native-pager-view:extractDeepLinksRelease
+> Task :react-native-google-signin_google-signin:processReleaseManifest
+package="com.reactnativegooglesignin" found in source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/@react-native-google-signin+google-signin@16.1.4_expo@55.0.28_react-native@0.83.10_@bab_4d552173cc4ea37d1058a6f7f4284869/node_modules/@react-native-google-signin/google-signin/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.reactnativegooglesignin" from the source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/@react-native-google-signin+google-signin@16.1.4_expo@55.0.28_react-native@0.83.10_@bab_4d552173cc4ea37d1058a6f7f4284869/node_modules/@react-native-google-signin/google-signin/android/src/main/AndroidManifest.xml.
+> Task :react-native-mmkv:processReleaseManifest
+> Task :react-native-reanimated:extractDeepLinksRelease
+> Task :react-native-safe-area-context:extractDeepLinksRelease
+> Task :react-native-pager-view:processReleaseManifest
+> Task :react-native-screens:extractDeepLinksRelease
+> Task :react-native-reanimated:processReleaseManifest
+> Task :react-native-safe-area-context:processReleaseManifest
+package="com.th3rdwave.safeareacontext" found in source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/react-native-safe-area-context@5.6.2_react-native@0.83.10_@babel+core@7.29.7_@types+rea_0d96bb8383952b8285068f425c1a96be/node_modules/react-native-safe-area-context/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.th3rdwave.safeareacontext" from the source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/react-native-safe-area-context@5.6.2_react-native@0.83.10_@babel+core@7.29.7_@types+rea_0d96bb8383952b8285068f425c1a96be/node_modules/react-native-safe-area-context/android/src/main/AndroidManifest.xml.
+> Task :react-native-svg:extractDeepLinksRelease
+> Task :react-native-track-player:extractDeepLinksRelease
+> Task :react-native-screens:processReleaseManifest
+> Task :react-native-track-player:processReleaseManifest
+package="com.doublesymmetry.trackplayer" found in source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.doublesymmetry.trackplayer" from the source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/AndroidManifest.xml.
+> Task :react-native-svg:processReleaseManifest
+> Task :react-native-view-shot:extractDeepLinksRelease
+> Task :react-native-webrtc:extractDeepLinksRelease
+> Task :react-native-webview:extractDeepLinksRelease
+> Task :react-native-view-shot:processReleaseManifest
+package="fr.greweb.reactnativeviewshot" found in source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/react-native-view-shot@4.0.3_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-view-shot/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="fr.greweb.reactnativeviewshot" from the source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/react-native-view-shot@4.0.3_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-view-shot/android/src/main/AndroidManifest.xml.
+> Task :react-native-webrtc:processReleaseManifest
+package="com.oney.WebRTCModule" found in source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/react-native-webrtc@124.0.1_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0_/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.oney.WebRTCModule" from the source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/react-native-webrtc@124.0.1_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0_/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml.
+/home/expo/workingdir/build/node_modules/.pnpm/react-native-webrtc@124.0.1_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0_/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml:11:5-15:7 Warning:
+	uses-feature#android.hardware.usb.host was tagged at AndroidManifest.xml:11 to replace another declaration but no other declaration present
+> Task :app:createBundleReleaseJsAndAssets
+Starting Metro Bundler
+> Task :react-native-worklets:extractDeepLinksRelease
+> Task :expo:writeReleaseAarMetadata
+> Task :expo-constants:writeReleaseAarMetadata
+> Task :react-native-worklets:processReleaseManifest
+> Task :expo-dev-client:writeReleaseAarMetadata
+> Task :expo-dev-launcher:writeReleaseAarMetadata
+> Task :react-native-webview:processReleaseManifest
+> Task :expo-dev-menu:writeReleaseAarMetadata
+> Task :expo-dev-menu-interface:writeReleaseAarMetadata
+> Task :expo-json-utils:writeReleaseAarMetadata
+> Task :expo-log-box:writeReleaseAarMetadata
+> Task :expo-manifests:writeReleaseAarMetadata
+> Task :expo-modules-core:writeReleaseAarMetadata
+> Task :expo-share-intent:writeReleaseAarMetadata
+> Task :expo-updates-interface:writeReleaseAarMetadata
+> Task :react-native-async-storage_async-storage:writeReleaseAarMetadata
+> Task :react-native-community_netinfo:writeReleaseAarMetadata
+> Task :react-native-google-signin_google-signin:writeReleaseAarMetadata
+> Task :react-native-gesture-handler:writeReleaseAarMetadata
+> Task :react-native-compressor:writeReleaseAarMetadata
+> Task :react-native-mmkv:writeReleaseAarMetadata
+> Task :react-native-pager-view:writeReleaseAarMetadata
+> Task :react-native-reanimated:writeReleaseAarMetadata
+> Task :react-native-safe-area-context:writeReleaseAarMetadata
+> Task :react-native-track-player:writeReleaseAarMetadata
+> Task :react-native-screens:writeReleaseAarMetadata
+> Task :react-native-svg:writeReleaseAarMetadata
+> Task :react-native-view-shot:writeReleaseAarMetadata
+> Task :react-native-webview:writeReleaseAarMetadata
+> Task :react-native-webrtc:writeReleaseAarMetadata
+> Task :react-native-worklets:writeReleaseAarMetadata
+> Task :expo-dev-client:compileReleaseLibraryResources
+> Task :expo:compileReleaseLibraryResources
+> Task :expo-constants:compileReleaseLibraryResources
+> Task :expo-dev-client:parseReleaseLocalResources
+> Task :expo:parseReleaseLocalResources
+> Task :expo-constants:parseReleaseLocalResources
+> Task :expo-dev-client:generateReleaseRFile
+> Task :expo:generateReleaseRFile
+> Task :expo-constants:generateReleaseRFile
+> Task :expo-dev-launcher:compileReleaseLibraryResources
+> Task :expo-dev-menu-interface:compileReleaseLibraryResources
+> Task :expo-dev-menu:compileReleaseLibraryResources
+> Task :expo-dev-launcher:parseReleaseLocalResources
+> Task :expo-dev-menu-interface:parseReleaseLocalResources
+> Task :expo-dev-menu:parseReleaseLocalResources
+> Task :expo-dev-launcher:generateReleaseRFile
+> Task :expo-dev-menu:generateReleaseRFile
+> Task :expo-dev-menu-interface:generateReleaseRFile
+> Task :expo-json-utils:compileReleaseLibraryResources
+> Task :expo-log-box:compileReleaseLibraryResources
+> Task :expo-manifests:compileReleaseLibraryResources
+> Task :expo-json-utils:parseReleaseLocalResources
+> Task :expo-log-box:parseReleaseLocalResources
+> Task :expo-manifests:parseReleaseLocalResources
+> Task :expo-json-utils:generateReleaseRFile
+> Task :expo-log-box:generateReleaseRFile
+> Task :expo-manifests:generateReleaseRFile
+> Task :expo-modules-core:compileReleaseLibraryResources
+> Task :expo-updates-interface:compileReleaseLibraryResources
+> Task :expo-share-intent:compileReleaseLibraryResources
+> Task :expo-modules-core:parseReleaseLocalResources
+> Task :expo-share-intent:parseReleaseLocalResources
+> Task :expo-updates-interface:parseReleaseLocalResources
+> Task :expo-updates-interface:generateReleaseRFile
+> Task :expo-modules-core:generateReleaseRFile
+> Task :expo-share-intent:generateReleaseRFile
+> Task :react-native-community_netinfo:compileReleaseLibraryResources
+> Task :react-native-async-storage_async-storage:compileReleaseLibraryResources
+> Task :react-native-compressor:compileReleaseLibraryResources
+> Task :react-native-community_netinfo:parseReleaseLocalResources
+> Task :react-native-async-storage_async-storage:parseReleaseLocalResources
+> Task :react-native-compressor:parseReleaseLocalResources
+> Task :react-native-compressor:generateReleaseRFile
+> Task :react-native-async-storage_async-storage:generateReleaseRFile
+> Task :react-native-community_netinfo:generateReleaseRFile
+> Task :react-native-gesture-handler:compileReleaseLibraryResources
+> Task :react-native-mmkv:compileReleaseLibraryResources
+> Task :react-native-google-signin_google-signin:compileReleaseLibraryResources
+> Task :react-native-google-signin_google-signin:parseReleaseLocalResources
+> Task :react-native-gesture-handler:parseReleaseLocalResources
+> Task :react-native-mmkv:parseReleaseLocalResources
+> Task :react-native-gesture-handler:generateReleaseRFile
+> Task :react-native-google-signin_google-signin:generateReleaseRFile
+> Task :react-native-reanimated:compileReleaseLibraryResources
+> Task :react-native-pager-view:compileReleaseLibraryResources
+> Task :react-native-mmkv:generateReleaseRFile
+> Task :react-native-reanimated:parseReleaseLocalResources
+> Task :react-native-pager-view:parseReleaseLocalResources
+> Task :react-native-safe-area-context:compileReleaseLibraryResources
+> Task :react-native-pager-view:generateReleaseRFile
+> Task :react-native-safe-area-context:parseReleaseLocalResources
+> Task :react-native-reanimated:generateReleaseRFile
+> Task :react-native-svg:compileReleaseLibraryResources
+> Task :react-native-safe-area-context:generateReleaseRFile
+> Task :react-native-svg:parseReleaseLocalResources
+> Task :react-native-screens:parseReleaseLocalResources
+> Task :react-native-svg:generateReleaseRFile
+> Task :react-native-screens:compileReleaseLibraryResources
+> Task :react-native-screens:generateReleaseRFile
+> Task :react-native-track-player:compileReleaseLibraryResources
+> Task :react-native-view-shot:compileReleaseLibraryResources
+> Task :react-native-track-player:parseReleaseLocalResources
+> Task :react-native-webrtc:compileReleaseLibraryResources
+> Task :react-native-view-shot:parseReleaseLocalResources
+> Task :react-native-track-player:generateReleaseRFile
+> Task :react-native-webrtc:parseReleaseLocalResources
+> Task :react-native-view-shot:generateReleaseRFile
+> Task :react-native-webview:compileReleaseLibraryResources
+> Task :react-native-worklets:compileReleaseLibraryResources
+> Task :react-native-webrtc:generateReleaseRFile
+> Task :react-native-webview:parseReleaseLocalResources
+> Task :react-native-worklets:parseReleaseLocalResources
+> Task :expo:mergeReleaseShaders
+> Task :expo:compileReleaseShaders NO-SOURCE
+> Task :react-native-worklets:generateReleaseRFile
+> Task :react-native-webview:generateReleaseRFile
+> Task :expo:generateReleaseAssets UP-TO-DATE
+> Task :expo-dev-client:mergeReleaseShaders
+> Task :expo-constants:mergeReleaseShaders
+> Task :expo-dev-client:compileReleaseShaders NO-SOURCE
+> Task :expo-dev-client:generateReleaseAssets UP-TO-DATE
+> Task :expo:mergeReleaseAssets
+> Task :expo-constants:compileReleaseShaders NO-SOURCE
+> Task :expo-constants:generateReleaseAssets UP-TO-DATE
+> Task :expo-dev-client:mergeReleaseAssets
+> Task :expo-dev-launcher:mergeReleaseShaders
+> Task :expo-dev-launcher:compileReleaseShaders NO-SOURCE
+> Task :expo-dev-launcher:generateReleaseAssets UP-TO-DATE
+> Task :expo-dev-menu:mergeReleaseShaders
+> Task :expo-constants:mergeReleaseAssets
+> Task :expo-dev-menu:compileReleaseShaders NO-SOURCE
+> Task :expo-dev-menu:generateReleaseAssets UP-TO-DATE
+> Task :expo-dev-launcher:mergeReleaseAssets
+> Task :expo-dev-menu-interface:mergeReleaseShaders
+> Task :expo-dev-menu-interface:compileReleaseShaders NO-SOURCE
+> Task :expo-dev-menu-interface:generateReleaseAssets UP-TO-DATE
+> Task :expo-dev-menu:mergeReleaseAssets
+> Task :expo-json-utils:mergeReleaseShaders
+> Task :expo-json-utils:compileReleaseShaders NO-SOURCE
+> Task :expo-json-utils:generateReleaseAssets UP-TO-DATE
+> Task :expo-dev-menu-interface:mergeReleaseAssets
+> Task :expo-json-utils:mergeReleaseAssets
+> Task :expo-log-box:mergeReleaseShaders
+> Task :expo-log-box:compileReleaseShaders NO-SOURCE
+> Task :expo-log-box:generateReleaseAssets UP-TO-DATE
+> Task :expo-modules-core:mergeReleaseShaders
+> Task :expo-manifests:mergeReleaseShaders
+> Task :expo-log-box:mergeReleaseAssets
+> Task :expo-modules-core:compileReleaseShaders NO-SOURCE
+> Task :expo-modules-core:generateReleaseAssets UP-TO-DATE
+> Task :expo-manifests:compileReleaseShaders NO-SOURCE
+> Task :expo-manifests:generateReleaseAssets UP-TO-DATE
+> Task :expo-modules-core:mergeReleaseAssets
+> Task :expo-share-intent:mergeReleaseShaders
+> Task :expo-share-intent:compileReleaseShaders NO-SOURCE
+> Task :expo-manifests:mergeReleaseAssets
+> Task :expo-share-intent:generateReleaseAssets UP-TO-DATE
+> Task :expo-updates-interface:mergeReleaseShaders
+> Task :expo-share-intent:mergeReleaseAssets
+> Task :expo-updates-interface:compileReleaseShaders NO-SOURCE
+> Task :expo-updates-interface:generateReleaseAssets UP-TO-DATE
+> Task :react-native-community_netinfo:mergeReleaseShaders
+> Task :react-native-async-storage_async-storage:mergeReleaseShaders
+> Task :expo-updates-interface:mergeReleaseAssets
+> Task :react-native-community_netinfo:compileReleaseShaders NO-SOURCE
+> Task :react-native-async-storage_async-storage:compileReleaseShaders NO-SOURCE
+> Task :react-native-community_netinfo:generateReleaseAssets UP-TO-DATE
+> Task :react-native-async-storage_async-storage:generateReleaseAssets UP-TO-DATE
+> Task :react-native-compressor:mergeReleaseShaders
+> Task :react-native-community_netinfo:mergeReleaseAssets
+> Task :react-native-async-storage_async-storage:mergeReleaseAssets
+> Task :react-native-compressor:compileReleaseShaders NO-SOURCE
+> Task :react-native-compressor:generateReleaseAssets UP-TO-DATE
+> Task :react-native-gesture-handler:mergeReleaseShaders
+> Task :react-native-google-signin_google-signin:mergeReleaseShaders
+> Task :react-native-compressor:mergeReleaseAssets
+> Task :react-native-google-signin_google-signin:compileReleaseShaders NO-SOURCE
+> Task :react-native-google-signin_google-signin:generateReleaseAssets UP-TO-DATE
+> Task :react-native-gesture-handler:compileReleaseShaders NO-SOURCE
+> Task :react-native-gesture-handler:generateReleaseAssets UP-TO-DATE
+> Task :react-native-mmkv:mergeReleaseShaders
+> Task :react-native-google-signin_google-signin:mergeReleaseAssets
+> Task :react-native-mmkv:compileReleaseShaders NO-SOURCE
+> Task :react-native-mmkv:generateReleaseAssets UP-TO-DATE
+> Task :react-native-gesture-handler:mergeReleaseAssets
+> Task :react-native-pager-view:mergeReleaseShaders
+> Task :react-native-pager-view:compileReleaseShaders NO-SOURCE
+> Task :react-native-pager-view:generateReleaseAssets UP-TO-DATE
+> Task :react-native-mmkv:mergeReleaseAssets
+> Task :react-native-reanimated:mergeReleaseShaders
+> Task :react-native-pager-view:mergeReleaseAssets
+> Task :react-native-safe-area-context:mergeReleaseShaders
+> Task :react-native-reanimated:compileReleaseShaders NO-SOURCE
+> Task :react-native-reanimated:generateReleaseAssets UP-TO-DATE
+> Task :react-native-safe-area-context:compileReleaseShaders NO-SOURCE
+> Task :react-native-safe-area-context:generateReleaseAssets UP-TO-DATE
+> Task :react-native-screens:mergeReleaseShaders
+> Task :react-native-reanimated:mergeReleaseAssets
+> Task :react-native-safe-area-context:mergeReleaseAssets
+> Task :react-native-screens:compileReleaseShaders NO-SOURCE
+> Task :react-native-screens:generateReleaseAssets UP-TO-DATE
+> Task :react-native-svg:mergeReleaseShaders
+> Task :react-native-svg:compileReleaseShaders NO-SOURCE
+> Task :react-native-track-player:mergeReleaseShaders
+> Task :react-native-svg:generateReleaseAssets UP-TO-DATE
+> Task :react-native-track-player:compileReleaseShaders NO-SOURCE
+> Task :react-native-track-player:generateReleaseAssets UP-TO-DATE
+> Task :react-native-screens:mergeReleaseAssets
+> Task :react-native-svg:mergeReleaseAssets
+> Task :react-native-track-player:mergeReleaseAssets
+> Task :app:createBundleReleaseJsAndAssets
+Android node_modules/.pnpm/expo-router@55.0.17_@expo+log-box@55.0.13_@expo+metro-runtime@55.0.12_@types+react@19.2_fa57ff102425499222532962d7069dd7/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+> Task :react-native-webrtc:mergeReleaseShaders
+> Task :react-native-view-shot:mergeReleaseShaders
+> Task :react-native-webrtc:compileReleaseShaders NO-SOURCE
+> Task :react-native-webrtc:generateReleaseAssets UP-TO-DATE
+> Task :react-native-webview:mergeReleaseShaders
+> Task :react-native-view-shot:compileReleaseShaders NO-SOURCE
+> Task :react-native-view-shot:generateReleaseAssets UP-TO-DATE
+> Task :react-native-webview:compileReleaseShaders NO-SOURCE
+> Task :react-native-webview:generateReleaseAssets UP-TO-DATE
+> Task :react-native-webrtc:mergeReleaseAssets
+> Task :react-native-webview:mergeReleaseAssets
+> Task :react-native-compressor:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-view-shot:mergeReleaseAssets
+> Task :react-native-pager-view:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-worklets:mergeReleaseShaders
+> Task :react-native-worklets:compileReleaseShaders NO-SOURCE
+> Task :react-native-worklets:generateReleaseAssets UP-TO-DATE
+> Task :react-native-compressor:generateReleaseBuildConfig
+> Task :react-native-pager-view:generateReleaseBuildConfig
+> Task :react-native-worklets:mergeReleaseAssets
+> Task :react-native-track-player:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-track-player:generateReleaseBuildConfig
+> Task :app:createBundleReleaseJsAndAssets
+[33m[7m[1m WARN [22m[27m[39m Attempted to import the module "/home/expo/workingdir/build/node_modules/.pnpm/react-native-webrtc@124.0.1_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0_/node_modules/event-target-shim/index" which is not listed in the "exports" of "/home/expo/workingdir/build/node_modules/.pnpm/event-target-shim@6.0.2/node_modules/event-target-shim" under the requested subpath "./index". Falling back to file-based resolution. Consider updating the call site or asking the package maintainer(s) to expose this API.
+Android node_modules/.pnpm/expo-router@55.0.17_@expo+log-box@55.0.13_@expo+metro-runtime@55.0.12_@types+react@19.2_fa57ff102425499222532962d7069dd7/node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 70.7% (1940/2308)
+Android Bundled 6442ms node_modules/.pnpm/expo-router@55.0.17_@expo+log-box@55.0.13_@expo+metro-runtime@55.0.12_@types+react@19.2_fa57ff102425499222532962d7069dd7/node_modules/expo-router/entry.js (2711 modules)
+Writing bundle output to: /home/expo/workingdir/build/artifacts/mobile/android/app/build/generated/assets/react/release/index.android.bundle
+Writing sourcemap output to: /home/expo/workingdir/build/artifacts/mobile/android/app/build/intermediates/sourcemaps/react/release/index.android.bundle.packager.map
+Copying 90 asset files
+Done writing bundle output
+Done writing sourcemap output
+> Task :react-native-track-player:compileReleaseKotlin FAILED
+> Task :react-native-pager-view:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/PagerViewViewManager.kt:10:8 'object MapBuilder : Any' is deprecated. Use Kotlin's built-in collections extensions.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/PagerViewViewManager.kt:41:19 'fun receiveCommand(view: NestedScrollableHost, commandName: String, args: ReadableArray?): Unit' is deprecated. args is not nullable, please update your method signature.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/PagerViewViewManager.kt:91:26 The corresponding parameter in the supertype 'PagerViewViewManager' is named 'parent'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/PagerViewViewManager.kt:204:16 'object MapBuilder : Any' is deprecated. Use Kotlin's built-in collections extensions.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/PagerViewViewManager.kt:205:45 'object MapBuilder : Any' is deprecated. Use Kotlin's built-in collections extensions.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/PagerViewViewManager.kt:206:57 'object MapBuilder : Any' is deprecated. Use Kotlin's built-in collections extensions.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/PagerViewViewManager.kt:207:47 'object MapBuilder : Any' is deprecated. Use Kotlin's built-in collections extensions.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/PagerViewViewPackage.kt:10:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollEvent.kt:6:8 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollEvent.kt:21:82 'constructor<T : Event<T>>(viewTag: Int): Event<T>' is deprecated. Use constructor with explicit surfaceId instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollEvent.kt:27:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollEvent.kt:27:44 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+e: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt:548:51 Argument type mismatch: actual type is 'Bundle?', but 'Bundle' was expected.
+e: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt:588:17 Argument type mismatch: actual type is 'Bundle?', but 'Bundle' was expected.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollEvent.kt:28:25 'fun receiveEvent(targetTag: Int, eventName: String, params: WritableMap?): Unit' is deprecated. Use [RCTModernEventEmitter.receiveEvent] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollStateChangedEvent.kt:6:8 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollStateChangedEvent.kt:15:89 'constructor<T : Event<T>>(viewTag: Int): Event<T>' is deprecated. Use constructor with explicit surfaceId instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollStateChangedEvent.kt:20:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollStateChangedEvent.kt:20:44 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollStateChangedEvent.kt:21:25 'fun receiveEvent(targetTag: Int, eventName: String, params: WritableMap?): Unit' is deprecated. Use [RCTModernEventEmitter.receiveEvent] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageSelectedEvent.kt:6:8 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageSelectedEvent.kt:15:69 'constructor<T : Event<T>>(viewTag: Int): Event<T>' is deprecated. Use constructor with explicit surfaceId instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageSelectedEvent.kt:24:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageSelectedEvent.kt:24:44 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageSelectedEvent.kt:25:25 'fun receiveEvent(targetTag: Int, eventName: String, params: WritableMap?): Unit' is deprecated. Use [RCTModernEventEmitter.receiveEvent] instead.
+> Task :react-native-compressor:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Audio/AudioCompressor.kt:260:30 Java type mismatch: inferred type is 'String?', but 'String' was expected.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Audio/AudioCompressor.kt:267:26 Java type mismatch: inferred type is 'String?', but 'String' was expected.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/CompressorModule.kt:159:15 'fun reject(message: String): Unit' is deprecated. Prefer passing a module-specific error code to JS. Using this method will pass the
+        error code EUNSPECIFIED.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/CompressorPackage.kt:3:8 'class TurboReactPackage : BaseReactPackage' is deprecated. Use BaseReactPackage instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/CompressorPackage.kt:9:27 'class TurboReactPackage : BaseReactPackage' is deprecated. Use BaseReactPackage instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/CompressorPackage.kt:22:50 'constructor(name: String, className: String, canOverrideExistingModule: Boolean, needsEagerInit: Boolean, hasConstants: Boolean, isCxxModule: Boolean, isTurboModule: Boolean): ReactModuleInfo' is deprecated. This constructor is deprecated and will be removed in the future. Use ReactModuleInfo(String, String, boolean, boolean, boolean, boolean)].
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Image/ImageCompressor.kt:29:35 Java type mismatch: inferred type is 'String?', but 'String' was expected.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Image/ImageCompressor.kt:31:39 'fun toURL(): URL!' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Image/ImageCompressor.kt:177:29 Java type mismatch: inferred type is 'String?', but 'String' was expected.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Image/ImageCompressor.kt:182:33 Java type mismatch: inferred type is 'String?', but 'String' was expected.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Image/ImageCompressor.kt:227:17 'field inDither: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Image/ImageCompressor.kt:228:17 'field inPurgeable: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Image/ImageCompressor.kt:229:17 'field inInputShareable: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Image/ImageCompressor.kt:250:13 Condition is always 'true'.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Image/ImageMain.kt:44:23 Java type mismatch: inferred type is 'String?', but 'String' was expected.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Utils/UploaderHelper.kt:106:56 Unchecked cast of 'HashMap<String, Any?>?' to 'Map<String, String>'.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Utils/UploaderHelper.kt:116:62 Unchecked cast of 'HashMap<String, Any?>?' to 'Map<String, String>'.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Utils/createVideoThumbnail.kt:64:115 Unchecked cast of 'HashMap<String, Any?>' to 'Map<String, String>'.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Utils/createVideoThumbnail.kt:108:15 Condition is always 'true'.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Video/AutoVideoCompression.kt:19:29 Java type mismatch: inferred type is 'String?', but 'String' was expected.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Video/VideoCompressorHelper.kt:61:23 'constructor(): Handler' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Video/VideoMain.kt:67:23 Java type mismatch: inferred type is 'String?', but 'String' was expected.
+[Incubating] Problems report is available at: file:///home/expo/workingdir/build/artifacts/mobile/android/build/reports/problems/problems-report.html
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+For more on this, please refer to https://docs.gradle.org/9.0.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+382 actionable tasks: 382 executed
+FAILURE: Build failed with an exception.
+* What went wrong:
+Execution failed for task ':react-native-track-player:compileReleaseKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to generate a Build Scan (Powered by Develocity).
+> Get more help at https://help.gradle.org.
+BUILD FAILED in 3m 11s
+See the profiling report at: file:///home/expo/workingdir/build/artifacts/mobile/android/build/reports/profile/profile-2026-08-27-09-29-16.html
+A fine-grained performance profile is available: use the --scan option.
+Error: Gradle build failed with unknown error. See logs for the "Run gradlew" phase for more information.
