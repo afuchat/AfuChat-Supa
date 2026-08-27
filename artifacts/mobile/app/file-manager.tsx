@@ -14,10 +14,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as MediaLibrary from "expo-media-library";
 import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import NearbyTransferSheet from "@/components/nearby/NearbyTransferSheet";
 import { useTheme } from "@/hooks/useTheme";
 import { useLanguage } from "@/context/LanguageContext";
+import { showAlert } from "@/lib/alert";
 
 type FileType = "image" | "video" | "audio" | "document";
 type Filter = "all" | "image" | "video" | "audio";
@@ -291,6 +293,27 @@ export default function FileManagerScreen() {
     setTransferOpen(true);
   }, [selectedFile]);
 
+  const shareSelectedFile = useCallback(async () => {
+    if (!selectedFile || Platform.OS === "web") return;
+    try {
+      let uri = selectedFile.uri;
+      if (selectedFile.assetId) {
+        const info = await MediaLibrary.getAssetInfoAsync(selectedFile.assetId);
+        uri = (info as any).localUri || info.uri || uri;
+      }
+      if (!uri) throw new Error("This file is not available on the device.");
+      const available = await Sharing.isAvailableAsync();
+      if (!available) throw new Error("System sharing is not available on this device.");
+      await Sharing.shareAsync(uri, {
+        mimeType: selectedFile.mimeType || "application/octet-stream",
+        dialogTitle: `Share ${selectedFile.name}`,
+        UTI: selectedFile.mimeType || "public.data",
+      });
+    } catch (error: any) {
+      showAlert("Share failed", error?.message || "Could not open the system share sheet.");
+    }
+  }, [selectedFile]);
+
   return (
     <View style={[styles.root, { backgroundColor: colors.backgroundSecondary }]}>
       <GlassHeader
@@ -365,23 +388,28 @@ export default function FileManagerScreen() {
       )}
 
       {Platform.OS !== "web" && selectedFile && (
-        <Pressable
-          testID="file-manager-send"
-          accessibilityRole="button"
-          accessibilityLabel={`Send ${selectedFile.name} offline`}
-          onPress={openTransfer}
-           style={[
-             styles.sendBar,
-             {
-               backgroundColor: colors.accent,
-               bottom: Math.max(insets.bottom, 8) + 76,
-             },
-           ]}
-        >
-          <Ionicons name="paper-plane" size={19} color={colors.background} />
-          <Text style={[styles.sendBarText, { color: colors.background }]}>Send offline</Text>
-          <Text style={[styles.sendBarHint, { color: colors.background + "BB" }]}>Direct Wi-Fi</Text>
-        </Pressable>
+        <View style={[styles.actionBar, { bottom: Math.max(insets.bottom, 8) + 76 }]}>
+          <Pressable
+            testID="file-manager-share"
+            accessibilityRole="button"
+            accessibilityLabel={`Share ${selectedFile.name}`}
+            onPress={shareSelectedFile}
+            style={[styles.sendBar, { backgroundColor: colors.surface, borderColor: colors.accent }]}
+          >
+            <Ionicons name="share-outline" size={19} color={colors.accent} />
+            <Text style={[styles.sendBarText, { color: colors.accent }]}>Share file</Text>
+          </Pressable>
+          <Pressable
+            testID="file-manager-send"
+            accessibilityRole="button"
+            accessibilityLabel={`Send ${selectedFile.name} offline`}
+            onPress={openTransfer}
+            style={[styles.sendBar, { backgroundColor: colors.accent }]}
+          >
+            <Ionicons name="paper-plane" size={19} color={colors.background} />
+            <Text style={[styles.sendBarText, { color: colors.background }]}>Send offline</Text>
+          </Pressable>
+        </View>
       )}
 
       <FileManagerBottomNav
@@ -417,6 +445,7 @@ const styles = StyleSheet.create({
   summaryTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
   summaryMeta: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 3 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingHorizontal: 40 },
+  actionBar: { position: "absolute", left: 16, right: 16, flexDirection: "row", gap: 10 },
   emptyTitle: { fontSize: 18, fontFamily: "Inter_600SemiBold", textAlign: "center" },
   emptyDesc: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 20 },
   emptyAction: { flexDirection: "row", alignItems: "center", gap: 7, borderRadius: 12, paddingHorizontal: 15, paddingVertical: 11, marginTop: 4 },

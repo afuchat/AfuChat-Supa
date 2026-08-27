@@ -38,6 +38,30 @@ export type DeepLinkAction =
   | null;
 
 /**
+ * Android may deliver the same custom-scheme link as either
+ * afuchat://chat/id (host + path) or afuchat:///chat/id (path only).
+ * The boot handoff uses this helper to pause its normal redirect while the
+ * root deep-link gate resolves the destination.
+ */
+export function isAfuChatDeepLink(url: string | null | undefined): boolean {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    const isAfuHost =
+      parsed.protocol === "afuchat:" ||
+      parsed.hostname === "afuchat.com" ||
+      parsed.hostname === "www.afuchat.com";
+    if (!isAfuHost) return false;
+    if (parsed.protocol === "afuchat:") {
+      return parsed.hostname.length > 0 || parsed.pathname.length > 1;
+    }
+    return parsed.pathname !== "/" && parsed.pathname.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Direct navigation routes — single-segment afuchat:// paths that map to
  * app screens. Checked before catch-all profile handling so system paths are never
  * misidentified as user handles.
@@ -161,11 +185,10 @@ export async function handleIncomingUrl(url: string | null | undefined): Promise
   if (!url) return null;
 
   try {
-    const normalised = url.startsWith("afuchat://")
-      ? url.replace("afuchat://", "https://afuchat.com/")
-      : url;
-
-    const parsed   = new URL(normalised);
+    const isCustomScheme = url.startsWith("afuchat://");
+    const parsed = new URL(
+      isCustomScheme ? url.replace("afuchat://", "https://afuchat.com/") : url,
+    );
     const segments = parsed.pathname.split("/").filter(Boolean);
 
     // 1. /join/:code -- group/channel invite link (UUID or shortId)

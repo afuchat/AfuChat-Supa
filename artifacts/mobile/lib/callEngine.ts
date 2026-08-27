@@ -2,6 +2,7 @@ import { NativeModules, Platform, TurboModuleRegistry } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { isExpoGo } from "@/lib/expoEnvironment";
 import { notifyCallRecipient } from "@/lib/pushNotifications";
+import { setNativeSpeakerphone } from "@/lib/nativeShareShortcuts";
 
 export type CallStatus =
   | "idle"
@@ -59,6 +60,7 @@ let pendingCandidates: any[] = [];
 let remoteDescriptionReady = false;
 let ringTimer: ReturnType<typeof setTimeout> | null = null;
 let listeners = new Set<Listener>();
+let speakerEnabled = false;
 
 function emit(event: CallEngineEvent) {
   listeners.forEach((listener) => {
@@ -100,6 +102,14 @@ function detectRtc(): RtcBridge | null {
     if (!NativeModules.WebRTCModule && TurboModuleRegistry?.get) {
       try {
         (NativeModules as any).WebRTCModule = TurboModuleRegistry.get("WebRTCModule");
+      } catch {}
+    }
+    // Some RN 0.83 bridgeless builds expose the legacy WebRTC package through
+    // TurboModuleRegistry only after the first lookup.
+    if (!NativeModules.WebRTCModule && TurboModuleRegistry?.getEnforcing) {
+      try {
+        (NativeModules as any).WebRTCModule =
+          TurboModuleRegistry.getEnforcing("WebRTCModule");
       } catch {}
     }
     const webrtc = require("react-native-webrtc");
@@ -182,6 +192,8 @@ function stopPeer() {
   try { peer?.close?.(); } catch {}
   localStream = null;
   peer = null;
+  speakerEnabled = false;
+  setNativeSpeakerphone(false);
 }
 
 function removeSignalChannel() {
@@ -396,6 +408,7 @@ export async function startCall(params: {
   };
   try {
     localStream = await bridge.mediaDevices.getUserMedia({ audio: true, video: false });
+    setNativeSpeakerphone(false);
     configurePeer(params.callId, true);
     configureSignalChannel(params.callId, true);
     await subscribe(signalChannel);
@@ -434,6 +447,7 @@ export async function acceptCall(notice: IncomingCallNotice, params: {
   if (!bridge) throw new Error("Calls are unavailable in this app build");
   try {
     localStream = await bridge.mediaDevices.getUserMedia({ audio: true, video: false });
+    setNativeSpeakerphone(false);
     configurePeer(notice.callId, false);
     configureSignalChannel(notice.callId, false);
     await subscribe(signalChannel);
@@ -499,8 +513,7 @@ export function toggleMute(): boolean {
 }
 
 export function toggleSpeaker(): boolean {
-  // Native WebRTC owns the audio session. This state is exposed for the UI;
-  // the native default route remains the earpiece until the platform audio
-  // session is explicitly changed by a future device-audio integration.
-  return false;
+  speakerEnabled = !speakerEnabled;
+  setNativeSpeakerphone(speakerEnabled);
+  return speakerEnabled;
 }

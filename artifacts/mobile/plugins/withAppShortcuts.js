@@ -315,6 +315,7 @@ import android.content.Context
 import android.content.Intent
  import android.appwidget.AppWidgetManager
  import android.content.ComponentName
+ import android.media.AudioManager
  import android.os.Handler
  import android.os.Looper
 import android.content.pm.ShortcutInfo
@@ -516,6 +517,29 @@ class AfuChatShareShortcutsModule(
       }
     }
   }
+
+  @ReactMethod
+  fun setSpeakerphone(enabled: Boolean, promise: Promise) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+      promise.resolve(false)
+      return
+    }
+    Handler(Looper.getMainLooper()).post {
+      try {
+        val audio = reactContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+        if (audio == null) {
+          promise.resolve(false)
+          return@post
+        }
+        audio.mode = AudioManager.MODE_IN_COMMUNICATION
+        @Suppress("DEPRECATION")
+        audio.isSpeakerphoneOn = enabled
+        promise.resolve(true)
+      } catch (error: Exception) {
+        promise.reject("CALL_AUDIO_ROUTE_FAILED", error)
+      }
+    }
+  }
 }
 `,
       );
@@ -660,6 +684,8 @@ function withNativePackageRegistration(config) {
     let contents = applicationConfig.modResults.contents;
     const importLine = "import com.afuchat.mobile.AfuChatShareShortcutsPackage";
     const moduleMarker = "add(AfuChatShareShortcutsPackage())";
+    const webRtcImportLine = "import com.oney.WebRTCModule.WebRTCModulePackage";
+    const webRtcModuleMarker = "add(WebRTCModulePackage())";
     const staleDataSyncImport = "import com.afuchat.mobile.AfuChatDataSyncPackage";
 
     if (contents.includes(staleDataSyncImport)) {
@@ -695,6 +721,23 @@ function withNativePackageRegistration(config) {
       contents = contents.replace(
         /(\s*\/\/ Packages that cannot be autolinked yet can be added manually here, for example:)/,
         `\n          ${moduleMarker}$1`,
+      );
+    }
+
+    // Expo's module autolinker does not include react-native-webrtc 124 in
+    // the SDK 55 package list. Register its ReactPackage explicitly or the
+    // JS package evaluates with NativeModules.WebRTCModule == null in the
+    // installed Android build.
+    if (!contents.includes(webRtcImportLine)) {
+      contents = contents.replace(
+        importLine,
+        `${importLine}\nimport ${webRtcImportLine.slice("import ".length)}`,
+      );
+    }
+    if (!contents.includes(webRtcModuleMarker)) {
+      contents = contents.replace(
+        moduleMarker,
+        `${moduleMarker}\n          ${webRtcModuleMarker}`,
       );
     }
 

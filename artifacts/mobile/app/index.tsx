@@ -5,20 +5,32 @@ import { useAuth } from "@/context/AuthContext";
 import { getCachedUserId } from "@/lib/offlineStore";
 import { storage, KEYS } from "@/lib/storage/mmkv";
 import { safeRouter } from "@/lib/navUtils";
+import { handleIncomingUrl, isAfuChatDeepLink } from "@/lib/deepLinkHandler";
 
 export default function IndexScreen() {
   const { session, profile, loading, user } = useAuth();
   const redirected = useRef(false);
   const [initialUrlChecked, setInitialUrlChecked] = useState(false);
+  const [initialDeepLinkPending, setInitialDeepLinkPending] = useState(false);
   const { handle } = useLocalSearchParams<{ handle?: string }>();
 
   useEffect(() => {
     let mounted = true;
-    Linking.getInitialURL()
-      .catch(() => null)
-      .then(() => {
-        if (mounted) setInitialUrlChecked(true);
-      });
+    Linking.getInitialURL().catch(() => null).then(async (url) => {
+      if (!mounted) return;
+      if (isAfuChatDeepLink(url)) {
+        // Resolve the action only to stop the ordinary boot redirect from
+        // racing the root deep-link gate, which owns actual navigation.
+        const action = await handleIncomingUrl(url);
+        if (mounted) setInitialDeepLinkPending(!!action);
+      }
+      if (mounted) setInitialUrlChecked(true);
+    }).catch(() => {
+      if (mounted) {
+        setInitialDeepLinkPending(false);
+        setInitialUrlChecked(true);
+      }
+    });
     return () => {
       mounted = false;
     };
@@ -76,13 +88,13 @@ export default function IndexScreen() {
   // Main routing — fires whenever auth state resolves
   useEffect(() => {
     if (!initialUrlChecked || loading) return;
-    if (handle) return;
+    if (handle || initialDeepLinkPending) return;
     doRedirect(
       !!session,
       !!profile,
       profile?.onboarding_completed === true,
     );
-  }, [session, profile, loading, handle, user?.id, initialUrlChecked]);
+  }, [session, profile, loading, handle, user?.id, initialUrlChecked, initialDeepLinkPending]);
 
   // Safety net: if auth takes too long, route based on cached/in-memory state.
   //
@@ -97,7 +109,7 @@ export default function IndexScreen() {
       // If auth already resolved, the main effect owns navigation. The old
       // timer could still redirect just after a slow Android auth restore and
       // replace a valid destination with Welcome/Chats.
-      if (redirected.current || !loading) return;
+      if (redirected.current || !loading || initialDeepLinkPending) return;
       if (handle) {
         redirected.current = true;
         safeRouter.replace(`/${handle}` as any);
@@ -112,7 +124,7 @@ export default function IndexScreen() {
     }, 2500);
 
     return () => clearTimeout(timeout);
-  }, [handle, loading, user?.id, initialUrlChecked]);
+  }, [handle, loading, user?.id, initialUrlChecked, initialDeepLinkPending]);
 
   // This route is only a navigation handoff. Returning users are routed from
   // the synchronous local identity cache, so never show an account-restoring

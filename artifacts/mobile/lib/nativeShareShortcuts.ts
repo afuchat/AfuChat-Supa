@@ -13,6 +13,7 @@ type ShareShortcutsModule = {
   update?: (chats: ShareShortcutChat[]) => Promise<boolean> | void;
   getInitialChatId?: () => Promise<string | null>;
   requestWidgetPin?: () => Promise<boolean> | void;
+  setSpeakerphone?: (enabled: boolean) => Promise<boolean> | void;
 };
 
 /**
@@ -76,5 +77,21 @@ export async function requestNativeWidgetPin(): Promise<boolean> {
     return (await native.requestWidgetPin()) === true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Routes call audio through the Android speaker or earpiece. The method is
+ * intentionally optional so iOS, web, and older installed builds keep the
+ * normal WebRTC audio path.
+ */
+export function setNativeSpeakerphone(enabled: boolean): void {
+  if (Platform.OS !== "android") return;
+  const native = NativeModules.AfuChatShareShortcuts as ShareShortcutsModule | undefined;
+  if (!native?.setSpeakerphone) return;
+  try {
+    Promise.resolve(native.setSpeakerphone(enabled)).catch(() => {});
+  } catch {
+    // An older binary may not include the optional audio method.
   }
 }
