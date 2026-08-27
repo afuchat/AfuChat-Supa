@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { Linking, StyleSheet, View } from "react-native";
 import { useAuth } from "@/context/AuthContext";
 import { getCachedUserId } from "@/lib/offlineStore";
 import { storage, KEYS } from "@/lib/storage/mmkv";
@@ -9,7 +9,20 @@ import { safeRouter } from "@/lib/navUtils";
 export default function IndexScreen() {
   const { session, profile, loading, user } = useAuth();
   const redirected = useRef(false);
+  const [initialUrlChecked, setInitialUrlChecked] = useState(false);
   const { handle } = useLocalSearchParams<{ handle?: string }>();
+
+  useEffect(() => {
+    let mounted = true;
+    Linking.getInitialURL()
+      .catch(() => null)
+      .then(() => {
+        if (mounted) setInitialUrlChecked(true);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   function doRedirect(hasSession: boolean, profileReady: boolean, profileOnboarded: boolean) {
     if (redirected.current) return;
@@ -55,21 +68,21 @@ export default function IndexScreen() {
 
   // Handle ?handle= query param for web profile deep links
   useEffect(() => {
-    if (!handle || redirected.current || loading) return;
+    if (!initialUrlChecked || !handle || redirected.current || loading) return;
     redirected.current = true;
     safeRouter.replace(`/${handle}` as any);
-  }, [handle, loading]);
+  }, [handle, loading, initialUrlChecked]);
 
   // Main routing — fires whenever auth state resolves
   useEffect(() => {
-    if (loading) return;
+    if (!initialUrlChecked || loading) return;
     if (handle) return;
     doRedirect(
       !!session,
       !!profile,
       profile?.onboarding_completed === true,
     );
-  }, [session, profile, loading, handle, user?.id]);
+  }, [session, profile, loading, handle, user?.id, initialUrlChecked]);
 
   // Safety net: if auth takes too long, route based on cached/in-memory state.
   //
@@ -80,6 +93,7 @@ export default function IndexScreen() {
   // a slow network or right after a device reboot.
   useEffect(() => {
     const timeout = setTimeout(() => {
+      if (!initialUrlChecked) return;
       // If auth already resolved, the main effect owns navigation. The old
       // timer could still redirect just after a slow Android auth restore and
       // replace a valid destination with Welcome/Chats.
@@ -98,7 +112,7 @@ export default function IndexScreen() {
     }, 2500);
 
     return () => clearTimeout(timeout);
-  }, [handle, loading, user?.id]);
+  }, [handle, loading, user?.id, initialUrlChecked]);
 
   // This route is only a navigation handoff. Returning users are routed from
   // the synchronous local identity cache, so never show an account-restoring

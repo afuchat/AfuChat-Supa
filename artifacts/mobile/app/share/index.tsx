@@ -144,13 +144,6 @@ export default function ShareToAfuChatScreen() {
     });
   }
 
-  function prioritizeTarget(targets: Contact[], chatId?: string): Contact[] {
-    if (!chatId) return targets;
-    const selected = targets.find((target) => target.chatId === chatId);
-    if (!selected) return targets;
-    return [selected, ...targets.filter((target) => target.chatId !== chatId)];
-  }
-
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
@@ -168,7 +161,9 @@ export default function ShareToAfuChatScreen() {
         );
         if (!cancelled) {
           recentTargetsRef.current = uniqueCachedTargets;
-          setRecentChats(prioritizeTarget(uniqueCachedTargets, typeof params.chatId === "string" ? params.chatId : undefined).slice(0, 8));
+           // A direct-share target is sent automatically below; it must not
+           // displace genuinely recent chats in the visible/native list.
+           setRecentChats(uniqueCachedTargets.slice(0, 8));
           updateNativeShareShortcuts(uniqueCachedTargets.map((chat) => ({
             chatId: chat.chatId!,
             label: chat.display_name,
@@ -200,7 +195,7 @@ export default function ShareToAfuChatScreen() {
             list.findIndex((item) => item.chatId === target.chatId) === index,
         );
         recentTargetsRef.current = uniqueTargets;
-        setRecentChats(prioritizeTarget(uniqueTargets, typeof params.chatId === "string" ? params.chatId : undefined).slice(0, 8));
+         setRecentChats(uniqueTargets.slice(0, 8));
         updateNativeShareShortcuts(uniqueTargets.map((chat) => ({
           chatId: chat.chatId!,
           label: chat.display_name,
@@ -255,7 +250,12 @@ export default function ShareToAfuChatScreen() {
           target,
           ...recentTargetsRef.current.filter((item) => item.chatId !== chatId),
         ];
-        setRecentChats(prioritizeTarget(recentTargetsRef.current, chatId).slice(0, 8));
+        // Keep the resolved direct-share target available without promoting a
+        // stale conversation into the recent-chat list.
+        if (!recentTargetsRef.current.some((item) => item.chatId === chatId)) {
+          recentTargetsRef.current = recentTargetsRef.current.filter((item) => item.chatId !== chatId);
+        }
+        setRecentChats(recentTargetsRef.current.slice(0, 8));
       } catch {
         // The shortcut will remain available for a future retry if its chat
         // becomes visible through the normal chat-list refresh.

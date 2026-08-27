@@ -318,6 +318,8 @@ function DeepLinkGate({ navigationReady }: { navigationReady: boolean }) {
   const { session, loading, user } = useAuth();
   const pendingActionRef = useRef<any>(null);
   const [pendingVersion, setPendingVersion] = useState(0);
+  const authRef = useRef({ loading, signedIn: Boolean(session?.user?.id || user?.id) });
+  authRef.current = { loading, signedIn: Boolean(session?.user?.id || user?.id) };
 
   const routeAction = useCallback((action: any) => {
     if (action?.type === "join_group") {
@@ -325,10 +327,14 @@ function DeepLinkGate({ navigationReady }: { navigationReady: boolean }) {
       return;
     }
     if (action?.type === "navigate") {
+      // A launcher shortcut is an explicit destination. Replace the root
+      // handoff rather than pushing it, so app/index.tsx cannot leave the
+      // user on Chats after the shortcut has already selected a conversation.
+      const route = action.path === "/chat/[id]" ? safeRouter.replace : safeRouter.push;
       if (action.params) {
-        safeRouter.push({ pathname: action.path as any, params: action.params });
+        route({ pathname: action.path as any, params: action.params });
       } else {
-        safeRouter.push(action.path as any);
+        route(action.path as any);
       }
     }
   }, []);
@@ -342,7 +348,7 @@ function DeepLinkGate({ navigationReady }: { navigationReady: boolean }) {
       if (cancelled || !action) return;
 
       const isChatDestination = action.type === "navigate" && action.path === "/chat/[id]";
-      if (isChatDestination && (loading || !session?.user?.id && !user?.id)) {
+      if (isChatDestination && (authRef.current.loading || !authRef.current.signedIn)) {
         pendingActionRef.current = action;
         setPendingVersion((version) => version + 1);
         return;
@@ -350,6 +356,8 @@ function DeepLinkGate({ navigationReady }: { navigationReady: boolean }) {
       routeAction(action);
     };
 
+    // Read the launch URL once. Re-running getInitialURL whenever auth changes
+    // can replay a shortcut after the normal root redirect has already fired.
     Linking.getInitialURL().then(processUrl).catch(() => {});
     const subscription = Linking.addEventListener("url", ({ url }) => {
       processUrl(url).catch(() => {});
@@ -358,7 +366,7 @@ function DeepLinkGate({ navigationReady }: { navigationReady: boolean }) {
       cancelled = true;
       subscription.remove();
     };
-  }, [loading, navigationReady, routeAction, session?.user?.id, user?.id]);
+  }, [navigationReady, routeAction]);
 
   useEffect(() => {
     const action = pendingActionRef.current;

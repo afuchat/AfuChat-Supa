@@ -129,6 +129,23 @@ function isShortCode(s: string): boolean {
 }
 
 /**
+ * Chat IDs are UUIDs today, but native launchers can preserve another
+ * database-safe identifier format. Keep the route parser in sync with the
+ * native shortcut payload instead of silently dropping a valid target.
+ */
+function isChatId(s: string): boolean {
+  return isUUID(s) || /^[A-Za-z0-9][A-Za-z0-9_-]{7,127}$/.test(s);
+}
+
+function decodePathSegment(s: string): string {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
+
+/**
  * Parse a URL and return a DeepLinkAction if one is identified, or null.
  *
  * Priority order:
@@ -172,8 +189,11 @@ export async function handleIncomingUrl(url: string | null | undefined): Promise
     }
 
     // 2. /chat/:id -- open a specific conversation
-    if (segments.length === 2 && segments[0] === "chat" && isUUID(segments[1])) {
-      return { type: "navigate", path: "/chat/[id]", params: { id: segments[1] } };
+    if (segments.length === 2 && segments[0] === "chat") {
+      const chatId = decodePathSegment(segments[1]);
+      if (isChatId(chatId)) {
+        return { type: "navigate", path: "/chat/[id]", params: { id: chatId } };
+      }
     }
 
     // 2a. Android Direct Share target. The share payload is still delivered
@@ -181,8 +201,9 @@ export async function handleIncomingUrl(url: string | null | undefined): Promise
     // existing conversation should receive it.
     if (segments.length === 1 && segments[0] === "share-chat") {
       const chatId = parsed.searchParams.get("chatId");
-      if (chatId && isUUID(chatId)) {
-        return { type: "navigate", path: "/share", params: { chatId } };
+      const decodedChatId = chatId ? decodePathSegment(chatId) : "";
+      if (decodedChatId && isChatId(decodedChatId)) {
+        return { type: "navigate", path: "/share", params: { chatId: decodedChatId } };
       }
     }
 

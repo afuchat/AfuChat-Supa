@@ -85,8 +85,8 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 8000
-externalPort = 8000
+localPort = 8080
+externalPort = 8080
 
 [postMerge]
 path = "scripts/post-merge.sh"
