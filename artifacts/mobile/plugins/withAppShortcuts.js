@@ -307,7 +307,7 @@ class AfuChatShareShortcutsModule(
   @ReactMethod
   fun getInitialChatId(promise: Promise) {
     try {
-      val intent = currentActivity?.intent
+      val intent = reactApplicationContext.currentActivity?.intent
       val fromData = intent?.data?.getQueryParameter("chatId")
       val fromExtra = intent?.getStringExtra("afuchat_chat_id")
       val chatId = fromData ?: fromExtra

@@ -1,0 +1,1481 @@
+Running 'gradlew :app:bundleRelease' in /home/expo/workingdir/build/artifacts/mobile/android
+Welcome to Gradle 9.0.0!
+Here are the highlights of this release:
+ - Configuration Cache is the recommended execution mode
+ - Gradle requires JVM 17 or higher to run
+ - Build scripts use Kotlin 2.2 and Groovy 4.0
+ - Improved Kotlin DSL script compilation avoidance
+For more details see https://docs.gradle.org/9.0.0/release-notes.html
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.0.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :gradle-plugin:settings-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:pluginDescriptors
+> Task :gradle-plugin:settings-plugin:pluginDescriptors
+> Task :gradle-plugin:settings-plugin:processResources
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:processResources
+> Task :gradle-plugin:shared:processResources NO-SOURCE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:processResources NO-SOURCE
+> Task :gradle-plugin:shared:compileKotlin
+> Task :gradle-plugin:shared:compileJava NO-SOURCE
+> Task :gradle-plugin:shared:classes UP-TO-DATE
+> Task :gradle-plugin:shared:jar
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:compileKotlin
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:classes UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:jar
+> Task :gradle-plugin:settings-plugin:compileKotlin
+> Task :gradle-plugin:settings-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:settings-plugin:classes
+> Task :gradle-plugin:settings-plugin:jar
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:compileKotlin
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:classes
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:jar
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-gradle-plugin:expo-autolinking-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:react-native-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-dev-launcher-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-dev-launcher-gradle-plugin:pluginDescriptors
+> Task :expo-dev-launcher-gradle-plugin:processResources
+> Task :expo-module-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-module-gradle-plugin:pluginDescriptors
+> Task :expo-module-gradle-plugin:processResources
+> Task :expo-gradle-plugin:expo-autolinking-plugin:pluginDescriptors
+> Task :expo-gradle-plugin:expo-autolinking-plugin:processResources
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:pluginDescriptors
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:processResources
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:compileKotlin
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:classes
+> Task :gradle-plugin:react-native-gradle-plugin:pluginDescriptors
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:jar
+> Task :gradle-plugin:react-native-gradle-plugin:processResources
+> Task :expo-gradle-plugin:expo-autolinking-plugin:compileKotlin
+> Task :expo-gradle-plugin:expo-autolinking-plugin:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-autolinking-plugin:classes
+> Task :expo-gradle-plugin:expo-autolinking-plugin:jar
+> Task :gradle-plugin:react-native-gradle-plugin:compileKotlin
+> Task :gradle-plugin:react-native-gradle-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:react-native-gradle-plugin:classes
+> Task :gradle-plugin:react-native-gradle-plugin:jar
+> Task :expo-dev-launcher-gradle-plugin:compileKotlin
+> Task :expo-dev-launcher-gradle-plugin:compileJava NO-SOURCE
+> Task :expo-dev-launcher-gradle-plugin:classes
+> Task :expo-dev-launcher-gradle-plugin:jar
+> Task :expo-module-gradle-plugin:compileKotlin
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-modules-core@55.0.25_react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0_dae4fc5c6ae239ac7dfe0e4c3edd6f5b/node_modules/expo-modules-core/expo-module-gradle-plugin/src/main/kotlin/expo/modules/plugin/android/AndroidLibraryExtension.kt:9:24 'var targetSdk: Int?' is deprecated. Will be removed from library DSL in v9.0. Use testOptions.targetSdk or/and lint.targetSdk instead.
+> Task :expo-module-gradle-plugin:compileJava NO-SOURCE
+> Task :expo-module-gradle-plugin:classes
+> Task :expo-module-gradle-plugin:jar
+> Configure project :
+[32m[ExpoRootProject][0m Using the following versions:
+  - buildTools:  [32m36.0.0[0m
+  - minSdk:      [32m24[0m
+  - compileSdk:  [32m36[0m
+  - targetSdk:   [32m36[0m
+  - ndk:         [32m27.1.12297006[0m
+  - kotlin:      [32m2.1.21[0m
+  - ksp:         [32m2.1.21-2.0.2[0m
+> Configure project :app
+ℹ️  [33mApplying gradle plugin[0m '[32mexpo-max-sdk-override-plugin[0m'
+  [expo-max-sdk-override-plugin] This plugin will find all permissions declared with `android:maxSdkVersion`. If there exists a declaration with the `android:maxSdkVersion` annotation and another one without, the plugin will remove the annotation from the final merged manifest. In order to see a log with the changes run a clean build of the app.
+ ℹ️  [33mApplying gradle plugin[0m '[32mexpo-dev-launcher-gradle-plugin[0m'
+> Configure project :expo
+Using expo modules
+  - [32mexpo-log-box[0m (55.0.13)
+  - [32mexpo-constants[0m (55.0.17)
+  - [32mexpo-dev-client[0m (55.0.37)
+- [32mexpo-dev-launcher[0m (55.0.38)
+- [32mexpo-dev-menu[0m (55.0.32)
+- [32mexpo-dev-menu-interface[0m (55.0.2)
+- [32mexpo-json-utils[0m (55.0.2)
+- [32mexpo-manifests[0m (55.0.19)
+> Configure project :expo-modules-core
+Linking react-native-worklets native libs into expo-modules-core build tasks
+task ':react-native-worklets:mergeDebugNativeLibs'
+task ':react-native-worklets:mergeReleaseNativeLibs'
+> Configure project :expo
+  - [32mexpo-modules-core[0m (55.0.25)
+- [32mexpo-share-intent[0m (6.0.0)
+- [32mexpo-updates-interface[0m (55.1.6)
+- [33m[📦][0m [32mexpo-dom-webview[0m (55.0.6)
+  - [33m[📦][0m [32mexpo-application[0m (55.0.17)
+  - [33m[📦][0m [32mexpo-asset[0m (55.0.18)
+  - [33m[📦][0m [32mexpo-av[0m (16.0.8)
+  - [33m[📦][0m [32mexpo-blur[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-camera[0m (55.0.21)
+  - [33m[📦][0m [32mexpo-clipboard[0m (55.0.15)
+  - [33m[📦][0m [32mexpo-contacts[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-crypto[0m (55.0.17)
+  - [33m[📦][0m [32mexpo-device[0m (55.0.19)
+  - [33m[📦][0m [32mexpo-document-picker[0m (55.0.15)
+  - [33m[📦][0m [32mexpo-file-system[0m (55.0.24)
+  - [33m[📦][0m [32mexpo-font[0m (55.0.8)
+  - [33m[📦][0m [32mexpo-haptics[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-image[0m (55.0.11)
+  - [33m[📦][0m [32mexpo-image-loader[0m (55.0.1)
+  - [33m[📦][0m [32mexpo-image-manipulator[0m (55.0.19)
+  - [33m[📦][0m [32mexpo-image-picker[0m (55.0.22)
+  - [33m[📦][0m [32mexpo-keep-awake[0m (55.0.8)
+  - [33m[📦][0m [32mexpo-linear-gradient[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-linking[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-local-authentication[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-location[0m (55.1.12)
+  - [33m[📦][0m [32mexpo-media-library[0m (55.0.19)
+  - [33m[📦][0m [32mexpo-network[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-notifications[0m (55.0.26)
+  - [33m[📦][0m [32mexpo-router[0m (55.0.17)
+  - [33m[📦][0m [32mexpo-screen-capture[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-secure-store[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-sharing[0m (55.0.22)
+  - [33m[📦][0m [32mexpo-speech[0m (55.0.16)
+  - [33m[📦][0m [32mexpo-splash-screen[0m (55.0.23)
+  - [33m[📦][0m [32mexpo-sqlite[0m (55.0.18)
+  - [33m[📦][0m [32mexpo-system-ui[0m (55.0.20)
+  - [33m[📦][0m [32mexpo-task-manager[0m (55.0.18)
+- [33m[📦][0m [32mexpo-video[0m (55.0.19)
+  - [33m[📦][0m [32mexpo-video-thumbnails[0m (55.0.17)
+  - [33m[📦][0m [32mexpo-web-browser[0m (55.0.18)
+  - [33m[📦][0m [32munimodules-app-loader[0m (55.0.5)
+> Configure project :react-native-mmkv
+[react-native-mmkv] Thank you for using react-native-mmkv ❤️
+[react-native-mmkv] If you enjoy using react-native-mmkv, please consider sponsoring this project: https://github.com/sponsors/mrousavy
+> Task :expo-dev-client:preBuild UP-TO-DATE
+> Task :expo-dev-launcher:preBuild UP-TO-DATE
+> Task :expo-dev-menu:preBuild UP-TO-DATE
+> Task :expo-dev-menu-interface:preBuild UP-TO-DATE
+> Task :expo-json-utils:preBuild UP-TO-DATE
+> Task :expo-log-box:preBuild UP-TO-DATE
+> Task :expo-manifests:preBuild UP-TO-DATE
+> Task :expo-modules-core:preBuild UP-TO-DATE
+> Task :expo-share-intent:preBuild UP-TO-DATE
+> Task :expo-updates-interface:preBuild UP-TO-DATE
+> Task :expo:generatePackagesList
+> Task :expo:preBuild
+> Task :react-native-async-storage_async-storage:generateCodegenSchemaFromJavaScript
+> Task :react-native-community_netinfo:generateCodegenSchemaFromJavaScript
+> Task :expo-constants:createExpoConfig
+> Task :expo-constants:preBuild
+> Task :react-native-async-storage_async-storage:generateCodegenArtifactsFromSchema
+> Task :react-native-async-storage_async-storage:preBuild
+The NODE_ENV environment variable is required but was not specified. Ensure the project is bundled with Expo CLI or NODE_ENV is set. Using only .env.local and .env
+> Task :react-native-community_netinfo:generateCodegenArtifactsFromSchema
+> Task :react-native-community_netinfo:preBuild
+> Task :react-native-compressor:generateCodegenSchemaFromJavaScript
+> Task :react-native-gesture-handler:generateCodegenSchemaFromJavaScript
+> Task :react-native-google-signin_google-signin:generateCodegenSchemaFromJavaScript
+> Task :react-native-compressor:generateCodegenArtifactsFromSchema
+> Task :react-native-compressor:preBuild
+> Task :react-native-gesture-handler:generateCodegenArtifactsFromSchema
+> Task :react-native-gesture-handler:preBuild
+> Task :react-native-google-signin_google-signin:generateCodegenArtifactsFromSchema
+> Task :react-native-google-signin_google-signin:preBuild
+> Task :react-native-reanimated:assertMinimalReactNativeVersionTask
+> Task :react-native-reanimated:assertNewArchitectureEnabledTask SKIPPED
+> Task :react-native-mmkv:generateCodegenSchemaFromJavaScript
+> Task :react-native-pager-view:generateCodegenSchemaFromJavaScript
+> Task :react-native-reanimated:assertWorkletsVersionTask
+> Task :react-native-reanimated:generateCodegenSchemaFromJavaScript
+> Task :react-native-mmkv:generateCodegenArtifactsFromSchema
+> Task :react-native-mmkv:preBuild
+> Task :react-native-pager-view:generateCodegenArtifactsFromSchema
+> Task :react-native-pager-view:preBuild
+> Task :react-native-reanimated:generateCodegenArtifactsFromSchema
+> Task :react-native-safe-area-context:generateCodegenSchemaFromJavaScript
+> Task :react-native-screens:generateCodegenSchemaFromJavaScript
+> Task :react-native-reanimated:prepareReanimatedHeadersForPrefabs
+> Task :react-native-reanimated:preBuild
+> Task :react-native-safe-area-context:generateCodegenArtifactsFromSchema
+> Task :react-native-safe-area-context:preBuild
+> Task :react-native-track-player:preBuild UP-TO-DATE
+> Task :app:createBundleReleaseJsAndAssets
+Expo Autolinking module resolution enabled
+> Task :react-native-screens:generateCodegenArtifactsFromSchema
+> Task :react-native-screens:preBuild
+> Task :react-native-webrtc:preBuild UP-TO-DATE
+> Task :react-native-svg:generateCodegenSchemaFromJavaScript
+> Task :react-native-view-shot:generateCodegenSchemaFromJavaScript
+> Task :react-native-webview:generateCodegenSchemaFromJavaScript
+> Task :react-native-view-shot:generateCodegenArtifactsFromSchema
+> Task :react-native-view-shot:preBuild
+> Task :react-native-svg:generateCodegenArtifactsFromSchema
+> Task :react-native-svg:preBuild
+> Task :expo:preReleaseBuild
+> Task :react-native-worklets:assertMinimalReactNativeVersionTask
+> Task :react-native-worklets:assertNewArchitectureEnabledTask SKIPPED
+> Task :expo:generateReleaseResValues
+> Task :expo:generateReleaseResources
+> Task :expo:packageReleaseResources
+> Task :expo-constants:preReleaseBuild
+> Task :expo-constants:generateReleaseResValues
+> Task :react-native-webview:generateCodegenArtifactsFromSchema
+> Task :react-native-webview:preBuild
+> Task :expo-dev-client:preReleaseBuild UP-TO-DATE
+> Task :expo-dev-client:generateReleaseResValues
+> Task :expo-constants:generateReleaseResources
+> Task :expo-dev-client:generateReleaseResources
+> Task :expo-constants:packageReleaseResources
+> Task :expo-dev-launcher:preReleaseBuild UP-TO-DATE
+> Task :expo-dev-client:packageReleaseResources
+> Task :expo-dev-menu:preReleaseBuild UP-TO-DATE
+> Task :expo-dev-menu:generateReleaseResValues
+> Task :expo-dev-launcher:generateReleaseResValues
+> Task :expo-dev-menu:generateReleaseResources
+> Task :expo-dev-launcher:generateReleaseResources
+> Task :expo-dev-menu:packageReleaseResources
+> Task :expo-dev-menu-interface:preReleaseBuild UP-TO-DATE
+> Task :expo-dev-launcher:packageReleaseResources
+> Task :expo-json-utils:preReleaseBuild UP-TO-DATE
+> Task :expo-dev-menu-interface:generateReleaseResValues
+> Task :expo-json-utils:generateReleaseResValues
+> Task :expo-json-utils:generateReleaseResources
+> Task :expo-dev-menu-interface:generateReleaseResources
+> Task :react-native-worklets:generateCodegenSchemaFromJavaScript
+> Task :expo-dev-menu-interface:packageReleaseResources
+> Task :expo-log-box:preReleaseBuild UP-TO-DATE
+> Task :expo-json-utils:packageReleaseResources
+> Task :expo-log-box:generateReleaseResValues
+> Task :expo-manifests:preReleaseBuild UP-TO-DATE
+> Task :expo-manifests:generateReleaseResValues
+> Task :expo-log-box:generateReleaseResources
+> Task :expo-log-box:packageReleaseResources
+> Task :expo-modules-core:preReleaseBuild UP-TO-DATE
+> Task :expo-manifests:generateReleaseResources
+> Task :expo-modules-core:generateReleaseResValues
+> Task :expo-modules-core:generateReleaseResources
+> Task :expo-manifests:packageReleaseResources
+> Task :expo-share-intent:preReleaseBuild UP-TO-DATE
+> Task :expo-modules-core:packageReleaseResources
+> Task :expo-updates-interface:preReleaseBuild UP-TO-DATE
+> Task :expo-share-intent:generateReleaseResValues
+> Task :expo-updates-interface:generateReleaseResValues
+> Task :expo-share-intent:generateReleaseResources
+> Task :expo-updates-interface:generateReleaseResources
+> Task :expo-share-intent:packageReleaseResources
+> Task :react-native-async-storage_async-storage:preReleaseBuild
+> Task :expo-updates-interface:packageReleaseResources
+> Task :react-native-community_netinfo:preReleaseBuild
+> Task :react-native-async-storage_async-storage:generateReleaseResValues
+> Task :react-native-community_netinfo:generateReleaseResValues
+> Task :react-native-async-storage_async-storage:generateReleaseResources
+> Task :react-native-community_netinfo:generateReleaseResources
+> Task :react-native-community_netinfo:packageReleaseResources
+> Task :react-native-async-storage_async-storage:packageReleaseResources
+> Task :react-native-gesture-handler:preReleaseBuild
+> Task :react-native-compressor:preReleaseBuild
+> Task :react-native-gesture-handler:generateReleaseResValues
+> Task :react-native-compressor:generateReleaseResValues
+> Task :react-native-compressor:generateReleaseResources
+> Task :react-native-gesture-handler:generateReleaseResources
+> Task :react-native-compressor:packageReleaseResources
+> Task :react-native-gesture-handler:packageReleaseResources
+> Task :react-native-google-signin_google-signin:preReleaseBuild
+> Task :react-native-mmkv:preReleaseBuild
+> Task :react-native-google-signin_google-signin:generateReleaseResValues
+> Task :react-native-mmkv:generateReleaseResValues
+> Task :react-native-google-signin_google-signin:generateReleaseResources
+> Task :react-native-mmkv:generateReleaseResources
+> Task :react-native-google-signin_google-signin:packageReleaseResources
+> Task :react-native-pager-view:preReleaseBuild
+> Task :react-native-mmkv:packageReleaseResources
+> Task :react-native-reanimated:preReleaseBuild
+> Task :react-native-reanimated:generateReleaseResValues
+> Task :react-native-pager-view:generateReleaseResValues
+> Task :react-native-reanimated:generateReleaseResources
+> Task :react-native-pager-view:generateReleaseResources
+> Task :react-native-reanimated:packageReleaseResources
+> Task :react-native-safe-area-context:preReleaseBuild
+> Task :react-native-safe-area-context:generateReleaseResValues
+> Task :react-native-pager-view:packageReleaseResources
+> Task :react-native-worklets:generateCodegenArtifactsFromSchema
+> Task :react-native-screens:preReleaseBuild
+> Task :react-native-safe-area-context:generateReleaseResources
+> Task :react-native-screens:generateReleaseResValues
+> Task :react-native-safe-area-context:packageReleaseResources
+> Task :react-native-svg:preReleaseBuild
+> Task :react-native-svg:generateReleaseResValues
+> Task :react-native-screens:generateReleaseResources
+> Task :react-native-svg:generateReleaseResources
+> Task :react-native-svg:packageReleaseResources
+> Task :react-native-worklets:prepareWorkletsHeadersForPrefabs
+> Task :react-native-track-player:preReleaseBuild UP-TO-DATE
+> Task :react-native-worklets:preBuild
+> Task :react-native-view-shot:preReleaseBuild
+> Task :react-native-view-shot:generateReleaseResValues
+> Task :react-native-track-player:generateReleaseResValues
+> Task :react-native-view-shot:generateReleaseResources
+> Task :react-native-track-player:generateReleaseResources
+> Task :react-native-view-shot:packageReleaseResources
+> Task :react-native-webrtc:preReleaseBuild UP-TO-DATE
+> Task :react-native-webrtc:generateReleaseResValues
+> Task :react-native-webrtc:generateReleaseResources
+> Task :react-native-webrtc:packageReleaseResources
+> Task :react-native-webview:preReleaseBuild
+> Task :react-native-track-player:packageReleaseResources
+> Task :react-native-worklets:preReleaseBuild
+> Task :react-native-worklets:generateReleaseResValues
+> Task :react-native-webview:generateReleaseResValues
+> Task :react-native-worklets:generateReleaseResources
+> Task :react-native-screens:packageReleaseResources
+> Task :react-native-webview:generateReleaseResources
+> Task :expo:extractDeepLinksRelease
+> Task :react-native-webview:packageReleaseResources
+> Task :react-native-worklets:packageReleaseResources
+> Task :expo-dev-client:extractDeepLinksRelease
+> Task :expo-constants:extractDeepLinksRelease
+> Task :expo-dev-client:processReleaseManifest
+> Task :expo-constants:processReleaseManifest
+> Task :expo:processReleaseManifest
+> Task :expo-dev-menu-interface:extractDeepLinksRelease
+> Task :expo-dev-menu:extractDeepLinksRelease
+> Task :expo-dev-launcher:extractDeepLinksRelease
+> Task :expo-dev-launcher:processReleaseManifest
+> Task :expo-dev-menu-interface:processReleaseManifest
+> Task :expo-json-utils:extractDeepLinksRelease
+> Task :expo-log-box:extractDeepLinksRelease
+> Task :expo-dev-menu:processReleaseManifest
+> Task :expo-manifests:extractDeepLinksRelease
+> Task :expo-log-box:processReleaseManifest
+> Task :expo-json-utils:processReleaseManifest
+> Task :expo-modules-core:extractDeepLinksRelease
+> Task :expo-share-intent:extractDeepLinksRelease
+> Task :expo-manifests:processReleaseManifest
+> Task :expo-updates-interface:extractDeepLinksRelease
+> Task :expo-updates-interface:processReleaseManifest
+> Task :expo-share-intent:processReleaseManifest
+> Task :expo-modules-core:processReleaseManifest
+/home/expo/workingdir/build/node_modules/.pnpm/expo-modules-core@55.0.25_react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0_dae4fc5c6ae239ac7dfe0e4c3edd6f5b/node_modules/expo-modules-core/android/src/main/AndroidManifest.xml:8:9-11:45 Warning:
+	meta-data#com.facebook.soloader.enabled@android:value was tagged at AndroidManifest.xml:8 to replace other declarations but no other declaration present
+> Task :react-native-async-storage_async-storage:extractDeepLinksRelease
+> Task :react-native-compressor:extractDeepLinksRelease
+> Task :react-native-community_netinfo:extractDeepLinksRelease
+> Task :react-native-community_netinfo:processReleaseManifest
+package="com.reactnativecommunity.netinfo" found in source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/@react-native-community+netinfo@11.5.2_react-native@0.83.10_@babel+core@7.29.7_@types+r_bbd2806faba43d1b47a788478578465a/node_modules/@react-native-community/netinfo/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.reactnativecommunity.netinfo" from the source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/@react-native-community+netinfo@11.5.2_react-native@0.83.10_@babel+core@7.29.7_@types+r_bbd2806faba43d1b47a788478578465a/node_modules/@react-native-community/netinfo/android/src/main/AndroidManifest.xml.
+> Task :react-native-compressor:processReleaseManifest
+> Task :react-native-async-storage_async-storage:processReleaseManifest
+package="com.reactnativecommunity.asyncstorage" found in source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/@react-native-async-storage+async-storage@2.2.0_react-native@0.83.10_@babel+core@7.29.7_7aa2597352334081991bd9d9339e1f68/node_modules/@react-native-async-storage/async-storage/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.reactnativecommunity.asyncstorage" from the source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/@react-native-async-storage+async-storage@2.2.0_react-native@0.83.10_@babel+core@7.29.7_7aa2597352334081991bd9d9339e1f68/node_modules/@react-native-async-storage/async-storage/android/src/main/AndroidManifest.xml.
+> Task :react-native-google-signin_google-signin:extractDeepLinksRelease
+> Task :react-native-mmkv:extractDeepLinksRelease
+> Task :react-native-gesture-handler:extractDeepLinksRelease
+> Task :react-native-google-signin_google-signin:processReleaseManifest
+package="com.reactnativegooglesignin" found in source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/@react-native-google-signin+google-signin@16.1.4_expo@55.0.28_react-native@0.83.10_@bab_4d552173cc4ea37d1058a6f7f4284869/node_modules/@react-native-google-signin/google-signin/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.reactnativegooglesignin" from the source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/@react-native-google-signin+google-signin@16.1.4_expo@55.0.28_react-native@0.83.10_@bab_4d552173cc4ea37d1058a6f7f4284869/node_modules/@react-native-google-signin/google-signin/android/src/main/AndroidManifest.xml.
+> Task :react-native-mmkv:processReleaseManifest
+> Task :react-native-pager-view:extractDeepLinksRelease
+> Task :react-native-reanimated:extractDeepLinksRelease
+> Task :react-native-gesture-handler:processReleaseManifest
+> Task :react-native-safe-area-context:extractDeepLinksRelease
+> Task :react-native-pager-view:processReleaseManifest
+> Task :react-native-reanimated:processReleaseManifest
+> Task :react-native-safe-area-context:processReleaseManifest
+package="com.th3rdwave.safeareacontext" found in source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/react-native-safe-area-context@5.6.2_react-native@0.83.10_@babel+core@7.29.7_@types+rea_0d96bb8383952b8285068f425c1a96be/node_modules/react-native-safe-area-context/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.th3rdwave.safeareacontext" from the source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/react-native-safe-area-context@5.6.2_react-native@0.83.10_@babel+core@7.29.7_@types+rea_0d96bb8383952b8285068f425c1a96be/node_modules/react-native-safe-area-context/android/src/main/AndroidManifest.xml.
+> Task :react-native-screens:extractDeepLinksRelease
+> Task :react-native-track-player:extractDeepLinksRelease
+> Task :react-native-svg:extractDeepLinksRelease
+> Task :react-native-screens:processReleaseManifest
+> Task :react-native-svg:processReleaseManifest
+> Task :react-native-view-shot:extractDeepLinksRelease
+> Task :react-native-track-player:processReleaseManifest
+package="com.doublesymmetry.trackplayer" found in source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.doublesymmetry.trackplayer" from the source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/AndroidManifest.xml.
+> Task :react-native-webrtc:extractDeepLinksRelease
+> Task :react-native-webview:extractDeepLinksRelease
+> Task :react-native-view-shot:processReleaseManifest
+package="fr.greweb.reactnativeviewshot" found in source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/react-native-view-shot@4.0.3_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-view-shot/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="fr.greweb.reactnativeviewshot" from the source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/react-native-view-shot@4.0.3_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-view-shot/android/src/main/AndroidManifest.xml.
+> Task :react-native-worklets:extractDeepLinksRelease
+> Task :react-native-webrtc:processReleaseManifest
+package="com.oney.WebRTCModule" found in source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/react-native-webrtc@124.0.1_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0_/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.oney.WebRTCModule" from the source AndroidManifest.xml: /home/expo/workingdir/build/node_modules/.pnpm/react-native-webrtc@124.0.1_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0_/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml.
+/home/expo/workingdir/build/node_modules/.pnpm/react-native-webrtc@124.0.1_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0_/node_modules/react-native-webrtc/android/src/main/AndroidManifest.xml:11:5-15:7 Warning:
+	uses-feature#android.hardware.usb.host was tagged at AndroidManifest.xml:11 to replace another declaration but no other declaration present
+> Task :react-native-webview:processReleaseManifest
+> Task :react-native-worklets:processReleaseManifest
+> Task :expo-constants:writeReleaseAarMetadata
+> Task :expo-dev-client:writeReleaseAarMetadata
+> Task :expo:writeReleaseAarMetadata
+> Task :expo-dev-launcher:writeReleaseAarMetadata
+> Task :expo-dev-menu-interface:writeReleaseAarMetadata
+> Task :expo-dev-menu:writeReleaseAarMetadata
+> Task :expo-log-box:writeReleaseAarMetadata
+> Task :expo-manifests:writeReleaseAarMetadata
+> Task :expo-json-utils:writeReleaseAarMetadata
+> Task :expo-modules-core:writeReleaseAarMetadata
+> Task :expo-share-intent:writeReleaseAarMetadata
+> Task :expo-updates-interface:writeReleaseAarMetadata
+> Task :react-native-async-storage_async-storage:writeReleaseAarMetadata
+> Task :react-native-compressor:writeReleaseAarMetadata
+> Task :react-native-community_netinfo:writeReleaseAarMetadata
+> Task :react-native-google-signin_google-signin:writeReleaseAarMetadata
+> Task :react-native-mmkv:writeReleaseAarMetadata
+> Task :react-native-gesture-handler:writeReleaseAarMetadata
+> Task :react-native-reanimated:writeReleaseAarMetadata
+> Task :react-native-pager-view:writeReleaseAarMetadata
+> Task :react-native-safe-area-context:writeReleaseAarMetadata
+> Task :react-native-track-player:writeReleaseAarMetadata
+> Task :react-native-screens:writeReleaseAarMetadata
+> Task :react-native-svg:writeReleaseAarMetadata
+> Task :react-native-view-shot:writeReleaseAarMetadata
+> Task :react-native-webrtc:writeReleaseAarMetadata
+> Task :react-native-webview:writeReleaseAarMetadata
+> Task :react-native-worklets:writeReleaseAarMetadata
+> Task :expo-dev-client:compileReleaseLibraryResources
+> Task :expo-constants:compileReleaseLibraryResources
+> Task :expo:compileReleaseLibraryResources
+> Task :app:createBundleReleaseJsAndAssets
+Starting Metro Bundler
+> Task :expo-dev-client:parseReleaseLocalResources
+> Task :expo:parseReleaseLocalResources
+> Task :expo-constants:parseReleaseLocalResources
+> Task :expo-constants:generateReleaseRFile
+> Task :expo:generateReleaseRFile
+> Task :expo-dev-client:generateReleaseRFile
+> Task :expo-dev-launcher:compileReleaseLibraryResources
+> Task :expo-dev-menu:compileReleaseLibraryResources
+> Task :expo-dev-menu-interface:compileReleaseLibraryResources
+> Task :expo-dev-launcher:parseReleaseLocalResources
+> Task :expo-dev-menu-interface:parseReleaseLocalResources
+> Task :expo-dev-menu:parseReleaseLocalResources
+> Task :expo-dev-launcher:generateReleaseRFile
+> Task :expo-dev-menu-interface:generateReleaseRFile
+> Task :expo-json-utils:compileReleaseLibraryResources
+> Task :expo-dev-menu:generateReleaseRFile
+> Task :expo-log-box:compileReleaseLibraryResources
+> Task :expo-json-utils:parseReleaseLocalResources
+> Task :expo-manifests:compileReleaseLibraryResources
+> Task :expo-log-box:parseReleaseLocalResources
+> Task :expo-json-utils:generateReleaseRFile
+> Task :expo-manifests:parseReleaseLocalResources
+> Task :expo-log-box:generateReleaseRFile
+> Task :expo-modules-core:compileReleaseLibraryResources
+> Task :expo-share-intent:compileReleaseLibraryResources
+> Task :expo-modules-core:parseReleaseLocalResources
+> Task :expo-manifests:generateReleaseRFile
+> Task :expo-modules-core:generateReleaseRFile
+> Task :expo-share-intent:parseReleaseLocalResources
+> Task :expo-updates-interface:compileReleaseLibraryResources
+> Task :react-native-async-storage_async-storage:compileReleaseLibraryResources
+> Task :expo-updates-interface:parseReleaseLocalResources
+> Task :expo-share-intent:generateReleaseRFile
+> Task :react-native-async-storage_async-storage:parseReleaseLocalResources
+> Task :react-native-community_netinfo:compileReleaseLibraryResources
+> Task :expo-updates-interface:generateReleaseRFile
+> Task :react-native-async-storage_async-storage:generateReleaseRFile
+> Task :react-native-compressor:compileReleaseLibraryResources
+> Task :react-native-community_netinfo:parseReleaseLocalResources
+> Task :react-native-gesture-handler:compileReleaseLibraryResources
+> Task :react-native-gesture-handler:parseReleaseLocalResources
+> Task :react-native-compressor:parseReleaseLocalResources
+> Task :react-native-community_netinfo:generateReleaseRFile
+> Task :react-native-compressor:generateReleaseRFile
+> Task :react-native-google-signin_google-signin:compileReleaseLibraryResources
+> Task :react-native-gesture-handler:generateReleaseRFile
+> Task :react-native-mmkv:compileReleaseLibraryResources
+> Task :react-native-pager-view:compileReleaseLibraryResources
+> Task :react-native-google-signin_google-signin:parseReleaseLocalResources
+> Task :react-native-mmkv:parseReleaseLocalResources
+> Task :react-native-pager-view:parseReleaseLocalResources
+> Task :react-native-google-signin_google-signin:generateReleaseRFile
+> Task :react-native-reanimated:compileReleaseLibraryResources
+> Task :react-native-mmkv:generateReleaseRFile
+> Task :react-native-pager-view:generateReleaseRFile
+> Task :react-native-safe-area-context:compileReleaseLibraryResources
+> Task :react-native-reanimated:parseReleaseLocalResources
+> Task :react-native-safe-area-context:parseReleaseLocalResources
+> Task :react-native-safe-area-context:generateReleaseRFile
+> Task :react-native-reanimated:generateReleaseRFile
+> Task :react-native-svg:compileReleaseLibraryResources
+> Task :react-native-screens:compileReleaseLibraryResources
+> Task :react-native-screens:parseReleaseLocalResources
+> Task :react-native-svg:parseReleaseLocalResources
+> Task :react-native-screens:generateReleaseRFile
+> Task :react-native-track-player:compileReleaseLibraryResources
+> Task :react-native-svg:generateReleaseRFile
+> Task :react-native-webrtc:compileReleaseLibraryResources
+> Task :react-native-view-shot:compileReleaseLibraryResources
+> Task :react-native-webrtc:parseReleaseLocalResources
+> Task :react-native-view-shot:parseReleaseLocalResources
+> Task :react-native-track-player:parseReleaseLocalResources
+> Task :react-native-view-shot:generateReleaseRFile
+> Task :react-native-webrtc:generateReleaseRFile
+> Task :react-native-track-player:generateReleaseRFile
+> Task :react-native-worklets:compileReleaseLibraryResources
+> Task :react-native-webview:compileReleaseLibraryResources
+> Task :expo:mergeReleaseShaders
+> Task :react-native-worklets:parseReleaseLocalResources
+> Task :react-native-webview:parseReleaseLocalResources
+> Task :expo:compileReleaseShaders NO-SOURCE
+> Task :expo:generateReleaseAssets UP-TO-DATE
+> Task :expo:mergeReleaseAssets
+> Task :react-native-webview:generateReleaseRFile
+> Task :expo-constants:mergeReleaseShaders
+> Task :react-native-worklets:generateReleaseRFile
+> Task :expo-dev-client:mergeReleaseShaders
+> Task :expo-dev-client:compileReleaseShaders NO-SOURCE
+> Task :expo-dev-client:generateReleaseAssets UP-TO-DATE
+> Task :expo-constants:compileReleaseShaders NO-SOURCE
+> Task :expo-constants:generateReleaseAssets UP-TO-DATE
+> Task :expo-dev-launcher:mergeReleaseShaders
+> Task :expo-dev-launcher:compileReleaseShaders NO-SOURCE
+> Task :expo-dev-launcher:generateReleaseAssets UP-TO-DATE
+> Task :expo-dev-client:mergeReleaseAssets
+> Task :expo-dev-launcher:mergeReleaseAssets
+> Task :expo-dev-menu:mergeReleaseShaders
+> Task :expo-dev-menu:compileReleaseShaders NO-SOURCE
+> Task :expo-dev-menu:generateReleaseAssets UP-TO-DATE
+> Task :expo-dev-menu-interface:mergeReleaseShaders
+> Task :expo-dev-menu-interface:compileReleaseShaders NO-SOURCE
+> Task :expo-dev-menu-interface:generateReleaseAssets UP-TO-DATE
+> Task :expo-constants:mergeReleaseAssets
+> Task :expo-dev-menu:mergeReleaseAssets
+> Task :expo-json-utils:mergeReleaseShaders
+> Task :expo-dev-menu-interface:mergeReleaseAssets
+> Task :expo-json-utils:compileReleaseShaders NO-SOURCE
+> Task :expo-json-utils:generateReleaseAssets UP-TO-DATE
+> Task :expo-log-box:mergeReleaseShaders
+> Task :expo-log-box:compileReleaseShaders NO-SOURCE
+> Task :expo-manifests:mergeReleaseShaders
+> Task :expo-log-box:generateReleaseAssets UP-TO-DATE
+> Task :expo-manifests:compileReleaseShaders NO-SOURCE
+> Task :expo-manifests:generateReleaseAssets UP-TO-DATE
+> Task :expo-json-utils:mergeReleaseAssets
+> Task :expo-log-box:mergeReleaseAssets
+> Task :expo-manifests:mergeReleaseAssets
+> Task :expo-modules-core:mergeReleaseShaders
+> Task :expo-share-intent:mergeReleaseShaders
+> Task :expo-modules-core:compileReleaseShaders NO-SOURCE
+> Task :expo-modules-core:generateReleaseAssets UP-TO-DATE
+> Task :expo-share-intent:compileReleaseShaders NO-SOURCE
+> Task :expo-share-intent:generateReleaseAssets UP-TO-DATE
+> Task :expo-modules-core:mergeReleaseAssets
+> Task :expo-share-intent:mergeReleaseAssets
+> Task :expo-updates-interface:mergeReleaseShaders
+> Task :expo-updates-interface:compileReleaseShaders NO-SOURCE
+> Task :expo-updates-interface:generateReleaseAssets UP-TO-DATE
+> Task :react-native-community_netinfo:mergeReleaseShaders
+> Task :react-native-async-storage_async-storage:mergeReleaseShaders
+> Task :react-native-community_netinfo:compileReleaseShaders NO-SOURCE
+> Task :react-native-community_netinfo:generateReleaseAssets UP-TO-DATE
+> Task :react-native-async-storage_async-storage:compileReleaseShaders NO-SOURCE
+> Task :react-native-async-storage_async-storage:generateReleaseAssets UP-TO-DATE
+> Task :expo-updates-interface:mergeReleaseAssets
+> Task :react-native-community_netinfo:mergeReleaseAssets
+> Task :react-native-compressor:mergeReleaseShaders
+> Task :react-native-async-storage_async-storage:mergeReleaseAssets
+> Task :react-native-compressor:compileReleaseShaders NO-SOURCE
+> Task :react-native-compressor:generateReleaseAssets UP-TO-DATE
+> Task :react-native-google-signin_google-signin:mergeReleaseShaders
+> Task :react-native-gesture-handler:mergeReleaseShaders
+> Task :react-native-google-signin_google-signin:compileReleaseShaders NO-SOURCE
+> Task :react-native-google-signin_google-signin:generateReleaseAssets UP-TO-DATE
+> Task :react-native-gesture-handler:compileReleaseShaders NO-SOURCE
+> Task :react-native-gesture-handler:generateReleaseAssets UP-TO-DATE
+> Task :react-native-compressor:mergeReleaseAssets
+> Task :react-native-google-signin_google-signin:mergeReleaseAssets
+> Task :react-native-gesture-handler:mergeReleaseAssets
+> Task :react-native-mmkv:mergeReleaseShaders
+> Task :react-native-pager-view:mergeReleaseShaders
+> Task :react-native-mmkv:compileReleaseShaders NO-SOURCE
+> Task :react-native-pager-view:compileReleaseShaders NO-SOURCE
+> Task :react-native-pager-view:generateReleaseAssets UP-TO-DATE
+> Task :react-native-reanimated:mergeReleaseShaders
+> Task :react-native-mmkv:generateReleaseAssets UP-TO-DATE
+> Task :react-native-reanimated:compileReleaseShaders NO-SOURCE
+> Task :react-native-reanimated:generateReleaseAssets UP-TO-DATE
+> Task :react-native-pager-view:mergeReleaseAssets
+> Task :react-native-mmkv:mergeReleaseAssets
+> Task :react-native-reanimated:mergeReleaseAssets
+> Task :react-native-svg:mergeReleaseShaders
+> Task :react-native-screens:mergeReleaseShaders
+> Task :react-native-svg:compileReleaseShaders NO-SOURCE
+> Task :react-native-svg:generateReleaseAssets UP-TO-DATE
+> Task :react-native-screens:compileReleaseShaders NO-SOURCE
+> Task :react-native-screens:generateReleaseAssets UP-TO-DATE
+> Task :react-native-safe-area-context:mergeReleaseShaders
+> Task :react-native-svg:mergeReleaseAssets
+> Task :react-native-safe-area-context:compileReleaseShaders NO-SOURCE
+> Task :react-native-safe-area-context:generateReleaseAssets UP-TO-DATE
+> Task :react-native-screens:mergeReleaseAssets
+> Task :react-native-track-player:mergeReleaseShaders
+> Task :react-native-safe-area-context:mergeReleaseAssets
+> Task :react-native-track-player:compileReleaseShaders NO-SOURCE
+> Task :react-native-view-shot:mergeReleaseShaders
+> Task :react-native-track-player:generateReleaseAssets UP-TO-DATE
+> Task :react-native-view-shot:compileReleaseShaders NO-SOURCE
+> Task :react-native-view-shot:generateReleaseAssets UP-TO-DATE
+> Task :react-native-track-player:mergeReleaseAssets
+> Task :react-native-webrtc:mergeReleaseShaders
+> Task :react-native-webrtc:compileReleaseShaders NO-SOURCE
+> Task :react-native-view-shot:mergeReleaseAssets
+> Task :react-native-webrtc:generateReleaseAssets UP-TO-DATE
+> Task :react-native-webview:mergeReleaseShaders
+> Task :react-native-worklets:mergeReleaseShaders
+> Task :react-native-webview:compileReleaseShaders NO-SOURCE
+> Task :react-native-webrtc:mergeReleaseAssets
+> Task :react-native-worklets:compileReleaseShaders NO-SOURCE
+> Task :react-native-webview:generateReleaseAssets UP-TO-DATE
+> Task :react-native-worklets:generateReleaseAssets UP-TO-DATE
+> Task :react-native-compressor:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-webview:mergeReleaseAssets
+> Task :react-native-pager-view:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-worklets:mergeReleaseAssets
+> Task :react-native-track-player:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-pager-view:generateReleaseBuildConfig
+> Task :react-native-compressor:generateReleaseBuildConfig
+> Task :react-native-track-player:generateReleaseBuildConfig
+> Task :app:createBundleReleaseJsAndAssets
+Android node_modules/.pnpm/expo-router@55.0.17_@expo+log-box@55.0.13_@expo+metro-runtime@55.0.12_@types+react@19.2_fa57ff102425499222532962d7069dd7/node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android node_modules/.pnpm/expo-router@55.0.17_@expo+log-box@55.0.13_@expo+metro-runtime@55.0.12_@types+react@19.2_fa57ff102425499222532962d7069dd7/node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓░░░░░░ 66.6% (1768/2186)
+[33m[7m[1m WARN [22m[27m[39m Attempted to import the module "/home/expo/workingdir/build/node_modules/.pnpm/react-native-webrtc@124.0.1_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0_/node_modules/event-target-shim/index" which is not listed in the "exports" of "/home/expo/workingdir/build/node_modules/.pnpm/event-target-shim@6.0.2/node_modules/event-target-shim" under the requested subpath "./index". Falling back to file-based resolution. Consider updating the call site or asking the package maintainer(s) to expose this API.
+Android node_modules/.pnpm/expo-router@55.0.17_@expo+log-box@55.0.13_@expo+metro-runtime@55.0.12_@types+react@19.2_fa57ff102425499222532962d7069dd7/node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (2711/2711)
+Android Bundled 8539ms node_modules/.pnpm/expo-router@55.0.17_@expo+log-box@55.0.13_@expo+metro-runtime@55.0.12_@types+react@19.2_fa57ff102425499222532962d7069dd7/node_modules/expo-router/entry.js (2711 modules)
+Writing bundle output to: /home/expo/workingdir/build/artifacts/mobile/android/app/build/generated/assets/react/release/index.android.bundle
+Writing sourcemap output to: /home/expo/workingdir/build/artifacts/mobile/android/app/build/intermediates/sourcemaps/react/release/index.android.bundle.packager.map
+Copying 90 asset files
+Done writing bundle output
+Done writing sourcemap output
+> Task :react-native-pager-view:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/PagerViewViewManager.kt:10:8 'object MapBuilder : Any' is deprecated. Use Kotlin's built-in collections extensions.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/PagerViewViewManager.kt:41:19 'fun receiveCommand(view: NestedScrollableHost, commandName: String, args: ReadableArray?): Unit' is deprecated. args is not nullable, please update your method signature.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/PagerViewViewManager.kt:91:26 The corresponding parameter in the supertype 'PagerViewViewManager' is named 'parent'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/PagerViewViewManager.kt:204:16 'object MapBuilder : Any' is deprecated. Use Kotlin's built-in collections extensions.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/PagerViewViewManager.kt:205:45 'object MapBuilder : Any' is deprecated. Use Kotlin's built-in collections extensions.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/PagerViewViewManager.kt:206:57 'object MapBuilder : Any' is deprecated. Use Kotlin's built-in collections extensions.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/PagerViewViewManager.kt:207:47 'object MapBuilder : Any' is deprecated. Use Kotlin's built-in collections extensions.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/PagerViewViewPackage.kt:10:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollEvent.kt:6:8 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollEvent.kt:21:82 'constructor<T : Event<T>>(viewTag: Int): Event<T>' is deprecated. Use constructor with explicit surfaceId instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollEvent.kt:27:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollEvent.kt:27:44 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollEvent.kt:28:25 'fun receiveEvent(targetTag: Int, eventName: String, params: WritableMap?): Unit' is deprecated. Use [RCTModernEventEmitter.receiveEvent] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollStateChangedEvent.kt:6:8 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollStateChangedEvent.kt:15:89 'constructor<T : Event<T>>(viewTag: Int): Event<T>' is deprecated. Use constructor with explicit surfaceId instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollStateChangedEvent.kt:20:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollStateChangedEvent.kt:20:44 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageScrollStateChangedEvent.kt:21:25 'fun receiveEvent(targetTag: Int, eventName: String, params: WritableMap?): Unit' is deprecated. Use [RCTModernEventEmitter.receiveEvent] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageSelectedEvent.kt:6:8 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageSelectedEvent.kt:15:69 'constructor<T : Event<T>>(viewTag: Int): Event<T>' is deprecated. Use constructor with explicit surfaceId instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageSelectedEvent.kt:24:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageSelectedEvent.kt:24:44 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-pager-view@8.0.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-pager-view/android/src/main/java/com/reactnativepagerview/event/PageSelectedEvent.kt:25:25 'fun receiveEvent(targetTag: Int, eventName: String, params: WritableMap?): Unit' is deprecated. Use [RCTModernEventEmitter.receiveEvent] instead.
+> Task :react-native-compressor:javaPreCompileRelease
+> Task :react-native-pager-view:javaPreCompileRelease
+> Task :react-native-track-player:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/TrackPlayer.kt:15:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:4:8 'class MediaMetadata : Any, Bundleable' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:5:8 'class Metadata : Any, Parcelable' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:6:8 'class VorbisComment : Any, Metadata.Entry' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:7:8 'class IcyHeaders : Any, Metadata.Entry' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:8:8 'class IcyInfo : Any, Metadata.Entry' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:9:8 'class ChapterFrame : Id3Frame' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:10:8 'class TextInformationFrame : Id3Frame' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:11:8 'class UrlLinkFrame : Id3Frame' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:12:8 'class MdtaMetadataEntry : Any, Metadata.Entry' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:17:36 'class Metadata : Any, Parcelable' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:25:28 'class ChapterFrame : Id3Frame' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:28:28 'class TextInformationFrame : Id3Frame' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:33:62 'field value: String' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:37:66 'field value: String' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:41:63 'field value: String' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:45:69 'field value: String' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:49:62 'field value: String' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:56:63 'field value: String' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:61:28 'class UrlLinkFrame : Id3Frame' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:70:28 'class IcyHeaders : Any, Metadata.Entry' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:98:28 'class IcyInfo : Any, Metadata.Entry' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:117:28 'class VorbisComment : Any, Metadata.Entry' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:153:28 'class MdtaMetadataEntry : Any, Metadata.Entry' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/MetadataAdapter.kt:193:41 'class MediaMetadata : Any, Bundleable' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:3:8 'class Metadata : Any, Parcelable' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:4:8 'class VorbisComment : Any, Metadata.Entry' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:5:8 'class IcyHeaders : Any, Metadata.Entry' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:6:8 'class IcyInfo : Any, Metadata.Entry' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:7:8 'class TextInformationFrame : Id3Frame' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:8:8 'class UrlLinkFrame : Id3Frame' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:9:8 'class MdtaMetadataEntry : Any, Metadata.Entry' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:25:39 'class Metadata : Any, Parcelable' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:37:24 'class TextInformationFrame : Id3Frame' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:41:47 'field value: String' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:45:47 'field value: String' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:49:48 'field value: String' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:53:46 'field value: String' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:57:47 'field value: String' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:62:24 'class UrlLinkFrame : Id3Frame' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:81:31 'class Metadata : Any, Parcelable' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:84:24 'class IcyHeaders : Any, Metadata.Entry' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:87:24 'class IcyInfo : Any, Metadata.Entry' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:112:41 'class Metadata : Any, Parcelable' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:124:30 'class VorbisComment : Any, Metadata.Entry' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:160:37 'class Metadata : Any, Parcelable' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/PlaybackMetadata.kt:171:30 'class MdtaMetadataEntry : Any, Metadata.Entry' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/Track.kt:9:8 'class RawResourceDataSource : BaseDataSource' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/model/Track.kt:40:13 'class RawResourceDataSource : BaseDataSource' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt:8:8 'class LocalBroadcastManager : Any' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt:19:8 'class DefaultLoadControl : Any, LoadControl' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt:20:8 'interface Player : Any' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt:156:34 'interface Player : Any' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt:157:36 'interface Player : Any' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt:158:36 'interface Player : Any' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/module/MusicModule.kt:232:9 'class LocalBroadcastManager : Any' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt:176:13 'var stoppingAppPausesPlayback: Boolean' is deprecated. This will be removed soon.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/service/MusicService.kt:177:17 'var stoppingAppPausesPlayback: Boolean' is deprecated. This will be removed soon.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/utils/BundleUtils.kt:16:19 'fun get(p0: String!): Any?' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/utils/BundleUtils.kt:24:51 'fun getInstance(): ResourceDrawableIdHelper' is deprecated. Use .instance instead, this API is for backward compat.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/utils/BundleUtils.kt:45:19 'fun get(p0: String!): Any?' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/utils/BundleUtils.kt:61:47 'fun getInstance(): ResourceDrawableIdHelper' is deprecated. Use .instance instead, this API is for backward compat.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/utils/BundleUtils.kt:71:47 'fun getInstance(): ResourceDrawableIdHelper' is deprecated. Use .instance instead, this API is for backward compat.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/utils/BundleUtils.kt:105:21 'fun get(p0: String!): Any?' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/utils/BundleUtils.kt:112:21 'fun get(p0: String!): Any?' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-track-player@4.1.2_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-track-player/android/src/main/java/com/doublesymmetry/trackplayer/utils/BundleUtils.kt:119:21 'fun get(p0: String!): Any?' is deprecated. Deprecated in Java.
+> Task :react-native-track-player:javaPreCompileRelease
+> Task :react-native-compressor:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Audio/AudioCompressor.kt:260:30 Java type mismatch: inferred type is 'String?', but 'String' was expected.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Audio/AudioCompressor.kt:267:26 Java type mismatch: inferred type is 'String?', but 'String' was expected.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/CompressorModule.kt:159:15 'fun reject(message: String): Unit' is deprecated. Prefer passing a module-specific error code to JS. Using this method will pass the
+        error code EUNSPECIFIED.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/CompressorPackage.kt:3:8 'class TurboReactPackage : BaseReactPackage' is deprecated. Use BaseReactPackage instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/CompressorPackage.kt:9:27 'class TurboReactPackage : BaseReactPackage' is deprecated. Use BaseReactPackage instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/CompressorPackage.kt:22:50 'constructor(name: String, className: String, canOverrideExistingModule: Boolean, needsEagerInit: Boolean, hasConstants: Boolean, isCxxModule: Boolean, isTurboModule: Boolean): ReactModuleInfo' is deprecated. This constructor is deprecated and will be removed in the future. Use ReactModuleInfo(String, String, boolean, boolean, boolean, boolean)].
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Image/ImageCompressor.kt:29:35 Java type mismatch: inferred type is 'String?', but 'String' was expected.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Image/ImageCompressor.kt:31:39 'fun toURL(): URL!' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Image/ImageCompressor.kt:177:29 Java type mismatch: inferred type is 'String?', but 'String' was expected.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Image/ImageCompressor.kt:182:33 Java type mismatch: inferred type is 'String?', but 'String' was expected.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Image/ImageCompressor.kt:227:17 'field inDither: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Image/ImageCompressor.kt:228:17 'field inPurgeable: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Image/ImageCompressor.kt:229:17 'field inInputShareable: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Image/ImageCompressor.kt:250:13 Condition is always 'true'.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Image/ImageMain.kt:44:23 Java type mismatch: inferred type is 'String?', but 'String' was expected.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Utils/UploaderHelper.kt:106:56 Unchecked cast of 'HashMap<String, Any?>?' to 'Map<String, String>'.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Utils/UploaderHelper.kt:116:62 Unchecked cast of 'HashMap<String, Any?>?' to 'Map<String, String>'.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Utils/createVideoThumbnail.kt:64:115 Unchecked cast of 'HashMap<String, Any?>' to 'Map<String, String>'.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Utils/createVideoThumbnail.kt:108:15 Condition is always 'true'.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Video/AutoVideoCompression.kt:19:29 Java type mismatch: inferred type is 'String?', but 'String' was expected.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Video/VideoCompressorHelper.kt:61:23 'constructor(): Handler' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-compressor@1.19.4_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-compressor/android/src/main/java/com/reactnativecompressor/Video/VideoMain.kt:67:23 Java type mismatch: inferred type is 'String?', but 'String' was expected.
+> Task :react-native-pager-view:compileReleaseJavaWithJavac
+> Task :react-native-pager-view:mergeReleaseGeneratedProguardFiles
+> Task :react-native-track-player:compileReleaseJavaWithJavac
+> Task :react-native-track-player:mergeReleaseGeneratedProguardFiles
+> Task :react-native-pager-view:exportReleaseConsumerProguardFiles
+> Task :react-native-track-player:exportReleaseConsumerProguardFiles
+> Task :react-native-webview:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-google-signin_google-signin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-webview:generateReleaseBuildConfig
+> Task :react-native-google-signin_google-signin:generateReleaseBuildConfig
+> Task :react-native-compressor:compileReleaseJavaWithJavac
+> Task :react-native-compressor:mergeReleaseGeneratedProguardFiles
+> Task :react-native-compressor:exportReleaseConsumerProguardFiles
+> Task :react-native-gesture-handler:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :react-native-gesture-handler:generateReleaseBuildConfig
+> Task :react-native-reanimated:generateReleaseBuildConfig
+> Task :react-native-reanimated:javaPreCompileRelease
+> Task :react-native-worklets:generateReleaseBuildConfig
+> Task :react-native-worklets:javaPreCompileRelease
+> Task :react-native-google-signin_google-signin:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/@react-native-google-signin+google-signin@16.1.4_expo@55.0.28_react-native@0.83.10_@bab_4d552173cc4ea37d1058a6f7f4284869/node_modules/@react-native-google-signin/google-signin/android/src/main/java/com/reactnativegooglesignin/ErrorDto.kt:3:8 'class GoogleSignInStatusCodes : CommonStatusCodes' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/@react-native-google-signin+google-signin@16.1.4_expo@55.0.28_react-native@0.83.10_@bab_4d552173cc4ea37d1058a6f7f4284869/node_modules/@react-native-google-signin/google-signin/android/src/main/java/com/reactnativegooglesignin/ErrorDto.kt:23:31 Condition is always 'true'.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/@react-native-google-signin+google-signin@16.1.4_expo@55.0.28_react-native@0.83.10_@bab_4d552173cc4ea37d1058a6f7f4284869/node_modules/@react-native-google-signin/google-signin/android/src/main/java/com/reactnativegooglesignin/ErrorDto.kt:24:16 'class GoogleSignInStatusCodes : CommonStatusCodes' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/@react-native-google-signin+google-signin@16.1.4_expo@55.0.28_react-native@0.83.10_@bab_4d552173cc4ea37d1058a6f7f4284869/node_modules/@react-native-google-signin/google-signin/android/src/main/java/com/reactnativegooglesignin/ErrorDto.kt:29:33 'class GoogleSignInStatusCodes : CommonStatusCodes' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/@react-native-google-signin+google-signin@16.1.4_expo@55.0.28_react-native@0.83.10_@bab_4d552173cc4ea37d1058a6f7f4284869/node_modules/@react-native-google-signin/google-signin/android/src/main/java/com/reactnativegooglesignin/ErrorDto.kt:30:38 'class GoogleSignInStatusCodes : CommonStatusCodes' is deprecated. Deprecated in Java.
+> Task :react-native-webview:javaPreCompileRelease
+> Task :react-native-google-signin_google-signin:javaPreCompileRelease
+> Task :react-native-worklets:compileReleaseJavaWithJavac
+Note: /home/expo/workingdir/build/node_modules/.pnpm/react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0.83.10_@babel+core@7.29.7__52fb36e27809349d9f7b227c0661e541/node_modules/react-native-worklets/android/src/main/java/com/swmansion/worklets/WorkletsMessageQueueThreadBase.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: /home/expo/workingdir/build/node_modules/.pnpm/react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0.83.10_@babel+core@7.29.7__52fb36e27809349d9f7b227c0661e541/node_modules/react-native-worklets/android/src/main/java/com/swmansion/worklets/WorkletsPackage.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+> Task :react-native-worklets:bundleLibCompileToJarRelease
+> Task :react-native-google-signin_google-signin:compileReleaseJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: /home/expo/workingdir/build/node_modules/.pnpm/@react-native-google-signin+google-signin@16.1.4_expo@55.0.28_react-native@0.83.10_@bab_4d552173cc4ea37d1058a6f7f4284869/node_modules/@react-native-google-signin/google-signin/android/src/main/java/com/reactnativegooglesignin/RNGoogleSigninModule.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+> Task :react-native-google-signin_google-signin:mergeReleaseGeneratedProguardFiles
+> Task :react-native-google-signin_google-signin:exportReleaseConsumerProguardFiles
+> Task :react-native-svg:generateReleaseBuildConfig
+> Task :react-native-svg:javaPreCompileRelease
+> Task :react-native-reanimated:compileReleaseJavaWithJavac
+> Task :react-native-reanimated:bundleLibCompileToJarRelease
+> Task :react-native-gesture-handler:javaPreCompileRelease
+> Task :react-native-safe-area-context:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+> Task :react-native-safe-area-context:generateReleaseBuildConfig
+> Task :react-native-webview:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:22:8 'object MapBuilder : Any' is deprecated. Use Kotlin's built-in collections extensions.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:82:18 'var allowFileAccessFromFileURLs: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:83:18 'var allowUniversalAccessFromFileURLs: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:124:21 'fun allowScanningByMediaScanner(): Unit' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:161:36 'var systemUiVisibility: Int' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:300:14 'object MapBuilder : Any' is deprecated. Use Kotlin's built-in collections extensions.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:350:34 Condition is always 'true'.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:369:38 'var allowUniversalAccessFromFileURLs: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:430:51 Unchecked cast of 'Any?' to 'HashMap<String, String>'.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:486:23 'var savePassword: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:487:23 'var saveFormData: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:557:23 'var allowFileAccessFromFileURLs: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:602:52 'static field FORCE_DARK_ON: Int' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:602:89 'static field FORCE_DARK_OFF: Int' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:603:35 'static fun setForceDark(p0: @NonNull() WebSettings, p1: Int): Unit' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:612:35 'static fun setForceDarkStrategy(p0: @NonNull() WebSettings, p1: Int): Unit' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:614:39 'static field DARK_STRATEGY_PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING: Int' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:658:65 Unchecked cast of 'ArrayList<Any?>' to 'List<Map<String, String>>'.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/RNCWebViewManagerImpl.kt:679:23 'var saveFormData: Boolean' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/SubResourceErrorEvent.kt:5:8 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/SubResourceErrorEvent.kt:11:3 'constructor<T : Event<T>>(viewTag: Int): Event<T>' is deprecated. Use constructor with explicit surfaceId instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/SubResourceErrorEvent.kt:22:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/SubResourceErrorEvent.kt:22:42 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/SubResourceErrorEvent.kt:23:21 'fun receiveEvent(targetTag: Int, eventName: String, params: WritableMap?): Unit' is deprecated. Use [RCTModernEventEmitter.receiveEvent] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopCustomMenuSelectionEvent.kt:5:8 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopCustomMenuSelectionEvent.kt:11:3 'constructor<T : Event<T>>(viewTag: Int): Event<T>' is deprecated. Use constructor with explicit surfaceId instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopCustomMenuSelectionEvent.kt:22:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopCustomMenuSelectionEvent.kt:22:42 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopCustomMenuSelectionEvent.kt:23:21 'fun receiveEvent(targetTag: Int, eventName: String, params: WritableMap?): Unit' is deprecated. Use [RCTModernEventEmitter.receiveEvent] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopHttpErrorEvent.kt:5:8 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopHttpErrorEvent.kt:11:3 'constructor<T : Event<T>>(viewTag: Int): Event<T>' is deprecated. Use constructor with explicit surfaceId instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopHttpErrorEvent.kt:22:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopHttpErrorEvent.kt:22:42 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopHttpErrorEvent.kt:23:21 'fun receiveEvent(targetTag: Int, eventName: String, params: WritableMap?): Unit' is deprecated. Use [RCTModernEventEmitter.receiveEvent] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingErrorEvent.kt:5:8 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingErrorEvent.kt:11:3 'constructor<T : Event<T>>(viewTag: Int): Event<T>' is deprecated. Use constructor with explicit surfaceId instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingErrorEvent.kt:22:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingErrorEvent.kt:22:42 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingErrorEvent.kt:23:21 'fun receiveEvent(targetTag: Int, eventName: String, params: WritableMap?): Unit' is deprecated. Use [RCTModernEventEmitter.receiveEvent] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingFinishEvent.kt:5:8 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingFinishEvent.kt:11:3 'constructor<T : Event<T>>(viewTag: Int): Event<T>' is deprecated. Use constructor with explicit surfaceId instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingFinishEvent.kt:22:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingFinishEvent.kt:22:42 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingFinishEvent.kt:23:21 'fun receiveEvent(targetTag: Int, eventName: String, params: WritableMap?): Unit' is deprecated. Use [RCTModernEventEmitter.receiveEvent] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingProgressEvent.kt:5:8 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingProgressEvent.kt:11:3 'constructor<T : Event<T>>(viewTag: Int): Event<T>' is deprecated. Use constructor with explicit surfaceId instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingProgressEvent.kt:22:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingProgressEvent.kt:22:42 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingProgressEvent.kt:23:21 'fun receiveEvent(targetTag: Int, eventName: String, params: WritableMap?): Unit' is deprecated. Use [RCTModernEventEmitter.receiveEvent] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingStartEvent.kt:5:8 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingStartEvent.kt:11:3 'constructor<T : Event<T>>(viewTag: Int): Event<T>' is deprecated. Use constructor with explicit surfaceId instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingStartEvent.kt:22:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingStartEvent.kt:22:42 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopLoadingStartEvent.kt:23:21 'fun receiveEvent(targetTag: Int, eventName: String, params: WritableMap?): Unit' is deprecated. Use [RCTModernEventEmitter.receiveEvent] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopMessageEvent.kt:5:8 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopMessageEvent.kt:10:75 'constructor<T : Event<T>>(viewTag: Int): Event<T>' is deprecated. Use constructor with explicit surfaceId instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopMessageEvent.kt:21:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopMessageEvent.kt:21:42 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopMessageEvent.kt:22:21 'fun receiveEvent(targetTag: Int, eventName: String, params: WritableMap?): Unit' is deprecated. Use [RCTModernEventEmitter.receiveEvent] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopNewWindowEvent.kt:5:8 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopNewWindowEvent.kt:11:3 'constructor<T : Event<T>>(viewTag: Int): Event<T>' is deprecated. Use constructor with explicit surfaceId instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopNewWindowEvent.kt:22:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopNewWindowEvent.kt:22:42 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopNewWindowEvent.kt:23:21 'fun receiveEvent(targetTag: Int, eventName: String, params: WritableMap?): Unit' is deprecated. Use [RCTModernEventEmitter.receiveEvent] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopRenderProcessGoneEvent.kt:5:8 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopRenderProcessGoneEvent.kt:12:3 'constructor<T : Event<T>>(viewTag: Int): Event<T>' is deprecated. Use constructor with explicit surfaceId instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopRenderProcessGoneEvent.kt:23:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopRenderProcessGoneEvent.kt:23:42 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopRenderProcessGoneEvent.kt:24:21 'fun receiveEvent(targetTag: Int, eventName: String, params: WritableMap?): Unit' is deprecated. Use [RCTModernEventEmitter.receiveEvent] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopShouldStartLoadWithRequestEvent.kt:5:8 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopShouldStartLoadWithRequestEvent.kt:10:89 'constructor<T : Event<T>>(viewTag: Int): Event<T>' is deprecated. Use constructor with explicit surfaceId instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopShouldStartLoadWithRequestEvent.kt:27:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopShouldStartLoadWithRequestEvent.kt:27:42 'interface RCTEventEmitter : JavaScriptModule' is deprecated. Use [RCTModernEventEmitter] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-webview/android/src/main/java/com/reactnativecommunity/webview/events/TopShouldStartLoadWithRequestEvent.kt:28:21 'fun receiveEvent(targetTag: Int, eventName: String, params: WritableMap?): Unit' is deprecated. Use [RCTModernEventEmitter.receiveEvent] instead.
+> Task :react-native-webview:compileReleaseJavaWithJavac
+> Task :react-native-webview:mergeReleaseGeneratedProguardFiles
+> Task :react-native-webview:exportReleaseConsumerProguardFiles
+> Task :react-native-safe-area-context:javaPreCompileRelease
+> Task :react-native-screens:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+> Task :react-native-screens:generateReleaseBuildConfig
+> Task :react-native-svg:compileReleaseJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+> Task :react-native-safe-area-context:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-safe-area-context@5.6.2_react-native@0.83.10_@babel+core@7.29.7_@types+rea_0d96bb8383952b8285068f425c1a96be/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaView.kt:9:8 'class UIManagerModule : ReactContextBaseJavaModule, OnBatchCompleteListener, LifecycleEventListener, UIManager' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-safe-area-context@5.6.2_react-native@0.83.10_@babel+core@7.29.7_@types+rea_0d96bb8383952b8285068f425c1a96be/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaView.kt:50:54 'class UIManagerModule : ReactContextBaseJavaModule, OnBatchCompleteListener, LifecycleEventListener, UIManager' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-safe-area-context@5.6.2_react-native@0.83.10_@babel+core@7.29.7_@types+rea_0d96bb8383952b8285068f425c1a96be/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaView.kt:59:23 'val uiImplementation: UIImplementation!' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-safe-area-context@5.6.2_react-native@0.83.10_@babel+core@7.29.7_@types+rea_0d96bb8383952b8285068f425c1a96be/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaViewShadowNode.kt:9:32 'class LayoutShadowNode : ReactShadowNodeImpl' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-safe-area-context@5.6.2_react-native@0.83.10_@babel+core@7.29.7_@types+rea_0d96bb8383952b8285068f425c1a96be/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaViewShadowNode.kt:110:61 'class NativeViewHierarchyOptimizer : Any' is deprecated. Deprecated in Java.
+> Task :react-native-svg:bundleLibCompileToJarRelease
+> Task :react-native-safe-area-context:compileReleaseJavaWithJavac
+> Task :react-native-safe-area-context:mergeReleaseGeneratedProguardFiles
+> Task :react-native-safe-area-context:exportReleaseConsumerProguardFiles
+> Task :react-native-screens:javaPreCompileRelease
+> Task :react-native-community_netinfo:generateReleaseBuildConfig
+> Task :react-native-community_netinfo:javaPreCompileRelease
+> Task :react-native-community_netinfo:compileReleaseJavaWithJavac
+> Task :react-native-community_netinfo:mergeReleaseGeneratedProguardFiles
+/home/expo/workingdir/build/node_modules/.pnpm/@react-native-community+netinfo@11.5.2_react-native@0.83.10_@babel+core@7.29.7_@types+r_bbd2806faba43d1b47a788478578465a/node_modules/@react-native-community/netinfo/android/src/newarch/com/reactnativecommunity/netinfo/NetInfoModule.java:43: warning: [removal] onCatalystInstanceDestroy() in NativeModule has been deprecated and marked for removal
+    public void onCatalystInstanceDestroy() {
+                ^
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+1 warning
+> Task :react-native-community_netinfo:exportReleaseConsumerProguardFiles
+> Task :react-native-mmkv:generateReleaseBuildConfig
+> Task :react-native-mmkv:javaPreCompileRelease
+> Task :react-native-mmkv:compileReleaseJavaWithJavac
+> Task :react-native-mmkv:mergeReleaseGeneratedProguardFiles
+> Task :react-native-mmkv:exportReleaseConsumerProguardFiles
+> Task :react-native-view-shot:generateReleaseBuildConfig
+> Task :react-native-view-shot:javaPreCompileRelease
+Note: /home/expo/workingdir/build/node_modules/.pnpm/react-native-mmkv@3.3.3_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-mmkv/android/src/main/java/com/mrousavy/mmkv/MmkvPackage.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+> Task :react-native-view-shot:compileReleaseJavaWithJavac
+> Task :react-native-view-shot:mergeReleaseGeneratedProguardFiles
+> Task :react-native-view-shot:exportReleaseConsumerProguardFiles
+> Task :react-native-webrtc:generateReleaseBuildConfig
+> Task :react-native-webrtc:javaPreCompileRelease
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+> Task :react-native-webrtc:compileReleaseJavaWithJavac
+/home/expo/workingdir/build/node_modules/.pnpm/react-native-webrtc@124.0.1_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0_/node_modules/react-native-webrtc/android/src/main/java/com/oney/WebRTCModule/WebRTCModule.java:120: warning: [removal] onCatalystInstanceDestroy() in NativeModule has been deprecated and marked for removal
+    public void onCatalystInstanceDestroy() {
+                ^
+/home/expo/workingdir/build/node_modules/.pnpm/react-native-webrtc@124.0.1_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0_/node_modules/react-native-webrtc/android/src/main/java/com/oney/WebRTCModule/WebRTCModule.java:124: warning: [removal] onCatalystInstanceDestroy() in NativeModule has been deprecated and marked for removal
+        super.onCatalystInstanceDestroy();
+             ^
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: /home/expo/workingdir/build/node_modules/.pnpm/react-native-webrtc@124.0.1_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0_/node_modules/react-native-webrtc/android/src/main/java/com/oney/WebRTCModule/StringUtils.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+2 warnings
+> Task :react-native-webrtc:mergeReleaseGeneratedProguardFiles
+> Task :react-native-webrtc:exportReleaseConsumerProguardFiles
+> Task :react-native-reanimated:mergeReleaseGeneratedProguardFiles
+> Task :react-native-reanimated:exportReleaseConsumerProguardFiles
+> Task :expo:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo:generateReleaseBuildConfig
+> Task :expo-constants:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-constants:generateReleaseBuildConfig
+> Task :expo-modules-core:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-modules-core:generateReleaseBuildConfig
+> Task :app:generateAutolinkingNewArchitectureFiles
+> Task :app:generateAutolinkingPackageList
+> Task :app:generateCodegenSchemaFromJavaScript SKIPPED
+> Task :app:generateCodegenArtifactsFromSchema SKIPPED
+> Task :app:generateReactNativeEntryPoint
+> Task :app:preBuild
+> Task :app:preReleaseBuild
+> Task :app:generateReleaseResValues
+> Task :app:processReleaseGoogleServices
+> Task :react-native-gesture-handler:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-gesture-handler@2.30.1_react-native@0.83.10_@babel+core@7.29.7_@types+reac_df8519d1e23be58c17d5016a58bf916f/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/Extensions.kt:8:8 'class UIManagerModule : ReactContextBaseJavaModule, OnBatchCompleteListener, LifecycleEventListener, UIManager' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-gesture-handler@2.30.1_react-native@0.83.10_@babel+core@7.29.7_@types+reac_df8519d1e23be58c17d5016a58bf916f/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/Extensions.kt:13:29 'class UIManagerModule : ReactContextBaseJavaModule, OnBatchCompleteListener, LifecycleEventListener, UIManager' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-gesture-handler@2.30.1_react-native@0.83.10_@babel+core@7.29.7_@types+reac_df8519d1e23be58c17d5016a58bf916f/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/Extensions.kt:14:32 'class UIManagerModule : ReactContextBaseJavaModule, OnBatchCompleteListener, LifecycleEventListener, UIManager' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-gesture-handler@2.30.1_react-native@0.83.10_@babel+core@7.29.7_@types+reac_df8519d1e23be58c17d5016a58bf916f/node_modules/react-native-gesture-handler/android/src/main/java/com/swmansion/gesturehandler/react/RNGestureHandlerModule.kt:173:53 This synthetic property is based on the getter function 'fun getRootViewTag(): Int' from Kotlin. In the future, synthetic properties will be available only if the base getter function came from Java. Consider replacing this property access with a 'getRootViewTag()' function call.
+> Task :react-native-screens:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/RNScreensPackage.kt:62:9 The corresponding parameter in the supertype 'BaseReactPackage' is named 'name'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/RNScreensPackage.kt:63:9 The corresponding parameter in the supertype 'BaseReactPackage' is named 'reactContext'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/RNScreensPackage.kt:76:17 'constructor(name: String, className: String, canOverrideExistingModule: Boolean, needsEagerInit: Boolean, hasConstants: Boolean, isCxxModule: Boolean, isTurboModule: Boolean): ReactModuleInfo' is deprecated. This constructor is deprecated and will be removed in the future. Use ReactModuleInfo(String, String, boolean, boolean, boolean, boolean)].
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/Screen.kt:24:8 'class UIManagerModule : ReactContextBaseJavaModule, OnBatchCompleteListener, LifecycleEventListener, UIManager' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/Screen.kt:54:77 Unchecked cast of '(CoordinatorLayout.Behavior<View!>?..CoordinatorLayout.Behavior<*>?)' to 'BottomSheetBehavior<Screen>'.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/Screen.kt:426:42 'class UIManagerModule : ReactContextBaseJavaModule, OnBatchCompleteListener, LifecycleEventListener, UIManager' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenContainerViewManager.kt:6:8 'class LayoutShadowNode : ReactShadowNodeImpl' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenContainerViewManager.kt:56:78 'class LayoutShadowNode : ReactShadowNodeImpl' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt:222:31 'var targetElevation: Float' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt:225:13 'fun setHasOptionsMenu(p0: Boolean): Unit' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt:404:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt:411:22 'fun onPrepareOptionsMenu(p0: Menu): Unit' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt:414:18 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackFragment.kt:419:22 'fun onCreateOptionsMenu(p0: Menu, p1: MenuInflater): Unit' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfig.kt:441:22 'val reactNativeHost: ReactNativeHost' is deprecated. You should not use ReactNativeHost directly in the New Architecture. Use ReactHost instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigShadowNode.kt:4:8 'class LayoutShadowNode : ReactShadowNodeImpl' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigShadowNode.kt:10:5 'class LayoutShadowNode : ReactShadowNodeImpl' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigViewManager.kt:9:8 'class LayoutShadowNode : ReactShadowNodeImpl' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackHeaderConfigViewManager.kt:37:78 'class LayoutShadowNode : ReactShadowNodeImpl' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackViewManager.kt:6:8 'class LayoutShadowNode : ReactShadowNodeImpl' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenStackViewManager.kt:65:78 'class LayoutShadowNode : ReactShadowNodeImpl' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenWindowTraits.kt:48:42 'fun replaceSystemWindowInsets(p0: Int, p1: Int, p2: Int, p3: Int): WindowInsetsCompat' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenWindowTraits.kt:49:39 'val systemWindowInsetLeft: Int' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenWindowTraits.kt:51:39 'val systemWindowInsetRight: Int' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreenWindowTraits.kt:52:39 'val systemWindowInsetBottom: Int' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreensShadowNode.kt:4:8 'class LayoutShadowNode : ReactShadowNodeImpl' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreensShadowNode.kt:5:8 'class NativeViewHierarchyManager : Any' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreensShadowNode.kt:6:8 'class NativeViewHierarchyOptimizer : Any' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreensShadowNode.kt:7:8 'class UIManagerModule : ReactContextBaseJavaModule, OnBatchCompleteListener, LifecycleEventListener, UIManager' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreensShadowNode.kt:11:5 'class LayoutShadowNode : ReactShadowNodeImpl' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreensShadowNode.kt:12:63 'class NativeViewHierarchyOptimizer : Any' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreensShadowNode.kt:14:34 'class UIManagerModule : ReactContextBaseJavaModule, OnBatchCompleteListener, LifecycleEventListener, UIManager' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/ScreensShadowNode.kt:14:106 'class NativeViewHierarchyManager : Any' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:7:8 'object ReactFeatureFlags : Any' is deprecated. Use com.facebook.react.internal.featureflags.ReactNativeFeatureFlags instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:25:13 'object ReactFeatureFlags : Any' is deprecated. Use com.facebook.react.internal.featureflags.ReactNativeFeatureFlags instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:32:9 The corresponding parameter in the supertype 'ReactViewGroup' is named 'left'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:33:9 The corresponding parameter in the supertype 'ReactViewGroup' is named 'top'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:34:9 The corresponding parameter in the supertype 'ReactViewGroup' is named 'right'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:35:9 The corresponding parameter in the supertype 'ReactViewGroup' is named 'bottom'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:71:9 The corresponding parameter in the supertype 'RootView' is named 'childView'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:72:9 The corresponding parameter in the supertype 'RootView' is named 'ev'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:79:46 The corresponding parameter in the supertype 'RootView' is named 'ev'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:83:9 The corresponding parameter in the supertype 'RootView' is named 'childView'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:84:9 The corresponding parameter in the supertype 'RootView' is named 'ev'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/BottomSheetDialogRootView.kt:95:34 The corresponding parameter in the supertype 'RootView' is named 't'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/DimmingView.kt:63:9 The corresponding parameter in the supertype 'ReactCompoundView' is named 'touchX'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/DimmingView.kt:64:9 The corresponding parameter in the supertype 'ReactCompoundView' is named 'touchY'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/DimmingView.kt:68:9 The corresponding parameter in the supertype 'ReactCompoundViewGroup' is named 'touchX'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/bottomsheet/DimmingView.kt:69:9 The corresponding parameter in the supertype 'ReactCompoundViewGroup' is named 'touchY'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/gamma/tabs/TabsHostViewManager.kt:37:9 The corresponding parameter in the supertype 'TabsHostViewManager' is named 'view'. This may cause problems when calling this function with named arguments.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/safearea/SafeAreaView.kt:19:8 'class UIManagerModule : ReactContextBaseJavaModule, OnBatchCompleteListener, LifecycleEventListener, UIManager' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/safearea/SafeAreaView.kt:153:45 'fun consumeDisplayCutout(): WindowInsetsCompat' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/safearea/SafeAreaView.kt:194:58 'class UIManagerModule : ReactContextBaseJavaModule, OnBatchCompleteListener, LifecycleEventListener, UIManager' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/safearea/SafeAreaView.kt:201:31 'val uiImplementation: UIImplementation!' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/safearea/paper/SafeAreaViewShadowNode.kt:7:8 'class LayoutShadowNode : ReactShadowNodeImpl' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/safearea/paper/SafeAreaViewShadowNode.kt:8:8 'class NativeViewHierarchyOptimizer : Any' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/safearea/paper/SafeAreaViewShadowNode.kt:14:32 'class LayoutShadowNode : ReactShadowNodeImpl' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/react-native-screens@4.23.0_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0__react@19.2.0/node_modules/react-native-screens/android/src/main/java/com/swmansion/rnscreens/safearea/paper/SafeAreaViewShadowNode.kt:83:63 'class NativeViewHierarchyOptimizer : Any' is deprecated. Deprecated in Java.
+> Task :react-native-gesture-handler:compileReleaseJavaWithJavac
+> Task :react-native-gesture-handler:mergeReleaseGeneratedProguardFiles
+> Task :react-native-gesture-handler:exportReleaseConsumerProguardFiles
+> Task :expo-modules-core:javaPreCompileRelease
+> Task :expo-constants:javaPreCompileRelease
+> Task :expo-dev-client:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-dev-client:dataBindingMergeDependencyArtifactsRelease
+> Task :react-native-screens:compileReleaseJavaWithJavac
+> Task :react-native-screens:mergeReleaseGeneratedProguardFiles
+> Task :react-native-screens:exportReleaseConsumerProguardFiles
+> Task :expo-dev-launcher:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-dev-client:dataBindingGenBaseClassesRelease
+> Task :expo-dev-client:generateReleaseBuildConfig
+> Task :app:mapReleaseSourceSetPaths
+> Task :app:generateReleaseResources
+> Task :expo-dev-client:javaPreCompileRelease
+> Task :expo-dev-menu:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-dev-menu:generateReleaseBuildConfig
+> Task :expo-dev-menu:javaPreCompileRelease
+> Task :expo-dev-menu-interface:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-dev-menu-interface:generateReleaseBuildConfig
+> Task :expo-dev-menu-interface:javaPreCompileRelease
+> Task :expo-json-utils:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-json-utils:generateReleaseBuildConfig
+> Task :expo-json-utils:javaPreCompileRelease
+> Task :expo-log-box:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-log-box:generateReleaseBuildConfig
+> Task :expo-log-box:javaPreCompileRelease
+> Task :expo-manifests:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-manifests:generateReleaseBuildConfig
+> Task :expo-manifests:javaPreCompileRelease
+> Task :expo-share-intent:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-share-intent:generateReleaseBuildConfig
+> Task :expo-share-intent:javaPreCompileRelease
+> Task :expo-updates-interface:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-updates-interface:generateReleaseBuildConfig
+> Task :expo-updates-interface:javaPreCompileRelease
+> Task :expo:javaPreCompileRelease
+> Task :react-native-worklets:mergeReleaseGeneratedProguardFiles
+> Task :react-native-worklets:exportReleaseConsumerProguardFiles
+> Task :react-native-async-storage_async-storage:generateReleaseBuildConfig
+> Task :react-native-async-storage_async-storage:javaPreCompileRelease
+> Task :expo-dev-launcher:dataBindingMergeDependencyArtifactsRelease
+> Task :react-native-async-storage_async-storage:compileReleaseJavaWithJavac
+> Task :react-native-async-storage_async-storage:mergeReleaseGeneratedProguardFiles
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: /home/expo/workingdir/build/node_modules/.pnpm/@react-native-async-storage+async-storage@2.2.0_react-native@0.83.10_@babel+core@7.29.7_7aa2597352334081991bd9d9339e1f68/node_modules/@react-native-async-storage/async-storage/android/src/javaPackage/java/com/reactnativecommunity/asyncstorage/AsyncStoragePackage.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+> Task :react-native-async-storage_async-storage:exportReleaseConsumerProguardFiles
+> Task :react-native-svg:mergeReleaseGeneratedProguardFiles
+> Task :react-native-svg:exportReleaseConsumerProguardFiles
+> Task :expo-dev-launcher:dataBindingGenBaseClassesRelease
+> Task :react-native-async-storage_async-storage:bundleLibCompileToJarRelease
+> Task :expo-dev-launcher:generateReleaseBuildConfig
+> Task :expo-dev-launcher:javaPreCompileRelease
+> Task :react-native-community_netinfo:bundleLibCompileToJarRelease
+> Task :react-native-compressor:bundleLibCompileToJarRelease
+> Task :react-native-gesture-handler:bundleLibCompileToJarRelease
+> Task :react-native-google-signin_google-signin:bundleLibCompileToJarRelease
+> Task :react-native-mmkv:bundleLibCompileToJarRelease
+> Task :react-native-pager-view:bundleLibCompileToJarRelease
+> Task :react-native-safe-area-context:bundleLibCompileToJarRelease
+> Task :react-native-track-player:bundleLibCompileToJarRelease
+> Task :react-native-view-shot:bundleLibCompileToJarRelease
+> Task :react-native-webrtc:bundleLibCompileToJarRelease
+> Task :react-native-screens:bundleLibCompileToJarRelease
+> Task :react-native-webview:bundleLibCompileToJarRelease
+> Task :expo-constants:prepareReleaseArtProfile
+> Task :expo:prepareReleaseArtProfile
+> Task :expo-dev-client:prepareReleaseArtProfile
+> Task :expo-dev-menu:prepareReleaseArtProfile
+> Task :expo-dev-launcher:prepareReleaseArtProfile
+> Task :expo-dev-menu-interface:prepareReleaseArtProfile
+> Task :expo-json-utils:prepareReleaseArtProfile
+> Task :expo-manifests:prepareReleaseArtProfile
+> Task :expo-log-box:prepareReleaseArtProfile
+> Task :expo-modules-core:prepareReleaseArtProfile
+> Task :expo-share-intent:prepareReleaseArtProfile
+> Task :expo-updates-interface:prepareReleaseArtProfile
+> Task :react-native-async-storage_async-storage:prepareReleaseArtProfile
+> Task :react-native-community_netinfo:prepareReleaseArtProfile
+> Task :react-native-compressor:prepareReleaseArtProfile
+> Task :react-native-google-signin_google-signin:prepareReleaseArtProfile
+> Task :react-native-gesture-handler:prepareReleaseArtProfile
+> Task :react-native-mmkv:prepareReleaseArtProfile
+> Task :react-native-reanimated:prepareReleaseArtProfile
+> Task :react-native-pager-view:prepareReleaseArtProfile
+> Task :react-native-safe-area-context:prepareReleaseArtProfile
+> Task :react-native-screens:prepareReleaseArtProfile
+> Task :react-native-svg:prepareReleaseArtProfile
+> Task :react-native-track-player:prepareReleaseArtProfile
+> Task :react-native-webrtc:prepareReleaseArtProfile
+> Task :react-native-view-shot:prepareReleaseArtProfile
+> Task :react-native-worklets:prepareReleaseArtProfile
+> Task :react-native-webview:prepareReleaseArtProfile
+> Task :react-native-async-storage_async-storage:bundleLibRuntimeToJarRelease
+> Task :react-native-community_netinfo:bundleLibRuntimeToJarRelease
+> Task :react-native-compressor:bundleLibRuntimeToJarRelease
+> Task :react-native-gesture-handler:bundleLibRuntimeToJarRelease
+> Task :react-native-google-signin_google-signin:bundleLibRuntimeToJarRelease
+> Task :react-native-mmkv:bundleLibRuntimeToJarRelease
+> Task :react-native-reanimated:bundleLibRuntimeToJarRelease
+> Task :react-native-pager-view:bundleLibRuntimeToJarRelease
+> Task :react-native-safe-area-context:bundleLibRuntimeToJarRelease
+> Task :react-native-svg:bundleLibRuntimeToJarRelease
+> Task :react-native-screens:bundleLibRuntimeToJarRelease
+> Task :react-native-view-shot:bundleLibRuntimeToJarRelease
+> Task :react-native-track-player:bundleLibRuntimeToJarRelease
+> Task :react-native-webrtc:bundleLibRuntimeToJarRelease
+> Task :react-native-webview:bundleLibRuntimeToJarRelease
+> Task :react-native-async-storage_async-storage:processReleaseJavaRes NO-SOURCE
+> Task :react-native-worklets:bundleLibRuntimeToJarRelease
+> Task :react-native-community_netinfo:processReleaseJavaRes NO-SOURCE
+> Task :react-native-compressor:processReleaseJavaRes
+> Task :react-native-gesture-handler:processReleaseJavaRes
+> Task :react-native-mmkv:processReleaseJavaRes NO-SOURCE
+> Task :react-native-google-signin_google-signin:processReleaseJavaRes
+> Task :react-native-reanimated:processReleaseJavaRes NO-SOURCE
+> Task :react-native-pager-view:processReleaseJavaRes
+> Task :react-native-safe-area-context:processReleaseJavaRes
+> Task :react-native-svg:processReleaseJavaRes NO-SOURCE
+> Task :react-native-track-player:processReleaseJavaRes
+> Task :react-native-view-shot:processReleaseJavaRes NO-SOURCE
+> Task :react-native-webrtc:processReleaseJavaRes NO-SOURCE
+> Task :react-native-screens:processReleaseJavaRes
+> Task :react-native-webview:processReleaseJavaRes
+> Task :react-native-worklets:processReleaseJavaRes NO-SOURCE
+> Task :expo:mergeReleaseJniLibFolders
+> Task :expo:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo:copyReleaseJniLibsProjectOnly
+> Task :expo-constants:mergeReleaseJniLibFolders
+> Task :expo-constants:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-constants:copyReleaseJniLibsProjectOnly
+> Task :expo-dev-client:mergeReleaseJniLibFolders
+> Task :expo-dev-client:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-dev-client:copyReleaseJniLibsProjectOnly
+> Task :expo-dev-launcher:mergeReleaseJniLibFolders
+> Task :expo-dev-launcher:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-dev-launcher:copyReleaseJniLibsProjectOnly
+> Task :expo-dev-menu:mergeReleaseJniLibFolders
+> Task :expo-dev-menu:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-dev-menu:copyReleaseJniLibsProjectOnly
+> Task :expo-dev-menu-interface:mergeReleaseJniLibFolders
+> Task :expo-dev-menu-interface:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-dev-menu-interface:copyReleaseJniLibsProjectOnly
+> Task :expo-json-utils:mergeReleaseJniLibFolders
+> Task :expo-json-utils:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-json-utils:copyReleaseJniLibsProjectOnly
+> Task :expo-log-box:mergeReleaseJniLibFolders
+> Task :expo-log-box:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-log-box:copyReleaseJniLibsProjectOnly
+> Task :expo-manifests:mergeReleaseJniLibFolders
+> Task :expo-manifests:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-manifests:copyReleaseJniLibsProjectOnly
+> Task :expo-modules-core:mergeReleaseJniLibFolders
+> Task :expo-share-intent:mergeReleaseJniLibFolders
+> Task :expo-share-intent:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-share-intent:copyReleaseJniLibsProjectOnly
+> Task :expo-updates-interface:mergeReleaseJniLibFolders
+> Task :expo-updates-interface:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-updates-interface:copyReleaseJniLibsProjectOnly
+> Task :react-native-async-storage_async-storage:mergeReleaseJniLibFolders
+> Task :react-native-async-storage_async-storage:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-async-storage_async-storage:copyReleaseJniLibsProjectOnly
+> Task :react-native-community_netinfo:mergeReleaseJniLibFolders
+> Task :react-native-community_netinfo:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-community_netinfo:copyReleaseJniLibsProjectOnly
+> Task :react-native-compressor:mergeReleaseJniLibFolders
+> Task :react-native-compressor:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-compressor:copyReleaseJniLibsProjectOnly
+> Task :react-native-gesture-handler:mergeReleaseJniLibFolders
+> Task :react-native-google-signin_google-signin:mergeReleaseJniLibFolders
+> Task :react-native-google-signin_google-signin:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-google-signin_google-signin:copyReleaseJniLibsProjectOnly
+> Task :react-native-mmkv:mergeReleaseJniLibFolders
+> Task :react-native-mmkv:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-mmkv:copyReleaseJniLibsProjectOnly
+> Task :react-native-pager-view:mergeReleaseJniLibFolders
+> Task :react-native-pager-view:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-pager-view:copyReleaseJniLibsProjectOnly
+> Task :react-native-reanimated:mergeReleaseJniLibFolders
+> Task :react-native-safe-area-context:mergeReleaseJniLibFolders
+> Task :react-native-safe-area-context:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-safe-area-context:copyReleaseJniLibsProjectOnly
+> Task :expo-modules-core:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-modules-core@55.0.25_react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0_dae4fc5c6ae239ac7dfe0e4c3edd6f5b/node_modules/expo-modules-core/android/src/main/java/expo/modules/apploader/AppLoaderProvider.kt:34:52 Unchecked cast of 'Class<*>!' to 'Class<out HeadlessAppLoader>'.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-modules-core@55.0.25_react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0_dae4fc5c6ae239ac7dfe0e4c3edd6f5b/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt:13:8 'class UIManagerModule : ReactContextBaseJavaModule, OnBatchCompleteListener, LifecycleEventListener, UIManager' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-modules-core@55.0.25_react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0_dae4fc5c6ae239ac7dfe0e4c3edd6f5b/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt:21:8 'typealias ErrorManagerModule = JSLoggerModule' is deprecated. Use JSLoggerModule instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-modules-core@55.0.25_react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0_dae4fc5c6ae239ac7dfe0e4c3edd6f5b/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt:59:13 'val hostingRuntimeContext: MainRuntime' is deprecated. Use AppContext.runtimeContext instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-modules-core@55.0.25_react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0_dae4fc5c6ae239ac7dfe0e4c3edd6f5b/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt:257:21 'typealias ErrorManagerModule = JSLoggerModule' is deprecated. Use JSLoggerModule instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-modules-core@55.0.25_react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0_dae4fc5c6ae239ac7dfe0e4c3edd6f5b/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt:366:21 'val DEFAULT: Int' is deprecated. UIManagerType.DEFAULT will be deleted in the next release of React Native. Use [LEGACY] instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-modules-core@55.0.25_react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0_dae4fc5c6ae239ac7dfe0e4c3edd6f5b/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/AppContext.kt:367:10 'class UIManagerModule : ReactContextBaseJavaModule, OnBatchCompleteListener, LifecycleEventListener, UIManager' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-modules-core@55.0.25_react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0_dae4fc5c6ae239ac7dfe0e4c3edd6f5b/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/defaultmodules/NativeModulesProxyModule.kt:16:5 'fun Constants(legacyConstantsProvider: () -> Map<String, Any?>): Unit' is deprecated. Use `Constant` or `Property` instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-modules-core@55.0.25_react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0_dae4fc5c6ae239ac7dfe0e4c3edd6f5b/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/views/ViewDefinitionBuilder.kt:464:16 'val errorManager: JSLoggerModule?' is deprecated. Use AppContext.jsLogger instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-modules-core@55.0.25_react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0_dae4fc5c6ae239ac7dfe0e4c3edd6f5b/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/views/ViewDefinitionBuilder.kt:464:30 'fun reportExceptionToLogBox(codedException: CodedException): Unit' is deprecated. Use appContext.jsLogger.error(...) instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-modules-core@55.0.25_react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0_dae4fc5c6ae239ac7dfe0e4c3edd6f5b/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/views/ViewManagerDefinition.kt:41:16 'val errorManager: JSLoggerModule?' is deprecated. Use AppContext.jsLogger instead.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-modules-core@55.0.25_react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0_dae4fc5c6ae239ac7dfe0e4c3edd6f5b/node_modules/expo-modules-core/android/src/main/java/expo/modules/kotlin/views/ViewManagerDefinition.kt:41:30 'fun reportExceptionToLogBox(codedException: CodedException): Unit' is deprecated. Use appContext.jsLogger.error(...) instead.
+> Task :app:createReleaseCompatibleScreenManifests
+> Task :app:extractDeepLinksRelease
+> Task :react-native-worklets:configureCMakeRelWithDebInfo[arm64-v8a]
+Checking the license for package CMake 3.22.1 in /home/expo/Android/Sdk/licenses
+License for package CMake 3.22.1 accepted.
+Preparing "Install CMake 3.22.1 v.3.22.1".
+"Install CMake 3.22.1 v.3.22.1" ready.
+Installing CMake 3.22.1 in /home/expo/Android/Sdk/cmake/3.22.1
+"Install CMake 3.22.1 v.3.22.1" complete.
+"Install CMake 3.22.1 v.3.22.1" finished.
+> Task :app:processReleaseMainManifest
+/home/expo/workingdir/build/artifacts/mobile/android/app/src/main/AndroidManifest.xml Warning:
+	uses-feature#android.hardware.usb.host was tagged at AndroidManifest.xml:0 to replace another declaration but no other declaration present
+/home/expo/workingdir/build/artifacts/mobile/android/app/src/main/AndroidManifest.xml Warning:
+	provider#expo.modules.filesystem.FileSystemFileProvider@android:authorities was tagged at AndroidManifest.xml:0 to replace other declarations but no other declaration present
+/home/expo/workingdir/build/artifacts/mobile/android/app/src/main/AndroidManifest.xml Warning:
+	activity#expo.modules.imagepicker.ExpoCropImageActivity@android:exported was tagged at AndroidManifest.xml:0 to replace other declarations but no other declaration present
+> Task :app:expoReleaseOverrideMaxSdkConflicts
+[33m---------- Expo Max Sdk Override Plugin ----------[0m
+[33m>>> WARNING: Found 1 permission(s) with conflicting 'android:maxSdkVersion' declarations.[0m
+[33m    - android.permission.READ_MEDIA_IMAGES[0m
+[33m      > Defined WITH `android:maxSdkVersion` in: /home/expo/.gradle/caches/9.0.0/transforms/41d5c276a4b536ca11749ad519179f01/transformed/expo.modules.screencapture-55.0.16/AndroidManifest.xml[0m
+[33m      > Defined WITHOUT `android:maxSdkVersion` in: /home/expo/workingdir/build/artifacts/mobile/android/app/src/main/AndroidManifest.xml[0m
+[33m>>> Removing 'android:maxSdkVersion' from these permissions in the final manifest to prevent runtime issues.[0m
+[33m>>> Removed 'android:maxSdkVersion' from 1 instance(s) in the final manifest.[0m
+[33m--------------------------------------------------[0m
+> Task :app:processReleaseManifest
+> Task :app:processApplicationManifestReleaseForBundle
+> Task :react-native-screens:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :app:mergeReleaseResources
+> Task :app:checkReleaseAarMetadata
+> Task :expo-modules-core:compileReleaseJavaWithJavac
+Note: /home/expo/workingdir/build/node_modules/.pnpm/expo-modules-core@55.0.25_react-native-worklets@0.7.4_@babel+core@7.29.7_react-native@0_dae4fc5c6ae239ac7dfe0e4c3edd6f5b/node_modules/expo-modules-core/android/src/main/java/expo/modules/adapters/react/ModuleRegistryAdapter.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+> Task :app:packageReleaseResources
+> Task :app:parseReleaseLocalResources
+> Task :app:processReleaseManifestForPackage
+> Task :expo-modules-core:bundleLibCompileToJarRelease
+> Task :expo-constants:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-constants@55.0.17_expo@55.0.28_react-native@0.83.10_@babel+core@7.29.7_@types+react@19.2.17_react@19.2.0_/node_modules/expo-constants/android/src/main/java/expo/modules/constants/ConstantsModule.kt:13:5 'fun Constants(legacyConstantsProvider: () -> Map<String, Any?>): Unit' is deprecated. Use `Constant` or `Property` instead.
+> Task :app:extractReleaseVersionControlInfo
+> Task :app:mergeReleaseShaders
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :app:mergeReleaseAssets
+> Task :expo-constants:compileReleaseJavaWithJavac
+> Task :expo-constants:bundleLibCompileToJarRelease
+> Task :expo-dev-client:compileReleaseKotlin NO-SOURCE
+> Task :react-native-screens:buildCMakeRelWithDebInfo[arm64-v8a]
+> Task :expo-dev-client:compileReleaseJavaWithJavac
+> Task :expo-dev-client:bundleLibCompileToJarRelease
+> Task :expo-dev-menu:compileReleaseKotlin
+> Task :expo-dev-launcher:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-dev-launcher@55.0.38_expo@55.0.28/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/DevLauncherPackage.kt:15:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+> Task :app:processReleaseResources
+> Task :expo-dev-launcher:compileReleaseJavaWithJavac
+> Task :expo-dev-launcher:bundleLibCompileToJarRelease
+> Task :expo-dev-menu-interface:compileReleaseKotlin NO-SOURCE
+> Task :expo-dev-menu:compileReleaseJavaWithJavac
+> Task :expo-dev-menu:bundleLibCompileToJarRelease
+> Task :expo-dev-menu-interface:compileReleaseJavaWithJavac
+> Task :expo-dev-menu-interface:bundleLibCompileToJarRelease
+> Task :expo-json-utils:compileReleaseKotlin
+> Task :expo-json-utils:compileReleaseJavaWithJavac
+> Task :expo-json-utils:bundleLibCompileToJarRelease
+> Task :app:bundleReleaseResources
+> Task :expo-log-box:compileReleaseKotlin
+> Task :expo-manifests:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-manifests@55.0.19_expo@55.0.28/node_modules/expo-manifests/android/src/main/java/expo/modules/manifests/core/EmbeddedManifest.kt:19:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-manifests@55.0.19_expo@55.0.28/node_modules/expo-manifests/android/src/main/java/expo/modules/manifests/core/EmbeddedManifest.kt:19:86 'fun getLegacyID(): String' is deprecated. Prefer scopeKey or projectId depending on use case.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-manifests@55.0.19_expo@55.0.28/node_modules/expo-manifests/android/src/main/java/expo/modules/manifests/core/ExpoUpdatesManifest.kt:16:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-manifests@55.0.19_expo@55.0.28/node_modules/expo-manifests/android/src/main/java/expo/modules/manifests/core/Manifest.kt:13:3 Deprecations and opt-ins on a method overridden from 'Any' may not be reported.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo-manifests@55.0.19_expo@55.0.28/node_modules/expo-manifests/android/src/main/java/expo/modules/manifests/core/Manifest.kt:15:12 'fun getRawJson(): JSONObject' is deprecated. Prefer to use specific field getters.
+> Task :expo-manifests:compileReleaseJavaWithJavac
+> Task :expo-log-box:compileReleaseJavaWithJavac
+> Task :expo-manifests:bundleLibCompileToJarRelease
+> Task :expo-log-box:bundleLibCompileToJarRelease
+> Task :expo-modules-core:mergeReleaseGeneratedProguardFiles
+> Task :expo-modules-core:exportReleaseConsumerProguardFiles
+> Task :expo-log-box:mergeReleaseGeneratedProguardFiles
+> Task :expo-log-box:exportReleaseConsumerProguardFiles
+> Task :expo-dev-launcher:mergeReleaseGeneratedProguardFiles
+> Task :expo-dev-launcher:exportReleaseConsumerProguardFiles
+> Task :expo-dev-menu-interface:mergeReleaseGeneratedProguardFiles
+> Task :expo-dev-menu-interface:exportReleaseConsumerProguardFiles
+> Task :expo-constants:mergeReleaseGeneratedProguardFiles
+> Task :expo-constants:exportReleaseConsumerProguardFiles
+> Task :expo-dev-client:mergeReleaseGeneratedProguardFiles
+> Task :expo-dev-client:exportReleaseConsumerProguardFiles
+> Task :expo-dev-menu:mergeReleaseGeneratedProguardFiles
+> Task :expo-dev-menu:exportReleaseConsumerProguardFiles
+> Task :expo-manifests:mergeReleaseGeneratedProguardFiles
+> Task :expo-manifests:exportReleaseConsumerProguardFiles
+> Task :expo-json-utils:mergeReleaseGeneratedProguardFiles
+> Task :expo-json-utils:exportReleaseConsumerProguardFiles
+> Task :app:buildKotlinToolingMetadata
+> Task :react-native-worklets:buildCMakeRelWithDebInfo[arm64-v8a][worklets]
+> Task :expo-updates-interface:compileReleaseKotlin
+> Task :expo-share-intent:compileReleaseKotlin
+> Task :expo-updates-interface:compileReleaseJavaWithJavac
+> Task :expo-updates-interface:bundleLibCompileToJarRelease
+> Task :expo-updates-interface:mergeReleaseGeneratedProguardFiles
+> Task :expo-updates-interface:exportReleaseConsumerProguardFiles
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateReleaseBuildConfig
+> Task :app:javaPreCompileRelease
+> Task :app:checkReleaseDuplicateClasses
+> Task :expo-constants:bundleLibRuntimeToJarRelease
+> Task :app:mergeReleaseArtProfile
+> Task :expo-dev-client:bundleLibRuntimeToJarRelease
+> Task :expo-dev-menu:bundleLibRuntimeToJarRelease
+> Task :expo-dev-launcher:bundleLibRuntimeToJarRelease
+> Task :expo-dev-menu-interface:bundleLibRuntimeToJarRelease
+> Task :expo-json-utils:bundleLibRuntimeToJarRelease
+> Task :expo-share-intent:compileReleaseJavaWithJavac
+> Task :expo-manifests:bundleLibRuntimeToJarRelease
+> Task :expo-log-box:bundleLibRuntimeToJarRelease
+> Task :expo-share-intent:bundleLibCompileToJarRelease
+> Task :expo-updates-interface:bundleLibRuntimeToJarRelease
+> Task :expo-share-intent:mergeReleaseGeneratedProguardFiles
+> Task :expo-share-intent:exportReleaseConsumerProguardFiles
+> Task :expo-share-intent:bundleLibRuntimeToJarRelease
+> Task :app:extractProguardFiles
+> Task :expo-constants:processReleaseJavaRes
+> Task :expo-dev-client:processReleaseJavaRes NO-SOURCE
+> Task :expo-dev-launcher:processReleaseJavaRes
+> Task :expo-dev-menu:processReleaseJavaRes
+> Task :expo-dev-menu-interface:processReleaseJavaRes NO-SOURCE
+> Task :expo-json-utils:processReleaseJavaRes
+> Task :expo-log-box:processReleaseJavaRes
+> Task :expo-manifests:processReleaseJavaRes
+> Task :expo-modules-core:processReleaseJavaRes
+> Task :expo-share-intent:processReleaseJavaRes
+> Task :expo-updates-interface:processReleaseJavaRes
+> Task :app:mergeReleaseStartupProfile
+> Task :expo-modules-core:bundleLibRuntimeToJarRelease
+> Task :app:mergeReleaseJniLibFolders
+> Task :react-native-svg:mergeReleaseJniLibFolders
+> Task :react-native-svg:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-svg:copyReleaseJniLibsProjectOnly
+> Task :react-native-track-player:mergeReleaseJniLibFolders
+> Task :react-native-track-player:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-screens:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :react-native-track-player:copyReleaseJniLibsProjectOnly
+> Task :react-native-view-shot:mergeReleaseJniLibFolders
+> Task :react-native-view-shot:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-view-shot:copyReleaseJniLibsProjectOnly
+> Task :react-native-webrtc:mergeReleaseJniLibFolders
+> Task :react-native-webrtc:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-webrtc:copyReleaseJniLibsProjectOnly
+> Task :react-native-webview:mergeReleaseJniLibFolders
+> Task :react-native-webview:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-webview:copyReleaseJniLibsProjectOnly
+> Task :app:writeReleaseAppMetadata
+> Task :app:collectReleaseDependencies
+> Task :app:configureReleaseDependencies
+> Task :expo:extractProguardFiles
+> Task :expo-constants:createFullJarRelease
+> Task :expo-constants:extractProguardFiles
+> Task :expo-modules-core:createFullJarRelease
+> Task :expo-modules-core:extractProguardFiles
+> Task :expo-modules-core:prepareLintJarForPublish
+> Task :expo-constants:prepareLintJarForPublish
+> Task :expo-dev-client:createFullJarRelease
+> Task :expo-dev-client:extractProguardFiles
+> Task :expo-dev-client:prepareLintJarForPublish
+> Task :expo-dev-launcher:createFullJarRelease
+> Task :expo-dev-launcher:extractProguardFiles
+> Task :expo-dev-launcher:prepareLintJarForPublish
+> Task :expo-dev-menu:createFullJarRelease
+> Task :expo-dev-menu:extractProguardFiles
+> Task :expo-dev-menu:prepareLintJarForPublish
+> Task :expo-dev-menu-interface:createFullJarRelease
+> Task :expo-dev-menu-interface:extractProguardFiles
+> Task :expo-dev-menu-interface:prepareLintJarForPublish
+> Task :expo-json-utils:createFullJarRelease
+> Task :expo-json-utils:extractProguardFiles
+> Task :expo-json-utils:prepareLintJarForPublish
+> Task :expo-log-box:createFullJarRelease
+> Task :expo-log-box:extractProguardFiles
+> Task :expo-log-box:prepareLintJarForPublish
+> Task :expo-manifests:createFullJarRelease
+> Task :expo-manifests:extractProguardFiles
+> Task :expo-manifests:prepareLintJarForPublish
+> Task :expo-share-intent:createFullJarRelease
+> Task :expo-share-intent:extractProguardFiles
+> Task :expo-share-intent:prepareLintJarForPublish
+> Task :expo-updates-interface:createFullJarRelease
+> Task :expo-updates-interface:extractProguardFiles
+> Task :expo-updates-interface:prepareLintJarForPublish
+> Task :expo:prepareLintJarForPublish
+> Task :react-native-async-storage_async-storage:createFullJarRelease
+> Task :react-native-async-storage_async-storage:extractProguardFiles
+> Task :expo:compileReleaseKotlin
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo@55.0.28_@babel+core@7.29.7_@expo+dom-webview@55.0.6_@expo+metro-runtime@55.0.12_ex_c29144b83405a24f72247aab9d44482d/node_modules/expo/android/src/main/java/expo/modules/ExpoModulesPackage.kt:34:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo@55.0.28_@babel+core@7.29.7_@expo+dom-webview@55.0.6_@expo+metro-runtime@55.0.12_ex_c29144b83405a24f72247aab9d44482d/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:22:8 'class ReactInstanceManager : Any' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo@55.0.28_@babel+core@7.29.7_@expo+dom-webview@55.0.6_@expo+metro-runtime@55.0.12_ex_c29144b83405a24f72247aab9d44482d/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:102:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo@55.0.28_@babel+core@7.29.7_@expo+dom-webview@55.0.6_@expo+metro-runtime@55.0.12_ex_c29144b83405a24f72247aab9d44482d/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:102:43 'class ReactInstanceManager : Any' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo@55.0.28_@babel+core@7.29.7_@expo+dom-webview@55.0.6_@expo+metro-runtime@55.0.12_ex_c29144b83405a24f72247aab9d44482d/node_modules/expo/android/src/main/java/expo/modules/ReactActivityDelegateWrapper.kt:103:21 'val reactInstanceManager: ReactInstanceManager' is deprecated. Deprecated in Java.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo@55.0.28_@babel+core@7.29.7_@expo+dom-webview@55.0.6_@expo+metro-runtime@55.0.12_ex_c29144b83405a24f72247aab9d44482d/node_modules/expo/android/src/main/java/expo/modules/fetch/ExpoFetchModule.kt:31:39 'constructor(reactContext: ReactContext): ForwardingCookieHandler' is deprecated. Use the default constructor.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo@55.0.28_@babel+core@7.29.7_@expo+dom-webview@55.0.6_@expo+metro-runtime@55.0.12_ex_c29144b83405a24f72247aab9d44482d/node_modules/expo/android/src/main/java/expo/modules/fetch/NativeResponse.kt:42:16 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/expo/workingdir/build/node_modules/.pnpm/expo@55.0.28_@babel+core@7.29.7_@expo+dom-webview@55.0.6_@expo+metro-runtime@55.0.12_ex_c29144b83405a24f72247aab9d44482d/node_modules/expo/android/src/main/java/expo/modules/fetch/NativeResponse.kt:44:11 'fun deallocate(): Unit' is deprecated. Use sharedObjectDidRelease() instead.
+> Task :react-native-screens:buildCMakeRelWithDebInfo[armeabi-v7a]
+> Task :expo:compileReleaseJavaWithJavac
+> Task :expo:mergeReleaseGeneratedProguardFiles
+> Task :expo:exportReleaseConsumerProguardFiles
+> Task :expo:bundleLibCompileToJarRelease
+> Task :react-native-async-storage_async-storage:generateReleaseLintModel
+> Task :expo:bundleLibRuntimeToJarRelease
+> Task :expo:processReleaseJavaRes
+> Task :expo:createFullJarRelease
+> Task :react-native-async-storage_async-storage:prepareLintJarForPublish
+> Task :react-native-community_netinfo:createFullJarRelease
+> Task :react-native-community_netinfo:extractProguardFiles
+> Task :react-native-community_netinfo:generateReleaseLintModel
+> Task :react-native-community_netinfo:prepareLintJarForPublish
+> Task :react-native-compressor:createFullJarRelease
+> Task :react-native-compressor:extractProguardFiles
+> Task :react-native-screens:configureCMakeRelWithDebInfo[x86]
+> Task :react-native-worklets:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :app:compileReleaseKotlin FAILED
+e: file:///home/expo/workingdir/build/artifacts/mobile/android/app/src/main/java/com/afuchat/mobile/AfuChatShareShortcutsModule.kt:133:20 Unresolved reference 'currentActivity'.
+> Task :react-native-compressor:generateReleaseLintModel
+> Task :react-native-screens:buildCMakeRelWithDebInfo[x86]
+> Task :react-native-worklets:buildCMakeRelWithDebInfo[armeabi-v7a][worklets]
+[Incubating] Problems report is available at: file:///home/expo/workingdir/build/artifacts/mobile/android/build/reports/problems/problems-report.html
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+For more on this, please refer to https://docs.gradle.org/9.0.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+781 actionable tasks: 781 executed
+FAILURE: Build failed with an exception.
+* What went wrong:
+Execution failed for task ':app:compileReleaseKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to generate a Build Scan (Powered by Develocity).
+> Get more help at https://help.gradle.org.
+BUILD FAILED in 5m 28s
+See the profiling report at: file:///home/expo/workingdir/build/artifacts/mobile/android/build/reports/profile/profile-2026-08-27-09-48-11.html
+A fine-grained performance profile is available: use the --scan option.
+Error: Gradle build failed with unknown error. See logs for the "Run gradlew" phase for more information.
