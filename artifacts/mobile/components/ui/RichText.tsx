@@ -12,7 +12,8 @@
  * Also renders URLs, @mentions, and #hashtags as tappable links.
  */
 import React, { useEffect, useMemo, useState } from "react";
-import { Image, Linking, Platform, StyleSheet, Text } from "react-native";
+import { Image as RNImage, Linking, Platform, StyleSheet, Text } from "react-native";
+import Image from "@/components/ui/OptimizedImage";
 import { router } from "expo-router";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { useOpenLink, useOpenLinkActions } from "@/lib/useOpenLink";

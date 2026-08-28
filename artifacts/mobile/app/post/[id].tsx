@@ -14,7 +14,7 @@ import {
   ActivityIndicator,
   Animated,
   FlatList,
-  Image,
+  Image as RNImage,
   Keyboard,
   Linking,
   Platform,
@@ -27,6 +27,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
+import Image from "@/components/ui/OptimizedImage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";

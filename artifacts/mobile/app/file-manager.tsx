@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Image,
+  Image as RNImage,
   Linking,
   Modal,
   Platform,
@@ -11,6 +11,7 @@ import {
   Text,
   View,
 } from "react-native";
+import Image from "@/components/ui/OptimizedImage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";

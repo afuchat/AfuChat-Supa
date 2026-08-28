@@ -3,7 +3,7 @@ import {
   ActivityIndicator,
   Animated,
   FlatList,
-  Image,
+  Image as RNImage,
   KeyboardAvoidingView,
   Linking,
   Modal,
@@ -18,6 +18,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Image from "@/components/ui/OptimizedImage";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";

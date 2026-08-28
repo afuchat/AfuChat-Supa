@@ -2,18 +2,16 @@
  * ─── Image Prefetcher ──────────────────────────────────────────────────────────
  *
  * Concurrency-limited background prefetch queue. Call after loading any list
- * (chats, feed, communities) so avatars and thumbnails are on disk before the
- * user scrolls to them.
+ * (chats, feed, communities) so avatars and thumbnails are warm in the
+ * expo-image cache before the user scrolls to them.
  *
  * Rules:
- *  • Max 4 concurrent downloads (avoids choking the network for real requests)
- *  • Already-cached URLs (in mem cache) are skipped with zero I/O
+ *  • Max 4 concurrent prefetches (avoids choking the network for real requests)
  *  • Duplicate enqueues for the same URL are de-duplicated
  *  • Avatars have higher priority than thumbnails
  */
 
-import { Platform } from "react-native";
-import { getCachedImageUriSync, downloadAndCache } from "./mediaCache";
+import { Image as ExpoImage } from "expo-image";
 
 type PrefetchItem = { url: string; type: "avatar" | "thumb" };
 
@@ -26,10 +24,7 @@ let _active = 0;
 const MAX_CONCURRENT = 4;
 
 function enqueue(item: PrefetchItem) {
-  if (Platform.OS === "web") return;
   if (!item.url || !item.url.startsWith("http")) return;
-  // Skip if already in memory cache
-  if (getCachedImageUriSync(item.url)) return;
   if (_seen.has(item.url)) return;
   _seen.add(item.url);
   // Avatars go to the front of the queue
@@ -45,7 +40,9 @@ function _drain() {
   while (_active < MAX_CONCURRENT && _queue.length > 0) {
     const item = _queue.shift()!;
     _active++;
-    downloadAndCache(item.url, item.type)
+    // Let expo-image use its native disk cache and decoder. This keeps
+    // prefetching aligned with the component that will render the image.
+    ExpoImage.prefetch(item.url, "memory-disk")
       .catch(() => {})
       .finally(() => {
         _active--;

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Image,
+  Image as RNImage,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -12,6 +12,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import Image from "@/components/ui/OptimizedImage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";

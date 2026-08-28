@@ -3,7 +3,7 @@ import {
   ActivityIndicator,
   Animated,
   FlatList,
-  Image,
+  Image as RNImage,
   Keyboard,
   LayoutAnimation,
   Linking,
@@ -22,6 +22,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Image from "@/components/ui/OptimizedImage";
 
 // Cap screen width so attachment bubbles don't fill an entire desktop monitor.
 const _SW = Math.min(Dimensions.get("window").width, 480);

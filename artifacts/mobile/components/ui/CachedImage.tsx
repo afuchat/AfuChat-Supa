@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Image as ExpoImage, type ImageProps } from "expo-image";
-import { getCachedImageUri, getCachedImageUriSync } from "@/lib/storage/mediaCache";
 
 type Props = Omit<ImageProps, "source"> & {
   uri: string | null | undefined;
@@ -10,64 +9,26 @@ type Props = Omit<ImageProps, "source"> & {
 /**
  * Persistent remote image — instant, offline-first.
  *
- * On first render the component reads the in-memory cache synchronously so
- * if the image was already downloaded this session it renders with the local
- * path immediately (zero flash, zero network). If not in memory, it falls
- * back to the remote URL while kicking off a background download to permanent
- * documentDirectory storage — next time the same URL is requested, the local
- * copy is used and the component renders instantly.
- *
- * expo-image cachePolicy="memory-disk" provides an additional OS-level cache
- * layer on top of our permanent store, so the fast path is: mem-cache hit
- * (same session) → expo-image disk cache (between restarts) → our permanent
- * documentDirectory copy → network download (first time only).
+ * expo-image owns the complete loading pipeline: native memory/disk caching,
+ * bitmap downsampling, and recycled-cell cleanup. Keeping one cache owner
+ * avoids a second FileSystem/SQLite download path and duplicate bitmaps.
  */
 export function CachedImage({ uri, cacheType = "thumb", ...props }: Props) {
-  // Sync read: if this URL is in the in-memory hot cache, use it immediately
-  // — no useEffect, no state update, no re-render flash.
-  const [resolvedUri, setResolvedUri] = useState<string>(() => {
-    if (!uri) return "";
-    return getCachedImageUriSync(uri) ?? uri;
-  });
-
-  useEffect(() => {
-    if (!uri) {
-      setResolvedUri("");
-      return;
-    }
-
-    // Sync check again in case this effect fires before initial state is read
-    const sync = getCachedImageUriSync(uri);
-    if (sync) {
-      setResolvedUri(sync);
-      return;
-    }
-
-    // Not in memory — show remote URL now, swap to local path when ready
-    setResolvedUri(uri);
-
-    let cancelled = false;
-    getCachedImageUri(uri, cacheType)
-      .then((localUri) => {
-        if (!cancelled && localUri && localUri !== uri) {
-          setResolvedUri(localUri);
-        }
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-    };
-  }, [uri, cacheType]);
-
-  if (!resolvedUri) return null;
+  // cacheType remains part of the public API for existing callers. Native
+  // caching is now owned entirely by expo-image rather than a second
+  // FileSystem/SQLite downloader, which avoids duplicate downloads and
+  // full-size bitmap allocations.
+  void cacheType;
+  if (!uri) return null;
 
   return (
     <ExpoImage
       {...props}
-      source={{ uri: resolvedUri }}
+      source={{ uri }}
       cachePolicy="memory-disk"
       transition={0}
+      allowDownscaling
+      recyclingKey={uri}
     />
   );
 }

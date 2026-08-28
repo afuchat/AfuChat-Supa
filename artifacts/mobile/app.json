@@ -163,12 +163,12 @@
             "targetSdkVersion": 36,
             "minSdkVersion": 24,
             "kotlinVersion": "2.1.21",
-            "enableProguardInReleaseBuilds": true,
-            "enableShrinkResources": true,
-            "enableMinifyInReleaseBuilds": true
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
           }
         }
       ],
+      "./plugins/withAndroidBuildOptimization",
       "./plugins/withAndroidAbiSplits",
       "./plugins/withProguardRules",
       "expo-secure-store",

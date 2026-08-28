@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
-  Image,
+  Image as RNImage,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Image from "@/components/ui/OptimizedImage";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";

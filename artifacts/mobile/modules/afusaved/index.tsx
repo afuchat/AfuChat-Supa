@@ -7,8 +7,9 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Image,
+  Image as RNImage,
 } from "react-native";
+import Image from "@/components/ui/OptimizedImage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";

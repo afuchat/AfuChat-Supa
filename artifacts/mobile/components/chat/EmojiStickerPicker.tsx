@@ -13,7 +13,7 @@ import {
   Animated,
   Easing,
   FlatList,
-  Image,
+  Image as RNImage,
   ScrollView,
   StyleSheet,
   Text,
@@ -22,6 +22,7 @@ import {
   View,
   ActivityIndicator,
 } from "react-native";
+import Image from "@/components/ui/OptimizedImage";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BlurView } from "expo-blur";
 import { emojisByCategory } from "rn-emoji-keyboard";

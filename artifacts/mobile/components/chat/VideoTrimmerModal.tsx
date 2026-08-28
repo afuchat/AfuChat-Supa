@@ -9,8 +9,9 @@ import {
   StyleSheet,
   ActivityIndicator,
   Platform,
-  Image,
+  Image as RNImage,
 } from "react-native";
+import Image from "@/components/ui/OptimizedImage";
 import { Ionicons } from "@expo/vector-icons";
 // Type-only — stripped at compile time, never triggers native module load
 import type { AVPlaybackStatus } from "expo-av";

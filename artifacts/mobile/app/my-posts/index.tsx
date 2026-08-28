@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   FlatList,
-  Image,
+  Image as RNImage,
   RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import Image from "@/components/ui/OptimizedImage";
 import { PostSkeleton } from "@/components/ui/Skeleton";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

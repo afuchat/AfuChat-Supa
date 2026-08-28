@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import {
   Animated,
-  Image,
+  Image as RNImage,
   PanResponder,
   Platform,
   StatusBar,
@@ -11,6 +11,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
+import Image from "@/components/ui/OptimizedImage";
 
 const IL_MESSAGING  = require("@/assets/illustrations/messaging.webp");
 const IL_COMMUNITY  = require("@/assets/illustrations/community.webp");

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
-  Image,
+  Image as RNImage,
   Modal,
   Platform,
   ScrollView,
@@ -13,6 +13,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
+import Image from "@/components/ui/OptimizedImage";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { router, useLocalSearchParams } from "expo-router";

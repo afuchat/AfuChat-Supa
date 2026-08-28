@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Image,
+  Image as RNImage,
   Platform,
   RefreshControl,
   ScrollView,
@@ -12,6 +12,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
+import Image from "@/components/ui/OptimizedImage";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";

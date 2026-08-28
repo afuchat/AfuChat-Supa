@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Animated,
   Dimensions,
-  Image,
+  Image as RNImage,
   Modal,
   PanResponder,
   Platform,
@@ -19,6 +19,7 @@ import {
   Text,
   View,
 } from "react-native";
+import Image from "@/components/ui/OptimizedImage";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";

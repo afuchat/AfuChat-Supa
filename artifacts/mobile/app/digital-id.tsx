@@ -3,7 +3,7 @@ import {
   ActivityIndicator,
   Animated,
   Easing,
-  Image,
+  Image as RNImage,
   Platform,
   ScrollView,
   StyleSheet,
@@ -12,6 +12,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
+import Image from "@/components/ui/OptimizedImage";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import Svg, { Line } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";

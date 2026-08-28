@@ -5,8 +5,9 @@
 | Setting | Value |
 |---|---|
 | R8 enabled | **Yes** (all release builds — APK and AAB) |
-| Resource shrinking | **Yes** (`enableShrinkResources: true`) |
+| Resource shrinking | **Yes** (`enableShrinkResourcesInReleaseBuilds: true`) |
 | JS minification | **Yes** (`enableMinifyInReleaseBuilds: true`) |
+| Android Gradle Plugin | **9.0.0** (generated Android project) |
 | Mapping file | Generated automatically on every release build |
 | Config mechanism | Expo config plugin (`plugins/withProguardRules.js`) |
 
@@ -22,9 +23,8 @@ R8 is activated via `expo-build-properties` in `app.json`:
     "plugins": [
       ["expo-build-properties", {
         "android": {
-          "enableProguardInReleaseBuilds": true,
-          "enableShrinkResources": true,
-          "enableMinifyInReleaseBuilds": true
+          "enableMinifyInReleaseBuilds": true,
+          "enableShrinkResourcesInReleaseBuilds": true
         }
       }]
     ]
