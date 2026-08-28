@@ -345,7 +345,16 @@ const VideoItem = React.memo(function VideoItem({
 }) {
   const { accent } = useAppAccent();
   const insets = useSafeAreaInsets();
-  const player = useVideoPlayer(null, (p) => { p.loop = true; p.muted = false; });
+  // On web, create the player with its final stable source. expo-video's web
+  // replace() calls HTMLMediaElement.play() without handling the returned
+  // promise, so replacing the fallback URL with a resolved/cache URL can
+  // produce a global "interrupted by a new load request" error. Native
+  // players still start empty and use replaceAsync below because that path
+  // supports the native player lifecycle.
+  const player = useVideoPlayer(
+    Platform.OS === "web" ? { uri: item.video_url } : null,
+    (p) => { p.loop = true; p.muted = false; },
+  );
   const videoViewRef = useRef<VideoView>(null);
   const videoEndFiredRef = useRef(false);
   const [inPip, setInPip] = useState(false);
@@ -416,7 +425,7 @@ const VideoItem = React.memo(function VideoItem({
   // When an error occurs fall back directly to the raw video_url, bypassing cache/manifest
   const playbackUri = videoError ? item.video_url : (cachedUri || resolved.uri || item.video_url);
   const shouldMountVideo = isActive || isNearActive;
-  const sourceReadyRef = useRef(false);
+  const sourceReadyRef = useRef(Platform.OS === "web" && !!item.video_url);
   const preloadOnly = !isActive && isNearActive;
   const showExpand = !!item.content && (item.content.split("\n").length > 2 || item.content.length > 120);
 
@@ -581,6 +590,15 @@ const VideoItem = React.memo(function VideoItem({
   useEffect(() => {
     if (!playbackUri || !shouldMountVideo) {
       sourceReadyRef.current = false;
+      return;
+    }
+
+    // The web player already received item.video_url in useVideoPlayer().
+    // Keep that source stable on web; the optimized manifest/cache URL can
+    // arrive later and replacing it is what interrupts pending HTML play()
+    // requests. Native playback keeps the async replacement path.
+    if (Platform.OS === "web") {
+      sourceReadyRef.current = true;
       return;
     }
 
@@ -1497,7 +1515,21 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
   // Realtime like/reply count updates — only fire DB calls for videos that
   // are actually loaded in this feed (avoids count queries for unrelated posts).
   useEffect(() => {
-    const channel = supabase.channel(`video-feed-realtime:${id ?? "embed"}`)
+    const channelName = `video-feed-realtime:${id ?? "embed"}`;
+    const channelTopic = `realtime:${channelName}`;
+
+    // React Strict Mode and fast tab transitions can run the next effect
+    // before Supabase has finished removing the previous channel. Supabase
+    // rejects adding postgres_changes handlers to that still-subscribed
+    // channel, which otherwise takes down the whole Shorts screen.
+    const staleChannels = supabase.getChannels().filter(
+      (candidate) => candidate.topic === channelTopic,
+    );
+    staleChannels.forEach((staleChannel) => {
+      void supabase.removeChannel(staleChannel).catch(() => {});
+    });
+
+    const channel = supabase.channel(channelName)
       .on("postgres_changes", { event: "*", schema: "public", table: "post_acknowledgments" }, (payload: any) => {
         const postId = payload.new?.post_id || payload.old?.post_id;
         if (!postId || !loadedVideoIdsRef.current.has(postId)) return;
@@ -1511,7 +1543,7 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
           .then(({ count }) => { setVideos((prev) => prev.map((v) => v.id === postId ? { ...v, replyCount: count || 0 } : v)); });
       })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { void supabase.removeChannel(channel).catch(() => {}); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 

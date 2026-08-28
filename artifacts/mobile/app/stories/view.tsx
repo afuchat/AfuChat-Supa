@@ -76,7 +76,14 @@ export default function ViewStoryScreen() {
   const [mediaDownloading, setMediaDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [mediaError, setMediaError] = useState(false);
-  const storyVideoPlayer = useVideoPlayer(null, (p) => { p.loop = false; p.muted = false; });
+  // expo-video's web replace() calls HTMLMediaElement.play() without
+  // handling its promise. Give web a new player with the resolved source
+  // instead of replacing a currently loading source; native keeps the
+  // existing player/replacement lifecycle below.
+  const storyVideoPlayer = useVideoPlayer(
+    Platform.OS === "web" && mediaUri ? { uri: mediaUri } : null,
+    (p) => { p.loop = false; p.muted = false; },
+  );
   const storyVideoRef = useRef<VideoView>(null);
   const [inPip, setInPip] = useState(false);
   const videoFinishedRef = React.useRef(false);
@@ -344,6 +351,13 @@ export default function ViewStoryScreen() {
   useEffect(() => {
     videoFinishedRef.current = false;
     if (!isVideoStory || !mediaUri) { safePause(storyVideoPlayer); return; }
+
+    if (Platform.OS === "web") {
+      setMediaReady(true);
+      if (!paused) safePlay(storyVideoPlayer);
+      return;
+    }
+
     let cancelled = false;
     storyVideoPlayer.replaceAsync({ uri: mediaUri })
       .then(() => { if (!paused) safePlay(storyVideoPlayer); if (!cancelled) setMediaReady(true); })

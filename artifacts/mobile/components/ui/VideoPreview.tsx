@@ -36,7 +36,10 @@ export default function VideoPreview({
 
   useEffect(() => {
     if (!uri) return;
-    player.replaceAsync({ uri }).catch(() => {});
+    // useVideoPlayer recreates the player when uri changes. Calling
+    // replaceAsync here as well causes expo-video's web adapter to start a
+    // second load while the first play promise is pending, which surfaces as
+    // "The play() request was interrupted by a new load request."
     player.loop = isLooping;
     player.muted = isMuted;
     player.playbackRate = playbackRate;
