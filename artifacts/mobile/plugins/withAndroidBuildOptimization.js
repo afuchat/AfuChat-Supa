@@ -7,6 +7,7 @@
 const {
   withProjectBuildGradle,
   withSettingsGradle,
+  withGradleProperties,
   withDangerousMod,
 } = require("@expo/config-plugins");
 const fs = require("fs");
@@ -82,4 +83,32 @@ function withGradleWrapper(config) {
   ]);
 }
 
-module.exports = (config) => withGradleWrapper(withAgp(config));
+/**
+ * expo-build-properties normally writes these values into the generated
+ * release build type. Keep the Gradle properties explicit as a fallback:
+ * Expo templates have changed the generated build.gradle shape across SDK
+ * releases, while these properties remain stable and are consumed by the
+ * React Native/Expo release template.
+ */
+function withReleaseOptimizations(config) {
+  return withGradleProperties(config, (config) => {
+    const properties = config.modResults;
+    const ensureProperty = (key, value) => {
+      const existing = properties.find(
+        (property) => property.type === "property" && property.key === key,
+      );
+      if (existing) {
+        existing.value = value;
+      } else {
+        properties.push({ type: "property", key, value });
+      }
+    };
+
+    ensureProperty("android.enableMinifyInReleaseBuilds", "true");
+    ensureProperty("android.enableShrinkResourcesInReleaseBuilds", "true");
+    return config;
+  });
+}
+
+module.exports = (config) =>
+  withReleaseOptimizations(withGradleWrapper(withAgp(config)));
