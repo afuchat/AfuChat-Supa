@@ -116,9 +116,12 @@ export function autoDownloadChatAttachments(
 export async function requestGalleryPermissionOnce(): Promise<boolean> {
   try {
     const ML = await import("expo-media-library");
-    const { status: current } = await ML.getPermissionsAsync();
+    // Chat auto-save only creates new assets; it never reads the user's
+    // existing gallery. Write-only avoids Android's selected-photos access
+    // flow, which can otherwise appear again while each new asset is saved.
+    const { status: current } = await ML.getPermissionsAsync(true);
     if (current === "granted") return true;
-    const { status } = await ML.requestPermissionsAsync();
+    const { status } = await ML.requestPermissionsAsync(true);
     return status === "granted";
   } catch {
     return false;
@@ -161,8 +164,10 @@ export async function saveAttachmentToGallery(url: string): Promise<boolean> {
     }
     if (!localPath) return false;
 
-    // Request permissions — this CAN show a dialog, called from user action
-    const { status } = await ML.requestPermissionsAsync();
+    // Request write-only permission — this can show a dialog, but only from
+    // the explicit Save to Phone action. Reading existing gallery photos is
+    // not needed to save a received attachment.
+    const { status } = await ML.requestPermissionsAsync(true);
     if (status !== "granted") return false;
 
     const asset = await ML.createAssetAsync(localPath);
@@ -272,7 +277,10 @@ async function _saveToDeviceLibrary(
     // Check permission WITHOUT requesting — no dialog during background download
     let status: string;
     try {
-      const perm = await ML.getPermissionsAsync();
+      // This code runs after an attachment download and must never prompt.
+      // We only need write access to create a new gallery asset; asking for
+      // read access here can invoke Android's selected-photos UI per asset.
+      const perm = await ML.getPermissionsAsync(true);
       status = perm.status;
     } catch {
       // Permission check itself can throw on Android if the manifest doesn't
