@@ -155,10 +155,11 @@ function Shell({ children }: { children: ReactNode }) {
     '/profile': ['Profile', 'Your identity and AfuChat preferences.'],
   };
   const [title, subtitle] = pageMeta[path] ?? ['AfuChat', 'Stay close to what matters.'];
-  const isChat = path === '/chat';
+  const activePath = path === '/' ? '/chat' : path;
+  const isChat = path === '/' || path === '/chat';
   return (
     <div className="app-shell">
-      <Sidebar path={path} />
+      <Sidebar path={activePath} />
       <main className="main-column">
         {!isChat && <Topbar title={title} subtitle={subtitle} onTheme={() => setDark((value) => !value)} dark={dark} onSearch={setSearch} search={search} onInstall={installApp} canInstall={Boolean(installPrompt)} />}
         {isChat ? <ChatPage globalSearch={search} /> : <div className="content">{children}</div>}
@@ -337,7 +338,7 @@ function NotFound() {
 
 function Router() {
   const [location] = useLocation();
-  return <Shell><ErrorBoundary resetKey={location}><Switch><Route path="/" component={HomePage} /><Route path="/chat" component={() => <ChatPage globalSearch="" />} /><Route path="/discover" component={DiscoverPage} /><Route path="/shorts" component={ShortsPage} /><Route path="/communities" component={CommunitiesPage} /><Route path="/assistant" component={AssistantPage} /><Route path="/apps" component={AppsPage} /><Route path="/files" component={FilesPage} /><Route path="/profile" component={ProfilePage} /><Route component={NotFound} /></Switch></ErrorBoundary></Shell>;
+  return <Shell><ErrorBoundary resetKey={location}><Switch><Route path="/" component={() => <ChatPage globalSearch="" />} /><Route path="/chat" component={() => <ChatPage globalSearch="" />} /><Route path="/discover" component={DiscoverPage} /><Route path="/shorts" component={ShortsPage} /><Route path="/communities" component={CommunitiesPage} /><Route path="/assistant" component={AssistantPage} /><Route path="/apps" component={AppsPage} /><Route path="/files" component={FilesPage} /><Route path="/profile" component={ProfilePage} /><Route component={NotFound} /></Switch></ErrorBoundary></Shell>;
 }
 
 function App() {

@@ -179,7 +179,7 @@
 @keyframes skeleton { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
 /* Chat workspace */
-.chat-layout { display: grid; grid-template-columns: 305px minmax(400px, 1fr) 280px; height: calc(100dvh - 72px); min-height: 590px; }
+.chat-layout { display: grid; grid-template-columns: 305px minmax(400px, 1fr) 280px; height: 100dvh; min-height: 590px; }
 .conversation-panel { border-right: 1px solid hsl(var(--border)); background: hsl(var(--card) / .54); display: flex; flex-direction: column; min-width: 0; }
 .conversation-head { padding: 21px 18px 14px; }
 .conversation-head-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
@@ -257,7 +257,7 @@
   .sidebar { width:62px;flex-basis:62px;padding:17px 8px;align-items:center;gap:22px; }
   .brand {padding:0;} .brand img {width:38px;height:38px;} .brand-name,.sidebar-section-label,.nav-item span,.nav-badge,.profile-mini-copy,.profile-mini > svg {display:none;} .nav-list {gap:7px;} .nav-item {width:44px;height:44px;padding:0;justify-content:center;} .sidebar-bottom {width:100%;} .profile-mini {padding:0;justify-content:center;border:0;} .profile-mini .avatar {width:36px;height:36px;}
   .topbar {padding:0 16px;height:64px;flex-basis:64px;} .topbar-heading p {display:none;} .content {padding:20px 15px;} .search-box input {width:170px;}
-  .chat-layout {height:calc(100dvh - 64px);min-height:0;grid-template-columns:1fr;} .conversation-panel {display:none;} .chat-header {padding:0 16px;} .message-scroll {padding:18px 14px;} .message-compose {padding:11px 12px 13px;}
+   .chat-layout {height:100dvh;min-height:0;grid-template-columns:1fr;} .conversation-panel {display:none;} .chat-header {padding:0 16px;} .message-scroll {padding:18px 14px;} .message-compose {padding:11px 12px 13px;}
   .hero-grid,.home-lower,.shorts-layout,.assistant-layout {grid-template-columns:1fr;} .metric-grid {grid-template-columns:1fr 1fr 1fr;gap:7px;} .metric {padding:12px;} .metric-value {font-size:18px;} .discover-grid {grid-template-columns:1fr 1fr;} .app-grid {grid-template-columns:1fr 1fr;} .settings-grid {grid-template-columns:1fr;} .profile-hero {align-items:flex-start;flex-wrap:wrap;} .profile-actions {margin-left:85px;margin-top:-8px;} .file-table th:nth-child(3),.file-table td:nth-child(3) {display:none;}
 }
 @media (max-width: 470px) {
