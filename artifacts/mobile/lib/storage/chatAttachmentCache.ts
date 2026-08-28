@@ -15,11 +15,13 @@
 // All metadata (url → local path) is stored in the existing `media_cache` SQLite
 // table using media_type values: chat_image, chat_gif, chat_audio, chat_file.
 
-import { Platform } from "react-native";
 import * as FileSystem from "expo-file-system/legacy";
 import { getDB } from "./db";
+import { storage } from "./mmkv";
 
 const BASE = ((FileSystem as any).documentDirectory ?? "") + "afuchat_media/chat/";
+const GALLERY_WRITE_PERMISSION_KEY = "chat_gallery_write_permission";
+let _galleryPermissionRequest: Promise<boolean> | null = null;
 
 const DIRS: Record<string, string> = {
   image:       BASE + "images/",
@@ -114,18 +116,37 @@ export function autoDownloadChatAttachments(
  * Returns true if permission was granted (or was already granted).
  */
 export async function requestGalleryPermissionOnce(): Promise<boolean> {
-  try {
-    const ML = await import("expo-media-library");
-    // Chat auto-save only creates new assets; it never reads the user's
-    // existing gallery. Write-only avoids Android's selected-photos access
-    // flow, which can otherwise appear again while each new asset is saved.
-    const { status: current } = await ML.getPermissionsAsync(true);
-    if (current === "granted") return true;
-    const { status } = await ML.requestPermissionsAsync(true);
-    return status === "granted";
-  } catch {
-    return false;
-  }
+  if (_galleryPermissionRequest) return _galleryPermissionRequest;
+
+  _galleryPermissionRequest = (async () => {
+    try {
+      const ML = await import("expo-media-library");
+      // Chat auto-save only creates new assets; it never reads the user's
+      // existing gallery. Write-only avoids Android's selected-photos access
+      // flow, which can otherwise appear again while each new asset is saved.
+      const { status: current } = await ML.getPermissionsAsync(true);
+      if (current === "granted") {
+        storage.setString(GALLERY_WRITE_PERMISSION_KEY, "granted");
+        return true;
+      }
+
+      // A denial is remembered so a failed Save to Phone action cannot reopen
+      // the native dialog on every subsequent image. A silent status check
+      // above still lets a later Settings change take effect.
+      if (storage.getString(GALLERY_WRITE_PERMISSION_KEY) === "denied") return false;
+
+      const { status } = await ML.requestPermissionsAsync(true);
+      const granted = status === "granted";
+      storage.setString(GALLERY_WRITE_PERMISSION_KEY, granted ? "granted" : "denied");
+      return granted;
+    } catch {
+      return false;
+    } finally {
+      _galleryPermissionRequest = null;
+    }
+  })();
+
+  return _galleryPermissionRequest;
 }
 
 /**
@@ -149,8 +170,6 @@ export async function openChatFile(localPath: string): Promise<void> {
  */
 export async function saveAttachmentToGallery(url: string): Promise<boolean> {
   try {
-    const ML = await import("expo-media-library");
-
     // Resolve local path from memory or SQLite
     let localPath: string | null = _mem.get(url) ?? null;
     if (!localPath) {
@@ -164,11 +183,11 @@ export async function saveAttachmentToGallery(url: string): Promise<boolean> {
     }
     if (!localPath) return false;
 
-    // Request write-only permission — this can show a dialog, but only from
-    // the explicit Save to Phone action. Reading existing gallery photos is
-    // not needed to save a received attachment.
-    const { status } = await ML.requestPermissionsAsync(true);
-    if (status !== "granted") return false;
+    // Ask at most once. Later saves reuse the OS grant and never reopen the
+    // permission dialog for each individual received image.
+    if (!(await requestGalleryPermissionOnce())) return false;
+
+    const ML = await import("expo-media-library");
 
     const asset = await ML.createAssetAsync(localPath);
     try {
