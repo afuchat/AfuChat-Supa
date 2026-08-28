@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "AfuChat for Chromebook"
+description = "A desktop-first AfuChat experience for Chromebook users to connect, share, watch, and explore."
+version = "1.0.0"
+id = "artifacts/afuchat-chromebook"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21145
+
+[services.development]
+run = "pnpm --filter @workspace/afuchat-chromebook run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/afuchat-chromebook", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/afuchat-chromebook/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21145"
+BASE_PATH = "/"
