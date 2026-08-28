@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { Image as ExpoImage } from "expo-image";
@@ -521,6 +522,8 @@ export default function TabLayout() {
   const isLoggedIn     = !!session || !!user;
   const prevSessionRef = useRef<Session | null>(null);
   const insets         = useSafeAreaInsets();
+  const { width }      = useWindowDimensions();
+  const isDesktop      = Platform.OS === "web" && width >= 980;
 
   useEffect(() => {
     if (loading) return;
@@ -553,7 +556,7 @@ export default function TabLayout() {
       <View style={{ flex: 1 }}>
         <ClassicTabLayout isLoggedIn={isLoggedIn} />
 
-        {isLoggedIn && (
+        {isLoggedIn && !isDesktop && (
           <CompactTabBar
             userId={user?.id}
             avatarUrl={profile?.avatar_url}

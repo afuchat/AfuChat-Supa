@@ -71,6 +71,7 @@ import { MiniAppRuntimeProvider } from "@/lib/superapp/MiniAppRuntime";
 import { AnimationGuardInit } from "@/components/AnimationGuardInit";
 import { SplashScreenView } from "@/components/ui/SplashScreenView";
 import NativeShareShortcutSync from "@/components/NativeShareShortcutSync";
+import DesktopShell from "@/components/web/DesktopShell";
 import { safeRouter } from "@/lib/navUtils";
 import { ShareIntentProvider, useShareIntentContext } from "expo-share-intent";
 import { getNativeShareChatId } from "@/lib/nativeShareShortcuts";
@@ -206,7 +207,7 @@ function HardwareBackGuard() {
 function AppNavigationStack() {
   const { colors } = useTheme();
   const bg = colors.background;
-  return (
+  const stack = (
     <Stack
       screenOptions={{
         headerShown: false,
@@ -236,6 +237,7 @@ function AppNavigationStack() {
       <Stack.Screen name="+not-found" />
     </Stack>
   );
+  return Platform.OS === "web" ? <DesktopShell>{stack}</DesktopShell> : stack;
 }
 
 function ThemedStatusBar() {

@@ -1,0 +1,347 @@
+import React, { useMemo } from "react";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { usePathname } from "expo-router";
+import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/hooks/useTheme";
+import { useLanguage } from "@/context/LanguageContext";
+import { safeRouter } from "@/lib/navUtils";
+import { Avatar } from "@/components/ui/Avatar";
+import { ChatsListPanel } from "@/app/(tabs)/index";
+
+const DESKTOP_BREAKPOINT = 980;
+
+const NAV_ITEMS = [
+  { route: "/(tabs)/chats", label: "Chat", icon: "chatbubbles-outline" },
+  { route: "/(tabs)/discover", label: "Discover", icon: "compass-outline" },
+  { route: "/(tabs)/shorts", label: "Shorts", icon: "play-circle-outline" },
+  { route: "/(tabs)/communities", label: "Communities", icon: "people-outline" },
+  { route: "/ai", label: "AI Assistant", icon: "sparkles-outline" },
+  { route: "/(tabs)/apps", label: "Apps", icon: "grid-outline" },
+  { route: "/(tabs)/me", label: "Me", icon: "person-circle-outline" },
+] as const;
+
+function normalizePath(pathname: string): string {
+  if (pathname === "/" || pathname === "/(tabs)" || pathname === "/(tabs)/index") {
+    return "/(tabs)/chats";
+  }
+  if (pathname === "/chats" || pathname.startsWith("/chat/")) return "/(tabs)/chats";
+  if (pathname === "/discover") return "/(tabs)/discover";
+  if (pathname === "/shorts") return "/(tabs)/shorts";
+  if (pathname === "/communities") return "/(tabs)/communities";
+  if (pathname === "/apps") return "/(tabs)/apps";
+  if (pathname === "/me") return "/(tabs)/me";
+  return pathname;
+}
+
+function routeTitle(pathname: string): string {
+  if (pathname.startsWith("/chat/")) return "Chat";
+  const active = NAV_ITEMS.find((item) => normalizePath(pathname) === item.route);
+  return active?.label ?? "AfuChat";
+}
+
+function isPublicRoute(pathname: string): boolean {
+  return (
+    pathname.startsWith("/(auth)") ||
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/welcome" ||
+    pathname === "/onboarding" ||
+    pathname === "/privacy" ||
+    pathname === "/terms"
+  );
+}
+
+export default function DesktopShell({ children }: { children: React.ReactNode }) {
+  const { width } = useWindowDimensions();
+  const pathname = usePathname() || "/";
+  const { colors, isDark } = useTheme();
+  const { user, session, profile } = useAuth();
+  const { t } = useLanguage();
+
+  const isDesktop = width >= DESKTOP_BREAKPOINT;
+  const isSignedIn = !!session?.user || !!user;
+  const shouldShow = isDesktop && isSignedIn && !isPublicRoute(pathname);
+  const normalizedPath = normalizePath(pathname);
+  const title = routeTitle(pathname);
+  const isChatDetail = pathname.startsWith("/chat/");
+
+  const activeRoute = useMemo(
+    () => NAV_ITEMS.find((item) => item.route === normalizedPath)?.route,
+    [normalizedPath],
+  );
+
+  if (!shouldShow) return <>{children}</>;
+
+  return (
+    <View style={[styles.shell, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.sidebar,
+          {
+            backgroundColor: isDark ? colors.surface : colors.card,
+            borderRightColor: colors.border,
+          },
+        ]}
+      >
+        <View style={styles.brandRow}>
+          <View style={[styles.brandMark, { backgroundColor: colors.accent }]}>
+            <Ionicons name="chatbubble-ellipses" size={22} color="#fff" />
+          </View>
+          <Text style={[styles.brandName, { color: colors.text }]}>
+            Afu<Text style={{ color: colors.accent }}>Chat</Text>
+          </Text>
+        </View>
+
+        <ScrollView
+          style={styles.navScroll}
+          contentContainerStyle={styles.navContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={[styles.navEyebrow, { color: colors.textMuted }]}>WORKSPACE</Text>
+          {NAV_ITEMS.map((item) => {
+            const isActive = activeRoute === item.route;
+            return (
+              <Pressable
+                key={item.route}
+                onPress={() => safeRouter.navigate(item.route as any)}
+                accessibilityRole="button"
+                accessibilityLabel={t(item.label)}
+                accessibilityState={{ selected: isActive }}
+                style={({ hovered, pressed }) => [
+                  styles.navItem,
+                  isActive && { backgroundColor: colors.accent + "18" },
+                  hovered && !isActive && { backgroundColor: colors.backgroundSecondary },
+                  pressed && { opacity: 0.72 },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.navIconWrap,
+                    isActive && { backgroundColor: colors.accent },
+                  ]}
+                >
+                  <Ionicons
+                    name={item.icon as any}
+                    size={19}
+                    color={isActive ? "#fff" : colors.textSecondary}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.navLabel,
+                    { color: isActive ? colors.accent : colors.textSecondary },
+                    isActive && styles.navLabelActive,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {t(item.label)}
+                </Text>
+                {item.route === "/(tabs)/chats" && (
+                  <View style={[styles.liveDot, { backgroundColor: colors.accent }]} />
+                )}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <View style={[styles.sidebarFooter, { borderTopColor: colors.border }]}>
+          <Pressable
+            onPress={() => safeRouter.navigate("/(tabs)/me" as any)}
+            accessibilityRole="button"
+            accessibilityLabel={t("Open profile")}
+            style={({ hovered, pressed }) => [
+              styles.profileRow,
+              hovered && { backgroundColor: colors.backgroundSecondary },
+              pressed && { opacity: 0.72 },
+            ]}
+          >
+            <Avatar
+              uri={profile?.avatar_url}
+              name={profile?.display_name || "Me"}
+              size={36}
+              userId={user?.id}
+            />
+            <View style={styles.profileCopy}>
+              <Text style={[styles.profileName, { color: colors.text }]} numberOfLines={1}>
+                {profile?.display_name || "Your profile"}
+              </Text>
+              <Text style={[styles.profileStatus, { color: colors.textMuted }]} numberOfLines={1}>
+                @{profile?.handle || "you"}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+          </Pressable>
+          <View style={styles.connectionRow}>
+            <View style={[styles.connectionDot, { backgroundColor: "#27B77A" }]} />
+            <Text style={[styles.connectionText, { color: colors.textMuted }]}>
+              Connected across your devices
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.workspace}>
+        <View style={[styles.topBar, { borderBottomColor: colors.border }]}>
+          <View>
+            <Text style={[styles.topBarTitle, { color: colors.text }]}>{t(title)}</Text>
+            <Text style={[styles.topBarSubtitle, { color: colors.textMuted }]}>
+              Connect, share, be you.
+            </Text>
+          </View>
+          <View style={styles.topBarActions}>
+            <Pressable
+              onPress={() => safeRouter.push("/search" as any)}
+              accessibilityRole="button"
+              accessibilityLabel={t("Search")}
+              style={({ hovered, pressed }) => [
+                styles.topBarButton,
+                { backgroundColor: colors.backgroundSecondary },
+                hovered && { backgroundColor: colors.accent + "18" },
+                pressed && { opacity: 0.72 },
+              ]}
+            >
+              <Ionicons name="search-outline" size={19} color={colors.textSecondary} />
+            </Pressable>
+            <Pressable
+              onPress={() => safeRouter.push("/settings" as any)}
+              accessibilityRole="button"
+              accessibilityLabel={t("Settings")}
+              style={({ hovered, pressed }) => [
+                styles.topBarButton,
+                { backgroundColor: colors.backgroundSecondary },
+                hovered && { backgroundColor: colors.accent + "18" },
+                pressed && { opacity: 0.72 },
+              ]}
+            >
+              <Ionicons name="settings-outline" size={19} color={colors.textSecondary} />
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.contentArea}>
+          {isChatDetail ? (
+            <View style={styles.masterDetail}>
+              <View
+                style={[
+                  styles.chatRail,
+                  { backgroundColor: colors.background, borderRightColor: colors.border },
+                ]}
+              >
+                <ChatsListPanel />
+              </View>
+              <View style={styles.detailPane}>{children}</View>
+            </View>
+          ) : (
+            <View style={styles.detailPane}>{children}</View>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  shell: { flex: 1, flexDirection: "row", minWidth: 980 },
+  sidebar: {
+    width: 232,
+    flexShrink: 0,
+    borderRightWidth: 0.5,
+    paddingTop: 26,
+  },
+  brandRow: {
+    height: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    gap: 10,
+  },
+  brandMark: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  brandName: { fontSize: 21, fontFamily: "Inter_700Bold", letterSpacing: -0.5 },
+  navScroll: { flex: 1, marginTop: 30 },
+  navContent: { paddingHorizontal: 14, paddingBottom: 20 },
+  navEyebrow: {
+    fontSize: 10,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 1.2,
+    marginHorizontal: 12,
+    marginBottom: 10,
+  },
+  navItem: {
+    minHeight: 48,
+    borderRadius: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    marginBottom: 5,
+    gap: 11,
+    cursor: "pointer" as any,
+  },
+  navIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  navLabel: { flex: 1, fontSize: 14, fontFamily: "Inter_500Medium" },
+  navLabelActive: { fontFamily: "Inter_700Bold" },
+  liveDot: { width: 6, height: 6, borderRadius: 3, marginRight: 3 },
+  sidebarFooter: { borderTopWidth: 0.5, padding: 16 },
+  profileRow: {
+    borderRadius: 12,
+    padding: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    cursor: "pointer" as any,
+  },
+  profileCopy: { flex: 1, minWidth: 0 },
+  profileName: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  profileStatus: { fontSize: 11, marginTop: 2 },
+  connectionRow: { flexDirection: "row", alignItems: "center", gap: 7, padding: 8, paddingBottom: 2 },
+  connectionDot: { width: 7, height: 7, borderRadius: 4 },
+  connectionText: { fontSize: 10, flex: 1 },
+  workspace: { flex: 1, minWidth: 0 },
+  topBar: {
+    minHeight: 76,
+    paddingHorizontal: 30,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 0.5,
+  },
+  topBarTitle: { fontSize: 22, fontFamily: "Inter_700Bold" },
+  topBarSubtitle: { fontSize: 12, marginTop: 3 },
+  topBarActions: { flexDirection: "row", gap: 8 },
+  topBarButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer" as any,
+  },
+  contentArea: { flex: 1, minHeight: 0 },
+  masterDetail: { flex: 1, flexDirection: "row", minWidth: 0 },
+  chatRail: {
+    width: 360,
+    flexShrink: 0,
+    borderRightWidth: 0.5,
+    overflow: "hidden",
+  },
+  detailPane: { flex: 1, minWidth: 0, minHeight: 0, overflow: "hidden" },
+});
