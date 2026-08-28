@@ -11,6 +11,7 @@
  *    R8 mapping file to a version-stamped filename after every release build:
  *
  *      android/app/build/outputs/mapping/release/mapping-<version>-<versionCode>.txt
+ *      android/app/build/archives/r8/mapping-<version>-<versionCode>.txt
  *
  *    This makes it easy to archive and upload to Google Play Console.
  *
@@ -89,9 +90,9 @@ function applyProguardRules(config) {
 const MAPPING_TASK = `
 ${GRADLE_MARKER}
 // After R8 runs, copy mapping.txt to a version-stamped filename so every
-// release build produces an uniquely named artefact ready to upload to
+// release build produces a uniquely named artefact ready to upload to
 // Google Play Console (Manage releases → App bundle explorer → Downloads).
-tasks.whenTaskAdded { task ->
+tasks.configureEach { task ->
     if (task.name == "minifyReleaseWithR8") {
         task.doLast {
             def versionName = android.defaultConfig.versionName ?: "unknown"
@@ -99,12 +100,17 @@ tasks.whenTaskAdded { task ->
             def mappingDir  = new File("\${buildDir}/outputs/mapping/release")
             def src = new File(mappingDir, "mapping.txt")
             def dst = new File(mappingDir, "mapping-\${versionName}-\${versionCode}.txt")
+            def archiveDir = new File("\${buildDir}/archives/r8")
+            def archive = new File(archiveDir, "mapping-\${versionName}-\${versionCode}.txt")
             if (src.exists()) {
+                archiveDir.mkdirs()
                 dst.bytes = src.bytes
+                archive.bytes = src.bytes
                 println ""
                 println "==========================================================="
                 println " R8 mapping archived:"
                 println "   " + dst.absolutePath
+                println "   " + archive.absolutePath
                 println " Upload this file to Google Play Console for deobfuscation."
                 println "==========================================================="
                 println ""

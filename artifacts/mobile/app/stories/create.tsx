@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
-  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -14,6 +13,7 @@ import {
   useWindowDimensions,
   KeyboardAvoidingView,
 } from "react-native";
+import Image from "@/components/ui/OptimizedImage";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";

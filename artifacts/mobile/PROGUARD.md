@@ -7,7 +7,7 @@
 | R8 enabled | **Yes** (all release builds — APK and AAB) |
 | Resource shrinking | **Yes** (`enableShrinkResourcesInReleaseBuilds: true`) |
 | JS minification | **Yes** (`enableMinifyInReleaseBuilds: true`) |
-| Android Gradle Plugin | **9.0.0** (generated Android project) |
+| Android Gradle Plugin | **9.0.0** (forced by the CNG config plugin) |
 | Mapping file | Generated automatically on every release build |
 | Config mechanism | Expo config plugin (`plugins/withProguardRules.js`) |
 
@@ -171,9 +171,10 @@ every EAS build):
    appends it to the generated `android/app/proguard-rules.pro` with an
    idempotency marker so repeated prebuilds don't duplicate the rules.
 
-2. **Gradle mapping task** — appends a `tasks.whenTaskAdded` hook to
-   `android/app/build.gradle` that fires after `minifyReleaseWithR8` and
-   copies `mapping.txt` to the version-stamped filename.
+2. **Gradle mapping task** — appends a `tasks.configureEach` hook to
+   `android/app/build.gradle` that runs after `minifyReleaseWithR8` and
+   copies `mapping.txt` to the version-stamped filename. `configureEach`
+   handles both already-created and future Gradle tasks.
 
 The `android/` directory is **gitignored** (CNG project).  The plugin is the
 single source of truth for these Android-native customisations.

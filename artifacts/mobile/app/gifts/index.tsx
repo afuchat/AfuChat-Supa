@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   FlatList,
-  Image,
   Modal,
   RefreshControl,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import Image from "@/components/ui/OptimizedImage";
 import { useLocalSearchParams } from "expo-router";
 import { safeRouter } from "@/lib/navUtils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

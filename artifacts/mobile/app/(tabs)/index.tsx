@@ -8,7 +8,6 @@ import {
   Easing,
   FlatList,
   InteractionManager,
-  Image,
   Modal,
   Platform,
   Pressable,
@@ -23,6 +22,7 @@ import {
 } from "react-native";
 
 import AfuLogo from "@/components/ui/AfuLogo";
+import Image from "@/components/ui/OptimizedImage";
 const SafeFlashList: any =
   (require("@shopify/flash-list").FlashList as any);
 import { LinearGradient } from "@/components/ui/SafeGradient";
