@@ -5,14 +5,19 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Link, Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import {
-  Archive, ArrowUpRight, Bell, Bot, Check, ChevronRight, CircleHelp,
+  Archive, ArrowUpRight, Bell, Bot, Check, ChevronRight, CircleHelp, Download,
   Compass, File, FileImage, FileText, FolderOpen, Grid2X2, Heart, Image, Info,
   MessageCircle, Mic, MoreHorizontal, Paperclip, Pencil, Play, Plus, Search,
   Send, Settings, Share2, Sparkles, Sun, Moon, Users, Video, WandSparkles, X,
 } from 'lucide-react';
-import iconPath from '../../mobile/assets/images/icon.png';
+const iconPath = `${import.meta.env.BASE_URL}afuchat-icon.png`;
 
 const queryClient = new QueryClient();
+
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+};
 
 type IconType = typeof MessageCircle;
 type AvatarTone = 'blue' | 'coral' | 'teal' | 'gold' | 'plum' | 'ink';
@@ -96,7 +101,7 @@ function Sidebar({ path }: { path: string }) {
   );
 }
 
-function Topbar({ title, subtitle, onTheme, dark, onSearch, search }: { title: string; subtitle: string; onTheme: () => void; dark: boolean; onSearch: (value: string) => void; search: string }) {
+function Topbar({ title, subtitle, onTheme, dark, onSearch, search, onInstall, canInstall }: { title: string; subtitle: string; onTheme: () => void; dark: boolean; onSearch: (value: string) => void; search: string; onInstall: () => void; canInstall: boolean }) {
   return (
     <header className="topbar">
       <div className="topbar-heading"><h1>{title}</h1><p>{subtitle}</p></div>
@@ -109,6 +114,7 @@ function Topbar({ title, subtitle, onTheme, dark, onSearch, search }: { title: s
           {dark ? <Sun size={17} /> : <Moon size={17} />}
         </button>
         <button className="icon-button" type="button" onClick={() => window.alert('You are all caught up.')} aria-label="Notifications" data-testid="button-notifications"><Bell size={17} /></button>
+        {canInstall && <button className="install-button" type="button" onClick={onInstall} data-testid="button-install-app"><Download size={14} /> Install app</button>}
         <Avatar initials="JR" tone="blue" />
       </div>
     </header>
@@ -119,6 +125,21 @@ function Shell({ children }: { children: ReactNode }) {
   const [path] = useLocation();
   const [dark, setDark] = useState(() => localStorage.getItem('afuchat-theme') === 'dark');
   const [search, setSearch] = useState('');
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  useEffect(() => {
+    const handleInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as BeforeInstallPromptEvent);
+    };
+    window.addEventListener('beforeinstallprompt', handleInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleInstallPrompt);
+  }, []);
+  const installApp = async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
+  };
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
     localStorage.setItem('afuchat-theme', dark ? 'dark' : 'light');
@@ -139,7 +160,7 @@ function Shell({ children }: { children: ReactNode }) {
     <div className="app-shell">
       <Sidebar path={path} />
       <main className="main-column">
-        {!isChat && <Topbar title={title} subtitle={subtitle} onTheme={() => setDark((value) => !value)} dark={dark} onSearch={setSearch} search={search} />}
+        {!isChat && <Topbar title={title} subtitle={subtitle} onTheme={() => setDark((value) => !value)} dark={dark} onSearch={setSearch} search={search} onInstall={installApp} canInstall={Boolean(installPrompt)} />}
         {isChat ? <ChatPage globalSearch={search} /> : <div className="content">{children}</div>}
       </main>
     </div>

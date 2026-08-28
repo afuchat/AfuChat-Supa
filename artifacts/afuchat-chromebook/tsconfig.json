@@ -1,9 +1,10 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "include": ["src/**/*"],
+  "include": ["src/App.tsx", "src/main.tsx", "src/components/error-boundary.tsx", "src/components/ui/toast.tsx", "src/components/ui/toaster.tsx", "src/components/ui/tooltip.tsx", "src/hooks/use-toast.ts", "src/lib/utils.ts", "src/index.css"],
   "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
   "compilerOptions": {
     "noEmit": true,
+    "target": "ES2020",
+    "module": "ESNext",
     "jsx": "preserve",
     "lib": ["esnext", "dom", "dom.iterable"],
     "resolveJsonModule": true,
@@ -14,9 +15,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "references": [
-    {
-      "path": "../../lib/api-client-react"
-    }
-  ]
+  "references": []
 }

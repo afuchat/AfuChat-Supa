@@ -1,5 +1,6 @@
 packages:
   - artifacts/mobile
+  - artifacts/afuchat-chromebook
 
 autoInstallPeers: false
 

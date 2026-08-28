@@ -130,6 +130,13 @@
 .topbar-heading h1 { margin: 0; font-size: 19px; letter-spacing: -.45px; }
 .topbar-heading p { margin: 4px 0 0; color: hsl(var(--muted-foreground)); font-size: 12px; }
 .topbar-actions { display: flex; align-items: center; gap: 10px; }
+.install-button {
+  border: 0; border-radius: 10px; min-height: 34px; padding: 0 12px;
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  background: hsl(var(--accent)); color: hsl(var(--primary));
+  font-size: 11px; font-weight: 750; transition: transform .18s ease, background-color .18s ease;
+}
+.install-button:hover { transform: translateY(-1px); background: hsl(var(--accent) / .72); }
 .icon-button, .plain-button {
   border: 0; background: transparent; color: hsl(var(--muted-foreground)); cursor: pointer;
   width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
@@ -163,6 +170,7 @@
   padding: 0 12px 0 36px; color: hsl(var(--foreground)); font-size: 12px;
 }
 .search-box input::placeholder, textarea::placeholder { color: hsl(var(--muted-foreground)); }
+.quick-item.plain-button { width: auto; height: auto; padding: 0; text-align: left; justify-content: flex-start; }
 .empty-state { padding: 46px 24px; text-align: center; border: 1px dashed hsl(var(--border)); border-radius: 16px; color: hsl(var(--muted-foreground)); }
 .empty-state svg { margin: 0 auto 12px; color: hsl(var(--primary)); }
 .empty-state strong { display: block; color: hsl(var(--foreground)); font-size: 14px; margin-bottom: 5px; }
