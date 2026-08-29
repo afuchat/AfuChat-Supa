@@ -376,6 +376,18 @@ export default function PrestigeScreen() {
         {/* ── OVERVIEW ────────────────────────────────────────────────────── */}
         {activeTab === "overview" && (
           <View style={s.section}>
+            <View style={[s.valueCard, { backgroundColor: colors.surface, borderColor: tier.color + "45" }]}>
+              <View style={[s.valueIcon, { backgroundColor: tier.color + "18" }]}>
+                <Ionicons name="sparkles-outline" size={20} color={tier.color} />
+              </View>
+              <View style={{ flex: 1, gap: 3 }}>
+                <Text style={[s.valueTitle, { color: colors.text }]}>Make your activity count</Text>
+                <Text style={[s.valueBody, { color: colors.textSecondary }]}>
+                  ACoin is AfuChat's reward currency. Use it to unlock status goods, show your progress and make your presence your own.
+                </Text>
+              </View>
+            </View>
+
             {/* Your tier perks */}
             <SectionHeader title={`${tier.emoji} ${tier.label.toUpperCase()} PERKS`} subtitle="Active benefits you have right now" colors={colors} />
             <View style={[s.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -851,6 +863,10 @@ const s = StyleSheet.create({
 
   // Section
   section: { paddingHorizontal: 14, paddingTop: 14, gap: 12 },
+  valueCard: { flexDirection: "row", alignItems: "flex-start", gap: 12, padding: 14, borderRadius: 16, borderWidth: 1 },
+  valueIcon: { width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  valueTitle: { fontSize: 15, fontFamily: "Inter_700Bold" },
+  valueBody: { fontSize: 12, lineHeight: 17, fontFamily: "Inter_400Regular" },
   sectionTitle: { fontSize: 10, fontFamily: "Inter_700Bold", letterSpacing: 0.9 },
   sectionSub: { fontSize: 11, fontFamily: "Inter_400Regular" },
   card: { borderRadius: 16, borderWidth: 0.5, overflow: "hidden" },

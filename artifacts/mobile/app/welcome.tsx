@@ -32,10 +32,10 @@ const SLIDES = [
   {
     accent: Colors.brand,
     accentAlt: "#7B5EA7",
-    title: "Chat like\nnever before",
+    title: "Connect with\npurpose",
     subtitle:
-      "Real-time messages, voice notes & encrypted video calls — with read receipts that actually work.",
-    action: "Explore messaging",
+      "Build real connections, share what matters and make every interaction count.",
+    action: "See how it works",
     illustration: "messaging",
     orb1: { x: 0.15, y: 0.12, size: 280, color: Colors.brand, opacity: 0.18 },
     orb2: { x: 0.85, y: 0.35, size: 220, color: "#7B5EA7", opacity: 0.14 },
@@ -44,10 +44,10 @@ const SLIDES = [
   {
     accent: "#AF52DE",
     accentAlt: "#FF6B9D",
-    title: "Find your\ntribe nearby",
+    title: "Find your\npeople",
     subtitle:
-      "Discover people, join communities, share stories and grow your circle every single day.",
-    action: "Find community",
+      "Follow your interests, join communities and discover conversations worth returning to.",
+    action: "Explore communities",
     illustration: "community",
     orb1: { x: 0.8, y: 0.08, size: 260, color: "#AF52DE", opacity: 0.18 },
     orb2: { x: 0.1, y: 0.42, size: 200, color: "#FF6B9D", opacity: 0.12 },
@@ -56,10 +56,10 @@ const SLIDES = [
   {
     accent: "#FF9500",
     accentAlt: "#FF6B35",
-    title: "AI that works\nfor you",
+    title: "Create. Share.\nBe seen.",
     subtitle:
-      "Smart replies, image generation, voice transcription and instant translation — right in your chats.",
-    action: "Try AI features",
+      "Post ideas, stories and moments that bring people together. AfuAI helps when you need it.",
+    action: "Create your profile",
     illustration: "ai",
     orb1: { x: 0.5, y: 0.05, size: 300, color: "#FF6B35", opacity: 0.16 },
     orb2: { x: 0.15, y: 0.45, size: 200, color: "#FF9500", opacity: 0.12 },
@@ -68,9 +68,9 @@ const SLIDES = [
   {
     accent: "#34C759",
     accentAlt: "#00D4AA",
-    title: "Earn as you\nconnect",
+    title: "Your activity\nhas value",
     subtitle:
-      "Send money, earn Nexa points, tip creators and manage your digital wallet — all in one place.",
+      "Earn ACoin through participation, then use it for status, perks and a presence that feels like yours.",
     action: "Get started free",
     illustration: "wallet",
     orb1: { x: 0.2, y: 0.10, size: 240, color: "#00D4AA", opacity: 0.16 },

@@ -470,8 +470,8 @@ export default function MeScreen() {
               <Text style={s.acoinEmoji}>🪙</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[s.acoinBalance, { color: Colors.gold }]}>{fmtCount(acoin)} ACoin</Text>
-              <Text style={[s.acoinSub, { color: colors.textMuted }]}>Prestige level & rewards</Text>
+               <Text style={[s.acoinBalance, { color: Colors.gold }]}>{fmtCount(acoin)} ACoin balance</Text>
+               <Text style={[s.acoinSub, { color: colors.textMuted }]}>Your activity unlocks status and perks</Text>
             </View>
             <Ionicons name="chevron-forward" size={15} color={Colors.gold + "80"} />
           </TouchableOpacity>

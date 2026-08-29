@@ -517,9 +517,9 @@ export default function OnboardingScreen() {
       <View style={st.stepContent}>
         <View style={st.stepHeader}>
           <Text style={st.stepEmoji}>👋</Text>
-          <Text style={[st.stepTitle, { color: colors.text }]}>Set up your profile</Text>
+          <Text style={[st.stepTitle, { color: colors.text }]}>Make your place on AfuChat</Text>
           <Text style={[st.stepDesc, { color: colors.textSecondary }]}>
-            Choose a display name and a unique handle that others will use to find you.
+            Your profile is your starting point for meaningful connections, communities and ACoin rewards.
           </Text>
         </View>
 
@@ -608,9 +608,9 @@ export default function OnboardingScreen() {
       <View style={st.stepContent}>
         <View style={st.stepHeader}>
           <Text style={st.stepEmoji}>📱</Text>
-          <Text style={[st.stepTitle, { color: colors.text }]}>Your phone number</Text>
+          <Text style={[st.stepTitle, { color: colors.text }]}>Stay connected</Text>
           <Text style={[st.stepDesc, { color: colors.textSecondary }]}>
-            Used for account recovery and connecting with contacts. Never shared publicly.
+            Use your number for account recovery and to find people you already know. It is never shared publicly.
           </Text>
         </View>
 
@@ -738,9 +738,9 @@ export default function OnboardingScreen() {
       <View style={st.stepContent}>
         <View style={st.stepHeader}>
           <Text style={st.stepEmoji}>✨</Text>
-          <Text style={[st.stepTitle, { color: colors.text }]}>What are you into?</Text>
+          <Text style={[st.stepTitle, { color: colors.text }]}>Choose what moves you</Text>
           <Text style={[st.stepDesc, { color: colors.textSecondary }]}>
-            Pick at least 3 interests to personalise your feed and connect with like-minded people.
+            Pick at least 3 interests so AfuChat can help you find the right people, communities and conversations.
           </Text>
         </View>
 
@@ -798,9 +798,9 @@ export default function OnboardingScreen() {
       <View style={st.stepContent}>
         <View style={st.stepHeader}>
           <Text style={st.stepEmoji}>📸</Text>
-          <Text style={[st.stepTitle, { color: colors.text }]}>Add a profile photo</Text>
+          <Text style={[st.stepTitle, { color: colors.text }]}>Ready to connect?</Text>
           <Text style={[st.stepDesc, { color: colors.textSecondary }]}>
-            Let people recognise you! Add a photo to complete your profile.
+            Add a photo so people can recognise you, then start building your place in the AfuChat community.
           </Text>
         </View>
 
