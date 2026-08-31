@@ -485,6 +485,7 @@ export default function FindPeopleTab() {
         <FlatList
           data={visiblePeople}
           keyExtractor={(item) => item.id}
+          style={styles.peopleList}
           contentContainerStyle={visiblePeople.length
             ? [styles.list, { paddingBottom: insets.bottom + 112 }]
             : [styles.emptyList, { paddingBottom: insets.bottom + 112 }]}
@@ -514,6 +515,7 @@ export default function FindPeopleTab() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, paddingHorizontal: 16 },
+  peopleList: { flex: 1, minHeight: 0 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 28, gap: 14 },
   heroIcon: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
   title: { fontSize: 22, fontFamily: "Inter_700Bold" },
