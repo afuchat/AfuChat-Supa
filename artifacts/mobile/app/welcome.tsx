@@ -12,6 +12,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import Image from "@/components/ui/OptimizedImage";
+import LocalizedText from "@/components/ui/LocalizedText";
 
 const IL_MESSAGING  = require("@/assets/illustrations/messaging.webp");
 const IL_COMMUNITY  = require("@/assets/illustrations/community.webp");
@@ -207,8 +208,8 @@ function OnboardingPage({
         />
 
         <View>
-          <Text style={s.title}>{slide.title}</Text>
-          <Text style={s.subtitle}>{slide.subtitle}</Text>
+          <LocalizedText style={s.title} __afuchatStaticText>{slide.title}</LocalizedText>
+          <LocalizedText style={s.subtitle} __afuchatStaticText>{slide.subtitle}</LocalizedText>
         </View>
 
         <View style={s.progressRow}>
@@ -238,7 +239,7 @@ function OnboardingPage({
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={s.cta}
           >
-            <Text style={s.ctaText}>{slide.action}</Text>
+            <LocalizedText style={s.ctaText} __afuchatStaticText>{slide.action}</LocalizedText>
             <View style={s.ctaArrowCircle}>
               <Ionicons name={isLast ? "checkmark" : "arrow-forward"} size={22} color="#111827" />
             </View>

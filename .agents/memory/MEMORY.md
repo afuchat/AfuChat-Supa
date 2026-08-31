@@ -88,3 +88,4 @@
 - [Expo video web source stability](expo-video-web-source-stability.md) — avoid web replaceAsync source swaps; expo-video calls HTML play() without handling its promise and interrupted loads reach the crash UI.
 - [Native direct-share targets](native-direct-share-targets.md) — sync Android shortcuts from authenticated app state and bridge the exact selected chat ID into one-tap sharing.
 - [Android notification channels](android-notification-channels.md) — channel sound settings persist on-device; use a new channel ID when correcting a ringtone/notification sound and ship the client before sender rollout.
+- [App language localization](app-language-localization.md) — first-run language controls global UI independently from message-translation settings; keep device startup and profile sync aligned.

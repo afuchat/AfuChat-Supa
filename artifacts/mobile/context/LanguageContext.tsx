@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { translateText, LANG_LABELS } from "@/lib/translate";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { setCurrentUiLanguage, translateUi } from "@/lib/uiTranslations";
+import { storage, KEYS } from "@/lib/storage/mmkv";
 
 export const LANGUAGE_PREFERENCE_KEY = "@afuchat:lang_pref";
 
@@ -58,25 +59,42 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     AsyncStorage.getItem(LANGUAGE_PREFERENCE_KEY).then((stored) => {
       const lang = normalizeLanguage(stored);
-      if (lang) setPreferredLangState(lang);
+      if (stored !== null) {
+        setPreferredLangState(lang);
+        setCurrentUiLanguage(lang);
+      }
     });
   }, []);
 
   async function fetchSettings(uid: string) {
-    const { data } = await supabase
-      .from("advanced_feature_settings")
-      .select("message_translation, translation_language, voice_to_text, text_to_speech")
-      .eq("user_id", uid)
-      .maybeSingle();
-    if (!data) return;
-    const lang =
-      data.message_translation && data.translation_language
-        ? normalizeLanguage(data.translation_language)
-        : null;
+    const [{ data: featureData }, { data: profileData }] = await Promise.all([
+      supabase
+        .from("advanced_feature_settings")
+        .select("voice_to_text, text_to_speech")
+        .eq("user_id", uid)
+        .maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("language")
+        .eq("id", uid)
+        .maybeSingle(),
+    ]);
+
+    // A device preference is authoritative when it exists. On a new device,
+    // restore the app language saved on the user's profile instead of using
+    // the message-translation toggle as a proxy for the whole UI.
+    const stored = await AsyncStorage.getItem(LANGUAGE_PREFERENCE_KEY);
+    const lang = stored !== null
+      ? normalizeLanguage(stored)
+      : normalizeLanguage(profileData?.language) ?? "en";
     setPreferredLangState(lang);
-    AsyncStorage.setItem(LANGUAGE_PREFERENCE_KEY, lang ?? "none");
-    setVoiceToText(!!data.voice_to_text);
-    setTextToSpeech(!!data.text_to_speech);
+    setCurrentUiLanguage(lang);
+    await AsyncStorage.setItem(LANGUAGE_PREFERENCE_KEY, lang ?? "none");
+    try {
+      storage.setString(KEYS.LANGUAGE, lang ?? "en");
+    } catch {}
+    setVoiceToText(!!featureData?.voice_to_text);
+    setTextToSpeech(!!featureData?.text_to_speech);
   }
 
   useEffect(() => {
@@ -125,16 +143,23 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   async function setPreferredLang(lang: string | null) {
     const normalizedLang = normalizeLanguage(lang);
     setPreferredLangState(normalizedLang);
+    setCurrentUiLanguage(normalizedLang);
     await AsyncStorage.setItem(LANGUAGE_PREFERENCE_KEY, normalizedLang ?? "none");
+    try {
+      storage.setString(KEYS.LANGUAGE, normalizedLang ?? "en");
+    } catch {}
     if (user) {
-      await supabase.from("advanced_feature_settings").upsert(
-        {
-          user_id: user.id,
-          message_translation: !!normalizedLang,
-          translation_language: normalizedLang ?? "en",
-        },
-        { onConflict: "user_id" }
-      );
+      await Promise.all([
+        supabase.from("profiles").update({ language: normalizedLang ?? "en" }).eq("id", user.id),
+        supabase.from("advanced_feature_settings").upsert(
+          {
+            user_id: user.id,
+            message_translation: !!normalizedLang,
+            translation_language: normalizedLang ?? "en",
+          },
+          { onConflict: "user_id" },
+        ),
+      ]);
     }
   }
 
@@ -147,10 +172,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     ? (LANG_LABELS[preferredLang] ?? preferredLang)
     : "Off";
   const isRTL = preferredLang === "ar";
-  useEffect(() => {
-    setCurrentUiLanguage(preferredLang);
-  }, [preferredLang]);
-  const t = (text: string) => translateUi(text, preferredLang);
+  // Keep non-hook callers used by the Babel transform in sync during the same
+  // render that observes a language change, not one render later.
+  setCurrentUiLanguage(preferredLang);
+  const t = useCallback((text: string) => translateUi(text, preferredLang), [preferredLang]);
 
   return (
     <LanguageContext.Provider

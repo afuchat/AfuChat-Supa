@@ -92,6 +92,27 @@ module.exports = function localizedTextPlugin({ types: t }) {
         ) {
           return;
         }
+        // Only static JSX copy should be sent to the global UI translator.
+        // Dynamic children may be user names, post content, amounts, or other
+        // values that must remain exactly as supplied by the app.
+        if (parent.isJSXOpeningElement()) {
+          const element = parent.parentPath;
+          const children = element.isJSXElement() ? element.node.children : [];
+          const hasStaticText = children.some(
+            (child) => t.isJSXText(child) && child.value.trim().length > 0,
+          );
+          const hasDynamicOrNestedChildren = children.some(
+            (child) => !t.isJSXText(child),
+          );
+          if (hasStaticText && !hasDynamicOrNestedChildren) {
+            parent.node.attributes.push(
+              t.jsxAttribute(
+                t.jsxIdentifier("__afuchatStaticText"),
+                t.jsxExpressionContainer(t.booleanLiteral(true)),
+              ),
+            );
+          }
+        }
         path.node.name = "LocalizedText";
         state.localizedTextUsed = true;
       },

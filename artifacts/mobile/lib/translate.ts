@@ -5,6 +5,7 @@
  */
 
 const CACHE = new Map<string, string>();
+const IN_FLIGHT = new Map<string, Promise<string>>();
 const SOURCE_LANGUAGE_CACHE = new Map<string, string | null>();
 
 function cacheKey(text: string, targetLang: string): string {
@@ -19,38 +20,49 @@ export async function translateText(text: string, targetLang: string): Promise<s
 
   const key = cacheKey(text, targetLang);
   if (CACHE.has(key)) return CACHE.get(key)!;
+  const existing = IN_FLIGHT.get(key);
+  if (existing) return existing;
 
-  try {
-    const url =
-      `https://translate.googleapis.com/translate_a/single` +
-      `?client=gtx&sl=auto&tl=${encodeURIComponent(targetLang)}&dt=t` +
-      `&q=${encodeURIComponent(text)}`;
+  const request = (async () => {
+    try {
+      const url =
+        `https://translate.googleapis.com/translate_a/single` +
+        `?client=gtx&sl=auto&tl=${encodeURIComponent(targetLang)}&dt=t` +
+        `&q=${encodeURIComponent(text)}`;
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
 
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timer);
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timer);
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    const json = await res.json();
+      const json = await res.json();
 
-    if (Array.isArray(json?.[0])) {
-      const translated = (json[0] as any[])
-        .map((seg: any) => (Array.isArray(seg) ? seg[0] ?? "" : ""))
-        .join("")
-        .trim();
+      if (Array.isArray(json?.[0])) {
+        const translated = (json[0] as any[])
+          .map((seg: any) => (Array.isArray(seg) ? seg[0] ?? "" : ""))
+          .join("")
+          .trim();
 
-      if (translated && translated !== text) {
-        CACHE.set(key, translated);
-        return translated;
+        if (translated && translated !== text) {
+          CACHE.set(key, translated);
+          return translated;
+        }
       }
-    }
 
-    return text;
-  } catch {
-    return text;
+      return text;
+    } catch {
+      return text;
+    }
+  })();
+
+  IN_FLIGHT.set(key, request);
+  try {
+    return await request;
+  } finally {
+    IN_FLIGHT.delete(key);
   }
 }
 
