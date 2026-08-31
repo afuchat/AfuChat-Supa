@@ -271,36 +271,6 @@ function RecentCommenters(_props: { postId: string; replyCount: number; bgColor:
   return null;
 }
 
-function AfuChatPurposeStrip({
-  colors,
-  user,
-}: {
-  colors: any;
-  user: { id: string } | null;
-}) {
-  return (
-    <View style={[styles.purposeStrip, { backgroundColor: colors.surface }]}>
-      <View style={[styles.purposeIcon, { backgroundColor: colors.accent + "18" }]}>
-        <Ionicons name="sparkles-outline" size={18} color={colors.accent} />
-      </View>
-      <View style={styles.purposeCopy}>
-        <Text style={[styles.purposeTitle, { color: colors.text }]}>Connect. Participate. Earn.</Text>
-        <Text style={[styles.purposeSubtitle, { color: colors.textSecondary }]}>
-          Build your circle, share what matters and turn your activity into ACoin rewards.
-        </Text>
-      </View>
-      <TouchableOpacity
-        onPress={() => user ? safeRouter.push("/prestige") : safeRouter.push("/(auth)/login")}
-        activeOpacity={0.75}
-        accessibilityRole="button"
-        accessibilityLabel={user ? "Explore ACoin rewards" : "Sign in to explore ACoin rewards"}
-      >
-        <Ionicons name="arrow-forward-circle" size={24} color={colors.accent} />
-      </TouchableOpacity>
-    </View>
-  );
-}
-
 // ── Stories row — real stories from the `stories` table ──────────────────────
 type StoryEntry = {
   userId: string;
@@ -2833,7 +2803,6 @@ export default function DiscoverScreen() {
           </TouchableOpacity>
           </View>
 
-          <AfuChatPurposeStrip colors={colors} user={user} />
         </View>
 
         {/* Stories move into the top-bar space when the tabs collapse. Keep
@@ -3195,37 +3164,6 @@ const styles = StyleSheet.create({
     position: "relative",
     zIndex: 1,
     overflow: "hidden",
-  },
-  purposeStrip: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginHorizontal: 12,
-    marginTop: 8,
-    marginBottom: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 14,
-    gap: 10,
-  },
-  purposeIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  purposeCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  purposeTitle: {
-    fontSize: 13,
-    fontFamily: "Inter_700Bold",
-  },
-  purposeSubtitle: {
-    fontSize: 11,
-    lineHeight: 15,
-    fontFamily: "Inter_400Regular",
   },
   headerTop: {
     flexDirection: "row",
