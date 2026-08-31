@@ -1,3 +1,5 @@
+import { translateText } from "@/lib/translate";
+
 export type UiLanguage = "en" | "sw" | "fr" | "es" | "ar" | "zh";
 
 type TranslationTable = Record<string, string>;
@@ -415,12 +417,101 @@ const TABLES: Record<UiLanguage, TranslationTable> = {
   },
 };
 
+const REMOTE_TABLES = new Map<string, Map<string, string>>();
+const REGISTERED_UI_TEXTS = new Set<string>();
+const ATTEMPTED_REMOTE_TEXTS = new Map<string, Set<string>>();
+const PRELOADS = new Map<string, Promise<void>>();
+const UI_TRANSLATION_LISTENERS = new Set<() => void>();
+
+function languageKey(language: string | null | undefined): string | null {
+  if (!language) return null;
+  return language.trim().toLowerCase().replace("_", "-").split("-")[0] || null;
+}
+
+function notifyUiTranslationListeners(): void {
+  UI_TRANSLATION_LISTENERS.forEach((listener) => {
+    try {
+      listener();
+    } catch {}
+  });
+}
+
+/**
+ * Register UI copy discovered by the Babel transform. This includes static
+ * Text content and literal input labels/placeholders, never runtime user data.
+ */
+export function registerUiTexts(texts: string[]): void {
+  let added = false;
+  for (const text of texts) {
+    if (typeof text === "string" && text.trim().length >= 2 && !REGISTERED_UI_TEXTS.has(text)) {
+      REGISTERED_UI_TEXTS.add(text);
+      added = true;
+    }
+  }
+  if (added && currentUiLanguage && currentUiLanguage !== "en") {
+    preloadUiTranslations(currentUiLanguage)
+      .then(notifyUiTranslationListeners)
+      .catch(() => {});
+  }
+}
+
+export function subscribeUiTranslations(listener: () => void): () => void {
+  UI_TRANSLATION_LISTENERS.add(listener);
+  return () => UI_TRANSLATION_LISTENERS.delete(listener);
+}
+
+/**
+ * Translate registered interface copy in the background. Work is shared by
+ * every screen and limited to small batches so a language change cannot flood
+ * the translation endpoint.
+ */
+export function preloadUiTranslations(language: string): Promise<void> {
+  const key = languageKey(language);
+  if (!key || key === "en") return Promise.resolve();
+  const existing = PRELOADS.get(key);
+  if (existing) return existing;
+
+  const work = (async () => {
+    const remote = REMOTE_TABLES.get(key) ?? new Map<string, string>();
+    REMOTE_TABLES.set(key, remote);
+    const attempted = ATTEMPTED_REMOTE_TEXTS.get(key) ?? new Set<string>();
+    ATTEMPTED_REMOTE_TEXTS.set(key, attempted);
+
+    let pending = Array.from(REGISTERED_UI_TEXTS).filter(
+      (text) =>
+        !remote.has(text) &&
+        !attempted.has(text) &&
+        translateUi(text, key) === text,
+    );
+    // A route can register more copy while the first batch is running.
+    for (let pass = 0; pass < 3 && pending.length > 0; pass++) {
+      for (let i = 0; i < pending.length; i += 6) {
+        const batch = pending.slice(i, i + 6);
+        await Promise.all(
+          batch.map(async (text) => {
+            attempted.add(text);
+            const translated = await translateText(text, key);
+            if (translated && translated !== text) remote.set(text, translated);
+          }),
+        );
+      }
+      pending = Array.from(REGISTERED_UI_TEXTS).filter(
+        (text) => !remote.has(text) && !attempted.has(text),
+      );
+    }
+  })();
+
+  PRELOADS.set(key, work);
+  work.finally(() => PRELOADS.delete(key)).catch(() => {});
+  return work;
+}
+
 export function translateUi(text: string, language: string | null | undefined): string {
   if (!text || !language) return text;
-  const normalized = language.trim().toLowerCase().replace("_", "-").split("-")[0];
+  const normalized = languageKey(language) ?? "";
   const uiLanguage = LANGUAGE_ALIASES[language.trim().toLowerCase()] ?? LANGUAGE_ALIASES[normalized];
-  if (!uiLanguage || uiLanguage === "en") return text;
-  return TABLES[uiLanguage]?.[text] ?? text;
+  if (uiLanguage === "en" || normalized === "en") return text;
+  return TABLES[uiLanguage as UiLanguage]?.[text] ?? REMOTE_TABLES.get(normalized)?.get(text) ?? text;
 }
 
 export function setCurrentUiLanguage(language: string | null): void {

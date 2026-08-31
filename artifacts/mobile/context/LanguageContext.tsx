@@ -4,7 +4,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { translateText, LANG_LABELS } from "@/lib/translate";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
-import { setCurrentUiLanguage, translateUi } from "@/lib/uiTranslations";
+import {
+  preloadUiTranslations,
+  setCurrentUiLanguage,
+  subscribeUiTranslations,
+  translateUi,
+} from "@/lib/uiTranslations";
 import { storage, KEYS } from "@/lib/storage/mmkv";
 
 export const LANGUAGE_PREFERENCE_KEY = "@afuchat:lang_pref";
@@ -53,6 +58,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [preferredLang, setPreferredLangState] = useState<string | null>(null);
   const [voiceToText, setVoiceToText] = useState(false);
   const [textToSpeech, setTextToSpeech] = useState(false);
+  const [uiTranslationVersion, setUiTranslationVersion] = useState(0);
   const userRef = useRef(user);
   userRef.current = user;
 
@@ -111,6 +117,17 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     return () => sub.remove();
   }, []);
 
+  useEffect(() => subscribeUiTranslations(() => {
+    setUiTranslationVersion((version) => version + 1);
+  }), []);
+
+  useEffect(() => {
+    if (!preferredLang || preferredLang === "en") return;
+    preloadUiTranslations(preferredLang)
+      .then(() => setUiTranslationVersion((version) => version + 1))
+      .catch(() => {});
+  }, [preferredLang]);
+
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -126,12 +143,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         (payload) => {
           const row = payload.new as any;
           if (!row) return;
-          const lang =
-            row.message_translation && row.translation_language
-              ? normalizeLanguage(row.translation_language)
-              : null;
-          setPreferredLangState(lang);
-          AsyncStorage.setItem(LANGUAGE_PREFERENCE_KEY, lang ?? "none");
           setVoiceToText(!!row.voice_to_text);
           setTextToSpeech(!!row.text_to_speech);
         }
@@ -171,11 +182,14 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const langLabel = preferredLang
     ? (LANG_LABELS[preferredLang] ?? preferredLang)
     : "Off";
-  const isRTL = preferredLang === "ar";
+  const isRTL = ["ar", "fa", "he", "ur"].includes(preferredLang ?? "");
   // Keep non-hook callers used by the Babel transform in sync during the same
   // render that observes a language change, not one render later.
   setCurrentUiLanguage(preferredLang);
-  const t = useCallback((text: string) => translateUi(text, preferredLang), [preferredLang]);
+  const t = useCallback(
+    (text: string) => translateUi(text, preferredLang),
+    [preferredLang, uiTranslationVersion],
+  );
 
   return (
     <LanguageContext.Provider

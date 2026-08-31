@@ -34,6 +34,7 @@ module.exports = function localizedTextPlugin({ types: t }) {
         enter(path, state) {
           state.localizedTextUsed = false;
           state.localizeUiUsed = false;
+          state.uiTextLiterals = new Set();
           const filename = state.filename || state.file?.opts?.filename || "";
           state.isAppSource =
             !filename.includes("node_modules") &&
@@ -83,6 +84,42 @@ module.exports = function localizedTextPlugin({ types: t }) {
               );
             }
           }
+          if (state.uiTextLiterals.size > 0) {
+            const alreadyRegistryImport = path.node.body.some(
+              (node) =>
+                t.isImportDeclaration(node) &&
+                node.source.value === "@/lib/uiTranslations" &&
+                node.specifiers.some(
+                  (specifier) =>
+                    t.isImportSpecifier(specifier) &&
+                    specifier.imported.name === "registerUiTexts",
+                ),
+            );
+            if (!alreadyRegistryImport) {
+              path.unshiftContainer(
+                "body",
+                t.importDeclaration(
+                  [
+                    t.importSpecifier(
+                      t.identifier("registerUiTexts"),
+                      t.identifier("registerUiTexts"),
+                    ),
+                  ],
+                  t.stringLiteral("@/lib/uiTranslations"),
+                ),
+              );
+            }
+            path.pushContainer(
+              "body",
+              t.expressionStatement(
+                t.callExpression(t.identifier("registerUiTexts"), [
+                  t.arrayExpression(
+                    Array.from(state.uiTextLiterals).map((text) => t.stringLiteral(text)),
+                  ),
+                ]),
+              ),
+            );
+          }
         },
       },
       JSXIdentifier(path, state) {
@@ -104,6 +141,7 @@ module.exports = function localizedTextPlugin({ types: t }) {
             ].includes(path.node.name) &&
             t.isStringLiteral(attribute.node.value)
           ) {
+            state.uiTextLiterals.add(attribute.node.value.value);
             attribute.node.value = t.jsxExpressionContainer(
               t.callExpression(t.identifier("localizeUi"), [
                 t.stringLiteral(attribute.node.value.value),
@@ -141,6 +179,9 @@ module.exports = function localizedTextPlugin({ types: t }) {
             (child) => t.isJSXElement(child) || t.isJSXFragment(child),
           );
           if (hasStaticText && !hasNestedChildren) {
+            children
+              .filter((child) => t.isJSXText(child))
+              .forEach((child) => state.uiTextLiterals.add(child.value));
             parent.node.attributes.push(
               t.jsxAttribute(
                 t.jsxIdentifier("__afuchatStaticText"),
@@ -160,6 +201,17 @@ module.exports = function localizedTextPlugin({ types: t }) {
               ),
             );
           } else if (isUiExpressionChildren) {
+            children.forEach((child) => {
+              if (!t.isJSXExpressionContainer(child)) return;
+              const expression = child.expression;
+              if (
+                isUiTranslationCall(expression) &&
+                expression.arguments[0] &&
+                t.isStringLiteral(expression.arguments[0])
+              ) {
+                state.uiTextLiterals.add(expression.arguments[0].value);
+              }
+            });
             parent.node.attributes.push(
               t.jsxAttribute(
                 t.jsxIdentifier("__afuchatStaticText"),
