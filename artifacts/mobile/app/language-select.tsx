@@ -98,7 +98,9 @@ export default function LanguageSelectScreen() {
           styles.content,
           {
             paddingTop: insets.top + 28,
-            paddingBottom: Math.max(insets.bottom, 20) + 24,
+            paddingBottom: selected
+              ? 150 + Math.max(insets.bottom, 20)
+              : Math.max(insets.bottom, 20) + 24,
           },
         ]}
         showsVerticalScrollIndicator={false}
@@ -150,34 +152,37 @@ export default function LanguageSelectScreen() {
             );
           })}
         </View>
-
-        <Pressable
-          onPress={continueToWelcome}
-          disabled={!selected || saving}
-          style={({ pressed }) => [
-            styles.continueButton,
-            !selected && styles.continueButtonDisabled,
-            pressed && selected && styles.continueButtonPressed,
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel={
-            selectedLanguage
-              ? `Continue with ${selectedLanguage.name}`
-              : "Choose a language to continue"
-          }
-        >
-          {saving ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <>
-              <Text style={styles.continueText}>Continue</Text>
-              <Ionicons name="arrow-forward" size={19} color="#FFFFFF" />
-            </>
-          )}
-        </Pressable>
-
-        <Text style={styles.requiredHint}>You can change this later in Settings.</Text>
       </ScrollView>
+
+      {selected && (
+        <View
+          style={[
+            styles.bottomFooter,
+            { paddingBottom: Math.max(insets.bottom, 20) + 14 },
+          ]}
+        >
+          <Pressable
+            onPress={continueToWelcome}
+            disabled={saving}
+            style={({ pressed }) => [
+              styles.continueButton,
+              pressed && styles.continueButtonPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={`Continue with ${selectedLanguage?.name ?? "selected language"}`}
+          >
+            {saving ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <>
+                <Text style={styles.continueText}>Continue</Text>
+                <Ionicons name="arrow-forward" size={19} color="#FFFFFF" />
+              </>
+            )}
+          </Pressable>
+          <Text style={styles.requiredHint}>You can change this later in Settings.</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -209,6 +214,16 @@ const styles = StyleSheet.create({
     top: 210,
     left: -120,
     backgroundColor: "#873DCE",
+  },
+  bottomFooter: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    paddingTop: 14,
+    paddingHorizontal: 22,
+    backgroundColor: "rgba(5,7,19,0.92)",
   },
   brandRow: {
     flexDirection: "row",
@@ -355,13 +370,13 @@ const styles = StyleSheet.create({
     maxWidth: 560,
     minHeight: 56,
     alignSelf: "center",
-    borderRadius: 18,
+    borderRadius: 999,
     backgroundColor: "#167EFF",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    marginTop: 22,
+    marginTop: 0,
     ...Platform.select({
       ios: {
         shadowColor: "#167EFF",
