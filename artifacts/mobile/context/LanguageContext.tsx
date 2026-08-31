@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { setCurrentUiLanguage, translateUi } from "@/lib/uiTranslations";
 
-const STORAGE_KEY = "@afuchat:lang_pref";
+export const LANGUAGE_PREFERENCE_KEY = "@afuchat:lang_pref";
 
 function normalizeLanguage(value: string | null | undefined): string | null {
   if (!value || value === "none") return null;
@@ -56,7 +56,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   userRef.current = user;
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((stored) => {
+    AsyncStorage.getItem(LANGUAGE_PREFERENCE_KEY).then((stored) => {
       const lang = normalizeLanguage(stored);
       if (lang) setPreferredLangState(lang);
     });
@@ -74,7 +74,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         ? normalizeLanguage(data.translation_language)
         : null;
     setPreferredLangState(lang);
-    AsyncStorage.setItem(STORAGE_KEY, lang ?? "none");
+    AsyncStorage.setItem(LANGUAGE_PREFERENCE_KEY, lang ?? "none");
     setVoiceToText(!!data.voice_to_text);
     setTextToSpeech(!!data.text_to_speech);
   }
@@ -113,7 +113,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
               ? normalizeLanguage(row.translation_language)
               : null;
           setPreferredLangState(lang);
-          AsyncStorage.setItem(STORAGE_KEY, lang ?? "none");
+          AsyncStorage.setItem(LANGUAGE_PREFERENCE_KEY, lang ?? "none");
           setVoiceToText(!!row.voice_to_text);
           setTextToSpeech(!!row.text_to_speech);
         }
@@ -125,7 +125,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   async function setPreferredLang(lang: string | null) {
     const normalizedLang = normalizeLanguage(lang);
     setPreferredLangState(normalizedLang);
-    await AsyncStorage.setItem(STORAGE_KEY, normalizedLang ?? "none");
+    await AsyncStorage.setItem(LANGUAGE_PREFERENCE_KEY, normalizedLang ?? "none");
     if (user) {
       await supabase.from("advanced_feature_settings").upsert(
         {

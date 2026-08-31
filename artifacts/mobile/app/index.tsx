@@ -1,17 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import { Linking, StyleSheet, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "@/context/AuthContext";
 import { getCachedUserId } from "@/lib/offlineStore";
 import { storage, KEYS } from "@/lib/storage/mmkv";
 import { safeRouter } from "@/lib/navUtils";
 import { handleIncomingUrl, isAfuChatDeepLink } from "@/lib/deepLinkHandler";
+import { LANGUAGE_PREFERENCE_KEY } from "@/context/LanguageContext";
 
 export default function IndexScreen() {
   const { session, profile, loading, user } = useAuth();
   const redirected = useRef(false);
   const [initialUrlChecked, setInitialUrlChecked] = useState(false);
   const [initialDeepLinkPending, setInitialDeepLinkPending] = useState(false);
+  const [languageChecked, setLanguageChecked] = useState(false);
+  const [languageSelected, setLanguageSelected] = useState(false);
   const { handle } = useLocalSearchParams<{ handle?: string }>();
 
   useEffect(() => {
@@ -31,6 +35,26 @@ export default function IndexScreen() {
         setInitialUrlChecked(true);
       }
     });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Language is the first-run gate. It runs before auth and onboarding
+  // routing so a new user can understand the welcome experience.
+  useEffect(() => {
+    let mounted = true;
+    AsyncStorage.getItem(LANGUAGE_PREFERENCE_KEY)
+      .then((stored) => {
+        if (!mounted) return;
+        setLanguageSelected(!!stored && stored !== "none");
+        setLanguageChecked(true);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setLanguageSelected(false);
+        setLanguageChecked(true);
+      });
     return () => {
       mounted = false;
     };
@@ -80,21 +104,33 @@ export default function IndexScreen() {
 
   // Handle ?handle= query param for web profile deep links
   useEffect(() => {
-    if (!initialUrlChecked || !handle || redirected.current || loading) return;
+    if (!languageChecked || !initialUrlChecked || !handle || redirected.current || loading) return;
+    if (!languageSelected) {
+      redirected.current = true;
+      safeRouter.replace("/language-select");
+      return;
+    }
     redirected.current = true;
     safeRouter.replace(`/${handle}` as any);
-  }, [handle, loading, initialUrlChecked]);
+  }, [handle, loading, initialUrlChecked, languageChecked, languageSelected]);
 
   // Main routing — fires whenever auth state resolves
   useEffect(() => {
-    if (!initialUrlChecked || loading) return;
+    if (!languageChecked || !initialUrlChecked || loading) return;
     if (handle || initialDeepLinkPending) return;
+    if (!languageSelected) {
+      if (!redirected.current) {
+        redirected.current = true;
+        safeRouter.replace("/language-select");
+      }
+      return;
+    }
     doRedirect(
       !!session,
       !!profile,
       profile?.onboarding_completed === true,
     );
-  }, [session, profile, loading, handle, user?.id, initialUrlChecked, initialDeepLinkPending]);
+  }, [session, profile, loading, handle, user?.id, initialUrlChecked, initialDeepLinkPending, languageChecked, languageSelected]);
 
   // Safety net: if auth takes too long, route based on cached/in-memory state.
   //
@@ -105,12 +141,15 @@ export default function IndexScreen() {
   // a slow network or right after a device reboot.
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (!initialUrlChecked) return;
+      if (!languageChecked || !initialUrlChecked) return;
       // If auth already resolved, the main effect owns navigation. The old
       // timer could still redirect just after a slow Android auth restore and
       // replace a valid destination with Welcome/Chats.
       if (redirected.current || !loading || initialDeepLinkPending) return;
-      if (handle) {
+      if (!languageSelected) {
+        redirected.current = true;
+        safeRouter.replace("/language-select");
+      } else if (handle) {
         redirected.current = true;
         safeRouter.replace(`/${handle}` as any);
       } else if (getCachedUserId() || user?.id) {
@@ -124,7 +163,7 @@ export default function IndexScreen() {
     }, 2500);
 
     return () => clearTimeout(timeout);
-  }, [handle, loading, user?.id, initialUrlChecked, initialDeepLinkPending]);
+  }, [handle, loading, user?.id, initialUrlChecked, initialDeepLinkPending, languageChecked, languageSelected]);
 
   // This route is only a navigation handoff. Returning users are routed from
   // the synchronous local identity cache, so never show an account-restoring
