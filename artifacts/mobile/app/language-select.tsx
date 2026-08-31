@@ -14,6 +14,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useLanguage } from "@/context/LanguageContext";
 import { LANG_LABELS } from "@/lib/translate";
+import Image from "@/components/ui/OptimizedImage";
+
+const PLATFORM_LOGO = require("@/assets/images/icon.png");
 
 const FLAGS: Record<string, string> = {
   en: "🇬🇧",
@@ -30,6 +33,26 @@ const FLAGS: Record<string, string> = {
   it: "🇮🇹",
   tr: "🇹🇷",
   am: "🇪🇹",
+  nl: "🇳🇱",
+  pl: "🇵🇱",
+  th: "🇹🇭",
+  vi: "🇻🇳",
+  id: "🇮🇩",
+  ms: "🇲🇾",
+  fil: "🇵🇭",
+  uk: "🇺🇦",
+  ro: "🇷🇴",
+  el: "🇬🇷",
+  cs: "🇨🇿",
+  sv: "🇸🇪",
+  da: "🇩🇰",
+  no: "🇳🇴",
+  fi: "🇫🇮",
+  he: "🇮🇱",
+  bn: "🇧🇩",
+  ta: "🇮🇳",
+  ur: "🇵🇰",
+  fa: "🇮🇷",
 };
 
 const LANGUAGES = Object.entries(LANG_LABELS).map(([code, name]) => ({
@@ -81,9 +104,7 @@ export default function LanguageSelectScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.brandRow}>
-          <View style={styles.brandMark}>
-            <Text style={styles.brandMarkText}>A</Text>
-          </View>
+          <Image source={PLATFORM_LOGO} style={styles.brandLogo} />
           <Text style={styles.brandText}>AfuChat</Text>
         </View>
 
@@ -113,7 +134,9 @@ export default function LanguageSelectScreen() {
                   pressed && styles.languageRowPressed,
                 ]}
               >
-                <Text style={styles.flag}>{language.flag}</Text>
+                <View style={styles.flagBubble}>
+                  <Text style={styles.flag}>{language.flag}</Text>
+                </View>
                 <View style={styles.languageInfo}>
                   <Text style={[styles.languageName, isSelected && styles.languageNameSelected]}>
                     {language.name}
@@ -192,18 +215,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  brandMark: {
+  brandLogo: {
     width: 30,
     height: 30,
-    borderRadius: 10,
-    backgroundColor: "#1D8CFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  brandMarkText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontFamily: "Inter_700Bold",
+    borderRadius: 9,
   },
   brandText: {
     color: "#FFFFFF",
@@ -248,28 +263,55 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 560,
     alignSelf: "center",
-    gap: 8,
+    gap: 12,
   },
   languageRow: {
-    minHeight: 58,
+    minHeight: 70,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 15,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.075)",
+    paddingHorizontal: 13,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.10)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
+    borderColor: "rgba(255,255,255,0.16)",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000000",
+        shadowOpacity: 0.20,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 5 },
+      },
+      android: { elevation: 4 },
+      web: { boxShadow: "0 6px 16px rgba(0,0,0,0.20)" } as any,
+    }),
   },
   languageRowSelected: {
     backgroundColor: "rgba(29,140,255,0.20)",
-    borderColor: "rgba(112,184,255,0.72)",
+    borderColor: "rgba(112,184,255,0.82)",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#167EFF",
+        shadowOpacity: 0.28,
+        shadowRadius: 14,
+        shadowOffset: { width: 0, height: 6 },
+      },
+      android: { elevation: 7 },
+      web: { boxShadow: "0 7px 20px rgba(22,126,255,0.24)" } as any,
+    }),
   },
   languageRowPressed: {
     opacity: 0.76,
   },
   flag: {
-    width: 36,
-    fontSize: 25,
+    fontSize: 24,
+  },
+  flagBubble: {
+    width: 44,
+    height: 44,
+    borderRadius: 15,
+    backgroundColor: "rgba(255,255,255,0.13)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   languageInfo: {
     flex: 1,
