@@ -107,7 +107,7 @@ export default function IndexScreen() {
     if (!languageChecked || !initialUrlChecked || !handle || redirected.current || loading) return;
     if (!languageSelected) {
       redirected.current = true;
-      safeRouter.replace("/language-select");
+      safeRouter.replace("/welcome");
       return;
     }
     redirected.current = true;
@@ -121,7 +121,7 @@ export default function IndexScreen() {
     if (!languageSelected) {
       if (!redirected.current) {
         redirected.current = true;
-        safeRouter.replace("/language-select");
+        safeRouter.replace("/welcome");
       }
       return;
     }
@@ -148,7 +148,7 @@ export default function IndexScreen() {
       if (redirected.current || !loading || initialDeepLinkPending) return;
       if (!languageSelected) {
         redirected.current = true;
-        safeRouter.replace("/language-select");
+        safeRouter.replace("/welcome");
       } else if (handle) {
         redirected.current = true;
         safeRouter.replace(`/${handle}` as any);

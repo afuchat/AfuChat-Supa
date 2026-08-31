@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   Animated,
   Image as RNImage,
@@ -27,6 +28,8 @@ import { useAuth } from "@/context/AuthContext";
 import { storage, KEYS } from "@/lib/storage/mmkv";
 import * as Haptics from "@/lib/haptics";
 import Colors from "@/constants/colors";
+import LanguageSelectionStep from "@/components/onboarding/LanguageSelectionStep";
+import { LANGUAGE_PREFERENCE_KEY } from "@/context/LanguageContext";
 
 // ─── Slide data ────────────────────────────────────────────────────────────────
 const SLIDES = [
@@ -262,6 +265,7 @@ export default function WelcomeScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const { width: SW, height: SH } = useWindowDimensions();
+  const [languageStep, setLanguageStep] = useState<boolean | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const activeIndexRef = useRef(0);
   const isBusyRef = useRef(false);
@@ -270,6 +274,36 @@ export default function WelcomeScreen() {
   useEffect(() => {
     if (user) router.replace("/(tabs)/discover");
   }, [user]);
+
+  useEffect(() => {
+    let mounted = true;
+    AsyncStorage.getItem(LANGUAGE_PREFERENCE_KEY)
+      .then((stored) => {
+        if (mounted) setLanguageStep(!stored || stored === "none");
+      })
+      .catch(() => {
+        if (mounted) setLanguageStep(true);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (languageStep === null) {
+    return <View style={[s.root, { backgroundColor: BG }]} />;
+  }
+
+  if (languageStep) {
+    return (
+      <LanguageSelectionStep
+        onComplete={() => {
+          setActiveIndex(0);
+          activeIndexRef.current = 0;
+          setLanguageStep(false);
+        }}
+      />
+    );
+  }
 
   function goTo(nextIdx: number) {
     const current = activeIndexRef.current;

@@ -217,7 +217,6 @@ function AppNavigationStack() {
       }}
     >
       <Stack.Screen name="index"      options={{ animation: "slide_from_right", contentStyle: { backgroundColor: bg } }} />
-      <Stack.Screen name="language-select" options={{ animation: "slide_from_right", gestureEnabled: false }} />
       <Stack.Screen name="welcome"    options={{ animation: "slide_from_right", gestureEnabled: false }} />
       <Stack.Screen name="(auth)"     options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="(tabs)"     options={{ animation: "slide_from_right" }} />
