@@ -29,12 +29,17 @@ import {
 import { requestGalleryPermissionOnce } from "@/lib/storage/chatAttachmentCache";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { useAdvancedFeatures } from "@/context/AdvancedFeaturesContext";
+import { useLanguage } from "@/context/LanguageContext";
+import { registerUiTexts } from "@/lib/uiTranslations";
 
 const FONT_SIZES = [13, 15, 17, 19];
 const MEDIA_QUALITIES: MediaQuality[] = ["Auto", "High", "Low"];
+const CHAT_DYNAMIC_UI_TEXTS = ["Rounded", "Sharp", "Minimal", ...MEDIA_QUALITIES];
+registerUiTexts(CHAT_DYNAMIC_UI_TEXTS);
 
 export default function ChatSettingsScreen() {
   const { colors, accent, isDark } = useTheme();
+  const { t } = useLanguage();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const { prefs, loading, updatePref } = useChatPreferences();
@@ -216,7 +221,7 @@ export default function ChatSettingsScreen() {
                   activeOpacity={0.8}
                 >
                   <View style={[s.bubbleShape, { borderRadius: r, backgroundColor: active ? themeColor : colors.backgroundSecondary, borderColor: active ? themeColor : colors.border, borderWidth: active ? 0 : 1.5 }]} />
-                  <Text style={[s.bubbleTileLabel, { color: active ? themeColor : colors.textMuted }]}>{name}</Text>
+                  <Text style={[s.bubbleTileLabel, { color: active ? themeColor : colors.textMuted }]}>{t(name)}</Text>
                   {active && <View style={[s.activeDot, { backgroundColor: themeColor }]} />}
                 </TouchableOpacity>
               );
@@ -382,7 +387,7 @@ export default function ChatSettingsScreen() {
                   onPress={() => updatePref("media_quality", q)}
                   style={[s.segBtn, prefs.media_quality === q && { backgroundColor: themeColor }]}
                 >
-                  <Text style={[s.segTxt, { color: prefs.media_quality === q ? "#fff" : colors.textMuted }]}>{q}</Text>
+                  <Text style={[s.segTxt, { color: prefs.media_quality === q ? "#fff" : colors.textMuted }]}>{t(q)}</Text>
                 </TouchableOpacity>
               ))}
             </View>

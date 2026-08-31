@@ -23,6 +23,8 @@ import { showAlert } from "@/lib/alert";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { TwoFactorGate } from "@/components/ui/TwoFactorGate";
+import { useLanguage } from "@/context/LanguageContext";
+import { registerUiTexts } from "@/lib/uiTranslations";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -48,6 +50,7 @@ const LEAVE_REASONS = [
   "Taking a break",
   "Other",
 ];
+registerUiTexts([...CONSEQUENCES.map((item) => item.text), ...LEAVE_REASONS]);
 
 // ─── Step indicator ───────────────────────────────────────────────────────────
 
@@ -79,6 +82,7 @@ function Step1({
   checked: Set<string>; onToggle: (id: string) => void;
   onNext: () => void; onCancel: () => void; colors: any;
 }) {
+  const { t } = useLanguage();
   const allChecked = CONSEQUENCES.every(c => checked.has(c.id));
   const remaining  = CONSEQUENCES.filter(c => !checked.has(c.id)).length;
 
@@ -109,7 +113,7 @@ function Step1({
                 {active && <Ionicons name="checkmark" size={12} color="#fff" />}
               </View>
               <Ionicons name={c.icon} size={15} color={active ? "#FF3B30" : colors.textMuted} style={{ marginTop: 1 }} />
-              <Text style={[st.ackText, { color: active ? colors.text : colors.textMuted }]}>{c.text}</Text>
+              <Text style={[st.ackText, { color: active ? colors.text : colors.textMuted }]}>{t(c.text)}</Text>
             </TouchableOpacity>
           );
         })}
@@ -139,6 +143,7 @@ function Step2({
   reason: string; onReasonChange: (v: string) => void;
   onNext: () => void; onBack: () => void; colors: any;
 }) {
+  const { t } = useLanguage();
   const [seconds, setSeconds]   = useState(STEP2_WAIT);
   const [timerDone, setTimerDone] = useState(false);
   const progress = useRef(new Animated.Value(1)).current;
@@ -205,7 +210,7 @@ function Step2({
             }]}>
               {reason === r && <View style={st.radioDot} />}
             </View>
-            <Text style={[st.reasonText, { color: reason === r ? colors.text : colors.textMuted }]}>{r}</Text>
+            <Text style={[st.reasonText, { color: reason === r ? colors.text : colors.textMuted }]}>{t(r)}</Text>
           </TouchableOpacity>
         ))}
       </View>

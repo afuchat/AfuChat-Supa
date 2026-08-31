@@ -134,8 +134,13 @@ module.exports = function localizedTextPlugin({ types: t }) {
               "accessibilityHint",
               "title",
               "label",
+              "sublabel",
+              "sub",
+              "desc",
               "subtitle",
               "description",
+              "note",
+              "text",
               "message",
               "buttonText",
             ].includes(path.node.name) &&

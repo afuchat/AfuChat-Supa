@@ -17,6 +17,8 @@ import { showAlert } from "@/lib/alert";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { patchLocalSetting } from "@/lib/storage/localSettings";
+import { useLanguage } from "@/context/LanguageContext";
+import { registerUiTexts } from "@/lib/uiTranslations";
 
 type PrivacyLevel = "everyone" | "followers" | "nobody";
 
@@ -30,6 +32,7 @@ const OPTS: { v: PrivacyLevel; l: string }[] = [
   { v: "followers", l: "Followers" },
   { v: "nobody",    l: "Nobody"    },
 ];
+registerUiTexts(OPTS.map((option) => option.l));
 
 function RadioGroup({
   label,
@@ -49,6 +52,7 @@ function RadioGroup({
   saving: boolean;
 }) {
   const { colors, accent } = useTheme();
+  const { t } = useLanguage();
   return (
     <GlassCard style={s.groupCard} variant="medium">
       <View style={[s.groupHeader, { backgroundColor: colors.surface }]}>
@@ -75,7 +79,7 @@ function RadioGroup({
               <View style={[s.radio, { borderColor: active ? accent : colors.border }]}>
                 {active && <View style={[s.radioDot, { backgroundColor: accent }]} />}
               </View>
-              <Text style={[s.optLabel, { color: active ? accent : colors.textSecondary }]}>{o.l}</Text>
+              <Text style={[s.optLabel, { color: active ? accent : colors.textSecondary }]}>{t(o.l)}</Text>
             </TouchableOpacity>
           );
         })}

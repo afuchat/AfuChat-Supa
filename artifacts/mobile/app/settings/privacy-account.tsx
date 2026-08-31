@@ -17,6 +17,7 @@ import { showAlert } from "@/lib/alert";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { patchLocalSetting } from "@/lib/storage/localSettings";
+import { useLanguage } from "@/context/LanguageContext";
 
 type Settings = {
   is_private: boolean;
@@ -43,14 +44,15 @@ function ToggleRow({
   saving?: boolean;
 }) {
   const { colors, accent } = useTheme();
+  const { t } = useLanguage();
   return (
     <View style={[s.row, { backgroundColor: colors.surface }]}>
       <View style={s.rowIcon}>
         <Ionicons name={icon} size={22} color={colors.text} />
       </View>
       <View style={s.rowText}>
-        <Text style={[s.rowLabel, { color: colors.text }]}>{label}</Text>
-        <Text style={[s.rowDesc, { color: colors.textMuted }]}>{description}</Text>
+        <Text style={[s.rowLabel, { color: colors.text }]}>{t(label)}</Text>
+        <Text style={[s.rowDesc, { color: colors.textMuted }]}>{t(description)}</Text>
       </View>
       {saving ? (
         <ActivityIndicator size="small" color={accent} />

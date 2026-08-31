@@ -26,8 +26,15 @@ import {
   clearExpiredOfflineVideos,
   type OfflineVideoEntry,
 } from "@/lib/videoCache";
+import { useLanguage } from "@/context/LanguageContext";
+import { registerUiTexts } from "@/lib/uiTranslations";
 
 const MS_24H = 24 * 60 * 60 * 1000;
+registerUiTexts([
+  "Watched Today", "Ready to play offline", "All Saved Videos", "Older than 24 hours",
+  "video", "videos", "watched in the last 24 hrs", "saved offline",
+  "Saved permanently on this device", "Video",
+]);
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -57,6 +64,7 @@ type SectionData = {
 
 export default function OfflineVideosScreen() {
   const { colors, accent } = useTheme();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
 
   const [sections, setSections] = useState<SectionData[]>([]);
@@ -147,12 +155,12 @@ export default function OfflineVideosScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.statsTitle, { color: colors.text }]}>
-              {stats.count} {stats.count === 1 ? "video" : "videos"} · {formatBytes(stats.bytes)}
+               {stats.count} {t(stats.count === 1 ? "video" : "videos")} · {formatBytes(stats.bytes)}
             </Text>
             <Text style={[styles.statsSub, { color: colors.textMuted }]}>
               {recentCount > 0
-                ? `${recentCount} watched in the last 24 hrs · saved offline`
-                : "Saved permanently on this device"}
+                 ? `${recentCount} ${t("watched in the last 24 hrs")} · ${t("saved offline")}`
+                 : t("Saved permanently on this device")}
             </Text>
           </View>
           {stats.count > 0 && (
@@ -205,8 +213,8 @@ export default function OfflineVideosScreen() {
           <View style={[styles.sectionAccentDot, { backgroundColor: accent }]} />
         )}
         <View style={{ flex: 1 }}>
-          <Text style={[styles.sectionLabel, { color: colors.text }]}>{section.title}</Text>
-          <Text style={[styles.sectionSub, { color: colors.textMuted }]}>{section.subtitle}</Text>
+           <Text style={[styles.sectionLabel, { color: colors.text }]}>{t(section.title)}</Text>
+           <Text style={[styles.sectionSub, { color: colors.textMuted }]}>{t(section.subtitle)}</Text>
         </View>
         <Text style={[styles.sectionCount, { color: colors.textMuted }]}>
           {section.data.length}
@@ -244,7 +252,7 @@ export default function OfflineVideosScreen() {
         {/* Info */}
         <View style={styles.videoInfo}>
           <Text style={[styles.videoTitle, { color: colors.text }]} numberOfLines={2}>
-            {item.title || "Video"}
+             {item.title || t("Video")}
           </Text>
           <View style={styles.metaRow}>
             <Text style={[styles.videoMeta, { color: colors.textMuted }]}>

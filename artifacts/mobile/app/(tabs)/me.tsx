@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "@/lib/haptics";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
 import { AvatarViewer } from "@/components/ui/AvatarViewer";
@@ -28,6 +29,44 @@ import { showAlert } from "@/lib/alert";
 import { getCachedProfileSync, isOnline, onConnectivityChange } from "@/lib/offlineStore";
 import { getLocalProfile } from "@/lib/storage/localProfile";
 import { showToast } from "@/lib/toast";
+import { registerUiTexts } from "@/lib/uiTranslations";
+
+const ME_UI_TEXTS = [
+  "Photo",
+  "Bio",
+  "Country",
+  "Website",
+  "Premium",
+  "Profile",
+  "Followers",
+  "Following",
+  "Posts",
+  "Edit Profile",
+  "My Profile",
+  "QR Code",
+  "Digital ID",
+  "ACoin balance",
+  "Your activity unlocks status and perks",
+  "Upgrade to Premium",
+  "Verified badge, exclusive perks & more",
+  "Upgrade",
+  "Subscription",
+  "Premium Active",
+  "Active",
+  "My Content",
+  "My Posts",
+  "Saved Posts",
+  "Watch History",
+  "Social & Growth",
+  "Prestige & Rewards",
+  "Achievements",
+  "App",
+  "Settings",
+  "NEW",
+  "posts",
+];
+
+registerUiTexts(ME_UI_TEXTS);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -55,6 +94,7 @@ type MenuItemProps = {
 
 function MenuItem({ icon, iconColor, label, value, badge, badgeColor, onPress, showSeparator, colors, destructive, rightIcon }: MenuItemProps) {
   const scale = useRef(new Animated.Value(1)).current;
+  const { t } = useLanguage();
   return (
     <>
       <Animated.View style={{ transform: [{ scale }] }}>
@@ -68,12 +108,12 @@ function MenuItem({ icon, iconColor, label, value, badge, badgeColor, onPress, s
           <View style={mi.iconWrap}>
             <Ionicons name={icon as any} size={22} color={colors.text} />
           </View>
-          <Text style={[mi.label, { color: destructive ? "#FF3B30" : colors.text }]} numberOfLines={1}>{label}</Text>
+          <Text style={[mi.label, { color: destructive ? "#FF3B30" : colors.text }]} numberOfLines={1}>{t(label)}</Text>
           <View style={mi.right}>
             {!!value && <Text style={[mi.value, { color: colors.textMuted }]} numberOfLines={1}>{value}</Text>}
             {!!badge && (
               <View style={[mi.badge, { backgroundColor: (badgeColor || colors.accent) + "20" }]}>
-                <Text style={[mi.badgeText, { color: badgeColor || colors.accent }]}>{badge}</Text>
+                <Text style={[mi.badgeText, { color: badgeColor || colors.accent }]}>{t(badge)}</Text>
               </View>
             )}
             <Ionicons name={(rightIcon ?? "chevron-forward") as any} size={15} color={colors.textMuted + "80"} />
@@ -99,7 +139,8 @@ const mi = StyleSheet.create({
 // ─── SectionLabel ────────────────────────────────────────────────────────────
 
 function SectionLabel({ label, colors }: { label: string; colors: any }) {
-  return <Text style={[sl.text, { color: colors.textMuted }]}>{label.toUpperCase()}</Text>;
+  const { t } = useLanguage();
+  return <Text style={[sl.text, { color: colors.textMuted }]}>{t(label).toUpperCase()}</Text>;
 }
 const sl = StyleSheet.create({
   text: { fontSize: 11, fontFamily: "Inter_600SemiBold", letterSpacing: 0.7, marginBottom: 6, marginTop: 24, marginLeft: 20 },
@@ -127,6 +168,7 @@ type ProfileFields = {
 
 function ProfileCompletionBar({ profile, isPremium, colors, accent }: { profile: ProfileFields | null; isPremium: boolean; colors: any; accent: string }) {
   const fillAnim = useRef(new Animated.Value(0)).current;
+  const { t } = useLanguage();
   const checks = [
     { label: "Photo",   done: !!profile?.avatar_url },
     { label: "Bio",     done: !!profile?.bio },
@@ -163,7 +205,7 @@ function ProfileCompletionBar({ profile, isPremium, colors, accent }: { profile:
             {checks.map((c) => (
               <View key={c.label} style={pc.checkItem}>
                 <Ionicons name={c.done ? "checkmark-circle" : "ellipse"} size={14} color={c.done ? "#34C759" : colors.border} />
-                <Text style={[pc.checkLabel, { color: c.done ? colors.textSecondary : colors.textMuted }]}>{c.label}</Text>
+                <Text style={[pc.checkLabel, { color: c.done ? colors.textSecondary : colors.textMuted }]}>{t(c.label)}</Text>
               </View>
             ))}
           </View>
@@ -190,6 +232,7 @@ const pc = StyleSheet.create({
 
 export default function MeScreen() {
   const { colors, accent, isDark } = useTheme();
+  const { t } = useLanguage();
   const { profile: authProfile, isPremium, subscription, loading, user, equippedGoods } = useAuth();
   // Match ChatsScreen's cache-first behavior. AuthContext refreshes this row
   // in the background, but a cached profile is enough to render the Me tab
@@ -497,7 +540,7 @@ export default function MeScreen() {
               {i > 0 && <View style={[s.statDivider, { backgroundColor: colors.border }]} />}
               <TouchableOpacity style={s.statCell} onPress={stat.onPress} activeOpacity={0.7}>
                 <Text style={[s.statValue, { color: colors.text }]}>{fmtCount(stat.count)}</Text>
-                <Text style={[s.statLabel, { color: colors.textMuted }]}>{stat.label}</Text>
+               <Text style={[s.statLabel, { color: colors.textMuted }]}>{t(stat.label)}</Text>
               </TouchableOpacity>
             </React.Fragment>
           ))}
@@ -515,7 +558,7 @@ export default function MeScreen() {
               <View style={[s.quickIconWrap, { backgroundColor: a.color + "15" }]}>
                 <Ionicons name={a.icon as any} size={20} color={a.color} />
               </View>
-              <Text style={[s.quickLabel, { color: colors.textSecondary }]} numberOfLines={1}>{a.label}</Text>
+               <Text style={[s.quickLabel, { color: colors.textSecondary }]} numberOfLines={1}>{t(a.label)}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -565,7 +608,7 @@ export default function MeScreen() {
               icon="grid"
               iconColor={accent}
               label="My Posts"
-              value={`${fmtCount(postCount)} posts`}
+               value={`${fmtCount(postCount)} ${t("posts")}`}
               onPress={() => router.push("/my-posts")}
               showSeparator
               colors={colors}

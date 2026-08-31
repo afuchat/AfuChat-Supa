@@ -32,11 +32,12 @@ function Section({
   children: React.ReactNode;
   colors: ReturnType<typeof useTheme>["colors"];
 }) {
+  const { t } = useLanguage();
   return (
     <View style={s.section}>
-      {title && (
-        <Text style={[s.sectionLabel, { color: colors.textMuted }]}>{title}</Text>
-      )}
+        {title && (
+          <Text style={[s.sectionLabel, { color: colors.textMuted }]}>{t(title)}</Text>
+        )}
       <View style={[s.card, { backgroundColor: colors.card }]}>
         {children}
       </View>
@@ -69,6 +70,7 @@ function Row({
   accent: string;
   danger?: boolean;
 }) {
+  const { t } = useLanguage();
   return (
     <>
       <TouchableOpacity
@@ -81,10 +83,10 @@ function Row({
           <Ionicons name={icon} size={22} color={danger ? "#FF3B30" : colors.text} />
         </View>
         <View style={s.rowText}>
-          <Text style={[s.rowLabel, { color: colors.text }]}>{label}</Text>
+          <Text style={[s.rowLabel, { color: colors.text }]}>{t(label)}</Text>
           {sublabel && (
             <Text style={[s.rowSub, { color: colors.textMuted }]} numberOfLines={1}>
-              {sublabel}
+              {t(sublabel)}
             </Text>
           )}
         </View>
@@ -93,7 +95,7 @@ function Row({
         )}
         {badge && (
           <View style={[s.badge, { backgroundColor: accent + "22" }]}>
-            <Text style={[s.badgeText, { color: accent }]}>{badge}</Text>
+            <Text style={[s.badgeText, { color: accent }]}>{t(badge)}</Text>
           </View>
         )}
         {onPress && (

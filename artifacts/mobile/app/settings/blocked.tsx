@@ -19,6 +19,8 @@ import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import { ContactRowSkeleton } from "@/components/ui/Skeleton";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { useLanguage } from "@/context/LanguageContext";
+import { registerUiTexts } from "@/lib/uiTranslations";
 
 type BlockedItem = {
   id: string;
@@ -26,19 +28,22 @@ type BlockedItem = {
   profile: { id: string; display_name: string; handle: string; avatar_url: string | null; is_verified?: boolean; is_organization_verified?: boolean };
 };
 
-function timeAgo(iso: string): string {
+registerUiTexts(["Today", "Yesterday", "days ago", "w ago", "mo ago", "y ago", "person", "people", "blocked"]);
+
+function timeAgo(iso: string, t: (text: string) => string): string {
   const ms = Date.now() - new Date(iso).getTime();
   const days = Math.floor(ms / 86_400_000);
-  if (days < 1) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days} days ago`;
-  if (days < 30) return `${Math.floor(days / 7)}w ago`;
-  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
-  return `${Math.floor(days / 365)}y ago`;
+  if (days < 1) return t("Today");
+  if (days === 1) return t("Yesterday");
+  if (days < 7) return `${days} ${t("days ago")}`;
+  if (days < 30) return `${Math.floor(days / 7)}${t("w ago")}`;
+  if (days < 365) return `${Math.floor(days / 30)}${t("mo ago")}`;
+  return `${Math.floor(days / 365)}${t("y ago")}`;
 }
 
 export default function BlockedUsersScreen() {
   const { colors, accent } = useTheme();
+  const { t } = useLanguage();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<BlockedItem[]>([]);
@@ -91,7 +96,7 @@ export default function BlockedUsersScreen() {
     <View style={[s.root, { backgroundColor: colors.backgroundSecondary }]}>
       <GlassHeader
         title="Blocked Users"
-        subtitle={!loading && items.length > 0 ? `${items.length} ${items.length === 1 ? "person" : "people"} blocked` : undefined}
+         subtitle={!loading && items.length > 0 ? `${items.length} ${t(items.length === 1 ? "person" : "people")} ${t("blocked")}` : undefined}
       />
 
       {loading ? (
@@ -153,7 +158,7 @@ export default function BlockedUsersScreen() {
                         <VerifiedBadge isVerified={item.profile.is_verified} isOrganizationVerified={item.profile.is_organization_verified} size={13} />
                       </View>
                       <Text style={[s.handle, { color: colors.textMuted }]}>@{item.profile.handle}</Text>
-                      <Text style={[s.blockedAt, { color: colors.textMuted }]}>Blocked {timeAgo(item.blocked_at)}</Text>
+                       <Text style={[s.blockedAt, { color: colors.textMuted }]}>Blocked {timeAgo(item.blocked_at, t)}</Text>
                     </View>
                     <TouchableOpacity
                       style={[s.unblockBtn, { borderColor: colors.border }]}

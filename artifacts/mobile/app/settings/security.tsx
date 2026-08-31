@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "@/lib/haptics";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { useTheme } from "@/hooks/useTheme";
 import { showAlert } from "@/lib/alert";
 import { GlassHeader } from "@/components/ui/GlassHeader";
@@ -34,9 +35,10 @@ function Section({
   children: React.ReactNode;
   colors: ReturnType<typeof useTheme>["colors"];
 }) {
+  const { t } = useLanguage();
   return (
     <View style={sec.section}>
-      <Text style={[sec.sectionLabel, { color: colors.textMuted }]}>{title}</Text>
+      <Text style={[sec.sectionLabel, { color: colors.textMuted }]}>{t(title)}</Text>
       <View style={[sec.card, { backgroundColor: colors.card }]}>{children}</View>
     </View>
   );
@@ -65,6 +67,7 @@ function Row({
   colors: ReturnType<typeof useTheme>["colors"];
 }) {
   const ic = danger ? "#FF3B30" : iconColor;
+  const { t } = useLanguage();
   return (
     <>
       <TouchableOpacity
@@ -80,9 +83,9 @@ function Row({
           }
         </View>
         <View style={sec.rowText}>
-          <Text style={[sec.rowLabel, { color: danger ? "#FF3B30" : colors.text }]}>{label}</Text>
+          <Text style={[sec.rowLabel, { color: danger ? "#FF3B30" : colors.text }]}>{t(label)}</Text>
           {sublabel && (
-            <Text style={[sec.rowSub, { color: colors.textMuted }]} numberOfLines={2}>{sublabel}</Text>
+            <Text style={[sec.rowSub, { color: colors.textMuted }]} numberOfLines={2}>{t(sublabel)}</Text>
           )}
         </View>
         {onPress && !rowLoading && (

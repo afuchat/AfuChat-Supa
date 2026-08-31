@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { useAdvancedFeatures } from "@/context/AdvancedFeaturesContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 // ─── Section ──────────────────────────────────────────────────────────────────
 function Section({
@@ -17,9 +18,10 @@ function Section({
   children: React.ReactNode;
   colors: ReturnType<typeof useTheme>["colors"];
 }) {
+  const { t } = useLanguage();
   return (
     <View style={s.section}>
-      <Text style={[s.sectionLabel, { color: colors.textMuted }]}>{title}</Text>
+      <Text style={[s.sectionLabel, { color: colors.textMuted }]}>{t(title)}</Text>
       <View style={[s.card, { backgroundColor: colors.card }]}>{children}</View>
     </View>
   );
@@ -45,6 +47,7 @@ function Row({
   onPress?: () => void;
   colors: ReturnType<typeof useTheme>["colors"];
 }) {
+  const { t } = useLanguage();
   return (
     <>
       <TouchableOpacity style={s.row} onPress={onPress} activeOpacity={0.7}>
@@ -52,10 +55,10 @@ function Row({
           <Ionicons name={icon} size={22} color={danger ? "#FF3B30" : colors.text} />
         </View>
         <View style={s.rowText}>
-          <Text style={[s.rowLabel, { color: danger ? "#FF3B30" : colors.text }]}>{label}</Text>
+          <Text style={[s.rowLabel, { color: danger ? "#FF3B30" : colors.text }]}>{t(label)}</Text>
           {sublabel && (
             <Text style={[s.rowSub, { color: colors.textMuted }]} numberOfLines={2}>
-              {sublabel}
+              {t(sublabel)}
             </Text>
           )}
         </View>

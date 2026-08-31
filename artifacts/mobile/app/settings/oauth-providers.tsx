@@ -22,6 +22,8 @@ import { GlassHeader } from "@/components/ui/GlassHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { GlassMenuSeparator } from "@/components/ui/GlassMenuItem";
 import { LinearGradient } from "@/components/ui/SafeGradient";
+import { useLanguage } from "@/context/LanguageContext";
+import { registerUiTexts } from "@/lib/uiTranslations";
 
 // ─── Provider config ──────────────────────────────────────────────────────────
 type Provider = {
@@ -38,10 +40,12 @@ const PROVIDERS: Provider[] = [
   { id: "twitter", label: "X (Twitter)", iconGradient: ["#1a1a1a", "#333333"], renderLogo: () => <XLogo size={18} color="#fff" />,    disabled: true },
   { id: "gitlab",  label: "GitLab",      iconGradient: ["#FC6D26", "#E24329"], renderLogo: () => <GitLabLogo size={18} />,           disabled: true },
 ];
+registerUiTexts(["Coming soon", "Connected", "Not connected", "Soon"]);
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function OAuthProvidersScreen() {
   const { colors, isDark } = useTheme();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
 
   const [identities, setIdentities] = useState<UserIdentity[]>([]);
@@ -170,14 +174,14 @@ export default function OAuthProvidersScreen() {
                           : isConnected ? "#30D158"
                           : colors.textMuted,
                       }]}>
-                        {isDisabled ? "Coming soon" : isConnected ? "● Connected" : "Not connected"}
+                         {isDisabled ? t("Coming soon") : isConnected ? `● ${t("Connected")}` : t("Not connected")}
                       </Text>
                     </View>
 
                     {/* Action */}
                     {isDisabled ? (
                       <View style={[styles.comingSoonBadge, { backgroundColor: colors.border }]}>
-                        <Text style={[styles.comingSoonText, { color: colors.textMuted }]}>Soon</Text>
+                         <Text style={[styles.comingSoonText, { color: colors.textMuted }]}>{t("Soon")}</Text>
                       </View>
                     ) : isBusy ? (
                       <ActivityIndicator size="small" color={colors.accent} />
