@@ -1,4 +1,32 @@
 module.exports = function localizedTextPlugin({ types: t }) {
+  function isUiTranslationCall(node) {
+    return (
+      t.isCallExpression(node) &&
+      ((t.isIdentifier(node.callee) &&
+        ["t", "localizeUi"].includes(node.callee.name)) ||
+        (t.isMemberExpression(node.callee) &&
+          t.isIdentifier(node.callee.property) &&
+          ["t", "localizeUi"].includes(node.callee.property.name)))
+    );
+  }
+
+  // Conditional labels such as loading ? "Saving…" : "Save" are UI copy,
+  // while {profile.display_name} is user data. Only the former gets the
+  // asynchronous global translation fallback.
+  function isUiStringExpression(node) {
+    if (isUiTranslationCall(node) || t.isStringLiteral(node)) return true;
+    if (t.isConditionalExpression(node)) {
+      return isUiStringExpression(node.consequent) && isUiStringExpression(node.alternate);
+    }
+    if (t.isLogicalExpression(node)) {
+      return isUiStringExpression(node.left) && isUiStringExpression(node.right);
+    }
+    if (t.isTemplateLiteral(node)) {
+      return node.expressions.length === 0;
+    }
+    return false;
+  }
+
   return {
     name: "localized-text",
     visitor: {
@@ -92,22 +120,55 @@ module.exports = function localizedTextPlugin({ types: t }) {
         ) {
           return;
         }
-        // Only static JSX copy should be sent to the global UI translator.
-        // Dynamic children may be user names, post content, amounts, or other
-        // values that must remain exactly as supplied by the app.
+        // Only static JSX copy and expressions that clearly produce UI copy
+        // should be sent to the global UI translator. Dynamic children may be
+        // user names, post content, amounts, or other values that must remain
+        // exactly as supplied by the app.
         if (parent.isJSXOpeningElement()) {
           const element = parent.parentPath;
           const children = element.isJSXElement() ? element.node.children : [];
           const hasStaticText = children.some(
             (child) => t.isJSXText(child) && child.value.trim().length > 0,
           );
-          const hasDynamicOrNestedChildren = children.some(
-            (child) => !t.isJSXText(child),
+          const isUiExpressionChildren =
+            children.length > 0 &&
+            children.every(
+              (child) =>
+                t.isJSXExpressionContainer(child) &&
+                isUiStringExpression(child.expression),
+            );
+          const hasNestedChildren = children.some(
+            (child) => t.isJSXElement(child) || t.isJSXFragment(child),
           );
-          if (hasStaticText && !hasDynamicOrNestedChildren) {
+          if (hasStaticText && !hasNestedChildren) {
             parent.node.attributes.push(
               t.jsxAttribute(
                 t.jsxIdentifier("__afuchatStaticText"),
+                t.jsxExpressionContainer(t.booleanLiteral(true)),
+              ),
+            );
+            parent.node.attributes.push(
+              t.jsxAttribute(
+                t.jsxIdentifier("__afuchatStaticParts"),
+                t.jsxExpressionContainer(
+                  t.arrayExpression(
+                    children
+                      .filter((child) => t.isJSXText(child))
+                      .map((child) => t.stringLiteral(child.value)),
+                  ),
+                ),
+              ),
+            );
+          } else if (isUiExpressionChildren) {
+            parent.node.attributes.push(
+              t.jsxAttribute(
+                t.jsxIdentifier("__afuchatStaticText"),
+                t.jsxExpressionContainer(t.booleanLiteral(true)),
+              ),
+            );
+            parent.node.attributes.push(
+              t.jsxAttribute(
+                t.jsxIdentifier("__afuchatTranslateAllText"),
                 t.jsxExpressionContainer(t.booleanLiteral(true)),
               ),
             );

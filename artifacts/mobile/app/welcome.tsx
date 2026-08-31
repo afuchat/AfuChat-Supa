@@ -208,8 +208,8 @@ function OnboardingPage({
         />
 
         <View>
-          <LocalizedText style={s.title} __afuchatStaticText>{slide.title}</LocalizedText>
-          <LocalizedText style={s.subtitle} __afuchatStaticText>{slide.subtitle}</LocalizedText>
+          <LocalizedText style={s.title} __afuchatStaticText __afuchatTranslateAllText>{slide.title}</LocalizedText>
+          <LocalizedText style={s.subtitle} __afuchatStaticText __afuchatTranslateAllText>{slide.subtitle}</LocalizedText>
         </View>
 
         <View style={s.progressRow}>
@@ -239,7 +239,7 @@ function OnboardingPage({
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={s.cta}
           >
-            <LocalizedText style={s.ctaText} __afuchatStaticText>{slide.action}</LocalizedText>
+            <LocalizedText style={s.ctaText} __afuchatStaticText __afuchatTranslateAllText>{slide.action}</LocalizedText>
             <View style={s.ctaArrowCircle}>
               <Ionicons name={isLast ? "checkmark" : "arrow-forward"} size={22} color="#111827" />
             </View>
