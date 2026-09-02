@@ -153,7 +153,9 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
           ) : (
             <>
               <Text style={[styles.continueText, !selected && styles.continueTextDisabled]}>
-                {selected ? "Continue" : "Choose a language"}
+                {selected
+                  ? `Continue with ${selectedLanguage?.name ?? "selected language"}`
+                  : "Choose a language"}
               </Text>
               <Text style={[styles.continueArrow, !selected && styles.continueTextDisabled]}>→</Text>
             </>
