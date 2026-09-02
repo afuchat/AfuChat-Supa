@@ -18,19 +18,19 @@ import Image from "@/components/ui/OptimizedImage";
 
 const PLATFORM_LOGO = require("@/assets/images/icon.png");
 
-const LANGUAGE_BADGES: Record<string, string> = {
-  en: "GB", zh: "CN", es: "ES", fr: "FR", ar: "SA", hi: "IN",
-  pt: "BR", ru: "RU", ja: "JP", de: "DE", sw: "KE", ko: "KR",
-  it: "IT", tr: "TR", nl: "NL", pl: "PL", th: "TH", vi: "VN",
-  id: "ID", ms: "MY", fil: "PH", uk: "UA", ro: "RO", el: "GR",
-  cs: "CZ", sv: "SE", da: "DK", no: "NO", fi: "FI", he: "IL",
-  bn: "BD", ta: "IN", ur: "PK", fa: "IR", am: "ET",
+const FLAGS: Record<string, string> = {
+  en: "🇬🇧", zh: "🇨🇳", es: "🇪🇸", fr: "🇫🇷", ar: "🇸🇦", hi: "🇮🇳",
+  pt: "🇧🇷", ru: "🇷🇺", ja: "🇯🇵", de: "🇩🇪", sw: "🇰🇪", ko: "🇰🇷",
+  it: "🇮🇹", tr: "🇹🇷", nl: "🇳🇱", pl: "🇵🇱", th: "🇹🇭", vi: "🇻🇳",
+  id: "🇮🇩", ms: "🇲🇾", fil: "🇵🇭", uk: "🇺🇦", ro: "🇷🇴", el: "🇬🇷",
+  cs: "🇨🇿", sv: "🇸🇪", da: "🇩🇰", no: "🇳🇴", fi: "🇫🇮", he: "🇮🇱",
+  bn: "🇧🇩", ta: "🇮🇳", ur: "🇵🇰", fa: "🇮🇷", am: "🇪🇹",
 };
 
 const LANGUAGES = Object.entries(LANG_LABELS).map(([code, name]) => ({
   code,
   name,
-  badge: LANGUAGE_BADGES[code] ?? code.slice(0, 2).toUpperCase(),
+  flag: FLAGS[code] ?? "🌐",
 }));
 
 type LanguageSelectionStepProps = {
@@ -119,15 +119,12 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
                 ]}
               >
                  <View style={[styles.badgeBubble, isSelected && styles.badgeBubbleSelected]}>
-                   <Text style={[styles.badgeText, isSelected && styles.badgeTextSelected]}>
-                     {language.badge}
-                   </Text>
+                   <Text style={styles.flag}>{language.flag}</Text>
                 </View>
                 <View style={styles.languageInfo}>
                   <Text style={[styles.languageName, isSelected && styles.languageNameSelected]}>
                     {language.name}
                   </Text>
-                  <Text style={styles.languageCode}>{language.code.toUpperCase()}</Text>
                 </View>
                 <View style={[styles.radio, isSelected && styles.radioSelected]}>
                   {isSelected && <View style={styles.radioDot} />}
@@ -219,12 +216,10 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   badgeBubbleSelected: { backgroundColor: "rgba(113,183,255,0.23)" },
-  badgeText: { color: "rgba(255,255,255,0.58)", fontSize: 12, fontFamily: "Inter_700Bold", letterSpacing: 0.4 },
-  badgeTextSelected: { color: "#DCEBFF" },
+  flag: { fontSize: 23, lineHeight: 26 },
   languageInfo: { flex: 1, marginLeft: 10 },
   languageName: { color: "rgba(255,255,255,0.88)", fontSize: 15, fontFamily: "Inter_600SemiBold" },
   languageNameSelected: { color: "#FFFFFF" },
-  languageCode: { color: "rgba(255,255,255,0.42)", fontSize: 11, marginTop: 2, fontFamily: "Inter_500Medium", letterSpacing: 0.6 },
   radio: { width: 21, height: 21, borderRadius: 11, borderWidth: 1.5, borderColor: "rgba(255,255,255,0.34)", alignItems: "center", justifyContent: "center" },
   radioSelected: { borderColor: "#72B5FF", backgroundColor: "rgba(114,181,255,0.13)" },
   radioDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: "#72B5FF" },
