@@ -34,6 +34,7 @@ import AfuLogo from "@/components/ui/AfuLogo";
 import { GitHubLogo, GoogleLogo } from "@/components/ui/OAuthLogos";
 import Colors from "@/constants/colors";
 import GoogleOneTap from "@/components/auth/GoogleOneTap";
+import { signInWithNativeGoogle } from "@/lib/nativeGoogleAuth";
 
 const BG = "#000000";
 
@@ -331,42 +332,36 @@ export default function SignUpScreen() {
     try {
       setOauthLoading("google");
       if (Platform.OS === "android") {
-        // Use the same native Google credential flow as login for standalone
-        // Android builds. Expo Go does not include this native module, so only
-        // the explicit missing-module case falls through to browser OAuth.
         try {
-          const GoogleSignin = require("@react-native-google-signin/google-signin").GoogleSignin;
-          await GoogleSignin.configure({
-            webClientId: GOOGLE_WEB_CLIENT_ID,
-            offlineAccess: false,
-          });
-          await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-          const result = await GoogleSignin.signIn();
-          const idToken = result?.data?.idToken ?? result?.idToken;
-          if (!idToken) throw new Error("Google did not return an ID token.");
-
-          const { data: authData, error: authError } = await supabase.auth.signInWithIdToken({
-            provider: "google",
-            token: idToken,
-          });
-          if (authError) throw authError;
-
-          const uid = authData.user?.id;
-          if (uid) {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("onboarding_completed")
-              .eq("id", uid)
-              .maybeSingle();
+          const nativeResult = await signInWithNativeGoogle();
+          if (nativeResult.kind === "cancelled") {
             setOauthLoading(null);
-            if (!profile?.onboarding_completed) {
-              router.replace({ pathname: "/onboarding", params: { userId: uid } } as any);
-            } else {
-              router.replace("/(tabs)/chats");
-            }
             return;
           }
-          throw new Error("Google sign-up did not create a user session.");
+          if (nativeResult.kind === "success") {
+            const { data: authData, error: authError } = await supabase.auth.signInWithIdToken({
+              provider: "google",
+              token: nativeResult.idToken,
+            });
+            if (authError) throw authError;
+
+            const uid = authData.user?.id;
+            if (uid) {
+              const { data: profile } = await supabase
+                .from("profiles")
+                .select("onboarding_completed")
+                .eq("id", uid)
+                .maybeSingle();
+              setOauthLoading(null);
+              if (!profile?.onboarding_completed) {
+                router.replace({ pathname: "/onboarding", params: { userId: uid } } as any);
+              } else {
+                router.replace("/(tabs)/chats");
+              }
+              return;
+            }
+            throw new Error("Google sign-up did not create a user session.");
+          }
         } catch (nativeError: any) {
           const code = nativeError?.code;
           if (code === "SIGN_IN_CANCELLED" || code === "12501") {

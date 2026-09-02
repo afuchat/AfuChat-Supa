@@ -26,7 +26,7 @@ import * as LocalAuthentication from "expo-local-authentication";
 import * as SecureStore from "expo-secure-store";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { supabase } from "@/lib/supabase";
-import { GOOGLE_WEB_CLIENT_ID, SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/env";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/env";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { useAppAccent } from "@/context/AppAccentContext";
@@ -36,6 +36,10 @@ import AfuLogo from "@/components/ui/AfuLogo";
 import { GitHubLogo, GoogleLogo } from "@/components/ui/OAuthLogos";
 import Colors from "@/constants/colors";
 import GoogleOneTap from "@/components/auth/GoogleOneTap";
+import {
+  signInSilentlyWithNativeGoogle,
+  signInWithNativeGoogle,
+} from "@/lib/nativeGoogleAuth";
 
 const BG = "#000000";
 const BIO_REFRESH_KEY = "afu_bio_refresh_token";
@@ -277,6 +281,49 @@ export default function SignInScreen() {
   const [verifyEmail, setVerifyEmail] = useState("");
   const pwdRef = useRef<TextInput>(null);
   const isSubmittingRef = useRef(false);
+  const nativeAutoSignInRef = useRef(false);
+
+  async function finishGoogleIdTokenSignIn(idToken: string) {
+    const { error } = await supabase.auth.signInWithIdToken({
+      provider: "google",
+      token: idToken,
+    });
+    if (error) throw error;
+    setOauthLoading(null);
+    router.replace("/(tabs)/chats");
+  }
+
+  // A returning Android user should not have to press the Google button again.
+  // GoogleSignin restores the previously approved account without showing a
+  // browser or account picker. A first-time user still gets the native picker
+  // when they press Continue with Google.
+  useEffect(() => {
+    if (Platform.OS !== "android" || user || nativeAutoSignInRef.current) return;
+    nativeAutoSignInRef.current = true;
+    let cancelled = false;
+    setOauthLoading("google");
+
+    void (async () => {
+      try {
+        const result = await signInSilentlyWithNativeGoogle();
+        if (cancelled || result.kind !== "success") return;
+        await finishGoogleIdTokenSignIn(result.idToken);
+      } catch (error: any) {
+        // Silent sign-in must never interrupt the login screen. A missing
+        // native module or unregistered signing certificate is handled by the
+        // explicit button flow, which can offer browser OAuth as a fallback.
+        if (__DEV__) {
+          console.warn("[Auth] Native Google silent sign-in unavailable", error?.code ?? error?.message ?? error);
+        }
+      } finally {
+        if (!cancelled) setOauthLoading(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   // ── Biometric state ──────────────────────────────────────────────────────────
   const [bioAvailable, setBioAvailable] = useState(false);
@@ -499,27 +546,16 @@ export default function SignInScreen() {
     try {
       setOauthLoading("google");
       if (Platform.OS === "android") {
-        // Use the native Google credential flow in standalone/dev builds.
-        // Expo Go does not contain this native module, so it falls through to
-        // the existing Supabase browser flow below.
         try {
-          const GoogleSignin = require("@react-native-google-signin/google-signin").GoogleSignin;
-          await GoogleSignin.configure({
-            webClientId: GOOGLE_WEB_CLIENT_ID,
-            offlineAccess: false,
-          });
-          await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-          const result = await GoogleSignin.signIn();
-          const idToken = result?.data?.idToken ?? result?.idToken;
-          if (!idToken) throw new Error("Google did not return an ID token.");
-          const { error } = await supabase.auth.signInWithIdToken({
-            provider: "google",
-            token: idToken,
-          });
-          if (error) throw error;
-          setOauthLoading(null);
-          router.replace("/(tabs)/chats");
-          return;
+          const nativeResult = await signInWithNativeGoogle();
+          if (nativeResult.kind === "cancelled") {
+            setOauthLoading(null);
+            return;
+          }
+          if (nativeResult.kind === "success") {
+            await finishGoogleIdTokenSignIn(nativeResult.idToken);
+            return;
+          }
         } catch (nativeError: any) {
           const code = nativeError?.code;
           if (code === "SIGN_IN_CANCELLED" || code === "12501") {
@@ -602,12 +638,7 @@ export default function SignInScreen() {
   async function handleGoogleOneTap(idToken: string) {
     try {
       setOauthLoading("google");
-      const { error } = await supabase.auth.signInWithIdToken({
-        provider: "google",
-        token: idToken,
-      });
-      if (error) throw error;
-      router.replace("/(tabs)/chats");
+      await finishGoogleIdTokenSignIn(idToken);
     } catch (error: any) {
       showAlert("Google sign-in failed", error?.message || "Could not complete Google One Tap sign-in.");
     } finally {
