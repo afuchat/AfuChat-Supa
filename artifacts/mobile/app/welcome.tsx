@@ -270,6 +270,17 @@ export default function WelcomeScreen() {
   const activeIndexRef = useRef(0);
   const isBusyRef = useRef(false);
   const pageX = useRef(new Animated.Value(0)).current;
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy),
+      onPanResponderRelease: (_, g) => {
+        if (g.dx < -SWIPE_THRESHOLD) goTo(activeIndexRef.current + 1);
+        else if (g.dx > SWIPE_THRESHOLD) goTo(activeIndexRef.current - 1);
+      },
+    }),
+  ).current;
 
   useEffect(() => {
     if (user) router.replace("/(tabs)/discover");
@@ -337,18 +348,6 @@ export default function WelcomeScreen() {
     if (index < TOTAL - 1) goTo(index + 1);
     else finish();
   };
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, g) =>
-        Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy),
-      onPanResponderRelease: (_, g) => {
-        if (g.dx < -SWIPE_THRESHOLD) goTo(activeIndexRef.current + 1);
-        else if (g.dx > SWIPE_THRESHOLD) goTo(activeIndexRef.current - 1);
-      },
-    }),
-  ).current;
 
   return (
     <View style={[s.root, { backgroundColor: BG }]} {...panResponder.panHandlers}>
