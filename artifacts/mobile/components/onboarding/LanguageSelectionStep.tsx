@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   languageList: { width: "100%", maxWidth: 560, alignSelf: "center", gap: 10 },
   languageRow: {
     minHeight: 64, flexDirection: "row", alignItems: "center", paddingHorizontal: 12,
-    borderRadius: 18, backgroundColor: "rgba(255,255,255,0.085)",
+    borderRadius: 999, backgroundColor: "rgba(255,255,255,0.085)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.14)",
     ...Platform.select({
       ios: { shadowColor: "#000000", shadowOpacity: 0.20, shadowRadius: 10, shadowOffset: { width: 0, height: 5 } },
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   },
   languageRowPressed: { opacity: 0.76 },
   badgeBubble: {
-    width: 40, height: 40, borderRadius: 13, backgroundColor: "rgba(255,255,255,0.11)",
+    width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.11)",
     alignItems: "center", justifyContent: "center",
   },
   badgeBubbleSelected: { backgroundColor: "rgba(113,183,255,0.23)" },
