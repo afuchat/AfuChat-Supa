@@ -27,6 +27,9 @@ function normalizeLanguage(value: string | null | undefined): string | null {
     español: "es",
     arabic: "ar",
     العربية: "ar",
+    amharic: "am",
+    "አማርኛ": "am",
+    kinyarwanda: "rw",
   };
   return aliases[normalized] ?? normalized.split("-")[0];
 }

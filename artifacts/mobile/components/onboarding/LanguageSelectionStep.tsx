@@ -19,6 +19,7 @@ import AfuLogo from "@/components/ui/AfuLogo";
 
 const FLAGS: Record<string, string> = {
   en: "🇬🇧", zh: "🇨🇳", es: "🇪🇸", fr: "🇫🇷", ar: "🇸🇦", sw: "🇰🇪",
+  am: "🇪🇹", rw: "🇷🇼",
 };
 
 const LANGUAGES = BUNDLED_UI_LANGUAGES

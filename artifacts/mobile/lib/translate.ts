@@ -135,6 +135,7 @@ export const LANG_LABELS: Record<string, string> = {
   ur: "Urdu",
   fa: "Persian",
   am: "Amharic",
+  rw: "Kinyarwanda",
   ha: "Hausa",
   yo: "Yoruba",
   zu: "Zulu",
