@@ -2152,7 +2152,6 @@ function ChatScreen() {
      otherHandle,
      channelHandle,
      channelDescription,
-     channelOwnerId,
     isGroup,
     isChannel,
     chatName,
@@ -2176,7 +2175,6 @@ function ChatScreen() {
     otherHandle?: string;
      channelHandle?: string;
      channelDescription?: string;
-     channelOwnerId?: string;
     isGroup?: string;
     isChannel?: string;
     chatName?: string;
@@ -2327,7 +2325,7 @@ function ChatScreen() {
         other_handle: otherHandle || null,
         channel_handle: channelHandle || null,
         channel_description: channelDescription || null,
-         channel_owner_id: channelOwnerId || null,
+        channel_owner_id: null,
         member_ids: otherId ? [otherId] : [],
         avatar_url: chatAvatar || null,
       };
@@ -2483,12 +2481,12 @@ function ChatScreen() {
         other_id: local.other_id || "",
         member_ids: local.other_id ? [local.other_id] : [],
         avatar_url: local.avatar_url,
-         channel_owner_id: local.created_by || channelOwnerId || null,
+         channel_owner_id: null,
         other_last_seen: local.other_last_seen,
         other_show_online_status: local.other_show_online,
       });
     }).catch(() => {});
-  }, [id, isDraft, chatInfo, user?.id, channelOwnerId]);
+  }, [id, isDraft, chatInfo, user?.id]);
 
   const [floatingInputHeight, setFloatingInputHeight] = useState(80);
 
@@ -2759,17 +2757,20 @@ function ChatScreen() {
       .single();
 
     if (chat) {
+      const channelAccess = chat.is_channel
+        ? (await supabase.rpc("get_channel_access_context", { p_channel_id: id })).data?.[0]
+        : null;
       const channel = chat.is_channel
         ? (await supabase
             .from("channels")
-            .select("handle, description, is_public, owner_id, subscriber_count")
+            .select("handle, description, is_public, subscriber_count")
             .eq("id", id)
             .maybeSingle()).data
         : null;
       if (!isCurrentLoad()) return;
       const allMembers = (chat.chat_members || []) as any[];
       const me = allMembers.find((m: any) => m.user_id === user.id);
-      setIAmChatAdmin(!!(me?.is_admin));
+      setIAmChatAdmin(chat.is_channel ? !!channelAccess?.is_admin : !!(me?.is_admin));
       const others = allMembers.filter((m) => m.user_id !== user.id);
       // Self-chat ("My Notes"): ONLY when the user is the sole member AND we have no
       // other_id hint from URL params (allMembers empty just means an old DM chat).
@@ -2790,7 +2791,7 @@ function ChatScreen() {
          channel_handle: channel?.handle || channelHandle || null,
          channel_description: channel?.description ?? chat.description ?? channelDescription ?? null,
         channel_is_public: channel?.is_public ?? undefined,
-         channel_owner_id: channel?.owner_id || channelOwnerId || null,
+            channel_owner_id: channelAccess?.owner_id || null,
         channel_subscriber_count: channel?.subscriber_count ?? null,
         is_verified: isSelf ? false : !!other?.is_verified,
         is_organization_verified: isSelf ? false : !!other?.is_organization_verified,
@@ -2799,7 +2800,7 @@ function ChatScreen() {
          other_handle: isSelf ? null : (other?.handle || null),
       });
     }
-  }, [id, user, isDraft, channelOwnerId, channelHandle, channelDescription]);
+  }, [id, user, isDraft, channelHandle, channelDescription]);
 
   const loadMessages = useCallback(async (loadToken = chatLoadGenerationRef.current) => {
     const isCurrentLoad = () => chatLoadGenerationRef.current === loadToken;
@@ -6758,7 +6759,7 @@ STRICT RULES:
   const isChannelOwner =
     !!chatInfo?.is_channel &&
     !!user?.id &&
-    (chatInfo.channel_owner_id || channelOwnerId) === user.id;
+    chatInfo.channel_owner_id === user.id;
   const canPostToChannel = !chatInfo?.is_channel || iAmChatAdmin || isChannelOwner;
   const headerSubtitle = chatInfo?.is_channel
     ? (chatInfo.channel_is_public === false ? "Private" : "Public")
@@ -6824,7 +6825,7 @@ STRICT RULES:
             isMe={isMe}
             isChannel={!!chatInfo?.is_channel}
             showTail={shouldShowTail(index)}
-            showName={shouldShowName(index)}
+            showName={shouldShowName(index) && !chatInfo?.is_channel}
             onLongPress={(m) => {
               if (chatPrefs.send_haptics) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               setTextSelectionMessageId(null);
@@ -6840,7 +6841,7 @@ STRICT RULES:
             onConfirmExec={handleConfirmAiExec}
             onCancelExec={handleCancelAiExec}
             onSuggestionTap={(text) => sendMessage(text)}
-            onSenderPress={advancedFeatures.mini_profile_popup && !isMe ? (id) => setMiniProfileUserId(id) : undefined}
+            onSenderPress={advancedFeatures.mini_profile_popup && !isMe && !chatInfo?.is_channel ? (id) => setMiniProfileUserId(id) : undefined}
             onReactionPress={addReaction}
             onStatusPress={isMe ? (m) => setMsgInfoTarget(m) : undefined}
              onNotificationAction={isNotificationsChat ? handleNotificationAction : undefined}

@@ -130,11 +130,8 @@ export default function CreateChannelScreen() {
     const tier = (subscription?.plan_tier as keyof typeof TIER_CHANNEL_LIMITS) || "free";
     const limit = TIER_CHANNEL_LIMITS[tier] ?? 1;
     if (isFinite(limit)) {
-      const { count } = await supabase
-        .from("channels")
-        .select("id", { count: "exact", head: true })
-        .eq("owner_id", user.id);
-      const current = count ?? 0;
+      const { data: currentCount } = await supabase.rpc("count_my_channels");
+      const current = Number(currentCount ?? 0);
       if (current >= limit) {
         const nextTier = tier === "free" ? "Silver" : tier === "silver" ? "Gold" : "Platinum";
         showAlert(
@@ -197,7 +194,6 @@ export default function CreateChannelScreen() {
       chatName: channelName.trim(),
       chatAvatar: avatarUrl || "",
       channelHandle: normalizedHandle,
-       channelOwnerId: user.id,
     } });
     setCreating(false);
   }

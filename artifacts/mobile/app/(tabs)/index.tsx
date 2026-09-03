@@ -1002,7 +1002,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
             isChannel: item.is_channel ? "true" : "false",
             chatName: item.name || "",
             chatAvatar: item.avatar_url || "",
-            channelOwnerId: item.is_channel ? (item.created_by || "") : "",
           },
         });
         return;
@@ -1179,7 +1178,6 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         isChannel: item.is_channel ? "true" : "false",
         chatName: item.name || "",
         chatAvatar: item.avatar_url || "",
-        channelOwnerId: item.is_channel ? (item.created_by || "") : "",
       },
     });
   }, [user, onOpenChat, phonebookNames]);

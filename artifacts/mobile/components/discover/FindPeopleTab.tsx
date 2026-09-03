@@ -46,7 +46,6 @@ type PublicChannel = {
   id: string;
   name: string;
   handle: string | null;
-  owner_id?: string | null;
   description: string | null;
   avatar_url: string | null;
   subscriber_count: number;
@@ -146,7 +145,7 @@ export default function FindPeopleTab() {
         supabase.from("chat_members").select("chat_id").eq("user_id", user.id),
         supabase
           .from("channels")
-          .select("id, name, handle, description, avatar_url, subscriber_count, is_verified, is_public, owner_id")
+          .select("id, name, handle, description, avatar_url, subscriber_count, is_verified, is_public")
           .eq("is_public", true)
           .order("subscriber_count", { ascending: false })
           .limit(30),
@@ -306,7 +305,7 @@ export default function FindPeopleTab() {
   const joinChannel = useCallback(async (channel: PublicChannel) => {
     if (!user) return router.push("/(auth)/login" as any);
     if (channel.is_subscriber) {
-       return router.push({ pathname: "/chat/[id]", params: { id: channel.id, isChannel: "true", chatName: channel.name, channelOwnerId: channel.owner_id || "" } } as any);
+       return router.push({ pathname: "/chat/[id]", params: { id: channel.id, isChannel: "true", chatName: channel.name } } as any);
     }
     setJoiningId(channel.id);
     const { error: memberError } = await supabase
@@ -320,7 +319,7 @@ export default function FindPeopleTab() {
       setChannels((current) => current.map((item) => item.id === channel.id
         ? { ...item, is_subscriber: true, subscriber_count: item.subscriber_count + 1 }
         : item));
-       router.push({ pathname: "/chat/[id]", params: { id: channel.id, isChannel: "true", chatName: channel.name, channelOwnerId: channel.owner_id || "" } } as any);
+       router.push({ pathname: "/chat/[id]", params: { id: channel.id, isChannel: "true", chatName: channel.name } } as any);
     } else {
       setError("Could not join that channel right now.");
     }

@@ -238,6 +238,7 @@ export default function ChatInfoScreen() {
   const [dmProfile,    setDmProfile]    = useState<DMProfile | null>(null);
   const [members,      setMembers]      = useState<Member[]>([]);
   const [channelStats, setChannelStats] = useState<ChannelStats | null>(null);
+  const [channelCanViewMembers, setChannelCanViewMembers] = useState(false);
   const [gridPosts,    setGridPosts]    = useState<GridPost[]>([]);
   const [showChannelQr, setShowChannelQr] = useState(false);
 
@@ -261,7 +262,7 @@ export default function ChatInfoScreen() {
 
   // Tab definitions by type
   const TABS = isChannel
-    ? ["Members", "Media", "Files", "Links"]
+    ? (channelCanViewMembers ? ["Members", "Media", "Files", "Links"] : ["Media", "Files", "Links"])
     : isGroup
     ? ["Members", "Media", "Links"]
     : ["Posts", "Media", "Links", "Groups"];
@@ -274,7 +275,7 @@ export default function ChatInfoScreen() {
     const [chatRes, muteRes] = await Promise.all([
       supabase
         .from("chats")
-        .select("is_group, is_channel, name, description, avatar_url, chat_members!inner(user_id, is_admin, profiles(display_name, avatar_url, id, handle, is_verified, is_organization_verified, last_seen, show_online_status))")
+        .select("is_group, is_channel, name, description, avatar_url, chat_members(user_id, is_admin, profiles(display_name, avatar_url, id, handle, is_verified, is_organization_verified, last_seen, show_online_status))")
         .eq("id", id).single(),
       supabase.from("chat_mutes").select("muted_until")
         .eq("user_id", user.id).eq("chat_id", id).maybeSingle(),
@@ -282,10 +283,14 @@ export default function ChatInfoScreen() {
 
     if (chatRes.data) {
       const c = chatRes.data as any;
+      const channelAccess = c.is_channel
+        ? (await supabase.rpc("get_channel_access_context", { p_channel_id: id })).data?.[0]
+        : null;
+      setChannelCanViewMembers(!c.is_channel || !!channelAccess?.can_view_members);
       const channel = c.is_channel
         ? (await supabase
             .from("channels")
-            .select("handle, description, is_public, owner_id, subscriber_count")
+            .select("handle, description, is_public, subscriber_count")
             .eq("id", id)
             .maybeSingle()).data
         : null;
@@ -305,7 +310,7 @@ export default function ChatInfoScreen() {
         other_is_organization_verified: !!op?.is_organization_verified,
          channel_handle: channel?.handle ?? null,
          channel_is_public: channel?.is_public ?? null,
-         channel_owner_id: channel?.owner_id ?? null,
+         channel_owner_id: channelAccess?.owner_id ?? null,
          channel_subscriber_count: channel?.subscriber_count ?? null,
       });
 
@@ -324,16 +329,16 @@ export default function ChatInfoScreen() {
             last_seen: p?.last_seen ?? null,
           };
         });
-        setMembers(mapped);
+        setMembers(c.is_channel && !channelAccess?.can_view_members ? [] : mapped);
 
         // Channel: compute admin count + subscriber count
         if (c.is_channel) {
-          const adminCount = mapped.filter((m) => m.is_admin).length;
-          const { count: subCount } = await supabase
-            .from("channel_subscriptions")
-            .select("id", { count: "exact", head: true })
-            .eq("channel_id", id);
-          setChannelStats({ subscriber_count: subCount ?? 0, admin_count: adminCount });
+          setChannelStats(channelAccess?.can_view_members
+            ? {
+                subscriber_count: Number(channelAccess?.subscriber_count ?? 0),
+                admin_count: Number(channelAccess?.admin_count ?? 0),
+              }
+            : null);
         }
       }
 
@@ -504,10 +509,11 @@ export default function ChatInfoScreen() {
   // ── List data (members or posts for FlatList) ────────────────────────────────
 
   const listData = React.useMemo<any[]>(() => {
-    if ((isGroup || isChannel) && activeTab === 0) return members;
+    if (isGroup && activeTab === 0) return members;
+    if (isChannel && channelCanViewMembers && activeTab === 0) return members;
     if (isDM && activeTab === 0) return gridPosts;
     return [];
-  }, [isGroup, isChannel, isDM, activeTab, members, gridPosts]);
+  }, [isGroup, isChannel, isDM, activeTab, members, gridPosts, channelCanViewMembers]);
 
   const numColumns = isDM && activeTab === 0 ? 3 : 1;
 
@@ -539,9 +545,9 @@ export default function ChatInfoScreen() {
       <View style={[s.topBar, { paddingTop: insets.top + 4 }]}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={12} style={s.topBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
+    </TouchableOpacity>
         <View style={{ flex: 1 }} />
-        <TouchableOpacity
+        {(!isChannel || isChannelOwner) && <TouchableOpacity
           onPress={() => router.push({
             pathname: "/chat-info/danger/[id]",
             params: { id, displayName, otherId: otherId ?? "", isGroup: isGroup ? "1" : "0", isChannel: isChannel ? "1" : "0" },
@@ -549,7 +555,7 @@ export default function ChatInfoScreen() {
           hitSlop={12} style={s.topBtn}
         >
           <Ionicons name="ellipsis-vertical" size={22} color={colors.text} />
-        </TouchableOpacity>
+        </TouchableOpacity>}
       </View>
 
       {/* ── Avatar + name ── */}
@@ -643,7 +649,7 @@ export default function ChatInfoScreen() {
           ) : null}
 
           {/* Chat settings row */}
-          <InfoCard colors={colors}>
+          {(!isChannel || channelCanViewMembers) && <InfoCard colors={colors}>
             <TouchableOpacity
               style={s.settingsRow}
               onPress={() => router.push({ pathname: "/chat-info/appearance/[id]", params: { id, displayName } } as any)}
@@ -653,7 +659,7 @@ export default function ChatInfoScreen() {
               <Text style={[s.settingsLabel, { color: colors.text }]}>Chat Appearance</Text>
               <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
             </TouchableOpacity>
-          </InfoCard>
+          </InfoCard>}
         </View>
       )}
 
@@ -769,7 +775,7 @@ export default function ChatInfoScreen() {
           )}
 
           {/* Stats */}
-          <InfoCard colors={colors}>
+          {(isChannelOwner || channelCanViewMembers) && <InfoCard colors={colors}>
             <InfoRow
               icon="people-outline"
               label="Subscribers"
@@ -794,7 +800,7 @@ export default function ChatInfoScreen() {
               colors={colors}
               last
             />
-          </InfoCard>
+          </InfoCard>}
         </View>
       )}
 
@@ -816,12 +822,12 @@ export default function ChatInfoScreen() {
       {listData.length === 0 && (
         <View style={s.emptyTab}>
           <Ionicons
-            name={activeTab === 0 && (isGroup || isChannel) ? "people-outline" : "images-outline"}
+            name={activeTab === 0 && (isGroup || (isChannel && channelCanViewMembers)) ? "people-outline" : "images-outline"}
             size={40}
             color={colors.textMuted}
           />
           <Text style={[s.emptyTabText, { color: colors.textMuted }]}>
-            {activeTab === 0 && (isGroup || isChannel) ? "No members found" :
+            {activeTab === 0 && (isGroup || (isChannel && channelCanViewMembers)) ? "No members found" :
              activeTab === 0 && isDM ? "No posts yet" : "Nothing here yet"}
           </Text>
         </View>
@@ -844,7 +850,7 @@ export default function ChatInfoScreen() {
         showsVerticalScrollIndicator={false}
         columnWrapperStyle={numColumns > 1 ? { gap: 1.5 } : undefined}
         ItemSeparatorComponent={
-          numColumns === 1 && (isGroup || isChannel) && activeTab === 0
+          numColumns === 1 && (isGroup || (isChannel && channelCanViewMembers)) && activeTab === 0
             ? () => <View style={[s.memberSep, { backgroundColor: colors.border }]} />
             : undefined
         }

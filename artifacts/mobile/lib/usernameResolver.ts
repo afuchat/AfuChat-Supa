@@ -10,7 +10,6 @@ export type UsernameTarget =
       avatarUrl: string | null;
       handle: string;
       description: string | null;
-      ownerId: string | null;
     }
   | {
       kind: "group";
@@ -63,7 +62,7 @@ export async function resolveUsernameTarget(handle: string): Promise<UsernameTar
       .limit(1),
     supabase
       .from("channels")
-      .select("id, name, handle, description, avatar_url, owner_id, is_public")
+      .select("id, name, handle, description, avatar_url, is_public")
       .ilike("handle", cleanHandle)
       .eq("is_public", true)
       .limit(1),
@@ -99,7 +98,6 @@ export async function resolveUsernameTarget(handle: string): Promise<UsernameTar
       avatarUrl: channel.avatar_url || null,
       handle: channel.handle || cleanHandle,
       description: channel.description || null,
-      ownerId: channel.owner_id || null,
     };
   }
 
@@ -145,7 +143,6 @@ export function navigateToUsernameTarget(target: UsernameTarget): void {
         chatAvatar: target.avatarUrl || "",
         channelHandle: target.handle,
         channelDescription: target.description || "",
-        channelOwnerId: target.ownerId || "",
       },
     } as any);
   } else {

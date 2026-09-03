@@ -110,13 +110,8 @@ export default function CreateGroupScreen() {
     const tier = (subscription?.plan_tier as keyof typeof TIER_GROUP_LIMITS) || "free";
     const limit = TIER_GROUP_LIMITS[tier] ?? 1;
     if (isFinite(limit)) {
-      const { count } = await supabase
-        .from("chats")
-        .select("id", { count: "exact", head: true })
-        .eq("created_by", user!.id)
-        .eq("is_group", true)
-        .eq("is_channel", false);
-      const current = count ?? 0;
+      const { data: currentCount } = await supabase.rpc("count_my_groups");
+      const current = Number(currentCount ?? 0);
       if (current >= limit) {
         const nextTier = tier === "free" ? "Silver" : tier === "silver" ? "Gold" : "Platinum";
         showAlert(

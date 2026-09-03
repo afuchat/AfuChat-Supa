@@ -49,13 +49,11 @@ type Channel = {
   id: string;
   name: string;
   handle: string | null;
-  owner_id?: string | null;
   description: string | null;
   avatar_url: string | null;
   subscriber_count: number;
   is_verified: boolean;
   am_subscriber: boolean;
-  owner: { display_name: string; handle: string } | null;
 };
 
 type CommunityTab = "groups" | "channels";
@@ -136,7 +134,7 @@ export default function CommunitiesScreen() {
         supabase
           .from("channels")
           .select(
-             "id, name, handle, description, avatar_url, subscriber_count, is_verified, is_public, owner_id, profiles!channels_owner_id_fkey(display_name, handle)"
+             "id, name, handle, description, avatar_url, subscriber_count, is_verified, is_public"
           )
           .eq("is_public", true)
           .order("subscriber_count", { ascending: false })
@@ -148,15 +146,11 @@ export default function CommunitiesScreen() {
         id: c.id,
         name: c.name || "Unnamed",
         handle: c.handle || null,
-         owner_id: c.owner_id || null,
         description: c.description || null,
         avatar_url: c.avatar_url || null,
         subscriber_count: c.subscriber_count ?? 0,
         is_verified: !!(c as any).is_verified,
         am_subscriber: subSet.has(c.id),
-        owner: c.profiles
-          ? { display_name: c.profiles.display_name, handle: c.profiles.handle }
-          : null,
       }));
     };
 
@@ -249,7 +243,6 @@ export default function CommunitiesScreen() {
         chatName: item.name,
         chatAvatar: item.avatar_url || "",
         channelHandle: item.handle || "",
-         channelOwnerId: item.owner_id || "",
       } } as any);
       return;
     }
@@ -283,7 +276,6 @@ export default function CommunitiesScreen() {
       chatName: item.name,
       chatAvatar: item.avatar_url || "",
       channelHandle: item.handle || "",
-      channelOwnerId: item.owner_id || "",
     } } as any);
   }
 
@@ -376,11 +368,6 @@ export default function CommunitiesScreen() {
                 <Ionicons name="checkmark-circle" size={14} color={PURPLE} />
               )}
             </View>
-            {item.owner && (
-              <Text style={[ss.cardMeta, { color: colors.textMuted, marginBottom: 2 }]} numberOfLines={1}>
-                by @{item.owner.handle}
-              </Text>
-            )}
             {item.handle ? (
               <Text style={[ss.cardMeta, { color: PURPLE, marginBottom: 2 }]} numberOfLines={1}>
                 @{item.handle}

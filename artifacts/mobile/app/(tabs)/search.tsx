@@ -92,7 +92,7 @@ type PersonResult  = { id:string; handle:string; display_name:string; avatar_url
 type OrgPageResult = { id:string; name:string; slug:string; logo_url:string|null; description:string|null; kind:"org" };
 type PostResult    = { id:string; content:string; image_url:string|null; author_id:string; author_handle:string; author_name:string; author_avatar:string|null; view_count:number; created_at:string; post_type:string; article_title:string|null };
 type VideoResult   = { id:string; content:string; video_url:string; image_url:string|null; author_id:string; author_handle:string; author_name:string; author_avatar:string|null; view_count:number; created_at:string; audio_name:string|null; duration_seconds:number|null };
-type ChannelResult = { id:string; name:string; handle:string|null; description:string|null; avatar_url:string|null; subscriber_count:number; owner_handle:string|null; owner_name:string|null };
+type ChannelResult = { id:string; name:string; handle:string|null; description:string|null; avatar_url:string|null; subscriber_count:number };
 type GroupResult   = { id:string; name:string; handle:string|null; description:string|null; avatar_url:string|null; member_count:number };
 type EventResult   = { id:string; title:string; description:string|null; emoji:string; price:number; event_date:string; capacity:number; tickets_sold:number; category:string|null; creator_name:string; creator_handle:string };
 type GiftResult    = { id:string; name:string; emoji:string; base_xp_cost:number; rarity:string; description:string|null };
@@ -522,7 +522,7 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
 
           wantsChannels
             ? supabase.from("channels")
-                .select("id, name, handle, description, avatar_url, subscriber_count, owner_id, profiles!channels_owner_id_fkey(display_name, handle)")
+                .select("id, name, handle, description, avatar_url, subscriber_count")
                 .or(`name.ilike.${pat},handle.ilike.${handlePat},description.ilike.${pat}`)
                 .eq("is_public", true)
                 .order("subscriber_count", { ascending: false })
@@ -625,7 +625,6 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
       });
 
       const channels: ChannelResult[] = ((channelsRes.data || []) as any[]).map((ch: any) => {
-        const owner = ch.profiles;
         return {
           id: ch.id,
           name: ch.name,
@@ -633,8 +632,6 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
           description: ch.description || null,
           avatar_url: ch.avatar_url || null,
           subscriber_count: ch.subscriber_count || 0,
-          owner_handle: owner?.handle || null,
-          owner_name: owner?.display_name || null,
         };
       });
 
@@ -1027,11 +1024,9 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
           <View style={{ flex: 1, gap: 3 }}>
             <Text style={[ss.rowTitle, { color: colors.text }]} numberOfLines={1}>{ch.name}</Text>
             {ch.handle ? <Text style={[ss.rowSub, { color: PURPLE }]} numberOfLines={1}>@{ch.handle}</Text> : null}
-            {ch.owner_name
-              ? <Text style={[ss.rowSub, { color: colors.textMuted }]} numberOfLines={1}>by {ch.owner_name}{ch.owner_handle ? ` @${ch.owner_handle}` : ""}</Text>
-              : ch.description
-                ? <Text style={[ss.rowSub, { color: colors.textMuted }]} numberOfLines={1}>{ch.description}</Text>
-                : null}
+            {ch.description
+              ? <Text style={[ss.rowSub, { color: colors.textMuted }]} numberOfLines={1}>{ch.description}</Text>
+              : null}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
               <Ionicons name="people" size={11} color={PURPLE} />
               <Text style={{ color: PURPLE, fontSize: 11, fontFamily: "Inter_600SemiBold" }}>{fmtNum(ch.subscriber_count)} subscribers</Text>
