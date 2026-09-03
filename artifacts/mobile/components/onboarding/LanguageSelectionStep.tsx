@@ -137,9 +137,6 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
     <View style={styles.root}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       <OnboardingBackdrop />
-      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-        <View style={[styles.languageAmbientGlow, { backgroundColor: ONBOARDING_THEME.orbBlue }]} />
-      </View>
 
       <View style={styles.headerPositioner}>
         <View
@@ -257,16 +254,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: ONBOARDING_THEME.background, overflow: "hidden" },
   scroll: { flex: 1 },
   languageScrollContent: { paddingHorizontal: 22 },
-  languageAmbientGlow: {
-    position: "absolute",
-    width: 420,
-    height: 420,
-    borderRadius: 210,
-    top: 170,
-    left: "50%" as any,
-    marginLeft: -210,
-    opacity: 0.1,
-  },
   headerPositioner: {
     position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, elevation: 10,
     alignItems: "center",

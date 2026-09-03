@@ -1,15 +1,15 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
-import { LinearGradient } from "@/components/ui/SafeGradient";
+import { StyleSheet, View, useWindowDimensions } from "react-native";
 import Colors from "@/constants/colors";
+import { useAppAccent } from "@/context/AppAccentContext";
 
 export const ONBOARDING_THEME = {
   background: Colors.dark.background,
-  // Keep the same dark atmospheric backdrop across welcome, language
-  // selection, and profile setup.
-  gradientTop: "#070D32",
-  gradientMiddle: "#020617",
-  orbBlue: "#1018D8",
+  // Keep the same black base as the login screen. The shared soft orbs below
+  // provide the only background color treatment across auth and onboarding.
+  gradientTop: Colors.dark.background,
+  gradientMiddle: Colors.dark.background,
+  orbBlue: Colors.brand,
   orbPurple: "#4B237A",
   text: Colors.dark.text,
   textSecondary: "rgba(255,255,255,0.62)",
@@ -18,42 +18,26 @@ export const ONBOARDING_THEME = {
   border: "rgba(255,255,255,0.14)",
 } as const;
 
-export default function OnboardingBackdrop() {
+function SoftOrb({ cx, cy, size, color }: { cx: number; cy: number; size: number; color: string }) {
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <LinearGradient
-        colors={[
-          ONBOARDING_THEME.gradientTop,
-          ONBOARDING_THEME.gradientMiddle,
-          ONBOARDING_THEME.background,
-        ]}
-        locations={[0, 0.48, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-      <View style={[styles.orb, styles.orbBlue]} />
-      <View style={[styles.orb, styles.orbPurple]} />
-    </View>
+    <>
+      <View style={{ position: "absolute", left: cx - size * 0.75, top: cy - size * 0.75, width: size * 1.5, height: size * 1.5, borderRadius: size * 0.75, backgroundColor: color, opacity: 0.07 }} />
+      <View style={{ position: "absolute", left: cx - size * 0.5, top: cy - size * 0.5, width: size, height: size, borderRadius: size * 0.5, backgroundColor: color, opacity: 0.11 }} />
+      <View style={{ position: "absolute", left: cx - size * 0.27, top: cy - size * 0.27, width: size * 0.54, height: size * 0.54, borderRadius: size * 0.27, backgroundColor: color, opacity: 0.16 }} />
+    </>
   );
 }
 
-const styles = StyleSheet.create({
-  orb: {
-    position: "absolute",
-    borderRadius: 999,
-    opacity: 0.15,
-  },
-  orbBlue: {
-    width: 260,
-    height: 260,
-    top: -120,
-    right: -85,
-    backgroundColor: ONBOARDING_THEME.orbBlue,
-  },
-  orbPurple: {
-    width: 200,
-    height: 200,
-    top: 210,
-    left: -120,
-    backgroundColor: ONBOARDING_THEME.orbPurple,
-  },
-});
+export default function OnboardingBackdrop() {
+  const { width, height } = useWindowDimensions();
+  const { accent } = useAppAccent();
+
+  return (
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: ONBOARDING_THEME.background }]} />
+      <SoftOrb cx={width * 0.85} cy={height * 0.08} size={280} color={accent} />
+      <SoftOrb cx={width * 0.10} cy={height * 0.55} size={220} color={ONBOARDING_THEME.orbPurple} />
+      <SoftOrb cx={width * 0.55} cy={height * 0.85} size={180} color={accent} />
+    </View>
+  );
+}

@@ -87,44 +87,6 @@ const SLIDES = [
 const SWIPE_THRESHOLD = 52;
 const BG = ONBOARDING_THEME.background;
 
-// ─── Soft orb (layered circles simulate radial gradient) ──────────────────────
-function SoftOrb({ cx, cy, size, color }: { cx: number; cy: number; size: number; color: string }) {
-  return (
-    <>
-      <View style={{
-        position: "absolute",
-        left: cx - size * 0.75,
-        top: cy - size * 0.75,
-        width: size * 1.5,
-        height: size * 1.5,
-        borderRadius: size * 0.75,
-        backgroundColor: color,
-        opacity: 0.07,
-      }} />
-      <View style={{
-        position: "absolute",
-        left: cx - size * 0.5,
-        top: cy - size * 0.5,
-        width: size,
-        height: size,
-        borderRadius: size * 0.5,
-        backgroundColor: color,
-        opacity: 0.11,
-      }} />
-      <View style={{
-        position: "absolute",
-        left: cx - size * 0.27,
-        top: cy - size * 0.27,
-        width: size * 0.54,
-        height: size * 0.54,
-        borderRadius: size * 0.27,
-        backgroundColor: color,
-        opacity: 0.15,
-      }} />
-    </>
-  );
-}
-
 // ─── Illustration sources (all pre-loaded at require time) ────────────────────
 const IL_SOURCES: { key: string; src: any }[] = [
   { key: "messaging", src: IL_MESSAGING },
@@ -176,25 +138,6 @@ function OnboardingPage({
           resizeMode="contain"
         />
       </View>
-
-      <View style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}>
-        <View style={StyleSheet.absoluteFill}>
-          <SoftOrb cx={width * slide.orb1.x} cy={height * slide.orb1.y} size={slide.orb1.size} color={slide.orb1.color} />
-        </View>
-        <View style={StyleSheet.absoluteFill}>
-          <SoftOrb cx={width * slide.orb2.x} cy={height * slide.orb2.y} size={slide.orb2.size} color={slide.orb2.color} />
-        </View>
-        <View style={StyleSheet.absoluteFill}>
-          <SoftOrb cx={width * slide.orb3.x} cy={height * slide.orb3.y} size={slide.orb3.size} color={slide.orb3.color} />
-        </View>
-      </View>
-
-      <LinearGradient
-        colors={["transparent", `${BG}00`, `${BG}B0`, BG, BG]}
-        locations={[0, 0.28, 0.52, 0.70, 1]}
-        start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
-        style={[StyleSheet.absoluteFill, { pointerEvents: "none" } as any]}
-      />
 
       <View style={[s.topBar, { paddingTop: topInset + 12 }]}>
         <View style={s.logoRow}>
