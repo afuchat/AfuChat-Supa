@@ -378,6 +378,7 @@ type ChatInfo = {
   channel_handle?: string | null;
   channel_description?: string | null;
   channel_is_public?: boolean;
+  channel_is_member?: boolean;
   channel_owner_id?: string | null;
   channel_subscriber_count?: number | null;
 };
@@ -2436,6 +2437,7 @@ function ChatScreen() {
   const [miniProfileUserId, setMiniProfileUserId] = useState<string | null>(null);
   const [emojiKeyboardHeight, setEmojiKeyboardHeight] = useState(280);
   const [iAmChatAdmin, setIAmChatAdmin] = useState(false);
+  const [joiningChannel, setJoiningChannel] = useState(false);
   const [showAddMembers, setShowAddMembers] = useState(false);
   const [showInviteLink, setShowInviteLink] = useState(false);
   const [inviteLinkCopied, setInviteLinkCopied] = useState(false);
@@ -2771,6 +2773,9 @@ function ChatScreen() {
       const allMembers = (chat.chat_members || []) as any[];
       const me = allMembers.find((m: any) => m.user_id === user.id);
       setIAmChatAdmin(chat.is_channel ? !!channelAccess?.is_admin : !!(me?.is_admin));
+      const channelIsMember = chat.is_channel
+        ? !!me || !!channelAccess?.is_owner || !!channelAccess?.is_admin
+        : undefined;
       const others = allMembers.filter((m) => m.user_id !== user.id);
       // Self-chat ("My Notes"): ONLY when the user is the sole member AND we have no
       // other_id hint from URL params (allMembers empty just means an old DM chat).
@@ -2791,6 +2796,7 @@ function ChatScreen() {
          channel_handle: channel?.handle || channelHandle || null,
          channel_description: channel?.description ?? chat.description ?? channelDescription ?? null,
         channel_is_public: channel?.is_public ?? undefined,
+        channel_is_member: channelIsMember,
             channel_owner_id: channelAccess?.owner_id || null,
         channel_subscriber_count: channel?.subscriber_count ?? null,
         is_verified: isSelf ? false : !!other?.is_verified,
@@ -6760,7 +6766,9 @@ STRICT RULES:
     !!chatInfo?.is_channel &&
     !!user?.id &&
     chatInfo.channel_owner_id === user.id;
-  const canPostToChannel = !chatInfo?.is_channel || iAmChatAdmin || isChannelOwner;
+  const isChannelMember = chatInfo?.channel_is_member === true;
+  const channelMembershipKnown = !chatInfo?.is_channel || typeof chatInfo.channel_is_member === "boolean";
+  const canPostToChannel = !chatInfo?.is_channel || (isChannelMember && (iAmChatAdmin || isChannelOwner));
   const headerSubtitle = chatInfo?.is_channel
     ? (chatInfo.channel_is_public === false ? "Private" : "Public")
     : null;
@@ -6779,6 +6787,29 @@ STRICT RULES:
       },
     } as any);
   }, [canOpenDirectProfile, chatInfo?.other_id, chatInfo?.is_verified, chatInfo?.is_organization_verified, headerTitle, headerAvatar]);
+
+  const joinCurrentChannel = useCallback(async () => {
+    if (!user || !id || !chatInfo?.is_channel || joiningChannel || isChannelMember) return;
+    setJoiningChannel(true);
+    try {
+      const { error } = await supabase
+        .from("channel_subscriptions")
+        .insert({ channel_id: id, user_id: user.id });
+      if (error && error.code !== "23505") throw error;
+      if (!error) {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      setChatInfo((prev) => prev ? {
+        ...prev,
+        channel_is_member: true,
+        channel_subscriber_count: error ? prev.channel_subscriber_count : (prev.channel_subscriber_count ?? 0) + 1,
+      } : prev);
+    } catch {
+      showAlert("Couldn't join channel", "Please try again.");
+    } finally {
+      setJoiningChannel(false);
+    }
+  }, [user, id, chatInfo?.is_channel, joiningChannel, isChannelMember]);
 
   const getMessageSpacing = useCallback((index: number): number => {
     if (index === 0) return 0;
@@ -7443,22 +7474,44 @@ STRICT RULES:
             </View>
           </View>
         ) : chatInfo?.is_channel && !canPostToChannel ? (
-          <View style={[st.channelReadOnlyBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-             <Ionicons name={isMuted ? "volume-mute" : "megaphone"} size={16} color={colors.textMuted} />
-             <Text style={[st.channelReadOnlyText, { color: colors.textMuted, flex: 1 }]}>
-               {isMuted ? "Channel muted" : "Channel updates"}
-             </Text>
-             <TouchableOpacity
-               onPress={() => void (isMuted ? handleUnmuteChat() : handleMuteChat(null))}
-               style={[st.channelMuteButton, { backgroundColor: colors.inputBg }]}
-               activeOpacity={0.7}
-             >
-               <Ionicons name={isMuted ? "notifications-outline" : "notifications-off-outline"} size={15} color={colors.textSecondary} />
-               <Text style={[st.channelMuteButtonText, { color: colors.textSecondary }]}>
-                 {isMuted ? "Unmute" : "Mute"}
-               </Text>
-             </TouchableOpacity>
-          </View>
+          !channelMembershipKnown ? (
+            <View style={[st.channelReadOnlyBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+              <ActivityIndicator size="small" color={colors.textMuted} />
+              <Text style={[st.channelReadOnlyText, { color: colors.textMuted }]}>Checking channel access…</Text>
+            </View>
+          ) : !isChannelMember ? (
+            <View style={[st.channelJoinBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[st.channelJoinTitle, { color: colors.text }]}>Join this channel</Text>
+                <Text style={[st.channelReadOnlyText, { color: colors.textMuted }]}>Join to receive channel updates.</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => void joinCurrentChannel()}
+                disabled={joiningChannel}
+                style={[st.channelJoinButton, { backgroundColor: BRAND }]}
+                activeOpacity={0.8}
+              >
+                {joiningChannel ? <ActivityIndicator size="small" color="#fff" /> : <Text style={st.channelJoinButtonText}>Join</Text>}
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={[st.channelReadOnlyBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+              <Ionicons name={isMuted ? "volume-mute" : "megaphone"} size={16} color={colors.textMuted} />
+              <Text style={[st.channelReadOnlyText, { color: colors.textMuted, flex: 1 }]}>
+                {isMuted ? "Channel muted" : "Channel updates"}
+              </Text>
+              <TouchableOpacity
+                onPress={() => void (isMuted ? handleUnmuteChat() : handleMuteChat(null))}
+                style={[st.channelMuteButton, { backgroundColor: colors.inputBg }]}
+                activeOpacity={0.7}
+              >
+                <Ionicons name={isMuted ? "notifications-outline" : "notifications-off-outline"} size={15} color={colors.textSecondary} />
+                <Text style={[st.channelMuteButtonText, { color: colors.textSecondary }]}>
+                  {isMuted ? "Unmute" : "Mute"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )
         ) : (
           <>
             {!isRecording && (chatInfo?.is_group || chatInfo?.is_channel) && (
@@ -9598,6 +9651,31 @@ const st = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  channelJoinBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  channelJoinTitle: {
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+  },
+  channelJoinButton: {
+    minWidth: 72,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 18,
+  },
+  channelJoinButtonText: {
+    color: "#fff",
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
   },
   channelReadOnlyText: {
     fontSize: 13,

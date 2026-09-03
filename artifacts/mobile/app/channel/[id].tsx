@@ -39,42 +39,6 @@ export default function ChannelRoute() {
         return;
       }
 
-      const { data: membership } = await supabase
-        .from("chat_members")
-        .select("user_id")
-        .eq("chat_id", id)
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!membership && !channel.is_public) {
-        if (!cancelled) setMessage("This is a private channel. Use an invite link to join.");
-        return;
-      }
-
-      if (!membership) {
-        const { data: subscription } = await supabase
-          .from("channel_subscriptions")
-          .select("id")
-          .eq("channel_id", id)
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        const { error: memberError } = await supabase
-          .from("chat_members")
-          .upsert({ chat_id: id, user_id: user.id, is_admin: false }, { onConflict: "chat_id,user_id" });
-        const { error: subscriptionError } = await supabase
-          .from("channel_subscriptions")
-          .upsert({ channel_id: id, user_id: user.id }, { onConflict: "channel_id,user_id" });
-
-        if (memberError || subscriptionError) {
-          if (!cancelled) setMessage("Could not join this channel right now.");
-          return;
-        }
-        if (!subscription) {
-          await supabase.rpc("increment_channel_subscriber", { p_channel_id: id });
-        }
-      }
-
       if (!cancelled) {
         router.replace({
           pathname: "/chat/[id]",

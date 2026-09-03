@@ -235,41 +235,7 @@ export default function CommunitiesScreen() {
   }
 
   async function subscribeOrOpenChannel(item: Channel) {
-    if (!user) return;
-    if (item.am_subscriber) {
-      safeRouter.push({ pathname: "/chat/[id]", params: {
-        id: item.id,
-        isChannel: "true",
-        chatName: item.name,
-        chatAvatar: item.avatar_url || "",
-        channelHandle: item.handle || "",
-      } } as any);
-      return;
-    }
-    if (!isOnline()) { showAlert("No internet", "An internet connection is required to subscribe."); return; }
-    setJoiningId(item.id);
-    const { error: memberError } = await supabase
-      .from("chat_members")
-      .upsert({ chat_id: item.id, user_id: user.id, is_admin: false }, { onConflict: "chat_id,user_id" });
-    const { error: subscriptionError } = await supabase
-      .from("channel_subscriptions")
-      .upsert({ channel_id: item.id, user_id: user.id }, { onConflict: "channel_id,user_id" });
-    if (memberError || subscriptionError) {
-      setJoiningId(null);
-      showAlert("Couldn't join channel", "Please try again.");
-      return;
-    }
-    await supabase.rpc("increment_channel_subscriber", { p_channel_id: item.id });
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    // Optimistic update + cache write
-    setChannels((prev) => {
-      const updated = prev.map((c) =>
-        c.id === item.id ? { ...c, am_subscriber: true, subscriber_count: c.subscriber_count + 1 } : c
-      );
-      queryCacheWrite(CHANNELS_KEY, updated);
-      return updated;
-    });
-    setJoiningId(null);
+    if (!user) return safeRouter.push("/(auth)/login" as any);
     safeRouter.push({ pathname: "/chat/[id]", params: {
       id: item.id,
       isChannel: "true",
@@ -396,7 +362,7 @@ export default function CommunitiesScreen() {
               <ActivityIndicator color={item.am_subscriber ? colors.textMuted : "#fff"} size="small" />
             ) : (
               <Text style={[ss.joinBtnText, { color: item.am_subscriber ? colors.textMuted : "#fff" }]}>
-                {item.am_subscriber ? "Open" : "Follow"}
+                {item.am_subscriber ? "Open" : "View"}
               </Text>
             )}
           </TouchableOpacity>

@@ -302,28 +302,9 @@ export default function FindPeopleTab() {
     setJoiningId(null);
   }, [user]);
 
-  const joinChannel = useCallback(async (channel: PublicChannel) => {
+  const openChannel = useCallback((channel: PublicChannel) => {
     if (!user) return router.push("/(auth)/login" as any);
-    if (channel.is_subscriber) {
-       return router.push({ pathname: "/chat/[id]", params: { id: channel.id, isChannel: "true", chatName: channel.name } } as any);
-    }
-    setJoiningId(channel.id);
-    const { error: memberError } = await supabase
-      .from("chat_members")
-      .upsert({ chat_id: channel.id, user_id: user.id, is_admin: false }, { onConflict: "chat_id,user_id" });
-    const { error: joinError } = await supabase
-      .from("channel_subscriptions")
-      .upsert({ channel_id: channel.id, user_id: user.id }, { onConflict: "channel_id,user_id" });
-    if (!memberError && !joinError) {
-      await supabase.rpc("increment_channel_subscriber", { p_channel_id: channel.id });
-      setChannels((current) => current.map((item) => item.id === channel.id
-        ? { ...item, is_subscriber: true, subscriber_count: item.subscriber_count + 1 }
-        : item));
-       router.push({ pathname: "/chat/[id]", params: { id: channel.id, isChannel: "true", chatName: channel.name } } as any);
-    } else {
-      setError("Could not join that channel right now.");
-    }
-    setJoiningId(null);
+    router.push({ pathname: "/chat/[id]", params: { id: channel.id, isChannel: "true", chatName: channel.name } } as any);
   }, [user]);
 
   const toggleFollow = useCallback(async (person: Person) => {
@@ -432,7 +413,7 @@ export default function FindPeopleTab() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.communityRail}>
                 {visibleChannels.map((channel) => (
                   <View key={channel.id} style={[styles.communityCard, { backgroundColor: colors.surface }]}>
-                    <TouchableOpacity onPress={() => void joinChannel(channel)} activeOpacity={0.75}>
+                    <TouchableOpacity onPress={() => openChannel(channel)} activeOpacity={0.75}>
                       {channel.avatar_url ? (
                         <ExpoImage source={{ uri: channel.avatar_url }} style={styles.communityAvatar} contentFit="cover" cachePolicy="memory-disk" />
                       ) : (
@@ -456,12 +437,9 @@ export default function FindPeopleTab() {
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.communityAction, { backgroundColor: channel.is_subscriber ? colors.inputBg : "#8B5CF6" }]}
-                      onPress={() => void joinChannel(channel)}
-                      disabled={joiningId === channel.id}
+                      onPress={() => openChannel(channel)}
                     >
-                      {joiningId === channel.id
-                        ? <ActivityIndicator size="small" color={channel.is_subscriber ? colors.textMuted : "#fff"} />
-                        : <Text style={{ color: channel.is_subscriber ? colors.textMuted : "#fff", fontFamily: "Inter_600SemiBold", fontSize: 12 }}>{channel.is_subscriber ? "Open" : "Join"}</Text>}
+                      <Text style={{ color: channel.is_subscriber ? colors.textMuted : "#fff", fontFamily: "Inter_600SemiBold", fontSize: 12 }}>{channel.is_subscriber ? "Open" : "View"}</Text>
                     </TouchableOpacity>
                   </View>
                 ))}
