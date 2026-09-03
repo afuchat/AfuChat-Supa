@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     }),
   },
   continueButtonDisabled: {
-    backgroundColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "rgba(255,255,255,0.18)",
     ...Platform.select({
       ios: { shadowOpacity: 0 },
       android: { elevation: 0 },
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
   },
   continueButtonPressed: { opacity: 0.84 },
   continueText: { color: "#FFFFFF", fontSize: 16, fontFamily: "Inter_700Bold" },
-  continueTextDisabled: { color: "rgba(255,255,255,0.38)" },
+  continueTextDisabled: { color: "rgba(255,255,255,0.62)" },
   continueArrow: { color: "#FFFFFF", fontSize: 21, lineHeight: 24, fontFamily: "Inter_700Bold" },
   requiredHint: { color: "rgba(255,255,255,0.38)", fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 10 },
 });
