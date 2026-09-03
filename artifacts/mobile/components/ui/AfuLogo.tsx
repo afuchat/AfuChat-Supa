@@ -2,10 +2,11 @@ import React from "react";
 import { Image as RNImage, StyleProp, ViewStyle } from "react-native";
 import Svg, { Defs, Ellipse, Image as SvgImage, Mask, Rect } from "react-native-svg";
 import { LOGO_BLACK_B64 } from "@/lib/logoAssets";
-import { LOGO_WHITE_BOLD_B64 } from "@/lib/logoWhiteBold";
 import { useThemeContext } from "@/context/ThemeContext";
 
-const LOGO_DARK = { uri: LOGO_WHITE_BOLD_B64 };
+// Keep the dark landing-page mark tied to the source asset rather than the
+// generated base64 copy, so its transparent pixels and artwork stay exact.
+const LOGO_DARK = require("@/assets/images/white-logo-bold.png");
 const LOGO_LIGHT = { uri: LOGO_BLACK_B64 };
 
 /**
@@ -57,7 +58,7 @@ export function AfuLogo({
           </Mask>
         </Defs>
         <SvgImage
-          href={source.uri}
+          href={source as any}
           x="0"
           y="0"
           width="1024"
