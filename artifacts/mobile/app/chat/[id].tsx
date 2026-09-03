@@ -1260,14 +1260,11 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   const { colors, isDark } = useTheme();
   const { openApp } = useSuperApp();
   const BRAND = brandColor ?? colors.accent;
-  const { preferredLang, voiceToText, textToSpeech } = useLanguage();
+  const { voiceToText, textToSpeech } = useLanguage();
   const { themeColors: chatTheme, bubbleRadius: chatRadius, prefs: chatPrefsLocal } = useChatPreferences();
   const _perChatFont = React.useContext(ChatFontSizeCtx);
   const { features: msgBubbleFeatures } = useAdvancedFeatures();
   const messageLongPress = isTextSelectionEnabled ? undefined : () => onLongPress(msg);
-  const [translated, setTranslated] = useState<string | null>(null);
-  const [translating, setTranslating] = useState(false);
-  const [showTranslated, setShowTranslated] = useState(false);
   const [transcript, setTranscript] = useState<string | null>(null);
   const [transcribing, setTranscribing] = useState(false);
   const [showTranscript, setShowTranscript] = useState(false);
@@ -1354,69 +1351,8 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
     msg.encrypted_content?.startsWith("🎁") ||
     ["📷 Photo", "🎥 Video", "GIF"].includes(msg.encrypted_content ?? "");
 
-  const canCheckTranslation =
-    !isMe &&
-    !!msg.encrypted_content &&
-    !isSpecial &&
-    !!preferredLang;
-  const [messageSourceLanguage, setMessageSourceLanguage] = useState<string | null>(null);
-  const canTranslate =
-    canCheckTranslation &&
-    (preferredLang === "en" ||
-      (messageSourceLanguage !== null && messageSourceLanguage !== "en"));
   const canTranscribe = !!msg.attachment_url && msg.attachment_type === "audio" && voiceToText;
   const canSpeak = textToSpeech && !!msg.encrypted_content && !isSpecial && msg.attachment_type !== "audio";
-
-  useEffect(() => {
-    if (!canCheckTranslation || !preferredLang) {
-      setMessageSourceLanguage(null);
-      setTranslated(null);
-      setShowTranslated(false);
-      return;
-    }
-
-    let cancelled = false;
-    const timer = setTimeout(() => {
-      const detectAndTranslate = async () => {
-        if (preferredLang === "en") {
-          setMessageSourceLanguage("en");
-          return;
-        }
-
-        const sourceLanguage = await detectMessageLanguage(msg.encrypted_content);
-        if (cancelled) return;
-        setMessageSourceLanguage(sourceLanguage);
-        if (!sourceLanguage || sourceLanguage === "en") return;
-
-        const result = await translateText(msg.encrypted_content, preferredLang);
-        if (!cancelled && result && result !== msg.encrypted_content) {
-          setTranslated(result);
-          setShowTranslated(true);
-        }
-      };
-      detectAndTranslate().catch(() => {
-        if (!cancelled) setMessageSourceLanguage("en");
-      });
-    }, Math.random() * 600);
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [canCheckTranslation, preferredLang, msg.encrypted_content]);
-
-  async function handleTranslate() {
-    if (showTranslated) { setShowTranslated(false); return; }
-    if (translated) { setShowTranslated(true); return; }
-    setTranslating(true);
-    try {
-      const result = await translateText(msg.encrypted_content, preferredLang || "en");
-      if (result && result !== msg.encrypted_content) {
-        setTranslated(result);
-        setShowTranslated(true);
-      }
-    } catch {
-      // translation failed silently — user can retry
-    } finally {
-      setTranslating(false);
-    }
-  }
 
   async function handleTranscribe() {
     if (showTranscript) { setShowTranscript(false); return; }
@@ -1445,7 +1381,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
       setIsSpeaking(false);
       return;
     }
-    const text = (showTranslated && translated ? translated : msg.encrypted_content) || "";
+    const text = msg.encrypted_content || "";
     setIsSpeaking(true);
     Speech.speak(text, {
       onDone: () => setIsSpeaking(false),
@@ -1454,7 +1390,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
     });
   }
 
-  const displayText = (showTranslated && translated ? translated : msg.encrypted_content) ?? "";
+  const displayText = msg.encrypted_content ?? "";
 
   const isRedEnvelope = msg.encrypted_content?.startsWith("🧧") ?? false;
   const isGiftMsg = msg.encrypted_content?.startsWith("🎁") ?? false;
@@ -1512,7 +1448,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   const isPlainText = !hasImage && !hasVideo && !hasAudio && !hasFile && !hasStoryReply && !isSticker;
   // Use inline timestamp only for bare text — exclude AI messages, flat-surface messages,
   // and messages that show translate/speak chips (chips follow the text, absolute metaRow would overlap them).
-  const useInlineTimestamp = isPlainText && !msg._isAi && !flatSurface && !canTranslate && !canSpeak;
+  const useInlineTimestamp = isPlainText && !msg._isAi && !flatSurface && !canSpeak;
 
   const replyIconOpacity = swipeX.interpolate({
     inputRange: isMe ? [-SWIPE_THRESHOLD, -10, 0] : [0, 10, SWIPE_THRESHOLD],
@@ -1948,29 +1884,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
             />
           )}
 
-          {/* Translate chip — shown on incoming messages when translation is enabled */}
-          {canTranslate && (
-            <TouchableOpacity
-              onPress={handleTranslate}
-              style={[st.translateChip, { backgroundColor: isMe ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.06)" }]}
-              hitSlop={8}
-            >
-              {translating ? (
-                <ActivityIndicator size={10} color={colors.textMuted} style={{ marginRight: 3 }} />
-              ) : (
-                <Ionicons name="language" size={11} color={showTranslated ? BRAND : colors.textMuted} style={{ marginRight: 3 }} />
-              )}
-              <Text style={[st.translateChipText, { color: showTranslated ? BRAND : colors.textMuted }]}>
-                {translating
-                  ? "Translating…"
-                  : showTranslated
-                  ? `Original · ${LANG_LABELS[preferredLang || "en"] ?? preferredLang}`
-                  : `Translate · ${LANG_LABELS[preferredLang || "en"] ?? preferredLang}`}
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          {/* Speak chip — shown when text-to-speech is enabled */}
+          {/* Speak stays directly on the bubble when Text to Speech is enabled. */}
           {canSpeak && (
             <TouchableOpacity
               onPress={handleSpeak}
@@ -2459,7 +2373,7 @@ function ChatScreen() {
       text.includes("|giftId:") ||
       ["📷 Photo", "🎥 Video", "GIF"].includes(text);
 
-    if (!message || isLocalNotes || isSpecialMessage || !preferredLang) {
+    if (!message || isLocalNotes || isSpecialMessage || !advancedFeatures.message_translation || !preferredLang) {
       setMessageSourceLanguage(null);
       return;
     }
@@ -2476,7 +2390,7 @@ function ChatScreen() {
       if (!cancelled) setMessageSourceLanguage(null);
     });
     return () => { cancelled = true; };
-  }, [showReactions?.id, showReactions?.encrypted_content, preferredLang, isLocalNotes]);
+  }, [showReactions?.id, showReactions?.encrypted_content, preferredLang, isLocalNotes, advancedFeatures.message_translation]);
 
   const closeMessageOptions = useCallback(() => {
     setShowReactions(null);
@@ -8247,7 +8161,8 @@ STRICT RULES:
 
          {/* Translate — only for non-English messages, unless English is the
              user's explicitly selected translation language. */}
-         {!isLocalNotes &&
+          {!isLocalNotes &&
+            advancedFeatures.message_translation &&
            !!preferredLang &&
            !!messageSourceLanguage &&
            (preferredLang === "en" || messageSourceLanguage !== "en") && (
