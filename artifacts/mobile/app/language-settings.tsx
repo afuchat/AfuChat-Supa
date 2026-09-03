@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLanguage } from "@/context/LanguageContext";
 import { useTheme } from "@/hooks/useTheme";
 import { LANG_LABELS } from "@/lib/translate";
+import { BUNDLED_UI_LANGUAGES } from "@/lib/uiTranslations";
 import Colors from "@/constants/colors";
 
 const FLAG: Record<string, string> = {
@@ -22,7 +23,10 @@ const FLAG: Record<string, string> = {
   it: "🇮🇹", tr: "🇹🇷",
 };
 
-const LANG_LIST = Object.entries(LANG_LABELS).map(([code, name]) => ({ code, name }));
+const LANG_LIST = BUNDLED_UI_LANGUAGES.map((code) => ({
+  code,
+  name: LANG_LABELS[code],
+}));
 
 export default function LanguageSettingsScreen() {
   const { colors } = useTheme();
@@ -92,7 +96,6 @@ export default function LanguageSettingsScreen() {
                 </View>
                 <View style={styles.rowInfo}>
                   <Text style={[styles.rowName, { color: isSelected ? colors.accent : colors.text }]}>{lang.name}</Text>
-                  <Text style={[styles.rowSub, { color: colors.textMuted }]}>{lang.code.toUpperCase()}</Text>
                 </View>
                 <View style={styles.rowRight}>
                   {isSaving ? (
@@ -109,7 +112,7 @@ export default function LanguageSettingsScreen() {
         </View>
 
         <Text style={[styles.footnote, { color: colors.textMuted }]}>
-          Translations are powered by Google Translate. Results may vary for informal or mixed-language text.
+          The AfuChat interface uses built-in translations and works offline.
         </Text>
       </ScrollView>
     </View>

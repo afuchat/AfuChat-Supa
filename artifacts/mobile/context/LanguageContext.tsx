@@ -5,11 +5,11 @@ import { translateText, LANG_LABELS } from "@/lib/translate";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import {
-  preloadUiTranslations,
   setCurrentUiLanguage,
   subscribeUiTranslations,
   translateUi,
 } from "@/lib/uiTranslations";
+import { isBundledUiLanguage } from "@/lib/uiTranslations";
 import { storage, KEYS } from "@/lib/storage/mmkv";
 
 export const LANGUAGE_PREFERENCE_KEY = "@afuchat:lang_pref";
@@ -66,8 +66,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.getItem(LANGUAGE_PREFERENCE_KEY).then((stored) => {
       const lang = normalizeLanguage(stored);
       if (stored !== null) {
-        setPreferredLangState(lang);
-        setCurrentUiLanguage(lang);
+        const safeLang = lang && !isBundledUiLanguage(lang) ? "en" : lang;
+        setPreferredLangState(safeLang);
+        setCurrentUiLanguage(safeLang);
       }
     });
   }, []);
@@ -90,9 +91,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     // restore the app language saved on the user's profile instead of using
     // the message-translation toggle as a proxy for the whole UI.
     const stored = await AsyncStorage.getItem(LANGUAGE_PREFERENCE_KEY);
-    const lang = stored !== null
+    const requestedLang = stored !== null
       ? normalizeLanguage(stored)
       : normalizeLanguage(profileData?.language) ?? "en";
+    const lang = requestedLang && !isBundledUiLanguage(requestedLang)
+      ? "en"
+      : requestedLang;
     setPreferredLangState(lang);
     setCurrentUiLanguage(lang);
     await AsyncStorage.setItem(LANGUAGE_PREFERENCE_KEY, lang ?? "none");
@@ -122,13 +126,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }), []);
 
   useEffect(() => {
-    if (!preferredLang || preferredLang === "en") return;
-    preloadUiTranslations(preferredLang)
-      .then(() => setUiTranslationVersion((version) => version + 1))
-      .catch(() => {});
-  }, [preferredLang]);
-
-  useEffect(() => {
     if (!user) return;
     const channel = supabase
       .channel(`lang_watch_${user.id}`)
@@ -152,7 +149,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   async function setPreferredLang(lang: string | null) {
-    const normalizedLang = normalizeLanguage(lang);
+    const requestedLang = normalizeLanguage(lang);
+    const normalizedLang = requestedLang && !isBundledUiLanguage(requestedLang)
+      ? "en"
+      : requestedLang;
     setPreferredLangState(normalizedLang);
     setCurrentUiLanguage(normalizedLang);
     await AsyncStorage.setItem(LANGUAGE_PREFERENCE_KEY, normalizedLang ?? "none");

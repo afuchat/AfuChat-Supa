@@ -1,6 +1,17 @@
-import { translateText } from "@/lib/translate";
-
 export type UiLanguage = "en" | "sw" | "fr" | "es" | "ar" | "zh";
+
+export const BUNDLED_UI_LANGUAGES: readonly UiLanguage[] = [
+  "en",
+  "sw",
+  "fr",
+  "es",
+  "ar",
+  "zh",
+];
+
+export function isBundledUiLanguage(language: string | null | undefined): language is UiLanguage {
+  return BUNDLED_UI_LANGUAGES.includes((language ?? "") as UiLanguage);
+}
 
 type TranslationTable = Record<string, string>;
 let currentUiLanguage: string | null = null;
@@ -417,10 +428,395 @@ const TABLES: Record<UiLanguage, TranslationTable> = {
   },
 };
 
-const REMOTE_TABLES = new Map<string, Map<string, string>>();
+// Shared controls are used throughout screens that are loaded lazily. Keeping
+// them in one local phrasebook prevents a screen from falling back to English
+// just because it was not visited during onboarding.
+const CORE_TABLES: Record<UiLanguage, TranslationTable> = {
+  en: {},
+  sw: {
+    "Choose your language": "Chagua lugha yako",
+    "Select the language you understand best. We will use it to make your AfuChat experience easier to follow.": "Chagua lugha unayoielewa vizuri zaidi. Tutaitumia kurahisisha matumizi yako ya AfuChat.",
+    "You can change this later in Settings.": "Unaweza kubadilisha hii baadaye katika Mipangilio.",
+    Skip: "Ruka",
+    "Connect with\npurpose": "Ungana kwa\nlengo",
+    "Build real connections, share what matters and make every interaction count.": "Jenga mahusiano ya kweli, shiriki yaliyo muhimu na ufanye kila mwingiliano uwe na maana.",
+    "See how it works": "Angalia jinsi inavyofanya kazi",
+    "Find your\npeople": "Pata\nwatu wako",
+    "Follow your interests, join communities and discover conversations worth returning to.": "Fuata mambo yanayokuvutia, jiunge na jumuiya na ugundue mazungumzo yanayostahili kurudiwa.",
+    "Explore communities": "Chunguza jumuiya",
+    "Create. Share.\nBe seen.": "Unda. Shiriki.\nOnesheka.",
+    "Post ideas, stories and moments that bring people together. AfuAI helps when you need it.": "Chapisha mawazo, hadithi na matukio yanayowaunganisha watu. AfuAI husaidia unapohitaji.",
+    "Create your profile": "Unda wasifu wako",
+    "Your activity\nhas value": "Shughuli zako\nzina thamani",
+    "Earn ACoin through participation, then use it for status, perks and a presence that feels like yours.": "Pata ACoin kwa kushiriki, kisha itumie kwa hadhi, manufaa na uwepo unaokufaa.",
+    "Get started free": "Anza bila malipo",
+    "Make your place on AfuChat": "Jenga nafasi yako kwenye AfuChat",
+    "Your profile is your starting point for meaningful connections, communities and ACoin rewards.": "Wasifu wako ni mwanzo wa mahusiano yenye maana, jumuiya na zawadi za ACoin.",
+    "Stay connected": "Endelea kuwasiliana",
+    "Use your number for account recovery and to find people you already know. It is never shared publicly.": "Tumia nambari yako kurejesha akaunti na kupata watu unaowajua. Haitashirikiwa hadharani.",
+    "Choose what moves you": "Chagua mambo yanayokuvutia",
+    "Pick at least 3 interests so AfuChat can help you find the right people, communities and conversations.": "Chagua angalau mambo 3 yanayokuvutia ili AfuChat ikusaidie kupata watu, jumuiya na mazungumzo yanayokufaa.",
+    "Ready to connect?": "Uko tayari kuungana?",
+    "Add a photo so people can recognise you, then start building your place in the AfuChat community.": "Ongeza picha ili watu wakutambue, kisha anza kujenga nafasi yako katika jumuiya ya AfuChat.",
+    "Choose a language": "Chagua lugha",
+    Continue: "Endelea",
+    "The AfuChat interface uses built-in translations and works offline.": "Kiolesura cha AfuChat kinatumia tafsiri zilizojengewa ndani na hufanya kazi bila intaneti.",
+    Home: "Nyumbani",
+    Discover: "Gundua",
+    Chats: "Mazungumzo",
+    Profile: "Wasifu",
+    More: "Zaidi",
+    Next: "Ifuatayo",
+    Previous: "Iliyotangulia",
+    Apply: "Tumia",
+    Delete: "Futa",
+    Edit: "Hariri",
+    Remove: "Ondoa",
+    Send: "Tuma",
+    Share: "Shiriki",
+    Follow: "Fuata",
+    Following: "Unafuata",
+    Unfollow: "Acha kufuata",
+    Like: "Penda",
+    Comment: "Toa maoni",
+    Post: "Chapisha",
+    Video: "Video",
+    Article: "Makala",
+    Create: "Unda",
+    Open: "Fungua",
+    New: "Mpya",
+    Yes: "Ndiyo",
+    No: "Hapana",
+    Confirm: "Thibitisha",
+    Error: "Hitilafu",
+    Success: "Imefaulu",
+    "No results found": "Hakuna matokeo yaliyopatikana",
+    "No comments yet": "Bado hakuna maoni",
+    "No messages yet": "Bado hakuna ujumbe",
+    "Try again": "Jaribu tena",
+    "Log out": "Toka",
+    "Sign out": "Toka",
+    Account: "Akaunti",
+    Notifications: "Arifa",
+    Help: "Msaada",
+    About: "Kuhusu",
+    Terms: "Masharti",
+    "Go back": "Rudi",
+    "Go Back": "Rudi",
+    "See all": "Tazama yote",
+    "Clear all": "Futa yote",
+    "Add Members": "Ongeza washiriki",
+    "New Group": "Kikundi kipya",
+    "New Channel": "Kituo kipya",
+    "New Message": "Ujumbe mpya",
+    "Write a message…": "Andika ujumbe…",
+    "No internet": "Hakuna intaneti",
+    Offline: "Bila intaneti",
+    Online: "Mtandaoni",
+  },
+  fr: {
+    "Choose your language": "Choisissez votre langue",
+    "Select the language you understand best. We will use it to make your AfuChat experience easier to follow.": "Sélectionnez la langue que vous comprenez le mieux. Nous l’utiliserons pour rendre AfuChat plus facile à suivre.",
+    "You can change this later in Settings.": "Vous pourrez modifier ce choix plus tard dans les réglages.",
+    Skip: "Passer",
+    "Connect with\npurpose": "Connectez-vous\navec intention",
+    "Build real connections, share what matters and make every interaction count.": "Créez de vraies relations, partagez ce qui compte et donnez du sens à chaque interaction.",
+    "See how it works": "Voir comment ça marche",
+    "Find your\npeople": "Trouvez\nvos proches",
+    "Follow your interests, join communities and discover conversations worth returning to.": "Suivez vos centres d’intérêt, rejoignez des communautés et découvrez des conversations auxquelles revenir.",
+    "Explore communities": "Explorer les communautés",
+    "Create. Share.\nBe seen.": "Créez. Partagez.\nFaites-vous voir.",
+    "Post ideas, stories and moments that bring people together. AfuAI helps when you need it.": "Publiez des idées, des histoires et des moments qui rapprochent les gens. AfuAI vous aide quand vous en avez besoin.",
+    "Create your profile": "Créer votre profil",
+    "Your activity\nhas value": "Votre activité\na de la valeur",
+    "Earn ACoin through participation, then use it for status, perks and a presence that feels like yours.": "Gagnez des ACoins en participant, puis utilisez-les pour votre statut, vos avantages et une présence qui vous ressemble.",
+    "Get started free": "Commencer gratuitement",
+    "Make your place on AfuChat": "Trouvez votre place sur AfuChat",
+    "Your profile is your starting point for meaningful connections, communities and ACoin rewards.": "Votre profil est le point de départ de relations enrichissantes, de communautés et de récompenses en ACoins.",
+    "Stay connected": "Restez connecté",
+    "Use your number for account recovery and to find people you already know. It is never shared publicly.": "Utilisez votre numéro pour récupérer votre compte et trouver des personnes que vous connaissez. Il n’est jamais partagé publiquement.",
+    "Choose what moves you": "Choisissez ce qui vous anime",
+    "Pick at least 3 interests so AfuChat can help you find the right people, communities and conversations.": "Choisissez au moins 3 centres d’intérêt pour qu’AfuChat vous aide à trouver les bonnes personnes, communautés et conversations.",
+    "Ready to connect?": "Prêt à vous connecter ?",
+    "Add a photo so people can recognise you, then start building your place in the AfuChat community.": "Ajoutez une photo pour que les autres vous reconnaissent, puis commencez à trouver votre place dans la communauté AfuChat.",
+    "Choose a language": "Choisissez une langue",
+    Continue: "Continuer",
+    "The AfuChat interface uses built-in translations and works offline.": "L’interface AfuChat utilise des traductions intégrées et fonctionne hors ligne.",
+    Home: "Accueil",
+    Discover: "Découvrir",
+    Chats: "Discussions",
+    Profile: "Profil",
+    More: "Plus",
+    Next: "Suivant",
+    Previous: "Précédent",
+    Apply: "Appliquer",
+    Delete: "Supprimer",
+    Edit: "Modifier",
+    Remove: "Retirer",
+    Send: "Envoyer",
+    Share: "Partager",
+    Follow: "Suivre",
+    Following: "Abonné",
+    Unfollow: "Ne plus suivre",
+    Like: "J’aime",
+    Comment: "Commenter",
+    Post: "Publier",
+    Video: "Vidéo",
+    Article: "Article",
+    Create: "Créer",
+    Open: "Ouvrir",
+    New: "Nouveau",
+    Yes: "Oui",
+    No: "Non",
+    Confirm: "Confirmer",
+    Error: "Erreur",
+    Success: "Réussi",
+    "No results found": "Aucun résultat trouvé",
+    "No comments yet": "Aucun commentaire pour le moment",
+    "No messages yet": "Aucun message pour le moment",
+    "Try again": "Réessayer",
+    "Log out": "Se déconnecter",
+    "Sign out": "Se déconnecter",
+    Account: "Compte",
+    Notifications: "Notifications",
+    Help: "Aide",
+    About: "À propos",
+    Terms: "Conditions",
+    "Go back": "Retour",
+    "Go Back": "Retour",
+    "See all": "Tout afficher",
+    "Clear all": "Tout effacer",
+    "Add Members": "Ajouter des membres",
+    "New Group": "Nouveau groupe",
+    "New Channel": "Nouveau canal",
+    "New Message": "Nouveau message",
+    "Write a message…": "Écrire un message…",
+    "No internet": "Pas d’Internet",
+    Offline: "Hors ligne",
+    Online: "En ligne",
+  },
+  es: {
+    "Choose your language": "Elige tu idioma",
+    "Select the language you understand best. We will use it to make your AfuChat experience easier to follow.": "Selecciona el idioma que entiendas mejor. Lo usaremos para que tu experiencia en AfuChat sea más fácil de seguir.",
+    "You can change this later in Settings.": "Puedes cambiarlo más tarde en Configuración.",
+    Skip: "Omitir",
+    "Connect with\npurpose": "Conecta con\npropósito",
+    "Build real connections, share what matters and make every interaction count.": "Crea conexiones reales, comparte lo que importa y haz que cada interacción cuente.",
+    "See how it works": "Mira cómo funciona",
+    "Find your\npeople": "Encuentra a\ntu gente",
+    "Follow your interests, join communities and discover conversations worth returning to.": "Sigue tus intereses, únete a comunidades y descubre conversaciones a las que querrás volver.",
+    "Explore communities": "Explorar comunidades",
+    "Create. Share.\nBe seen.": "Crea. Comparte.\nDéjate ver.",
+    "Post ideas, stories and moments that bring people together. AfuAI helps when you need it.": "Publica ideas, historias y momentos que unen a las personas. AfuAI te ayuda cuando lo necesitas.",
+    "Create your profile": "Crea tu perfil",
+    "Your activity\nhas value": "Tu actividad\ntiene valor",
+    "Earn ACoin through participation, then use it for status, perks and a presence that feels like yours.": "Gana ACoin participando y úsalo para obtener estatus, beneficios y una presencia que te represente.",
+    "Get started free": "Empieza gratis",
+    "Make your place on AfuChat": "Haz tu espacio en AfuChat",
+    "Your profile is your starting point for meaningful connections, communities and ACoin rewards.": "Tu perfil es el punto de partida para conexiones significativas, comunidades y recompensas de ACoin.",
+    "Stay connected": "Mantente conectado",
+    "Use your number for account recovery and to find people you already know. It is never shared publicly.": "Usa tu número para recuperar tu cuenta y encontrar personas que ya conoces. Nunca se comparte públicamente.",
+    "Choose what moves you": "Elige lo que te inspira",
+    "Pick at least 3 interests so AfuChat can help you find the right people, communities and conversations.": "Elige al menos 3 intereses para que AfuChat te ayude a encontrar a las personas, comunidades y conversaciones adecuadas.",
+    "Ready to connect?": "¿Listo para conectar?",
+    "Add a photo so people can recognise you, then start building your place in the AfuChat community.": "Añade una foto para que te reconozcan y empieza a crear tu espacio en la comunidad de AfuChat.",
+    "Choose a language": "Elige un idioma",
+    Continue: "Continuar",
+    "The AfuChat interface uses built-in translations and works offline.": "La interfaz de AfuChat usa traducciones integradas y funciona sin conexión.",
+    Home: "Inicio",
+    Discover: "Descubrir",
+    Chats: "Chats",
+    Profile: "Perfil",
+    More: "Más",
+    Next: "Siguiente",
+    Previous: "Anterior",
+    Apply: "Aplicar",
+    Delete: "Eliminar",
+    Edit: "Editar",
+    Remove: "Quitar",
+    Send: "Enviar",
+    Share: "Compartir",
+    Follow: "Seguir",
+    Following: "Siguiendo",
+    Unfollow: "Dejar de seguir",
+    Like: "Me gusta",
+    Comment: "Comentar",
+    Post: "Publicar",
+    Video: "Vídeo",
+    Article: "Artículo",
+    Create: "Crear",
+    Open: "Abrir",
+    New: "Nuevo",
+    Yes: "Sí",
+    No: "No",
+    Confirm: "Confirmar",
+    Error: "Error",
+    Success: "Éxito",
+    "No results found": "No se encontraron resultados",
+    "No comments yet": "Aún no hay comentarios",
+    "No messages yet": "Aún no hay mensajes",
+    "Try again": "Intentar de nuevo",
+    "Log out": "Cerrar sesión",
+    "Sign out": "Cerrar sesión",
+    Account: "Cuenta",
+    Notifications: "Notificaciones",
+    Help: "Ayuda",
+    About: "Acerca de",
+    Terms: "Términos",
+    "Go back": "Volver",
+    "Go Back": "Volver",
+    "See all": "Ver todo",
+    "Clear all": "Borrar todo",
+    "Add Members": "Añadir miembros",
+    "New Group": "Nuevo grupo",
+    "New Channel": "Nuevo canal",
+    "New Message": "Nuevo mensaje",
+    "Write a message…": "Escribe un mensaje…",
+    "No internet": "Sin conexión",
+    Offline: "Sin conexión",
+    Online: "En línea",
+  },
+  ar: {
+    "Choose your language": "اختر لغتك",
+    "Select the language you understand best. We will use it to make your AfuChat experience easier to follow.": "اختر اللغة التي تفهمها أكثر، وسنستخدمها لجعل تجربة AfuChat أسهل.",
+    "You can change this later in Settings.": "يمكنك تغيير ذلك لاحقًا من الإعدادات.",
+    Skip: "تخطي",
+    "Connect with\npurpose": "تواصل\nبهدف",
+    "Build real connections, share what matters and make every interaction count.": "كوّن علاقات حقيقية، وشارك ما يهمك، واجعل لكل تفاعل قيمة.",
+    "See how it works": "تعرّف على طريقة العمل",
+    "Find your\npeople": "اعثر على\nأشخاصك",
+    "Follow your interests, join communities and discover conversations worth returning to.": "تابع اهتماماتك، وانضم إلى المجتمعات، واكتشف محادثات تستحق العودة إليها.",
+    "Explore communities": "استكشاف المجتمعات",
+    "Create. Share.\nBe seen.": "أنشئ. شارك.\nكن حاضرًا.",
+    "Post ideas, stories and moments that bring people together. AfuAI helps when you need it.": "انشر الأفكار والقصص واللحظات التي تجمع الناس. يساعدك AfuAI عندما تحتاج إليه.",
+    "Create your profile": "أنشئ ملفك الشخصي",
+    "Your activity\nhas value": "نشاطك\nله قيمة",
+    "Earn ACoin through participation, then use it for status, perks and a presence that feels like yours.": "اكسب ACoin من خلال المشاركة، واستخدمه للمكانة والمزايا وحضور يعبر عنك.",
+    "Get started free": "ابدأ مجانًا",
+    "Make your place on AfuChat": "اصنع مكانك على AfuChat",
+    "Your profile is your starting point for meaningful connections, communities and ACoin rewards.": "ملفك الشخصي هو نقطة البداية لعلاقات هادفة ومجتمعات ومكافآت ACoin.",
+    "Stay connected": "ابقَ على تواصل",
+    "Use your number for account recovery and to find people you already know. It is never shared publicly.": "استخدم رقمك لاسترداد حسابك والعثور على أشخاص تعرفهم. لن تتم مشاركته علنًا.",
+    "Choose what moves you": "اختر ما يلهمك",
+    "Pick at least 3 interests so AfuChat can help you find the right people, communities and conversations.": "اختر 3 اهتمامات على الأقل ليساعدك AfuChat في العثور على الأشخاص والمجتمعات والمحادثات المناسبة.",
+    "Ready to connect?": "هل أنت مستعد للتواصل؟",
+    "Add a photo so people can recognise you, then start building your place in the AfuChat community.": "أضف صورة ليتعرف عليك الناس، ثم ابدأ ببناء مكانك في مجتمع AfuChat.",
+    "Choose a language": "اختر لغة",
+    Continue: "متابعة",
+    "The AfuChat interface uses built-in translations and works offline.": "تستخدم واجهة AfuChat ترجمات مدمجة وتعمل دون اتصال بالإنترنت.",
+    Home: "الرئيسية",
+    Discover: "استكشاف",
+    Chats: "المحادثات",
+    Profile: "الملف الشخصي",
+    More: "المزيد",
+    Next: "التالي",
+    Previous: "السابق",
+    Apply: "تطبيق",
+    Delete: "حذف",
+    Edit: "تعديل",
+    Remove: "إزالة",
+    Send: "إرسال",
+    Share: "مشاركة",
+    Follow: "متابعة",
+    Following: "تتابعه",
+    Unfollow: "إلغاء المتابعة",
+    Like: "إعجاب",
+    Comment: "تعليق",
+    Post: "نشر",
+    Video: "فيديو",
+    Article: "مقال",
+    Create: "إنشاء",
+    Open: "فتح",
+    New: "جديد",
+    Yes: "نعم",
+    No: "لا",
+    Confirm: "تأكيد",
+    Error: "خطأ",
+    Success: "تم بنجاح",
+    "No results found": "لم يتم العثور على نتائج",
+    "No comments yet": "لا توجد تعليقات بعد",
+    "No messages yet": "لا توجد رسائل بعد",
+    "Try again": "حاول مرة أخرى",
+    "Log out": "تسجيل الخروج",
+    "Sign out": "تسجيل الخروج",
+    Account: "الحساب",
+    Notifications: "الإشعارات",
+    Help: "المساعدة",
+    About: "حول",
+    Terms: "الشروط",
+    "Go back": "رجوع",
+    "Go Back": "رجوع",
+    "See all": "عرض الكل",
+    "Clear all": "مسح الكل",
+    "Add Members": "إضافة أعضاء",
+    "New Group": "مجموعة جديدة",
+    "New Channel": "قناة جديدة",
+    "New Message": "رسالة جديدة",
+    "Write a message…": "اكتب رسالة…",
+    "No internet": "لا يوجد اتصال بالإنترنت",
+    Offline: "دون اتصال",
+    Online: "متصل",
+  },
+  zh: {
+    "Choose a language": "选择语言",
+    Continue: "继续",
+    "The AfuChat interface uses built-in translations and works offline.": "AfuChat 界面使用内置翻译，可离线运行。",
+    Home: "首页",
+    Discover: "发现",
+    Chats: "聊天",
+    Profile: "个人资料",
+    More: "更多",
+    Next: "下一步",
+    Previous: "上一步",
+    Apply: "应用",
+    Delete: "删除",
+    Edit: "编辑",
+    Remove: "移除",
+    Send: "发送",
+    Share: "分享",
+    Follow: "关注",
+    Following: "已关注",
+    Unfollow: "取消关注",
+    Like: "赞",
+    Comment: "评论",
+    Post: "发布",
+    Video: "视频",
+    Article: "文章",
+    Create: "创建",
+    Open: "打开",
+    New: "新建",
+    Yes: "是",
+    No: "否",
+    Confirm: "确认",
+    Error: "错误",
+    Success: "成功",
+    "No results found": "未找到结果",
+    "No comments yet": "暂无评论",
+    "No messages yet": "暂无消息",
+    "Try again": "重试",
+    "Log out": "退出登录",
+    "Sign out": "退出登录",
+    Account: "账户",
+    Notifications: "通知",
+    Help: "帮助",
+    About: "关于",
+    Terms: "条款",
+    "Go back": "返回",
+    "Go Back": "返回",
+    "See all": "查看全部",
+    "Clear all": "全部清除",
+    "Add Members": "添加成员",
+    "New Group": "新群组",
+    "New Channel": "新频道",
+    "New Message": "新消息",
+    "Write a message…": "输入消息…",
+    "No internet": "无网络",
+    Offline: "离线",
+    Online: "在线",
+  },
+};
+
 const REGISTERED_UI_TEXTS = new Set<string>();
-const ATTEMPTED_REMOTE_TEXTS = new Map<string, Set<string>>();
-const PRELOADS = new Map<string, Promise<void>>();
 const UI_TRANSLATION_LISTENERS = new Set<() => void>();
 
 function languageKey(language: string | null | undefined): string | null {
@@ -448,11 +844,7 @@ export function registerUiTexts(texts: string[]): void {
       added = true;
     }
   }
-  if (added && currentUiLanguage && currentUiLanguage !== "en") {
-    preloadUiTranslations(currentUiLanguage)
-      .then(notifyUiTranslationListeners)
-      .catch(() => {});
-  }
+  if (added) notifyUiTranslationListeners();
 }
 
 export function subscribeUiTranslations(listener: () => void): () => void {
@@ -461,49 +853,11 @@ export function subscribeUiTranslations(listener: () => void): () => void {
 }
 
 /**
- * Translate registered interface copy in the background. Work is shared by
- * every screen and limited to small batches so a language change cannot flood
- * the translation endpoint.
+ * Kept as a compatibility no-op for callers that used to warm the remote
+ * translation cache. UI copy is now resolved only from the bundled catalogs.
  */
-export function preloadUiTranslations(language: string): Promise<void> {
-  const key = languageKey(language);
-  if (!key || key === "en") return Promise.resolve();
-  const existing = PRELOADS.get(key);
-  if (existing) return existing;
-
-  const work = (async () => {
-    const remote = REMOTE_TABLES.get(key) ?? new Map<string, string>();
-    REMOTE_TABLES.set(key, remote);
-    const attempted = ATTEMPTED_REMOTE_TEXTS.get(key) ?? new Set<string>();
-    ATTEMPTED_REMOTE_TEXTS.set(key, attempted);
-
-    let pending = Array.from(REGISTERED_UI_TEXTS).filter(
-      (text) =>
-        !remote.has(text) &&
-        !attempted.has(text) &&
-        translateUi(text, key) === text,
-    );
-    // A route can register more copy while the first batch is running.
-    for (let pass = 0; pass < 3 && pending.length > 0; pass++) {
-      for (let i = 0; i < pending.length; i += 6) {
-        const batch = pending.slice(i, i + 6);
-        await Promise.all(
-          batch.map(async (text) => {
-            attempted.add(text);
-            const translated = await translateText(text, key);
-            if (translated && translated !== text) remote.set(text, translated);
-          }),
-        );
-      }
-      pending = Array.from(REGISTERED_UI_TEXTS).filter(
-        (text) => !remote.has(text) && !attempted.has(text),
-      );
-    }
-  })();
-
-  PRELOADS.set(key, work);
-  work.finally(() => PRELOADS.delete(key)).catch(() => {});
-  return work;
+export function preloadUiTranslations(_language: string): Promise<void> {
+  return Promise.resolve();
 }
 
 export function translateUi(text: string, language: string | null | undefined): string {
@@ -511,7 +865,9 @@ export function translateUi(text: string, language: string | null | undefined): 
   const normalized = languageKey(language) ?? "";
   const uiLanguage = LANGUAGE_ALIASES[language.trim().toLowerCase()] ?? LANGUAGE_ALIASES[normalized];
   if (uiLanguage === "en" || normalized === "en") return text;
-  return TABLES[uiLanguage as UiLanguage]?.[text] ?? REMOTE_TABLES.get(normalized)?.get(text) ?? text;
+  return TABLES[uiLanguage as UiLanguage]?.[text]
+    ?? CORE_TABLES[uiLanguage as UiLanguage]?.[text]
+    ?? text;
 }
 
 export function setCurrentUiLanguage(language: string | null): void {
