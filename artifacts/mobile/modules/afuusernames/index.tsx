@@ -42,6 +42,7 @@ type Listing = {
   current_bidder_id: string | null;
   views: number;
   description: string | null;
+  is_resale: boolean;
   seller: Seller | null;
 };
 type FeaturedPlacement = { id: string; listing_id: string; amount: number; ends_at: string; listing: Listing };
@@ -133,6 +134,7 @@ function ListingCard({
         <View style={styles.handleRow}>
           <Text style={[styles.handle, { color: colors.text }]} numberOfLines={1}>@{item.username}</Text>
           {auction ? <View style={[styles.auctionPill, { backgroundColor: Colors.gold + "20" }]}><Text style={[styles.auctionPillText, { color: Colors.gold }]}>LIVE AUCTION</Text></View> : null}
+          {item.is_resale ? <View style={[styles.resalePill, { backgroundColor: Colors.gold + "20" }]}><Ionicons name="repeat-outline" size={10} color={Colors.gold} /><Text style={[styles.resalePillText, { color: Colors.gold }]}>RESALE</Text></View> : null}
         </View>
         <SellerLine seller={item.seller} colors={colors} />
         <Text style={[styles.cardNote, { color: colors.textMuted }]}>{own ? "Your active listing" : auction ? `${timeLeft(item.auction_end_at)} · ${item.views || 0} watchers` : "Instant ownership transfer"}</Text>
@@ -166,7 +168,10 @@ function FeaturedCard({ item, colors, onPress }: { item: FeaturedPlacement; colo
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.featuredCard, { backgroundColor: colors.surface, opacity: pressed ? 0.82 : 1 }]}>
       <View style={styles.featuredTop}><View style={[styles.featuredBadge, { backgroundColor: Colors.gold + "22" }]}><Ionicons name="star-outline" size={12} color={Colors.gold} /><Text style={[styles.featuredBadgeText, { color: Colors.gold }]}>FEATURED</Text></View><Text style={[styles.featuredTime, { color: colors.textMuted }]}>{timeLeft(item.ends_at)}</Text></View>
-      <Text style={[styles.featuredHandle, { color: colors.text }]} numberOfLines={1}>@{listing.username}</Text>
+      <View style={styles.featuredHandleRow}>
+        <Text style={[styles.featuredHandle, { color: colors.text }]} numberOfLines={1}>@{listing.username}</Text>
+        {listing.is_resale ? <View style={[styles.resalePill, { backgroundColor: Colors.gold + "20" }]}><Ionicons name="repeat-outline" size={10} color={Colors.gold} /><Text style={[styles.resalePillText, { color: Colors.gold }]}>RESALE</Text></View> : null}
+      </View>
       <Text style={[styles.featuredDescription, { color: colors.textMuted }]} numberOfLines={2}>{listing.description || "A premium handle ready for its next owner."}</Text>
       <View style={styles.featuredBottom}><Text style={[styles.featuredPrice, { color: listing.is_auction ? Colors.gold : colors.accent }]}>{money(listing.is_auction ? Math.max(listing.current_bid, listing.reserve_price || 0) : listing.price)} {listing.is_auction ? "current bid" : "ACoin"}</Text><Ionicons name="arrow-forward-circle" size={22} color={colors.accent} /></View>
     </Pressable>
@@ -277,19 +282,20 @@ function WalletBadge({
 
 function ListHandleSheet({
   visible,
-  handle,
+  handles,
   userId,
   onClose,
   onDone,
   colors,
 }: {
   visible: boolean;
-  handle?: string | null;
+  handles: string[];
   userId?: string;
   onClose: () => void;
   onDone: () => void;
   colors: any;
 }) {
+  const [selectedHandle, setSelectedHandle] = useState("");
   const [price, setPrice] = useState("");
   const [auction, setAuction] = useState(false);
   const [duration, setDuration] = useState("168");
@@ -297,22 +303,23 @@ function ListHandleSheet({
 
   useEffect(() => {
     if (visible) {
+      setSelectedHandle(handles[0] ?? "");
       setPrice("");
       setAuction(false);
       setDuration("168");
       setBusy(false);
     }
-  }, [visible]);
+  }, [visible, handles]);
 
   const submit = async () => {
     if (!userId) {
       showAlert("Sign in required", "Sign in before listing a username.");
       return;
     }
-    const username = (handle || "").replace(/^@/, "").trim().toLowerCase();
+    const username = selectedHandle.replace(/^@/, "").trim().toLowerCase();
     const amount = Number.parseInt(price, 10);
     if (!HANDLE_RE.test(username)) {
-      showAlert("No username to list", "Your current username is not available to list.");
+      showAlert("No username to list", "Choose one of the usernames you own.");
       return;
     }
     if (!Number.isSafeInteger(amount) || amount < 1) {
@@ -346,12 +353,23 @@ function ListHandleSheet({
         </View>
         <Text style={[styles.sheetTitle, { color: colors.text }]}>Sell your username</Text>
         <Text style={[styles.sheetCopy, { color: colors.textMuted }]}>
-          Choose a fixed price for a fast transfer, or run a timed auction for a handle with real demand.
+          Choose any username you own, then set a fixed price for a fast transfer or run a timed auction for a handle with real demand.
         </Text>
-        <View style={[styles.lockedField, { backgroundColor: colors.inputBg }]}>
-          <Text style={[styles.at, { color: colors.accent }]}>@</Text>
-          <Text style={[styles.lockedValue, { color: colors.text }]}>{handle || "your username"}</Text>
-          <Ionicons name="lock-closed" size={15} color={colors.textMuted} />
+        <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Username to list</Text>
+        <View style={styles.handleOptions}>
+          {handles.map((candidate) => {
+            const selected = candidate === selectedHandle;
+            return (
+              <Pressable
+                key={candidate}
+                onPress={() => setSelectedHandle(candidate)}
+                style={[styles.handleOption, { backgroundColor: selected ? colors.accent : colors.inputBg }]}
+              >
+                <Text style={[styles.handleOptionText, { color: selected ? "#fff" : colors.text }]}>@{candidate}</Text>
+                {selected ? <Ionicons name="checkmark-circle" size={15} color="#fff" /> : null}
+              </Pressable>
+            );
+          })}
         </View>
         <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Price</Text>
         <View style={[styles.inputField, { backgroundColor: colors.inputBg }]}>
@@ -542,7 +560,7 @@ export default function AfuUsernamesApp({ initialTab }: { initialTab?: "market" 
     try {
       let query = supabase
         .from("username_listings")
-        .select("id, username, price, seller_id, created_at, is_auction, auction_end_at, reserve_price, current_bid, current_bidder_id, views, description")
+        .select("id, username, price, seller_id, created_at, is_auction, auction_end_at, reserve_price, current_bid, current_bidder_id, views, description, is_resale")
         .eq("is_active", true)
         .order("created_at", { ascending: false })
         .limit(100);
@@ -621,6 +639,12 @@ export default function AfuUsernamesApp({ initialTab }: { initialTab?: "market" 
   }, [listings, tab, user?.id]);
   const auctionCount = listings.filter((item) => item.is_auction).length;
   const sellerListingCount = listings.filter((item) => item.seller_id === user?.id).length;
+  const listableHandles = useMemo(() => {
+    const candidates = [profile?.handle ?? "", ...owned.map((item) => item.handle)];
+    return [...new Set(candidates
+      .map((handle) => handle.replace(/^@/, "").trim().toLowerCase())
+      .filter((handle) => HANDLE_RE.test(handle)))];
+  }, [owned, profile?.handle]);
 
   const delist = async (item: Listing) => {
     const confirmed = await confirmAlert(
@@ -782,7 +806,7 @@ export default function AfuUsernamesApp({ initialTab }: { initialTab?: "market" 
       />
       <ListHandleSheet
         visible={listVisible}
-        handle={profile?.handle}
+        handles={listableHandles}
         userId={user?.id}
         onClose={() => setListVisible(false)}
         onDone={() => void load(true)}
@@ -828,6 +852,8 @@ const styles = StyleSheet.create({
   handle: { fontSize: 16, fontFamily: "Inter_700Bold" },
   auctionPill: { borderRadius: 5, paddingHorizontal: 5, paddingVertical: 2 },
   auctionPillText: { fontSize: 8, fontFamily: "Inter_700Bold", letterSpacing: 0.4 },
+  resalePill: { flexDirection: "row", alignItems: "center", gap: 3, borderRadius: 5, paddingHorizontal: 5, paddingVertical: 2 },
+  resalePillText: { fontSize: 8, fontFamily: "Inter_700Bold", letterSpacing: 0.4 },
   sellerLine: { flexDirection: "row", alignItems: "center", gap: 5, minWidth: 0 },
   avatar: { width: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center" },
   sellerText: { flexShrink: 1, fontSize: 10, fontFamily: "Inter_500Medium" },
@@ -845,7 +871,8 @@ const styles = StyleSheet.create({
   featuredBadge: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 4 },
   featuredBadgeText: { fontSize: 8, letterSpacing: 0.6, fontFamily: "Inter_700Bold" },
   featuredTime: { fontSize: 10, fontFamily: "Inter_500Medium" },
-  featuredHandle: { fontSize: 21, fontFamily: "Inter_700Bold", marginTop: 11 },
+  featuredHandleRow: { flexDirection: "row", alignItems: "center", gap: 7, minWidth: 0, marginTop: 11 },
+  featuredHandle: { flexShrink: 1, fontSize: 21, fontFamily: "Inter_700Bold" },
   featuredDescription: { fontSize: 11, lineHeight: 16, fontFamily: "Inter_400Regular", marginTop: 4 },
   featuredBottom: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 },
   featuredPrice: { fontSize: 12, fontFamily: "Inter_700Bold" },
@@ -878,6 +905,9 @@ const styles = StyleSheet.create({
   lockedField: { minHeight: 48, borderRadius: 999, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", gap: 9 },
   at: { fontSize: 18, fontFamily: "Inter_700Bold" },
   lockedValue: { flex: 1, fontSize: 15, fontFamily: "Inter_500Medium" },
+  handleOptions: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  handleOption: { minHeight: 40, borderRadius: 999, paddingHorizontal: 13, flexDirection: "row", alignItems: "center", gap: 6 },
+  handleOptionText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
   fieldLabel: { fontSize: 12, fontFamily: "Inter_500Medium", marginTop: 2 },
   inputField: { minHeight: 48, borderRadius: 999, paddingHorizontal: 16, flexDirection: "row", alignItems: "center", gap: 9 },
   input: { flex: 1, minHeight: 48, fontSize: 15, fontFamily: "Inter_400Regular" },
