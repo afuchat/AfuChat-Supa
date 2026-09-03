@@ -8,6 +8,7 @@ import {
   StatusBar,
   Text,
   View,
+  useWindowDimensions,
 } from "react-native";
 import Svg, { Circle, Ellipse, Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -35,11 +36,13 @@ type LanguageSelectionStepProps = {
 
 export default function LanguageSelectionStep({ onComplete }: LanguageSelectionStepProps) {
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
   const { setPreferredLang, t } = useLanguage();
   const [selected, setSelected] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(278);
   const continueLabel = selected ? t("Continue") : t("Choose a language");
+  const contentWidth = Math.max(0, Math.min(560, screenWidth - 32));
 
   function selectLanguage(code: string) {
     setSelected(code);
@@ -68,7 +71,7 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
 
       <View style={styles.headerPositioner}>
         <View
-          style={[styles.header, { paddingTop: insets.top + 24 }]}
+          style={[styles.header, { width: contentWidth, paddingTop: insets.top + 24 }]}
           onLayout={(event) => {
             const measuredHeight = Math.ceil(event.nativeEvent.layout.height);
             if (measuredHeight > 0 && measuredHeight !== headerHeight) {
@@ -110,7 +113,7 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.languageList}>
+        <View style={[styles.languageList, { width: contentWidth }]}>
           {LANGUAGES.map((language) => {
             const isSelected = selected === language.code;
             return (
@@ -183,8 +186,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   header: {
-    width: "calc(100% - 32px)" as any,
-    maxWidth: 560,
     paddingHorizontal: 22,
     backgroundColor: ONBOARDING_THEME.gradientTop,
     borderBottomLeftRadius: 28,
@@ -194,7 +195,7 @@ const styles = StyleSheet.create({
   headerInner: { width: "100%", maxWidth: 560, alignSelf: "center" },
   bottomFooter: {
     alignItems: "center",
-    paddingTop: 8, paddingHorizontal: 22, backgroundColor: "transparent",
+    paddingTop: 20, paddingHorizontal: 22, backgroundColor: ONBOARDING_THEME.gradientMiddle,
   },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   brandText: { color: "#FFFFFF", fontSize: 22, fontFamily: "Inter_700Bold", letterSpacing: -0.5 },
@@ -206,9 +207,9 @@ const styles = StyleSheet.create({
   },
   title: { color: "#FFFFFF", fontSize: 28, lineHeight: 34, textAlign: "center", fontFamily: "Inter_700Bold", letterSpacing: -0.7 },
   subtitle: { maxWidth: 440, color: "rgba(255,255,255,0.62)", fontSize: 14, lineHeight: 21, textAlign: "center", fontFamily: "Inter_400Regular", marginTop: 11 },
-  languageList: { width: "100%", maxWidth: 560, alignSelf: "center", gap: 10 },
+  languageList: { width: "100%", maxWidth: 560, alignSelf: "center", gap: 6 },
   languageRow: {
-    minHeight: 64, flexDirection: "row", alignItems: "center", paddingHorizontal: 12,
+    minHeight: 50, flexDirection: "row", alignItems: "center", paddingHorizontal: 12,
     borderRadius: 999, backgroundColor: "rgba(255,255,255,0.085)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.14)",
     ...Platform.select({
@@ -239,7 +240,7 @@ const styles = StyleSheet.create({
   radioSelected: { borderColor: "#72B5FF", backgroundColor: "rgba(114,181,255,0.13)" },
   radioDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: "#72B5FF" },
   continueButton: {
-    width: "100%", maxWidth: 560, minHeight: 54, alignSelf: "center", borderRadius: 999,
+    width: "100%", maxWidth: 560, minHeight: 50, alignSelf: "center", borderRadius: 999,
     backgroundColor: "#167EFF", flexDirection: "row", alignItems: "center", justifyContent: "center",
     gap: 10,
     ...Platform.select({
