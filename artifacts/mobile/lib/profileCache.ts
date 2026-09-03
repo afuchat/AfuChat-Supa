@@ -39,7 +39,7 @@ const _cache = new Map<string, Entry>();
 /**
  * handle → profile-id map. Never expires — a handle's owner UUID never changes.
  * Populated whenever a profile is stored via setProfileCache or
- * setHandleId; consumed by navigateToProfile.
+ * setHandleId; available to profile-aware consumers that need a fast local hint.
  */
 const _handleToId = new Map<string, string>();
 
