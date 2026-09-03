@@ -167,7 +167,7 @@ function TapHandler({
   onLongPress,
 }: {
   onTap: () => void;
-  onDoubleTap?: () => void;
+  onDoubleTap?: (x: number, y: number) => void;
   onLongPress?: () => void;
 }) {
   const singleTap = Gesture.Tap()
@@ -181,7 +181,7 @@ function TapHandler({
     .maxDuration(250)
     .maxDistance(10)
     .runOnJS(true)
-    .onEnd(() => { onDoubleTap?.(); });
+    .onEnd((event) => { onDoubleTap?.(event.x, event.y); });
 
   const longPress = Gesture.LongPress()
     .minDuration(500)
@@ -408,6 +408,10 @@ const VideoItem = React.memo(function VideoItem({
   const heartScale = useRef(new Animated.Value(1)).current;
   const doubleTapOpacity = useRef(new Animated.Value(0)).current;
   const doubleTapScale = useRef(new Animated.Value(0.3)).current;
+  const [doubleTapPoint, setDoubleTapPoint] = useState({
+    x: screenW / 2,
+    y: (screenH - BOTTOM_BAR_H) / 2,
+  });
   const videoAreaAnim = useRef(new Animated.Value(screenH - BOTTOM_BAR_H)).current;
   const overlayOpacity = useRef(new Animated.Value(1)).current;
   const viewRecorded = useRef(false);
@@ -692,8 +696,18 @@ const VideoItem = React.memo(function VideoItem({
     setPaused((p) => !p);
   }
 
-  function triggerDoubleTapLike() {
+  function triggerDoubleTapLike(x: number, y: number) {
     if (!item.liked) onLike(item.id, false);
+
+    // The gesture coordinates are local to the video area. Keep the heart
+    // anchored to the second tap and restart cleanly if the user taps again
+    // before the previous burst has finished.
+    setDoubleTapPoint({ x, y });
+    doubleTapOpacity.stopAnimation();
+    doubleTapScale.stopAnimation();
+    doubleTapOpacity.setValue(0);
+    doubleTapScale.setValue(0.3);
+
     Animated.sequence([
       Animated.parallel([
         Animated.timing(doubleTapOpacity, { toValue: 1, duration: 100, useNativeDriver: USE_NATIVE }),
@@ -813,9 +827,18 @@ const VideoItem = React.memo(function VideoItem({
           </View>
         )}
 
-        {/* Double-tap like burst */}
+        {/* Double-tap like burst, centered on the user's second tap */}
         <Animated.View
-          style={[vStyles.centerOverlay, { opacity: doubleTapOpacity, transform: [{ scale: doubleTapScale }], pointerEvents: "none" } as any]}
+          style={[
+            vStyles.doubleTapHeart,
+            {
+              left: doubleTapPoint.x - 55,
+              top: doubleTapPoint.y - 55,
+              opacity: doubleTapOpacity,
+              transform: [{ scale: doubleTapScale }],
+              pointerEvents: "none",
+            } as any,
+          ]}
         >
           <Ionicons name="heart" size={90} color="#FF3B30" />
         </Animated.View>
@@ -978,6 +1001,13 @@ const VS_SHADOW = Platform.select({
 const vStyles = StyleSheet.create({
   item: { backgroundColor: "#000", overflow: "hidden" },
   centerOverlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
+  doubleTapHeart: {
+    position: "absolute",
+    width: 110,
+    height: 110,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   pauseCircle: { width: 72, height: 72, borderRadius: 36, backgroundColor: "rgba(0,0,0,0.4)", borderWidth: 1.5, borderColor: "rgba(255,255,255,0.25)", alignItems: "center", justifyContent: "center" },
   // Caption sits directly above the seek bar (seekContainer height = 28)
   captionOverlay: { position: "absolute", left: 16, right: 16, bottom: 28 },
