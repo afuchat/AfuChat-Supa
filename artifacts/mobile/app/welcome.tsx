@@ -30,7 +30,7 @@ import { storage, KEYS } from "@/lib/storage/mmkv";
 import * as Haptics from "@/lib/haptics";
 import Colors from "@/constants/colors";
 import LanguageSelectionStep from "@/components/onboarding/LanguageSelectionStep";
-import OnboardingBackdrop from "@/components/onboarding/OnboardingBackdrop";
+import OnboardingBackdrop, { ONBOARDING_THEME } from "@/components/onboarding/OnboardingBackdrop";
 
 // ─── Slide data ────────────────────────────────────────────────────────────────
 const SLIDES = [
@@ -85,7 +85,7 @@ const SLIDES = [
 ];
 
 const SWIPE_THRESHOLD = 52;
-const BG = "#000000";
+const BG = ONBOARDING_THEME.background;
 
 // ─── Soft orb (layered circles simulate radial gradient) ──────────────────────
 function SoftOrb({ cx, cy, size, color }: { cx: number; cy: number; size: number; color: string }) {

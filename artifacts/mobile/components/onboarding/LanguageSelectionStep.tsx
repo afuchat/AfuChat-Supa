@@ -196,7 +196,7 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#000000", overflow: "hidden" },
+  root: { flex: 1, backgroundColor: ONBOARDING_THEME.background, overflow: "hidden" },
   scroll: { flex: 1 },
   languageScrollContent: { paddingHorizontal: 22 },
   headerPositioner: {
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 22,
-    backgroundColor: ONBOARDING_THEME.gradientTop,
+    backgroundColor: ONBOARDING_THEME.background,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
     overflow: "hidden",
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     position: "relative",
     alignItems: "center",
     paddingTop: 18, paddingHorizontal: 22,
-    backgroundColor: "rgba(17,31,54,0.78)",
+    backgroundColor: ONBOARDING_THEME.background,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     borderTopWidth: 1,
