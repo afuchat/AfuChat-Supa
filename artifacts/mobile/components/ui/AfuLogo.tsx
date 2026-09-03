@@ -17,10 +17,17 @@ export function AfuLogo({
   size = 72,
   style,
   forceTheme,
+  visualScale = 1,
 }: {
   size?: number;
   style?: StyleProp<ViewStyle>;
   forceTheme?: "dark" | "light";
+  /**
+   * Enlarges the artwork inside its allocated box. The source PNG includes
+   * transparent breathing room, so this increases the visible mark without
+   * changing surrounding layout dimensions.
+   */
+  visualScale?: number;
 }) {
   const { isDark } = useThemeContext();
   const resolved = forceTheme ?? (isDark ? "dark" : "light");
@@ -29,7 +36,11 @@ export function AfuLogo({
   return (
     <ExpoImage
       source={source}
-      style={[{ width: size, height: size }, style as any]}
+      style={[
+        { width: size, height: size },
+        visualScale !== 1 && { transform: [{ scale: visualScale }] },
+        style as any,
+      ]}
       contentFit="contain"
       accessibilityLabel="AfuChat logo"
       cachePolicy="memory-disk"
