@@ -686,7 +686,7 @@ export default function SignInScreen() {
           {/* Logo + wordmark */}
           <View style={{ alignItems: "center", marginBottom: showBioBtn ? 32 : 48 }}>
             <View style={sc.logoRing}>
-              <AfuLogo size={24} forceTheme="dark" />
+              <AfuLogo size={56} visualScale={1.12} forceTheme="dark" />
             </View>
             <Text style={sc.logoWordmark}>AfuChat</Text>
           </View>
@@ -855,15 +855,15 @@ const sc = StyleSheet.create({
   panel: { ...StyleSheet.absoluteFillObject, backgroundColor: "transparent" },
 
   logoRing: {
-    width: 88,
-    height: 88,
+    width: 100,
+    height: 100,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
+    marginBottom: 14,
   },
   logoWordmark: {
     color: "#fff",
-    fontSize: 20,
+    fontSize: 22,
     fontFamily: "Inter_700Bold",
     letterSpacing: -0.4,
   },
