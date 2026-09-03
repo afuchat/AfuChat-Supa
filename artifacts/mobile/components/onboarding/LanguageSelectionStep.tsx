@@ -93,7 +93,6 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
               </View>
               <View>
                 <Text style={styles.brandText}>AfuChat</Text>
-                <Text style={styles.brandCaption}>WELCOME</Text>
               </View>
             </View>
 
