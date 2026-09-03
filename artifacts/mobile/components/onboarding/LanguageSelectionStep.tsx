@@ -140,16 +140,16 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
                   pressed && styles.languageRowPressed,
                 ]}
               >
+                <View style={[styles.badgeBubble, isSelected && styles.badgeBubbleSelected]}>
+                  <Text style={styles.flag}>{language.flag}</Text>
+                </View>
                 <View style={styles.languageInfo}>
                   <Text style={[styles.languageName, isSelected && styles.languageNameSelected]}>
                     {language.name}
                   </Text>
                 </View>
-                <View style={[styles.radio, isSelected && styles.radioSelected]}>
+                <View style={[styles.radio, isSelected && styles.radioSelected, styles.radioEdge]}>
                   {isSelected && <View style={styles.radioDot} />}
-                </View>
-                <View style={[styles.badgeBubble, isSelected && styles.badgeBubbleSelected]}>
-                  <Text style={styles.flag}>{language.flag}</Text>
                 </View>
               </Pressable>
             );
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   subtitle: { maxWidth: 440, color: "rgba(255,255,255,0.62)", fontSize: 14, lineHeight: 21, textAlign: "center", fontFamily: "Inter_400Regular", marginTop: 11 },
   languageList: { width: "100%", maxWidth: 560, alignSelf: "center", gap: 6 },
   languageRow: {
-    minHeight: 50, flexDirection: "row", alignItems: "center", paddingHorizontal: 12,
+    minHeight: 50, flexDirection: "row", alignItems: "center", paddingLeft: 0, paddingRight: 6,
     borderRadius: 999, backgroundColor: "rgba(255,255,255,0.085)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.14)",
     ...Platform.select({
@@ -292,6 +292,7 @@ const styles = StyleSheet.create({
   languageName: { color: "rgba(255,255,255,0.88)", fontSize: 15, fontFamily: "Inter_600SemiBold" },
   languageNameSelected: { color: "#FFFFFF" },
   radio: { width: 21, height: 21, borderRadius: 11, borderWidth: 1.5, borderColor: "rgba(255,255,255,0.34)", alignItems: "center", justifyContent: "center" },
+  radioEdge: { marginRight: 0 },
   radioSelected: { borderColor: "#72B5FF", backgroundColor: "rgba(114,181,255,0.13)" },
   radioDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: "#72B5FF" },
   continueButton: {
