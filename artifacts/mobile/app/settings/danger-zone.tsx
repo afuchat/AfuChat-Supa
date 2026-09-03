@@ -24,7 +24,7 @@ import { GlassHeader } from "@/components/ui/GlassHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { TwoFactorGate } from "@/components/ui/TwoFactorGate";
 import { useLanguage } from "@/context/LanguageContext";
-import { registerUiTexts } from "@/lib/uiTranslations";
+import { registerUiTexts } from "@/lib/i18n";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

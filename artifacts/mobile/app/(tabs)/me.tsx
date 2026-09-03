@@ -29,7 +29,7 @@ import { showAlert } from "@/lib/alert";
 import { getCachedProfileSync, isOnline, onConnectivityChange } from "@/lib/offlineStore";
 import { getLocalProfile } from "@/lib/storage/localProfile";
 import { showToast } from "@/lib/toast";
-import { registerUiTexts } from "@/lib/uiTranslations";
+import { registerUiTexts } from "@/lib/i18n";
 
 const ME_UI_TEXTS = [
   "Photo",

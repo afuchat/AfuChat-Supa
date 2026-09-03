@@ -89,7 +89,7 @@ module.exports = function localizedTextPlugin({ types: t }) {
             const alreadyUiImport = path.node.body.some(
               (node) =>
                 t.isImportDeclaration(node) &&
-                node.source.value === "@/lib/uiTranslations" &&
+                node.source.value === "@/lib/i18n" &&
                 node.specifiers.some(
                   (specifier) =>
                     t.isImportSpecifier(specifier) &&
@@ -106,7 +106,7 @@ module.exports = function localizedTextPlugin({ types: t }) {
                       t.identifier("localizeUi"),
                     ),
                   ],
-                  t.stringLiteral("@/lib/uiTranslations"),
+                  t.stringLiteral("@/lib/i18n"),
                 ),
               );
             }
@@ -115,7 +115,7 @@ module.exports = function localizedTextPlugin({ types: t }) {
             const alreadyRegistryImport = path.node.body.some(
               (node) =>
                 t.isImportDeclaration(node) &&
-                node.source.value === "@/lib/uiTranslations" &&
+                node.source.value === "@/lib/i18n" &&
                 node.specifiers.some(
                   (specifier) =>
                     t.isImportSpecifier(specifier) &&
@@ -132,7 +132,7 @@ module.exports = function localizedTextPlugin({ types: t }) {
                       t.identifier("registerUiTexts"),
                     ),
                   ],
-                  t.stringLiteral("@/lib/uiTranslations"),
+                  t.stringLiteral("@/lib/i18n"),
                 ),
               );
             }

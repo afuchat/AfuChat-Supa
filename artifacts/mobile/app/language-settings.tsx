@@ -12,8 +12,7 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLanguage } from "@/context/LanguageContext";
 import { useTheme } from "@/hooks/useTheme";
-import { LANG_LABELS } from "@/lib/translate";
-import { BUNDLED_UI_LANGUAGES } from "@/lib/uiTranslations";
+import { LANG_LABELS, BUNDLED_UI_LANGUAGES } from "@/lib/i18n";
 import Colors from "@/constants/colors";
 
 const FLAG: Record<string, string> = {

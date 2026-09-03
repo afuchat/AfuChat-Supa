@@ -1,7 +1,8 @@
 /**
- * Real message translation using Google Translate's public endpoint.
- * No API key required. Auto-detects source language.
- * Supports 100+ languages with full accuracy.
+ * User-content translation using Google Translate's public endpoint.
+ *
+ * This module is only for runtime content authored by users, such as chat
+ * messages and posts. UI/page copy belongs in the bundled local i18n module.
  */
 
 const CACHE = new Map<string, string>();
@@ -12,7 +13,7 @@ function cacheKey(text: string, targetLang: string): string {
   return `${targetLang}:${text.slice(0, 120)}`;
 }
 
-export async function translateText(text: string, targetLang: string): Promise<string> {
+export async function translateUserContent(text: string, targetLang: string): Promise<string> {
   if (!text?.trim() || text.trim().length < 2) return text;
 
   const stripped = text.replace(/[\p{Emoji}\s]/gu, "");
@@ -99,46 +100,3 @@ export async function detectMessageLanguage(text: string): Promise<string | null
   }
 }
 
-export const LANG_LABELS: Record<string, string> = {
-  en: "English",
-  zh: "Chinese",
-  es: "Spanish",
-  fr: "French",
-  ar: "Arabic",
-  hi: "Hindi",
-  pt: "Portuguese",
-  ru: "Russian",
-  ja: "Japanese",
-  de: "German",
-  sw: "Swahili",
-  ko: "Korean",
-  it: "Italian",
-  tr: "Turkish",
-  nl: "Dutch",
-  pl: "Polish",
-  th: "Thai",
-  vi: "Vietnamese",
-  id: "Indonesian",
-  ms: "Malay",
-  fil: "Filipino",
-  uk: "Ukrainian",
-  ro: "Romanian",
-  el: "Greek",
-  cs: "Czech",
-  sv: "Swedish",
-  da: "Danish",
-  no: "Norwegian",
-  fi: "Finnish",
-  he: "Hebrew",
-  bn: "Bengali",
-  ta: "Tamil",
-  ur: "Urdu",
-  fa: "Persian",
-  am: "Amharic",
-  rw: "Kinyarwanda",
-  ha: "Hausa",
-  yo: "Yoruba",
-  zu: "Zulu",
-  af: "Afrikaans",
-  so: "Somali",
-};

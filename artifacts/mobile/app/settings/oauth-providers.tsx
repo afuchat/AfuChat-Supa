@@ -23,7 +23,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { GlassMenuSeparator } from "@/components/ui/GlassMenuItem";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { useLanguage } from "@/context/LanguageContext";
-import { registerUiTexts } from "@/lib/uiTranslations";
+import { registerUiTexts } from "@/lib/i18n";
 
 // ─── Provider config ──────────────────────────────────────────────────────────
 type Provider = {

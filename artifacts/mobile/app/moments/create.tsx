@@ -37,7 +37,7 @@ import {
   finishPostUpload,
   failPostUpload,
 } from "@/lib/postUploadStore";
-import { LANG_LABELS } from "@/lib/translate";
+import { LANG_LABELS } from "@/lib/i18n";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types & constants

@@ -20,7 +20,7 @@ import { ContactRowSkeleton } from "@/components/ui/Skeleton";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { useLanguage } from "@/context/LanguageContext";
-import { registerUiTexts } from "@/lib/uiTranslations";
+import { registerUiTexts } from "@/lib/i18n";
 
 type BlockedItem = {
   id: string;

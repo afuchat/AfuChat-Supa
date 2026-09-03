@@ -1,6 +1,6 @@
 import { Alert } from "react-native";
 import { showToast as _showToast } from "./toast";
-import { localizeUi } from "./uiTranslations";
+import { localizeUi } from "./i18n";
 
 export type AlertButton = {
   text: string;

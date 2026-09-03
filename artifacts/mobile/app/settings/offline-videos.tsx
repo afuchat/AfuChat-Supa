@@ -27,7 +27,7 @@ import {
   type OfflineVideoEntry,
 } from "@/lib/videoCache";
 import { useLanguage } from "@/context/LanguageContext";
-import { registerUiTexts } from "@/lib/uiTranslations";
+import { registerUiTexts } from "@/lib/i18n";
 
 const MS_24H = 24 * 60 * 60 * 1000;
 registerUiTexts([

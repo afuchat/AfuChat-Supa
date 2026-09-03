@@ -59,7 +59,8 @@ import { setHandleId } from "@/lib/profileCache";
 import { trackEvent } from "@/lib/activityTracker";
 import { getMergedLearnedWeights } from "@/lib/personalization";
 import { useLanguage } from "@/context/LanguageContext";
-import { translateText, LANG_LABELS } from "@/lib/translate";
+import { translateUserContent } from "@/lib/translate";
+import { LANG_LABELS } from "@/lib/i18n";
 import { encodeId } from "@/lib/shortId";
 import { useOpenLink } from "@/lib/useOpenLink";
 import { useVideoProgress } from "@/hooks/useVideoProgress";
@@ -665,7 +666,7 @@ const PostCard = React.memo(function PostCard({ item, onToggleLike, onToggleBook
     let cancelled = false;
     const task = InteractionManager.runAfterInteractions(() => {
       if (cancelled) return;
-      translateText(item.content, preferredLang).then((result) => {
+      translateUserContent(item.content, preferredLang).then((result) => {
         if (!cancelled && result && result !== item.content) {
           setDisplayContent(result);
           setIsTranslated(true);

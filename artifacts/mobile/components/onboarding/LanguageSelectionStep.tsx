@@ -13,8 +13,7 @@ import Svg, { Circle, Ellipse, Path } from "react-native-svg";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLanguage } from "@/context/LanguageContext";
-import { LANG_LABELS } from "@/lib/translate";
-import { BUNDLED_UI_LANGUAGES } from "@/lib/uiTranslations";
+import { LANG_LABELS, BUNDLED_UI_LANGUAGES } from "@/lib/i18n";
 import AfuLogo from "@/components/ui/AfuLogo";
 
 const FLAGS: Record<string, string> = {

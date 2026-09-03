@@ -23,7 +23,7 @@ import { RichText } from "@/components/ui/RichText";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import Colors from "@/constants/colors";
 import { showAlert } from "@/lib/alert";
-import { useAutoTranslate } from "@/context/LanguageContext";
+import { useUserContentTranslation } from "@/context/LanguageContext";
 
 type PostItem = {
   id: string;
@@ -48,7 +48,7 @@ function formatRelative(iso: string): string {
 
 function MyPostCard({ item, profile, onDelete }: { item: PostItem; profile: any; onDelete: (id: string) => void }) {
   const { colors } = useTheme();
-  const { displayText } = useAutoTranslate(item.content);
+  const { displayText } = useUserContentTranslation(item.content);
   const allImages = item.images.length > 0 ? item.images : item.image_url ? [item.image_url] : [];
   return (
     <TouchableOpacity

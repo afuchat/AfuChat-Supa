@@ -1,15 +1,10 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { translateText, LANG_LABELS } from "@/lib/translate";
+import { translateUserContent as translateUserContentWithGoogle } from "@/lib/translate";
+import { LANG_LABELS, isBundledUiLanguage, setLocale, subscribeUiTranslations, t as translateUi } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
-import {
-  setCurrentUiLanguage,
-  subscribeUiTranslations,
-  translateUi,
-} from "@/lib/uiTranslations";
-import { isBundledUiLanguage } from "@/lib/uiTranslations";
 import { storage, KEYS } from "@/lib/storage/mmkv";
 
 export const LANGUAGE_PREFERENCE_KEY = "@afuchat:lang_pref";
@@ -39,7 +34,7 @@ type LanguageContextType = {
   langLabel: string;
   isRTL: boolean;
   setPreferredLang: (lang: string | null) => Promise<void>;
-  autoTranslate: (text: string) => Promise<string>;
+  translateUserContent: (text: string) => Promise<string>;
   voiceToText: boolean;
   textToSpeech: boolean;
   t: (text: string) => string;
@@ -50,7 +45,7 @@ const LanguageContext = createContext<LanguageContextType>({
   langLabel: "Off",
   isRTL: false,
   setPreferredLang: async () => {},
-  autoTranslate: async (t) => t,
+  translateUserContent: async (t) => t,
   voiceToText: false,
   textToSpeech: false,
   t: (text) => text,
@@ -83,7 +78,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         if (hasLocalLanguageChange.current) return;
         const safeLang = lang && !isBundledUiLanguage(lang) ? "en" : lang;
         setPreferredLangState(safeLang);
-        setCurrentUiLanguage(safeLang);
+        setLocale(safeLang);
       })
       .catch(() => {});
   }, []);
@@ -114,7 +109,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         ? "en"
         : requestedLang;
       setPreferredLangState(lang);
-      setCurrentUiLanguage(lang);
+      setLocale(lang);
       await AsyncStorage.setItem(LANGUAGE_PREFERENCE_KEY, lang ?? "none");
       try {
         storage.setString(KEYS.LANGUAGE, lang ?? "en");
@@ -176,7 +171,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     // Update the live UI synchronously. Persistence is queued below so a
     // rapid wrong-language -> new-language change cannot finish out of order.
     setPreferredLangState(normalizedLang);
-    setCurrentUiLanguage(normalizedLang);
+    setLocale(normalizedLang);
 
     languagePersistQueueRef.current = languagePersistQueueRef.current
       .catch(() => {})
@@ -211,9 +206,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     await languagePersistQueueRef.current;
   }
 
-  async function autoTranslate(text: string): Promise<string> {
+  async function translateUserContent(text: string): Promise<string> {
     if (!preferredLang || !text?.trim()) return text;
-    return translateText(text, preferredLang);
+    return translateUserContentWithGoogle(text, preferredLang);
   }
 
   const langLabel = preferredLang
@@ -224,7 +219,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const isRTL = false;
   // Keep non-hook callers used by the Babel transform in sync during the same
   // render that observes a language change, not one render later.
-  setCurrentUiLanguage(preferredLang);
+  setLocale(preferredLang);
   const t = useCallback(
     (text: string) => translateUi(text, preferredLang),
     [preferredLang, uiTranslationVersion],
@@ -232,7 +227,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <LanguageContext.Provider
-      value={{ preferredLang, langLabel, isRTL, setPreferredLang, autoTranslate, voiceToText, textToSpeech, t }}
+      value={{ preferredLang, langLabel, isRTL, setPreferredLang, translateUserContent, voiceToText, textToSpeech, t }}
     >
       {children}
     </LanguageContext.Provider>
@@ -243,7 +238,7 @@ export function useLanguage() {
   return useContext(LanguageContext);
 }
 
-export function useAutoTranslate(text: string | null | undefined) {
+export function useUserContentTranslation(text: string | null | undefined) {
   const { preferredLang } = useLanguage();
   const [displayText, setDisplayText] = useState(text || "");
   const [isTranslated, setIsTranslated] = useState(false);
@@ -253,7 +248,7 @@ export function useAutoTranslate(text: string | null | undefined) {
     setIsTranslated(false);
     if (!preferredLang || !text?.trim()) return;
     let cancelled = false;
-    translateText(text, preferredLang).then((result) => {
+    translateUserContentWithGoogle(text, preferredLang).then((result) => {
       if (!cancelled && result && result !== text) {
         setDisplayText(result);
         setIsTranslated(true);

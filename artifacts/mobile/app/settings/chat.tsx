@@ -30,7 +30,7 @@ import { requestGalleryPermissionOnce } from "@/lib/storage/chatAttachmentCache"
 import { useAppAccent } from "@/context/AppAccentContext";
 import { useAdvancedFeatures } from "@/context/AdvancedFeaturesContext";
 import { useLanguage } from "@/context/LanguageContext";
-import { registerUiTexts } from "@/lib/uiTranslations";
+import { registerUiTexts } from "@/lib/i18n";
 
 const FONT_SIZES = [13, 15, 17, 19];
 const MEDIA_QUALITIES: MediaQuality[] = ["Auto", "High", "Low"];

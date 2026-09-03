@@ -103,7 +103,8 @@ import { clearUnread, getLocalConversation } from "@/lib/storage/localConversati
 import { getLocalAttachmentUri, ensureChatAttachmentDownloaded, autoDownloadChatAttachments, openChatFile, saveAttachmentToGallery } from "@/lib/storage/chatAttachmentCache";
 import { uploadChatMedia } from "@/lib/mediaUpload";
 import { syncPendingMessages } from "@/lib/offlineSync";
-import { translateText, detectMessageLanguage, LANG_LABELS } from "@/lib/translate";
+import { translateUserContent, detectMessageLanguage } from "@/lib/translate";
+import { LANG_LABELS } from "@/lib/i18n";
 import { useLanguage } from "@/context/LanguageContext";
 import { useChatPreferences, CHAT_THEME_COLORS, BUBBLE_RADIUS } from "@/context/ChatPreferencesContext";
 import { useAdvancedFeatures } from "@/context/AdvancedFeaturesContext";
@@ -4924,7 +4925,7 @@ STRICT RULES:
     setAiResultType("translate");
     setAiResult(null);
     try {
-      const result = await translateText(translateMsg.encrypted_content, langCode);
+      const result = await translateUserContent(translateMsg.encrypted_content, langCode);
       setAiResult(result);
     } catch {
       setAiResult("Could not translate. Please try again.");
