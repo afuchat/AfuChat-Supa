@@ -10,7 +10,17 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import Svg, { Circle, Ellipse, Path } from "react-native-svg";
+import Svg, {
+  Circle,
+  ClipPath,
+  Defs,
+  Ellipse,
+  G,
+  LinearGradient as SvgLinearGradient,
+  Path,
+  RadialGradient,
+  Stop,
+} from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLanguage } from "@/context/LanguageContext";
 import { LANG_LABELS, BUNDLED_UI_LANGUAGES } from "@/lib/i18n";
@@ -29,6 +39,63 @@ const LANGUAGES = BUNDLED_UI_LANGUAGES
     name: LANG_LABELS[code],
     flag: FLAGS[code],
   }));
+
+function PlanetIcon() {
+  return (
+    <Svg width={44} height={44} viewBox="0 0 44 44" accessibilityLabel="Planet">
+      <Defs>
+        <RadialGradient id="planetSurface" cx="28%" cy="22%" r="82%">
+          <Stop offset="0%" stopColor="#8ED9FF" />
+          <Stop offset="48%" stopColor="#2C91D5" />
+          <Stop offset="100%" stopColor="#0B397C" />
+        </RadialGradient>
+        <SvgLinearGradient id="planetAtmosphere" x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor="#C7EEFF" stopOpacity="0.92" />
+          <Stop offset="48%" stopColor="#5FB9F4" stopOpacity="0.25" />
+          <Stop offset="100%" stopColor="#1D5DA5" stopOpacity="0.7" />
+        </SvgLinearGradient>
+        <ClipPath id="planetClip">
+          <Circle cx="22" cy="22" r="15.5" />
+        </ClipPath>
+      </Defs>
+
+      <Ellipse
+        cx="22"
+        cy="22"
+        rx="19"
+        ry="7.5"
+        fill="none"
+        stroke="#8FD8FF"
+        strokeOpacity="0.45"
+        strokeWidth="1.2"
+        transform="rotate(-18 22 22)"
+      />
+      <Circle cx="22" cy="22" r="17.5" fill="url(#planetAtmosphere)" opacity={0.34} />
+      <Circle cx="22" cy="22" r="15.5" fill="url(#planetSurface)" />
+      <G clipPath="url(#planetClip)" opacity={0.9}>
+        <Path
+          d="M9 16.5c2.5-1.8 4-3.2 6.2-3.3l2.1 2.1-1.6 2.2-2.8.6-1.7 2.5-2.9-.3-1.4-2.2zm10.2-6.1 3.1-2.1 3.7 1.2 1 2.7-2.5 1.2-2.6-.8-2.7.6zm5 10.1 3.5-.9 2.9 1.6-.6 2.8-2.2 1.3-1.8 3.9-2.7-.6-.9-3.1-2.6-1.6 1.1-2.5zm-12.7 4.2 3.1-.6 2.4 2.2-.9 3.2-2.8 1.2-2.2-2.2z"
+          fill="#51B56C"
+        />
+        <Path
+          d="M10 11.5c4.2-3.2 9.1-4.7 14.5-3.6-2.7.9-5 2-7.4 3.8-2.6 1.8-4.5 3.7-6.4 6.8-1.2-2-1.5-4.5-.7-7z"
+          fill="#D1F3FF"
+          opacity={0.28}
+        />
+      </G>
+      <Circle cx="22" cy="22" r="15.5" fill="none" stroke="#B8E8FF" strokeOpacity="0.75" strokeWidth="0.8" />
+      <Ellipse
+        cx="17"
+        cy="15"
+        rx="5.5"
+        ry="3"
+        fill="#FFFFFF"
+        opacity={0.2}
+        transform="rotate(-28 17 15)"
+      />
+    </Svg>
+  );
+}
 
 type LanguageSelectionStepProps = {
   onComplete: () => void;
@@ -97,11 +164,7 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
 
             <View style={[styles.hero, isMobile && styles.heroMobile]}>
               <View style={styles.globeBadge}>
-                <Svg width={25} height={25} viewBox="0 0 25 25" accessibilityLabel="Language">
-                  <Circle cx="12.5" cy="12.5" r="9.5" stroke="#A9C9FF" strokeWidth="1.4" fill="none" />
-                  <Ellipse cx="12.5" cy="12.5" rx="4.2" ry="9.5" stroke="#A9C9FF" strokeWidth="1.2" fill="none" />
-                  <Path d="M3.5 12.5h18M5.4 7.6h14.2M5.4 17.4h14.2" stroke="#A9C9FF" strokeWidth="1.1" fill="none" />
-                </Svg>
+                <PlanetIcon />
               </View>
               <Text style={styles.title}>{t("Choose your language")}</Text>
               <Text style={styles.subtitle}>
