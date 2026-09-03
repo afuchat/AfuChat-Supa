@@ -42,7 +42,9 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
   const [saving, setSaving] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(278);
   const continueLabel = selected ? t("Continue") : t("Choose a language");
+  const isMobile = screenWidth < 600;
   const contentWidth = Math.max(0, Math.min(560, screenWidth - 32));
+  const headerWidth = isMobile ? screenWidth : contentWidth;
 
   function selectLanguage(code: string) {
     setSelected(code);
@@ -71,7 +73,11 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
 
       <View style={styles.headerPositioner}>
         <View
-          style={[styles.header, { width: contentWidth, paddingTop: insets.top + 24 }]}
+          style={[
+            styles.header,
+            isMobile && styles.headerMobile,
+            { width: headerWidth, paddingTop: insets.top + (isMobile ? 16 : 24) },
+          ]}
           onLayout={(event) => {
             const measuredHeight = Math.ceil(event.nativeEvent.layout.height);
             if (measuredHeight > 0 && measuredHeight !== headerHeight) {
@@ -80,12 +86,17 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
           }}
         >
           <View style={styles.headerInner}>
-            <View style={styles.brandRow}>
-              <AfuLogo size={24} forceTheme="dark" />
-              <Text style={styles.brandText}>AfuChat</Text>
+            <View style={styles.brandLockup}>
+              <View style={styles.brandIconFrame}>
+                <AfuLogo size={24} forceTheme="dark" />
+              </View>
+              <View>
+                <Text style={styles.brandText}>AfuChat</Text>
+                <Text style={styles.brandCaption}>WELCOME</Text>
+              </View>
             </View>
 
-            <View style={styles.hero}>
+            <View style={[styles.hero, isMobile && styles.heroMobile]}>
               <View style={styles.globeBadge}>
                 <Svg width={25} height={25} viewBox="0 0 25 25" accessibilityLabel="Language">
                   <Circle cx="12.5" cy="12.5" r="9.5" stroke="#A9C9FF" strokeWidth="1.4" fill="none" />
@@ -182,7 +193,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   languageScrollContent: { paddingHorizontal: 22 },
   headerPositioner: {
-    position: "absolute", top: 12, left: 0, right: 0, zIndex: 10, elevation: 10,
+    position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, elevation: 10,
     alignItems: "center",
   },
   header: {
@@ -191,15 +202,31 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
     overflow: "hidden",
+    ...Platform.select({
+      ios: { shadowColor: "#000000", shadowOpacity: 0.24, shadowRadius: 18, shadowOffset: { width: 0, height: 10 } },
+      android: { elevation: 8 },
+      web: { boxShadow: "0 10px 26px rgba(0,0,0,0.24)" } as any,
+    }),
+  },
+  headerMobile: {
+    paddingHorizontal: 24,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
   headerInner: { width: "100%", maxWidth: 560, alignSelf: "center" },
   bottomFooter: {
     alignItems: "center",
     paddingTop: 20, paddingHorizontal: 22, backgroundColor: ONBOARDING_THEME.gradientMiddle,
   },
-  brandRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  brandText: { color: "#FFFFFF", fontSize: 22, fontFamily: "Inter_700Bold", letterSpacing: -0.5 },
+  brandLockup: { flexDirection: "row", alignItems: "center", gap: 10, alignSelf: "center" },
+  brandIconFrame: {
+    width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.10)",
+  },
+  brandText: { color: "#FFFFFF", fontSize: 22, lineHeight: 25, fontFamily: "Inter_700Bold", letterSpacing: -0.5 },
+  brandCaption: { color: "rgba(188,215,255,0.58)", fontSize: 8, lineHeight: 10, letterSpacing: 1.8, fontFamily: "Inter_700Bold", marginTop: 1 },
   hero: { alignItems: "center", marginTop: 26, marginBottom: 16 },
+  heroMobile: { marginTop: 20, marginBottom: 14 },
   globeBadge: {
     width: 60, height: 60, borderRadius: 30, backgroundColor: "rgba(52,125,255,0.18)",
     borderWidth: 1, borderColor: "rgba(145,194,255,0.42)", alignItems: "center",
