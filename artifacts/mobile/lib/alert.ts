@@ -1,5 +1,6 @@
 import { Alert } from "react-native";
 import { showToast as _showToast } from "./toast";
+import { localizeUi } from "./uiTranslations";
 
 export type AlertButton = {
   text: string;
@@ -58,6 +59,8 @@ export function unregisterAlertListener() {
 }
 
 export function showToast(message: string, _long = false) {
+  // App literals are localized by the Babel transform. Runtime messages
+  // (including server/user content) must remain untouched.
   _showToast(message, { type: "info" });
 }
 
@@ -69,7 +72,14 @@ export function showAlert(
   const safeMessage = message === undefined ? undefined : formatAlertMessage(message);
   // Always prefer the custom AlertModal — gives a consistent appearance across platforms.
   if (_listener) {
-    _listener({ visible: true, title, message: safeMessage, buttons });
+    _listener({
+      visible: true,
+      title,
+      // Literal messages are localized by the Babel UI transform. Keep
+      // runtime/server error strings intact; they are not interface copy.
+      message: safeMessage,
+      buttons,
+    });
     return;
   }
 
@@ -97,12 +107,12 @@ export function confirmAlert(
   return new Promise((resolve) => {
     showAlert(title, message, [
       {
-        text: options?.cancelText || "Cancel",
+        text: options?.cancelText || localizeUi("Cancel"),
         style: "cancel",
         onPress: () => resolve(false),
       },
       {
-        text: options?.confirmText || "OK",
+        text: options?.confirmText || localizeUi("OK"),
         style: options?.destructive ? "destructive" : "default",
         onPress: () => resolve(true),
       },

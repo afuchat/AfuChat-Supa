@@ -55,7 +55,14 @@ const LanguageContext = createContext<LanguageContextType>({
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [preferredLang, setPreferredLangState] = useState<string | null>(null);
+  const [preferredLang, setPreferredLangState] = useState<string | null>(() => {
+    try {
+      const cached = normalizeLanguage(storage.getString(KEYS.LANGUAGE));
+      return cached && isBundledUiLanguage(cached) ? cached : null;
+    } catch {
+      return null;
+    }
+  });
   const [voiceToText, setVoiceToText] = useState(false);
   const [textToSpeech, setTextToSpeech] = useState(false);
   const [uiTranslationVersion, setUiTranslationVersion] = useState(0);
@@ -65,11 +72,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     AsyncStorage.getItem(LANGUAGE_PREFERENCE_KEY).then((stored) => {
       const lang = normalizeLanguage(stored);
-      if (stored !== null) {
-        const safeLang = lang && !isBundledUiLanguage(lang) ? "en" : lang;
-        setPreferredLangState(safeLang);
-        setCurrentUiLanguage(safeLang);
-      }
+      if (stored === null) return;
+      const safeLang = lang && !isBundledUiLanguage(lang) ? "en" : lang;
+      setPreferredLangState(safeLang);
+      setCurrentUiLanguage(safeLang);
     });
   }, []);
 

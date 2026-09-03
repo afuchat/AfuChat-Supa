@@ -90,6 +90,13 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
   const [saving, setSaving] = useState(false);
   const continueLabel = selected ? CONTINUE_LABELS[selected] ?? "Continue" : "Choose a language";
 
+  function selectLanguage(code: string) {
+    setSelected(code);
+    // Apply the language immediately so this screen updates as soon as the
+    // user selects an option. The provider handles persistence and sync.
+    void setPreferredLang(code);
+  }
+
   async function continueSelection() {
     if (!selected || saving) return;
     setSaving(true);
@@ -151,7 +158,7 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
             return (
               <Pressable
                 key={language.code}
-                onPress={() => setSelected(language.code)}
+                onPress={() => selectLanguage(language.code)}
                 accessibilityRole="radio"
                 accessibilityState={{ checked: isSelected }}
                 style={({ pressed }) => [

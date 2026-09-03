@@ -27,6 +27,33 @@ module.exports = function localizedTextPlugin({ types: t }) {
     return false;
   }
 
+  function isUiCall(node) {
+    if (!t.isCallExpression(node)) return false;
+    if (t.isIdentifier(node.callee)) {
+      return ["showAlert", "showToast", "confirmAlert"].includes(node.callee.name);
+    }
+    if (t.isMemberExpression(node.callee) && t.isIdentifier(node.callee.property)) {
+      return node.callee.property.name === "alert";
+    }
+    return false;
+  }
+
+  function localizeStaticExpression(node, state) {
+    if (t.isStringLiteral(node)) {
+      state.uiTextLiterals.add(node.value);
+      state.localizeUiUsed = true;
+      return t.callExpression(t.identifier("localizeUi"), [node]);
+    }
+    if (t.isConditionalExpression(node)) {
+      node.consequent = localizeStaticExpression(node.consequent, state);
+      node.alternate = localizeStaticExpression(node.alternate, state);
+    } else if (t.isLogicalExpression(node)) {
+      node.left = localizeStaticExpression(node.left, state);
+      node.right = localizeStaticExpression(node.right, state);
+    }
+    return node;
+  }
+
   return {
     name: "localized-text",
     visitor: {
@@ -183,7 +210,7 @@ module.exports = function localizedTextPlugin({ types: t }) {
           const hasNestedChildren = children.some(
             (child) => t.isJSXElement(child) || t.isJSXFragment(child),
           );
-          if (hasStaticText && !hasNestedChildren) {
+          if (hasStaticText) {
             children
               .filter((child) => t.isJSXText(child))
               .forEach((child) => state.uiTextLiterals.add(child.value));
@@ -233,6 +260,50 @@ module.exports = function localizedTextPlugin({ types: t }) {
         }
         path.node.name = "LocalizedText";
         state.localizedTextUsed = true;
+      },
+      JSXText(path, state) {
+        if (!state.isAppSource || path.node.value.trim().length < 2) return;
+        const parent = path.parentPath;
+        if (!parent.isJSXElement()) return;
+        const openingName = parent.node.openingElement.name;
+        // Text handles its own children through __afuchatStaticParts so
+        // dynamic names/content next to a static label remain untouched.
+        if (t.isJSXIdentifier(openingName, { name: "Text" })) return;
+        state.uiTextLiterals.add(path.node.value);
+        state.localizeUiUsed = true;
+        path.replaceWith(
+          t.jsxExpressionContainer(
+            t.callExpression(t.identifier("localizeUi"), [t.stringLiteral(path.node.value)]),
+          ),
+        );
+      },
+      JSXExpressionContainer(path, state) {
+        if (!state.isAppSource || !isUiStringExpression(path.node.expression)) return;
+        const parent = path.parentPath;
+        if (!parent.isJSXElement()) return;
+        const openingName = parent.node.openingElement.name;
+        if (t.isJSXIdentifier(openingName, { name: "Text" })) return;
+        path.node.expression = localizeStaticExpression(path.node.expression, state);
+      },
+      CallExpression(path, state) {
+        if (!state.isAppSource || !isUiCall(path.node)) return;
+        // String literals passed to alerts/toasts are UI copy too. Dynamic
+        // server errors and user content remain untouched.
+        path.node.arguments = path.node.arguments.map((argument, index) => {
+          if (index > 2 && t.isIdentifier(path.node.callee, { name: "showAlert" })) {
+            return argument;
+          }
+          return localizeStaticExpression(argument, state);
+        });
+      },
+      ObjectProperty(path, state) {
+        if (!state.isAppSource || !t.isIdentifier(path.node.key)) return;
+        if (!["text", "confirmText", "cancelText"].includes(path.node.key.name)) return;
+        const call = path.findParent((parent) => parent.isCallExpression() && isUiCall(parent.node));
+        if (!call || !t.isStringLiteral(path.node.value)) return;
+        state.uiTextLiterals.add(path.node.value.value);
+        state.localizeUiUsed = true;
+        path.node.value = t.callExpression(t.identifier("localizeUi"), [path.node.value]);
       },
     },
   };

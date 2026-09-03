@@ -816,6 +816,271 @@ const CORE_TABLES: Record<UiLanguage, TranslationTable> = {
   },
 };
 
+/**
+ * The UI catalog is intentionally offline and deterministic.  The phrase
+ * tables above hold polished copy for the most common product surfaces; this
+ * smaller vocabulary is the safety net for copy added by a lazy-loaded route
+ * or a shared component.  It keeps a newly shipped label from silently
+ * reverting to English just because that route was not part of onboarding.
+ */
+const OFFLINE_WORDS: Record<UiLanguage, Record<string, string>> = {
+  en: {},
+  sw: {
+    a: "kwa", about: "kuhusu", account: "akaunti", active: "inatumika", add: "ongeza",
+    address: "anwani", all: "yote", amount: "kiasi", and: "na", answer: "jibu",
+    apply: "tuma ombi", back: "rudi", block: "zuia", blocked: "zimezuiwa",
+    call: "piga simu", cancel: "ghairi", change: "badilisha", channel: "kituo",
+    chat: "gumzo", chats: "mazungumzo", choose: "chagua", clear: "futa",
+    close: "funga", code: "msimbo", comment: "maoni", comments: "maoni",
+    confirm: "thibitisha", connect: "unganisha", contact: "mwasiliani",
+    contacts: "mawasiliano", continue: "endelea", copied: "imenakiliwa",
+    create: "unda", delete: "futa", description: "maelezo", discover: "gundua",
+    edit: "hariri", email: "barua pepe", error: "hitilafu", explore: "chunguza",
+    failed: "imeshindikana", find: "tafuta", first: "kwanza", follow: "fuata",
+    followers: "wafuasi", following: "unafuata", forgot: "umesahau",
+    from: "kutoka", group: "kikundi", help: "msaada", history: "historia",
+    home: "nyumbani", image: "picha", invalid: "si sahihi", invite: "alika",
+    language: "lugha", like: "penda", link: "kiungo", loading: "inapakia",
+    log: "toka", login: "ingia", logout: "toka", manage: "dhibiti",
+    members: "washiriki", message: "ujumbe", messages: "ujumbe", more: "zaidi",
+    name: "jina", new: "mpya", next: "ifuatayo", no: "hapana", none: "hakuna",
+    notifications: "arifa", offline: "bila intaneti", online: "mtandaoni",
+    open: "fungua", optional: "si lazima", password: "nenosiri", people: "watu",
+    phone: "simu", photo: "picha", post: "chapisho", posts: "machapisho",
+    previous: "iliyotangulia", profile: "wasifu", privacy: "faragha",
+    publish: "chapisha", remove: "ondoa", report: "ripoti", required: "inahitajika",
+    reset: "weka upya", retry: "jaribu tena", save: "hifadhi", search: "tafuta",
+    select: "chagua", send: "tuma", settings: "mipangilio", share: "shiriki",
+    sign: "ingia", skip: "ruka", start: "anza", status: "hali", story: "hadithi",
+    success: "imefaulu", terms: "masharti", too: "pia", try: "jaribu",
+    unblock: "ruhusu", update: "sasisha", upload: "pakia", user: "mtumiaji",
+    users: "watumiaji", verify: "thibitisha", video: "video", view: "tazama",
+    welcome: "karibu", yes: "ndiyo", your: "yako",
+  },
+  fr: {
+    a: "un", about: "à propos", account: "compte", active: "actif", add: "ajouter",
+    address: "adresse", all: "tout", amount: "montant", and: "et", answer: "réponse",
+    apply: "postuler", back: "retour", block: "bloquer", blocked: "bloqué",
+    call: "appel", cancel: "annuler", change: "modifier", channel: "canal",
+    chat: "discussion", chats: "discussions", choose: "choisir", clear: "effacer",
+    close: "fermer", code: "code", comment: "commentaire", comments: "commentaires",
+    confirm: "confirmer", connect: "connecter", contact: "contact", contacts: "contacts",
+    continue: "continuer", copied: "copié", create: "créer", delete: "supprimer",
+    description: "description", discover: "découvrir", edit: "modifier",
+    email: "e-mail", error: "erreur", explore: "explorer", failed: "échoué",
+    find: "trouver", first: "premier", follow: "suivre", followers: "abonnés",
+    following: "abonné", forgot: "oublié", from: "de", group: "groupe",
+    help: "aide", history: "historique", home: "accueil", image: "image",
+    invalid: "invalide", invite: "inviter", language: "langue", like: "j’aime",
+    link: "lien", loading: "chargement", log: "journal", login: "connexion",
+    logout: "déconnexion", manage: "gérer", members: "membres", message: "message",
+    messages: "messages", more: "plus", name: "nom", new: "nouveau", next: "suivant",
+    no: "non", none: "aucun", notifications: "notifications", offline: "hors ligne",
+    online: "en ligne", open: "ouvrir", optional: "facultatif", password: "mot de passe",
+    people: "personnes", phone: "téléphone", photo: "photo", post: "publication",
+    posts: "publications", previous: "précédent", profile: "profil", privacy: "confidentialité",
+    publish: "publier", remove: "retirer", report: "signaler", required: "requis",
+    reset: "réinitialiser", retry: "réessayer", save: "enregistrer", search: "rechercher",
+    select: "sélectionner", send: "envoyer", settings: "paramètres", share: "partager",
+    sign: "se", skip: "passer", start: "commencer", status: "statut", story: "story",
+    success: "réussi", terms: "conditions", too: "trop", try: "essayer",
+    unblock: "débloquer", update: "mettre à jour", upload: "téléverser", user: "utilisateur",
+    users: "utilisateurs", verify: "vérifier", video: "vidéo", view: "voir",
+    welcome: "bienvenue", yes: "oui", your: "votre",
+  },
+  es: {
+    a: "un", about: "acerca de", account: "cuenta", active: "activo", add: "añadir",
+    address: "dirección", all: "todo", amount: "cantidad", and: "y", answer: "respuesta",
+    apply: "solicitar", back: "volver", block: "bloquear", blocked: "bloqueado",
+    call: "llamada", cancel: "cancelar", change: "cambiar", channel: "canal",
+    chat: "chat", chats: "chats", choose: "elegir", clear: "borrar", close: "cerrar",
+    code: "código", comment: "comentario", comments: "comentarios", confirm: "confirmar",
+    connect: "conectar", contact: "contacto", contacts: "contactos", continue: "continuar",
+    copied: "copiado", create: "crear", delete: "eliminar", description: "descripción",
+    discover: "descubrir", edit: "editar", email: "correo", error: "error",
+    explore: "explorar", failed: "fallido", find: "encontrar", first: "primero",
+    follow: "seguir", followers: "seguidores", following: "siguiendo", forgot: "olvidada",
+    from: "de", group: "grupo", help: "ayuda", history: "historial", home: "inicio",
+    image: "imagen", invalid: "no válido", invite: "invitar", language: "idioma",
+    like: "me gusta", link: "enlace", loading: "cargando", log: "registro",
+    login: "iniciar sesión", logout: "cerrar sesión", manage: "gestionar",
+    members: "miembros", message: "mensaje", messages: "mensajes", more: "más",
+    name: "nombre", new: "nuevo", next: "siguiente", no: "no", none: "ninguno",
+    notifications: "notificaciones", offline: "sin conexión", online: "en línea",
+    open: "abrir", optional: "opcional", password: "contraseña", people: "personas",
+    phone: "teléfono", photo: "foto", post: "publicación", posts: "publicaciones",
+    previous: "anterior", profile: "perfil", privacy: "privacidad", publish: "publicar",
+    remove: "quitar", report: "reportar", required: "obligatorio", reset: "restablecer",
+    retry: "reintentar", save: "guardar", search: "buscar", select: "seleccionar",
+    send: "enviar", settings: "ajustes", share: "compartir", sign: "iniciar",
+    skip: "omitir", start: "empezar", status: "estado", story: "historia",
+    success: "éxito", terms: "términos", too: "demasiado", try: "intentar",
+    unblock: "desbloquear", update: "actualizar", upload: "subir", user: "usuario",
+    users: "usuarios", verify: "verificar", video: "vídeo", view: "ver",
+    welcome: "bienvenido", yes: "sí", your: "tu",
+  },
+  ar: {
+    a: "واحد", about: "حول", account: "الحساب", active: "نشط", add: "إضافة",
+    address: "العنوان", all: "الكل", amount: "المبلغ", and: "و", answer: "إجابة",
+    apply: "تقديم", back: "رجوع", block: "حظر", blocked: "محظور", call: "مكالمة",
+    cancel: "إلغاء", change: "تغيير", channel: "قناة", chat: "دردشة", chats: "محادثات",
+    choose: "اختر", clear: "مسح", close: "إغلاق", code: "رمز", comment: "تعليق",
+    comments: "تعليقات", confirm: "تأكيد", connect: "تواصل", contact: "جهة اتصال",
+    contacts: "جهات الاتصال", continue: "متابعة", copied: "تم النسخ", create: "إنشاء",
+    delete: "حذف", description: "الوصف", discover: "استكشاف", edit: "تعديل",
+    email: "البريد الإلكتروني", error: "خطأ", explore: "استكشاف", failed: "فشل",
+    find: "بحث", first: "الأول", follow: "متابعة", followers: "المتابعون",
+    following: "يتابع", forgot: "نسيت", from: "من", group: "مجموعة", help: "مساعدة",
+    history: "السجل", home: "الرئيسية", image: "صورة", invalid: "غير صالح",
+    invite: "دعوة", language: "اللغة", like: "إعجاب", link: "رابط", loading: "جار التحميل",
+    log: "سجل", login: "تسجيل الدخول", logout: "تسجيل الخروج", manage: "إدارة",
+    members: "الأعضاء", message: "رسالة", messages: "رسائل", more: "المزيد",
+    name: "الاسم", new: "جديد", next: "التالي", no: "لا", none: "لا شيء",
+    notifications: "الإشعارات", offline: "دون اتصال", online: "متصل", open: "فتح",
+    optional: "اختياري", password: "كلمة المرور", people: "الأشخاص", phone: "الهاتف",
+    photo: "صورة", post: "منشور", posts: "منشورات", previous: "السابق",
+    profile: "الملف الشخصي", privacy: "الخصوصية", publish: "نشر", remove: "إزالة",
+    report: "إبلاغ", required: "مطلوب", reset: "إعادة ضبط", retry: "حاول مرة أخرى",
+    save: "حفظ", search: "بحث", select: "اختيار", send: "إرسال", settings: "الإعدادات",
+    share: "مشاركة", sign: "تسجيل", skip: "تخطي", start: "بدء", status: "الحالة",
+    story: "قصة", success: "نجاح", terms: "الشروط", too: "جدًا", try: "حاول",
+    unblock: "إلغاء الحظر", update: "تحديث", upload: "رفع", user: "مستخدم",
+    users: "مستخدمون", verify: "تحقق", video: "فيديو", view: "عرض", welcome: "مرحبًا",
+    yes: "نعم", your: "الخاص بك",
+  },
+  zh: {
+    a: "一个", about: "关于", account: "账户", active: "活跃", add: "添加",
+    address: "地址", all: "全部", amount: "金额", and: "和", answer: "答案",
+    apply: "申请", back: "返回", block: "屏蔽", blocked: "已屏蔽", call: "通话",
+    cancel: "取消", change: "更改", channel: "频道", chat: "聊天", chats: "聊天",
+    choose: "选择", clear: "清除", close: "关闭", code: "验证码", comment: "评论",
+    comments: "评论", confirm: "确认", connect: "连接", contact: "联系人",
+    contacts: "联系人", continue: "继续", copied: "已复制", create: "创建",
+    delete: "删除", description: "描述", discover: "发现", edit: "编辑",
+    email: "邮箱", error: "错误", explore: "探索", failed: "失败", find: "查找",
+    first: "第一", follow: "关注", followers: "粉丝", following: "已关注",
+    forgot: "忘记", from: "来自", group: "群组", help: "帮助", history: "历史记录",
+    home: "首页", image: "图片", invalid: "无效", invite: "邀请", language: "语言",
+    like: "点赞", link: "链接", loading: "加载中", log: "日志", login: "登录",
+    logout: "退出登录", manage: "管理", members: "成员", message: "消息",
+    messages: "消息", more: "更多", name: "名称", new: "新建", next: "下一步",
+    no: "否", none: "无", notifications: "通知", offline: "离线", online: "在线",
+    open: "打开", optional: "可选", password: "密码", people: "人员", phone: "手机",
+    photo: "照片", post: "帖子", posts: "帖子", previous: "上一步", profile: "个人资料",
+    privacy: "隐私", publish: "发布", remove: "移除", report: "举报", required: "必填",
+    reset: "重置", retry: "重试", save: "保存", search: "搜索", select: "选择",
+    send: "发送", settings: "设置", share: "分享", sign: "登录", skip: "跳过",
+    start: "开始", status: "状态", story: "动态", success: "成功", terms: "条款",
+    too: "太", try: "尝试", unblock: "取消屏蔽", update: "更新", upload: "上传",
+    user: "用户", users: "用户", verify: "验证", video: "视频", view: "查看",
+    welcome: "欢迎", yes: "是", your: "你的",
+  },
+};
+
+const OFFLINE_PHRASES: Record<UiLanguage, TranslationTable> = {
+  en: {},
+  sw: {
+    "Email address": "Anwani ya barua pepe",
+    "Email, @username, or phone": "Barua pepe, @jina la mtumiaji, au simu",
+    "New password": "Nenosiri jipya",
+    "Confirm password": "Thibitisha nenosiri",
+    "Search…": "Tafuta…",
+    "Search messages…": "Tafuta ujumbe…",
+    "Search contacts…": "Tafuta mawasiliano…",
+    "Search by name…": "Tafuta kwa jina…",
+    "Search people, groups, and channels": "Tafuta watu, vikundi na vituo",
+    "Add a message (optional)": "Ongeza ujumbe (si lazima)",
+    "Description (optional)": "Maelezo (si lazima)",
+    "No updates yet": "Bado hakuna masasisho",
+    "No followers yet": "Bado hakuna wafuasi",
+    "No comments yet": "Bado hakuna maoni",
+    "No messages yet": "Bado hakuna ujumbe",
+    "Permission needed": "Ruhusa inahitajika",
+    "Please try again.": "Tafadhali jaribu tena.",
+    "Something went wrong. Please try again.": "Hitilafu imetokea. Tafadhali jaribu tena.",
+  },
+  fr: {
+    "Email address": "Adresse e-mail",
+    "Email, @username, or phone": "E-mail, @nom d'utilisateur ou téléphone",
+    "New password": "Nouveau mot de passe",
+    "Confirm password": "Confirmer le mot de passe",
+    "Search…": "Rechercher…",
+    "Search messages…": "Rechercher dans les messages…",
+    "Search contacts…": "Rechercher des contacts…",
+    "Search by name…": "Rechercher par nom…",
+    "Search people, groups, and channels": "Rechercher des personnes, groupes et canaux",
+    "Add a message (optional)": "Ajouter un message (facultatif)",
+    "Description (optional)": "Description (facultatif)",
+    "No updates yet": "Aucune mise à jour pour le moment",
+    "No followers yet": "Aucun abonné pour le moment",
+    "No comments yet": "Aucun commentaire pour le moment",
+    "No messages yet": "Aucun message pour le moment",
+    "Permission needed": "Autorisation requise",
+    "Please try again.": "Veuillez réessayer.",
+    "Something went wrong. Please try again.": "Une erreur s’est produite. Veuillez réessayer.",
+  },
+  es: {
+    "Email address": "Dirección de correo",
+    "Email, @username, or phone": "Correo, @usuario o teléfono",
+    "New password": "Nueva contraseña",
+    "Confirm password": "Confirmar contraseña",
+    "Search…": "Buscar…",
+    "Search messages…": "Buscar mensajes…",
+    "Search contacts…": "Buscar contactos…",
+    "Search by name…": "Buscar por nombre…",
+    "Search people, groups, and channels": "Buscar personas, grupos y canales",
+    "Add a message (optional)": "Añadir un mensaje (opcional)",
+    "Description (optional)": "Descripción (opcional)",
+    "No updates yet": "Aún no hay actualizaciones",
+    "No followers yet": "Aún no hay seguidores",
+    "No comments yet": "Aún no hay comentarios",
+    "No messages yet": "Aún no hay mensajes",
+    "Permission needed": "Se necesita permiso",
+    "Please try again.": "Inténtalo de nuevo.",
+    "Something went wrong. Please try again.": "Algo salió mal. Inténtalo de nuevo.",
+  },
+  ar: {
+    "Email address": "عنوان البريد الإلكتروني",
+    "Email, @username, or phone": "البريد الإلكتروني أو @اسم المستخدم أو الهاتف",
+    "New password": "كلمة مرور جديدة",
+    "Confirm password": "تأكيد كلمة المرور",
+    "Search…": "بحث…",
+    "Search messages…": "البحث في الرسائل…",
+    "Search contacts…": "البحث عن جهات اتصال…",
+    "Search by name…": "البحث بالاسم…",
+    "Search people, groups, and channels": "البحث عن أشخاص ومجموعات وقنوات",
+    "Add a message (optional)": "إضافة رسالة (اختياري)",
+    "Description (optional)": "الوصف (اختياري)",
+    "No updates yet": "لا توجد تحديثات بعد",
+    "No followers yet": "لا يوجد متابعون بعد",
+    "No comments yet": "لا توجد تعليقات بعد",
+    "No messages yet": "لا توجد رسائل بعد",
+    "Permission needed": "الإذن مطلوب",
+    "Please try again.": "يرجى المحاولة مرة أخرى.",
+    "Something went wrong. Please try again.": "حدث خطأ. يرجى المحاولة مرة أخرى.",
+  },
+  zh: {
+    "Email address": "邮箱地址",
+    "Email, @username, or phone": "邮箱、@用户名或手机号",
+    "New password": "新密码",
+    "Confirm password": "确认密码",
+    "Search…": "搜索…",
+    "Search messages…": "搜索消息…",
+    "Search contacts…": "搜索联系人…",
+    "Search by name…": "按名称搜索…",
+    "Search people, groups, and channels": "搜索用户、群组和频道",
+    "Add a message (optional)": "添加消息（可选）",
+    "Description (optional)": "描述（可选）",
+    "No updates yet": "暂无更新",
+    "No followers yet": "暂无粉丝",
+    "No comments yet": "暂无评论",
+    "No messages yet": "暂无消息",
+    "Permission needed": "需要权限",
+    "Please try again.": "请重试。",
+    "Something went wrong. Please try again.": "出了点问题，请重试。",
+  },
+};
+
 const REGISTERED_UI_TEXTS = new Set<string>();
 const UI_TRANSLATION_LISTENERS = new Set<() => void>();
 
@@ -865,9 +1130,28 @@ export function translateUi(text: string, language: string | null | undefined): 
   const normalized = languageKey(language) ?? "";
   const uiLanguage = LANGUAGE_ALIASES[language.trim().toLowerCase()] ?? LANGUAGE_ALIASES[normalized];
   if (uiLanguage === "en" || normalized === "en") return text;
-  return TABLES[uiLanguage as UiLanguage]?.[text]
-    ?? CORE_TABLES[uiLanguage as UiLanguage]?.[text]
-    ?? text;
+  const languageTable = uiLanguage as UiLanguage;
+  const leading = text.match(/^\s*/)?.[0] ?? "";
+  const trailing = text.match(/\s*$/)?.[0] ?? "";
+  const trimmed = text.slice(leading.length, text.length - trailing.length || undefined);
+  const translated = OFFLINE_PHRASES[languageTable]?.[trimmed]
+    ?? TABLES[languageTable]?.[trimmed]
+    ?? CORE_TABLES[languageTable]?.[trimmed];
+  if (translated) return `${leading}${translated}${trailing}`;
+
+  // Translate a literal UI phrase word-by-word as a local fallback. Keep
+  // URLs, handles, product names, numbers, and interpolation-like tokens
+  // intact; those are identifiers, not interface copy.
+  const words = OFFLINE_WORDS[languageTable] ?? {};
+  const localized = trimmed.replace(/[A-Za-zÀ-ÿ]+/g, (word) => {
+    const replacement = words[word.toLowerCase()];
+    if (!replacement) return word;
+    if (word[0] === word[0].toUpperCase() && replacement.length > 0) {
+      return replacement[0].toUpperCase() + replacement.slice(1);
+    }
+    return replacement;
+  });
+  return `${leading}${localized}${trailing}`;
 }
 
 export function setCurrentUiLanguage(language: string | null): void {
