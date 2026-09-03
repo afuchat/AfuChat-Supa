@@ -45,6 +45,7 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
   const { setPreferredLang, t } = useLanguage();
   const [selected, setSelected] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(278);
   const continueLabel = selected ? t("Continue") : t("Choose a language");
 
   function selectLanguage(code: string) {
@@ -78,36 +79,48 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
       <View style={[styles.orb, styles.orbBlue]} />
       <View style={[styles.orb, styles.orbPurple]} />
 
+      <View
+        style={[styles.header, { paddingTop: insets.top + 24 }]}
+        onLayout={(event) => {
+          const measuredHeight = Math.ceil(event.nativeEvent.layout.height);
+          if (measuredHeight > 0 && measuredHeight !== headerHeight) {
+            setHeaderHeight(measuredHeight);
+          }
+        }}
+      >
+        <View style={styles.headerInner}>
+          <View style={styles.brandRow}>
+            <Image source={PLATFORM_LOGO} style={styles.brandLogo} />
+            <Text style={styles.brandText}>AfuChat</Text>
+          </View>
+
+          <View style={styles.hero}>
+            <View style={styles.globeBadge}>
+              <Svg width={25} height={25} viewBox="0 0 25 25" accessibilityLabel="Language">
+                <Circle cx="12.5" cy="12.5" r="9.5" stroke="#A9C9FF" strokeWidth="1.4" fill="none" />
+                <Ellipse cx="12.5" cy="12.5" rx="4.2" ry="9.5" stroke="#A9C9FF" strokeWidth="1.2" fill="none" />
+                <Path d="M3.5 12.5h18M5.4 7.6h14.2M5.4 17.4h14.2" stroke="#A9C9FF" strokeWidth="1.1" fill="none" />
+              </Svg>
+            </View>
+            <Text style={styles.title}>{t("Choose your language")}</Text>
+            <Text style={styles.subtitle}>
+              {t("Select the language you understand best. We will use it to make your AfuChat experience easier to follow.")}
+            </Text>
+          </View>
+        </View>
+      </View>
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[
-          styles.content,
+          styles.languageScrollContent,
           {
-            paddingTop: insets.top + 24,
+            paddingTop: headerHeight + 12,
             paddingBottom: 28,
           },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.brandRow}>
-          <Image source={PLATFORM_LOGO} style={styles.brandLogo} />
-          <Text style={styles.brandText}>AfuChat</Text>
-        </View>
-
-        <View style={styles.hero}>
-          <View style={styles.globeBadge}>
-            <Svg width={25} height={25} viewBox="0 0 25 25" accessibilityLabel="Language">
-              <Circle cx="12.5" cy="12.5" r="9.5" stroke="#A9C9FF" strokeWidth="1.4" fill="none" />
-              <Ellipse cx="12.5" cy="12.5" rx="4.2" ry="9.5" stroke="#A9C9FF" strokeWidth="1.2" fill="none" />
-              <Path d="M3.5 12.5h18M5.4 7.6h14.2M5.4 17.4h14.2" stroke="#A9C9FF" strokeWidth="1.1" fill="none" />
-            </Svg>
-          </View>
-          <Text style={styles.title}>{t("Choose your language")}</Text>
-          <Text style={styles.subtitle}>
-            {t("Select the language you understand best. We will use it to make your AfuChat experience easier to follow.")}
-          </Text>
-        </View>
-
         <View style={styles.languageList}>
           {LANGUAGES.map((language) => {
             const isSelected = selected === language.code;
@@ -123,8 +136,8 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
                   pressed && styles.languageRowPressed,
                 ]}
               >
-                 <View style={[styles.badgeBubble, isSelected && styles.badgeBubbleSelected]}>
-                   <Text style={styles.flag}>{language.flag}</Text>
+                <View style={[styles.badgeBubble, isSelected && styles.badgeBubbleSelected]}>
+                  <Text style={styles.flag}>{language.flag}</Text>
                 </View>
                 <View style={styles.languageInfo}>
                   <Text style={[styles.languageName, isSelected && styles.languageNameSelected]}>
@@ -175,18 +188,24 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#000000" },
   scroll: { flex: 1 },
-  content: { flexGrow: 1, paddingHorizontal: 22 },
+  languageScrollContent: { paddingHorizontal: 22 },
   orb: { position: "absolute", borderRadius: 999, opacity: 0.15 },
   orbBlue: { width: 260, height: 260, top: -120, right: -85, backgroundColor: "#2D5BFF" },
   orbPurple: { width: 200, height: 200, top: 210, left: -120, backgroundColor: "#873DCE" },
+  header: {
+    position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, elevation: 10,
+    paddingTop: 24, paddingHorizontal: 22, backgroundColor: "rgba(8,12,40,0.98)",
+    borderBottomLeftRadius: 24, borderBottomRightRadius: 24, overflow: "hidden",
+  },
+  headerInner: { width: "100%", maxWidth: 560, alignSelf: "center" },
   bottomFooter: {
     alignItems: "center",
     paddingTop: 8, paddingHorizontal: 22, backgroundColor: "transparent",
   },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  brandLogo: { width: 30, height: 30, borderRadius: 9 },
-  brandText: { color: "#FFFFFF", fontSize: 17, fontFamily: "Inter_700Bold", letterSpacing: -0.3 },
-  hero: { alignItems: "center", marginTop: 34, marginBottom: 24 },
+  brandLogo: { width: 36, height: 36, borderRadius: 10 },
+  brandText: { color: "#FFFFFF", fontSize: 22, fontFamily: "Inter_700Bold", letterSpacing: -0.5 },
+  hero: { alignItems: "center", marginTop: 26, marginBottom: 16 },
   globeBadge: {
     width: 60, height: 60, borderRadius: 30, backgroundColor: "rgba(52,125,255,0.18)",
     borderWidth: 1, borderColor: "rgba(145,194,255,0.42)", alignItems: "center",
