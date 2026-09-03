@@ -10,11 +10,11 @@ import {
   View,
 } from "react-native";
 import Svg, { Circle, Ellipse, Path } from "react-native-svg";
-import { LinearGradient } from "@/components/ui/SafeGradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLanguage } from "@/context/LanguageContext";
 import { LANG_LABELS, BUNDLED_UI_LANGUAGES } from "@/lib/i18n";
 import AfuLogo from "@/components/ui/AfuLogo";
+import OnboardingBackdrop from "@/components/onboarding/OnboardingBackdrop";
 
 const FLAGS: Record<string, string> = {
   en: "🇬🇧", zh: "🇨🇳", es: "🇪🇸", fr: "🇫🇷", ar: "🇸🇦", sw: "🇰🇪",
@@ -64,13 +64,7 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <LinearGradient
-        colors={["#111A54", "#050713", "#000000"]}
-        locations={[0, 0.48, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-      <View style={[styles.orb, styles.orbBlue]} />
-      <View style={[styles.orb, styles.orbPurple]} />
+      <OnboardingBackdrop />
 
       <View
         style={[styles.header, { paddingTop: insets.top + 24 }]}
@@ -179,15 +173,12 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#000000" },
+  root: { flex: 1, backgroundColor: "#000000", overflow: "hidden" },
   scroll: { flex: 1 },
   languageScrollContent: { paddingHorizontal: 22 },
-  orb: { position: "absolute", borderRadius: 999, opacity: 0.15 },
-  orbBlue: { width: 260, height: 260, top: -120, right: -85, backgroundColor: "#2D5BFF" },
-  orbPurple: { width: 200, height: 200, top: 210, left: -120, backgroundColor: "#873DCE" },
   header: {
     position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, elevation: 10,
-    paddingTop: 24, paddingHorizontal: 22, backgroundColor: "rgba(8,12,40,0.98)",
+    paddingTop: 24, paddingHorizontal: 22, backgroundColor: "rgba(0,0,0,0.34)",
     borderBottomLeftRadius: 24, borderBottomRightRadius: 24, overflow: "hidden",
   },
   headerInner: { width: "100%", maxWidth: 560, alignSelf: "center" },

@@ -30,6 +30,7 @@ import { storage, KEYS } from "@/lib/storage/mmkv";
 import * as Haptics from "@/lib/haptics";
 import Colors from "@/constants/colors";
 import LanguageSelectionStep from "@/components/onboarding/LanguageSelectionStep";
+import OnboardingBackdrop from "@/components/onboarding/OnboardingBackdrop";
 
 // ─── Slide data ────────────────────────────────────────────────────────────────
 const SLIDES = [
@@ -167,6 +168,7 @@ function OnboardingPage({
     <View style={[s.page, { width, height, backgroundColor: BG }]}>
       {/* Every page owns its illustration, background orbs, header, and CTA.
           The parent track moves this complete surface as one unit. */}
+      <OnboardingBackdrop />
       <View style={[s.illustrationBg, { pointerEvents: "none" }]}>
         <Image
           source={IL_SOURCES[slideIndex].src}
@@ -308,7 +310,11 @@ export default function WelcomeScreen() {
   }, []);
 
   if (languageStep === null) {
-    return <View style={[s.root, { backgroundColor: BG }]} />;
+    return (
+      <View style={[s.root, { backgroundColor: BG }]}>
+        <OnboardingBackdrop />
+      </View>
+    );
   }
 
   function goTo(nextIdx: number) {

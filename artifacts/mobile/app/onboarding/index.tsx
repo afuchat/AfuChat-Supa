@@ -41,6 +41,7 @@ import { ensureAfuAiChat } from "@/lib/afuAiBot";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { CHAT_THEME_COLORS, type ChatTheme } from "@/context/ChatPreferencesContext";
 import { checkUsernameAvailability, usernamePurchasePrompt } from "@/lib/usernameAvailability";
+import OnboardingBackdrop, { ONBOARDING_THEME } from "@/components/onboarding/OnboardingBackdrop";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -104,7 +105,21 @@ function DotIndicator({ index, step, accent }: { index: number; step: number; ac
 
 // ─── Main screen ───────────────────────────────────────────────────────────────
 export default function OnboardingScreen() {
-  const { colors } = useTheme();
+  const { colors: themeColors } = useTheme();
+  const colors = {
+    ...themeColors,
+    background: ONBOARDING_THEME.background,
+    backgroundSecondary: ONBOARDING_THEME.background,
+    backgroundTertiary: ONBOARDING_THEME.background,
+    surface: ONBOARDING_THEME.background,
+    card: ONBOARDING_THEME.background,
+    text: ONBOARDING_THEME.text,
+    textSecondary: ONBOARDING_THEME.textSecondary,
+    textMuted: ONBOARDING_THEME.textMuted,
+    border: ONBOARDING_THEME.border,
+    separator: "rgba(255,255,255,0.10)",
+    inputBg: ONBOARDING_THEME.inputBackground,
+  };
   const { user, refreshProfile } = useAuth();
   const { appTheme, setAppTheme } = useAppAccent();
   const insets = useSafeAreaInsets();
@@ -940,8 +955,9 @@ export default function OnboardingScreen() {
 
   return (
     <React.Fragment>
+    <OnboardingBackdrop />
     <KeyboardAvoidingView
-      style={[st.root, { backgroundColor: colors.background }]}
+      style={st.root}
       behavior="padding"
       keyboardVerticalOffset={0}
     >
@@ -993,7 +1009,7 @@ export default function OnboardingScreen() {
       </View>
 
       {/* ── Bottom action bar — positioned absolute so it floats above keyboard ── */}
-        <View style={[st.bottomBar, { paddingBottom: insets.bottom > 0 ? insets.bottom : 16, backgroundColor: colors.background }]}>
+        <View style={[st.bottomBar, { paddingBottom: insets.bottom > 0 ? insets.bottom : 16 }]}>
         <Pressable
           style={[
             st.nextBtn,
