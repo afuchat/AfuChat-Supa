@@ -11,6 +11,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import UserName from "@/components/ui/UserName";
 import { safeRouter } from "@/lib/navUtils";
+import { navigateToProfile } from "@/lib/navigateToProfile";
 import * as Haptics from "@/lib/haptics";
 import { Skeleton } from "@/components/ui/Skeleton";
 
@@ -169,7 +170,7 @@ export const UserRecsCard = React.memo(function UserRecsCard({ seed = 0, onRequi
           <TouchableOpacity
             key={u.id}
             style={[styles.card, { backgroundColor: colors.surface }]}
-            onPress={() => safeRouter.push(`/@${u.handle}` as any)}
+            onPress={() => navigateToProfile(u.handle, true).catch(() => {})}
             activeOpacity={0.88}
           >
             <Avatar uri={u.avatar_url} name={u.display_name} size={52} square={u.is_organization_verified} userId={u.id} />

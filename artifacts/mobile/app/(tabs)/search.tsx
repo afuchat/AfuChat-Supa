@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
+import { navigateToProfile } from "@/lib/navigateToProfile";
 import * as Haptics from "@/lib/haptics";
 import { safeRouter } from "@/lib/navUtils";
 
@@ -852,7 +853,7 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
     const per = p as PersonResult;
     return (
       <View >
-        <TouchableOpacity style={[ss.listRow, { backgroundColor: colors.surface }]} onPress={() => router.push(`/@${per.handle}` as any)} activeOpacity={0.75}>
+        <TouchableOpacity style={[ss.listRow, { backgroundColor: colors.surface }]} onPress={() => navigateToProfile(per.handle, true).catch(() => {})} activeOpacity={0.75}>
           <View style={{ position: "relative" }}>
             <Avatar uri={per.avatar_url} name={per.display_name} size={48} square={per.is_organization_verified} userId={per.id} />
             {per.is_verified && (
@@ -1533,7 +1534,7 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
                 <TouchableOpacity
                   key={p.id}
                   style={{ width: 148, backgroundColor: colors.surface, borderRadius: 22, overflow: "hidden", borderWidth: 0.5, borderColor: colors.border }}
-                  onPress={() => router.push(`/@${p.handle}` as any)}
+                  onPress={() => navigateToProfile(p.handle, true).catch(() => {})}
                   activeOpacity={0.8}
                 >
                   {/* Gradient top band */}

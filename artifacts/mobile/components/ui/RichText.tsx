@@ -315,9 +315,7 @@ export function RichText({
         Linking.openURL(`mailto:${span.text}`).catch(() => {});
         break;
       case "mention": {
-        navigateToProfile(span.text, !!session).catch(() => {
-          router.push(`/@${span.text.replace("@", "")}` as any);
-        });
+        navigateToProfile(span.text, !!session).catch(() => {});
         break;
       }
       case "hashtag": {

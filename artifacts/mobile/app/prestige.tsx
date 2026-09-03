@@ -13,6 +13,7 @@ import {
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { navigateToProfile } from "@/lib/navigateToProfile";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
 import { useAuth } from "@/context/AuthContext";
@@ -630,9 +631,9 @@ export default function PrestigeScreen() {
             {/* Podium — top 3 */}
             {!loadingList && richList.length >= 3 && (
               <View style={s.podiumWrap}>
-                <PodiumCard user={richList[1]} rank={2} isMe={richList[1]?.id === user?.id} myTier={tier} colors={colors} onPress={() => router.push(`/@${richList[1].handle}` as any)} />
-                <PodiumCard user={richList[0]} rank={1} isMe={richList[0]?.id === user?.id} myTier={tier} colors={colors} onPress={() => router.push(`/@${richList[0].handle}` as any)} />
-                <PodiumCard user={richList[2]} rank={3} isMe={richList[2]?.id === user?.id} myTier={tier} colors={colors} onPress={() => router.push(`/@${richList[2].handle}` as any)} />
+                <PodiumCard user={richList[1]} rank={2} isMe={richList[1]?.id === user?.id} myTier={tier} colors={colors} onPress={() => navigateToProfile(richList[1].handle, true).catch(() => {})} />
+                <PodiumCard user={richList[0]} rank={1} isMe={richList[0]?.id === user?.id} myTier={tier} colors={colors} onPress={() => navigateToProfile(richList[0].handle, true).catch(() => {})} />
+                <PodiumCard user={richList[2]} rank={3} isMe={richList[2]?.id === user?.id} myTier={tier} colors={colors} onPress={() => navigateToProfile(richList[2].handle, true).catch(() => {})} />
               </View>
             )}
 
@@ -656,7 +657,7 @@ export default function PrestigeScreen() {
                         {idx > 0 && <View style={[s.sep, { backgroundColor: colors.border }]} />}
                         <TouchableOpacity
                           style={[s.richRow, isMe && { backgroundColor: tier.color + "0C" }]}
-                          onPress={() => router.push(`/@${u.handle}` as any)}
+                          onPress={() => navigateToProfile(u.handle, true).catch(() => {})}
                           activeOpacity={0.75}
                         >
                           <Text style={[s.richRank, { color: rank <= 10 ? Colors.gold : colors.textMuted, fontFamily: rank <= 10 ? "Inter_700Bold" : "Inter_400Regular" }]}>#{rank}</Text>
@@ -692,7 +693,7 @@ export default function PrestigeScreen() {
                             {idx > 0 && <View style={[s.sep, { backgroundColor: colors.border }]} />}
                             <TouchableOpacity
                               style={s.richRow}
-                              onPress={() => router.push(`/@${u.handle}` as any)}
+                              onPress={() => navigateToProfile(u.handle, true).catch(() => {})}
                               activeOpacity={0.75}
                             >
                               <Text style={[s.richRank, { color: colors.textMuted }]}>#{uRank}</Text>

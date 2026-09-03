@@ -21,6 +21,7 @@ import {
 import { Image as ExpoImage } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { navigateToProfile } from "@/lib/navigateToProfile";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
@@ -1068,7 +1069,7 @@ const UserRow = React.memo(function UserRow({
           },
         ]}
         onPress={() =>
-          router.push(`/@${item.handle}` as any)
+          navigateToProfile(item.handle, true).catch(() => {})
         }
       >
         {/* Avatar */}

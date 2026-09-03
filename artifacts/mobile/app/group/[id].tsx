@@ -16,6 +16,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
+import { navigateToProfile } from "@/lib/navigateToProfile";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -711,7 +712,7 @@ export default function GroupManageScreen() {
                   ]}
                   onPress={() => {
                     if (isMe || !iAmAdmin) {
-                      router.push(`/@${member.profile.handle}` as any);
+                      navigateToProfile(member.profile.handle, true).catch(() => {});
                     } else {
                       setSelectedMember(member);
                       setShowMemberSheet(true);
@@ -879,7 +880,7 @@ export default function GroupManageScreen() {
               activeOpacity={0.65}
               onPress={() => {
                 setShowMemberSheet(false);
-                router.push(`/@${selectedMember.profile.handle}` as any);
+                navigateToProfile(selectedMember.profile.handle, true).catch(() => {});
               }}
             >
               <Ionicons name="person" size={24} color={colors.text} style={{ marginRight: 18, width: 24, textAlign: "center" }} />

@@ -44,6 +44,7 @@ import * as Clipboard from "expo-clipboard";
 import { Image as ExpoImage } from "expo-image";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { navigateToProfile } from "@/lib/navigateToProfile";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { VideoView, useVideoPlayer } from "expo-video";
@@ -931,12 +932,12 @@ const VideoItem = React.memo(function VideoItem({
       <View style={vStyles.bottomBar}>
         {/* Left: avatar · @handle · slim Follow button below handle (no display name) */}
         <View style={vStyles.bottomBarLeft}>
-          <TouchableOpacity onPress={() => router.push(`/@${item.profile.handle}` as any)} activeOpacity={0.85}>
+          <TouchableOpacity onPress={() => navigateToProfile(item.profile.handle, true).catch(() => {})} activeOpacity={0.85}>
             <Avatar uri={item.profile.avatar_url} name={item.profile.display_name} size={36} userId={item.author_id} />
           </TouchableOpacity>
           <View style={{ flex: 1, minWidth: 0 }}>
             <TouchableOpacity
-              onPress={() => router.push(`/@${item.profile.handle}` as any)}
+              onPress={() => navigateToProfile(item.profile.handle, true).catch(() => {})}
               activeOpacity={0.85}
             >
               <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>

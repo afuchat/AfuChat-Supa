@@ -13,6 +13,7 @@
 //   Navigate.back();
 
 import { safeRouter } from "@/lib/navUtils";
+import { navigateToProfile } from "@/lib/navigateToProfile";
 
 // ─── Param shapes ──────────────────────────────────────────────────────────────
 
@@ -102,7 +103,7 @@ export const Navigate = {
   /** Push a user's public profile page (e.g. "/@alice"). */
   toUserProfile(handle: string) {
     const normalizedHandle = handle.replace(/^@+/, "");
-    safeRouter.push(`/@${normalizedHandle}` as any);
+    return navigateToProfile(normalizedHandle, true);
   },
 
   // ── Search / discovery ───────────────────────────────────────────────────────

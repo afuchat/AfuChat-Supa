@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { MeTabSkeleton } from "@/components/ui/Skeleton";
 import { Redirect, router } from "expo-router";
+import { navigateToProfile } from "@/lib/navigateToProfile";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "@/lib/haptics";
@@ -550,7 +551,7 @@ export default function MeScreen() {
         <View style={[s.quickRow, { backgroundColor: colors.surface }]}>
           {[
             { icon: "create",    label: "Edit Profile", color: accent, onPress: () => router.push("/profile/edit") },
-            { icon: "person",    label: "My Profile",   color: accent, onPress: () => profile?.handle && router.push(`/@${profile.handle}` as any) },
+            { icon: "person",    label: "My Profile",   color: accent, onPress: () => profile?.handle && navigateToProfile(profile.handle, true).catch(() => {}) },
             { icon: "qr-code",   label: "QR Code",      color: accent, onPress: () => router.push("/app/afuqr" as any) },
             { icon: "card",      label: "Digital ID",   color: accent, onPress: () => router.push("/digital-id" as any) },
           ].map((a) => (

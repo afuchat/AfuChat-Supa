@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import Image from "@/components/ui/OptimizedImage";
 import { router, useLocalSearchParams } from "expo-router";
+import { navigateToProfile } from "@/lib/navigateToProfile";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { VideoView, useVideoPlayer } from "expo-video";
@@ -707,7 +708,7 @@ export default function ViewStoryScreen() {
       {/* ── Top bar — avatar, name, time, share, close ───────────────────── */}
       <View style={[styles.topBar, { top: insets.top + 20 }]}>
         <TouchableOpacity
-          onPress={() => router.push(`/@${story.profile.handle}` as any)}
+          onPress={() => navigateToProfile(story.profile.handle, true).catch(() => {})}
           activeOpacity={0.8}
         >
           <Avatar uri={story.profile.avatar_url} name={story.profile.display_name} size={36} />

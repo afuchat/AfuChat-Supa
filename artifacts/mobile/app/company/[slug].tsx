@@ -22,6 +22,7 @@ import Image from "@/components/ui/OptimizedImage";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
+import { navigateToProfile } from "@/lib/navigateToProfile";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/context/AuthContext";
@@ -872,7 +873,7 @@ export default function CompanyPageScreen() {
             return (
               <TouchableOpacity
                 style={[styles.followerRow, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                onPress={() => router.push(`/@${p.handle}` as any)}
+                onPress={() => p.handle && navigateToProfile(p.handle, true).catch(() => {})}
                 activeOpacity={0.8}
               >
                 <View style={styles.followerAvatarWrap}>

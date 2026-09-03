@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { navigateToProfile } from "@/lib/navigateToProfile";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
@@ -214,7 +215,7 @@ export default function FollowersScreen() {
           if (isMe) {
             router.push("/(tabs)/me");
           } else {
-            router.push(`/@${item.handle}` as any);
+            navigateToProfile(item.handle, true).catch(() => {});
           }
         }}
       >
