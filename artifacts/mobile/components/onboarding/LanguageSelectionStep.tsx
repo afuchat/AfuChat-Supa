@@ -219,7 +219,6 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
       </ScrollView>
 
       <View style={[styles.bottomFooter, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-        <View style={styles.bottomSheetHighlight} pointerEvents="none" />
         <Pressable
           onPress={continueSelection}
           disabled={!selected || saving}
@@ -286,22 +285,12 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(178,211,255,0.20)",
     overflow: "hidden",
     ...Platform.select({
       ios: { shadowColor: "#000000", shadowOpacity: 0.30, shadowRadius: 20, shadowOffset: { width: 0, height: -8 } },
       android: { elevation: 12 },
       web: { boxShadow: "0 -10px 28px rgba(0,0,0,0.24)" } as any,
     }),
-  },
-  bottomSheetHighlight: {
-    position: "absolute",
-    top: 0,
-    left: 32,
-    right: 32,
-    height: 1,
-    backgroundColor: "rgba(255,255,255,0.24)",
   },
   brandLockup: { flexDirection: "row", alignItems: "center", gap: 10, alignSelf: "center" },
   brandIconFrame: {
