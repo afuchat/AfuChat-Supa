@@ -90,3 +90,4 @@
 - [Android notification channels](android-notification-channels.md) — channel sound settings persist on-device; use a new channel ID when correcting a ringtone/notification sound and ship the client before sender rollout.
 - [App language localization](app-language-localization.md) — first-run language controls global UI independently from message-translation settings; keep device startup and profile sync aligned.
 - [JSX localization boundary](jsx-localization-boundary.md) — translate static JSX labels, including nested/custom controls, while preserving dynamic user and server content.
+- [Arabic UI direction](arabic-ltr-ui.md) — Arabic is translated while the existing left-to-right layout, navigation, and icon placement stay unchanged.

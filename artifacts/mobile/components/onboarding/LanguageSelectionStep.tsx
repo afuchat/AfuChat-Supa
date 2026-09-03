@@ -36,47 +36,13 @@ const LANGUAGES = BUNDLED_UI_LANGUAGES
     flag: FLAGS[code],
   }));
 
-const CONTINUE_LABELS: Record<string, string> = {
-  en: "Continue",
-  sw: "Endelea",
-  fr: "Continuer",
-  es: "Continuar",
-  ar: "متابعة",
-  zh: "继续",
-  hi: "जारी रखें",
-  pt: "Continuar",
-  ru: "Продолжить",
-  ja: "続ける",
-  de: "Weiter",
-  ko: "계속",
-  it: "Continua",
-  tr: "Devam et",
-  nl: "Doorgaan",
-  pl: "Kontynuuj",
-  th: "ดำเนินการต่อ",
-  vi: "Tiếp tục",
-  id: "Lanjutkan",
-  ms: "Teruskan",
-  fil: "Magpatuloy",
-  uk: "Продовжити",
-  ro: "Continuă",
-  el: "Συνέχεια",
-  cs: "Pokračovat",
-  sv: "Fortsätt",
-  da: "Fortsæt",
-  no: "Fortsett",
-  fi: "Jatka",
-  he: "המשך",
-  bn: "চালিয়ে যান",
-  ta: "தொடரவும்",
-  ur: "جاری رکھیں",
-  fa: "ادامه",
-  am: "ቀጥል",
-  ha: "Ci gaba",
-  yo: "Tẹ̀síwájú",
-  zu: "Qhubeka",
-  af: "Gaan voort",
-  so: "Sii wad",
+const LANGUAGE_NAMES: Record<string, Record<string, string>> = {
+  en: { en: "English", sw: "Swahili", fr: "French", es: "Spanish", ar: "Arabic", zh: "Chinese" },
+  sw: { en: "Kiingereza", sw: "Kiswahili", fr: "Kifaransa", es: "Kihispania", ar: "Kiarabu", zh: "Kichina" },
+  fr: { en: "Anglais", sw: "Swahili", fr: "Français", es: "Espagnol", ar: "Arabe", zh: "Chinois" },
+  es: { en: "Inglés", sw: "Suajili", fr: "Francés", es: "Español", ar: "Árabe", zh: "Chino" },
+  ar: { en: "الإنجليزية", sw: "السواحيلية", fr: "الفرنسية", es: "الإسبانية", ar: "العربية", zh: "الصينية" },
+  zh: { en: "英语", sw: "斯瓦希里语", fr: "法语", es: "西班牙语", ar: "阿拉伯语", zh: "中文" },
 };
 
 type LanguageSelectionStepProps = {
@@ -85,10 +51,11 @@ type LanguageSelectionStepProps = {
 
 export default function LanguageSelectionStep({ onComplete }: LanguageSelectionStepProps) {
   const insets = useSafeAreaInsets();
-  const { setPreferredLang, t } = useLanguage();
+  const { preferredLang, setPreferredLang, t } = useLanguage();
   const [selected, setSelected] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const continueLabel = selected ? CONTINUE_LABELS[selected] ?? "Continue" : "Choose a language";
+  const activeLanguage = preferredLang ?? "en";
+  const continueLabel = selected ? t("Continue") : t("Choose a language");
 
   function selectLanguage(code: string) {
     setSelected(code);
@@ -145,10 +112,9 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
               <Path d="M3.5 12.5h18M5.4 7.6h14.2M5.4 17.4h14.2" stroke="#A9C9FF" strokeWidth="1.1" fill="none" />
             </Svg>
           </View>
-          <Text style={styles.title}>Choose your language</Text>
+          <Text style={styles.title}>{t("Choose your language")}</Text>
           <Text style={styles.subtitle}>
-            Select the language you understand best. We’ll use it to make your
-            AfuChat experience easier to follow.
+            {t("Select the language you understand best. We will use it to make your AfuChat experience easier to follow.")}
           </Text>
         </View>
 
@@ -172,7 +138,7 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
                 </View>
                 <View style={styles.languageInfo}>
                   <Text style={[styles.languageName, isSelected && styles.languageNameSelected]}>
-                    {language.name}
+                    {LANGUAGE_NAMES[activeLanguage]?.[language.code] ?? language.name}
                   </Text>
                 </View>
                 <View style={[styles.radio, isSelected && styles.radioSelected]}>
@@ -209,7 +175,7 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
           )}
         </Pressable>
         <Text style={styles.requiredHint}>
-          {selected ? "You can change this later in Settings." : "Select one option to continue."}
+          {selected ? t("You can change this later in Settings.") : t("Select one option to continue.")}
         </Text>
       </View>
     </View>
