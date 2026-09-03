@@ -14,18 +14,20 @@ import React, { useEffect, useRef } from "react";
 import {
   Animated,
   Dimensions,
+  Image,
   Platform,
   StyleSheet,
   Text,
   View,
   useColorScheme,
 } from "react-native";
-import { Image } from "expo-image";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { LOGO_WHITE_B64, LOGO_BLACK_B64 } from "@/lib/logoAssets";
+import { LOGO_BLACK_B64 } from "@/lib/logoAssets";
+import { LOGO_WHITE_BOLD_B64 } from "@/lib/logoWhiteBold";
 
 const { width } = Dimensions.get("window");
 const LOGO_SIZE = Math.min(width * 0.32, 130);
+const LOGO_WHITE = { uri: LOGO_WHITE_BOLD_B64 };
 
 interface Props {
   ready: boolean;
@@ -76,7 +78,7 @@ export function SplashScreenView({ ready, onDone }: Props) {
   const bg            = isDark ? "#000000" : "#FFFFFF";
   const wordmarkColor = isDark ? "#FFFFFF" : "#000000";
   const taglineColor  = isDark ? "rgba(255,255,255,0.52)" : "rgba(0,0,0,0.48)";
-  const logoSource    = { uri: isDark ? LOGO_WHITE_B64 : LOGO_BLACK_B64 };
+  const logoSource    = isDark ? LOGO_WHITE : { uri: LOGO_BLACK_B64 };
 
   return (
     <Animated.View
@@ -86,9 +88,8 @@ export function SplashScreenView({ ready, onDone }: Props) {
         <Image
           source={logoSource}
           style={styles.logo}
-          contentFit="contain"
+          resizeMode="contain"
           accessibilityLabel="AfuChat logo"
-          cachePolicy="memory"
         />
       </Animated.View>
 

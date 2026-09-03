@@ -1,10 +1,10 @@
 import React from "react";
-import { StyleProp, ViewStyle } from "react-native";
-import { Image as ExpoImage } from "expo-image";
-import { LOGO_WHITE_B64, LOGO_BLACK_B64 } from "@/lib/logoAssets";
+import { Image as RNImage, StyleProp, ViewStyle } from "react-native";
+import { LOGO_BLACK_B64 } from "@/lib/logoAssets";
+import { LOGO_WHITE_BOLD_B64 } from "@/lib/logoWhiteBold";
 import { useThemeContext } from "@/context/ThemeContext";
 
-const LOGO_DARK = { uri: LOGO_WHITE_B64 };
+const LOGO_DARK = { uri: LOGO_WHITE_BOLD_B64 };
 const LOGO_LIGHT = { uri: LOGO_BLACK_B64 };
 
 /**
@@ -34,16 +34,15 @@ export function AfuLogo({
   const source = resolved === "dark" ? LOGO_DARK : LOGO_LIGHT;
 
   return (
-    <ExpoImage
+    <RNImage
       source={source}
       style={[
         { width: size, height: size },
         visualScale !== 1 && { transform: [{ scale: visualScale }] },
         style as any,
       ]}
-      contentFit="contain"
+      resizeMode="contain"
       accessibilityLabel="AfuChat logo"
-      cachePolicy="memory-disk"
     />
   );
 }
