@@ -1115,6 +1115,7 @@ export default function DiscoverScreen() {
   const { user, profile } = useAuth();
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
+  const isCompactHeader = screenWidth < 600;
   const navigation = useNavigation();
   // Shorts now lives at /shorts (which redirects to /video/[id]). Any URL like
   // ?tab=shorts is forwarded there so existing links keep working.
@@ -2717,10 +2718,15 @@ export default function DiscoverScreen() {
           style={{ zIndex: 2 }}
         >
           {/* ── Tabs and actions ── */}
-          <View style={[styles.tabRow, { paddingTop: insets.top + 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
+          <View style={[
+            styles.tabRow,
+            isCompactHeader && styles.tabRowCompact,
+            { paddingTop: insets.top + 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+          ]}>
           <TouchableOpacity
             style={[
               styles.tabPill,
+              isCompactHeader && styles.tabPillCompact,
               activeDiscoverTab === "for_you" && { borderBottomWidth: 2.5, borderBottomColor: colors.accent },
             ]}
             onPress={() => {
@@ -2741,6 +2747,7 @@ export default function DiscoverScreen() {
             <TouchableOpacity
               style={[
                 styles.tabPill,
+                isCompactHeader && styles.tabPillCompact,
                 activeDiscoverTab === "following" && { borderBottomWidth: 2.5, borderBottomColor: colors.accent },
               ]}
               onPress={() => {
@@ -2761,6 +2768,7 @@ export default function DiscoverScreen() {
           <TouchableOpacity
             style={[
               styles.tabPill,
+              isCompactHeader && styles.tabPillCompact,
               activeDiscoverTab === "find" && { borderBottomWidth: 2.5, borderBottomColor: colors.accent },
             ]}
             onPress={() => {
@@ -2794,7 +2802,11 @@ export default function DiscoverScreen() {
           )}
           <TouchableOpacity
             onPress={() => { Haptics.selectionAsync(); router.push("/search" as any); }}
-            style={[styles.searchBtn, { backgroundColor: "transparent" }]}
+            style={[
+              styles.searchBtn,
+              isCompactHeader && styles.searchBtnCompact,
+              { backgroundColor: isCompactHeader ? colors.surface : "transparent" },
+            ]}
             activeOpacity={0.7}
             hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}
             accessibilityRole="button"
@@ -3212,6 +3224,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 4,
+  },
+  tabRowCompact: {
+    justifyContent: "flex-start",
+    paddingHorizontal: 4,
+  },
+  tabPillCompact: {
+    flex: 1,
+    minWidth: 0,
+    paddingHorizontal: 5,
+  },
+  searchBtnCompact: {
+    width: 42,
+    height: 42,
+    marginLeft: 2,
   },
   loadMorePill: {
     position: "absolute",
