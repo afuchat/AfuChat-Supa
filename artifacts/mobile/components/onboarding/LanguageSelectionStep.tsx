@@ -27,11 +27,13 @@ const FLAGS: Record<string, string> = {
   bn: "🇧🇩", ta: "🇮🇳", ur: "🇵🇰", fa: "🇮🇷", am: "🇪🇹",
 };
 
-const LANGUAGES = Object.entries(LANG_LABELS).map(([code, name]) => ({
-  code,
-  name,
-  flag: FLAGS[code] ?? "🌐",
-}));
+const LANGUAGES = Object.entries(LANG_LABELS)
+  .filter(([code]) => Boolean(FLAGS[code]))
+  .map(([code, name]) => ({
+    code,
+    name,
+    flag: FLAGS[code],
+  }));
 
 const CONTINUE_LABELS: Record<string, string> = {
   en: "Continue",
