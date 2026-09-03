@@ -669,7 +669,7 @@ export default function SignInScreen() {
           {/* Logo + wordmark */}
           <View style={{ alignItems: "center", marginBottom: showBioBtn ? 32 : 48 }}>
             <View style={sc.logoRing}>
-              <AfuLogo size={64} forceTheme="dark" />
+              <AfuLogo size={80} forceTheme="dark" />
             </View>
             <Text style={sc.logoWordmark}>AfuChat</Text>
           </View>
