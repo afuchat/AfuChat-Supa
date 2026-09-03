@@ -1390,6 +1390,30 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
     });
   }
 
+  const speakButton = canSpeak ? (
+    <TouchableOpacity
+      onPress={handleSpeak}
+      style={[
+        st.translateChip,
+        {
+          marginTop: 0,
+          backgroundColor: isMe ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.06)",
+        },
+      ]}
+      hitSlop={8}
+    >
+      <Ionicons
+        name={isSpeaking ? "stop-circle" : "volume-medium"}
+        size={11}
+        color={isSpeaking ? BRAND : colors.textMuted}
+        style={{ marginRight: 3 }}
+      />
+      <Text style={[st.translateChipText, { color: isSpeaking ? BRAND : colors.textMuted }]}>
+        {isSpeaking ? "Stop" : "Speak"}
+      </Text>
+    </TouchableOpacity>
+  ) : null;
+
   const displayText = msg.encrypted_content ?? "";
 
   const isRedEnvelope = msg.encrypted_content?.startsWith("🧧") ?? false;
@@ -1446,9 +1470,10 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
   // Plain text messages get an inline (WhatsApp-style) timestamp.
   // All other types (image, audio, file, sticker, AI) keep the metaRow below.
   const isPlainText = !hasImage && !hasVideo && !hasAudio && !hasFile && !hasStoryReply && !isSticker;
-  // Use inline timestamp only for bare text — exclude AI messages, flat-surface messages,
-  // and messages that show translate/speak chips (chips follow the text, absolute metaRow would overlap them).
-  const useInlineTimestamp = isPlainText && !msg._isAi && !flatSurface && !canSpeak;
+  // Use inline timestamp only for bare text — exclude AI and flat-surface messages.
+  // Speak is rendered in the metadata row, so it can share this line without
+  // becoming part of the message text.
+  const useInlineTimestamp = isPlainText && !msg._isAi && !flatSurface;
 
   const replyIconOpacity = swipeX.interpolate({
     inputRange: isMe ? [-SWIPE_THRESHOLD, -10, 0] : [0, 10, SWIPE_THRESHOLD],
@@ -1751,16 +1776,18 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                   const _fontSize  = _perChatFont;
                   const _lineH     = _fontSize + 5;
                   const _timeStr   = formatMsgTime(msg.sent_at);
-                   // Keep short messages genuinely compact. The old reservation
-                   // made "hi" and "ok" look like wide empty cards.
-                   const _tsWidth = (msg.edited_at ? 34 : 0) + (isMe ? 56 : 40);
+                   // Keep short messages genuinely compact. Reserve room for the
+                   // real metadata row, including Speak when it is available.
+                   const _speakWidth = canSpeak ? 56 : 0;
+                   const _tsWidth = (msg.edited_at ? 34 : 0) + (isMe ? 56 : 40) + _speakWidth;
                   // Ghost: same color as bubble background → visually invisible on all platforms.
                   // Content mirrors the real timestamp exactly plus a leading gap ("   ")
                   // so the last line of text never crowds or overlaps the timestamp.
                    const _iconPad = isMe ? "   " : " "; // space for checkmark icon + margins
+                   const _speakPad = canSpeak ? " ".repeat(18) : "";
                   const ghost = (
                     <Text style={{ color: bubbleColor, fontSize: 11, fontFamily: "Inter_400Regular", includeFontPadding: false }}>
-                      {"   "}{msg.edited_at ? "edited  " : ""}{_timeStr}{_iconPad}
+                       {"   "}{_speakPad}{msg.edited_at ? "edited  " : ""}{_timeStr}{_iconPad}
                     </Text>
                   );
                   return (
@@ -1782,7 +1809,8 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                          )}
                       </TouchableOpacity>
                       {/* Real timestamp floats at bottom-right, over the invisible ghost */}
-                       <View style={[st.metaRow, { position: "absolute", bottom: 3, right: 8 }]}>
+                        <View style={[st.metaRow, { position: "absolute", bottom: 3, right: 8 }]}>
+                         {speakButton}
                         {msg.edited_at && (
                           <Text style={[st.msgTime, { color: isMe ? myTimeColor : colors.textMuted, marginRight: 3 }]}>edited</Text>
                         )}
@@ -1884,25 +1912,6 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
             />
           )}
 
-          {/* Speak stays directly on the bubble when Text to Speech is enabled. */}
-          {canSpeak && (
-            <TouchableOpacity
-              onPress={handleSpeak}
-              style={[st.translateChip, { backgroundColor: isMe ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.06)" }]}
-              hitSlop={8}
-            >
-              <Ionicons
-                name={isSpeaking ? "stop-circle" : "volume-medium"}
-                size={11}
-                color={isSpeaking ? BRAND : colors.textMuted}
-                style={{ marginRight: 3 }}
-              />
-              <Text style={[st.translateChipText, { color: isSpeaking ? BRAND : colors.textMuted }]}>
-                {isSpeaking ? "Stop" : "Speak"}
-              </Text>
-            </TouchableOpacity>
-          )}
-
           {/* metaRow: only rendered for non-plain-text messages (images, audio, AI, etc.).
               Plain text messages render their timestamp inline in the text flow above.
               hideTimestamp suppresses the time text but keeps the read-receipt icon
@@ -1916,6 +1925,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                    : { marginTop: 3 },
                ]}
              >
+               {speakButton}
               {!hideTimestamp && msg.edited_at && (
                 <Text style={[st.msgTime, { color: isMe ? myTimeColor : colors.textMuted, marginRight: 4 }]}>edited</Text>
               )}
