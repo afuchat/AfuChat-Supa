@@ -360,7 +360,7 @@ export default function WatchHistoryScreen() {
         <>
           {/* Algorithm info banner */}
           <View style={[styles.infoBanner, { backgroundColor: "#00BCD408", borderColor: "#00BCD420" }]}>
-            <Ionicons name="sparkles" size={14} color="#00BCD4" />
+            <Ionicons name="time-outline" size={14} color="#00BCD4" />
             <Text style={[styles.infoText, { color: colors.textMuted }]}>
               {items.length} video{items.length !== 1 ? "s" : ""} · Clearing history resets your For You algorithm
             </Text>

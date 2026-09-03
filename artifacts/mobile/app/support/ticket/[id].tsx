@@ -81,7 +81,7 @@ function AiTypingIndicator({ colors }: { colors: any }) {
   return (
     <View style={[st.aiTypingWrap, { backgroundColor: "#7C3AED10", borderColor: "#7C3AED25" }]}>
       <LinearGradient colors={["#7C3AED", "#6D28D9"]} style={st.aiTypingIcon}>
-        <Ionicons name="sparkles" size={10} color="#fff" />
+        <Ionicons name="bulb-outline" size={10} color="#fff" />
       </LinearGradient>
       <Text style={[st.aiTypingLabel, { color: "#7C3AED" }]}>AI is drafting a reply</Text>
       <View style={st.dotsRow}>
@@ -332,7 +332,7 @@ export default function TicketDetail() {
                 <View style={st.aiBubbleWrap}>
                   <View style={st.aiAvatarRow}>
                     <LinearGradient colors={["#7C3AED", "#6D28D9"]} style={st.aiAvatar}>
-                      <Ionicons name="sparkles" size={12} color="#fff" />
+                      <Ionicons name="bulb-outline" size={12} color="#fff" />
                     </LinearGradient>
                     <View style={st.aiLabelRow}>
                       <Text style={st.aiLabelName}>AI Assistant</Text>

@@ -23,7 +23,7 @@ const NAV_ITEMS = [
   { route: "/(tabs)/discover", label: "Discover", icon: "compass-outline" },
   { route: "/(tabs)/shorts", label: "Shorts", icon: "play-circle-outline" },
   { route: "/(tabs)/communities", label: "Communities", icon: "people-outline" },
-  { route: "/ai", label: "AI Assistant", icon: "sparkles-outline" },
+  { route: "/ai", label: "AI Assistant", icon: "bulb-outline" },
   { route: "/(tabs)/apps", label: "Apps", icon: "grid-outline" },
   { route: "/(tabs)/me", label: "Me", icon: "person-circle-outline" },
 ] as const;

@@ -69,7 +69,7 @@ const SHOP_CATEGORIES = [
     emoji: "💬",
     subtitle: "Shows up on every message you send",
     items: [
-      { id: "sg8", name: "Status Glow",    emoji: "✨", where: "On every message bubble you send",  description: "A soft prestige-colored glow frames all your chat messages.", acoin: 3000,  tier: "gold" },
+      { id: "sg8", name: "Status Glow",    emoji: "💎", where: "On every message bubble you send",  description: "A soft prestige-colored glow frames all your chat messages.", acoin: 3000,  tier: "gold" },
     ],
   },
   {
@@ -378,7 +378,7 @@ export default function PrestigeScreen() {
           <View style={s.section}>
             <View style={[s.valueCard, { backgroundColor: colors.surface, borderColor: tier.color + "45" }]}>
               <View style={[s.valueIcon, { backgroundColor: tier.color + "18" }]}>
-                <Ionicons name="sparkles-outline" size={20} color={tier.color} />
+                <Ionicons name="star-outline" size={20} color={tier.color} />
               </View>
               <View style={{ flex: 1, gap: 3 }}>
                 <Text style={[s.valueTitle, { color: colors.text }]}>Make your activity count</Text>

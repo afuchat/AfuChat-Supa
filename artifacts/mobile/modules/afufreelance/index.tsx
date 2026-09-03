@@ -44,7 +44,7 @@ const CATEGORIES = ["All", "Design", "Dev", "Writing", "Marketing", "Video", "Mu
 const CAT_ICONS: Record<string, string> = {
   All: "apps-outline", Design: "color-palette-outline", Dev: "code-slash-outline",
   Writing: "document-text-outline", Marketing: "megaphone-outline", Video: "videocam-outline",
-  Music: "musical-notes-outline", AI: "sparkles-outline", Business: "briefcase-outline", Other: "ellipsis-horizontal-outline",
+  Music: "musical-notes-outline", AI: "hardware-chip-outline", Business: "briefcase-outline", Other: "ellipsis-horizontal-outline",
 };
 
 const SEL = "id,title,description,price,delivery_days,category,emoji,seller_id,orders_count,rating,review_count,tags,requirements,is_active,created_at,seller:profiles!freelance_listings_seller_id_fkey(display_name,handle,avatar_url,is_verified)";
@@ -216,7 +216,7 @@ export default function AfuFreelanceApp({ initialScreen }: { initialScreen?: Scr
         <ScrollView contentContainerStyle={{ padding: 18, gap: 16, paddingBottom: insets.bottom + 40 }} keyboardShouldPersistTaps="handled">
           <View style={[s.formIntro, { backgroundColor: colors.inputBg }]}>
             <View style={[s.formIntroIcon, { backgroundColor: accent + "18" }]}>
-              <Ionicons name="sparkles-outline" size={22} color={accent} />
+              <Ionicons name="bulb-outline" size={22} color={accent} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[s.formIntroTitle, { color: colors.text }]}>Share what you do best</Text>

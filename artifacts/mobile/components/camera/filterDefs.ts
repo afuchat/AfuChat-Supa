@@ -19,7 +19,7 @@ export interface FilterDef {
 }
 
 export const FILTERS: FilterDef[] = [
-  { id: "normal",        label: "Normal",   icon: "✨", previewColor: "#666" },
+  { id: "normal",        label: "Normal",   icon: "camera-outline", previewColor: "#666" },
   { id: "lipstick_red",  label: "Red Lip",  icon: "💋", previewColor: "#CC1A1A" },
   { id: "lipstick_pink", label: "Pink Lip", icon: "🌸", previewColor: "#D1467A" },
   { id: "lipstick_coral",label: "Coral",    icon: "🍑", previewColor: "#E8623A" },

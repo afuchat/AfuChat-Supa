@@ -73,7 +73,7 @@ export const PRESTIGE_TIERS: PrestigeTier[] = [
     description: "Top 5% of AfuChat — you've earned it",
     perks: [
       { icon: "ellipse", text: "Ice-blue animated diamond ring on your avatar" },
-      { icon: "sparkles-outline", text: "Diamond glow effect on your messages" },
+      { icon: "diamond-outline", text: "Diamond glow effect on your messages" },
       { icon: "person-circle-outline", text: "Featured on the Rich List with diamond badge" },
       { icon: "gift-outline", text: "Unlock Diamond-tier Status Goods" },
       { icon: "pricetag-outline", text: "Custom Diamond title on your profile" },
@@ -91,7 +91,7 @@ export const PRESTIGE_TIERS: PrestigeTier[] = [
     description: "Top 1% — feared and respected",
     perks: [
       { icon: "ellipse", text: "Pulsing dark void ring on your avatar" },
-      { icon: "sparkles", text: "Purple particle trail on your messages" },
+      { icon: "color-palette-outline", text: "Purple particle trail on your messages" },
       { icon: "medal-outline", text: "Exclusive 'Obsidian' title on your profile" },
       { icon: "trophy", text: "Rich List Top 100 dedicated section" },
       { icon: "gift-outline", text: "Unlock Obsidian-tier Status Goods" },

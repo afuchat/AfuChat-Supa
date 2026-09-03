@@ -1073,7 +1073,7 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
                 <View style={{ backgroundColor: rc + "1A", borderRadius: 5, paddingHorizontal: 5, paddingVertical: 1 }}>
                   <Text style={{ color: rc, fontSize: 9, fontFamily: "Inter_700Bold", textTransform: "capitalize" }}>{g.rarity}</Text>
                 </View>
-                <Text style={{ color: GOLD, fontSize: 11, fontFamily: "Inter_700Bold" }}>✦ {formatCompactAmount(g.base_xp_cost)}</Text>
+                <Text style={{ color: GOLD, fontSize: 11, fontFamily: "Inter_700Bold" }}>{formatCompactAmount(g.base_xp_cost)}</Text>
               </TouchableOpacity>
             </View>
           );
@@ -1490,7 +1490,7 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
         {displayTags.length > 0 && (
           <View style={{ paddingTop: 28 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: PH, marginBottom: 14 }}>
-              <Ionicons name={trendingHashtags.length === 0 && personalizedTags.length > 0 ? "sparkles" as any : "flame"} size={18} color={trendingHashtags.length === 0 && personalizedTags.length > 0 ? BRAND : RED} />
+              <Ionicons name={trendingHashtags.length === 0 && personalizedTags.length > 0 ? "bulb-outline" as any : "flame"} size={18} color={trendingHashtags.length === 0 && personalizedTags.length > 0 ? BRAND : RED} />
               <Text style={{ fontSize: 22, fontFamily: "Inter_700Bold", color: colors.text, flex: 1, letterSpacing: -0.5 }}>
                 {trendingHashtags.length === 0 && personalizedTags.length > 0 ? "Based on your interests" : "Trending"}
               </Text>
@@ -1560,7 +1560,7 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
                     )}
                     {p.xp != null && (
                       <View style={{ backgroundColor: BRAND + "15", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, marginTop: 2 }}>
-                        <Text style={{ color: BRAND, fontSize: 11, fontFamily: "Inter_700Bold" }}>✦ {fmtNum(p.xp)} XP</Text>
+                        <Text style={{ color: BRAND, fontSize: 11, fontFamily: "Inter_700Bold" }}>{fmtNum(p.xp)} XP</Text>
                       </View>
                     )}
                     <View style={{ marginTop: 6, backgroundColor: BRAND, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 7, width: "100%", alignItems: "center" }}>

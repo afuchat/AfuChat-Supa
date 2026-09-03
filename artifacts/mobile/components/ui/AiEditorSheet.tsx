@@ -42,7 +42,7 @@ type Tab = "style" | "fix" | "translate";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const TONE_PRESETS: { key: string; label: string; emoji: string }[] = [
-  { key: "create",   label: "Create",   emoji: "✨" },
+  { key: "create",   label: "Create",   emoji: "📝" },
   { key: "formal",   label: "Formal",   emoji: "🌟" },
   { key: "short",    label: "Short",    emoji: "⚡" },
   { key: "tribal",   label: "Tribal",   emoji: "🔥" },
@@ -361,7 +361,7 @@ export default function AiEditorSheet({
               <View style={[s.resultSection, { borderTopColor: accent + "30", backgroundColor: accent + "0C" }]}>
                 <View style={s.textSectionHeader}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                    <Ionicons name="sparkles" size={13} color={accent} />
+                    <Ionicons name="bulb-outline" size={13} color={accent} />
                     <Text style={[s.sectionLabel, { color: accent }]}>Result</Text>
                   </View>
                 </View>

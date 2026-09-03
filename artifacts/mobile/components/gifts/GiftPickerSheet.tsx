@@ -81,7 +81,7 @@ const STATIC_GIFTS = [
   { name: "Music Score",     emoji: "🎶", base_xp_cost: 22,   rarity: "uncommon",  description: "A beautiful musical score" },
 
   { name: "Trophy",          emoji: "🏆", base_xp_cost: 75,   rarity: "rare",      description: "A golden trophy for champions" },
-  { name: "Stardust",        emoji: "✨", base_xp_cost: 65,   rarity: "rare",      description: "A sprinkle of magical stardust" },
+  { name: "Stardust",        emoji: "💎", base_xp_cost: 65,   rarity: "rare",      description: "A sprinkle of magical stardust" },
   { name: "Shooting Star",   emoji: "💫", base_xp_cost: 90,   rarity: "rare",      description: "Make a wish on this shooting star" },
   { name: "Gold Star",       emoji: "🌟", base_xp_cost: 100,  rarity: "rare",      description: "A brilliant glowing gold star" },
   { name: "Peacock",         emoji: "🦚", base_xp_cost: 130,  rarity: "rare",      description: "The regal peacock with iridescent feathers" },

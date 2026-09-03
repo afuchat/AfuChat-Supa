@@ -46,7 +46,7 @@ const GOAL_OPTIONS = [
   { v: "serious", l: "Serious Relationship", emoji: "💍" },
   { v: "casual", l: "Something Casual", emoji: "🌊" },
   { v: "friendship", l: "New Friends", emoji: "👋" },
-  { v: "open", l: "Open to Anything", emoji: "✨" },
+  { v: "open", l: "Open to Anything", emoji: "💡" },
 ] as const;
 
 type PhotoItem = { id?: string; uri: string; url?: string; order: number; is_primary: boolean; uploading?: boolean };

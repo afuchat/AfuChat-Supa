@@ -29,7 +29,7 @@ const GOAL_LABELS: Record<string, { l: string; emoji: string }> = {
   serious: { l: "Serious Relationship", emoji: "💍" },
   casual: { l: "Something Casual", emoji: "🌊" },
   friendship: { l: "New Friends", emoji: "👋" },
-  open: { l: "Open to Anything", emoji: "✨" },
+  open: { l: "Open to Anything", emoji: "💡" },
 };
 
 const EDU_LABELS: Record<string, string> = {

@@ -797,7 +797,7 @@ export default function EditProfileScreen() {
                 {aiGenerating ? (
                   <ActivityIndicator size="small" color={accent} />
                 ) : (
-                  <Ionicons name="sparkles" size={13} color={accent} />
+                  <Ionicons name="person-add-outline" size={13} color={accent} />
                 )}
                 <Text style={[styles.aiBioBtnText, { color: accent }]}>
                   {aiGenerating ? "Generating…" : "AI Generate"}

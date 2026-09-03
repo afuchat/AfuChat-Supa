@@ -46,7 +46,7 @@ const FEATURES = [
     desc: "Algorithmic For You & Following feeds, Shorts, watch history & bookmarks",
   },
   {
-    icon: "sparkles",
+    icon: "information-circle-outline",
     label: "AfuAI",
     desc: "AI chat assistant, smart reply suggestions & auto-responder for your inbox",
   },
@@ -230,7 +230,7 @@ export default function AboutScreen() {
           <View style={{ flex: 1 }}>
             <Text style={[s.githubTitle, { color: colors.text }]}>GitHub</Text>
             <Text style={[s.githubSub, { color: colors.textMuted }]}>
-              github.com/afuchat · Star us ⭐
+              github.com/afuchat · Star us
             </Text>
           </View>
           <Ionicons name="open-outline" size={16} color={colors.textMuted} />

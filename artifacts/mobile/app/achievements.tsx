@@ -396,7 +396,7 @@ function AchievementBadge({ achievement, onPress }: { achievement: Achievement; 
         </Text>
         <View style={[badge.rarityTag, { backgroundColor: glowColor + "18" }]}>
           <Text style={[badge.rarityText, { color: glowColor }]}>
-            {achievement.rarity === "legendary" ? "✦ LEG" : RARITY_LABEL[achievement.rarity].slice(0, 3)}
+            {achievement.rarity === "legendary" ? "LEG" : RARITY_LABEL[achievement.rarity].slice(0, 3)}
           </Text>
         </View>
       </Animated.View>

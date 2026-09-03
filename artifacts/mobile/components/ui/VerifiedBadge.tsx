@@ -96,7 +96,7 @@ export default function VerifiedBadge({
       ]
     : [
         { icon: "person-outline",          label: "Identity confirmed" },
-        { icon: "sparkles-outline",        label: "Recognized public presence" },
+        { icon: "ribbon-outline",           label: "Recognized public presence" },
         { icon: "shield-checkmark-outline", label: "Follows AfuChat's guidelines" },
       ];
 
@@ -163,7 +163,7 @@ export default function VerifiedBadge({
                 router.push(isOrg ? "/business-verification" : "/premium");
               }}
             >
-              <Ionicons name={isOrg ? "storefront-outline" : "sparkles-outline"} size={15} color="#fff" />
+              <Ionicons name={isOrg ? "storefront-outline" : "ribbon-outline"} size={15} color="#fff" />
               <Text style={s.ctaBtnText}>{isOrg ? "Apply for Verification" : "Get Verified"}</Text>
             </TouchableOpacity>
 

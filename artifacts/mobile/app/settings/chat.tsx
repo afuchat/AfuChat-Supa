@@ -321,7 +321,7 @@ export default function ChatSettingsScreen() {
             desc="Have received messages read aloud to you"
             value={adv.text_to_speech} onChange={(v) => setFeature("text_to_speech", v)} />
           <Sep color={colors.border} />
-          <TogRow colors={colors} themeColor={themeColor} icon="sparkles"
+          <TogRow colors={colors} themeColor={themeColor} icon="options-outline"
             label="Chat Summary"
             desc="AI-generated summary of any conversation from the ⋮ menu"
             value={adv.chat_summary} onChange={(v) => setFeature("chat_summary", v)} />

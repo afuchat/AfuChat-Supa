@@ -490,7 +490,7 @@ export default function SignUpScreen() {
             </View>
             <Text style={sc.logoWordmark}>AfuChat</Text>
             <View style={sc.freeBadge}>
-              <Text style={sc.freeBadgeText}>Free forever ✦</Text>
+              <Text style={sc.freeBadgeText}>Free forever</Text>
             </View>
           </View>
 

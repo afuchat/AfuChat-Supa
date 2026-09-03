@@ -116,7 +116,7 @@ const FRAMES = [
 ];
 
 const STICKER_EMOJIS = [
-  "🔥","❤️","✨","💯","😍","🎉","👏","🤩","💪","🙌","😂","🥳",
+  "🔥","❤️","💯","😍","🎉","👏","🤩","💪","🙌","😂","🥳",
   "🌟","🎯","🚀","💎","👑","🎵","🌈","⚡","🦋","🌺","🍕","🎮",
   "😎","🤔","💀","🥺","😤","🤯","🥰","🤣","😭","🙏","👀","💬",
 ];
@@ -538,7 +538,7 @@ function CameraPhase({
           {/* Beauty indicator */}
           {beautyMode && (
             <View style={[cs.beautyBadge, { top: insets.top + 56 }]}>
-              <Ionicons name="sparkles" size={12} color="#FFD700" />
+              <Ionicons name="bulb-outline" size={12} color="#FFD700" />
               <Text style={cs.beautyBadgeText}>Beauty</Text>
             </View>
           )}
@@ -641,7 +641,7 @@ function CameraPhase({
           accent={accent}
         />
         <SideBtn
-          icon="sparkles"
+                  icon="bulb-outline"
           label="Beauty"
           onPress={() => { setBeautyMode((v) => !v); void Haptics.impactAsync("light"); }}
           active={beautyMode}
@@ -750,7 +750,7 @@ function CameraPhase({
             activeOpacity={0.8}
           >
             <View style={[{ width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: beautyMode ? "rgba(255,215,0,0.2)" : "transparent" }]}>
-              <Ionicons name="sparkles" size={26} color={beautyMode ? "#FFD700" : "#fff"} />
+              <Ionicons name="bulb-outline" size={26} color={beautyMode ? "#FFD700" : "#fff"} />
             </View>
             <Text style={[cs.galleryLabel, beautyMode && { color: "#FFD700" }]}>Beauty</Text>
           </TouchableOpacity>

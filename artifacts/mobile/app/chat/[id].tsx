@@ -415,7 +415,7 @@ if (Platform.OS === "android" && !("RN$Bridgeless" in global) && UIManager.setLa
 }
 
 const REACTION_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
-const REACTION_EMOJIS_ADVANCED = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "👏", "😍", "🤔", "😭", "🥳", "💯", "🎉", "😎", "✨"];
+const REACTION_EMOJIS_ADVANCED = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥", "👏", "😍", "🤔", "😭", "🥳", "💯", "🎉", "😎"];
 const BRAND_FALLBACK = Colors.brand;
 const DISAPPEAR_OPTIONS = [
   { label: "Off",      seconds: 0 },
@@ -5270,7 +5270,7 @@ STRICT RULES:
           notifyInsertedChatMessage({
             chatId: activeChatId,
             messageId: msgResult.data.id,
-            body: `${walletCurrency === "acoin" ? "🪙" : "✨"} Sent ${amt.toLocaleString()} ${coinLabel}${noteText ? ` - ${noteText}` : ""}`,
+            body: `🪙 Sent ${amt.toLocaleString()} ${coinLabel}${noteText ? `: ${noteText}` : ""}`,
           });
         }
       }
@@ -8351,7 +8351,7 @@ STRICT RULES:
           <>
             <View style={[st.reactRowSep, { backgroundColor: colors.border }]} />
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 20, paddingVertical: 10 }}>
-              <Ionicons name="sparkles" size={12} color={colors.accent} />
+              <Ionicons name="bulb-outline" size={12} color={colors.accent} />
               <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: colors.accent, textTransform: "uppercase", letterSpacing: 0.5 }}>AI Features</Text>
             </View>
             {showReactions && showReactions.encrypted_content.length >= 500 && (
@@ -8370,7 +8370,7 @@ STRICT RULES:
             {aiResult && aiResultType === "summary" && (
               <View style={{ marginHorizontal: 20, marginTop: 4, marginBottom: 8, backgroundColor: colors.accent + "0A", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: colors.accent + "18" }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
-                  <Ionicons name="sparkles" size={12} color={colors.accent} />
+                  <Ionicons name="bulb-outline" size={12} color={colors.accent} />
                   <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: colors.accent, textTransform: "uppercase", letterSpacing: 0.5 }}>Summary</Text>
                 </View>
                 <Text style={{ fontSize: 14, color: colors.text, fontFamily: "Inter_400Regular", lineHeight: 20 }}>{aiResult}</Text>
@@ -8409,7 +8409,7 @@ STRICT RULES:
       <BottomSheet visible={showAfuAiMenu} onClose={() => setShowAfuAiMenu(false)}>
         <View style={{ paddingHorizontal: 16, paddingBottom: 8, paddingTop: 4 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingBottom: 12, borderBottomColor: colors.border }}>
-            <Ionicons name="sparkles" size={18} color={Colors.brand} />
+            <Ionicons name="bulb-outline" size={18} color={Colors.brand} />
             <Text style={{ fontSize: 16, fontFamily: "Inter_700Bold", color: colors.text }}>AfuAI Options</Text>
           </View>
           <TouchableOpacity
@@ -8719,7 +8719,7 @@ STRICT RULES:
                   onPress={() => { setShowChatOptions(false); setShowInviteLink(true); }} />
               )}
                {advancedFeatures.chat_summary && !isLocalNotes && (chatInfo?.is_group || chatInfo?.is_channel) && (
-                <DdRow colors={colors} icon="sparkles" label="Summarize Chat"
+                <DdRow colors={colors} icon="bulb-outline" label="Summarize Chat"
                   onPress={() => { setShowChatOptions(false); handleChatSummaryFull(); }} />
               )}
               {/* Per-chat appearance */}

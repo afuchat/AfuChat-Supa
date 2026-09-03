@@ -68,7 +68,7 @@ const GOAL_INFO: Record<string, { emoji: string; l: string }> = {
   serious: { emoji: "💍", l: "Serious Relationship" },
   casual: { emoji: "🌊", l: "Something Casual" },
   friendship: { emoji: "👋", l: "New Friends" },
-  open: { emoji: "✨", l: "Open to Anything" },
+  open: { emoji: "💡", l: "Open to Anything" },
 };
 
 function calcAge(dob: string | null): number | null {

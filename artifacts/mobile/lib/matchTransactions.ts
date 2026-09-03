@@ -19,7 +19,7 @@ export const GIFT_CATALOG: GiftItem[] = [
   { emoji: "⭐", name: "Star",        price: 3  },
   { emoji: "🎵", name: "Music Note",  price: 2  },
   { emoji: "🌙", name: "Moon",        price: 5  },
-  { emoji: "✨", name: "Sparkle",     price: 3  },
+  { emoji: "⭐", name: "Star",        price: 3  },
   { emoji: "🏆", name: "Trophy",      price: 10 },
   { emoji: "👑", name: "Crown",       price: 15 },
 ];

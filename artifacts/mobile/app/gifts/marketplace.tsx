@@ -339,7 +339,7 @@ export default function GiftMarketplaceScreen() {
       />
 
       <View style={[styles.infoBanner, { backgroundColor: "rgba(255,149,0,0.08)" }]}>
-        <Ionicons name="sparkles" size={16} color="#FF9500" />
+        <Ionicons name="star-outline" size={16} color="#FF9500" />
         <Text style={[styles.infoText, { color: colors.textSecondary }]}>
           Only <Text style={{ fontFamily: "Inter_600SemiBold" }}>Rare</Text>, <Text style={{ fontFamily: "Inter_600SemiBold" }}>Epic</Text> & <Text style={{ fontFamily: "Inter_600SemiBold" }}>Legendary</Text> gifts can be traded here
         </Text>

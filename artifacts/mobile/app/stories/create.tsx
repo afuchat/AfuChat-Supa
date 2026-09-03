@@ -378,7 +378,7 @@ export default function CreateStoryScreen() {
               {showEmojis && (
                 <View style={styles.emojiPanel}>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.emojiScroll}>
-                    {["😊","😂","❤️","🔥","👍","😍","🎉","😎","🙏","💪","✨","🤩","💯","😭","👀","🫶","🥳","😅","🤣","🌟"].map((e) => (
+                    {["😊","😂","❤️","🔥","👍","😍","🎉","😎","🙏","💪","🤩","💯","😭","👀","🫶","🥳","😅","🤣","🌟"].map((e) => (
                       <TouchableOpacity key={e} style={styles.emojiItem}
                         onPress={() => { setCaption((c) => (c + e).slice(0, CAPTION_MAX)); setShowEmojis(false); }}>
                         <Text style={{ fontSize: 26 }}>{e}</Text>

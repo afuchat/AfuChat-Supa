@@ -243,7 +243,7 @@ export default function SupportCenter() {
           </View>
         </View>
         <View style={[st.headBadge, { backgroundColor: "rgba(255,255,255,0.18)" }]}>
-          <Ionicons name="sparkles" size={12} color="#fff" />
+          <Ionicons name="bulb-outline" size={12} color="#fff" />
           <Text style={st.headBadgeText}>AI Ready</Text>
         </View>
       </LinearGradient>
@@ -289,7 +289,7 @@ export default function SupportCenter() {
             style={[st.heroCard, { borderColor: BRAND + "25" }]}
           >
             <View style={[st.heroIconWrap, { backgroundColor: BRAND }]}>
-              <Ionicons name="sparkles" size={22} color="#fff" />
+              <Ionicons name="bulb-outline" size={22} color="#fff" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[st.heroTitle, { color: colors.text }]}>How can we help you?</Text>
@@ -438,7 +438,7 @@ export default function SupportCenter() {
                   colors={["#7C3AED", "#6D28D9"]}
                   style={st.aiThinkingIcon}
                 >
-                  <Ionicons name="sparkles" size={16} color="#fff" />
+                  <Ionicons name="bulb-outline" size={16} color="#fff" />
                 </LinearGradient>
                 <View style={{ flex: 1 }}>
                   <Text style={[st.aiThinkingTitle, { color: "#7C3AED" }]}>
@@ -479,7 +479,7 @@ export default function SupportCenter() {
               >
                 {/* AI notice */}
                 <View style={[st.aiNotice, { backgroundColor: "#7C3AED0D", borderColor: "#7C3AED30" }]}>
-                  <Ionicons name="sparkles" size={14} color="#7C3AED" />
+                  <Ionicons name="bulb-outline" size={14} color="#7C3AED" />
                   <Text style={[st.aiNoticeText, { color: "#7C3AED" }]}>
                     Our AI reviews every ticket and drafts an instant reply. A human agent follows up within 2–4 hours.
                   </Text>
@@ -755,7 +755,7 @@ export default function SupportCenter() {
                       <View style={{ flex: 1 }} />
                       {item.has_ai_draft && (
                         <View style={st.aiDraftBadge}>
-                          <Ionicons name="sparkles" size={10} color="#7C3AED" />
+                          <Ionicons name="bulb-outline" size={10} color="#7C3AED" />
                           <Text style={st.aiDraftBadgeText}>AI Draft</Text>
                         </View>
                       )}

@@ -1028,7 +1028,7 @@ export default function CompanyPageScreen() {
                   activeOpacity={0.75}
                   disabled={!!aiLoading || posting}
                 >
-                  <Ionicons name="sparkles" size={15} color={colors.accent} />
+                  <Ionicons name="bulb-outline" size={15} color={colors.accent} />
                   <Text style={[styles.aiToggleText, { color: colors.accent }]}>AI Writing Assistant</Text>
                   <Ionicons name={showAiPanel ? "chevron-up" : "chevron-down"} size={13} color={colors.accent} />
                 </TouchableOpacity>
@@ -1081,7 +1081,7 @@ export default function CompanyPageScreen() {
                           setAiLoading(null);
                         }}
                       >
-                        <Ionicons name="sparkles" size={14} color="#fff" />
+                        <Ionicons name="bulb-outline" size={14} color="#fff" />
                         <Text style={styles.aiGenerateBtnText}>Generate</Text>
                       </TouchableOpacity>
                     </View>
@@ -1245,7 +1245,7 @@ export default function CompanyPageScreen() {
                     setJobAiLoading(false);
                   }}
                 >
-                  {jobAiLoading ? <ActivityIndicator size="small" color={colors.accent} /> : <Ionicons name="sparkles" size={15} color={colors.accent} />}
+                  {jobAiLoading ? <ActivityIndicator size="small" color={colors.accent} /> : <Ionicons name="bulb-outline" size={15} color={colors.accent} />}
                   <Text style={[styles.aiToggleText, { color: colors.accent }]}>
                     {jobAiLoading ? "Researching company & writing description…" : !jobForm.title.trim() ? "Enter a job title to use AI" : "Generate description with AI"}
                   </Text>

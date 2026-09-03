@@ -91,7 +91,7 @@ export default function PrivacyDataScreen() {
           <Text style={[s.sectionTitle, { color: colors.textMuted }]}>DATA USAGE</Text>
           <GlassCard style={s.group} variant="medium">
             <ToggleRow
-              icon="sparkles"
+              icon="lock-closed-outline"
               iconColor="#AF52DE"
               label="Personalisation"
               description="Use your activity to personalise your feed, suggestions, and AI responses"

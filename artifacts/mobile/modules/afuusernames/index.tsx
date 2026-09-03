@@ -165,7 +165,7 @@ function FeaturedCard({ item, colors, onPress }: { item: FeaturedPlacement; colo
   const listing = item.listing;
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.featuredCard, { backgroundColor: colors.surface, opacity: pressed ? 0.82 : 1 }]}>
-      <View style={styles.featuredTop}><View style={[styles.featuredBadge, { backgroundColor: Colors.gold + "22" }]}><Ionicons name="sparkles" size={12} color={Colors.gold} /><Text style={[styles.featuredBadgeText, { color: Colors.gold }]}>FEATURED</Text></View><Text style={[styles.featuredTime, { color: colors.textMuted }]}>{timeLeft(item.ends_at)}</Text></View>
+      <View style={styles.featuredTop}><View style={[styles.featuredBadge, { backgroundColor: Colors.gold + "22" }]}><Ionicons name="star-outline" size={12} color={Colors.gold} /><Text style={[styles.featuredBadgeText, { color: Colors.gold }]}>FEATURED</Text></View><Text style={[styles.featuredTime, { color: colors.textMuted }]}>{timeLeft(item.ends_at)}</Text></View>
       <Text style={[styles.featuredHandle, { color: colors.text }]} numberOfLines={1}>@{listing.username}</Text>
       <Text style={[styles.featuredDescription, { color: colors.textMuted }]} numberOfLines={2}>{listing.description || "A premium handle ready for its next owner."}</Text>
       <View style={styles.featuredBottom}><Text style={[styles.featuredPrice, { color: listing.is_auction ? Colors.gold : colors.accent }]}>{money(listing.is_auction ? Math.max(listing.current_bid, listing.reserve_price || 0) : listing.price)} {listing.is_auction ? "current bid" : "ACoin"}</Text><Ionicons name="arrow-forward-circle" size={22} color={colors.accent} /></View>
@@ -189,7 +189,7 @@ function FeatureSheet({ item, visible, onClose, onDone, colors }: { item: Listin
   return (
     <SmartSheet visible={visible} onClose={onClose} peekFraction={0.6} backgroundColor={colors.surface}>
       <View style={styles.sheet}>
-        <View style={[styles.sheetIcon, { backgroundColor: Colors.gold + "20" }]}><Ionicons name="sparkles" size={25} color={Colors.gold} /></View>
+        <View style={[styles.sheetIcon, { backgroundColor: Colors.gold + "20" }]}><Ionicons name="star-outline" size={25} color={Colors.gold} /></View>
         <Text style={[styles.sheetTitle, { color: colors.text }]}>Feature @{item.username}</Text>
         <Text style={[styles.sheetCopy, { color: colors.textMuted }]}>Put your listing in front of serious buyers in the featured rail. Promotion is paid from your ACoin wallet.</Text>
         <View style={styles.featureOptions}>

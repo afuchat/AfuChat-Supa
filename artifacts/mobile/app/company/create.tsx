@@ -597,7 +597,7 @@ export default function CreateCompanyPageScreen() {
 
               {/* AI context hint */}
               <View style={[styles.aiHintBanner, { backgroundColor: colors.accent + "0E", borderColor: colors.accent + "35" }]}>
-                <Ionicons name="sparkles" size={14} color={colors.accent} />
+                <Ionicons name="bulb-outline" size={14} color={colors.accent} />
                 <Text style={[styles.aiHintText, { color: colors.textMuted }]}>
                   AI generates content based only on the facts you've entered — no invented details.
                   {form.name ? ` Working with: ${form.name}${form.org_type ? ` · ${form.org_type}` : ""}${form.industry ? ` · ${form.industry}` : ""}.` : " Add a name and org type in Step 1 first."}
@@ -615,7 +615,7 @@ export default function CreateCompanyPageScreen() {
                   >
                     {aiTaglineLoading
                       ? <ActivityIndicator size={11} color={colors.accent} />
-                      : <Ionicons name="sparkles" size={12} color={colors.accent} />
+                      : <Ionicons name="bulb-outline" size={12} color={colors.accent} />
                     }
                     <Text style={[styles.aiBtnText, { color: colors.accent }]}>
                       {aiTaglineLoading ? "Generating…" : form.tagline ? "Regenerate" : "Generate"}
@@ -644,7 +644,7 @@ export default function CreateCompanyPageScreen() {
                   >
                     {aiDescLoading
                       ? <ActivityIndicator size={11} color={colors.accent} />
-                      : <Ionicons name="sparkles" size={12} color={colors.accent} />
+                      : <Ionicons name="bulb-outline" size={12} color={colors.accent} />
                     }
                     <Text style={[styles.aiBtnText, { color: colors.accent }]}>
                       {aiDescLoading ? "Generating…" : form.description ? "Regenerate" : "Generate"}

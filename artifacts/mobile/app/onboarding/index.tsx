@@ -737,7 +737,7 @@ export default function OnboardingScreen() {
     return (
       <View style={st.stepContent}>
         <View style={st.stepHeader}>
-          <Text style={st.stepEmoji}>✨</Text>
+          <Text style={st.stepEmoji}>💡</Text>
           <Text style={[st.stepTitle, { color: colors.text }]}>Choose what moves you</Text>
           <Text style={[st.stepDesc, { color: colors.textSecondary }]}>
             Pick at least 3 interests so AfuChat can help you find the right people, communities and conversations.

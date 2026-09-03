@@ -458,7 +458,7 @@ export default function ManageCompanyPageScreen() {
             >
               {aboutAiLoading
                 ? <ActivityIndicator size="small" color={colors.accent} />
-                : <Ionicons name="sparkles" size={14} color={colors.accent} />
+                : <Ionicons name="bulb-outline" size={14} color={colors.accent} />
               }
               <Text style={{ fontSize: 13, fontFamily: "Inter_500Medium", color: colors.accent }}>
                 {aboutAiLoading ? "Researching…" : "Write with AI"}

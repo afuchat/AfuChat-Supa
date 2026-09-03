@@ -474,7 +474,7 @@ export default function CreatePostScreen() {
           onPress={() => { setShowAiPanel(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
           activeOpacity={0.75}
         >
-          <Ionicons name="sparkles" size={13} color={colors.accent} />
+          <Ionicons name="bulb-outline" size={13} color={colors.accent} />
           <Text style={[ss.aiPillText, { color: colors.accent }]}>AI</Text>
         </TouchableOpacity>
 
@@ -654,7 +654,7 @@ export default function CreatePostScreen() {
             <View style={[ss.handle, { backgroundColor: colors.border }]} />
             <View style={ss.aiSheetHeader}>
               <View style={[ss.aiSheetIconWrap, { backgroundColor: colors.accent + "14" }]}>
-                <Ionicons name="sparkles" size={18} color={colors.accent} />
+                <Ionicons name="bulb-outline" size={18} color={colors.accent} />
               </View>
               <View>
                 <Text style={[ss.sheetTitle, { color: colors.text, marginBottom: 2 }]}>AI Writing Tools</Text>

@@ -38,7 +38,7 @@ const CAT_ICONS: Record<string, string> = {
   "Electronics": "hardware-chip-outline",
   "Fashion": "shirt-outline",
   "Food & Drink": "fast-food-outline",
-  "Beauty": "sparkles-outline",
+  "Beauty": "flower-outline",
   "Home & Garden": "home-outline",
   "Sports": "football-outline",
   "Books": "book-outline",

@@ -105,7 +105,7 @@ const TIER_CONFIG: Record<string, TierCfg> = {
     tagline: "Essential AI & privacy tools",
     sections: [
       {
-        icon: "sparkles",
+        icon: "checkmark-circle-outline",
         title: "AfuAI",
         items: [
           "50 AI messages / day",
@@ -149,7 +149,7 @@ const TIER_CONFIG: Record<string, TierCfg> = {
     tagline: "Power tools for creators",
     sections: [
       {
-        icon: "sparkles",
+        icon: "checkmark-circle-outline",
         title: "Advanced AI",
         items: [
           "200 AI messages / day",
@@ -196,7 +196,7 @@ const TIER_CONFIG: Record<string, TierCfg> = {
     tagline: "Unlimited, elite, no limits",
     sections: [
       {
-        icon: "sparkles",
+        icon: "checkmark-circle-outline",
         title: "Elite AI",
         items: [
           "Unlimited AI messages",

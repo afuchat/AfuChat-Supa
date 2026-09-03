@@ -60,7 +60,7 @@ const GOAL_OPTIONS = [
   { v: "serious", l: "Serious Relationship", emoji: "💍" },
   { v: "casual", l: "Something Casual", emoji: "🌊" },
   { v: "friendship", l: "New Friends", emoji: "👋" },
-  { v: "open", l: "Open to Anything", emoji: "✨" },
+  { v: "open", l: "Open to Anything", emoji: "💡" },
 ] as const;
 
 const EDU_OPTIONS = [
