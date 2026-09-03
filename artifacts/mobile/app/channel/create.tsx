@@ -196,6 +196,7 @@ export default function CreateChannelScreen() {
       chatName: channelName.trim(),
       chatAvatar: avatarUrl || "",
       channelHandle: normalizedHandle,
+       channelOwnerId: user.id,
     } });
     setCreating(false);
   }

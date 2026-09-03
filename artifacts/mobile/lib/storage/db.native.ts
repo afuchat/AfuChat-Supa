@@ -295,4 +295,10 @@ async function runMigrations(db: DB) {
     `);
     await db.runAsync("UPDATE schema_version SET version = 16");
   }
+
+  if (currentVersion < 17) {
+    const safeAdd = async (sql: string) => { try { await db.execAsync(sql); } catch {} };
+    await safeAdd("ALTER TABLE conversations ADD COLUMN created_by TEXT");
+    await db.runAsync("UPDATE schema_version SET version = 17");
+  }
 }

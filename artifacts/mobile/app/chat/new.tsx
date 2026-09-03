@@ -67,7 +67,7 @@ type NonAfuContact = Pick<LocalPhoneContact, "key" | "name" | "phone" | "normali
 type SearchResult = Contact & { _searching?: boolean };
 
 type GroupItem = { id: string; name: string; avatar_url: string | null };
-type ChannelItem = { id: string; name: string; avatar_url: string | null; is_verified?: boolean };
+type ChannelItem = { id: string; name: string; avatar_url: string | null; is_verified?: boolean; owner_id?: string | null };
 
 export default function NewChatScreen() {
   const { colors, accent } = useTheme();
@@ -168,15 +168,15 @@ export default function NewChatScreen() {
     const [{ data: memberRows }, { data: subRows }, { data: ownedRows }] = await Promise.all([
       supabase
         .from("chat_members")
-        .select("chat_id, chats(id, name, avatar_url, is_group)")
+        .select("chat_id, chats(id, name, avatar_url, is_group, created_by)")
         .eq("user_id", user.id),
       supabase
         .from("channel_subscriptions")
-        .select("channel_id, channels(id, name, avatar_url, is_verified)")
+        .select("channel_id, channels(id, name, avatar_url, is_verified, owner_id)")
         .eq("user_id", user.id),
       supabase
         .from("channels")
-        .select("id, name, avatar_url, is_verified")
+        .select("id, name, avatar_url, is_verified, owner_id")
         .eq("owner_id", user.id),
     ]);
 
@@ -190,12 +190,12 @@ export default function NewChatScreen() {
     const subChannels: ChannelItem[] = (subRows || []).flatMap((s: any) => {
       const ch = Array.isArray(s.channels) ? s.channels[0] : s.channels;
       if (!ch) return [];
-      return [{ id: ch.id, name: ch.name || "Channel", avatar_url: ch.avatar_url || null, is_verified: !!ch.is_verified }];
+       return [{ id: ch.id, name: ch.name || "Channel", avatar_url: ch.avatar_url || null, is_verified: !!ch.is_verified, owner_id: ch.owner_id || null }];
     });
     const subIds = new Set(subChannels.map((c) => c.id));
     const ownedChannels: ChannelItem[] = (ownedRows || [])
       .filter((ch: any) => !subIds.has(ch.id))
-      .map((ch: any) => ({ id: ch.id, name: ch.name || "Channel", avatar_url: ch.avatar_url || null, is_verified: !!ch.is_verified }));
+       .map((ch: any) => ({ id: ch.id, name: ch.name || "Channel", avatar_url: ch.avatar_url || null, is_verified: !!ch.is_verified, owner_id: ch.owner_id || null }));
     setChannels([...subChannels, ...ownedChannels]);
   }, [user]);
 
@@ -556,7 +556,7 @@ export default function NewChatScreen() {
                 groups={groups}
                 channels={channels}
                 onGroupPress={(g) => router.push({ pathname: "/chat/[id]", params: { id: g.id } } as any)}
-                onChannelPress={(c) => router.push({ pathname: "/chat/[id]", params: { id: c.id, isChannel: "true", chatName: c.name, chatAvatar: c.avatar_url || "" } } as any)}
+                onChannelPress={(c) => router.push({ pathname: "/chat/[id]", params: { id: c.id, isChannel: "true", chatName: c.name, chatAvatar: c.avatar_url || "", channelOwnerId: c.owner_id || "" } } as any)}
                 onNotesPress={openMyNotes}
               />
             }

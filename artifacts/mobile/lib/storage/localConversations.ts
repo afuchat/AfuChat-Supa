@@ -13,6 +13,7 @@ export type LocalConversation = {
   name: string | null;
   is_group: boolean;
   is_channel: boolean;
+  created_by: string | null;
   other_id: string | null;
   other_display_name: string | null;
   other_avatar: string | null;
@@ -37,6 +38,7 @@ export function mapConversation(item: any): LocalConversation {
     name: item.name ?? null,
     is_group: item.is_group ?? false,
     is_channel: item.is_channel ?? false,
+    created_by: item.created_by ?? null,
     other_id: item.other_id ?? null,
     other_display_name: item.other_display_name ?? null,
     other_avatar: item.other_avatar ?? null,
@@ -136,13 +138,13 @@ export async function saveConversations(items: any[]): Promise<void> {
       const c = mapConversation(item);
       await db.runAsync(
         `INSERT OR REPLACE INTO conversations
-         (id, name, is_group, is_channel, other_id, other_display_name, other_avatar,
+         (id, name, is_group, is_channel, created_by, other_id, other_display_name, other_avatar,
           last_message, last_message_at, last_message_is_mine, last_message_status,
           is_pinned, is_archived, avatar_url, unread_count, is_verified,
           is_organization_verified, other_last_seen, other_show_online, stored_at)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [
-          c.id, c.name, c.is_group ? 1 : 0, c.is_channel ? 1 : 0,
+           c.id, c.name, c.is_group ? 1 : 0, c.is_channel ? 1 : 0, c.created_by,
           c.other_id, c.other_display_name, c.other_avatar,
           c.last_message, c.last_message_at, c.last_message_is_mine ? 1 : 0,
           c.last_message_status, c.is_pinned ? 1 : 0, c.is_archived ? 1 : 0,

@@ -2152,6 +2152,7 @@ function ChatScreen() {
      otherHandle,
      channelHandle,
      channelDescription,
+     channelOwnerId,
     isGroup,
     isChannel,
     chatName,
@@ -2175,6 +2176,7 @@ function ChatScreen() {
     otherHandle?: string;
      channelHandle?: string;
      channelDescription?: string;
+     channelOwnerId?: string;
     isGroup?: string;
     isChannel?: string;
     chatName?: string;
@@ -2325,6 +2327,7 @@ function ChatScreen() {
         other_handle: otherHandle || null,
         channel_handle: channelHandle || null,
         channel_description: channelDescription || null,
+         channel_owner_id: channelOwnerId || null,
         member_ids: otherId ? [otherId] : [],
         avatar_url: chatAvatar || null,
       };
@@ -2480,6 +2483,7 @@ function ChatScreen() {
         other_id: local.other_id || "",
         member_ids: local.other_id ? [local.other_id] : [],
         avatar_url: local.avatar_url,
+         channel_owner_id: local.created_by || null,
         other_last_seen: local.other_last_seen,
         other_show_online_status: local.other_show_online,
       });
@@ -6751,6 +6755,7 @@ STRICT RULES:
       ? "My Notes"
       : (phonebookName || chatInfo?.other_name || "Chat");
   const headerAvatar = chatInfo?.is_group || chatInfo?.is_channel ? chatInfo?.avatar_url : isSelfChat ? null : chatInfo?.other_avatar;
+  const canPostToChannel = !chatInfo?.is_channel || iAmChatAdmin || chatInfo.channel_owner_id === user?.id;
   const headerSubtitle = chatInfo?.is_channel
     ? (chatInfo.channel_is_public === false ? "Private" : "Public")
     : null;
@@ -7432,12 +7437,22 @@ STRICT RULES:
               </View>
             </View>
           </View>
-        ) : chatInfo?.is_channel && !iAmChatAdmin ? (
+        ) : chatInfo?.is_channel && !canPostToChannel ? (
           <View style={[st.channelReadOnlyBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-            <Ionicons name="megaphone" size={16} color={colors.textMuted} />
-            <Text style={[st.channelReadOnlyText, { color: colors.textMuted }]}>
-              Only admins can post in this channel
-            </Text>
+             <Ionicons name={isMuted ? "volume-mute" : "megaphone"} size={16} color={colors.textMuted} />
+             <Text style={[st.channelReadOnlyText, { color: colors.textMuted, flex: 1 }]}>
+               {isMuted ? "Channel muted" : "Channel updates"}
+             </Text>
+             <TouchableOpacity
+               onPress={() => void (isMuted ? handleUnmuteChat() : handleMuteChat(null))}
+               style={[st.channelMuteButton, { backgroundColor: colors.inputBg }]}
+               activeOpacity={0.7}
+             >
+               <Ionicons name={isMuted ? "notifications-outline" : "notifications-off-outline"} size={15} color={colors.textSecondary} />
+               <Text style={[st.channelMuteButtonText, { color: colors.textSecondary }]}>
+                 {isMuted ? "Unmute" : "Mute"}
+               </Text>
+             </TouchableOpacity>
           </View>
         ) : (
           <>
@@ -9582,6 +9597,18 @@ const st = StyleSheet.create({
   channelReadOnlyText: {
     fontSize: 13,
     fontWeight: "500",
+  },
+  channelMuteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: 16,
+  },
+  channelMuteButtonText: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
   },
   inputFloatOuter: {
     paddingTop: 4,

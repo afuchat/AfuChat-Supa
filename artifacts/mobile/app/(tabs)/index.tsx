@@ -140,6 +140,7 @@ type ChatItem = {
   name: string | null;
   is_group: boolean;
   is_channel: boolean;
+  created_by?: string | null;
   /** "notes" = explicitly-created local Notes. */
   kind?: "notes";
   /** Profile handle for stable route classification before chat metadata loads. */
@@ -777,6 +778,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         name: row.chat_name ?? null,
         is_group: !!row.is_group,
         is_channel: !!row.is_channel,
+         created_by: row.created_by || null,
         other_display_name: isSelfChat ? "My Notes" : (row.other_display_name || "Unknown"),
         other_handle: isSelfChat ? null : (row.other_handle || null),
         other_avatar: isSelfChat ? null : (row.other_avatar || null),
@@ -1000,6 +1002,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
             isChannel: item.is_channel ? "true" : "false",
             chatName: item.name || "",
             chatAvatar: item.avatar_url || "",
+            channelOwnerId: item.is_channel ? (item.created_by || "") : "",
           },
         });
         return;
@@ -1176,6 +1179,7 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         isChannel: item.is_channel ? "true" : "false",
         chatName: item.name || "",
         chatAvatar: item.avatar_url || "",
+        channelOwnerId: item.is_channel ? (item.created_by || "") : "",
       },
     });
   }, [user, onOpenChat, phonebookNames]);

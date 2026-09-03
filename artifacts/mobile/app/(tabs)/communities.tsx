@@ -48,6 +48,7 @@ type Channel = {
   id: string;
   name: string;
   handle: string | null;
+  owner_id?: string | null;
   description: string | null;
   avatar_url: string | null;
   subscriber_count: number;
@@ -133,7 +134,7 @@ export default function CommunitiesScreen() {
         supabase
           .from("channels")
           .select(
-            "id, name, handle, description, avatar_url, subscriber_count, is_verified, is_public, profiles!channels_owner_id_fkey(display_name, handle)"
+             "id, name, handle, description, avatar_url, subscriber_count, is_verified, is_public, owner_id, profiles!channels_owner_id_fkey(display_name, handle)"
           )
           .eq("is_public", true)
           .order("subscriber_count", { ascending: false })
@@ -145,6 +146,7 @@ export default function CommunitiesScreen() {
         id: c.id,
         name: c.name || "Unnamed",
         handle: c.handle || null,
+         owner_id: c.owner_id || null,
         description: c.description || null,
         avatar_url: c.avatar_url || null,
         subscriber_count: c.subscriber_count ?? 0,
@@ -245,6 +247,7 @@ export default function CommunitiesScreen() {
         chatName: item.name,
         chatAvatar: item.avatar_url || "",
         channelHandle: item.handle || "",
+         channelOwnerId: item.owner_id || "",
       } } as any);
       return;
     }
@@ -278,6 +281,7 @@ export default function CommunitiesScreen() {
       chatName: item.name,
       chatAvatar: item.avatar_url || "",
       channelHandle: item.handle || "",
+      channelOwnerId: item.owner_id || "",
     } } as any);
   }
 

@@ -30,7 +30,7 @@ export default function ChannelRoute() {
 
       const { data: channel } = await supabase
         .from("channels")
-        .select("id, name, handle, description, avatar_url, is_public")
+        .select("id, name, handle, description, avatar_url, is_public, owner_id")
         .eq("id", id)
         .maybeSingle();
 
@@ -85,6 +85,7 @@ export default function ChannelRoute() {
             chatAvatar: channel.avatar_url || "",
             channelHandle: channel.handle || "",
             channelDescription: channel.description || "",
+            channelOwnerId: channel.owner_id || "",
           },
         } as any);
       }
