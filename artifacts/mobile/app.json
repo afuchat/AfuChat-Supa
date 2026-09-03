@@ -154,7 +154,13 @@
           "supportsPictureInPicture": true
         }
       ],
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/white-logo-bold.png",
+          "color": "#FFFFFF"
+        }
+      ],
       [
         "expo-build-properties",
         {

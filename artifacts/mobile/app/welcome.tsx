@@ -193,7 +193,7 @@ function OnboardingPage({
 
       <View style={[s.topBar, { paddingTop: topInset + 12 }]}>
         <View style={s.logoRow}>
-          <AfuLogo size={36} forceTheme="dark" />
+          <AfuLogo size={22} forceTheme="dark" />
           <Text style={s.logoText}>AfuChat</Text>
         </View>
         <TouchableOpacity onPress={onSkip} hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}>

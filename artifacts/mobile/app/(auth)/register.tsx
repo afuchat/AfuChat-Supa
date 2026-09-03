@@ -486,7 +486,7 @@ export default function SignUpScreen() {
           {/* Logo + tagline */}
           <View style={{ alignItems: "center", marginBottom: 48 }}>
             <View style={sc.logoRing}>
-              <AfuLogo size={80} forceTheme="dark" />
+              <AfuLogo size={24} forceTheme="dark" />
             </View>
             <Text style={sc.logoWordmark}>AfuChat</Text>
             <View style={sc.freeBadge}>
