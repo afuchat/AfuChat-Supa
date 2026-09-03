@@ -73,14 +73,16 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   userRef.current = user;
 
   useEffect(() => {
-    AsyncStorage.getItem(LANGUAGE_PREFERENCE_KEY).then((stored) => {
-      const lang = normalizeLanguage(stored);
-      if (stored === null) return;
-      if (hasLocalLanguageChange.current) return;
-      const safeLang = lang && !isBundledUiLanguage(lang) ? "en" : lang;
-      setPreferredLangState(safeLang);
-      setCurrentUiLanguage(safeLang);
-    });
+    AsyncStorage.getItem(LANGUAGE_PREFERENCE_KEY)
+      .then((stored) => {
+        const lang = normalizeLanguage(stored);
+        if (stored === null) return;
+        if (hasLocalLanguageChange.current) return;
+        const safeLang = lang && !isBundledUiLanguage(lang) ? "en" : lang;
+        setPreferredLangState(safeLang);
+        setCurrentUiLanguage(safeLang);
+      })
+      .catch(() => {});
   }, []);
 
   async function fetchSettings(uid: string) {

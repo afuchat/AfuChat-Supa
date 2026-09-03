@@ -5207,12 +5207,14 @@ STRICT RULES:
           p_metadata: { from_user_id: user.id },
         });
         if (creditErr || !(creditResult as any)?.success) {
-          await supabase.rpc("award_xp", {
-            p_user_id: user.id,
-            p_action_type: "nexa_transfer_rollback",
-            p_xp_amount: amt,
-            p_metadata: { recipient_id: recipient.id },
-          }).catch(() => {});
+          try {
+            await supabase.rpc("award_xp", {
+              p_user_id: user.id,
+              p_action_type: "nexa_transfer_rollback",
+              p_xp_amount: amt,
+              p_metadata: { recipient_id: recipient.id },
+            });
+          } catch {}
           showAlert("Error", "Could not credit the recipient. Your Nexa was restored.");
           setWalletSending(false);
           return;
@@ -5244,7 +5246,9 @@ STRICT RULES:
         if (deductErr) { showAlert("Error", "Could not deduct ACoin. Please check your balance and try again."); setWalletSending(false); return; }
         const { error: creditErr } = await supabase.rpc("credit_acoin", { p_user_id: recipient.id, p_amount: amt });
         if (creditErr) {
-          await supabase.rpc("credit_acoin", { p_user_id: user.id, p_amount: amt }).catch(() => {});
+          try {
+            await supabase.rpc("credit_acoin", { p_user_id: user.id, p_amount: amt });
+          } catch {}
           showAlert("Error", "Could not credit the recipient. Your ACoin was restored.");
           setWalletSending(false);
           return;

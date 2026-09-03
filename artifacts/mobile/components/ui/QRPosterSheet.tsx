@@ -107,7 +107,10 @@ export default function QRPosterSheet({
     }
   }
 
-  const PosterCaptureView = nativeViewShot ?? View;
+  // The native capture component and the web View have different ref props
+  // in React 19's typings. Both are ref-compatible at runtime, so keep the
+  // dynamic host component intentionally broad here.
+  const PosterCaptureView: any = nativeViewShot ?? View;
 
   return (
     <SmartSheet visible={visible} onClose={onClose} peekFraction={0.85} backgroundColor={sheetBg}>

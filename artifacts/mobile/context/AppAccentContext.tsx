@@ -21,14 +21,16 @@ export function AppAccentProvider({ children }: { children: React.ReactNode }) {
   const [appTheme, setAppThemeState] = useState<ChatTheme>("Teal");
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((v) => {
-      if (v && v in CHAT_THEME_COLORS) setAppThemeState(v as ChatTheme);
-    });
+    AsyncStorage.getItem(STORAGE_KEY)
+      .then((v) => {
+        if (v && v in CHAT_THEME_COLORS) setAppThemeState(v as ChatTheme);
+      })
+      .catch(() => {});
   }, []);
 
   const setAppTheme = useCallback((t: ChatTheme) => {
     setAppThemeState(t);
-    AsyncStorage.setItem(STORAGE_KEY, t);
+    AsyncStorage.setItem(STORAGE_KEY, t).catch(() => {});
   }, []);
 
   const accent = CHAT_THEME_COLORS[appTheme]?.accent || Colors.brand;
