@@ -68,8 +68,29 @@ export function useNearbyLocation(): UseNearbyLocationResult {
     setLocating(true);
     setError(null);
 
-    const { status: existing } = await Location.getForegroundPermissionsAsync();
-    let granted = existing === "granted";
+    // expo-location does not implement the permission API on web. Use the
+    // existing IP fallback directly rather than leaving the hook stuck in its
+    // locating state after a rejected native-only call.
+    if (Platform.OS === "web") {
+      setPermissionStatus("granted");
+      const ip = await getCoordsByIp();
+      if (ip) {
+        setCoords(ip);
+        setLocating(false);
+        return ip;
+      }
+      setError("Could not determine your location. Please try again.");
+      setLocating(false);
+      return null;
+    }
+
+    let granted = false;
+    try {
+      const { status: existing } = await Location.getForegroundPermissionsAsync();
+      granted = existing === "granted";
+    } catch {
+      setPermissionStatus("denied");
+    }
 
     if (!granted) {
       await new Promise<void>((resolve) => {
@@ -85,8 +106,12 @@ export function useNearbyLocation(): UseNearbyLocationResult {
             {
               text: "Allow Location",
               onPress: async () => {
-                const { status } = await Location.requestForegroundPermissionsAsync();
-                granted = status === "granted";
+                 try {
+                   const { status } = await Location.requestForegroundPermissionsAsync();
+                   granted = status === "granted";
+                 } catch {
+                   granted = false;
+                 }
                 resolve();
               },
             },

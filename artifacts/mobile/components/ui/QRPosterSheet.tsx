@@ -5,7 +5,7 @@
  * Captures the poster as a PNG via react-native-view-shot (native)
  * or html2canvas (web), then offers Share / Save to Camera Roll.
  */
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -24,17 +24,6 @@ import AfuLogo from "@/components/ui/AfuLogo";
 import { useTheme } from "@/hooks/useTheme";
 import { SmartSheet } from "@/components/ui/SmartSheet";
 import Colors from "@/constants/colors";
-
-let ViewShot: any = ({ children, style, ...rest }: any) => <View style={style} {...rest}>{children}</View>;
-let captureRef: ((ref: any, opts?: any) => Promise<string>) | null = null;
-try {
-  const vshot = require("react-native-view-shot");
-  ViewShot = vshot.default;
-  captureRef = vshot.captureRef;
-} catch (_) {}
-
-let MediaLibrary: any = null;
-try { MediaLibrary = require("expo-media-library"); } catch (_) {}
 
 const BRAND = Colors.brand;
 
@@ -56,7 +45,20 @@ export default function QRPosterSheet({
 }: Props) {
   const { colors, isDark, accent } = useTheme();
   const posterRef = useRef<any>(null);
+  const captureRefRef = useRef<((ref: any, opts?: any) => Promise<string>) | null>(null);
+  const [nativeViewShot, setNativeViewShot] = useState<React.ComponentType<any> | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === "web" || !visible || nativeViewShot) return;
+    try {
+      const vshot = require("react-native-view-shot");
+      captureRefRef.current = vshot.captureRef;
+      setNativeViewShot(() => vshot.default);
+    } catch {
+      captureRefRef.current = null;
+    }
+  }, [visible, nativeViewShot]);
 
   const qrUrl = `https://afuchat.com/id/${afuId}`;
 
@@ -65,8 +67,8 @@ export default function QRPosterSheet({
   const cardTop = "#0d1e38";
 
   async function capture(): Promise<string | null> {
-    if (!captureRef || !posterRef.current) return null;
-    return captureRef(posterRef.current, { format: "png", quality: 1, result: "tmpfile" });
+    if (!captureRefRef.current || !posterRef.current) return null;
+    return captureRefRef.current(posterRef.current, { format: "png", quality: 1, result: "tmpfile" });
   }
 
   async function handleShare() {
@@ -87,6 +89,10 @@ export default function QRPosterSheet({
   async function handleSave() {
     setSaving(true);
     try {
+      let MediaLibrary: typeof import("expo-media-library") | null = null;
+      if (Platform.OS !== "web") {
+        try { MediaLibrary = require("expo-media-library"); } catch {}
+      }
       if (!MediaLibrary) { showToast("Media library not available"); return; }
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== "granted") { showToast("Camera roll access denied"); return; }
@@ -101,6 +107,8 @@ export default function QRPosterSheet({
     }
   }
 
+  const PosterCaptureView = nativeViewShot ?? View;
+
   return (
     <SmartSheet visible={visible} onClose={onClose} peekFraction={0.85} backgroundColor={sheetBg}>
       <View style={s.content}>
@@ -109,9 +117,9 @@ export default function QRPosterSheet({
 
         {/* Poster card — this gets captured */}
         <View style={s.posterWrap}>
-          <ViewShot
+          <PosterCaptureView
             ref={posterRef}
-            options={{ format: "png", quality: 1, result: "tmpfile" }}
+            {...(nativeViewShot ? { options: { format: "png", quality: 1, result: "tmpfile" } } : {})}
             style={s.poster}
           >
             <View style={[s.posterBg, { backgroundColor: cardBg }]}>
@@ -150,7 +158,7 @@ export default function QRPosterSheet({
               <Text style={s.posterScan}>Scan to connect on AfuChat</Text>
               <Text style={s.posterUrl}>afuchat.com/id/{afuId}</Text>
             </View>
-          </ViewShot>
+          </PosterCaptureView>
         </View>
 
         {/* Action buttons */}

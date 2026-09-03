@@ -23,8 +23,15 @@ import {
 
 import AfuLogo from "@/components/ui/AfuLogo";
 import Image from "@/components/ui/OptimizedImage";
-const SafeFlashList: any =
-  (require("@shopify/flash-list").FlashList as any);
+const SafeFlashList: any = Platform.OS === "web"
+  ? FlatList
+  : (() => {
+      try {
+        return require("@shopify/flash-list").FlashList as any;
+      } catch {
+        return FlatList;
+      }
+    })();
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { Redirect, useFocusEffect, useNavigation, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

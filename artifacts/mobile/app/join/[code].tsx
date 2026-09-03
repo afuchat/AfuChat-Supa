@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 
 import { supabase } from "@/lib/supabase";
@@ -26,6 +27,7 @@ import { parseInviteCode, generateGroupInviteLink } from "@/lib/groupInvite";
 import Colors from "@/constants/colors";
 
 const BRAND = Colors.brand;
+const PENDING_INVITE_KEY = "afuchat_pending_invite_code";
 
 type GroupInfo = {
   id: string;
@@ -119,7 +121,8 @@ export default function JoinGroupScreen() {
 
   async function handleJoin() {
     if (!user) {
-      router.replace("/login" as any);
+      await AsyncStorage.setItem(PENDING_INVITE_KEY, code ?? "").catch(() => {});
+      router.replace("/(auth)/login" as any);
       return;
     }
     if (!group) return;

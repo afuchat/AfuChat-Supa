@@ -25,6 +25,7 @@ import * as WebBrowser from "expo-web-browser";
 import * as LocalAuthentication from "expo-local-authentication";
 import * as SecureStore from "expo-secure-store";
 import { LinearGradient } from "@/components/ui/SafeGradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/lib/supabase";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/env";
 import { useAuth } from "@/context/AuthContext";
@@ -44,6 +45,7 @@ import {
 const BG = "#000000";
 const BIO_REFRESH_KEY = "afu_bio_refresh_token";
 const BIO_EMAIL_KEY = "afu_bio_display_email";
+const PENDING_INVITE_KEY = "afuchat_pending_invite_code";
 
 // ─── Soft orb ─────────────────────────────────────────────────────────────────
 function SoftOrb({ cx, cy, size, color }: { cx: number; cy: number; size: number; color: string }) {
@@ -268,7 +270,22 @@ export default function SignInScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const { width: SW, height: SH } = useWindowDimensions();
-  useEffect(() => { if (user) router.replace("/(tabs)/chats"); }, [user]);
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    void AsyncStorage.getItem(PENDING_INVITE_KEY).then(async (pendingCode) => {
+      if (cancelled) return;
+      if (pendingCode) {
+        await AsyncStorage.removeItem(PENDING_INVITE_KEY).catch(() => {});
+        if (!cancelled) router.replace({ pathname: "/join/[code]", params: { code: pendingCode } } as any);
+      } else {
+        router.replace("/(tabs)/chats");
+      }
+    }).catch(() => {
+      if (!cancelled) router.replace("/(tabs)/chats");
+    });
+    return () => { cancelled = true; };
+  }, [user]);
 
   const [step, setStep] = useState<"landing" | "email">("landing");
   const [identifier, setIdentifier] = useState("");

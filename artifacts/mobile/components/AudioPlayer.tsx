@@ -122,6 +122,7 @@ function AudioPlayerActive({
   onError,
 }: AudioPlayerProps & { playerId: string }) {
   const soundRef = useRef<AudioSound | null>(null);
+  const webAudioRef = useRef<HTMLAudioElement | null>(null);
   const mountedRef = useRef(true);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -156,9 +157,39 @@ function AudioPlayerActive({
 
   useEffect(() => {
     let mounted = true;
+    let webAudio: HTMLAudioElement | null = null;
 
     async function loadAudio() {
       try {
+        if (Platform.OS === "web") {
+          webAudio = new window.Audio(uri);
+          webAudio.preload = "metadata";
+          webAudioRef.current = webAudio;
+          webAudio.onloadedmetadata = () => {
+            if (!mounted || !webAudio) return;
+            setDurationMs(Number.isFinite(webAudio.duration) ? webAudio.duration * 1000 : 0);
+            setIsLoaded(true);
+            void webAudio.play().catch(() => {});
+          };
+          webAudio.ontimeupdate = () => {
+            if (!mounted || !webAudio) return;
+            setPositionMs(webAudio.currentTime * 1000);
+          };
+          webAudio.onplay = () => { if (mounted) setIsPlaying(true); };
+          webAudio.onpause = () => { if (mounted) setIsPlaying(false); };
+          webAudio.onended = () => {
+            if (!mounted || !webAudio) return;
+            setIsPlaying(false);
+            setPositionMs(webAudio.duration * 1000);
+            voicePlaybackCoordinator.finished(playerId);
+          };
+          webAudio.onerror = () => {
+            if (mounted) { setHasError(true); onError?.(); }
+          };
+          webAudio.load();
+          return;
+        }
+
         if (!Audio) { if (mounted) { setHasError(true); onError?.(); } return; }
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: false,
@@ -201,13 +232,29 @@ function AudioPlayerActive({
 
     return () => {
       mounted = false;
+      if (webAudio) {
+        webAudio.pause();
+        webAudio.src = "";
+        webAudioRef.current = null;
+      }
       soundRef.current?.unloadAsync().catch(() => {});
     };
   }, [uri]);
 
   const togglePlay = useCallback(async () => {
-    if (!isLoaded || !soundRef.current) return;
+    if (!isLoaded) return;
     try {
+      if (Platform.OS === "web") {
+        const audio = webAudioRef.current;
+        if (!audio) return;
+        if (audio.ended || (audio.duration > 0 && audio.currentTime >= audio.duration)) {
+          audio.currentTime = 0;
+        }
+        if (audio.paused) await audio.play();
+        else audio.pause();
+        return;
+      }
+      if (!soundRef.current) return;
       if (isPlaying) {
         await soundRef.current.pauseAsync();
       } else {
@@ -221,21 +268,31 @@ function AudioPlayerActive({
   }, [isPlaying, positionMs, durationMs, isLoaded]);
 
   const cycleSpeed = useCallback(async () => {
-    if (!isLoaded || !soundRef.current) return;
+    if (!isLoaded) return;
     const idx = SPEEDS.indexOf(speed);
     const next = SPEEDS[(idx + 1) % SPEEDS.length];
     setSpeed(next);
     try {
+      if (Platform.OS === "web") {
+        if (webAudioRef.current) webAudioRef.current.playbackRate = next;
+        return;
+      }
+      if (!soundRef.current) return;
       await soundRef.current.setRateAsync(next, true);
     } catch {}
   }, [speed, isLoaded]);
 
   const seekFromTouch = useCallback(
     async (e: GestureResponderEvent) => {
-      if (!isLoaded || durationMs === 0 || !soundRef.current) return;
+      if (!isLoaded || durationMs === 0) return;
       const { locationX } = e.nativeEvent;
       const ratio = Math.max(0, Math.min(1, locationX / (trackWidth.current || 1)));
       try {
+        if (Platform.OS === "web") {
+          if (webAudioRef.current) webAudioRef.current.currentTime = ratio * durationMs / 1000;
+          return;
+        }
+        if (!soundRef.current) return;
         await soundRef.current.setPositionAsync(ratio * durationMs);
       } catch {}
     },

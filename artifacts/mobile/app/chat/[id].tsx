@@ -2185,7 +2185,7 @@ function ChatScreen() {
     lensIntro?: string;
   }>();
   const isDraft = id === "new";
-  const { user, profile, isPremium, subscription, refreshProfile, equippedGoods } = useAuth();
+  const { user, session, profile, isPremium, subscription, refreshProfile, equippedGoods } = useAuth();
   const { status: callStatus, startCall: callStart, isAvailable: callAvailable } = useCall();
   const callStartingRef = useRef(false);
   const { openApp } = useSuperApp();
@@ -2734,10 +2734,12 @@ function ChatScreen() {
   const typingTimeout = useRef<any>(null);
   const draftSaveTimer = useRef<any>(null);
   const selectionClearTimer = useRef<any>(null);
+  const chatLoadGenerationRef = useRef(0);
 
   const effectiveChatId = isDraft ? realChatId : id;
 
-  const loadChatInfo = useCallback(async () => {
+  const loadChatInfo = useCallback(async (loadToken = chatLoadGenerationRef.current) => {
+    const isCurrentLoad = () => chatLoadGenerationRef.current === loadToken;
     if (!id || !user || isDraft || isLocalNotesId(id)) return;
     // SQLite fallback (useEffect above) already hydrates chatInfo when offline —
     // skip the network round-trip so we don't leave a dangling fetch.
@@ -2756,6 +2758,7 @@ function ChatScreen() {
             .eq("id", id)
             .maybeSingle()).data
         : null;
+      if (!isCurrentLoad()) return;
       const allMembers = (chat.chat_members || []) as any[];
       const me = allMembers.find((m: any) => m.user_id === user.id);
       setIAmChatAdmin(!!(me?.is_admin));
@@ -2790,7 +2793,8 @@ function ChatScreen() {
     }
   }, [id, user, isDraft]);
 
-  const loadMessages = useCallback(async () => {
+  const loadMessages = useCallback(async (loadToken = chatLoadGenerationRef.current) => {
+    const isCurrentLoad = () => chatLoadGenerationRef.current === loadToken;
     const chatId = isDraft ? realChatId : id;
     if (!chatId || !user) return;
     if (isNotificationsChat || isAfuAiDirectChat) {
@@ -2805,6 +2809,7 @@ function ChatScreen() {
     // to realtime, or attempt any server sync for this conversation.
     if (isLocalNotesId(chatId)) {
       const localNotes = await getLocalNotesMessages(user.id);
+      if (!isCurrentLoad()) return;
       setMessages([...localNotes].reverse().map((message) => ({
         id: message.id,
         chat_id: message.chat_id,
@@ -2827,6 +2832,7 @@ function ChatScreen() {
       // must be the NEWEST message. Reverse to get newest-first.
       const clearedAt = await AsyncStorage.getItem(`chat_cleared_${user.id}_${chatId}`).catch(() => null);
       const allCached = await getLocalMessages(chatId, 5000);
+      if (!isCurrentLoad()) return;
       const cached = clearedAt ? allCached.filter((m) => m.sent_at > clearedAt) : allCached;
       if (cached.length > 0) {
         const newestFirst = [...cached].reverse();
@@ -2857,6 +2863,7 @@ function ChatScreen() {
         const cachedIds = cached.map((m) => m.id).filter((cid) => !cid.startsWith("pending"));
         if (cachedIds.length > 0) {
           void supabase.from("message_reactions").select("message_id, reaction, user_id").in("message_id", cachedIds).then(({ data: cacheReactions }) => {
+             if (!isCurrentLoad()) return;
             if (!cacheReactions || cacheReactions.length === 0) return;
             const reactionMap: Record<string, { emoji: string; count: number; myReaction: boolean }[]> = {};
             for (const r of cacheReactions as any[]) {
@@ -2885,6 +2892,7 @@ function ChatScreen() {
     // On web: always fetch fresh from the server (no local cache).
     const newestStored = await getNewestMessageDate(chatId);
     const clearedAtServer = await AsyncStorage.getItem(`chat_cleared_${user.id}_${chatId}`).catch(() => null);
+    if (!isCurrentLoad()) return;
     let msgQuery = supabase
       .from("messages")
       .select(`id, chat_id, sender_id, encrypted_content, sent_at, reply_to_message_id, attachment_url, attachment_type, edited_at, profiles!messages_sender_id_fkey(display_name, avatar_url, handle)`)
@@ -2898,6 +2906,7 @@ function ChatScreen() {
       msgQuery = msgQuery.gt("sent_at", clearedAtServer);
     }
       const { data } = await msgQuery;
+      if (!isCurrentLoad()) return;
 
     if (data) {
       const msgIds = data.map((m: any) => m.id);
@@ -2988,6 +2997,7 @@ function ChatScreen() {
           supabase.from("message_reactions").select("message_id, reaction, user_id").in("message_id", msgIds),
           supabase.from("message_status").select("message_id, read_at, delivered_at").in("message_id", msgIds),
         ]).then(([{ data: reactions }, { data: statuses }]) => {
+          if (!isCurrentLoad()) return;
           const reactionMap: Record<string, { emoji: string; count: number; myReaction: boolean }[]> = {};
           for (const r of (reactions || []) as any[]) {
             if (!reactionMap[r.message_id]) reactionMap[r.message_id] = [];
@@ -3041,6 +3051,7 @@ function ChatScreen() {
         supabase.from("message_status")
           .select("message_id").eq("user_id", user.id).not("read_at", "is", null).in("message_id", unreadIds)
           .then(({ data: myReadRows }) => {
+            if (!isCurrentLoad()) return;
             const alreadyRead = new Set((myReadRows || []).map((r: any) => r.message_id));
             const toMark = unreadFromOthers.filter((m: any) => !alreadyRead.has(m.id));
             if (toMark.length > 0) {
@@ -3061,7 +3072,7 @@ function ChatScreen() {
           });
       }
     }
-    setLoading(false);
+    if (isCurrentLoad()) setLoading(false);
   }, [
     id,
     user,
@@ -3277,14 +3288,16 @@ function ChatScreen() {
   useEffect(() => {
     const activeChatId = isDraft ? realChatId : id;
     if (!activeChatId) return;
+    const loadToken = ++chatLoadGenerationRef.current;
+    const isCurrentSubscription = () => chatLoadGenerationRef.current === loadToken;
 
     // Set this synchronously, before any async load. ChatsScreen may refresh
     // while this screen is opening; the RPC then excludes this chat's unread
     // rows instead of racing the loader and briefly restoring the badge.
     markChatVisited(activeChatId);
     setActiveChatId(activeChatId);
-    loadChatInfo();
-    loadMessages();
+    loadChatInfo(loadToken);
+    loadMessages(loadToken);
 
     if (isLocalNotesId(activeChatId)) {
       return () => {
@@ -3296,7 +3309,7 @@ function ChatScreen() {
     // This fires ~20 ms after send (before Postgres Changes arrives).
     // We render the message immediately and deduplicate when Postgres fires.
     const unsubFastPath = subscribeToChat(activeChatId, (gMsg) => {
-      if (!user || gMsg.sender_id === user.id) return;
+      if (!isCurrentSubscription() || !user || gMsg.sender_id === user.id) return;
       const cachedSender = getProfileCache(gMsg.sender_id);
       const senderSnap = cachedSender
         ? { display_name: cachedSender.display_name, avatar_url: cachedSender.avatar_url ?? null, handle: cachedSender.handle }
@@ -3321,6 +3334,7 @@ function ChatScreen() {
       .channel(`chat:${activeChatId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `chat_id=eq.${activeChatId}` },
         async (payload) => {
+          if (!isCurrentSubscription()) return;
           const newMsg = payload.new as any;
           if (newMsg.sender_id === user?.id) return;
           if (newMsg.sender_id === AFUAI_BOT_ID) return;
@@ -3350,6 +3364,7 @@ function ChatScreen() {
             return event ? ({ ...event } as NotificationMessageData) : undefined;
           };
           const notificationData = await fetchNotificationData();
+          if (!isCurrentSubscription()) return;
           setMessages((prev) => {
             // Deduplicate — broadcast fast-path may have already inserted this message
             if (prev.some((m) => m.id === newMsg.id)) return prev;
@@ -3363,8 +3378,9 @@ function ChatScreen() {
             void (async () => {
               for (const delay of [150, 400, 900]) {
                 await new Promise((resolve) => setTimeout(resolve, delay));
+                if (!isCurrentSubscription()) return;
                 const latest = await fetchNotificationData();
-                if (latest) {
+                if (latest && isCurrentSubscription()) {
                   setMessages((prev) => prev.map((m) =>
                     m.id === newMsg.id ? { ...m, _notification: latest } : m
                   ));
@@ -3375,7 +3391,7 @@ function ChatScreen() {
           }
           if (!_cachedSender) {
             supabase.from("profiles").select("display_name, avatar_url, handle").eq("id", newMsg.sender_id).single().then(({ data: _sp }) => {
-              if (_sp) {
+              if (_sp && isCurrentSubscription()) {
                 setProfileCache(newMsg.sender_id, _sp as any);
                 setMessages((prev) => prev.map((m) => m.id === newMsg.id ? { ...m, sender: _sp as any } : m));
               }
@@ -3439,6 +3455,7 @@ function ChatScreen() {
       // Real-time reaction sync — someone added a reaction
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "message_reactions" },
         (payload) => {
+          if (!isCurrentSubscription()) return;
           const r = payload.new as any;
           if (r.user_id === user?.id) return; // already handled optimistically
           setMessages((prev) =>
@@ -3459,6 +3476,7 @@ function ChatScreen() {
       // Real-time reaction sync — someone removed a reaction
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "message_reactions" },
         (payload) => {
+          if (!isCurrentSubscription()) return;
           const r = payload.old as any;
           if (r.user_id === user?.id) return; // already handled optimistically
           setMessages((prev) =>
@@ -3477,7 +3495,7 @@ function ChatScreen() {
           if (msgSubDroppedRef.current) {
             // Reconnected after a drop — re-fetch to catch any missed messages
             msgSubDroppedRef.current = false;
-            loadMessages();
+            loadMessages(loadToken);
           }
         } else if (
           status === "CLOSED" ||
@@ -3489,6 +3507,7 @@ function ChatScreen() {
       });
 
     return () => {
+      chatLoadGenerationRef.current += 1;
       unsubFastPath();
       clearActiveChatId();
       supabase.removeChannel(msgSub);
@@ -5157,7 +5176,7 @@ STRICT RULES:
   }
 
   async function handleInlineSendMoney() {
-    if (!user || !profile || !chatInfo?.other_id || walletSending) return;
+    if (!user || !session || !profile || !chatInfo?.other_id || walletSending) return;
     const amt = parseInt(walletAmount, 10);
     if (isNaN(amt) || amt <= 0) { showAlert("Invalid amount", "Please enter a valid amount greater than zero."); return; }
     const currentBalance = walletCurrency === "acoin" ? (profile.acoin ?? 0) : (profile.xp ?? 0);
@@ -5169,18 +5188,71 @@ STRICT RULES:
       if (!recipient) { showAlert("Error", "Recipient not found."); setWalletSending(false); return; }
       const noteText = walletNote.trim() || null;
       if (walletCurrency === "nexa") {
-        const { error: deductErr } = await supabase.from("profiles").update({ xp: (profile.xp || 0) - amt }).eq("id", user.id);
-        if (deductErr) { showAlert("Error", "Could not deduct Nexa. Please try again."); setWalletSending(false); return; }
-        await supabase.from("profiles").update({ xp: (recipient.xp || 0) + amt }).eq("id", recipient.id);
-        await supabase.from("xp_transfers").insert({ sender_id: user.id, receiver_id: recipient.id, amount: amt, message: noteText }).then(null, () => {});
+        const { data: deducted, error: deductErr } = await supabase
+          .from("profiles")
+          .update({ xp: (profile.xp || 0) - amt })
+          .eq("id", user.id)
+          .gte("xp", amt)
+          .select("id")
+          .maybeSingle();
+        if (deductErr || !deducted) {
+          showAlert("Error", "Could not deduct Nexa. Please check your balance and try again.");
+          setWalletSending(false);
+          return;
+        }
+        const { data: creditResult, error: creditErr } = await supabase.rpc("award_xp", {
+          p_user_id: recipient.id,
+          p_action_type: "nexa_transfer_received",
+          p_xp_amount: amt,
+          p_metadata: { from_user_id: user.id },
+        });
+        if (creditErr || !(creditResult as any)?.success) {
+          await supabase.rpc("award_xp", {
+            p_user_id: user.id,
+            p_action_type: "nexa_transfer_rollback",
+            p_xp_amount: amt,
+            p_metadata: { recipient_id: recipient.id },
+          }).catch(() => {});
+          showAlert("Error", "Could not credit the recipient. Your Nexa was restored.");
+          setWalletSending(false);
+          return;
+        }
+        const { error: transferErr } = await supabase
+          .from("xp_transfers")
+          .insert({ sender_id: user.id, receiver_id: recipient.id, amount: amt, message: noteText });
+        if (transferErr) {
+          await Promise.all([
+            supabase.rpc("award_xp", {
+              p_user_id: user.id,
+              p_action_type: "nexa_transfer_rollback",
+              p_xp_amount: amt,
+              p_metadata: { recipient_id: recipient.id },
+            }),
+            supabase.rpc("award_xp", {
+              p_user_id: recipient.id,
+              p_action_type: "nexa_transfer_reversal",
+              p_xp_amount: -amt,
+              p_metadata: { sender_id: user.id },
+            }),
+          ]).catch(() => {});
+          showAlert("Error", "The transfer could not be recorded. Your Nexa was restored.");
+          setWalletSending(false);
+          return;
+        }
       } else {
         const { error: deductErr } = await supabase.rpc("deduct_acoin", { p_user_id: user.id, p_amount: amt }).maybeSingle();
         if (deductErr) { showAlert("Error", "Could not deduct ACoin. Please check your balance and try again."); setWalletSending(false); return; }
-        await supabase.rpc("credit_acoin", { p_user_id: recipient.id, p_amount: amt }).then(null, () => {});
+        const { error: creditErr } = await supabase.rpc("credit_acoin", { p_user_id: recipient.id, p_amount: amt });
+        if (creditErr) {
+          await supabase.rpc("credit_acoin", { p_user_id: user.id, p_amount: amt }).catch(() => {});
+          showAlert("Error", "Could not credit the recipient. Your ACoin was restored.");
+          setWalletSending(false);
+          return;
+        }
         await Promise.all([
           supabase.from("acoin_transactions").insert({ user_id: user.id, amount: -amt, transaction_type: "acoin_transfer_sent", metadata: { to_user_id: recipient.id, to_handle: recipient.handle, message: noteText } }),
           supabase.from("acoin_transactions").insert({ user_id: recipient.id, amount: amt, transaction_type: "acoin_transfer_received", metadata: { from_user_id: user.id, from_handle: profile.handle, message: noteText } }),
-        ]);
+        ]).catch(() => {});
       }
       const activeChatId = await getOrCreateChatId();
       if (activeChatId) {
@@ -5211,7 +5283,7 @@ STRICT RULES:
 
   async function sendMessage(directText?: string) {
     const text = (directText ?? input).trim();
-    if (!text || !user || sending) return;
+    if (!text || !user || sending || (!session && !isLocalNotesId(id))) return;
     if (messageLimited) {
       showAlert("Message limit", `You can only send one message until ${chatInfo?.other_name || "this user"} replies or follows you.`);
       return;

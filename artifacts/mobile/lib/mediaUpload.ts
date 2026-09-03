@@ -479,10 +479,11 @@ export async function uploadChatMedia(
   // Multiple chat images upload concurrently. A timestamp alone is not unique
   // when Promise.all starts them in the same millisecond, which caused several
   // images to share one R2 key and appear as duplicates in the grouped message.
-  // Keep the original name when explicitly provided, otherwise add a random
-  // suffix so every selected image gets its own storage object.
+  // Keep the original name as the readable base, but always add a random
+  // suffix so picker names such as IMG_0001.jpg cannot overwrite each other.
   const uniqueSuffix = Math.random().toString(36).slice(2, 10);
-  const fileName = originalName || `${Date.now()}_${uniqueSuffix}.${ext}`;
+  const readableName = originalName?.split("/").pop()?.split("\\").pop()?.replace(/\.[^.]+$/, "") || `${Date.now()}`;
+  const fileName = `${readableName}_${Date.now()}_${uniqueSuffix}.${ext}`;
   const filePath =
     bucket === "voice-messages" ? `${userId}/${fileName}` : `${userId}/${chatId}/${fileName}`;
   return uploadToStorage(bucket, filePath, fileUri, contentType || getMime(ext));

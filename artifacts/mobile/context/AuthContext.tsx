@@ -850,6 +850,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // CRITICAL: we do NOT clear any user state here regardless of outcome.
           // A user who has ever logged in must NEVER be involuntarily signed out.
           if (!sessionRestoreRef.current) {
+             const currentUserId = user?.id ?? session?.user?.id ?? getCachedUserId();
             const restorePromise = getStoredAccounts()
               .then(async (accts) => {
                 if (
@@ -857,7 +858,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   isUserSigningOut.current ||
                   isSwitchingRef.current
                 ) return;
-                const stored = accts[0] ?? null;
+                 const stored = currentUserId
+                   ? (accts.find((account) => account.userId === currentUserId) ?? null)
+                   : (accts[0] ?? null);
                 if (!stored) return;
 
                 try {
