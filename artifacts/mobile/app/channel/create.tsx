@@ -24,8 +24,10 @@ import { uploadToStorage } from "@/lib/mediaUpload";
 import { showAlert } from "@/lib/alert";
 import { isOnline } from "@/lib/offlineStore";
 import { TIER_CHANNEL_LIMITS } from "@/lib/featureUsage";
+import { checkPublicChatUsername } from "@/lib/usernameAvailability";
 
 const PURPLE = "#5856D6";
+type HandleStatus = "idle" | "checking" | "available" | "taken" | "invalid_format" | "error";
 
 export default function CreateChannelScreen() {
   const { colors } = useTheme();
@@ -43,9 +45,37 @@ export default function CreateChannelScreen() {
   const [description, setDescription] = useState("");
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [isPublic, setIsPublic] = useState(true);
+  const [handleStatus, setHandleStatus] = useState<HandleStatus>("idle");
   const [creating, setCreating] = useState(false);
 
   const descRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    if (!isPublic) {
+      setHandleStatus("idle");
+      return;
+    }
+    const normalized = channelHandle.trim().toLowerCase();
+    if (!normalized) {
+      setHandleStatus("idle");
+      return;
+    }
+    if (normalized.length < 3) {
+      setHandleStatus("invalid_format");
+      return;
+    }
+    let active = true;
+    setHandleStatus("checking");
+    const timer = setTimeout(() => {
+      void checkPublicChatUsername(normalized).then((result) => {
+        if (active) setHandleStatus(result?.status ?? "error");
+      });
+    }, 300);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [channelHandle, isPublic]);
 
   async function pickAvatar() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -81,6 +111,18 @@ export default function CreateChannelScreen() {
     if (normalizedHandle && normalizedHandle.length < 3) {
       showAlert("Username too short", "Channel usernames must be at least 3 characters.");
       return;
+    }
+    if (isPublic) {
+      const availability = await checkPublicChatUsername(normalizedHandle);
+      if (!availability || availability.status !== "available") {
+        showAlert(
+          availability?.status === "invalid_format" ? "Invalid username" : "Username unavailable",
+          availability?.status === "invalid_format"
+            ? "Use 3–30 lowercase letters, numbers, or underscores."
+            : "That username is already used or owned on AfuChat. Please choose another."
+        );
+        return;
+      }
     }
     if (!user) return;
 
@@ -219,6 +261,17 @@ export default function CreateChannelScreen() {
             returnKeyType="next"
             onSubmitEditing={() => descRef.current?.focus()}
           />
+          {isPublic && channelHandle.trim() ? (
+            <Text style={[styles.handleStatus, {
+              color: handleStatus === "available" ? "#34C759" : handleStatus === "taken" || handleStatus === "invalid_format" ? "#FF3B30" : colors.textMuted,
+            }]}>
+              {handleStatus === "checking" ? "Checking username…" :
+                handleStatus === "available" ? "Username available" :
+                handleStatus === "taken" ? "Username already used or owned" :
+                handleStatus === "invalid_format" ? "Use at least 3 letters, numbers, or underscores" :
+                handleStatus === "error" ? "Could not check username yet" : ""}
+            </Text>
+          ) : null}
         </View>
       </View>
 
@@ -336,6 +389,11 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 5,
     borderBottomWidth: 1,
+  },
+  handleStatus: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    paddingTop: 4,
   },
 
   descSection: {

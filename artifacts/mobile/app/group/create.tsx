@@ -24,6 +24,7 @@ import VerifiedBadge from "@/components/ui/VerifiedBadge";
 import { ContactRowSkeleton } from "@/components/ui/Skeleton";
 import { isOnline } from "@/lib/offlineStore";
 import { TIER_GROUP_LIMITS } from "@/lib/featureUsage";
+import { checkPublicChatUsername } from "@/lib/usernameAvailability";
 
 type FollowedUser = {
   id: string;
@@ -33,12 +34,15 @@ type FollowedUser = {
   is_verified?: boolean;
   is_organization_verified?: boolean;
 };
+type HandleStatus = "idle" | "checking" | "available" | "taken" | "invalid_format" | "error";
 
 export default function CreateGroupScreen() {
   const { colors } = useTheme();
   const { user, subscription } = useAuth();
   const insets = useSafeAreaInsets();
   const [groupName, setGroupName] = useState("");
+  const [groupHandle, setGroupHandle] = useState("");
+  const [handleStatus, setHandleStatus] = useState<HandleStatus>("idle");
   const [followedUsers, setFollowedUsers] = useState<FollowedUser[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
@@ -64,6 +68,29 @@ export default function CreateGroupScreen() {
   }, [user]);
 
   useEffect(() => { loadFollowing(); }, [loadFollowing]);
+
+  useEffect(() => {
+    const normalized = groupHandle.trim().toLowerCase();
+    if (!normalized) {
+      setHandleStatus("idle");
+      return;
+    }
+    if (normalized.length < 3) {
+      setHandleStatus("invalid_format");
+      return;
+    }
+    let active = true;
+    setHandleStatus("checking");
+    const timer = setTimeout(() => {
+      void checkPublicChatUsername(normalized).then((result) => {
+        if (active) setHandleStatus(result?.status ?? "error");
+      });
+    }, 300);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [groupHandle]);
 
   function toggleSelect(id: string) {
     Haptics.selectionAsync();
@@ -108,6 +135,21 @@ export default function CreateGroupScreen() {
       showAlert("Group name required", "Please enter a group name.");
       return;
     }
+    const normalizedHandle = groupHandle.trim().toLowerCase();
+    if (!normalizedHandle) {
+      showAlert("Username required", "Public groups need a username so people can find and share them.");
+      return;
+    }
+    const availability = await checkPublicChatUsername(normalizedHandle);
+    if (!availability || availability.status !== "available") {
+      showAlert(
+        availability?.status === "invalid_format" ? "Invalid username" : "Username unavailable",
+        availability?.status === "invalid_format"
+          ? "Use 3–30 lowercase letters, numbers, or underscores."
+          : "That username is already used or owned on AfuChat. Please choose another."
+      );
+      return;
+    }
     if (selected.size < 1) {
       showAlert("Add members", "Select at least 1 contact.");
       return;
@@ -116,26 +158,27 @@ export default function CreateGroupScreen() {
     setCreating(true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    const { data: chat } = await supabase
-      .from("chats")
-      .insert({
-        name: groupName.trim(),
-        is_group: true,
-        created_by: user.id,
-        user_id: user.id,
-      })
-      .select()
-      .single();
+    const { data: chatId, error: createError } = await supabase.rpc("create_group_chat", {
+      p_name: groupName.trim(),
+      p_handle: normalizedHandle,
+      p_member_ids: Array.from(selected),
+    });
 
-    if (chat) {
-      const members = [user.id, ...Array.from(selected)].map((uid, i) => ({
-        chat_id: chat.id,
-        user_id: uid,
-        is_admin: uid === user.id,
-      }));
-      await supabase.from("chat_members").insert(members);
+    if (createError || !chatId) {
+      const message = createError?.message?.toLowerCase() || "";
+      showAlert(
+        message.includes("username") || message.includes("duplicate") ? "Username unavailable" : "Could not create group",
+        message.includes("username") || message.includes("duplicate")
+          ? "That username is already used or owned on AfuChat. Please choose another."
+          : "Please try again."
+      );
+      setCreating(false);
+      return;
+    }
+
+    if (chatId) {
       try { const { rewardXp } = await import("../../lib/rewardXp"); rewardXp("group_created"); } catch (_) {}
-      router.replace({ pathname: "/chat/[id]", params: { id: chat.id } });
+      router.replace({ pathname: "/chat/[id]", params: { id: chatId, chatName: groupName.trim(), chatHandle: normalizedHandle } });
     }
     setCreating(false);
   }
@@ -156,14 +199,37 @@ export default function CreateGroupScreen() {
         <View style={[styles.groupIconWrap, { backgroundColor: colors.inputBg }]}>
           <Ionicons name="camera" size={20} color={colors.textMuted} />
         </View>
-        <TextInput
-          style={[styles.nameInput, { color: colors.text }]}
-          placeholder="Group name"
-          placeholderTextColor={colors.textMuted}
-          value={groupName}
-          onChangeText={setGroupName}
-          autoFocus
-        />
+        <View style={styles.nameInputWrap}>
+          <TextInput
+            style={[styles.nameInput, { color: colors.text }]}
+            placeholder="Group name"
+            placeholderTextColor={colors.textMuted}
+            value={groupName}
+            onChangeText={setGroupName}
+            autoFocus
+          />
+          <TextInput
+            style={[styles.handleInput, { color: colors.text, borderBottomColor: colors.accent }]}
+            placeholder="Public group username"
+            placeholderTextColor={colors.textMuted}
+            value={groupHandle}
+            onChangeText={(value) => setGroupHandle(value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 30))}
+            autoCapitalize="none"
+            autoCorrect={false}
+            maxLength={30}
+          />
+          {groupHandle.trim() ? (
+            <Text style={[styles.handleStatus, {
+              color: handleStatus === "available" ? "#34C759" : handleStatus === "taken" || handleStatus === "invalid_format" ? "#FF3B30" : colors.textMuted,
+            }]}>
+              {handleStatus === "checking" ? "Checking username…" :
+                handleStatus === "available" ? "Username available" :
+                handleStatus === "taken" ? "Username already used or owned" :
+                handleStatus === "invalid_format" ? "Use at least 3 letters, numbers, or underscores" :
+                handleStatus === "error" ? "Could not check username yet" : ""}
+            </Text>
+          ) : null}
+        </View>
       </View>
 
       <View style={[styles.memberCount, { backgroundColor: colors.backgroundSecondary }]}>
@@ -249,6 +315,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   nameInput: { flex: 1, fontSize: 17, fontFamily: "Inter_400Regular" },
+  nameInputWrap: { flex: 1 },
+  handleInput: {
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    padding: 0,
+    paddingTop: 10,
+    paddingBottom: 5,
+    borderBottomWidth: 1,
+  },
+  handleStatus: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    paddingTop: 4,
+  },
   memberCount: { paddingHorizontal: 16, paddingVertical: 8 },
   memberCountText: { fontSize: 13, fontFamily: "Inter_500Medium" },
   contactRow: {
