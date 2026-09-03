@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -13,7 +13,7 @@ import Svg, { Circle, Ellipse, Path } from "react-native-svg";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLanguage } from "@/context/LanguageContext";
-import { LANG_LABELS } from "@/lib/translate";
+import { LANG_LABELS, translateText } from "@/lib/translate";
 import Image from "@/components/ui/OptimizedImage";
 
 const PLATFORM_LOGO = require("@/assets/images/icon.png");
@@ -33,6 +33,49 @@ const LANGUAGES = Object.entries(LANG_LABELS).map(([code, name]) => ({
   flag: FLAGS[code] ?? "🌐",
 }));
 
+const CONTINUE_LABELS: Record<string, string> = {
+  en: "Continue",
+  sw: "Endelea",
+  fr: "Continuer",
+  es: "Continuar",
+  ar: "متابعة",
+  zh: "继续",
+  hi: "जारी रखें",
+  pt: "Continuar",
+  ru: "Продолжить",
+  ja: "続ける",
+  de: "Weiter",
+  ko: "계속",
+  it: "Continua",
+  tr: "Devam et",
+  nl: "Doorgaan",
+  pl: "Kontynuuj",
+  th: "ดำเนินการต่อ",
+  vi: "Tiếp tục",
+  id: "Lanjutkan",
+  ms: "Teruskan",
+  fil: "Magpatuloy",
+  uk: "Продовжити",
+  ro: "Continuă",
+  el: "Συνέχεια",
+  cs: "Pokračovat",
+  sv: "Fortsätt",
+  da: "Fortsæt",
+  no: "Fortsett",
+  fi: "Jatka",
+  he: "המשך",
+  bn: "চালিয়ে যান",
+  ta: "தொடரவும்",
+  ur: "جاری رکھیں",
+  fa: "ادامه",
+  am: "ቀጥል",
+  ha: "Ci gaba",
+  yo: "Tẹ̀síwájú",
+  zu: "Qhubeka",
+  af: "Gaan voort",
+  so: "Sii wad",
+};
+
 type LanguageSelectionStepProps = {
   onComplete: () => void;
 };
@@ -42,11 +85,30 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
   const { setPreferredLang, t } = useLanguage();
   const [selected, setSelected] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [translatedContinue, setTranslatedContinue] = useState("Continue");
 
-  const selectedLanguage = useMemo(
-    () => LANGUAGES.find((language) => language.code === selected),
-    [selected],
-  );
+  useEffect(() => {
+    let cancelled = false;
+    if (!selected) {
+      setTranslatedContinue("Continue");
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const localTranslation = CONTINUE_LABELS[selected];
+    if (localTranslation) setTranslatedContinue(localTranslation);
+
+    translateText("Continue", selected)
+      .then((translation) => {
+        if (!cancelled && translation?.trim()) setTranslatedContinue(translation);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selected]);
 
   async function continueSelection() {
     if (!selected || saving) return;
@@ -146,7 +208,7 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
           ]}
           accessibilityRole="button"
           accessibilityState={{ disabled: !selected || saving }}
-          accessibilityLabel={`${t("Continue with")} ${selectedLanguage?.name ?? t("selected language")}`}
+          accessibilityLabel={selected ? translatedContinue : t("Choose a language")}
         >
           {saving ? (
             <ActivityIndicator color="#FFFFFF" />
@@ -154,7 +216,7 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
             <>
               <Text style={[styles.continueText, !selected && styles.continueTextDisabled]}>
                 {selected
-                  ? `Continue with ${selectedLanguage?.name ?? "selected language"}`
+                  ? translatedContinue
                   : "Choose a language"}
               </Text>
               <Text style={[styles.continueArrow, !selected && styles.continueTextDisabled]}>→</Text>
