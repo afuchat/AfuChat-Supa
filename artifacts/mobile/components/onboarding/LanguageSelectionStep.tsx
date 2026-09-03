@@ -16,7 +16,6 @@ import { useLanguage } from "@/context/LanguageContext";
 import { LANG_LABELS, BUNDLED_UI_LANGUAGES } from "@/lib/i18n";
 import AfuLogo from "@/components/ui/AfuLogo";
 import OnboardingBackdrop, { ONBOARDING_THEME } from "@/components/onboarding/OnboardingBackdrop";
-import { BlurView } from "expo-blur";
 
 const FLAGS: Record<string, string> = {
   en: "🇬🇧", zh: "🇨🇳", es: "🇪🇸", fr: "🇫🇷", ar: "🇸🇦", sw: "🇰🇪",
@@ -157,12 +156,6 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
       </ScrollView>
 
       <View style={[styles.bottomFooter, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-        <BlurView
-          intensity={62}
-          tint="dark"
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
-        />
         <View style={styles.bottomSheetHighlight} pointerEvents="none" />
         <Pressable
           onPress={continueSelection}
