@@ -2723,6 +2723,7 @@ export default function DiscoverScreen() {
             isCompactHeader && styles.tabRowCompact,
             { paddingTop: insets.top + 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
           ]}>
+          <View style={[styles.tabsGroup, isCompactHeader && styles.tabsGroupCompact]}>
           <TouchableOpacity
             style={[
               styles.tabPill,
@@ -2793,6 +2794,7 @@ export default function DiscoverScreen() {
               </View>
             </View>
           </TouchableOpacity>
+          </View>
           <View style={[styles.tabSpacer, isCompactHeader && styles.tabSpacerCompact]} />
           {!user && (
             <TouchableOpacity
@@ -3228,15 +3230,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 4,
   },
+  tabsGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  tabsGroupCompact: {
+    flex: 1,
+    minWidth: 0,
+  },
   tabRowCompact: {
     justifyContent: "flex-start",
     paddingHorizontal: 8,
   },
   tabPillCompact: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
     minWidth: 0,
     paddingHorizontal: 4,
     minHeight: 44,
+    justifyContent: "center",
   },
   tabPillTextCompact: {
     fontSize: 13,
