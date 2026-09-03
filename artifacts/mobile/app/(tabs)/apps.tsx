@@ -247,9 +247,16 @@ function FeaturedPageCard({
               </View>
             ) : null}
           </View>
-            <Text style={styles.featLabel} numberOfLines={1}>{t(page.label)}</Text>
+            <Text
+              style={styles.featLabel}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.78}
+            >
+              {t(page.label)}
+            </Text>
           {page.featuredSub ? (
-            <Text style={styles.featSub} numberOfLines={2}>{t(page.featuredSub)}</Text>
+            <Text style={styles.featSub} numberOfLines={3}>{t(page.featuredSub)}</Text>
           ) : null}
           <View style={styles.featOpenBtn}>
             <Text style={styles.featOpenText}>{t("Open")}</Text>
@@ -310,7 +317,12 @@ function PageTile({
             </View>
           ) : null}
         </View>
-        <Text style={[styles.tileLabel, { color: colors.text }]} numberOfLines={1}>
+        <Text
+          style={[styles.tileLabel, { color: colors.text, maxWidth: Math.min(110, tileWidth - 4) }]}
+          numberOfLines={2}
+          adjustsFontSizeToFit
+          minimumFontScale={0.72}
+        >
           {t(page.label)}
         </Text>
         {usageCount && usageCount > 0 ? (
@@ -418,9 +430,14 @@ export default function AppsScreen() {
         {/* ── Featured horizontal scroll ── */}
         {!searchQuery ? (
           <View style={{ marginBottom: 28 }}>
-            <Text style={[styles.sectionTitle, { color: colors.text, paddingHorizontal: H_PAD, marginBottom: 12 }]}>
+              <Text
+                style={[styles.sectionTitle, { color: colors.text, paddingHorizontal: H_PAD, marginBottom: 12 }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
               {t("Featured")}
-            </Text>
+              </Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -448,7 +465,12 @@ export default function AppsScreen() {
           const padCount = cat.pages.length % COLS === 0 ? 0 : COLS - (cat.pages.length % COLS);
           return (
             <View key={cat.id} style={{ marginBottom: 24 }}>
-              <Text style={[styles.sectionTitle, { color: colors.text, paddingHorizontal: H_PAD, marginBottom: 4 }]}>
+              <Text
+                style={[styles.sectionTitle, { color: colors.text, paddingHorizontal: H_PAD, marginBottom: 4 }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+              >
                 {t(cat.title)}
               </Text>
               <View style={[styles.grid, { paddingHorizontal: H_PAD }]}>
@@ -472,7 +494,12 @@ export default function AppsScreen() {
         {filteredCategories.length === 0 ? (
           <View style={styles.emptyWrap}>
             <Ionicons name="search" size={40} color={colors.textMuted} />
-            <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+            <Text
+              style={[styles.emptyText, { color: colors.textMuted }]}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
               {t("No pages match")} "{searchQuery}"
             </Text>
           </View>
@@ -559,13 +586,14 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 17,
     fontFamily: "Inter_700Bold",
+    lineHeight: 21,
     marginBottom: 4,
   },
   featSub: {
     color: "rgba(255,255,255,0.75)",
-    fontSize: 11,
+    fontSize: 10.5,
     fontFamily: "Inter_400Regular",
-    lineHeight: 15,
+    lineHeight: 14,
     flex: 1,
   },
   featOpenBtn: {
@@ -611,9 +639,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: "Inter_500Medium",
     textAlign: "center",
-    maxWidth: 68,
+    lineHeight: 14,
+    minHeight: 28,
   },
   usageText: { fontSize: 9, fontFamily: "Inter_400Regular", marginTop: 1 },
-  emptyWrap: { alignItems: "center", paddingTop: 60, gap: 12 },
+  emptyWrap: { alignItems: "center", paddingTop: 60, gap: 12, paddingHorizontal: H_PAD },
   emptyText: { fontSize: 15, fontFamily: "Inter_400Regular" },
 });
