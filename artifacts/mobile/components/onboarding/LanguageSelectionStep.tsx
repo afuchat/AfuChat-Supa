@@ -181,9 +181,7 @@ const styles = StyleSheet.create({
   orbPurple: { width: 200, height: 200, top: 210, left: -120, backgroundColor: "#873DCE" },
   bottomFooter: {
     alignItems: "center",
-    paddingTop: 8, paddingHorizontal: 22, backgroundColor: "rgba(5,7,19,0.96)",
-    borderTopWidth: 0.5,
-    borderTopColor: "rgba(255,255,255,0.08)",
+    paddingTop: 8, paddingHorizontal: 22, backgroundColor: "transparent",
   },
   brandRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   brandLogo: { width: 30, height: 30, borderRadius: 9 },
