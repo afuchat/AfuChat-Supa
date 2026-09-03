@@ -25,12 +25,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { useAuth } from "@/context/AuthContext";
-import { LANGUAGE_PREFERENCE_KEY, useLanguage } from "@/context/LanguageContext";
+import { LANGUAGE_PREFERENCE_KEY } from "@/context/LanguageContext";
 import { storage, KEYS } from "@/lib/storage/mmkv";
 import * as Haptics from "@/lib/haptics";
 import Colors from "@/constants/colors";
-import { LANG_LABELS } from "@/lib/translate";
-import { BUNDLED_UI_LANGUAGES } from "@/lib/uiTranslations";
+import LanguageSelectionStep from "@/components/onboarding/LanguageSelectionStep";
 
 // ─── Slide data ────────────────────────────────────────────────────────────────
 const SLIDES = [
@@ -86,21 +85,6 @@ const SLIDES = [
 
 const SWIPE_THRESHOLD = 52;
 const BG = "#000000";
-const LANGUAGE_FLAGS: Record<string, string> = {
-  en: "🇬🇧",
-  sw: "🇰🇪",
-  fr: "🇫🇷",
-  es: "🇪🇸",
-  ar: "🇸🇦",
-  zh: "🇨🇳",
-};
-const LANGUAGE_OPTIONS = BUNDLED_UI_LANGUAGES
-  .filter((code) => Boolean(LANGUAGE_FLAGS[code]))
-  .map((code) => ({
-    code,
-    name: LANG_LABELS[code],
-    flag: LANGUAGE_FLAGS[code],
-  }));
 
 // ─── Soft orb (layered circles simulate radial gradient) ──────────────────────
 function SoftOrb({ cx, cy, size, color }: { cx: number; cy: number; size: number; color: string }) {
@@ -279,160 +263,15 @@ function OnboardingPage({
   );
 }
 
-type LanguageOnboardingPageProps = {
-  pageIndex: number;
-  totalPages: number;
-  width: number;
-  height: number;
-  topInset: number;
-  bottomInset: number;
-  activeIndex: number;
-  selectedLanguage: string | null;
-  onSelectLanguage: (code: string) => void;
-  onContinue: () => void;
-};
-
-function LanguageOnboardingPage({
-  pageIndex,
-  totalPages,
-  width,
-  height,
-  topInset,
-  bottomInset,
-  activeIndex,
-  selectedLanguage,
-  onSelectLanguage,
-  onContinue,
-}: LanguageOnboardingPageProps) {
-  const { t } = useLanguage();
-  const canContinue = Boolean(selectedLanguage);
-
-  return (
-    <View style={[s.page, { width, height, backgroundColor: BG }]}>
-      <View style={[s.illustrationBg, s.languageIllustration, { pointerEvents: "none" }]}>
-        <View style={s.languageGlobe}>
-          <Ionicons name="globe-outline" size={82} color="rgba(169,201,255,0.88)" />
-        </View>
-      </View>
-
-      <LinearGradient
-        colors={["transparent", `${BG}00`, `${BG}B0`, BG, BG]}
-        locations={[0, 0.28, 0.52, 0.70, 1]}
-        start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
-        style={[StyleSheet.absoluteFill, { pointerEvents: "none" } as any]}
-      />
-
-      <View style={[s.topBar, { paddingTop: topInset + 12 }]}>
-        <View style={s.logoRow}>
-          <AfuLogo size={22} forceTheme="dark" />
-          <Text style={s.logoText}>AfuChat</Text>
-        </View>
-        <View style={s.stepPill}>
-          <Text style={s.stepText}>{pageIndex + 1} / {totalPages}</Text>
-        </View>
-      </View>
-
-      <View style={[s.card, { paddingBottom: Math.max(bottomInset, 20) + 8 }]}>
-        <LinearGradient
-          colors={[Colors.brand + "55", "#7B5EA7" + "30", "transparent"]}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-          style={s.cardTopBorder}
-        />
-
-        <View>
-          <LocalizedText style={s.title} __afuchatStaticText __afuchatTranslateAllText>
-            Choose your language
-          </LocalizedText>
-          <LocalizedText style={s.subtitle} __afuchatStaticText __afuchatTranslateAllText>
-            Select the language you understand best. We will use it to make your AfuChat experience easier to follow.
-          </LocalizedText>
-        </View>
-
-        <View style={s.languageOptionGrid}>
-          {LANGUAGE_OPTIONS.map((language) => {
-            const isSelected = selectedLanguage === language.code;
-            return (
-              <TouchableOpacity
-                key={language.code}
-                onPress={() => onSelectLanguage(language.code)}
-                activeOpacity={0.78}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: isSelected }}
-                style={[
-                  s.languageOption,
-                  isSelected && s.languageOptionSelected,
-                ]}
-              >
-                <Text style={s.languageFlag}>{language.flag}</Text>
-                <Text style={[s.languageOptionName, isSelected && s.languageOptionNameSelected]}>
-                  {language.name}
-                </Text>
-                <View style={[s.languageRadio, isSelected && s.languageRadioSelected]}>
-                  {isSelected && <View style={s.languageRadioDot} />}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        <View style={s.progressRow}>
-          {Array.from({ length: totalPages }, (_, i) => {
-            const active = i === activeIndex;
-            return (
-              <View key={i} style={[s.progressSegment, { backgroundColor: "rgba(255,255,255,0.12)" }]}>
-                {active && (
-                  <LinearGradient
-                    colors={[Colors.brand, "#7B5EA7"]}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                    style={[StyleSheet.absoluteFill, { borderRadius: 2 }]}
-                  />
-                )}
-              </View>
-            );
-          })}
-        </View>
-
-        <TouchableOpacity
-          style={[s.ctaWrap, !canContinue && s.ctaWrapDisabled]}
-          onPress={onContinue}
-          activeOpacity={canContinue ? 0.84 : 1}
-          disabled={!canContinue}
-        >
-          <LinearGradient
-            colors={canContinue ? [Colors.brand, "#7B5EA7"] : ["#252525", "#181818"]}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={s.cta}
-          >
-            <LocalizedText style={[s.ctaText, !canContinue && s.ctaTextDisabled]} __afuchatStaticText __afuchatTranslateAllText>
-              {canContinue ? "Continue" : "Choose a language"}
-            </LocalizedText>
-            <View style={[s.ctaArrowCircle, !canContinue && s.ctaArrowCircleDisabled]}>
-              <Ionicons name="arrow-forward" size={22} color={canContinue ? "#111827" : "#777"} />
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
-
-        <View style={s.hintRow}>
-          <LocalizedText style={s.hintText} __afuchatStaticText __afuchatTranslateAllText>
-            You can change this later in Settings.
-          </LocalizedText>
-        </View>
-      </View>
-    </View>
-  );
-}
-
 // ─── Main component ────────────────────────────────────────────────────────────
 export default function WelcomeScreen() {
   const { user } = useAuth();
-  const { setPreferredLang } = useLanguage();
   const insets = useSafeAreaInsets();
   const { width: SW, height: SH } = useWindowDimensions();
   const [languageStep, setLanguageStep] = useState<boolean | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const activeIndexRef = useRef(0);
   const isBusyRef = useRef(false);
-  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const pageX = useRef(new Animated.Value(0)).current;
   const showLanguagePage = languageStep === true;
   const totalPages = SLIDES.length + (showLanguagePage ? 1 : 0);
@@ -515,23 +354,9 @@ export default function WelcomeScreen() {
         ]}
       >
         {showLanguagePage && (
-          <LanguageOnboardingPage
-            pageIndex={0}
-            totalPages={totalPages}
-            width={SW}
-            height={SH}
-            topInset={insets.top}
-            bottomInset={insets.bottom}
-            activeIndex={activeIndex}
-            selectedLanguage={selectedLanguage}
-            onSelectLanguage={(code) => {
-              setSelectedLanguage(code);
-              void setPreferredLang(code);
-            }}
-            onContinue={() => {
-              if (selectedLanguage) goNext(0);
-            }}
-          />
+          <View style={{ width: SW, height: SH }}>
+            <LanguageSelectionStep onComplete={() => goNext(0)} />
+          </View>
         )}
         {SLIDES.map((slide, index) => (
           <OnboardingPage
