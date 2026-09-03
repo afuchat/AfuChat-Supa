@@ -148,10 +148,14 @@ function MentionAvatar({
   handle,
   onPress,
   textColor,
+  mentionColor,
+  showAvatar,
 }: {
   handle: string;       // includes the leading @
   onPress?: () => void;
   textColor: string;
+  mentionColor: string;
+  showAvatar: boolean;
 }) {
   const raw = handle.replace("@", "").toLowerCase();
   const [avatarUrl, setAvatarUrl] = useState<string | null | undefined>(
@@ -179,17 +183,31 @@ function MentionAvatar({
     return () => { cancelled = true; };
   }, [raw]);
 
+  // Channel announcements keep the actual @handle visible so the mentioned
+  // username can be clearly highlighted instead of being replaced by an avatar.
+  if (!showAvatar) {
+    return (
+      <Text
+        style={[styles.mention, { color: mentionColor }]}
+        onPress={onPress}
+        suppressHighlighting
+      >
+        {handle}
+      </Text>
+    );
+  }
+
   // Still loading — show @handle as a placeholder so layout doesn't jump
   if (avatarUrl === undefined) {
     return (
-      <Text style={[styles.mention, { color: textColor }]}>{handle}</Text>
+      <Text style={[styles.mention, { color: mentionColor }]}>{handle}</Text>
     );
   }
 
   // User not found — bold, unclickable
   if (avatarUrl === null) {
     return (
-      <Text style={[styles.bold, { color: textColor }]}>{handle}</Text>
+      <Text style={[styles.bold, { color: mentionColor }]}>{handle}</Text>
     );
   }
 
@@ -197,7 +215,7 @@ function MentionAvatar({
   if (Platform.OS === "web") {
     return (
       <Text
-        style={[styles.mention, { color: textColor }]}
+        style={[styles.mention, { color: mentionColor }]}
         onPress={onPress}
         suppressHighlighting
       >
@@ -260,6 +278,9 @@ type RichTextProps = {
    *  of navigable links.  Use in feed post bodies where mentions should
    *  stay in-place but not trigger navigation. */
   plainMentions?: boolean;
+  /** When false, channel mentions stay visible as highlighted @handles
+   *  instead of being replaced by inline profile avatars. */
+  showMentionAvatars?: boolean;
   /** Transparent inline spacer appended after all spans — used for the
    *  WhatsApp-style timestamp ghost: reserves horizontal space on the last
    *  line so the real (absolute-positioned) timestamp never overlaps text. */
@@ -273,6 +294,7 @@ export function RichText({
   numberOfLines,
   selectable,
   plainMentions,
+  showMentionAvatars = true,
   tail,
 }: RichTextProps) {
   const { accent } = useAppAccent();
@@ -416,6 +438,8 @@ export function RichText({
                 handle={span.text}
                 onPress={plainMentions ? undefined : () => handlePress(span)}
                 textColor={inheritedColor}
+                mentionColor={effectiveLinkColor}
+                showAvatar={showMentionAvatars}
               />
             );
           case "email":

@@ -1230,9 +1230,10 @@ function MediaUploadIndicator({ kind, isMe }: { kind: "image" | "video"; isMe: b
   );
 }
 
-function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, replyPreview, onTapReply, isHighlighted, onTapEnvelope, onTapGift, onImageTap, onConfirmExec, onCancelExec, onSuggestionTap, onSenderPress, onReactionPress, onStatusPress, onNotificationAction, brandColor, flatSurface, hideTimestamp, isTextSelectionEnabled }: {
+function MessageBubble({ msg, isMe, isChannel, showTail, showName, onLongPress, onReply, replyPreview, onTapReply, isHighlighted, onTapEnvelope, onTapGift, onImageTap, onConfirmExec, onCancelExec, onSuggestionTap, onSenderPress, onReactionPress, onStatusPress, onNotificationAction, brandColor, flatSurface, hideTimestamp, isTextSelectionEnabled }: {
   msg: Message;
   isMe: boolean;
+  isChannel?: boolean;
   showTail: boolean;
   showName: boolean;
   onLongPress: (msg: Message) => void;
@@ -1601,7 +1602,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                     style={[st.bubbleText, { color: textColor, marginTop: 3, fontSize: _perChatFont, lineHeight: _perChatFont + 5 }]}
                   />
                 ) : (
-                  <RichText style={[st.bubbleText, { color: textColor, marginTop: 3, fontSize: _perChatFont, lineHeight: _perChatFont + 5 }]} linkColor={isMe ? "#FFFFFF" : BRAND}>{displayText}</RichText>
+                  <RichText style={[st.bubbleText, { color: textColor, marginTop: 3, fontSize: _perChatFont, lineHeight: _perChatFont + 5 }]} linkColor={isMe ? "#FFFFFF" : BRAND} showMentionAvatars={!isChannel}>{displayText}</RichText>
                 )
               )}
             </>
@@ -1803,6 +1804,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                            <RichText
                              style={[st.bubbleText, { color: textColor, fontSize: _fontSize, lineHeight: _lineH }]}
                              linkColor={isMe ? "#FFFFFF" : BRAND}
+                              showMentionAvatars={!isChannel}
                              tail={ghost}
                            >
                              {displayText}
@@ -1874,6 +1876,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
                             lineHeight: _perChatFont + 5,
                           }]}
                           linkColor={isMe ? "#FFFFFF" : BRAND}
+                          showMentionAvatars={!isChannel}
                         >
                           {displayText}
                         </RichText>
@@ -6810,6 +6813,7 @@ STRICT RULES:
           <MessageBubble
             msg={item}
             isMe={isMe}
+            isChannel={!!chatInfo?.is_channel}
             showTail={shouldShowTail(index)}
             showName={shouldShowName(index)}
             onLongPress={(m) => {
