@@ -8,3 +8,9 @@ The first language selected before welcome is the app UI language. Keep it in th
 **Why:** Users expect choosing Chinese, Swahili, or another language to change the whole interface, while message translation is a separate content preference.
 
 **How to apply:** Route first-run users through language selection before welcome, keep global static UI text on the localization transform, and use the translation service as a fallback for supported languages without local dictionary entries.
+
+Language changes must update the context immediately but serialize persistence with latest-selection-wins semantics. Rapid taps or a settings change must never allow an older async write to overwrite the newest language.
+
+**Why:** The onboarding selector can write on selection and again on Continue, and remote/device writes can otherwise resolve out of order.
+
+**How to apply:** Keep a monotonically increasing change id and a persistence queue around AsyncStorage, local storage, and profile synchronization.

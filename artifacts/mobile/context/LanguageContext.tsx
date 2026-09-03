@@ -68,6 +68,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [uiTranslationVersion, setUiTranslationVersion] = useState(0);
   const userRef = useRef(user);
   const hasLocalLanguageChange = useRef(false);
+  const languageChangeIdRef = useRef(0);
+  const languagePersistQueueRef = useRef<Promise<void>>(Promise.resolve());
   userRef.current = user;
 
   useEffect(() => {
@@ -160,29 +162,48 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   async function setPreferredLang(lang: string | null) {
     hasLocalLanguageChange.current = true;
+    const changeId = ++languageChangeIdRef.current;
     const requestedLang = normalizeLanguage(lang);
     const normalizedLang = requestedLang && !isBundledUiLanguage(requestedLang)
       ? "en"
       : requestedLang;
+
+    // Update the live UI synchronously. Persistence is queued below so a
+    // rapid wrong-language -> new-language change cannot finish out of order.
     setPreferredLangState(normalizedLang);
     setCurrentUiLanguage(normalizedLang);
-    await AsyncStorage.setItem(LANGUAGE_PREFERENCE_KEY, normalizedLang ?? "none");
-    try {
-      storage.setString(KEYS.LANGUAGE, normalizedLang ?? "en");
-    } catch {}
-    if (user) {
-      await Promise.all([
-        supabase.from("profiles").update({ language: normalizedLang ?? "en" }).eq("id", user.id),
-        supabase.from("advanced_feature_settings").upsert(
-          {
-            user_id: user.id,
-            message_translation: !!normalizedLang,
-            translation_language: normalizedLang ?? "en",
-          },
-          { onConflict: "user_id" },
-        ),
-      ]);
-    }
+
+    languagePersistQueueRef.current = languagePersistQueueRef.current
+      .catch(() => {})
+      .then(async () => {
+        // Older queued changes are intentionally discarded once a newer
+        // selection exists.
+        if (changeId !== languageChangeIdRef.current) return;
+
+        await AsyncStorage.setItem(LANGUAGE_PREFERENCE_KEY, normalizedLang ?? "none");
+        if (changeId !== languageChangeIdRef.current) return;
+
+        try {
+          storage.setString(KEYS.LANGUAGE, normalizedLang ?? "en");
+        } catch {}
+
+        const activeUser = userRef.current;
+        if (!activeUser || changeId !== languageChangeIdRef.current) return;
+
+        await Promise.all([
+          supabase.from("profiles").update({ language: normalizedLang ?? "en" }).eq("id", activeUser.id),
+          supabase.from("advanced_feature_settings").upsert(
+            {
+              user_id: activeUser.id,
+              message_translation: !!normalizedLang,
+              translation_language: normalizedLang ?? "en",
+            },
+            { onConflict: "user_id" },
+          ),
+        ]);
+      });
+
+    await languagePersistQueueRef.current;
   }
 
   async function autoTranslate(text: string): Promise<string> {
