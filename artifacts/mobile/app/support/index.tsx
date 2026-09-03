@@ -75,12 +75,12 @@ const FAQ_ITEMS = [
     a: "Tap 'Forgot Password' on the login screen. Enter your registered phone or email and follow the verification link sent to you.",
   },
   {
-    q: "My ACoins purchase didn't reflect — what do I do?",
+    q: "My ACoins purchase didn't reflect. What do I do?",
     a: "ACoins usually credit within 60 seconds. If they haven't appeared after 5 minutes, submit a Payments ticket with your transaction reference number.",
   },
   {
     q: "How long does support take to reply?",
-    a: "Our AI assistant replies instantly with initial guidance. A human agent follows up within 2–4 hours during business hours.",
+    a: "Our AI assistant replies instantly with initial guidance. A human agent follows up within 2 to 4 hours during business hours.",
   },
   {
     q: "Can I get a refund on ACoins?",
@@ -303,7 +303,7 @@ export default function SupportCenter() {
           <View style={[st.statsRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {[
               { icon: "flash", label: "Instant AI Reply", val: "< 1 min" },
-              { icon: "person", label: "Human Follow-up", val: "2–4 hrs" },
+              { icon: "person", label: "Human Follow-up", val: "2 to 4 hrs" },
               { icon: "star",   label: "Satisfaction",    val: "97%" },
             ].map((s) => (
               <View key={s.label} style={st.statItem}>
@@ -583,7 +583,7 @@ export default function SupportCenter() {
                   style={[st.textarea, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
                   value={message}
                   onChangeText={setMessage}
-                  placeholder="Provide as much detail as possible — steps to reproduce, error messages, or when it started happening — so our AI and team can help you faster."
+                  placeholder="Provide as much detail as possible. Include steps to reproduce, error messages, or when it started happening so our AI and team can help you faster."
                   placeholderTextColor={colors.textMuted}
                   multiline
                   numberOfLines={6}

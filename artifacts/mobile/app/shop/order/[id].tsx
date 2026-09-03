@@ -329,7 +329,7 @@ export default function OrderDetailScreen() {
             <Ionicons name={escrowMeta.icon as any} size={26} color={escrowMeta.color} />
             <View style={{ flex: 1, gap: 2 }}>
               <Text style={{ color: escrowMeta.color, fontFamily: "Inter_700Bold", fontSize: 14 }}>
-                {escrowMeta.label} — {formatShopAcoin(order.escrow_status === "held" ? order.escrowed_acoin : order.total_acoin)}
+                {escrowMeta.label}: {formatShopAcoin(order.escrow_status === "held" ? order.escrowed_acoin : order.total_acoin)}
               </Text>
               <Text style={{ color: escrowMeta.color, fontFamily: "Inter_400Regular", fontSize: 12, lineHeight: 17, opacity: 0.85 }}>
                 {escrowMeta.desc}
@@ -483,7 +483,7 @@ export default function OrderDetailScreen() {
               <View style={st.timelineItem}>
                 <View style={[st.timelineDot, { backgroundColor: SUCCESS }]} />
                 <View style={{ flex: 1 }}>
-                  <Text style={[{ color: colors.text, fontFamily: "Inter_500Medium", fontSize: 13 }]}>Delivery confirmed — funds released</Text>
+                  <Text style={[{ color: colors.text, fontFamily: "Inter_500Medium", fontSize: 13 }]}>Delivery confirmed. Funds released</Text>
                   <Text style={[{ color: colors.textMuted, fontSize: 11 }]}>{new Date(order.buyer_confirmed_at).toLocaleString()}</Text>
                 </View>
               </View>

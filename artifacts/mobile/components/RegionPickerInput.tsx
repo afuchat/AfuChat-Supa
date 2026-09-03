@@ -143,7 +143,7 @@ export default function RegionPickerInput({ value, onChange, country, placeholde
           : loading
           ? `Loading cities in ${country}…`
           : allCities.length > 0
-          ? `${allCities.length} cities in ${country} — tap to browse`
+            ? `${allCities.length} cities in ${country}. Tap to browse`
           : `No cities found for ${country}`}
       </Text>
 

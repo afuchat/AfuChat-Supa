@@ -773,8 +773,8 @@ const AI_EXEC_LABELS: Record<string, string> = {
 };
 function buildAiExecDesc(actionType: string, params: Record<string, any>): string {
   switch (actionType) {
-    case "send_nexa": return `Send ${params.amount || "?"} Nexa to @${params.handle || "?"}${params.message ? ` — "${params.message}"` : ""}`;
-    case "send_acoin": return `Send ${params.amount || "?"} ACoin to @${params.handle || "?"}${params.message ? ` — "${params.message}"` : ""}`;
+    case "send_nexa": return `Send ${params.amount || "?"} Nexa to @${params.handle || "?"}${params.message ? `. Message: "${params.message}"` : ""}`;
+    case "send_acoin": return `Send ${params.amount || "?"} ACoin to @${params.handle || "?"}${params.message ? `. Message: "${params.message}"` : ""}`;
     case "follow": return `Follow @${params.handle || "?"}`;
     case "unfollow": return `Unfollow @${params.handle || "?"}`;
     case "subscribe": return `Subscribe to ${params.tier ? params.tier.charAt(0).toUpperCase() + params.tier.slice(1) : "?"} plan`;
@@ -1369,7 +1369,7 @@ function MessageBubble({ msg, isMe, showTail, showName, onLongPress, onReply, re
         setShowTranscript(true);
       }
     } catch (err) {
-      setTranscript("Transcription failed — please try again.");
+      setTranscript("Transcription failed. Please try again.");
       setShowTranscript(true);
     }
     setTranscribing(false);
@@ -4139,7 +4139,7 @@ function ChatScreen() {
           // Entitlement is already active, so do not claim the purchase failed.
           // The missing ledger row can be repaired by the server/admin audit.
         }
-        return { success: true, message: `Subscribed to ${p.name}! Active for ${p.duration_days} days.`, invoice: { type: "Premium Subscription", date: new Date().toISOString(), amount: p.acoin_price, currency: "ACoin", reference: `SUB-${Date.now().toString(36).toUpperCase()}`, status: "Completed", description: `${p.name} — ${p.duration_days} days` } };
+        return { success: true, message: `Subscribed to ${p.name}! Active for ${p.duration_days} days.`, invoice: { type: "Premium Subscription", date: new Date().toISOString(), amount: p.acoin_price, currency: "ACoin", reference: `SUB-${Date.now().toString(36).toUpperCase()}`, status: "Completed", description: `${p.name}. ${p.duration_days} days` } };
       }
       case "cancel_subscription": {
         const { error } = await supabase.rpc("cancel_my_subscription");
@@ -4342,7 +4342,7 @@ function ChatScreen() {
     if (!chatId || !user) return;
     const isGroupOrChannel = chatInfo?.is_group || chatInfo?.is_channel;
     const subtitle = isGroupOrChannel
-      ? "This clears the chat for you only — other members won't be affected. This cannot be undone."
+          ? "This clears the chat for you only. Other members won't be affected. This cannot be undone."
       : "This clears the chat for you only. This cannot be undone.";
     showAlert("Clear Chat", subtitle, [
       { text: "Cancel", style: "cancel" },
@@ -7945,7 +7945,7 @@ STRICT RULES:
                   </View>
                   <Text style={{ fontSize: 16, fontFamily: "Inter_600SemiBold", color: colors.text }}>Create a Poll</Text>
                   <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: colors.textMuted, textAlign: "center" }}>
-                    Coming soon — polls let everyone vote on a question.
+                    Coming soon. Polls let everyone vote on a question.
                   </Text>
                 </View>
               );

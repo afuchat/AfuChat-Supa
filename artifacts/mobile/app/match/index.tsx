@@ -757,7 +757,7 @@ export default function MatchScreen({ initialTab }: { initialTab?: "discover" | 
         </LinearGradient>
         <Text style={[styles.onboardTitle, { color: colors.text }]}>Welcome to AfuMatch</Text>
         <Text style={[styles.onboardSub, { color: colors.textMuted }]}>
-          AfuMatch is a completely separate, private dating experience. Create your dating profile to get started — your main AfuChat account is never shared.
+          AfuMatch is a completely separate, private dating experience. Create your dating profile to get started. Your main AfuChat account is never shared.
         </Text>
         <View style={[styles.onboardFeatures, { backgroundColor: colors.surface }]}>
           {[

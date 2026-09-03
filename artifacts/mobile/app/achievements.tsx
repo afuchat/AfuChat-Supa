@@ -122,7 +122,7 @@ function buildAchievements(profile: any, isPremium: boolean, stats: Stats): Achi
     mk("set_country",  "World Explorer",    "Added your country to your profile", "Set your country in your profile",    "earth",          "Social", "common",    50,     !!profile?.country),
     mk("interests",    "Curiosity Seeker",  "Picked 5 or more interests",         "Select interests during onboarding",  "heart",          "Social", "common",    100,    (profile?.interests?.length ?? 0) >= 5, Math.min(profile?.interests?.length ?? 0, 5), 5),
     mk("xp_1k",        "Rising Star",       "Earned 1,000 XP",                    "Keep being active on AfuChat",        "trending-up",    "Social", "common",    100,    xp >= 1_000,    Math.min(xp, 1_000),   1_000),
-    mk("xp_5k",        "Socialite",         "Earned 5,000 XP",                    "Stay active — post, chat, react",     "people",         "Social", "rare",      300,    xp >= 5_000,    Math.min(xp, 5_000),   5_000),
+    mk("xp_5k",        "Socialite",         "Earned 5,000 XP",                    "Stay active by posting, chatting, and reacting",     "people",         "Social", "rare",      300,    xp >= 5_000,    Math.min(xp, 5_000),   5_000),
     mk("xp_10k",       "Networker",         "Earned 10,000 XP",                   "Keep engaging with the community",    "git-network",    "Social", "rare",      500,    xp >= 10_000,   Math.min(xp, 10_000),  10_000),
     mk("xp_25k",       "Influencer",        "Earned 25,000 XP",                   "Be consistently active for months",   "megaphone",      "Social", "epic",      1_000,  xp >= 25_000,   Math.min(xp, 25_000),  25_000),
     mk("xp_50k",       "Hall of Fame",      "Earned 50,000 XP",                   "Become one of the top AfuChat users", "podium",         "Social", "epic",      2_000,  xp >= 50_000,   Math.min(xp, 50_000),  50_000),
@@ -136,7 +136,7 @@ function buildAchievements(profile: any, isPremium: boolean, stats: Stats): Achi
     mk("first_post",  "Debut Post",        "Published your first post",          "Create a post on your feed",          "create",         "Creator", "common",    50,     posts >= 1,   Math.min(posts, 1),   1),
     mk("posts_10",    "Content Creator",   "Published 10 posts",                 "Keep posting to the community",       "newspaper",      "Creator", "common",    200,    posts >= 10,  Math.min(posts, 10),  10),
     mk("posts_50",    "Prolific",          "Published 50 posts",                 "Stay consistent with your content",   "library",        "Creator", "rare",      500,    posts >= 50,  Math.min(posts, 50),  50),
-    mk("posts_100",   "Thought Leader",    "Published 100 posts",                "100 posts milestone — amazing!",      "bulb",           "Creator", "epic",      1_000,  posts >= 100, Math.min(posts, 100), 100),
+    mk("posts_100",   "Thought Leader",    "Published 100 posts",                "100 posts milestone. Amazing!",      "bulb",           "Creator", "epic",      1_000,  posts >= 100, Math.min(posts, 100), 100),
     mk("posts_500",   "Content Machine",   "Published 500 posts",                "One of AfuChat's top creators",       "planet",         "Creator", "legendary", 3_000,  posts >= 500, Math.min(posts, 500), 500),
     mk("first_story", "Story Teller",      "Posted your first story",            "Share a story that disappears in 24h","images",         "Creator", "common",    50,     stories >= 1,   Math.min(stories, 1),   1),
     mk("stories_20",  "Story Master",      "Posted 20 stories",                  "Share moments consistently",          "film",           "Creator", "rare",      300,    stories >= 20,  Math.min(stories, 20),  20),
@@ -147,7 +147,7 @@ function buildAchievements(profile: any, isPremium: boolean, stats: Stats): Achi
     mk("msg_50",    "Chatterbox",         "Sent 50 messages",                   "Keep the conversations going",        "chatbubbles",     "Messenger", "common",    100,    messages >= 50,    Math.min(messages, 50),    50),
     mk("msg_500",   "Social Butterfly",   "Sent 500 messages",                  "You love to chat!",                   "chatbubbles",     "Messenger", "rare",      300,    messages >= 500,   Math.min(messages, 500),   500),
     mk("msg_2k",    "Talk of the Town",   "Sent 2,000 messages",                "One of AfuChat's most active chatters","mic",            "Messenger", "epic",      1_000,  messages >= 2_000, Math.min(messages, 2_000), 2_000),
-    mk("msg_10k",   "Motormouth",         "Sent 10,000 messages",               "You never stop talking — we love it", "radio",           "Messenger", "legendary", 5_000,  messages >= 10_000,Math.min(messages, 10_000),10_000),
+    mk("msg_10k",   "Motormouth",         "Sent 10,000 messages",               "You never stop talking. We love it", "radio",           "Messenger", "legendary", 5_000,  messages >= 10_000,Math.min(messages, 10_000),10_000),
 
     // ── Wallet ───────────────────────────────────────────────────────────────
     mk("coins_1",    "First Coins",       "Earned your first ACoins",           "Complete any action that rewards ACoins","cash",          "Wallet", "common",    50,     acoin >= 1,      Math.min(acoin, 1),      1),

@@ -563,7 +563,7 @@ export default function DeviceSecurityScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={[styles.actionLabel, { color: colors.text }]}>Two-Factor Authentication</Text>
                 <Text style={[styles.actionSub, { color: colors.textMuted }]}>
-                  {prefs.two_factor_enabled ? "Enabled — extra sign-in protection active" : "Coming soon — email OTP + authenticator app"}
+                {prefs.two_factor_enabled ? "Enabled. Extra sign-in protection active" : "Coming soon. Email OTP and authenticator app"}
                 </Text>
               </View>
               <View style={[styles.soonBadge, { backgroundColor: colors.backgroundTertiary }]}>

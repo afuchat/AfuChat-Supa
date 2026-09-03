@@ -216,7 +216,7 @@ export default function ChatAppearanceScreen() {
 
   return (
     <View style={[s.root, { backgroundColor: colors.backgroundSecondary }]}>
-      <GlassHeader title={`Appearance — ${displayName ?? "Chat"}`} />
+      <GlassHeader title={`Appearance: ${displayName ?? "Chat"}`} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

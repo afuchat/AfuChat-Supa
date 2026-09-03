@@ -831,10 +831,10 @@ export default function OnboardingScreen() {
           {[
             ["Name",     displayName],
             ["Username", `@${handle.replace(/[^a-zA-Z0-9_]/g,"").toLowerCase()}`],
-            ["Country",  `${selectedCountry?.flag ?? ""} ${selectedCountry?.name ?? "—"}`],
+                  ["Country",  `${selectedCountry?.flag ?? ""} ${selectedCountry?.name ?? "N/A"}`],
             ["Phone",    `${selectedCountry?.dial ?? ""} ${phoneNumber}`],
             ["Born",     `${dobDay} ${MONTHS[dobMonth - 1] ?? ""} ${dobYear}`],
-            ["Gender",   gender === "male" ? "Male" : gender === "female" ? "Female" : "—"],
+                  ["Gender",   gender === "male" ? "Male" : gender === "female" ? "Female" : "N/A"],
           ].map(([label, val]) => (
             <View key={label} style={st.summaryRow}>
               <Text style={[st.summaryLabel, { color: colors.textMuted }]}>{label}</Text>

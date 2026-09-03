@@ -189,7 +189,7 @@ Deno.serve(async (req: Request) => {
 
       const bodyBytes = await req.arrayBuffer();
       if (!bodyBytes.byteLength) {
-        return json({ error: "Empty file body — nothing to upload." }, 400);
+    return json({ error: "Empty file body. Nothing to upload." }, 400);
       }
 
       await s3.send(new PutObjectCommand({

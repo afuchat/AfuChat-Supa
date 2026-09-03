@@ -181,7 +181,7 @@ export async function aiTransformTone(text: string, preset: string): Promise<str
 export async function aiFixText(text: string): Promise<string> {
   return askAi(
     `Fix all grammar, spelling, and punctuation errors in this message. Keep the same meaning, tone, and style. Return ONLY the corrected text:\n\n${text}`,
-    "Grammar and spelling editor. Return ONLY the corrected text. Do not change the meaning, tone, or style — fix errors only.",
+    "Grammar and spelling editor. Return ONLY the corrected text. Do not change the meaning, tone, or style. Fix errors only.",
     { fast: true, maxTokens: 600 },
   );
 }

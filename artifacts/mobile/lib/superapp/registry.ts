@@ -69,7 +69,7 @@ export const SUPER_APP_REGISTRY: ModuleManifest[] = [
   {
     id: "afuqr",
     name: "QR Scanner",
-    description: "Scan any QR code — links, Wi-Fi, contacts and more.",
+    description: "Scan any QR code for links, Wi-Fi, contacts and more.",
     version: "1.0.0",
     icon: "qr-code",
     gradient: ["#1C1C1E", "#3A3A3C"] as const,

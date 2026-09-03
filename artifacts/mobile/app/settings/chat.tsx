@@ -117,7 +117,7 @@ export default function ChatSettingsScreen() {
       if (n === 0) { showAlert("Backup", "No chats to back up."); return; }
       showAlert(
         "Cloud sync is automatic",
-        `Your ${n} chat${n === 1 ? "" : "s"} are continuously synced to AfuChat cloud while you're online — no manual backup needed.`,
+      `Your ${n} chat${n === 1 ? "" : "s"} are continuously synced to AfuChat cloud while you're online. No manual backup needed.`,
       );
     } catch (error: any) {
       showAlert("Backup unavailable", error?.message || "We couldn't verify cloud sync right now. Please try again.");

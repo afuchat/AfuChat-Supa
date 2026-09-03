@@ -45,7 +45,7 @@ async function _ensureAfuAiChatInner(userId: string, displayName?: string): Prom
         { fast: true, maxTokens: 120 }
       );
     } catch {
-      greeting = `Hey ${name}! 👋 I'm AfuAI — ask me anything, anytime. Welcome to AfuChat!`;
+  greeting = `Hey ${name}! 👋 I'm AfuAI. Ask me anything, anytime. Welcome to AfuChat!`;
     }
 
     // Atomic insert: the DB function uses an advisory lock + NOT EXISTS check so

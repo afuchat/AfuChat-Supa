@@ -358,7 +358,7 @@ export function DonateSheet({ visible, onClose }: DonateSheetProps) {
                   <>
                     <Ionicons name="heart" size={17} color="#fff" />
                     <Text style={s.donateBtnText}>
-                      Donate ${usdAmount >= 1 ? usdAmount.toFixed(usdAmount % 1 === 0 ? 0 : 2) : "—"}
+            Donate ${usdAmount >= 1 ? usdAmount.toFixed(usdAmount % 1 === 0 ? 0 : 2) : "N/A"}
                     </Text>
                   </>
                 )}

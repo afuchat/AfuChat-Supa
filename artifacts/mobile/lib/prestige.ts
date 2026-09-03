@@ -70,7 +70,7 @@ export const PRESTIGE_TIERS: PrestigeTier[] = [
     glowColor: "#4FC3F7",
     emoji: "💎",
     tagline: "Rare and valuable",
-    description: "Top 5% of AfuChat — you've earned it",
+    description: "Top 5% of AfuChat. You've earned it",
     perks: [
       { icon: "ellipse", text: "Ice-blue animated diamond ring on your avatar" },
       { icon: "diamond-outline", text: "Diamond glow effect on your messages" },
@@ -88,7 +88,7 @@ export const PRESTIGE_TIERS: PrestigeTier[] = [
     glowColor: "#AF52DE",
     emoji: "⬛",
     tagline: "Dark power",
-    description: "Top 1% — feared and respected",
+    description: "Top 1%. Feared and respected",
     perks: [
       { icon: "ellipse", text: "Pulsing dark void ring on your avatar" },
       { icon: "color-palette-outline", text: "Purple particle trail on your messages" },

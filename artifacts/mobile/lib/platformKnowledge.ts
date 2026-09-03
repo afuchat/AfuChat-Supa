@@ -205,7 +205,7 @@ export const USERNAME_MARKET_KNOWLEDGE = `
 ## USERNAME MARKETPLACE & BOUGHT USERNAMES
 
 ### What are bought usernames?
-Any handle acquired via the Username Market (/app/afuusernames) becomes a "bought username" owned by the buyer.  Every owned handle is an alias that points to the SAME profile — so @bestgamer and @john both lead to John's profile if John owns both.
+Any handle acquired via the Username Market (/app/afuusernames) becomes a "bought username" owned by the buyer.  Every owned handle is an alias that points to the SAME profile. For example, @bestgamer and @john both lead to John's profile if John owns both.
 
 ### Rarity tiers (by handle length)
 | Tier | Length | Badge |
@@ -259,7 +259,7 @@ export const VERIFICATION_KNOWLEDGE = `
 ### Email & Phone Verification (Account Security)
 - Separate from the social verified badge — this is basic account security.
 - **Email verification:** Done at registration (6-digit code to your email). Re-trigger in Settings → Security → Verify Email.
-- **Phone verification:** Optional but recommended — adds 2-step recovery. Settings → Security → Add Phone Number.
+- **Phone verification:** Optional but recommended. It adds 2-step recovery. Settings → Security → Add Phone Number.
 - **Two-factor authentication (2FA):** Settings → Security → Two-Factor Authentication. Strongly recommended.
 
 ### Common Questions AfuAI handles about Verification
@@ -409,11 +409,11 @@ export function detectVoiceNavCommand(query: string): { route: string; label: st
  */
 export const NAV_CONFIRMATION_PHRASES = [
   (label: string) => `Sure! Taking you to **${label}** right now. Let me know if you need anything else once you're there.`,
-  (label: string) => `On it — navigating to **${label}**! Feel free to ask me anything once you arrive.`,
+  (label: string) => `On it. Navigating to **${label}**! Feel free to ask me anything once you arrive.`,
   (label: string) => `Got it! I've opened **${label}** for you. Anything else I can help with?`,
   (label: string) => `Heading to **${label}** right away. I'll be here if you have questions!`,
   (label: string) => `Done! Bringing you to **${label}** now. Let me know if you need a hand.`,
-  (label: string) => `Sure thing — opening **${label}**. Ask me anything you need once you're there.`,
+  (label: string) => `Sure thing. Opening **${label}**. Ask me anything you need once you're there.`,
 ];
 
 export function pickNavConfirmation(label: string): string {

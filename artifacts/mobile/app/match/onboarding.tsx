@@ -292,7 +292,7 @@ export default function MatchOnboarding() {
             <View style={styles.stepWrap}>
               <Text style={[styles.stepLabel, { color: BRAND }]}>Step 1 of {TOTAL_STEPS}</Text>
               <Text style={[styles.stepTitle, { color: colors.text }]}>Let's start with the basics</Text>
-              <Text style={[styles.stepSub, { color: colors.textMuted }]}>This is your AfuMatch identity — separate from your main profile.</Text>
+              <Text style={[styles.stepSub, { color: colors.textMuted }]}>This is your AfuMatch identity. It is separate from your main profile.</Text>
 
               <View style={styles.fieldGroup}>
                 <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>YOUR FIRST NAME</Text>
@@ -450,7 +450,7 @@ export default function MatchOnboarding() {
             <View style={styles.stepWrap}>
               <Text style={[styles.stepLabel, { color: BRAND }]}>Step 4 of {TOTAL_STEPS}</Text>
               <Text style={[styles.stepTitle, { color: colors.text }]}>Career & Education</Text>
-              <Text style={[styles.stepSub, { color: colors.textMuted }]}>Optional — but people love knowing what you do.</Text>
+              <Text style={[styles.stepSub, { color: colors.textMuted }]}>Optional. People love knowing what you do.</Text>
 
               {[
                 { label: "JOB TITLE", value: jobTitle, set: setJobTitle, ph: "e.g. Software Engineer", cap: 60 },
@@ -542,7 +542,7 @@ export default function MatchOnboarding() {
             <View style={styles.stepWrap}>
               <Text style={[styles.stepLabel, { color: BRAND }]}>Step 6 of {TOTAL_STEPS}</Text>
               <Text style={[styles.stepTitle, { color: colors.text }]}>Where are you?</Text>
-              <Text style={[styles.stepSub, { color: colors.textMuted }]}>Your location helps find people near you. Only your city or country is ever shown — never your exact location.</Text>
+              <Text style={[styles.stepSub, { color: colors.textMuted }]}>Your location helps find people near you. Only your city or country is ever shown. Your exact location is never shared.</Text>
 
               <View style={[styles.locationCard, { backgroundColor: colors.surface }]}>
                 <Ionicons name="shield-checkmark" size={20} color="#34C759" />
@@ -602,11 +602,11 @@ export default function MatchOnboarding() {
               <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: BRAND }]}>
                 <Text style={[styles.summaryTitle, { color: colors.text }]}>Your AfuMatch Profile</Text>
                 <View style={styles.summaryRows}>
-                  <SummaryRow icon="person" label={name || "—"} />
-                  <SummaryRow icon="calendar" label={dob.day && dob.month && dob.year ? `${dob.day}/${dob.month}/${dob.year}` : "—"} />
-                  <SummaryRow icon="body" label={GENDER_OPTIONS.find(g => g.v === gender)?.l ?? "—"} />
+                  <SummaryRow icon="person" label={name || "N/A"} />
+                  <SummaryRow icon="calendar" label={dob.day && dob.month && dob.year ? `${dob.day}/${dob.month}/${dob.year}` : "N/A"} />
+                  <SummaryRow icon="body" label={GENDER_OPTIONS.find(g => g.v === gender)?.l ?? "N/A"} />
                   <SummaryRow icon="images" label={`${photos.length} photo${photos.length !== 1 ? "s" : ""}`} />
-                  <SummaryRow icon="heart" label={GOAL_OPTIONS.find(g => g.v === goal)?.l ?? "—"} />
+                  <SummaryRow icon="heart" label={GOAL_OPTIONS.find(g => g.v === goal)?.l ?? "N/A"} />
                 </View>
               </View>
             </View>

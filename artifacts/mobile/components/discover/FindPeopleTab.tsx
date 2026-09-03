@@ -506,7 +506,7 @@ export default function FindPeopleTab() {
               </TouchableOpacity>
             </View>
           )}
-          ListEmptyComponent={<View style={styles.center}><Ionicons name={filter === "online" ? "radio-outline" : "people-outline"} size={34} color={colors.textMuted} /><Text style={[styles.emptyTitle, { color: colors.text }]}>No users match this view</Text><Text style={[styles.subtitle, { color: colors.textMuted }]}>{query ? "Try a different name or username." : "Check back soon — people will appear here as they come online."}</Text></View>}
+          ListEmptyComponent={<View style={styles.center}><Ionicons name={filter === "online" ? "radio-outline" : "people-outline"} size={34} color={colors.textMuted} /><Text style={[styles.emptyTitle, { color: colors.text }]}>No users match this view</Text><Text style={[styles.subtitle, { color: colors.textMuted }]}>{query ? "Try a different name or username." : "Check back soon. People will appear here as they come online."}</Text></View>}
         />
       )}
     </View>

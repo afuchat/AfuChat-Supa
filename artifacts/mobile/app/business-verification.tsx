@@ -256,7 +256,7 @@ export default function BusinessVerificationScreen() {
           </View>
           <Text style={[st.bigTitle, { color: colors.text }]}>Under Review</Text>
           <Text style={[st.bigSub, { color: colors.textMuted }]}>
-            Your application for <Text style={{ fontFamily: "Inter_600SemiBold", color: colors.text }}>{existingApp?.org_name}</Text> is being reviewed. We typically respond within 3–5 business days.
+            Your application for <Text style={{ fontFamily: "Inter_600SemiBold", color: colors.text }}>{existingApp?.org_name}</Text> is being reviewed. We typically respond within 3 to 5 business days.
           </Text>
           {existingApp?.created_at ? (
             <View style={[st.dateBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -518,7 +518,7 @@ export default function BusinessVerificationScreen() {
                 <Ionicons name="chevron-forward" size={14} color={GOLD} />
               </TouchableOpacity>
               <Text style={[st.disclaimer, { color: colors.textMuted }]}>
-                Submitting does not guarantee verification. Our team reviews all applications and will notify you within 3–5 business days. False information will result in permanent disqualification.
+                Submitting does not guarantee verification. Our team reviews all applications and will notify you within 3 to 5 business days. False information will result in permanent disqualification.
               </Text>
             </>
           )}

@@ -214,7 +214,7 @@ export default function DigitalIdScreen() {
           <View style={[s.flipPill, { backgroundColor: isDark ? "#ffffff12" : "#00000010" }]}>
             <Ionicons name="sync" size={11} color={colors.textMuted} />
             <Text style={[s.flipTxt, { color: colors.textMuted }]}>
-              {showBack ? "Showing back — tap to flip" : "Tap card to flip"}
+                  {showBack ? "Showing back. Tap to flip" : "Tap card to flip"}
             </Text>
           </View>
           <View style={[s.sideDot, { backgroundColor: showBack ? theme.secondary : theme.primary }]} />
@@ -413,7 +413,7 @@ function CardFront({ cardWidth: cw, cardHeight: ch, theme, profile, roleConf, me
 
         {/* RIGHT: info fields */}
         <View style={{ flex: 1, gap: 7 }}>
-          <Field label="FULL NAME" value={profile?.display_name ?? "— — —"} large />
+          <Field label="FULL NAME" value={profile?.display_name ?? "N/A"} large />
           <Field label="MEMBER NO." value={`AFU-${padMember(memberNumber ?? 1)}`} mono accent={theme.primary} large />
           <Field label="NATIONALITY" value={profile?.country ?? "DIGITAL CITIZEN"} />
           <View style={{ flexDirection: "row", gap: 10 }}>

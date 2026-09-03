@@ -103,7 +103,7 @@ function OrderCard({ order, onPress }: { order: ShopOrder; onPress: () => void }
         <View style={[st.actionBanner, { backgroundColor: "#FF9500" + "12", borderColor: "#FF9500" + "30" }]}>
           <Ionicons name="lock-closed" size={14} color="#FF9500" />
           <Text style={{ color: "#FF9500", fontSize: 12, fontFamily: "Inter_500Medium", flex: 1 }}>
-            Item shipped — open to confirm receipt and release payment
+            Item shipped. Open to confirm receipt and release payment
           </Text>
           <Ionicons name="chevron-forward" size={14} color="#FF9500" />
         </View>
@@ -113,7 +113,7 @@ function OrderCard({ order, onPress }: { order: ShopOrder; onPress: () => void }
         <View style={[st.actionBanner, { backgroundColor: "#FF3B30" + "12", borderColor: "#FF3B30" + "30" }]}>
           <Ionicons name="alert-circle" size={14} color="#FF3B30" />
           <Text style={{ color: "#FF3B30", fontSize: 12, fontFamily: "Inter_500Medium", flex: 1 }}>
-            Dispute open — our team is reviewing this order
+            Dispute open. Our team is reviewing this order
           </Text>
         </View>
       )}

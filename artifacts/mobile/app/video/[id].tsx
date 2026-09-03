@@ -1776,9 +1776,9 @@ export function VideoFeed({ isEmbedded = false }: { isEmbedded?: boolean } = {})
   }
   function handleReport(item: VideoPost) {
     showAlert("Report video", "Why are you reporting this?", [
-      { text: "Spam", onPress: () => showToast("Report submitted — thanks") },
-      { text: "Inappropriate", onPress: () => showToast("Report submitted — thanks") },
-      { text: "Misinformation", onPress: () => showToast("Report submitted — thanks") },
+      { text: "Spam", onPress: () => showToast("Report submitted. Thanks") },
+      { text: "Inappropriate", onPress: () => showToast("Report submitted. Thanks") },
+      { text: "Misinformation", onPress: () => showToast("Report submitted. Thanks") },
       { text: "Cancel", style: "cancel" },
     ]);
   }

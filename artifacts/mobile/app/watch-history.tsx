@@ -288,7 +288,7 @@ export default function WatchHistoryScreen() {
             setClearing(false);
             if (ok) {
               setItems([]);
-              showToast("Watch history cleared — algorithm reset", { type: "success" });
+              showToast("Watch history cleared. Algorithm reset", { type: "success" });
             } else {
               showToast(error || "Failed to clear history", { type: "error" });
             }

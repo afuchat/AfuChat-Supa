@@ -773,7 +773,7 @@ export default function ChatInfoScreen() {
             <InfoRow
               icon="people-outline"
               label="Subscribers"
-              value={channelStats ? fmtNum(channelStats.subscriber_count) : "—"}
+                  value={channelStats ? fmtNum(channelStats.subscriber_count) : "N/A"}
               valueColor={BRAND}
               colors={colors}
             />
@@ -781,7 +781,7 @@ export default function ChatInfoScreen() {
             <InfoRow
               icon="shield-outline"
               label="Administrators"
-              value={channelStats ? fmtNum(channelStats.admin_count) : "—"}
+                  value={channelStats ? fmtNum(channelStats.admin_count) : "N/A"}
               valueColor={BRAND}
               colors={colors}
             />

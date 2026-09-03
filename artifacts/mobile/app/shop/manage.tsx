@@ -469,7 +469,7 @@ export default function ShopManage() {
 
               {((order as any).shop_order_items || []).map((item: any) => (
                 <Text key={item.id} style={[styles.orderItemLine, { color: colors.textSecondary }]}>
-                  {item.quantity}× {item.shop_products?.name || item.snapshot_name || "Product"} — {formatShopAcoin(item.unit_price_acoin * item.quantity)}
+                  {item.quantity}× {item.shop_products?.name || item.snapshot_name || "Product"}: {formatShopAcoin(item.unit_price_acoin * item.quantity)}
                 </Text>
               ))}
 

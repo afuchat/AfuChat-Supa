@@ -241,8 +241,8 @@ export default function SecuritySettingsScreen() {
               </Text>
               <Text style={[styles.mfaSub, { color: mfaStatus === "enabled" ? "#30D158" : colors.textMuted }]}>
                 {mfaStatus === "loading" ? "Checking status…"
-                  : mfaStatus === "enabled" ? "Active — your account is protected"
-                  : "Disabled — add extra security"}
+                : mfaStatus === "enabled" ? "Active. Your account is protected"
+                : "Disabled. Add extra security"}
               </Text>
             </View>
             {mfaStatus === "loading"
@@ -383,7 +383,7 @@ export default function SecuritySettingsScreen() {
             <View style={styles.warningBox}>
               <Ionicons name="information-circle" size={22} color={colors.accent} />
               <Text style={[styles.warningText, { color: colors.text }]}>
-                Signing out will permanently erase all local data from this device — messages, media, and settings.
+                Signing out will permanently erase all local data from this device. This includes messages, media, and settings.
                 Your account remains active and you can log back in anytime.
               </Text>
             </View>

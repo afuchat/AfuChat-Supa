@@ -116,7 +116,7 @@ export default function QRPosterSheet({
     <SmartSheet visible={visible} onClose={onClose} peekFraction={0.85} backgroundColor={sheetBg}>
       <View style={s.content}>
         <Text style={[s.sheetTitle, { color: colors.text }]}>Your AfuChat QR Poster</Text>
-        <Text style={[s.sheetSub, { color: colors.textMuted }]}>Long-press or share with anyone — they can scan it to find you instantly.</Text>
+        <Text style={[s.sheetSub, { color: colors.textMuted }]}>Long-press or share with anyone. They can scan it to find you instantly.</Text>
 
         {/* Poster card — this gets captured */}
         <View style={s.posterWrap}>

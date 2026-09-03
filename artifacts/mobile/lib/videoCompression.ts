@@ -343,7 +343,7 @@ export function getCompressionEstimate(originalBytes: number): CompressionEstima
 export function getVideoSizeWarning(fileSizeBytes: number): string | null {
   if (fileSizeBytes <= 0 || fileSizeBytes < WARN_SIZE_BYTES) return null;
   const mb = (fileSizeBytes / (1024 * 1024)).toFixed(0);
-  return `This video is ${mb} MB — it may take a while to upload. Consider trimming it for faster uploads.`;
+    return `This video is ${mb} MB. It may take a while to upload. Consider trimming it for faster uploads.`;
 }
 
 /**

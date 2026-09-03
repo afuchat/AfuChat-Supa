@@ -38,7 +38,7 @@ const FEATURES = [
   {
     icon: "call",
     label: "Voice Calls",
-    desc: "P2P audio calls via WebRTC — crystal-clear Opus audio with zero relay cost",
+    desc: "P2P audio calls via WebRTC. Crystal-clear Opus audio with zero relay cost",
   },
   {
     icon: "play-circle",

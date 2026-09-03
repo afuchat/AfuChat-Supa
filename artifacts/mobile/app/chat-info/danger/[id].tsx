@@ -116,7 +116,7 @@ export default function ChatDangerScreen() {
     showAlert(
       "Clear Chat History",
       (isGroup || isChannel)
-        ? "This removes all messages for you only — other members won't be affected. This action cannot be undone."
+        ? "This removes all messages for you only. Other members won't be affected. This action cannot be undone."
         : "This removes all messages for you only. This action cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
@@ -233,7 +233,7 @@ export default function ChatDangerScreen() {
             icon="trash"
             bg="#FF9500"
             label="Clear Chat History"
-            sub="Removes all messages for you only — cannot be undone"
+            sub="Removes all messages for you only. This cannot be undone"
             colors={colors}
             onPress={handleClearChat}
           />

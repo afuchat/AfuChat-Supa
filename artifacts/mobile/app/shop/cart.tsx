@@ -288,7 +288,7 @@ export default function CartScreen() {
             </TouchableOpacity>
             {!canAfford && items.length > 0 && (
               <TouchableOpacity onPress={() => router.push("/app/afupay?section=topup" as any)} style={styles.topUpLink}>
-                <Text style={[styles.topUpText, { color: colors.accent }]}>Insufficient balance — Top up wallet</Text>
+                <Text style={[styles.topUpText, { color: colors.accent }]}>Insufficient balance. Top up wallet</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity

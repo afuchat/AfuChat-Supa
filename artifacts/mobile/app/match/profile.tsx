@@ -447,7 +447,7 @@ export default function MatchProfileEditScreen() {
                   </>
                 ) : (
                   <Text style={[styles.lockedText, { color: country ? colors.text : colors.textMuted }]}>
-                    {country || "Could not detect — check network"}
+                    {country || "Could not detect. Check network"}
                   </Text>
                 )}
                 <View style={styles.lockedBadge}>

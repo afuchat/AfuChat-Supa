@@ -666,7 +666,7 @@ export default function KampalaHustleGame() {
           ) : leaderboard.length === 0 ? (
             <View style={st.emptyLb}>
               <Text style={{ fontSize: 40 }}>🏙️</Text>
-              <Text style={[st.emptyLbText, { color: "rgba(255,255,255,0.5)" }]}>No rankings yet — be the first!</Text>
+              <Text style={[st.emptyLbText, { color: "rgba(255,255,255,0.5)" }]}>No rankings yet. Be the first!</Text>
             </View>
           ) : leaderboard.map((entry, i) => (
             <View key={entry.handle ?? i} style={st.lbRow}>

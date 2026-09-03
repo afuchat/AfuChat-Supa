@@ -307,7 +307,7 @@ export default function MeScreen() {
   }
 
   function fmtDate(iso: string) {
-    if (!iso) return "—";
+  if (!iso) return "N/A";
     return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
   }
 
@@ -729,7 +729,7 @@ export default function MeScreen() {
                   <Ionicons name="calendar" size={16} color={colors.icon} />
                   <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: colors.textSecondary }}>Purchased On</Text>
                 </View>
-                <Text style={{ fontSize: 14, fontFamily: "Inter_600SemiBold", color: colors.text }}>{purchasePopup ? fmtDate(purchasePopup.purchasedAt) : "—"}</Text>
+                <Text style={{ fontSize: 14, fontFamily: "Inter_600SemiBold", color: colors.text }}>{purchasePopup ? fmtDate(purchasePopup.purchasedAt) : "N/A"}</Text>
               </View>
               {purchasePopup?.sellerHandle && (
                 <>

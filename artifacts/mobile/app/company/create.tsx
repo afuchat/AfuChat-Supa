@@ -33,11 +33,11 @@ const ORG_TYPES = [
 ];
 
 const SIZE_OPTIONS = [
-  { label: "1–10", sub: "Micro" },
-  { label: "11–50", sub: "Small" },
-  { label: "51–200", sub: "Mid-size" },
-  { label: "201–500", sub: "Growth" },
-  { label: "501–1000", sub: "Large" },
+  { label: "1 to 10", sub: "Micro" },
+  { label: "11 to 50", sub: "Small" },
+  { label: "51 to 200", sub: "Mid-size" },
+  { label: "201 to 500", sub: "Growth" },
+  { label: "501 to 1000", sub: "Large" },
   { label: "1000+", sub: "Enterprise" },
 ];
 
@@ -422,7 +422,7 @@ export default function CreateCompanyPageScreen() {
                       {userCountry
                         ? `Searching ${userCountry} government registry`
                         : "Search the government business registry"}
-                      {!jurisdictionCode && userCountry ? " (not yet supported — fill manually below)" : ""}
+                  {!jurisdictionCode && userCountry ? " (not yet supported. Fill manually below)" : ""}
                     </Text>
                   </View>
                   {userCountry ? (

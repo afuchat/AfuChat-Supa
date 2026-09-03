@@ -109,7 +109,7 @@ export default function ReportUserScreen() {
               </View>
             )}
             <Text style={[s.successNote, { color: colors.textMuted }]}>
-              We typically review reports within 24–48 hours. You may receive a follow-up if we need more information.
+              We typically review reports within 24 to 48 hours. You may receive a follow-up if we need more information.
             </Text>
             <TouchableOpacity
               style={[s.doneBtn, { backgroundColor: "#34C759" }]}
@@ -229,7 +229,7 @@ export default function ReportUserScreen() {
     <View style={[s.root, { backgroundColor: colors.backgroundSecondary }]}>
       <GlassHeader
         title={step === 3 ? "Report Sent" : "Report User"}
-        subtitle={step === 1 ? "Step 1 of 2 — Choose a reason" : step === 2 ? "Step 2 of 2 — Add details" : undefined}
+        subtitle={step === 1 ? "Step 1 of 2. Choose a reason" : step === 2 ? "Step 2 of 2. Add details" : undefined}
       />
 
       {/* Progress bar */}

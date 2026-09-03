@@ -600,7 +600,7 @@ export default function NewChatScreen() {
                 <View style={{ paddingBottom: 40 }}>
                   <View style={[styles.sectionHeader, { backgroundColor: colors.backgroundSecondary, marginTop: 8 }]}>
                     <Text style={[styles.sectionTitle, { color: accent }]}>
-                      INVITE FRIENDS — {phoneNotAfu.length}
+                      INVITE FRIENDS: {phoneNotAfu.length}
                     </Text>
                   </View>
                   {phoneNotAfu.map((item) => (
@@ -856,7 +856,7 @@ function ListHeader({
           ]}
         >
           <Text style={[styles.sectionTitle, { color: accent }]}>
-            CONTACTS — {contactCount}
+                    CONTACTS: {contactCount}
           </Text>
         </View>
       )}

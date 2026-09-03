@@ -136,7 +136,7 @@ export default function SchoolPickerInput({ value, onChange, country, placeholde
           : loading
           ? `Loading schools in ${country}…`
           : allSchools.length > 0
-          ? `${allSchools.length} schools in ${country} — tap to browse`
+            ? `${allSchools.length} schools in ${country}. Tap to browse`
           : `No schools found for ${country}`}
       </Text>
 

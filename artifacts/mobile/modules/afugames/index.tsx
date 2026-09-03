@@ -87,7 +87,7 @@ export default function AfuGamesApp() {
           {"Leaderboard launching with games"}
         </Text>
         <Text style={[styles.launchSub, { color: colors.textMuted }]}>
-          {"Real rankings from real players — coming when games go live."}
+                    {"Real rankings from real players. Coming when games go live."}
         </Text>
       </View>
     </ScrollView>

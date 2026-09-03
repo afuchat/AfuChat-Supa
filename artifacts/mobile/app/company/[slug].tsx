@@ -1254,7 +1254,7 @@ export default function CompanyPageScreen() {
 
                 <TextInput
                   style={[styles.postInput, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border, minHeight: 140, textAlignVertical: "top" }]}
-                  placeholder="Job description — responsibilities, requirements, benefits…"
+                  placeholder="Job description: responsibilities, requirements, benefits…"
                   placeholderTextColor={colors.textMuted}
                   value={jobForm.description}
                   onChangeText={(v) => setJobForm((f) => ({ ...f, description: v }))}

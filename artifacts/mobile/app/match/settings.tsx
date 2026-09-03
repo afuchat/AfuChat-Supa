@@ -193,7 +193,7 @@ export default function MatchSettingsScreen() {
               icon="shield-checkmark" iconBg="#34C759"
               label="Safety Centre"
               description="Tips for safe dating and how to report"
-              onPress={() => showAlert("Safety Centre", "Always meet in public places. Tell a friend where you're going. Trust your instincts — if something feels wrong, leave. Use the report button on any profile you feel unsafe about.")}
+              onPress={() => showAlert("Safety Centre", "Always meet in public places. Tell a friend where you're going. Trust your instincts. If something feels wrong, leave. Use the report button on any profile you feel unsafe about.")}
             />
             <View style={[styles.sep, { backgroundColor: colors.border }]} />
             <NavRow

@@ -483,7 +483,7 @@ export default function AfuBusinessApp({ initialScreen }: { initialScreen?: Scre
                   </View>
                   <View style={st.shopStatRow}>
                     <Text style={[st.shopStatLabel, { color: colors.textMuted }]}>Category</Text>
-                    <Text style={[st.shopStatVal, { color: colors.text }]}>{shop.category ?? "—"}</Text>
+                    <Text style={[st.shopStatVal, { color: colors.text }]}>{shop.category ?? "N/A"}</Text>
                   </View>
                   <View style={st.shopStatRow}>
                     <Text style={[st.shopStatLabel, { color: colors.textMuted }]}>Rating</Text>
@@ -722,7 +722,7 @@ export default function AfuBusinessApp({ initialScreen }: { initialScreen?: Scre
                   {selectedOrder.buyer?.display_name ?? "Customer"}
                 </Text>
                 <Text style={[{ color: colors.textMuted, fontFamily: "Inter_400Regular", fontSize: 12 }]}>
-                  @{selectedOrder.buyer?.handle ?? "—"}
+                  @{selectedOrder.buyer?.handle ?? "N/A"}
                 </Text>
               </View>
             </View>

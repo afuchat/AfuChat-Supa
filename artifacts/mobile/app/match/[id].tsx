@@ -186,7 +186,7 @@ export default function MatchConversationScreen() {
     }
     setAcoinBalance(result.newBalance ?? 0);
     const msgContent = message.trim()
-      ? `Sent ${gift.emoji} ${gift.name} — ${message.trim()}`
+      ? `Sent ${gift.emoji} ${gift.name}. ${message.trim()}`
       : `Sent ${gift.emoji} ${gift.name}`;
     const { data } = await supabase.from("match_messages").insert({
       match_id: id,
@@ -402,7 +402,7 @@ export default function MatchConversationScreen() {
             <View style={{ alignItems: "center", paddingTop: 40, paddingBottom: 20 }}>
               <Text style={{ fontSize: 40, marginBottom: 12 }}>💌</Text>
               <Text style={[styles.emptyTitle, { color: colors.text }]}>Start the conversation!</Text>
-              <Text style={[styles.emptySub, { color: colors.textMuted }]}>Be yourself — a genuine opener goes a long way.</Text>
+              <Text style={[styles.emptySub, { color: colors.textMuted }]}>Be yourself. A genuine opener goes a long way.</Text>
             </View>
           }
         />

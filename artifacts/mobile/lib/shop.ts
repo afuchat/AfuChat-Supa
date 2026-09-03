@@ -211,7 +211,7 @@ export async function placeOrder(params: {
     .single();
 
   if (deductErr || !deductData) {
-    return { success: false, error: "Payment failed — balance may have changed. Please try again." };
+    return { success: false, error: "Payment failed. Your balance may have changed. Please try again." };
   }
 
   const { data: order, error: orderErr } = await supabase
@@ -231,7 +231,7 @@ export async function placeOrder(params: {
 
   if (orderErr || !order) {
     await supabase.from("profiles").update({ acoin: buyerAcoin }).eq("id", buyerId);
-    return { success: false, error: "Failed to create order — your balance has been restored." };
+    return { success: false, error: "Failed to create order. Your balance has been restored." };
   }
 
   await supabase.from("shop_order_items").insert(
@@ -309,7 +309,7 @@ export async function confirmDelivery(params: {
     .update({ acoin: (sellerProfile.acoin || 0) + sellerReceives })
     .eq("id", order.seller_id);
 
-  if (creditErr) return { success: false, error: "Failed to credit seller — please contact support" };
+  if (creditErr) return { success: false, error: "Failed to credit seller. Please contact support" };
 
   const now = new Date().toISOString();
   await supabase.from("shop_orders").update({
@@ -361,7 +361,7 @@ export async function raiseDispute(params: {
 
   if (fetchErr || !order) return { success: false, error: "Order not found" };
   if (order.buyer_id !== buyerId) return { success: false, error: "Unauthorized" };
-  if (order.escrow_status === "released") return { success: false, error: "Funds already released — dispute cannot be raised" };
+  if (order.escrow_status === "released") return { success: false, error: "Funds already released. A dispute cannot be raised" };
   if (order.escrow_status === "refunded") return { success: false, error: "Order already refunded" };
   if (order.escrow_status === "disputed") return { success: false, error: "Dispute already open" };
 

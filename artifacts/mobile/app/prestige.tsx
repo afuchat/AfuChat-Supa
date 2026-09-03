@@ -78,7 +78,7 @@ const SHOP_CATEGORIES = [
     emoji: "🔒",
     subtitle: "One-time or limited items for true believers",
     items: [
-      { id: "sg6", name: "Founder's Seal", emoji: "🔏", where: "Profile badge — lifetime status", description: "Exclusive for early AfuChat believers. Proves you were here first. Never sold again.", acoin: 100000, tier: "legend" },
+      { id: "sg6", name: "Founder's Seal", emoji: "🔏", where: "Profile badge. Lifetime status", description: "Exclusive for early AfuChat believers. Proves you were here first. Never sold again.", acoin: 100000, tier: "legend" },
     ],
   },
 ];
@@ -147,9 +147,9 @@ export default function PrestigeScreen() {
         if (t.transaction_type === "status_good_purchase") { label = `${t.metadata?.good_emoji || ""} ${t.metadata?.good_name || "Status Good"}`; icon = "star"; color = "#AF52DE"; }
         else if (t.transaction_type === "conversion")       { label = "Nexa converted to ACoin"; icon = "swap-horizontal"; color = "#FF9500"; }
         else if (t.transaction_type === "topup")            { label = "ACoin Top-Up"; icon = "card"; color = "#34C759"; }
-        else if (t.transaction_type === "subscription")     { label = `Premium — ${t.metadata?.plan_name || "Plan"}`; icon = "diamond"; color = "#FF9500"; }
-        else if (t.transaction_type === "gift_sent")        { label = `Gift sent — ${t.metadata?.gift_name || ""}`; icon = "gift"; color = "#FF9500"; }
-        else if (t.transaction_type === "gift_received")    { label = `Gift received — ${t.metadata?.gift_name || ""}`; icon = "gift"; color = "#34C759"; }
+        else if (t.transaction_type === "subscription")     { label = `Premium: ${t.metadata?.plan_name || "Plan"}`; icon = "diamond"; color = "#FF9500"; }
+        else if (t.transaction_type === "gift_sent")        { label = `Gift sent: ${t.metadata?.gift_name || ""}`; icon = "gift"; color = "#FF9500"; }
+        else if (t.transaction_type === "gift_received")    { label = `Gift received: ${t.metadata?.gift_name || ""}`; icon = "gift"; color = "#34C759"; }
         return { ...t, label, icon, color };
       }));
     }
@@ -283,7 +283,7 @@ export default function PrestigeScreen() {
             </View>
             <View style={s.heroStatDivider} />
             <View style={s.heroStatItem}>
-              <Text style={s.heroStatValue}>{myRank != null ? `#${myRank}` : "—"}</Text>
+              <Text style={s.heroStatValue}>{myRank != null ? `#${myRank}` : "N/A"}</Text>
               <Text style={s.heroStatLabel}>Rich List</Text>
             </View>
             <View style={s.heroStatDivider} />
@@ -323,7 +323,7 @@ export default function PrestigeScreen() {
             </View>
           ) : (
             <View style={[s.maxBadge, { backgroundColor: tier.color + "22" }]}>
-              <Text style={s.maxText}>👑 Maximum Prestige — You are a Legend</Text>
+              <Text style={s.maxText}>👑 Maximum Prestige. You are a Legend</Text>
             </View>
           )}
         </LinearGradient>

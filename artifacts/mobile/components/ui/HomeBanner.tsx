@@ -59,7 +59,7 @@ type FixedEvent = {
 const FIXED_EVENTS: FixedEvent[] = [
   { month: 1,  day: 1,  name: "New Year's Day",              emoji: "🎆", gradient: ["#FF6B35", "#FF3B30"], showDayBefore: true, subtitle: "Wishing you a wonderful year ahead!" },
   { month: 1,  day: 26, name: "NRM Liberation Day",           emoji: "🇺🇬", gradient: ["#078930", "#078930"], subtitle: "Happy Liberation Day, Uganda!" },
-  { month: 2,  day: 14, name: "Valentine's Day",              emoji: "💕", gradient: ["#FF2D55", "#FF6B81"], showDayBefore: true, giftCTA: true, subtitle: "Show your love — send a special gift" },
+  { month: 2,  day: 14, name: "Valentine's Day",              emoji: "💕", gradient: ["#FF2D55", "#FF6B81"], showDayBefore: true, giftCTA: true, subtitle: "Show your love. Send a special gift" },
   { month: 2,  day: 16, name: "Archbishop Luwum Day",         emoji: "✝️", gradient: ["#5856D6", "#7B7BCA"], subtitle: "Honoring a great servant of Uganda" },
   { month: 3,  day: 8,  name: "International Women's Day",    emoji: "💜", gradient: ["#9B59B6", "#C084FC"], giftCTA: true, subtitle: "Celebrate the women in your life" },
   { month: 4,  day: 22, name: "Earth Day",                    emoji: "🌍", gradient: ["#34C759", "#30D158"], subtitle: "Every action for our planet counts" },
@@ -69,13 +69,13 @@ const FIXED_EVENTS: FixedEvent[] = [
   { month: 6,  day: 9,  name: "National Heroes' Day",         emoji: "⭐", gradient: ["#078930", "#078930"], subtitle: "Celebrating Uganda's national heroes" },
   { month: 7,  day: 4,  name: "Independence Day (US)",        emoji: "🇺🇸", gradient: ["#003087", "#BF0A30"], subtitle: "Happy 4th of July!" },
   { month: 10, day: 9,  name: "Uganda Independence Day",      emoji: "🇺🇬", gradient: ["#078930", "#FCDC04"], showDayBefore: true, subtitle: "Happy Independence Day, Uganda!" },
-  { month: 10, day: 31, name: "Halloween",                    emoji: "🎃", gradient: ["#FF6B35", "#2C2C2E"], giftCTA: true, subtitle: "Trick or treat — send spooky gifts!" },
+  { month: 10, day: 31, name: "Halloween",                    emoji: "🎃", gradient: ["#FF6B35", "#2C2C2E"], giftCTA: true, subtitle: "Trick or treat. Send spooky gifts!" },
   { month: 11, day: 11, name: "Veterans Day",                 emoji: "🎖️", gradient: ["#003087", "#5856D6"], subtitle: "Honoring those who served" },
   { month: 11, day: 19, name: "International Men's Day",      emoji: "👨", gradient: ["#007AFF", "#0A84FF"], giftCTA: true, subtitle: "Celebrate the men who matter to you" },
-  { month: 12, day: 24, name: "Christmas Eve",                emoji: "🎄", gradient: ["#C0392B", "#27AE60"], giftCTA: true, subtitle: "Christmas is tomorrow — send your gifts!" },
+  { month: 12, day: 24, name: "Christmas Eve",                emoji: "🎄", gradient: ["#C0392B", "#27AE60"], giftCTA: true, subtitle: "Christmas is tomorrow. Send your gifts!" },
   { month: 12, day: 25, name: "Christmas Day",                emoji: "🎁", gradient: ["#C0392B", "#27AE60"], giftCTA: true, subtitle: "Merry Christmas! Spread joy with a gift" },
   { month: 12, day: 26, name: "Boxing Day",                   emoji: "📦", gradient: ["#27AE60", "#2ECC71"], giftCTA: true, subtitle: "Keep the holiday spirit going!" },
-  { month: 12, day: 31, name: "New Year's Eve",               emoji: "🥂", gradient: ["#5856D6", "#FF2D55"], subtitle: "See you on the other side — Happy New Year!" },
+  { month: 12, day: 31, name: "New Year's Eve",               emoji: "🥂", gradient: ["#5856D6", "#FF2D55"], subtitle: "See you on the other side. Happy New Year!" },
 ];
 
 // ─── Dynamic moveable feasts ──────────────────────────────────────────────────
@@ -110,7 +110,7 @@ const DYNAMIC_EVENTS: DynamicEvent[] = [
     gradient: ["#FF2D55", "#FF9500"],
     showDayBefore: true,
     giftCTA: true,
-    subtitle: "Show mom you love her — send a heartfelt gift",
+    subtitle: "Show mom you love her. Send a heartfelt gift",
     getDate: (y) => nthWeekday(y, 5, 0, 2),
   },
   {
@@ -340,7 +340,7 @@ function ContactPickerSheet({ visible, gradient, eventName, onClose, onSelect }:
           <View style={sh.emptyBox}>
             <Ionicons name="people" size={40} color={colors.textMuted} />
             <Text style={[sh.emptyText, { color: colors.textMuted }]}>
-              {search ? "No contacts match your search" : "No contacts yet — follow someone first"}
+              {search ? "No contacts match your search" : "No contacts yet. Follow someone first"}
             </Text>
           </View>
         ) : (

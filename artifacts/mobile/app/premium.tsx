@@ -174,7 +174,7 @@ const TIER_CONFIG: Record<string, TierCfg> = {
         items: [
           "10 Groups · 10 Channels",
           "15 Stories per day",
-          "Creator Studio — Monetise posts",
+  "Creator Studio: Monetise posts",
           "Prestige Status",
         ],
       },
@@ -560,7 +560,7 @@ export default function PremiumScreen() {
               <Text style={[s.costLbl, { color: colors.textMuted }]}>Balance</Text>
               <Text style={[s.costVal, { color: colors.text }]}>{profile?.acoin ?? 0}</Text>
             </View>
-            <Text style={[s.costOp, { color: isDark ? "#3A3A3A" : "#ddd" }]}>−</Text>
+            <Text style={[s.costOp, { color: isDark ? "#3A3A3A" : "#ddd" }]}>to</Text>
             <View style={s.costCol}>
               <Text style={[s.costLbl, { color: colors.textMuted }]}>Cost</Text>
               <Text style={[s.costVal, { color: "#FF9500" }]}>{acoinPrice}</Text>

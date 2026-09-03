@@ -258,7 +258,7 @@ export default function TwoFactorScreen() {
     setVerifyBusy(false);
     if (error) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      setVerifyError("Wrong code — 2FA has not been saved. Check your authenticator and try again.");
+      setVerifyError("Wrong code. 2FA has not been saved. Check your authenticator and try again.");
       setVerifyCode("");
       verifyRef.current?.focus();
       return;
@@ -499,7 +499,7 @@ export default function TwoFactorScreen() {
                   </View>
                   <View style={s.actionMeta}>
                     <Text style={[s.actionLabel, { color: colors.text }]}>Reset via Phone</Text>
-                    <Text style={[s.actionSub, { color: colors.textMuted }]}>SMS recovery — coming soon</Text>
+                    <Text style={[s.actionSub, { color: colors.textMuted }]}>SMS recovery. Coming soon</Text>
                   </View>
                   <View style={[s.badge, { backgroundColor: colors.inputBg }]}>
                     <Text style={[s.badgeText, { color: colors.textMuted }]}>SOON</Text>
@@ -544,7 +544,7 @@ export default function TwoFactorScreen() {
             <Animated.View style={[s.warnBanner, { transform: [{ scale: pulseAnim }] }]}>
               <Ionicons name="time" size={15} color="#FF9F0A" />
               <Text style={s.warnText}>
-                2FA is <Text style={{ fontFamily: "Inter_700Bold" }}>not active yet</Text> — complete all steps below
+                2FA is <Text style={{ fontFamily: "Inter_700Bold" }}>not active yet</Text>. Complete all steps below
               </Text>
             </Animated.View>
 
@@ -607,7 +607,7 @@ export default function TwoFactorScreen() {
 
               {secretVisible && (
                 <View style={[s.secretBox, { backgroundColor: colors.backgroundTertiary, borderColor: colors.border }]}>
-                  <Text style={[s.secretLabel, { color: colors.textMuted }]}>SECRET KEY — tap to select and copy</Text>
+                  <Text style={[s.secretLabel, { color: colors.textMuted }]}>SECRET KEY. Tap to select and copy</Text>
                   <Text style={[s.secretKey, { color: colors.text }]} selectable>{formattedSecret}</Text>
                   <View style={[s.secretMeta, { borderTopColor: colors.border }]}>
                     <Text style={[s.secretMetaText, { color: colors.textMuted }]}>Account: AfuChat · Issuer: AfuChat · Type: TOTP · Period: 30s</Text>
@@ -726,7 +726,7 @@ export default function TwoFactorScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity style={s.cancelBtn} onPress={() => cancelEnroll(factorId)} disabled={verifyBusy}>
-              <Text style={[s.cancelText, { color: colors.textMuted }]}>Cancel — no changes will be saved</Text>
+              <Text style={[s.cancelText, { color: colors.textMuted }]}>Cancel. No changes will be saved</Text>
             </TouchableOpacity>
           </ScrollView>
         </KeyboardAvoidingView>

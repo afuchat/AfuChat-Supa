@@ -637,7 +637,7 @@ function TopUpView({ colors, insets, profile, onBack, onSuccess }: any) {
             : <>
                 <Ionicons name="lock-closed" size={16} color="#fff" />
                 <Text style={s.primaryBtnText}>
-                  Pay {acoinAmt >= 50 ? `$${price} · ${fmtAmt(acoinAmt)} AC` : "— select a package"}
+                  Pay {acoinAmt >= 50 ? `$${price} · ${fmtAmt(acoinAmt)} AC` : "Select a package"}
                 </Text>
               </>
           }

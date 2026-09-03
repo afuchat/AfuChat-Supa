@@ -618,7 +618,7 @@ export default function ContactScreen() {
                   {stat.locked
                     ? <View style={s.lockedStat}>
                         <Ionicons name="lock-closed" size={11} color={colors.textMuted} />
-                        <Text style={[s.statNum, { color: colors.textMuted }]}>—</Text>
+                        <Text style={[s.statNum, { color: colors.textMuted }]}>N/A</Text>
                       </View>
                     : <Text style={[s.statNum, { color: isExpanded ? accent : colors.text }]}>{fmtCount(stat.value)}</Text>}
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>

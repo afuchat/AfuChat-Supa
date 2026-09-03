@@ -308,7 +308,7 @@ function HandleStatus({ status, colors, accent }: {
     available:      { icon: "checkmark-circle", color: "#34C759", label: "Available" },
     owned:          { icon: "checkmark-circle", color: "#34C759", label: "You own this username" },
     taken:          { icon: "close-circle",     color: "#FF3B30", label: "Already taken" },
-    listed:         { icon: "pricetag",          color: colors.accent, label: "Listed for sale — buy first" },
+    listed:         { icon: "pricetag",          color: colors.accent, label: "Listed for sale. Buy first" },
     invalid_format: { icon: "warning",          color: "#FF9F0A", label: "Letters, numbers & _ only (min 3)" },
   } as const;
   const cfg = map[status as keyof typeof map];
@@ -755,7 +755,7 @@ export default function EditProfileScreen() {
               </Text>
             )}
             {handleLockedDays === 0 && handleStatus === "taken" && (
-              <Text style={[styles.handleHint, { color: "#FF3B30" }]}>That handle is already taken — try another.</Text>
+              <Text style={[styles.handleHint, { color: "#FF3B30" }]}>That handle is already taken. Try another.</Text>
             )}
             {handleLockedDays === 0 && handleStatus === "invalid_format" && (
               <Text style={[styles.handleHint, { color: "#FF9F0A" }]}>Only letters, numbers and underscores, minimum 3 characters.</Text>

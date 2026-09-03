@@ -35,11 +35,11 @@ const FINAL_PHRASE = "PERMANENTLY DELETE MY ACCOUNT";
 const CONSEQUENCES = [
   { id: "posts",    icon: "newspaper"   as const, text: "All posts, stories and moments will be permanently erased" },
   { id: "chats",    icon: "chatbubbles"  as const, text: "Every chat, message and media file will be removed forever" },
-  { id: "coins",    icon: "wallet"       as const, text: "Your entire ACoins balance will be forfeited — no refund" },
+  { id: "coins",    icon: "wallet"       as const, text: "Your entire ACoins balance will be forfeited. No refund" },
   { id: "friends",  icon: "people"       as const, text: "All followers, contacts and community memberships will be lost" },
   { id: "premium",  icon: "star"         as const, text: "Active Premium or Platinum subscriptions will NOT be refunded" },
   { id: "media",    icon: "images"       as const, text: "Every photo, video and file you uploaded will be deleted" },
-  { id: "irrev",    icon: "warning"      as const, text: "After 30 days this is irreversible — your data is gone forever" },
+  { id: "irrev",    icon: "warning"      as const, text: "After 30 days this is irreversible. Your data is gone forever" },
 ];
 
 const LEAVE_REASONS = [
@@ -125,7 +125,7 @@ function Step1({
         activeOpacity={0.8}
       >
         <Text style={[st.btnText, { color: allChecked ? "#fff" : colors.textMuted }]}>
-          {allChecked ? "I understand everything — Continue" : `${remaining} item${remaining !== 1 ? "s" : ""} left to acknowledge`}
+              {allChecked ? "I understand everything. Continue" : `${remaining} item${remaining !== 1 ? "s" : ""} left to acknowledge`}
         </Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={onCancel} style={st.cancelBtn}>
@@ -567,7 +567,7 @@ export default function DangerZoneScreen() {
                 {[
                   { icon: "time" as const,          text: "5-step verification process with mandatory waiting periods" },
                   { icon: "shield" as const,        text: "2FA identity check required before you can begin" },
-                  { icon: "hourglass" as const,     text: "30-day grace period — you can restore your account during this time" },
+          { icon: "hourglass" as const,     text: "30-day grace period. You can restore your account during this time" },
                   { icon: "trash" as const,         text: "After 30 days all data is permanently erased with no recovery" },
                 ].map(item => (
                   <View key={item.text} style={s.warnRow}>

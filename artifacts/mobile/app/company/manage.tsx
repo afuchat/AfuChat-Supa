@@ -35,7 +35,7 @@ const INDUSTRIES = [
   "Manufacturing", "Construction & Real Estate", "Hospitality & Tourism",
   "Legal & Professional Services", "Energy & Utilities", "Transport & Logistics", "Other",
 ];
-const ORG_SIZES = ["1–10", "11–50", "51–200", "201–500", "501–1,000", "1,001–5,000", "5,000+"];
+  const ORG_SIZES = ["1 to 10", "11 to 50", "51 to 200", "201 to 500", "501 to 1,000", "1,001 to 5,000", "5,000+"];
 
 type OrgPage = {
   id: string;
