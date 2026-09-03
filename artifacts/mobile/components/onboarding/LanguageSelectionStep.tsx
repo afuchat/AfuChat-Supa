@@ -66,33 +66,35 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       <OnboardingBackdrop />
 
-      <View
-        style={[styles.header, { paddingTop: insets.top + 24 }]}
-        onLayout={(event) => {
-          const measuredHeight = Math.ceil(event.nativeEvent.layout.height);
-          if (measuredHeight > 0 && measuredHeight !== headerHeight) {
-            setHeaderHeight(measuredHeight);
-          }
-        }}
-      >
-        <View style={styles.headerInner}>
-          <View style={styles.brandRow}>
-            <AfuLogo size={24} forceTheme="dark" />
-            <Text style={styles.brandText}>AfuChat</Text>
-          </View>
-
-          <View style={styles.hero}>
-            <View style={styles.globeBadge}>
-              <Svg width={25} height={25} viewBox="0 0 25 25" accessibilityLabel="Language">
-                <Circle cx="12.5" cy="12.5" r="9.5" stroke="#A9C9FF" strokeWidth="1.4" fill="none" />
-                <Ellipse cx="12.5" cy="12.5" rx="4.2" ry="9.5" stroke="#A9C9FF" strokeWidth="1.2" fill="none" />
-                <Path d="M3.5 12.5h18M5.4 7.6h14.2M5.4 17.4h14.2" stroke="#A9C9FF" strokeWidth="1.1" fill="none" />
-              </Svg>
+      <View style={styles.headerPositioner}>
+        <View
+          style={[styles.header, { paddingTop: insets.top + 24 }]}
+          onLayout={(event) => {
+            const measuredHeight = Math.ceil(event.nativeEvent.layout.height);
+            if (measuredHeight > 0 && measuredHeight !== headerHeight) {
+              setHeaderHeight(measuredHeight);
+            }
+          }}
+        >
+          <View style={styles.headerInner}>
+            <View style={styles.brandRow}>
+              <AfuLogo size={24} forceTheme="dark" />
+              <Text style={styles.brandText}>AfuChat</Text>
             </View>
-            <Text style={styles.title}>{t("Choose your language")}</Text>
-            <Text style={styles.subtitle}>
-              {t("Select the language you understand best. We will use it to make your AfuChat experience easier to follow.")}
-            </Text>
+
+            <View style={styles.hero}>
+              <View style={styles.globeBadge}>
+                <Svg width={25} height={25} viewBox="0 0 25 25" accessibilityLabel="Language">
+                  <Circle cx="12.5" cy="12.5" r="9.5" stroke="#A9C9FF" strokeWidth="1.4" fill="none" />
+                  <Ellipse cx="12.5" cy="12.5" rx="4.2" ry="9.5" stroke="#A9C9FF" strokeWidth="1.2" fill="none" />
+                  <Path d="M3.5 12.5h18M5.4 7.6h14.2M5.4 17.4h14.2" stroke="#A9C9FF" strokeWidth="1.1" fill="none" />
+                </Svg>
+              </View>
+              <Text style={styles.title}>{t("Choose your language")}</Text>
+              <Text style={styles.subtitle}>
+                {t("Select the language you understand best. We will use it to make your AfuChat experience easier to follow.")}
+              </Text>
+            </View>
           </View>
         </View>
       </View>
@@ -102,7 +104,7 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
         contentContainerStyle={[
           styles.languageScrollContent,
           {
-            paddingTop: headerHeight + 12,
+            paddingTop: headerHeight + 24,
             paddingBottom: 28,
           },
         ]}
@@ -176,10 +178,17 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#000000", overflow: "hidden" },
   scroll: { flex: 1 },
   languageScrollContent: { paddingHorizontal: 22 },
+  headerPositioner: {
+    position: "absolute", top: 12, left: 0, right: 0, zIndex: 10, elevation: 10,
+    alignItems: "center",
+  },
   header: {
-    position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, elevation: 10,
-    paddingTop: 24, paddingHorizontal: 22, backgroundColor: ONBOARDING_THEME.gradientTop,
-    borderBottomLeftRadius: 24, borderBottomRightRadius: 24, overflow: "hidden",
+    width: "calc(100% - 32px)" as any,
+    maxWidth: 560,
+    paddingHorizontal: 22,
+    backgroundColor: ONBOARDING_THEME.gradientTop,
+    borderRadius: 28,
+    overflow: "hidden",
   },
   headerInner: { width: "100%", maxWidth: 560, alignSelf: "center" },
   bottomFooter: {
