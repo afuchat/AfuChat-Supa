@@ -89,7 +89,7 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
           <View style={styles.headerInner}>
             <View style={styles.brandLockup}>
               <View style={styles.brandIconFrame}>
-                <AfuLogo size={24} withoutFlame />
+                <AfuLogo size={24} forceTheme="dark" withoutFlame />
               </View>
               <View>
                 <Text style={styles.brandText}>AfuChat</Text>
