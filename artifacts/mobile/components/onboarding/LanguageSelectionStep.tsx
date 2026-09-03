@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLanguage } from "@/context/LanguageContext";
 import { LANG_LABELS, BUNDLED_UI_LANGUAGES } from "@/lib/i18n";
 import AfuLogo from "@/components/ui/AfuLogo";
-import OnboardingBackdrop from "@/components/onboarding/OnboardingBackdrop";
+import OnboardingBackdrop, { ONBOARDING_THEME } from "@/components/onboarding/OnboardingBackdrop";
 
 const FLAGS: Record<string, string> = {
   en: "🇬🇧", zh: "🇨🇳", es: "🇪🇸", fr: "🇫🇷", ar: "🇸🇦", sw: "🇰🇪",
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
   languageScrollContent: { paddingHorizontal: 22 },
   header: {
     position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, elevation: 10,
-    paddingTop: 24, paddingHorizontal: 22, backgroundColor: "rgba(0,0,0,0.34)",
+    paddingTop: 24, paddingHorizontal: 22, backgroundColor: ONBOARDING_THEME.gradientTop,
     borderBottomLeftRadius: 24, borderBottomRightRadius: 24, overflow: "hidden",
   },
   headerInner: { width: "100%", maxWidth: 560, alignSelf: "center" },
