@@ -1554,6 +1554,14 @@ export default function DiscoverScreen() {
     setFeedTab(nextTab);
   }, []);
 
+  function selectDiscoverTab(nextTab: "for_you" | "following" | "find") {
+    Haptics.selectionAsync();
+    revealHeader();
+    setActiveDiscoverTab(nextTab);
+    if (nextTab !== "find") setFeedTab(nextTab);
+    pagerRef.current?.setPage(nextTab === "for_you" ? 0 : nextTab === "following" ? 1 : 2);
+  }
+
   useEffect(() => {
     getMergedLearnedWeights().then((w) => { learnedWeightsRef.current = w; }).catch(() => {});
   }, []);
@@ -2730,20 +2738,15 @@ export default function DiscoverScreen() {
               isCompactHeader && styles.tabPillCompact,
               activeDiscoverTab === "for_you" && { borderBottomWidth: 2.5, borderBottomColor: colors.accent },
             ]}
-            onPress={() => {
-              setFeedTab("for_you");
-              setActiveDiscoverTab("for_you");
-              revealHeader();
-              pagerRef.current?.setPage(0);
-            }}
+            onPress={() => selectDiscoverTab("for_you")}
           >
-            <Text style={[
-              styles.tabPillText,
-              isCompactHeader && styles.tabPillTextCompact,
-              { color: activeDiscoverTab === "for_you" ? colors.accent : colors.textMuted },
-            ]}>
-              For You
-            </Text>
+            <View style={styles.tabContent}>
+              <Text style={[
+                styles.tabPillText,
+                isCompactHeader && styles.tabPillTextCompact,
+                { color: activeDiscoverTab === "for_you" ? colors.accent : colors.textMuted },
+              ]}>For You</Text>
+            </View>
           </TouchableOpacity>
           {user && (
             <TouchableOpacity
@@ -2752,20 +2755,15 @@ export default function DiscoverScreen() {
                 isCompactHeader && styles.tabPillCompact,
                 activeDiscoverTab === "following" && { borderBottomWidth: 2.5, borderBottomColor: colors.accent },
               ]}
-              onPress={() => {
-                setFeedTab("following");
-                setActiveDiscoverTab("following");
-                revealHeader();
-                pagerRef.current?.setPage(1);
-              }}
+              onPress={() => selectDiscoverTab("following")}
             >
-              <Text style={[
-                styles.tabPillText,
-                isCompactHeader && styles.tabPillTextCompact,
+              <View style={styles.tabContent}>
+                <Text style={[
+                  styles.tabPillText,
+                  isCompactHeader && styles.tabPillTextCompact,
                   { color: activeDiscoverTab === "following" ? colors.accent : colors.textMuted },
-              ]}>
-                Following
-              </Text>
+                ]}>Following</Text>
+              </View>
             </TouchableOpacity>
           )}
           <TouchableOpacity
@@ -2774,16 +2772,11 @@ export default function DiscoverScreen() {
               isCompactHeader && styles.tabPillCompact,
               activeDiscoverTab === "find" && { borderBottomWidth: 2.5, borderBottomColor: colors.accent },
             ]}
-            onPress={() => {
-              Haptics.selectionAsync();
-              revealHeader();
-              setActiveDiscoverTab("find");
-              pagerRef.current?.setPage(2);
-            }}
+            onPress={() => selectDiscoverTab("find")}
             accessibilityRole="tab"
             accessibilityLabel="Find people nearby"
           >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+            <View style={styles.tabContent}>
               <Text style={[
                 styles.tabPillText,
                 isCompactHeader && styles.tabPillTextCompact,
@@ -3253,6 +3246,12 @@ const styles = StyleSheet.create({
   },
   tabPillTextCompact: {
     fontSize: 13,
+  },
+  tabContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
   },
   tabSpacer: {
     flex: 1,
