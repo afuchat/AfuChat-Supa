@@ -127,7 +127,7 @@ export default function QRPosterSheet({
           >
             <View style={[s.posterBg, { backgroundColor: cardBg }]}>
               <View style={[s.brandStrip, { backgroundColor: cardTop }]}>
-                <AfuLogo size={26} forceTheme="dark" style={{ marginRight: 2 }} />
+                <AfuLogo size={26} style={{ marginRight: 2 }} />
                 <Text style={s.brandName}>AfuChat</Text>
               </View>
 

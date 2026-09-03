@@ -1,30 +1,21 @@
 import React from "react";
 import { Image as RNImage, StyleProp, ViewStyle } from "react-native";
 import Svg, { Defs, Ellipse, Image as SvgImage, Mask, Rect } from "react-native-svg";
-import { LOGO_BLACK_B64 } from "@/lib/logoAssets";
-import { useThemeContext } from "@/context/ThemeContext";
 
-// Keep the dark landing-page mark tied to the clean white brand asset so its
-// transparent pixels and artwork stay exact.
-const LOGO_DARK = require("@/assets/images/white-logo-bold.png");
-const LOGO_LIGHT = { uri: LOGO_BLACK_B64 };
+const LOGO_SOURCE = require("@/assets/images/black-logo.png");
 
 /**
- * AfuChat brand logo — theme-aware.
- * • Dark theme  → white logo (visible on dark backgrounds)
- * • Light theme → black logo (visible on light backgrounds)
- * • forceTheme  → override app theme ("dark" = white logo, "light" = black logo)
+ * AfuChat brand logo.
+ * The logo intentionally uses one fixed black asset in every context.
  */
 export function AfuLogo({
   size = 72,
   style,
-  forceTheme,
   visualScale = 1,
   withoutFlame = false,
 }: {
   size?: number;
   style?: StyleProp<ViewStyle>;
-  forceTheme?: "dark" | "light";
   withoutFlame?: boolean;
   /**
    * Enlarges the artwork inside its allocated box. The source PNG includes
@@ -33,10 +24,6 @@ export function AfuLogo({
    */
   visualScale?: number;
 }) {
-  const { isDark } = useThemeContext();
-  const resolved = forceTheme ?? (isDark ? "dark" : "light");
-  const source = resolved === "dark" ? LOGO_DARK : LOGO_LIGHT;
-
   if (withoutFlame) {
     return (
       <Svg
@@ -58,7 +45,7 @@ export function AfuLogo({
           </Mask>
         </Defs>
         <SvgImage
-          href={source as any}
+          href={LOGO_SOURCE as any}
           x="0"
           y="0"
           width="1024"
@@ -72,7 +59,7 @@ export function AfuLogo({
 
   return (
     <RNImage
-      source={source}
+      source={LOGO_SOURCE}
       style={[
         { width: size, height: size },
         visualScale !== 1 && { transform: [{ scale: visualScale }] },
