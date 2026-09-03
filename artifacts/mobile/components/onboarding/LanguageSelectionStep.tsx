@@ -15,9 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLanguage } from "@/context/LanguageContext";
 import { LANG_LABELS } from "@/lib/translate";
 import { BUNDLED_UI_LANGUAGES } from "@/lib/uiTranslations";
-import Image from "@/components/ui/OptimizedImage";
-
-const PLATFORM_LOGO = require("@/assets/images/icon.png");
+import AfuLogo from "@/components/ui/AfuLogo";
 
 const FLAGS: Record<string, string> = {
   en: "🇬🇧", zh: "🇨🇳", es: "🇪🇸", fr: "🇫🇷", ar: "🇸🇦", hi: "🇮🇳",
@@ -90,7 +88,7 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
       >
         <View style={styles.headerInner}>
           <View style={styles.brandRow}>
-            <Image source={PLATFORM_LOGO} style={styles.brandLogo} />
+            <AfuLogo size={36} forceTheme="dark" />
             <Text style={styles.brandText}>AfuChat</Text>
           </View>
 
