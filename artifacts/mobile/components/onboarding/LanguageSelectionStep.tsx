@@ -150,7 +150,7 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
         </View>
       </ScrollView>
 
-      <View style={[styles.bottomFooter, { paddingBottom: Math.max(insets.bottom, 20) + 14 }]}>
+      <View style={[styles.bottomFooter, { paddingBottom: Math.max(insets.bottom, 8) }]}>
         <Pressable
           onPress={continueSelection}
           disabled={!selected || saving}
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   orbPurple: { width: 200, height: 200, top: 210, left: -120, backgroundColor: "#873DCE" },
   bottomFooter: {
     alignItems: "center",
-    paddingTop: 16, paddingHorizontal: 22, backgroundColor: "rgba(5,7,19,0.96)",
+    paddingTop: 8, paddingHorizontal: 22, backgroundColor: "rgba(5,7,19,0.96)",
     borderTopWidth: 0.5,
     borderTopColor: "rgba(255,255,255,0.08)",
   },
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   radioSelected: { borderColor: "#72B5FF", backgroundColor: "rgba(114,181,255,0.13)" },
   radioDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: "#72B5FF" },
   continueButton: {
-    width: "100%", maxWidth: 560, minHeight: 56, alignSelf: "center", borderRadius: 999,
+    width: "100%", maxWidth: 560, minHeight: 54, alignSelf: "center", borderRadius: 999,
     backgroundColor: "#167EFF", flexDirection: "row", alignItems: "center", justifyContent: "center",
     gap: 10,
     ...Platform.select({
@@ -260,5 +260,5 @@ const styles = StyleSheet.create({
   continueText: { color: "#FFFFFF", fontSize: 16, fontFamily: "Inter_700Bold" },
   continueArrow: { color: "#FFFFFF", fontSize: 24, lineHeight: 24, marginTop: -2, fontFamily: "Inter_400Regular" },
   continueTextDisabled: { color: "rgba(255,255,255,0.46)" },
-  requiredHint: { color: "rgba(255,255,255,0.38)", fontSize: 12, textAlign: "center", fontFamily: "Inter_400Regular", marginTop: 12 },
+  requiredHint: { color: "rgba(255,255,255,0.38)", fontSize: 12, textAlign: "center", fontFamily: "Inter_400Regular", marginTop: 6 },
 });
