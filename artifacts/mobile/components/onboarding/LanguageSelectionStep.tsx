@@ -198,7 +198,9 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 22,
-    backgroundColor: "transparent",
+    // Keep the language header opaque while matching the shared onboarding
+    // backdrop's visible dark-blue top tone.
+    backgroundColor: ONBOARDING_THEME.gradientTop,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
     overflow: "hidden",
