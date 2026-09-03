@@ -5,11 +5,10 @@ import Colors from "@/constants/colors";
 
 export const ONBOARDING_THEME = {
   background: Colors.dark.background,
-  // Keep one consistent dark base across welcome, language selection, and
-  // profile setup. The colored orbs still add atmosphere without changing
-  // the underlying page color.
-  gradientTop: Colors.dark.background,
-  gradientMiddle: Colors.dark.background,
+  // Keep the same dark atmospheric backdrop across welcome, language
+  // selection, and profile setup.
+  gradientTop: "#070D32",
+  gradientMiddle: "#020617",
   orbBlue: "#1018D8",
   orbPurple: "#4B237A",
   text: Colors.dark.text,

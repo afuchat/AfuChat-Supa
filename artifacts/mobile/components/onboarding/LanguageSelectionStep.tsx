@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 22,
-    backgroundColor: ONBOARDING_THEME.background,
+    backgroundColor: "transparent",
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
     overflow: "hidden",
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     position: "relative",
     alignItems: "center",
     paddingTop: 18, paddingHorizontal: 22,
-    backgroundColor: ONBOARDING_THEME.background,
+    backgroundColor: "transparent",
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     borderTopWidth: 1,
