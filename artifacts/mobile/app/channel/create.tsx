@@ -47,6 +47,7 @@ export default function CreateChannelScreen() {
   const [isPublic, setIsPublic] = useState(true);
   const [handleStatus, setHandleStatus] = useState<HandleStatus>("idle");
   const [creating, setCreating] = useState(false);
+  const [step, setStep] = useState<1 | 2>(1);
 
   const descRef = useRef<TextInput>(null);
 
@@ -201,138 +202,156 @@ export default function CreateChannelScreen() {
     setCreating(false);
   }
 
+  function goToSetup() {
+    if (!channelName.trim()) {
+      showAlert("Channel name required", "Please enter a name for your channel.");
+      return;
+    }
+    Keyboard.dismiss();
+    setStep(2);
+  }
+
   return (
     <View style={[styles.root, { backgroundColor: colors.background, paddingBottom: keyboardHeight }]}>
       <GlassHeader
-        title="New Channel"
-        onBack={() => router.back()}
+        title={step === 1 ? "New Channel" : "Channel Setup"}
+        onBack={() => step === 1 ? router.back() : setStep(1)}
         right={
           <TouchableOpacity
-            onPress={createChannel}
-            disabled={creating || !channelName.trim()}
+            onPress={step === 1 ? goToSetup : createChannel}
+            disabled={creating || (step === 1 && !channelName.trim())}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             {creating ? (
               <ActivityIndicator color={PURPLE} size="small" />
             ) : (
-              <Ionicons name="checkmark" size={24} color={channelName.trim() ? PURPLE : colors.textMuted} />
+              <Ionicons
+                name={step === 1 ? "arrow-forward" : "checkmark"}
+                size={24}
+                color={step === 1 && !channelName.trim() ? colors.textMuted : PURPLE}
+              />
             )}
           </TouchableOpacity>
         }
       />
 
       <View style={[styles.nameSection, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <TouchableOpacity
-          style={[styles.avatarBtn, { backgroundColor: avatarUri ? "transparent" : PURPLE }]}
-          onPress={pickAvatar}
-          activeOpacity={0.8}
-        >
-          {avatarUri ? (
-            <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
-          ) : (
-            <View style={styles.avatarIconWrap}>
-              <Ionicons name="camera" size={22} color="#fff" />
-              <View style={styles.plusBadge}>
-                <Ionicons name="add" size={10} color="#fff" />
+        {step === 2 ? (
+          <TouchableOpacity
+            style={[styles.avatarBtn, { backgroundColor: avatarUri ? "transparent" : PURPLE }]}
+            onPress={pickAvatar}
+            activeOpacity={0.8}
+          >
+            {avatarUri ? (
+              <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatarIconWrap}>
+                <Ionicons name="camera" size={22} color="#fff" />
+                <View style={styles.plusBadge}>
+                  <Ionicons name="add" size={10} color="#fff" />
+                </View>
               </View>
-            </View>
-          )}
-        </TouchableOpacity>
+            )}
+          </TouchableOpacity>
+        ) : null}
 
         <View style={styles.nameInputWrap}>
-          <TextInput
-            style={[styles.nameInput, { color: colors.text, borderBottomColor: PURPLE }]}
-            placeholder="Channel name"
-            placeholderTextColor={colors.textMuted}
-            value={channelName}
-            onChangeText={setChannelName}
-            autoFocus
-            returnKeyType="next"
-            onSubmitEditing={() => descRef.current?.focus()}
-          />
-          <TextInput
-            style={[styles.handleInput, { color: colors.text, borderBottomColor: PURPLE }]}
-            placeholder={isPublic ? "Channel username" : "Username (optional)"}
-            placeholderTextColor={colors.textMuted}
-            value={channelHandle}
-            onChangeText={(value) => setChannelHandle(value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 30))}
-            autoCapitalize="none"
-            autoCorrect={false}
-            maxLength={30}
-            returnKeyType="next"
-            onSubmitEditing={() => descRef.current?.focus()}
-          />
-          {isPublic && channelHandle.trim() ? (
-            <Text style={[styles.handleStatus, {
-              color: handleStatus === "available" ? "#34C759" : handleStatus === "taken" || handleStatus === "invalid_format" ? "#FF3B30" : colors.textMuted,
-            }]}>
-              {handleStatus === "checking" ? "Checking username…" :
-                handleStatus === "available" ? "Username available" :
-                handleStatus === "taken" ? "Username already used or owned" :
-                handleStatus === "invalid_format" ? "Use at least 3 letters, numbers, or underscores" :
-                handleStatus === "error" ? "Could not check username yet" : ""}
-            </Text>
-          ) : null}
+          {step === 1 ? (
+            <TextInput
+              style={[styles.nameInput, { color: colors.text, borderBottomColor: PURPLE }]}
+              placeholder="Channel name"
+              placeholderTextColor={colors.textMuted}
+              value={channelName}
+              onChangeText={setChannelName}
+              autoFocus
+              returnKeyType="next"
+              onSubmitEditing={goToSetup}
+            />
+          ) : (
+            <>
+              <TextInput
+                style={[styles.handleInput, { color: colors.text, borderBottomColor: PURPLE }]}
+                placeholder={isPublic ? "Channel username" : "Username (optional)"}
+                placeholderTextColor={colors.textMuted}
+                value={channelHandle}
+                onChangeText={(value) => setChannelHandle(value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 30))}
+                autoCapitalize="none"
+                autoCorrect={false}
+                maxLength={30}
+                returnKeyType="next"
+                onSubmitEditing={() => descRef.current?.focus()}
+                autoFocus
+              />
+              {isPublic && channelHandle.trim() ? (
+                <Text style={[styles.handleStatus, {
+                  color: handleStatus === "available" ? "#34C759" : handleStatus === "taken" || handleStatus === "invalid_format" ? "#FF3B30" : colors.textMuted,
+                }]}>
+                  {handleStatus === "checking" ? "Checking username…" :
+                    handleStatus === "available" ? "Username available" :
+                    handleStatus === "taken" ? "Username already used or owned" :
+                    handleStatus === "invalid_format" ? "Use at least 3 letters, numbers, or underscores" :
+                    handleStatus === "error" ? "Could not check username yet" : ""}
+                </Text>
+              ) : null}
+            </>
+          )}
         </View>
       </View>
 
-      <View style={[styles.descSection, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <TextInput
-          ref={descRef}
-          style={[styles.descInput, { color: colors.text }]}
-          placeholder="Description (optional)"
-          placeholderTextColor={colors.textMuted}
-          value={description}
-          onChangeText={setDescription}
-          multiline
-          returnKeyType="done"
-          blurOnSubmit
-        />
-      </View>
-
-      <TouchableOpacity
-        style={[styles.visibilityRow, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}
-        onPress={() => setIsPublic((v) => !v)}
-        activeOpacity={0.75}
-      >
-        <View style={styles.visibilityLeft}>
-          <Ionicons
-            name={isPublic ? "globe" : "lock-closed"}
-            size={20}
-            color={isPublic ? PURPLE : colors.textMuted}
-          />
-          <View>
-            <Text style={[styles.visibilityTitle, { color: colors.text }]}>
-              {isPublic ? "Public Channel" : "Private Channel"}
-            </Text>
-            <Text style={[styles.visibilitySub, { color: colors.textMuted }]}>
-              {isPublic
-                ? "Anyone can find and subscribe"
-                : "Only people with the link can subscribe"}
-            </Text>
+      {step === 2 ? (
+        <>
+          <View style={[styles.descSection, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+            <TextInput
+              ref={descRef}
+              style={[styles.descInput, { color: colors.text }]}
+              placeholder="Description (optional)"
+              placeholderTextColor={colors.textMuted}
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              returnKeyType="done"
+              blurOnSubmit
+            />
           </View>
-        </View>
-        <View
-          style={[
-            styles.visibilityToggle,
-            { backgroundColor: isPublic ? PURPLE : colors.border },
-          ]}
-        >
-          <View
-            style={[
-              styles.visibilityThumb,
-              { transform: [{ translateX: isPublic ? 18 : 0 }] },
-            ]}
-          />
-        </View>
-      </TouchableOpacity>
 
-      <View style={[styles.tipCard, { backgroundColor: PURPLE + "0E", marginHorizontal: 14, marginTop: 14, borderRadius: 14, borderWidth: 1, borderColor: PURPLE + "30", padding: 14 }]}>
-        <Ionicons name="megaphone" size={16} color={PURPLE} />
-        <Text style={[styles.tipText, { color: PURPLE }]}>
-          As the channel owner, only you can post broadcasts. Subscribers can like and comment on your posts.
-        </Text>
-      </View>
+          <TouchableOpacity
+            style={[styles.visibilityRow, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}
+            onPress={() => setIsPublic((v) => !v)}
+            activeOpacity={0.75}
+          >
+            <View style={styles.visibilityLeft}>
+              <Ionicons
+                name={isPublic ? "globe" : "lock-closed"}
+                size={20}
+                color={isPublic ? PURPLE : colors.textMuted}
+              />
+              <View>
+                <Text style={[styles.visibilityTitle, { color: colors.text }]}>
+                  {isPublic ? "Public Channel" : "Private Channel"}
+                </Text>
+                <Text style={[styles.visibilitySub, { color: colors.textMuted }]}>
+                  {isPublic
+                    ? "Anyone can find and subscribe"
+                    : "Only people with the link can subscribe"}
+                </Text>
+              </View>
+            </View>
+            <View
+              style={[
+                styles.visibilityToggle,
+                { backgroundColor: isPublic ? PURPLE : colors.border },
+              ]}
+            >
+              <View
+                style={[
+                  styles.visibilityThumb,
+                  { transform: [{ translateX: isPublic ? 18 : 0 }] },
+                ]}
+              />
+            </View>
+          </TouchableOpacity>
+        </>
+      ) : null}
     </View>
   );
 }
@@ -434,6 +453,4 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
 
-  tipCard: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
-  tipText: { flex: 1, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
 });
