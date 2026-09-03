@@ -4,9 +4,9 @@ import Svg, { Defs, Ellipse, Image as SvgImage, Mask, Rect } from "react-native-
 import { LOGO_BLACK_B64 } from "@/lib/logoAssets";
 import { useThemeContext } from "@/context/ThemeContext";
 
-// Keep the dark landing-page mark tied to the provided notification asset so
-// its transparent pixels and artwork stay exact.
-const LOGO_DARK = require("@/assets/images/notification-icon.png");
+// Keep the dark landing-page mark tied to the clean white brand asset so its
+// transparent pixels and artwork stay exact.
+const LOGO_DARK = require("@/assets/images/white-logo-bold.png");
 const LOGO_LIGHT = { uri: LOGO_BLACK_B64 };
 
 /**
