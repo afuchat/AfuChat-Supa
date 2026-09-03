@@ -38,6 +38,7 @@ const CHANNELS_KEY = "communities:channels";
 type Group = {
   id: string;
   name: string;
+  handle: string | null;
   description: string | null;
   avatar_url: string | null;
   member_count: number;
@@ -101,9 +102,9 @@ export default function CommunitiesScreen() {
       ] = await Promise.all([
         supabase
           .from("chats")
-          .select("id, name, description, avatar_url, is_group, is_channel, is_public, chat_members(count)")
+          .select("id, name, handle, description, avatar_url, is_group, is_channel, is_private, chat_members(count)")
           .eq("is_group", true)
-          .eq("is_public", true)
+          .eq("is_private", false)
           .order("updated_at", { ascending: false })
           .limit(50),
         supabase.from("chat_members").select("chat_id").eq("user_id", user.id),
@@ -118,6 +119,7 @@ export default function CommunitiesScreen() {
         return {
           id: c.id,
           name: c.name || "Unnamed",
+          handle: c.handle || null,
           description: c.description || null,
           avatar_url: c.avatar_url || null,
           member_count,
@@ -310,6 +312,11 @@ export default function CommunitiesScreen() {
           </View>
           <View style={ss.cardBody}>
             <Text style={[ss.cardName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+            {item.handle ? (
+              <Text style={[ss.cardMeta, { color: BRAND, marginBottom: 2 }]} numberOfLines={1}>
+                @{item.handle}
+              </Text>
+            ) : null}
             {item.description ? (
               <Text style={[ss.cardDesc, { color: colors.textMuted }]} numberOfLines={2}>{item.description}</Text>
             ) : null}

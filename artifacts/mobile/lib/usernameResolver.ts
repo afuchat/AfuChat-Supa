@@ -51,10 +51,10 @@ export async function resolveUsernameTarget(handle: string): Promise<UsernameTar
   if (!/^[a-z0-9_]{1,30}$/.test(cleanHandle)) return null;
 
   const [
-    { data: profiles },
-    { data: channels },
-    { data: groups },
-    { data: aliases },
+    { data: profiles, error: profileError },
+    { data: channels, error: channelError },
+    { data: groups, error: groupError },
+    { data: aliases, error: aliasError },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -80,6 +80,12 @@ export async function resolveUsernameTarget(handle: string): Promise<UsernameTar
       .ilike("handle", cleanHandle)
       .limit(1),
   ]);
+
+  const queryError = profileError || channelError || groupError || aliasError;
+  if (queryError) {
+    console.warn("[UsernameResolver] lookup failed:", queryError.message);
+    throw queryError;
+  }
 
   const profile = (profiles as any[] | null)?.[0];
   if (profile?.id) return { kind: "profile", id: profile.id };
@@ -111,11 +117,15 @@ export async function resolveUsernameTarget(handle: string): Promise<UsernameTar
   if (alias?.owner_id) {
     // A username reservation can outlive a deleted profile. Do not navigate
     // to an owner ID unless its profile still exists.
-    const { data: aliasProfile } = await supabase
+    const { data: aliasProfile, error: aliasProfileError } = await supabase
       .from("profiles")
       .select("id")
       .eq("id", alias.owner_id)
       .maybeSingle();
+    if (aliasProfileError) {
+      console.warn("[UsernameResolver] owner lookup failed:", aliasProfileError.message);
+      throw aliasProfileError;
+    }
     if (aliasProfile?.id) return { kind: "profile", id: aliasProfile.id };
   }
 

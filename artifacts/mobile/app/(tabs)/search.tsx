@@ -93,7 +93,7 @@ type OrgPageResult = { id:string; name:string; slug:string; logo_url:string|null
 type PostResult    = { id:string; content:string; image_url:string|null; author_id:string; author_handle:string; author_name:string; author_avatar:string|null; view_count:number; created_at:string; post_type:string; article_title:string|null };
 type VideoResult   = { id:string; content:string; video_url:string; image_url:string|null; author_id:string; author_handle:string; author_name:string; author_avatar:string|null; view_count:number; created_at:string; audio_name:string|null; duration_seconds:number|null };
 type ChannelResult = { id:string; name:string; handle:string|null; description:string|null; avatar_url:string|null; subscriber_count:number; owner_handle:string|null; owner_name:string|null };
-type GroupResult   = { id:string; name:string; description:string|null; avatar_url:string|null; member_count:number };
+type GroupResult   = { id:string; name:string; handle:string|null; description:string|null; avatar_url:string|null; member_count:number };
 type EventResult   = { id:string; title:string; description:string|null; emoji:string; price:number; event_date:string; capacity:number; tickets_sold:number; category:string|null; creator_name:string; creator_handle:string };
 type GiftResult    = { id:string; name:string; emoji:string; base_xp_cost:number; rarity:string; description:string|null };
 type MarketResult  = { id:string; kind:"product"|"freelance"|"community"; title:string; desc:string|null; emoji:string|null; image_url:string|null; price:number; badge:string|null; seller_name:string; route:string };
@@ -525,9 +525,9 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
 
           wantsChannels && trimmed.length >= 1
             ? supabase.from("chats")
-                .select("id, name, description, avatar_url, chat_members(count)")
+                .select("id, name, handle, description, avatar_url, chat_members(count)")
                 .eq("is_group", true)
-                .eq("is_public", true)
+                .eq("is_private", false)
                 .ilike("name", pat)
                 .limit(all ? 4 : 20)
             : Promise.resolve({ data: [] }),
@@ -635,7 +635,14 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
       const groups: GroupResult[] = ((groupsRes.data || []) as any[]).map((c: any) => {
         const countArr = c.chat_members;
         const member_count = Array.isArray(countArr) && countArr[0]?.count != null ? Number(countArr[0].count) : 0;
-        return { id: c.id, name: c.name || "Unnamed", description: c.description || null, avatar_url: c.avatar_url || null, member_count };
+        return {
+          id: c.id,
+          name: c.name || "Unnamed",
+          handle: c.handle || null,
+          description: c.description || null,
+          avatar_url: c.avatar_url || null,
+          member_count,
+        };
       });
 
       const events: EventResult[] = ((eventsRes.data || []) as any[]).map((e: any) => {
@@ -983,6 +990,7 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
           </View>
           <View style={{ flex: 1, gap: 3 }}>
             <Text style={[ss.rowTitle, { color: colors.text }]} numberOfLines={1}>{gr.name}</Text>
+            {gr.handle ? <Text style={[ss.rowSub, { color: BRAND }]} numberOfLines={1}>@{gr.handle}</Text> : null}
             {gr.description ? <Text style={[ss.rowSub, { color: colors.textMuted }]} numberOfLines={1}>{gr.description}</Text> : null}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
               <Ionicons name="people" size={11} color={BRAND} />

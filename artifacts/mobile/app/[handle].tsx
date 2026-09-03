@@ -106,10 +106,10 @@ export default function HandleScreen() {
       // groups. Resolve each public source before allowing any navigation so
       // a chat username can never fall through to a profile error screen.
       const [
-        { data: profiles },
-        { data: channels },
-        { data: groups },
-        { data: aliases },
+        { data: profiles, error: profileError },
+        { data: channels, error: channelError },
+        { data: groups, error: groupError },
+        { data: aliases, error: aliasError },
       ] = await Promise.all([
         supabase
           .from("profiles")
@@ -137,6 +137,11 @@ export default function HandleScreen() {
       ]);
 
       if (cancelled) return;
+      const queryError = profileError || channelError || groupError || aliasError;
+      if (queryError) {
+        console.warn("[HandleScreen] username lookup failed:", queryError.message);
+        throw queryError;
+      }
 
       const primary = (profiles as any[] | null)?.[0];
       if (primary?.id) {
@@ -176,13 +181,17 @@ export default function HandleScreen() {
       if (alias?.owner_id) {
         // An owned username can outlive a deleted profile. Confirm the owner
         // still has a profile before treating the alias as navigable.
-        const { data: aliasProfile } = await supabase
+        const { data: aliasProfile, error: aliasProfileError } = await supabase
           .from("profiles")
           .select("id")
           .eq("id", alias.owner_id)
           .maybeSingle();
 
-      if (cancelled) return;
+        if (aliasProfileError) {
+          console.warn("[HandleScreen] owner lookup failed:", aliasProfileError.message);
+          throw aliasProfileError;
+        }
+        if (cancelled) return;
         if (aliasProfile?.id) {
           setTarget({ kind: "profile", id: aliasProfile.id });
           setDataReady(true);

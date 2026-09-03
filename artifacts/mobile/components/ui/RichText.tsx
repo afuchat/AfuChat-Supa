@@ -207,7 +207,13 @@ function MentionAvatar({
   // User not found — bold, unclickable
   if (avatarUrl === null) {
     return (
-      <Text style={[styles.bold, { color: mentionColor }]}>{handle}</Text>
+      <Text
+        style={[styles.bold, { color: mentionColor }]}
+        onPress={onPress}
+        suppressHighlighting
+      >
+        {handle}
+      </Text>
     );
   }
 
