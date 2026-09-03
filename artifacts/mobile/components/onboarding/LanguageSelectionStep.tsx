@@ -36,25 +36,15 @@ const LANGUAGES = BUNDLED_UI_LANGUAGES
     flag: FLAGS[code],
   }));
 
-const LANGUAGE_NAMES: Record<string, Record<string, string>> = {
-  en: { en: "English", sw: "Swahili", fr: "French", es: "Spanish", ar: "Arabic", zh: "Chinese" },
-  sw: { en: "Kiingereza", sw: "Kiswahili", fr: "Kifaransa", es: "Kihispania", ar: "Kiarabu", zh: "Kichina" },
-  fr: { en: "Anglais", sw: "Swahili", fr: "Français", es: "Espagnol", ar: "Arabe", zh: "Chinois" },
-  es: { en: "Inglés", sw: "Suajili", fr: "Francés", es: "Español", ar: "Árabe", zh: "Chino" },
-  ar: { en: "الإنجليزية", sw: "السواحيلية", fr: "الفرنسية", es: "الإسبانية", ar: "العربية", zh: "الصينية" },
-  zh: { en: "英语", sw: "斯瓦希里语", fr: "法语", es: "西班牙语", ar: "阿拉伯语", zh: "中文" },
-};
-
 type LanguageSelectionStepProps = {
   onComplete: () => void;
 };
 
 export default function LanguageSelectionStep({ onComplete }: LanguageSelectionStepProps) {
   const insets = useSafeAreaInsets();
-  const { preferredLang, setPreferredLang, t } = useLanguage();
+  const { setPreferredLang, t } = useLanguage();
   const [selected, setSelected] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const activeLanguage = preferredLang ?? "en";
   const continueLabel = selected ? t("Continue") : t("Choose a language");
 
   function selectLanguage(code: string) {
@@ -138,7 +128,7 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
                 </View>
                 <View style={styles.languageInfo}>
                   <Text style={[styles.languageName, isSelected && styles.languageNameSelected]}>
-                    {LANGUAGE_NAMES[activeLanguage]?.[language.code] ?? language.name}
+                    {language.name}
                   </Text>
                 </View>
                 <View style={[styles.radio, isSelected && styles.radioSelected]}>
