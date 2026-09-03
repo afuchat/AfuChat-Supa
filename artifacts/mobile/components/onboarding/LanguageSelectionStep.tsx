@@ -16,6 +16,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { LANG_LABELS, BUNDLED_UI_LANGUAGES } from "@/lib/i18n";
 import AfuLogo from "@/components/ui/AfuLogo";
 import OnboardingBackdrop, { ONBOARDING_THEME } from "@/components/onboarding/OnboardingBackdrop";
+import { BlurView } from "expo-blur";
 
 const FLAGS: Record<string, string> = {
   en: "🇬🇧", zh: "🇨🇳", es: "🇪🇸", fr: "🇫🇷", ar: "🇸🇦", sw: "🇰🇪",
@@ -88,7 +89,7 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
           <View style={styles.headerInner}>
             <View style={styles.brandLockup}>
               <View style={styles.brandIconFrame}>
-                <AfuLogo size={24} forceTheme="dark" />
+                <AfuLogo size={24} forceTheme="dark" withoutFlame />
               </View>
               <View>
                 <Text style={styles.brandText}>AfuChat</Text>
@@ -157,6 +158,13 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
       </ScrollView>
 
       <View style={[styles.bottomFooter, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+        <BlurView
+          intensity={62}
+          tint="dark"
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
+        <View style={styles.bottomSheetHighlight} pointerEvents="none" />
         <Pressable
           onPress={continueSelection}
           disabled={!selected || saving}
@@ -215,13 +223,33 @@ const styles = StyleSheet.create({
   },
   headerInner: { width: "100%", maxWidth: 560, alignSelf: "center" },
   bottomFooter: {
+    position: "relative",
     alignItems: "center",
-    paddingTop: 20, paddingHorizontal: 22, backgroundColor: ONBOARDING_THEME.gradientMiddle,
+    paddingTop: 18, paddingHorizontal: 22,
+    backgroundColor: "rgba(17,31,54,0.78)",
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(178,211,255,0.20)",
+    overflow: "hidden",
+    ...Platform.select({
+      ios: { shadowColor: "#000000", shadowOpacity: 0.30, shadowRadius: 20, shadowOffset: { width: 0, height: -8 } },
+      android: { elevation: 12 },
+      web: { boxShadow: "0 -10px 28px rgba(0,0,0,0.24)" } as any,
+    }),
+  },
+  bottomSheetHighlight: {
+    position: "absolute",
+    top: 0,
+    left: 32,
+    right: 32,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.24)",
   },
   brandLockup: { flexDirection: "row", alignItems: "center", gap: 10, alignSelf: "center" },
   brandIconFrame: {
     width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.10)",
+    backgroundColor: "transparent",
   },
   brandText: { color: "#FFFFFF", fontSize: 22, lineHeight: 25, fontFamily: "Inter_700Bold", letterSpacing: -0.5 },
   brandCaption: { color: "rgba(188,215,255,0.58)", fontSize: 8, lineHeight: 10, letterSpacing: 1.8, fontFamily: "Inter_700Bold", marginTop: 1 },
