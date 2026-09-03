@@ -379,6 +379,7 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
       .from("profiles")
       .select("id, handle, display_name, avatar_url, bio, is_verified, is_organization_verified, current_grade, country, xp")
       .eq("is_verified", true)
+      .or("hide_from_search.is.null,hide_from_search.eq.false")
       .order("xp", { ascending: false })
       .limit(12);
     if (data) setTrendingPeople(data.map((p: any) => ({ ...p, kind: "profile" })));
@@ -518,7 +519,7 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
             ? supabase.from("channels")
                 .select("id, name, handle, description, avatar_url, subscriber_count, owner_id, profiles!channels_owner_id_fkey(display_name, handle)")
                 .or(`name.ilike.${pat},handle.ilike.${pat},description.ilike.${pat}`)
-                .not("owner_id", "is", null)
+                .eq("is_public", true)
                 .order("subscriber_count", { ascending: false })
                 .limit(all ? 4 : 20)
             : Promise.resolve({ data: [] }),
@@ -527,8 +528,8 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
             ? supabase.from("chats")
                 .select("id, name, handle, description, avatar_url, chat_members(count)")
                 .eq("is_group", true)
-                .eq("is_private", false)
-                .ilike("name", pat)
+                .or("is_private.is.null,is_private.eq.false")
+                .or(`name.ilike.${pat},handle.ilike.${pat}`)
                 .limit(all ? 4 : 20)
             : Promise.resolve({ data: [] }),
 
