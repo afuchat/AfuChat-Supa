@@ -2483,12 +2483,12 @@ function ChatScreen() {
         other_id: local.other_id || "",
         member_ids: local.other_id ? [local.other_id] : [],
         avatar_url: local.avatar_url,
-         channel_owner_id: local.created_by || null,
+         channel_owner_id: local.created_by || channelOwnerId || null,
         other_last_seen: local.other_last_seen,
         other_show_online_status: local.other_show_online,
       });
     }).catch(() => {});
-  }, [id, isDraft, chatInfo, user?.id]);
+  }, [id, isDraft, chatInfo, user?.id, channelOwnerId]);
 
   const [floatingInputHeight, setFloatingInputHeight] = useState(80);
 
@@ -2787,10 +2787,10 @@ function ChatScreen() {
         other_id: isSelf ? user.id : (other?.id || ""),
         member_ids: memberIds,
         avatar_url: chat.avatar_url,
-        channel_handle: channel?.handle || null,
-        channel_description: channel?.description ?? chat.description ?? null,
+         channel_handle: channel?.handle || channelHandle || null,
+         channel_description: channel?.description ?? chat.description ?? channelDescription ?? null,
         channel_is_public: channel?.is_public ?? undefined,
-        channel_owner_id: channel?.owner_id || null,
+         channel_owner_id: channel?.owner_id || channelOwnerId || null,
         channel_subscriber_count: channel?.subscriber_count ?? null,
         is_verified: isSelf ? false : !!other?.is_verified,
         is_organization_verified: isSelf ? false : !!other?.is_organization_verified,
@@ -2799,7 +2799,7 @@ function ChatScreen() {
          other_handle: isSelf ? null : (other?.handle || null),
       });
     }
-  }, [id, user, isDraft]);
+  }, [id, user, isDraft, channelOwnerId, channelHandle, channelDescription]);
 
   const loadMessages = useCallback(async (loadToken = chatLoadGenerationRef.current) => {
     const isCurrentLoad = () => chatLoadGenerationRef.current === loadToken;
@@ -6755,7 +6755,11 @@ STRICT RULES:
       ? "My Notes"
       : (phonebookName || chatInfo?.other_name || "Chat");
   const headerAvatar = chatInfo?.is_group || chatInfo?.is_channel ? chatInfo?.avatar_url : isSelfChat ? null : chatInfo?.other_avatar;
-  const canPostToChannel = !chatInfo?.is_channel || iAmChatAdmin || chatInfo.channel_owner_id === user?.id;
+  const isChannelOwner =
+    !!chatInfo?.is_channel &&
+    !!user?.id &&
+    (chatInfo.channel_owner_id || channelOwnerId) === user.id;
+  const canPostToChannel = !chatInfo?.is_channel || iAmChatAdmin || isChannelOwner;
   const headerSubtitle = chatInfo?.is_channel
     ? (chatInfo.channel_is_public === false ? "Private" : "Public")
     : null;
@@ -6916,7 +6920,7 @@ STRICT RULES:
               <Text style={[st.headerSub, { color: colors.accent }]}>Official · updates & actions</Text>
             ) : isLocalNotes ? (
               <Text style={[st.headerSub, { color: colors.textMuted }]}>Private · stored on this device</Text>
-            ) : !networkOnline ? (
+            ) : !networkOnline && !canPostToChannel ? (
               <Text style={[st.headerSub, { color: "#FF9500" }]}>Waiting for network...</Text>
              ) : chatInfo?.is_channel ? (
               <Text style={[st.headerSub, { color: colors.textMuted }]}>
