@@ -236,7 +236,7 @@ export default function CreateChannelScreen() {
       />
 
       <View style={[styles.nameSection, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        {step === 2 ? (
+        {step === 1 ? (
           <TouchableOpacity
             style={[styles.avatarBtn, { backgroundColor: avatarUri ? "transparent" : PURPLE }]}
             onPress={pickAvatar}
