@@ -17,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "@/lib/haptics";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 const USAGE_KEY = "afu_app_usage";
 const COLS = 4;
@@ -216,6 +217,7 @@ function FeaturedPageCard({
   onTap: (id: string) => void;
 }) {
   const scale = useRef(new Animated.Value(1)).current;
+  const { t } = useLanguage();
 
   function handlePressIn() {
     Animated.spring(scale, { toValue: 0.96, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
@@ -241,16 +243,16 @@ function FeaturedPageCard({
             </View>
             {page.badge ? (
               <View style={styles.featBadge}>
-                <Text style={styles.featBadgeText}>{page.badge}</Text>
+                <Text style={styles.featBadgeText}>{t(page.badge)}</Text>
               </View>
             ) : null}
           </View>
-          <Text style={styles.featLabel} numberOfLines={1}>{page.label}</Text>
+            <Text style={styles.featLabel} numberOfLines={1}>{t(page.label)}</Text>
           {page.featuredSub ? (
-            <Text style={styles.featSub} numberOfLines={2}>{page.featuredSub}</Text>
+            <Text style={styles.featSub} numberOfLines={2}>{t(page.featuredSub)}</Text>
           ) : null}
           <View style={styles.featOpenBtn}>
-            <Text style={styles.featOpenText}>Open</Text>
+            <Text style={styles.featOpenText}>{t("Open")}</Text>
           </View>
         </LinearGradient>
       </Pressable>
@@ -270,6 +272,7 @@ function PageTile({
   onTap: (id: string) => void;
 }) {
   const { colors, accent } = useTheme();
+  const { t } = useLanguage();
   const scale = useRef(new Animated.Value(1)).current;
 
   function handlePressIn() {
@@ -303,12 +306,12 @@ function PageTile({
           </LinearGradient>
           {page.badge ? (
             <View style={[styles.badge, page.badge === "AI" ? styles.badgeAI : page.badge === "NEW" ? styles.badgeNew : styles.badgeDefault]}>
-              <Text style={styles.badgeText}>{page.badge}</Text>
+              <Text style={styles.badgeText}>{t(page.badge)}</Text>
             </View>
           ) : null}
         </View>
         <Text style={[styles.tileLabel, { color: colors.text }]} numberOfLines={1}>
-          {page.label}
+          {t(page.label)}
         </Text>
         {usageCount && usageCount > 0 ? (
           <Text style={[styles.usageText, { color: colors.textMuted }]}>
@@ -322,6 +325,7 @@ function PageTile({
 
 export default function AppsScreen() {
   const { colors, accent, isDark } = useTheme();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const { width: SW } = useWindowDimensions();
   const [usageCounts, setUsageCounts] = useState<Record<string, number>>({});
@@ -361,7 +365,7 @@ export default function AppsScreen() {
     pages: cat.pages.filter((a) => {
       if (!isVisible(a)) return false;
       if (!searchQuery) return true;
-      return a.label.toLowerCase().includes(searchQuery.toLowerCase());
+       return t(a.label).toLowerCase().includes(searchQuery.toLowerCase());
     }),
   })).filter((cat) => cat.pages.length > 0);
 
@@ -380,11 +384,11 @@ export default function AppsScreen() {
         {/* ── Header ── */}
         <View style={[styles.header, { paddingHorizontal: H_PAD }]}>
           <View style={styles.headerLeft}>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>{"Pages"}</Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>{t("Pages")}</Text>
             {isPremium ? (
               <View style={[styles.premiumPill, { backgroundColor: colors.backgroundSecondary }]}>
                 <Ionicons name="diamond" size={11} color="#FFD60A" />
-                <Text style={styles.premiumPillText}>{"Premium"}</Text>
+                <Text style={styles.premiumPillText}>{t("Premium")}</Text>
               </View>
             ) : null}
           </View>
@@ -396,7 +400,7 @@ export default function AppsScreen() {
             <Ionicons name="search" size={16} color={colors.textMuted} />
             <TextInput
               style={[styles.searchInput, { color: colors.text }]}
-              placeholder="Search pages…"
+              placeholder={t("Search pages…")}
               placeholderTextColor={colors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -415,7 +419,7 @@ export default function AppsScreen() {
         {!searchQuery ? (
           <View style={{ marginBottom: 28 }}>
             <Text style={[styles.sectionTitle, { color: colors.text, paddingHorizontal: H_PAD, marginBottom: 12 }]}>
-              {"Featured"}
+              {t("Featured")}
             </Text>
             <ScrollView
               horizontal
@@ -445,7 +449,7 @@ export default function AppsScreen() {
           return (
             <View key={cat.id} style={{ marginBottom: 24 }}>
               <Text style={[styles.sectionTitle, { color: colors.text, paddingHorizontal: H_PAD, marginBottom: 4 }]}>
-                {cat.title}
+                {t(cat.title)}
               </Text>
               <View style={[styles.grid, { paddingHorizontal: H_PAD }]}>
                 {cat.pages.map((page) => (
@@ -468,7 +472,9 @@ export default function AppsScreen() {
         {filteredCategories.length === 0 ? (
           <View style={styles.emptyWrap}>
             <Ionicons name="search" size={40} color={colors.textMuted} />
-            <Text style={[styles.emptyText, { color: colors.textMuted }]}>No pages match "{searchQuery}"</Text>
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+              {t("No pages match")} "{searchQuery}"
+            </Text>
           </View>
         ) : null}
       </ScrollView>
