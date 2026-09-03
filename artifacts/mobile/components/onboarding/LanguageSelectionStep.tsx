@@ -140,9 +140,6 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
                   pressed && styles.languageRowPressed,
                 ]}
               >
-                <View style={[styles.badgeBubble, isSelected && styles.badgeBubbleSelected]}>
-                  <Text style={styles.flag}>{language.flag}</Text>
-                </View>
                 <View style={styles.languageInfo}>
                   <Text style={[styles.languageName, isSelected && styles.languageNameSelected]}>
                     {language.name}
@@ -150,6 +147,9 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
                 </View>
                 <View style={[styles.radio, isSelected && styles.radioSelected]}>
                   {isSelected && <View style={styles.radioDot} />}
+                </View>
+                <View style={[styles.badgeBubble, isSelected && styles.badgeBubbleSelected]}>
+                  <Text style={styles.flag}>{language.flag}</Text>
                 </View>
               </Pressable>
             );
