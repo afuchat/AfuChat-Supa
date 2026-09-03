@@ -2738,6 +2738,7 @@ export default function DiscoverScreen() {
           >
             <Text style={[
               styles.tabPillText,
+              isCompactHeader && styles.tabPillTextCompact,
               { color: activeDiscoverTab === "for_you" ? colors.accent : colors.textMuted },
             ]}>
               For You
@@ -2759,6 +2760,7 @@ export default function DiscoverScreen() {
             >
               <Text style={[
                 styles.tabPillText,
+                isCompactHeader && styles.tabPillTextCompact,
                   { color: activeDiscoverTab === "following" ? colors.accent : colors.textMuted },
               ]}>
                 Following
@@ -2783,6 +2785,7 @@ export default function DiscoverScreen() {
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
               <Text style={[
                 styles.tabPillText,
+                isCompactHeader && styles.tabPillTextCompact,
                 { color: activeDiscoverTab === "find" ? colors.accent : colors.textMuted },
               ]}>Find</Text>
               <View style={[styles.newTabBadge, { backgroundColor: colors.accent }]}>
@@ -2790,7 +2793,7 @@ export default function DiscoverScreen() {
               </View>
             </View>
           </TouchableOpacity>
-          <View style={{ flex: 1 }} />
+          <View style={[styles.tabSpacer, isCompactHeader && styles.tabSpacerCompact]} />
           {!user && (
             <TouchableOpacity
               onPress={() => safeRouter.push("/(auth)/login")}
@@ -3227,17 +3230,27 @@ const styles = StyleSheet.create({
   },
   tabRowCompact: {
     justifyContent: "flex-start",
-    paddingHorizontal: 4,
+    paddingHorizontal: 8,
   },
   tabPillCompact: {
     flex: 1,
     minWidth: 0,
-    paddingHorizontal: 5,
+    paddingHorizontal: 4,
+    minHeight: 44,
+  },
+  tabPillTextCompact: {
+    fontSize: 13,
+  },
+  tabSpacer: {
+    flex: 1,
+  },
+  tabSpacerCompact: {
+    flex: 0,
   },
   searchBtnCompact: {
-    width: 42,
-    height: 42,
-    marginLeft: 2,
+    width: 40,
+    height: 40,
+    marginLeft: 4,
   },
   loadMorePill: {
     position: "absolute",

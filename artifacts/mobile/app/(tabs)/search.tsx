@@ -454,6 +454,11 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
     const id = ++searchIdRef.current;
     setLoading(true); setHasSearched(true);
     const pat = `%${trimmed}%`;
+    // Handles are stored without the leading @, but users commonly search
+    // for them as @username. Keep the original query for text content and use
+    // the normalized value for every handle lookup.
+    const handleQuery = trimmed.replace(/^@+/, "").trim();
+    const handlePat = handleQuery ? `%${handleQuery}%` : pat;
     const all = currentTab === "all";
     const cutoff = dateRangeCutoff(dr);
 
@@ -473,7 +478,7 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
             ? (() => {
                 let pq = supabase.from("profiles")
                   .select("id, handle, display_name, avatar_url, bio, is_verified, is_organization_verified, current_grade, country, xp")
-                  .or(`handle.ilike.${pat},display_name.ilike.${pat},bio.ilike.${pat}`)
+                  .or(`handle.ilike.${handlePat},display_name.ilike.${pat},bio.ilike.${pat}`)
                   .or("hide_from_search.is.null,hide_from_search.eq.false");
                 if (vOnly) pq = pq.eq("is_verified", true);
                 pq = pq.order("xp", { ascending: false });
@@ -518,7 +523,7 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
           wantsChannels
             ? supabase.from("channels")
                 .select("id, name, handle, description, avatar_url, subscriber_count, owner_id, profiles!channels_owner_id_fkey(display_name, handle)")
-                .or(`name.ilike.${pat},handle.ilike.${pat},description.ilike.${pat}`)
+                .or(`name.ilike.${pat},handle.ilike.${handlePat},description.ilike.${pat}`)
                 .eq("is_public", true)
                 .order("subscriber_count", { ascending: false })
                 .limit(all ? 4 : 20)
@@ -529,7 +534,7 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
                 .select("id, name, handle, description, avatar_url, chat_members(count)")
                 .eq("is_group", true)
                 .or("is_private.is.null,is_private.eq.false")
-                .or(`name.ilike.${pat},handle.ilike.${pat}`)
+                .or(`name.ilike.${pat},handle.ilike.${handlePat}`)
                 .limit(all ? 4 : 20)
             : Promise.resolve({ data: [] }),
 
