@@ -24,7 +24,6 @@ import { makeRedirectUri } from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { supabase } from "@/lib/supabase";
-import { GOOGLE_WEB_CLIENT_ID } from "@/lib/env";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { useAppAccent } from "@/context/AppAccentContext";
@@ -33,7 +32,6 @@ import { showAlert } from "@/lib/alert";
 import AfuLogo from "@/components/ui/AfuLogo";
 import { GitHubLogo, GoogleLogo } from "@/components/ui/OAuthLogos";
 import Colors from "@/constants/colors";
-import GoogleOneTap from "@/components/auth/GoogleOneTap";
 import { signInWithNativeGoogle } from "@/lib/nativeGoogleAuth";
 
 const BG = "#000000";
@@ -331,124 +329,25 @@ export default function SignUpScreen() {
   async function handleGoogle() {
     try {
       setOauthLoading("google");
-      if (Platform.OS === "android") {
-        try {
-          const nativeResult = await signInWithNativeGoogle();
-          if (nativeResult.kind === "cancelled") {
-            setOauthLoading(null);
-            return;
-          }
-          if (nativeResult.kind === "success") {
-            const { data: authData, error: authError } = await supabase.auth.signInWithIdToken({
-              provider: "google",
-              token: nativeResult.idToken,
-            });
-            if (authError) throw authError;
-
-            const uid = authData.user?.id;
-            if (uid) {
-              const { data: profile } = await supabase
-                .from("profiles")
-                .select("onboarding_completed")
-                .eq("id", uid)
-                .maybeSingle();
-              setOauthLoading(null);
-              if (!profile?.onboarding_completed) {
-                router.replace({ pathname: "/onboarding", params: { userId: uid } } as any);
-              } else {
-                router.replace("/(tabs)/chats");
-              }
-              return;
-            }
-            throw new Error("Google sign-up did not create a user session.");
-          }
-        } catch (nativeError: any) {
-          const code = nativeError?.code;
-          if (code === "SIGN_IN_CANCELLED" || code === "12501") {
-            setOauthLoading(null);
-            return;
-          }
-          // Expo Go has no native module, and DEVELOPER_ERROR (10) means the
-          // installed build's signing certificate is not registered in Google
-          // Cloud. Both cases must use the Supabase browser flow below.
-          const message = String(nativeError?.message ?? "");
-          const canUseBrowserFallback =
-            message.includes("Cannot find module") ||
-            code === "10" ||
-            code === 10 ||
-            code === "DEVELOPER_ERROR" ||
-            code === "12500" ||
-            message.includes("DEVELOPER_ERROR");
-          if (!canUseBrowserFallback) {
-            throw nativeError;
-          }
-        }
-      }
-      if (Platform.OS === "web" && typeof window !== "undefined") {
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: { redirectTo: `${window.location.origin}/` },
-        });
-        if (error) {
-          showAlert("Google sign-up failed", error.message);
-            setOauthLoading(null);
-        }
+      if (Platform.OS !== "android") {
+        showAlert("Google sign-up unavailable", "Google sign-up is available in the Android app.");
         return;
       }
 
-      const redirectUrl = makeRedirectUri({ native: "afuchat://(auth)/register" });
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: redirectUrl, skipBrowserRedirect: true },
-      });
-      if (error) { showAlert("Google sign-up failed", error.message); setOauthLoading(null); return; }
-      if (!data?.url) { setOauthLoading(null); return; }
-
-      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl, { showInRecents: false });
-      if (result.type === "success" && result.url) {
-        const url = new URL(result.url);
-        const code = url.searchParams.get("code");
-        if (code) {
-          const { data: sessionData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-          if (exchangeError) throw exchangeError;
-          const uid = sessionData.user?.id;
-          if (uid) {
-            const { data: profile } = await supabase.from("profiles").select("onboarding_completed").eq("id", uid).maybeSingle();
-            if (!profile?.onboarding_completed) {
-              setOauthLoading(null);
-              router.replace({ pathname: "/onboarding", params: { userId: uid } } as any);
-              return;
-            }
-          }
-          setOauthLoading(null);
-          router.replace("/(tabs)/chats");
-          return;
-        }
-        const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
-        const accessToken = url.searchParams.get("access_token") || hashParams.get("access_token");
-        const refreshToken = url.searchParams.get("refresh_token") || hashParams.get("refresh_token");
-        if (accessToken && refreshToken) {
-          const { error: sessionError } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-          if (sessionError) throw sessionError;
-          router.replace("/(tabs)/chats");
-        }
+      const nativeResult = await signInWithNativeGoogle();
+      if (nativeResult.kind === "cancelled" || nativeResult.kind === "no_saved_credential") return;
+      if (nativeResult.kind === "unavailable") {
+        showAlert("Google sign-up unavailable", "Install the Android app to use native Google sign-up.");
+        return;
       }
-      setOauthLoading(null);
-    } catch (error: any) {
-      setOauthLoading(null);
-      showAlert("Google sign-up failed", error?.message || "Could not complete Google sign-up.");
-    }
-  }
 
-  async function handleGoogleOneTap(idToken: string) {
-    try {
-      setOauthLoading("google");
-      const { data, error } = await supabase.auth.signInWithIdToken({
+      const { data: authData, error: authError } = await supabase.auth.signInWithIdToken({
         provider: "google",
-        token: idToken,
+        token: nativeResult.idToken,
       });
-      if (error) throw error;
-      const uid = data.user?.id;
+      if (authError) throw authError;
+
+      const uid = authData.user?.id;
       if (!uid) throw new Error("Google sign-up did not create a user session.");
       const { data: profile } = await supabase
         .from("profiles")
@@ -461,7 +360,7 @@ export default function SignUpScreen() {
         router.replace("/(tabs)/chats");
       }
     } catch (error: any) {
-      showAlert("Google sign-up failed", error?.message || "Could not complete Google One Tap sign-up.");
+      showAlert("Google sign-up failed", error?.message || "Could not complete Google sign-up.");
     } finally {
       setOauthLoading(null);
     }
@@ -469,7 +368,6 @@ export default function SignUpScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: BG, overflow: "hidden" }}>
-      <GoogleOneTap onCredential={handleGoogleOneTap} />
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       {/* ── Background orbs ── */}
@@ -498,11 +396,13 @@ export default function SignUpScreen() {
           <Text style={sc.subheading}>{t("Join millions of people on AfuChat")}</Text>
 
           <View style={{ gap: 12, marginTop: 28 }}>
-            {/* Google */}
-            <TouchableOpacity style={[sc.glassBtn, oauthLoading === "google" && { opacity: 0.62 }]} onPress={handleGoogle} disabled={oauthLoading !== null} activeOpacity={0.78}>
-              {oauthLoading === "google" ? <ActivityIndicator size="small" color={accent} /> : <GoogleLogo size={20} />}
-              <Text style={sc.glassBtnText}>{oauthLoading === "google" ? t("Signing up…") : t("Continue with Google")}</Text>
-            </TouchableOpacity>
+            {/* Native Google is available only in the Android standalone app. */}
+            {Platform.OS === "android" && (
+              <TouchableOpacity style={[sc.glassBtn, oauthLoading === "google" && { opacity: 0.62 }]} onPress={handleGoogle} disabled={oauthLoading !== null} activeOpacity={0.78}>
+                {oauthLoading === "google" ? <ActivityIndicator size="small" color={accent} /> : <GoogleLogo size={20} />}
+                <Text style={sc.glassBtnText}>{oauthLoading === "google" ? t("Signing up…") : t("Continue with Google")}</Text>
+              </TouchableOpacity>
+            )}
 
             {/* GitHub */}
             <TouchableOpacity style={[sc.glassBtn, oauthLoading === "github" && { opacity: 0.62 }]} onPress={handleGitHub} disabled={oauthLoading !== null} activeOpacity={0.78}>
