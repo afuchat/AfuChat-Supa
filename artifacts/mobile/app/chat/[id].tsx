@@ -2796,9 +2796,12 @@ function ChatScreen() {
     contextKey: messageGateContextKey,
     status: initialMessageGateStatus,
   });
+  // Never borrow the previous route's gate while navigating between chats.
+  // Read this chat's durable snapshot synchronously so a known unlocked chat
+  // opens straight into its composer, even when the device is offline.
   const messageGateStatus = messageGateSnapshot.contextKey === messageGateContextKey
     ? messageGateSnapshot.status
-    : "unknown";
+    : initialMessageGateStatus;
   const messageLimited = messageGateStatus === "limited";
   const messageGateBlocked = messageGateStatus !== "unlocked";
   const [isStranger, setIsStranger] = useState(false);
@@ -3431,17 +3434,6 @@ function ChatScreen() {
         applyGateState("unknown");
       }
       return;
-    }
-
-    // Migrate the old pair-based unlock marker once, but write the result
-    // under this exact chat ID so future chats cannot inherit its status.
-    if (cachedStatus === "unknown") {
-      const legacyUnlock = await AsyncStorage.getItem(`chat_message_gate_unlocked_${user.id}_${otherId}`).catch(() => null);
-      if (legacyUnlock === "1") {
-        persistGateState(chatId, "unlocked");
-        applyGateState("unlocked");
-        return;
-      }
     }
 
     const { data: theyFollowMe, error: followError } = await supabase
@@ -6298,6 +6290,9 @@ STRICT RULES:
   }
 
   async function startVoiceRecordingHold() {
+    // The normal composer remains visible while an exact-chat gate is being
+    // resolved, but recording must obey the same fail-closed send guard.
+    if (blockMessageAction()) return;
     if (recordingActiveRef.current) return;
     // Microphone input owns the audio session. Stop any voice message (and
     // every other registered speaker playback) before asking for the mic so
@@ -6485,6 +6480,12 @@ STRICT RULES:
   }
 
   async function stopVoiceRecording() {
+    // The gate can change while the microphone is open (for example after a
+    // reconnect). Cancel rather than allowing an unresolved chat to bypass it.
+    if (blockMessageAction()) {
+      await cancelVoiceRecording();
+      return;
+    }
     if (!recordingActiveRef.current) {
       if (recordingStartingRef.current) await cancelVoiceRecording();
       return;
@@ -7761,12 +7762,6 @@ STRICT RULES:
               >
                 {messageLimitNotice}
               </Text>
-            </View>
-          </View>
-        ) : messageGateStatus === "unknown" ? (
-          <View style={[st.inputFloatOuter, st.limitedFloatOuter, { paddingBottom: Math.max(insets.bottom + 6, 14) }]}>
-            <View style={[st.limitedGlass, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <ActivityIndicator size="small" color={colors.textMuted} />
             </View>
           </View>
         ) : isRecording && recLocked ? (
