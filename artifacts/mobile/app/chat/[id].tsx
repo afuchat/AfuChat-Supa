@@ -381,6 +381,7 @@ type ChatInfo = {
   channel_is_member?: boolean;
   channel_owner_id?: string | null;
   channel_subscriber_count?: number | null;
+  channel_role?: "owner" | "member";
 };
 
 function NativeAttachmentIcon({
@@ -2155,6 +2156,7 @@ function ChatScreen() {
      channelDescription,
     isGroup,
     isChannel,
+    channelRole,
     chatName,
     chatAvatar,
     initialMessage,
@@ -2178,6 +2180,7 @@ function ChatScreen() {
      channelDescription?: string;
     isGroup?: string;
     isChannel?: string;
+    channelRole?: "owner" | "member";
     chatName?: string;
     chatAvatar?: string;
     initialMessage?: string;
@@ -2326,7 +2329,9 @@ function ChatScreen() {
         other_handle: otherHandle || null,
         channel_handle: channelHandle || null,
         channel_description: channelDescription || null,
-        channel_owner_id: null,
+        channel_owner_id: channelRole === "owner" ? (user?.id ?? null) : null,
+        channel_role: channelRole,
+        channel_is_member: channelRole ? true : undefined,
         member_ids: otherId ? [otherId] : [],
         avatar_url: chatAvatar || null,
       };
@@ -2483,7 +2488,11 @@ function ChatScreen() {
         other_id: local.other_id || "",
         member_ids: local.other_id ? [local.other_id] : [],
         avatar_url: local.avatar_url,
-         channel_owner_id: null,
+        channel_owner_id: local.is_channel && local.created_by === user?.id ? (user?.id ?? null) : null,
+        channel_role: local.is_channel
+          ? (local.created_by === user?.id ? "owner" : "member")
+          : undefined,
+        channel_is_member: local.is_channel ? true : undefined,
         other_last_seen: local.other_last_seen,
         other_show_online_status: local.other_show_online,
       });
@@ -2786,6 +2795,9 @@ function ChatScreen() {
           other_avatar: chat.avatar_url ?? prev?.other_avatar ?? chatAvatar ?? null,
           avatar_url: chat.avatar_url ?? prev?.avatar_url ?? chatAvatar ?? null,
           channel_description: prev?.channel_description ?? chat.description ?? channelDescription ?? null,
+          channel_role: prev?.channel_role ?? channelRole,
+          channel_is_member: prev?.channel_is_member ?? (channelRole ? true : undefined),
+          channel_owner_id: prev?.channel_owner_id ?? (channelRole === "owner" ? user.id : null),
         }));
 
         void Promise.all([
@@ -2808,6 +2820,11 @@ function ChatScreen() {
           const channelIsMember = channelMembershipResult.error
             ? undefined
             : !!channelMembershipResult.data || !!channelAccess?.is_owner || !!channelAccess?.is_admin;
+          const nextChannelRole = channelAccess?.is_owner
+            ? "owner"
+            : channelIsMember
+              ? (channelRole ?? "member")
+              : undefined;
           setIAmChatAdmin(!!channelAccess?.is_admin);
           setChatInfo((prev) => prev ? {
             ...prev,
@@ -2817,6 +2834,7 @@ function ChatScreen() {
             channel_is_member: channelIsMember === undefined ? prev.channel_is_member : channelIsMember,
             channel_owner_id: channelAccess?.owner_id || prev.channel_owner_id || null,
             channel_subscriber_count: channel?.subscriber_count ?? prev.channel_subscriber_count ?? null,
+            channel_role: nextChannelRole,
           } : prev);
         }).catch(() => {});
         return;
@@ -2869,7 +2887,7 @@ function ChatScreen() {
          other_handle: isSelf ? null : (other?.handle || null),
       });
     }
-  }, [id, user, isDraft, isChannel, channelHandle, channelDescription, chatName, chatAvatar]);
+  }, [id, user, isDraft, isChannel, channelRole, channelHandle, channelDescription, chatName, chatAvatar]);
 
   const loadMessages = useCallback(async (loadToken = chatLoadGenerationRef.current) => {
     const isCurrentLoad = () => chatLoadGenerationRef.current === loadToken;
@@ -3591,6 +3609,60 @@ function ChatScreen() {
       supabase.removeChannel(msgSub);
     };
   }, [id, isDraft, realChatId, loadChatInfo, loadMessages, isNotificationsChat]);
+
+  // Channel membership changes update the bottom bar directly. This keeps
+  // Join/Mute state live without refreshing the chat list or reloading messages.
+  useEffect(() => {
+    const isChannelChat = chatInfo?.is_channel || isChannel === "true";
+    if (!user || !id || !isChannelChat) return;
+
+    const topic = `channel-membership:${id}:${user.id}`;
+    const staleChannel = supabase.getChannels().find((ch) => ch.topic === `realtime:${topic}`);
+    if (staleChannel) supabase.removeChannel(staleChannel);
+
+    const membershipSub = supabase
+      .channel(topic)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "channel_subscriptions", filter: `channel_id=eq.${id}` },
+        (payload: any) => {
+          if (payload.new?.user_id !== user.id) return;
+          setChatInfo((prev) => prev ? {
+            ...prev,
+            channel_is_member: true,
+            channel_role: prev.channel_role ?? "member",
+            channel_subscriber_count: prev.channel_subscriber_count == null || prev.channel_is_member
+              ? prev.channel_subscriber_count
+              : prev.channel_subscriber_count + 1,
+          } : prev);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "channel_subscriptions", filter: `channel_id=eq.${id}` },
+        (payload: any) => {
+          if (payload.old?.user_id !== user.id) return;
+          setChatInfo((prev) => {
+            if (!prev) return prev;
+            const isOwner = prev.channel_role === "owner" || prev.channel_owner_id === user.id;
+            const wasMember = prev.channel_is_member === true;
+            return {
+              ...prev,
+              channel_is_member: isOwner,
+              channel_role: isOwner ? "owner" : undefined,
+              channel_subscriber_count: wasMember && prev.channel_subscriber_count != null
+                ? Math.max(0, prev.channel_subscriber_count - 1)
+                : prev.channel_subscriber_count,
+            };
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(membershipSub);
+    };
+  }, [user, id, isChannel, chatInfo?.is_channel]);
 
   // ── Realtime: typing indicators + read receipts (user-scoped for DMs) ─────
   useEffect(() => {

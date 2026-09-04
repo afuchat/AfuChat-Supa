@@ -92,7 +92,7 @@ type PersonResult  = { id:string; handle:string; display_name:string; avatar_url
 type OrgPageResult = { id:string; name:string; slug:string; logo_url:string|null; description:string|null; kind:"org" };
 type PostResult    = { id:string; content:string; image_url:string|null; author_id:string; author_handle:string; author_name:string; author_avatar:string|null; view_count:number; created_at:string; post_type:string; article_title:string|null };
 type VideoResult   = { id:string; content:string; video_url:string; image_url:string|null; author_id:string; author_handle:string; author_name:string; author_avatar:string|null; view_count:number; created_at:string; audio_name:string|null; duration_seconds:number|null };
-type ChannelResult = { id:string; name:string; handle:string|null; description:string|null; avatar_url:string|null; subscriber_count:number };
+type ChannelResult = { id:string; name:string; handle:string|null; description:string|null; avatar_url:string|null; subscriber_count:number; is_subscriber?: boolean };
 type GroupResult   = { id:string; name:string; handle:string|null; description:string|null; avatar_url:string|null; member_count:number };
 type EventResult   = { id:string; title:string; description:string|null; emoji:string; price:number; event_date:string; capacity:number; tickets_sold:number; category:string|null; creator_name:string; creator_handle:string };
 type GiftResult    = { id:string; name:string; emoji:string; base_xp_cost:number; rarity:string; description:string|null };
@@ -624,6 +624,15 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
         };
       });
 
+      const channelIds = ((channelsRes.data || []) as any[]).map((ch: any) => ch.id).filter(Boolean);
+      const { data: channelSubscriptions } = user && channelIds.length
+        ? await supabase
+            .from("channel_subscriptions")
+            .select("channel_id")
+            .eq("user_id", user.id)
+            .in("channel_id", channelIds)
+        : { data: [] as any[] };
+      const subscribedChannelIds = new Set((channelSubscriptions || []).map((row: any) => row.channel_id));
       const channels: ChannelResult[] = ((channelsRes.data || []) as any[]).map((ch: any) => {
         return {
           id: ch.id,
@@ -632,6 +641,7 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
           description: ch.description || null,
           avatar_url: ch.avatar_url || null,
           subscriber_count: ch.subscriber_count || 0,
+          is_subscriber: subscribedChannelIds.has(ch.id),
         };
       });
 
@@ -1013,7 +1023,18 @@ export function SearchScreen({ title = "Search", initialTab }: { title?: string;
       <View >
         <TouchableOpacity
           style={[ss.listRow, { backgroundColor: colors.surface }]}
-          onPress={() => router.push({ pathname: "/channel/[id]", params: { id: ch.id } } as any)}
+          onPress={() => router.push({
+            pathname: "/chat/[id]",
+            params: {
+              id: ch.id,
+              isChannel: "true",
+              channelRole: ch.is_subscriber ? "member" : "",
+              chatName: ch.name,
+              chatAvatar: ch.avatar_url || "",
+              channelHandle: ch.handle || "",
+              channelDescription: ch.description || "",
+            },
+          } as any)}
           activeOpacity={0.75}
         >
           <View style={{ width: 48, height: 48, borderRadius: 14, overflow: "hidden" }}>

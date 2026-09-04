@@ -1176,6 +1176,9 @@ export function ChatsScreen({ panelMode = false, onOpenChat }: { panelMode?: boo
         otherHandle: isNotificationsChatItem(item) ? "notifications" : (item.other_handle || ""),
         isGroup: item.is_group ? "true" : "false",
         isChannel: item.is_channel ? "true" : "false",
+        channelRole: item.is_channel
+          ? (item.created_by === user.id ? "owner" : "member")
+          : "",
         chatName: item.name || "",
         chatAvatar: item.avatar_url || "",
       },

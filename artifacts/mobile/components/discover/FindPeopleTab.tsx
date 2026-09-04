@@ -304,7 +304,15 @@ export default function FindPeopleTab() {
 
   const openChannel = useCallback((channel: PublicChannel) => {
     if (!user) return router.push("/(auth)/login" as any);
-    router.push({ pathname: "/chat/[id]", params: { id: channel.id, isChannel: "true", chatName: channel.name } } as any);
+    router.push({
+      pathname: "/chat/[id]",
+      params: {
+        id: channel.id,
+        isChannel: "true",
+        channelRole: channel.is_subscriber ? "member" : "",
+        chatName: channel.name,
+      },
+    } as any);
   }, [user]);
 
   const toggleFollow = useCallback(async (person: Person) => {
