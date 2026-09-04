@@ -14,7 +14,9 @@ const fs = require("fs");
 const path = require("path");
 
 const AGP_VERSION = "9.0.0";
-const GRADLE_VERSION = "9.1";
+// Keep the wrapper on the Gradle release used by the successful SDK 55 build.
+// "9.1" is not a published distribution name; Gradle 9.1 is published as 9.1.0.
+const GRADLE_VERSION = "9.0.0";
 const AGP_MARKER = "// AfuChat Android Gradle Plugin 9 optimization";
 
 function updateAgpDeclaration(contents) {
