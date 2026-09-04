@@ -12,8 +12,7 @@ type PushResponse = {
 };
 
 export const PUSH_ACTION_REPLY = "reply";
-export const PUSH_ACTION_REPLY_THANKS = "reply_thanks";
-export const PUSH_ACTION_REPLY_OKAY = "reply_okay";
+export const PUSH_ACTION_MUTE = "mute";
 export const PUSH_ACTION_MARK_READ = "mark_read";
 export const PUSH_ACTION_OPEN = "open";
 export const PUSH_ACTION_ACCEPT_CALL = "accept_call";
@@ -140,6 +139,21 @@ async function sendSuggestedReply(response: PushResponse, userId: string, text: 
   await markRead(response, userId);
 }
 
+async function muteChat(response: PushResponse, userId: string) {
+  const { chatId } = getTarget(response);
+  if (!chatId) return;
+  const mutedUntil = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
+  await supabase.from("chat_mutes").upsert(
+    {
+      user_id: userId,
+      chat_id: chatId,
+      muted_until: mutedUntil,
+      created_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,chat_id" },
+  );
+}
+
 async function handleCallAction(
   response: PushResponse,
   userId: string,
@@ -179,12 +193,8 @@ export async function handleNotificationResponse(
     if (text) await sendSuggestedReply(response, userId, text);
     return;
   }
-  if (response.actionIdentifier === PUSH_ACTION_REPLY_THANKS) {
-    await sendSuggestedReply(response, userId, "Thanks!");
-    return;
-  }
-  if (response.actionIdentifier === PUSH_ACTION_REPLY_OKAY) {
-    await sendSuggestedReply(response, userId, "Okay");
+  if (response.actionIdentifier === PUSH_ACTION_MUTE) {
+    await muteChat(response, userId);
     return;
   }
   if (
@@ -203,8 +213,7 @@ function defineBackgroundTask() {
       if (error || !data || !data.actionIdentifier) return;
       if (
         data.actionIdentifier !== PUSH_ACTION_REPLY &&
-        data.actionIdentifier !== PUSH_ACTION_REPLY_THANKS &&
-        data.actionIdentifier !== PUSH_ACTION_REPLY_OKAY &&
+        data.actionIdentifier !== PUSH_ACTION_MUTE &&
         data.actionIdentifier !== PUSH_ACTION_MARK_READ &&
         data.actionIdentifier !== PUSH_ACTION_DECLINE_CALL
       ) return;
@@ -254,8 +263,7 @@ export function configurePushNotifications() {
   const categories = [
     notifications.setNotificationCategoryAsync(PUSH_CATEGORY_MESSAGE, [
       { identifier: PUSH_ACTION_REPLY, buttonTitle: "Reply", textInput: { submitButtonTitle: "Send", placeholder: "Reply..." }, options: { opensAppToForeground: false } },
-      { identifier: PUSH_ACTION_REPLY_THANKS, buttonTitle: "Thanks!", options: { opensAppToForeground: false } },
-      { identifier: PUSH_ACTION_REPLY_OKAY, buttonTitle: "Okay", options: { opensAppToForeground: false } },
+      { identifier: PUSH_ACTION_MUTE, buttonTitle: "Mute", options: { opensAppToForeground: false } },
       { identifier: PUSH_ACTION_MARK_READ, buttonTitle: "Mark as read", options: { opensAppToForeground: false } },
     ]),
     notifications.setNotificationCategoryAsync(PUSH_CATEGORY_CALL, [

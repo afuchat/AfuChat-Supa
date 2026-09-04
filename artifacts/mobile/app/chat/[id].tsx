@@ -2218,6 +2218,7 @@ function ChatScreen() {
     sharedFileType,
     sharedFileName,
     lensIntro,
+    messageId,
   } = useLocalSearchParams<{
     id: string;
     contactId?: string;
@@ -2242,6 +2243,7 @@ function ChatScreen() {
     sharedFileType?: string;
     sharedFileName?: string;
     lensIntro?: string;
+    messageId?: string;
   }>();
   const isDraft = id === "new";
   const { user, session, profile, isPremium, subscription, refreshProfile, equippedGoods } = useAuth();
@@ -2430,6 +2432,8 @@ function ChatScreen() {
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [highlightedMsgId, setHighlightedMsgId] = useState<string | null>(null);
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const notificationTargetLoadRef = useRef<string | null>(null);
+  const notificationTargetHandledRef = useRef<string | null>(null);
   const [searchActive, setSearchActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchCursor, setSearchCursor] = useState(0);
@@ -7035,13 +7039,82 @@ STRICT RULES:
   }, []);
 
   const scrollToMessage = useCallback((msgId: string) => {
-    const index = messages.findIndex((m) => m.id === msgId);
+    const index = listData.findIndex((m) => m.id === msgId);
     if (index === -1) return;
     flatListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
     if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
     setHighlightedMsgId(msgId);
     highlightTimerRef.current = setTimeout(() => setHighlightedMsgId(null), 1500);
-  }, [messages]);
+  }, [listData]);
+
+  // A push can target an older message that is not in the first page or the
+  // local cache. Fetch that exact row so tapping the notification never lands
+  // on an approximate point in the conversation.
+  useEffect(() => {
+    const chatId = isDraft ? realChatId : id;
+    if (
+      !messageId ||
+      !user ||
+      !chatId ||
+      isLocalNotesId(chatId) ||
+      notificationTargetLoadRef.current === messageId ||
+      messages.some((message) => message.id === messageId)
+    ) {
+      return;
+    }
+    notificationTargetLoadRef.current = messageId;
+    let cancelled = false;
+    supabase
+      .from("messages")
+      .select(`id, chat_id, sender_id, encrypted_content, sent_at, reply_to_message_id, attachment_url, attachment_type, edited_at, profiles!messages_sender_id_fkey(display_name, avatar_url, handle)`)
+      .eq("id", messageId)
+      .eq("chat_id", chatId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        const row = data as any;
+        const isBot = row.sender_id === AFUAI_BOT_ID;
+        const aiParsed = isBot ? parseAfuAiTags(row.encrypted_content || "") : null;
+        const targetMessage: Message = {
+          id: row.id,
+          chat_id: row.chat_id,
+          sender_id: row.sender_id,
+          encrypted_content: aiParsed ? (aiParsed.text || row.encrypted_content) : row.encrypted_content,
+          sent_at: row.sent_at,
+          reply_to_message_id: row.reply_to_message_id,
+          attachment_url: row.attachment_url,
+          attachment_type: row.attachment_type,
+          edited_at: row.edited_at,
+          sender: row.profiles,
+          reactions: [],
+          _isAi: isBot || undefined,
+          _aiActions: aiParsed && aiParsed.actions.length > 0 ? aiParsed.actions : undefined,
+          _aiInvoices: aiParsed && aiParsed.invoices.length > 0 ? aiParsed.invoices : undefined,
+        };
+        setMessages((previous) => {
+          if (previous.some((message) => message.id === targetMessage.id)) return previous;
+          return [...previous, targetMessage].sort(
+            (a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime(),
+          );
+        });
+      }, () => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [messageId, id, realChatId, isDraft, user?.id, messages.length]);
+
+  useEffect(() => {
+    if (
+      !messageId ||
+      notificationTargetHandledRef.current === messageId ||
+      !messages.some((message) => message.id === messageId)
+    ) {
+      return;
+    }
+    notificationTargetHandledRef.current = messageId;
+    const timer = setTimeout(() => scrollToMessage(messageId), 0);
+    return () => clearTimeout(timer);
+  }, [messageId, messages, scrollToMessage]);
 
   const handleNotificationAction = useCallback(async (notification: NotificationMessageData) => {
     const route = getNotificationRoute(notification);

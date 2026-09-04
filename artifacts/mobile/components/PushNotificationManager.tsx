@@ -40,7 +40,13 @@ export default function PushNotificationManager() {
           if (response.actionIdentifier === PUSH_ACTION_ACCEPT_CALL && target.callId) {
             safeRouter.push({ pathname: "/call/[id]", params: { id: target.callId } } as any);
           } else if (target.chatId) {
-            safeRouter.push({ pathname: "/chat/[id]", params: { id: target.chatId } } as any);
+            safeRouter.push({
+              pathname: "/chat/[id]",
+              params: {
+                id: target.chatId,
+                ...(target.messageId ? { messageId: target.messageId } : {}),
+              },
+            } as any);
           } else if (target.route) {
             safeRouter.push({
               pathname: target.route as any,
