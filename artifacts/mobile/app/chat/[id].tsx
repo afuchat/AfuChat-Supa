@@ -2397,6 +2397,17 @@ function ChatScreen() {
     .some((value) => value?.trim().toLowerCase() === "notifications");
   const isSelfChat = !chatInfo?.is_group && !chatInfo?.is_channel && !!chatInfo?.other_id && chatInfo?.other_id === user?.id;
   const isLocalNotes = isLocalNotesId(id);
+  // Direct message requests fail closed while relationship state is loading.
+  // This prevents the composer from flashing open before the follow/reply
+  // check completes, including on an offline cold start.
+  const startsMessageGateLocked =
+    !isDraft &&
+    !isLocalNotes &&
+    !isNotificationsChat &&
+    !isAfuAiDirectChat &&
+    !isSelfChat &&
+    isGroup !== "true" &&
+    isChannel !== "true";
   const [phonebookName, setPhonebookName] = useState<string | null>(null);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const typingMapRef = useRef<Map<string, string>>(new Map());
@@ -2770,7 +2781,7 @@ function ChatScreen() {
   const [showVideoTrimmer, setShowVideoTrimmer] = useState(false);
   const [pendingVideoUri, setPendingVideoUri] = useState<{ uri: string; mimeType: string } | null>(null);
   const [networkOnline, setNetworkOnline] = useState(isOnline());
-  const [messageLimited, setMessageLimited] = useState(false);
+  const [messageLimited, setMessageLimited] = useState(startsMessageGateLocked);
   const [isStranger, setIsStranger] = useState(false);
   const [strangerCountry, setStrangerCountry] = useState<string | null>(null);
   const [forwardMsg, setForwardMsg] = useState<Message | null>(null);
@@ -2790,6 +2801,7 @@ function ChatScreen() {
   const draftSaveTimer = useRef<any>(null);
   const selectionClearTimer = useRef<any>(null);
   const chatLoadGenerationRef = useRef(0);
+  const messageGateCheckRef = useRef(0);
 
   const effectiveChatId = isDraft ? realChatId : id;
 
@@ -3327,52 +3339,90 @@ function ChatScreen() {
 
   const checkMessageGating = useCallback(async () => {
     if (!user) return;
+    const checkId = ++messageGateCheckRef.current;
+    const applyGateState = (locked: boolean) => {
+      if (messageGateCheckRef.current === checkId) setMessageLimited(locked);
+    };
     if (isNotificationsChat) {
-      setMessageLimited(false);
+      applyGateState(false);
       return;
     }
     if (isLocalNotesId(id)) {
-      setMessageLimited(false);
+      applyGateState(false);
       return;
     }
     const info = chatInfo;
-    if (!info || info.is_group || info.is_channel || !info.other_id || info.other_id === AFUAI_BOT_ID) {
-      setMessageLimited(false);
+    // Keep the optimistic lock while chat metadata is still loading. A
+    // missing/failed request must never turn the composer back on.
+    if (!info) return;
+    if (info.is_group || info.is_channel || !info.other_id || info.other_id === AFUAI_BOT_ID || info.other_id === user.id) {
+      applyGateState(false);
       return;
     }
     const otherId = info.other_id;
-    const { data: theyFollowMe } = await supabase
+    const gateCacheKey = `chat_message_gate_unlocked_${user.id}_${otherId}`;
+    const cachedUnlock = await AsyncStorage.getItem(gateCacheKey).catch(() => null);
+    if (cachedUnlock === "1") {
+      applyGateState(false);
+      return;
+    }
+
+    // A locally cached reply is authoritative while offline. This also
+    // prevents a cached conversation from relocking during a network outage.
+    const localReply = messages.some((message) => message.sender_id === otherId && !message._pending);
+    if (localReply) {
+      applyGateState(false);
+      AsyncStorage.setItem(gateCacheKey, "1").catch(() => {});
+      return;
+    }
+
+    const chatId = isDraft ? realChatId : id;
+    if (!chatId) {
+      if (isDraft) applyGateState(false);
+      return;
+    }
+
+    // No network means no relationship proof. Stay locked until a cached
+    // unlock marker or a cached reply proves that the recipient accepted.
+    if (!isOnline()) {
+      applyGateState(true);
+      return;
+    }
+
+    const { data: theyFollowMe, error: followError } = await supabase
       .from("follows")
       .select("id")
       .eq("follower_id", otherId)
       .eq("following_id", user.id)
       .maybeSingle();
+    if (followError) {
+      applyGateState(true);
+      return;
+    }
     if (theyFollowMe) {
-      setMessageLimited(false);
+      applyGateState(false);
+      AsyncStorage.setItem(gateCacheKey, "1").catch(() => {});
       return;
     }
-    const chatId = isDraft ? realChatId : id;
-    if (!chatId) {
-      setMessageLimited(false);
-      return;
-    }
-    const { data: theirReplies } = await supabase
+    const { data: theirReplies, error: replyError } = await supabase
       .from("messages")
       .select("id")
       .eq("chat_id", chatId)
       .eq("sender_id", otherId)
       .limit(1);
-    if (theirReplies && theirReplies.length > 0) {
-      setMessageLimited(false);
+    if (replyError) {
+      applyGateState(true);
       return;
     }
-    const { count } = await supabase
-      .from("messages")
-      .select("id", { count: "exact", head: true })
-      .eq("chat_id", chatId)
-      .eq("sender_id", user.id);
-    setMessageLimited((count || 0) >= 1);
-  }, [user, chatInfo, isDraft, realChatId, id, isNotificationsChat]);
+    if (theirReplies && theirReplies.length > 0) {
+      applyGateState(false);
+      AsyncStorage.setItem(gateCacheKey, "1").catch(() => {});
+      return;
+    }
+    // The recipient has not accepted this request. Keep the composer hidden,
+    // regardless of whether the sender has already sent zero or one message.
+    applyGateState(true);
+  }, [user, chatInfo, isDraft, realChatId, id, isNotificationsChat, messages]);
 
   const checkIfStranger = useCallback(async () => {
     if (!user) return;
@@ -3416,7 +3466,18 @@ function ChatScreen() {
   useEffect(() => {
     checkMessageGating();
     checkIfStranger();
-  }, [checkMessageGating, checkIfStranger, messages.length]);
+  }, [checkMessageGating, checkIfStranger, messages.length, networkOnline]);
+
+  // A recipient can unlock the request by following or replying while this
+  // screen is open. Poll only while locked; failed/offline checks remain
+  // fail-closed and are retried after connectivity returns.
+  useEffect(() => {
+    if (!messageLimited || !user || !networkOnline) return;
+    const timer = setInterval(() => {
+      void checkMessageGating();
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [messageLimited, user, networkOnline, checkMessageGating]);
 
 
   useEffect(() => {
