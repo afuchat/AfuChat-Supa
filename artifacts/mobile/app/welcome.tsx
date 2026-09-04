@@ -353,6 +353,7 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 7,
+    flexShrink: 0,
   },
   logoImg: {
     width: 26,
@@ -361,8 +362,12 @@ const s = StyleSheet.create({
   logoText: {
     color: "#fff",
     fontSize: 17,
+    lineHeight: 22,
     fontFamily: "Inter_700Bold",
+    fontWeight: "700",
     letterSpacing: -0.3,
+    includeFontPadding: false,
+    paddingRight: 4,
   },
   skipPill: {
     backgroundColor: "rgba(255,255,255,0.10)",
