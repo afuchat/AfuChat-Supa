@@ -248,7 +248,7 @@ export default function AboutScreen() {
                 <View style={[s.linkIconBox, { backgroundColor: ACCENT + "15" }]}>
                   <Ionicons name={icon as any} size={18} color={ACCENT} />
                 </View>
-                <Text style={[s.linkLabel, { color: colors.text }]}>{label}</Text>
+                <Text style={[s.linkLabel, { color: colors.text }]}>{t(label)}</Text>
                 <Ionicons name="chevron-forward" size={15} color={colors.textMuted} />
               </TouchableOpacity>
             </React.Fragment>
