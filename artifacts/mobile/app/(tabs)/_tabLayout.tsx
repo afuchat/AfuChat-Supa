@@ -29,11 +29,11 @@ import { useLanguage } from "@/context/LanguageContext";
 
 // Visible bottom bar tabs — Chat · Discover · Shorts · Apps · Me
 const BOTTOM_TABS = [
-  { route: "/(tabs)/chats",    icon: "chatbubbles",        label: "Chat"     },
-  { route: "/(tabs)/discover", icon: "compass",            label: "Discover" },
-  { route: "/(tabs)/shorts",   icon: "play-circle",        label: "Shorts"   },
-  { route: "/(tabs)/apps",     icon: "grid",               label: "Apps"     },
-  { route: "/(tabs)/me",       icon: "person-circle",      label: "ME"       },
+  { route: "/(tabs)/chats",    icon: "chatbubbles",        label: "navigation.chat"     },
+  { route: "/(tabs)/discover", icon: "compass",            label: "navigation.discover" },
+  { route: "/(tabs)/shorts",   icon: "play-circle",        label: "navigation.shorts"   },
+  { route: "/(tabs)/apps",     icon: "grid",               label: "navigation.apps"     },
+  { route: "/(tabs)/me",       icon: "person-circle",      label: "navigation.me"       },
 ] as const;
 
 function normalizeTabPath(p: string): string {
@@ -169,10 +169,10 @@ export function CompactTabBar({
   const accentColor = colors.accent;
 
   const CREATE_OPTIONS = [
-    { icon: "camera",        label: "Story",   route: "/stories/camera",        color: accentColor },
-    { icon: "create",        label: "Post",    route: "/moments/create",        color: accentColor },
-    { icon: "videocam",      label: "Video",   route: "/moments/create-video",  color: accentColor },
-    { icon: "document-text", label: "Article", route: "/moments/create-article", color: accentColor },
+    { icon: "camera",        label: "navigation.story",   route: "/stories/camera",        color: accentColor },
+    { icon: "create",        label: "navigation.post",    route: "/moments/create",        color: accentColor },
+    { icon: "videocam",      label: "navigation.video",   route: "/moments/create-video",  color: accentColor },
+    { icon: "document-text", label: "navigation.article", route: "/moments/create-article", color: accentColor },
   ];
 
   const INACTIVE_ICON  = colors.textSecondary;
@@ -302,7 +302,7 @@ export function CompactTabBar({
               ]}
               activeOpacity={0.8}
               accessibilityRole="button"
-               accessibilityLabel={`${t("Create")} ${t(opt.label)}`}
+               accessibilityLabel={`${t("navigation.create")} ${t(opt.label)}`}
             >
               <View style={pill.actionLabel}>
                 <Text
@@ -335,7 +335,7 @@ export function CompactTabBar({
             ]}
             activeOpacity={0.82}
             accessibilityRole="button"
-            accessibilityLabel={showCreateActions ? "Close create options" : "Create"}
+             accessibilityLabel={showCreateActions ? t("navigation.close_create_options") : t("navigation.create")}
             accessibilityState={{ expanded: showCreateActions }}
           >
             <Ionicons name={showCreateActions ? "close" : "add"} size={28} color="#fff" />

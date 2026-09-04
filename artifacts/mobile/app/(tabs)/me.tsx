@@ -197,6 +197,13 @@ export default function MeScreen() {
   const { colors, accent, isDark } = useTheme();
   const { t } = useLanguage();
   const { profile: authProfile, isPremium, subscription, loading, user, equippedGoods } = useAuth();
+  const planLabel = useMemo(() => {
+    const tier = subscription?.plan_tier?.toLowerCase();
+    if (tier === "premium") return t("profile.plan_premium");
+    if (tier === "platinum") return t("profile.plan_platinum");
+    if (tier === "free") return t("profile.plan_free");
+    return subscription?.plan_tier || t("profile.active");
+  }, [subscription?.plan_tier, t]);
   // Match ChatsScreen's cache-first behavior. AuthContext refreshes this row
   // in the background, but a cached profile is enough to render the Me tab
   // immediately during offline startup or a slow session restore.
@@ -435,7 +442,7 @@ export default function MeScreen() {
             <View style={{ flex: 1, gap: 3 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
                 <Text style={[s.heroName, { color: equippedGoods.has('sg4') ? Colors.gold : colors.text }]} numberOfLines={1} ellipsizeMode="tail">
-                  {profile?.display_name || "User"}
+                  {profile?.display_name || t("common.user")}
                 </Text>
                 <VerifiedBadge isVerified={profile?.is_verified} isOrganizationVerified={profile?.is_organization_verified} size={17} />
               </View>
@@ -446,7 +453,7 @@ export default function MeScreen() {
                 style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
               >
                 {purchaseLoading && <ActivityIndicator size="small" color={colors.textMuted} style={{ marginRight: 4 }} />}
-                <Text style={[s.heroHandle, { color: colors.textMuted }]}>@{profile?.handle || "handle"}</Text>
+                <Text style={[s.heroHandle, { color: colors.textMuted }]}>@{profile?.handle || t("common.handle")}</Text>
                 <Ionicons name="information-circle" size={13} color={colors.textMuted} style={{ opacity: 0.6 }} />
               </TouchableOpacity>
 
@@ -552,7 +559,7 @@ export default function MeScreen() {
                 icon="diamond"
                 iconColor={accent}
                  label="profile.premium_active"
-                 value={subscription?.plan_tier ? `${subscription.plan_tier}` : t("profile.active")}
+                  value={planLabel}
                 onPress={() => router.push("/premium")}
                 colors={colors}
               />
@@ -644,8 +651,8 @@ export default function MeScreen() {
       <QRPosterSheet
         visible={qrPosterOpen}
         onClose={() => setQrPosterOpen(false)}
-        displayName={profile?.display_name || "AfuChat User"}
-        handle={profile?.handle || "user"}
+        displayName={profile?.display_name || t("common.afuchat_user")}
+        handle={profile?.handle || t("common.user")}
         avatarUrl={profile?.avatar_url || null}
         afuId={afuId}
         isVerified={!!profile?.is_verified}
@@ -692,7 +699,7 @@ export default function MeScreen() {
                   <Ionicons name="calendar" size={16} color={colors.icon} />
                   <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: colors.textSecondary }}>{t("common.purchased_on")}</Text>
                 </View>
-                <Text style={{ fontSize: 14, fontFamily: "Inter_600SemiBold", color: colors.text }}>{purchasePopup ? fmtDate(purchasePopup.purchasedAt) : "N/A"}</Text>
+                <Text style={{ fontSize: 14, fontFamily: "Inter_600SemiBold", color: colors.text }}>{purchasePopup ? fmtDate(purchasePopup.purchasedAt) : t("common.not_available")}</Text>
               </View>
               {purchasePopup?.sellerHandle && (
                 <>

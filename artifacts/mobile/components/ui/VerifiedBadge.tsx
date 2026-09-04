@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useAppAccent } from "@/context/AppAccentContext";
 import { useTheme } from "@/hooks/useTheme";
+import { useLanguage } from "@/context/LanguageContext";
 
 let _svgMod: any = null;
 function getSvgMod() {
@@ -79,6 +80,7 @@ export default function VerifiedBadge({
 }: Props) {
   const { accent } = useAppAccent();
   const { colors } = useTheme();
+  const { t } = useLanguage();
   const [visible, setVisible] = useState(false);
 
   const isOrg   = !!isOrganizationVerified;
@@ -90,14 +92,14 @@ export default function VerifiedBadge({
 
   const REASONS: { icon: string; label: string }[] = isOrg
     ? [
-        { icon: "storefront-outline",      label: "Business details confirmed" },
-        { icon: "ribbon-outline",           label: "Recognized in its field" },
-        { icon: "shield-checkmark-outline", label: "Follows AfuChat's guidelines" },
+        { icon: "storefront-outline",      label: "verified.business_confirmed" },
+        { icon: "ribbon-outline",           label: "verified.recognized_field" },
+        { icon: "shield-checkmark-outline", label: "verified.follows_guidelines" },
       ]
     : [
-        { icon: "person-outline",          label: "Identity confirmed" },
-        { icon: "ribbon-outline",           label: "Recognized public presence" },
-        { icon: "shield-checkmark-outline", label: "Follows AfuChat's guidelines" },
+        { icon: "person-outline",          label: "verified.identity_confirmed" },
+        { icon: "ribbon-outline",           label: "verified.public_presence" },
+        { icon: "shield-checkmark-outline", label: "verified.follows_guidelines" },
       ];
 
   return (
@@ -130,12 +132,10 @@ export default function VerifiedBadge({
               </View>
               <View style={s.headerCopy}>
                 <Text style={[s.title, { color: colors.text }]}>
-                  {isOrg ? "Verified organization" : "Verified account"}
+                  {t(isOrg ? "verified.organization" : "verified.account")}
                 </Text>
                 <Text style={[s.subtitle, { color: colors.textSecondary }]}>
-                  {isOrg
-                    ? "AfuChat confirmed this organization is authentic."
-                    : "AfuChat confirmed this person is authentic."}
+                  {t(isOrg ? "verified.organization_subtitle" : "verified.account_subtitle")}
                 </Text>
               </View>
             </View>
@@ -143,7 +143,7 @@ export default function VerifiedBadge({
             <View style={[s.divider, { backgroundColor: colors.border }]} />
 
             <Text style={[s.sectionLabel, { color: colors.textMuted }]}>
-              WHY THIS BADGE
+              {t("verified.why_badge")}
             </Text>
 
             {REASONS.map((r, i) => (
@@ -151,7 +151,7 @@ export default function VerifiedBadge({
                 <View style={[s.bulletIcon, { backgroundColor: badgeColor + "18" }]}>
                   <Ionicons name={r.icon as any} size={15} color={badgeColor} />
                 </View>
-                <Text style={[s.bulletText, { color: colors.textSecondary }]}>{r.label}</Text>
+                <Text style={[s.bulletText, { color: colors.textSecondary }]}>{t(r.label)}</Text>
               </View>
             ))}
 
@@ -164,7 +164,7 @@ export default function VerifiedBadge({
               }}
             >
               <Ionicons name={isOrg ? "storefront-outline" : "ribbon-outline"} size={15} color="#fff" />
-              <Text style={s.ctaBtnText}>{isOrg ? "Apply for Verification" : "Get Verified"}</Text>
+              <Text style={s.ctaBtnText}>{t(isOrg ? "verified.apply" : "verified.get")}</Text>
             </TouchableOpacity>
 
           </View>

@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { translateUserContent as translateUserContentWithGoogle } from "@/lib/translate";
-import { LANG_LABELS, isBundledUiLanguage, setLocale, subscribeUiTranslations, t as translateUi, tp as translatePlural } from "@/lib/i18n";
+import { LANG_LABELS, isBundledUiLanguage, isRtlUiLanguage, setLocale, subscribeUiTranslations, t as translateUi, tp as translatePlural } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { storage, KEYS } from "@/lib/storage/mmkv";
@@ -216,9 +216,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const langLabel = preferredLang
     ? (LANG_LABELS[preferredLang] ?? preferredLang)
     : "Off";
-  // Arabic UI copy is translated, but the product intentionally keeps the
-  // existing left-to-right layout and navigation structure unchanged.
-  const isRTL = false;
+  const isRTL = isRtlUiLanguage(preferredLang);
   // Keep non-hook callers used by the Babel transform in sync during the same
   // render that observes a language change, not one render later.
   setLocale(preferredLang);

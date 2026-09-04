@@ -24,6 +24,7 @@ import AfuLogo from "@/components/ui/AfuLogo";
 import { useTheme } from "@/hooks/useTheme";
 import { SmartSheet } from "@/components/ui/SmartSheet";
 import Colors from "@/constants/colors";
+import { useLanguage } from "@/context/LanguageContext";
 
 const BRAND = Colors.brand;
 
@@ -44,6 +45,7 @@ export default function QRPosterSheet({
   afuId, isVerified, isOrgVerified,
 }: Props) {
   const { colors, isDark, accent } = useTheme();
+  const { t } = useLanguage();
   const posterRef = useRef<any>(null);
   const captureRefRef = useRef<((ref: any, opts?: any) => Promise<string>) | null>(null);
   const [nativeViewShot, setNativeViewShot] = useState<React.ComponentType<any> | null>(null);
@@ -75,12 +77,12 @@ export default function QRPosterSheet({
     setSaving(true);
     try {
       const uri = await capture();
-      if (!uri) { showToast("Could not generate image"); return; }
+       if (!uri) { showToast(t("qr.generate_failed")); return; }
       const ok = await Sharing.isAvailableAsync();
       if (ok) await Sharing.shareAsync(uri, { mimeType: "image/png" });
-      else showToast("Sharing not available on this device");
+       else showToast(t("qr.sharing_unavailable"));
     } catch {
-      showToast("Share failed");
+       showToast(t("qr.share_failed"));
     } finally {
       setSaving(false);
     }
@@ -93,15 +95,15 @@ export default function QRPosterSheet({
       if (Platform.OS !== "web") {
         try { MediaLibrary = require("expo-media-library"); } catch {}
       }
-      if (!MediaLibrary) { showToast("Media library not available"); return; }
+       if (!MediaLibrary) { showToast(t("qr.media_library_unavailable")); return; }
       const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== "granted") { showToast("Camera roll access denied"); return; }
+       if (status !== "granted") { showToast(t("qr.camera_roll_denied")); return; }
       const uri = await capture();
-      if (!uri) { showToast("Could not generate image"); return; }
+       if (!uri) { showToast(t("qr.generate_failed")); return; }
       await MediaLibrary.saveToLibraryAsync(uri);
-      showToast("Saved to camera roll! 📸");
+       showToast(t("qr.saved") + " 📸");
     } catch {
-      showToast("Save failed");
+       showToast(t("qr.save_failed"));
     } finally {
       setSaving(false);
     }
@@ -115,8 +117,8 @@ export default function QRPosterSheet({
   return (
     <SmartSheet visible={visible} onClose={onClose} peekFraction={0.85} backgroundColor={sheetBg}>
       <View style={s.content}>
-        <Text style={[s.sheetTitle, { color: colors.text }]}>Your AfuChat QR Poster</Text>
-        <Text style={[s.sheetSub, { color: colors.textMuted }]}>Long-press or share with anyone. They can scan it to find you instantly.</Text>
+         <Text style={[s.sheetTitle, { color: colors.text }]}>{t("qr.title")}</Text>
+         <Text style={[s.sheetSub, { color: colors.textMuted }]}>{t("qr.subtitle")}</Text>
 
         {/* Poster card — this gets captured */}
         <View style={s.posterWrap}>
@@ -158,7 +160,7 @@ export default function QRPosterSheet({
                 <QRCode value={qrUrl} size={130} color="#0a1628" backgroundColor="#ffffff" />
               </View>
 
-              <Text style={s.posterScan}>Scan to connect on AfuChat</Text>
+               <Text style={s.posterScan}>{t("qr.scan_to_connect")}</Text>
               <Text style={s.posterUrl}>afuchat.com/id/{afuId}</Text>
             </View>
           </PosterCaptureView>
@@ -178,7 +180,7 @@ export default function QRPosterSheet({
           ) : (
             <Ionicons name="share-social" size={24} color={accent} style={s.actionIcon} />
           )}
-          <Text style={[s.actionLabel, { color: accent }]}>Share</Text>
+           <Text style={[s.actionLabel, { color: accent }]}>{t("qr.share")}</Text>
         </TouchableOpacity>
 
         <View style={[s.sep, { backgroundColor: colors.border }]} />
@@ -190,7 +192,7 @@ export default function QRPosterSheet({
           activeOpacity={0.65}
         >
           <Ionicons name="download" size={24} color={colors.text} style={s.actionIcon} />
-          <Text style={[s.actionLabel, { color: colors.text }]}>Save Image</Text>
+           <Text style={[s.actionLabel, { color: colors.text }]}>{t("qr.save_image")}</Text>
         </TouchableOpacity>
 
         <View style={[s.sep, { backgroundColor: colors.border }]} />

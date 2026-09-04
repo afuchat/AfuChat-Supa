@@ -104,7 +104,7 @@ import { getLocalAttachmentUri, ensureChatAttachmentDownloaded, autoDownloadChat
 import { uploadChatMedia } from "@/lib/mediaUpload";
 import { syncPendingMessages } from "@/lib/offlineSync";
 import { translateUserContent, detectMessageLanguage } from "@/lib/translate";
-import { LANG_LABELS } from "@/lib/i18n";
+import { BUNDLED_UI_LANGUAGES, LANG_LABELS } from "@/lib/i18n";
 import { useLanguage } from "@/context/LanguageContext";
 import { useChatPreferences, CHAT_THEME_COLORS, BUBBLE_RADIUS } from "@/context/ChatPreferencesContext";
 import { useAdvancedFeatures } from "@/context/AdvancedFeaturesContext";
@@ -8681,7 +8681,7 @@ STRICT RULES:
           </View>
         )}
         <ScrollView style={{ maxHeight: 320, marginTop: 4 }} showsVerticalScrollIndicator={false} bounces={false}>
-          {Object.entries(LANG_LABELS).map(([code, label]) => (
+          {BUNDLED_UI_LANGUAGES.map((code) => (
             <TouchableOpacity
               key={code}
               style={{
@@ -8692,7 +8692,7 @@ STRICT RULES:
               disabled={translatingLang}
               activeOpacity={0.6}
             >
-              <Text style={{ flex: 1, fontSize: 15, color: colors.text, fontFamily: "Inter_500Medium" }}>{label}</Text>
+              <Text style={{ flex: 1, fontSize: 15, color: colors.text, fontFamily: "Inter_500Medium" }}>{LANG_LABELS[code]}</Text>
               <Text style={{ fontSize: 13, color: colors.textMuted, fontFamily: "Inter_400Regular" }}>{code.toUpperCase()}</Text>
             </TouchableOpacity>
           ))}

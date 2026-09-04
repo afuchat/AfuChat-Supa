@@ -37,7 +37,7 @@ import {
   finishPostUpload,
   failPostUpload,
 } from "@/lib/postUploadStore";
-import { LANG_LABELS } from "@/lib/i18n";
+import { BUNDLED_UI_LANGUAGES, LANG_LABELS } from "@/lib/i18n";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types & constants
@@ -54,7 +54,7 @@ const AUDIENCE_OPTIONS: { key: Audience; label: string; icon: string; desc: stri
   { key: "private",   label: "Only Me",   icon: "lock-closed", desc: "Visible only to you"       },
 ];
 
-const LANG_LIST = Object.entries(LANG_LABELS).map(([code, label]) => ({ code, label }));
+const LANG_LIST = BUNDLED_UI_LANGUAGES.map((code) => ({ code, label: LANG_LABELS[code] }));
 
 const AI_COLOR = { enhance: "#6366F1", hashtags: "#F59E0B", caption: "#10B981" } as const;
 

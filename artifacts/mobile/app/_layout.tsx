@@ -263,8 +263,9 @@ function ThemedRoot({ children }: { children: React.ReactNode }) {
 }
 
 function LanguageDirectionShell({ children }: { children: React.ReactNode }) {
+  const { isRTL } = useLanguage();
   return (
-    <View style={[styles.directionShell, { direction: "ltr" }]}>
+    <View style={[styles.directionShell, { direction: isRTL ? "rtl" : "ltr" }]}>
       {children}
     </View>
   );

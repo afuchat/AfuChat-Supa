@@ -1,15 +1,39 @@
 export type UiLanguage = "en" | "sw" | "fr" | "es" | "ar" | "zh" | "am" | "rw";
 
-export const BUNDLED_UI_LANGUAGES: readonly UiLanguage[] = [
-  "en",
-  "sw",
-  "fr",
-  "es",
-  "ar",
-  "zh",
-  "am",
-  "rw",
+export type UiLanguageDefinition = {
+  code: UiLanguage;
+  label: string;
+  nativeLabel: string;
+  isRTL: boolean;
+};
+
+/**
+ * The single language registry used by catalogs, settings, onboarding, and
+ * feature-specific language pickers. Do not add a language here until its
+ * bundled catalog is complete.
+ */
+export const UI_LANGUAGE_REGISTRY: readonly UiLanguageDefinition[] = [
+  { code: "en", label: "English", nativeLabel: "English", isRTL: false },
+  { code: "sw", label: "Swahili", nativeLabel: "Kiswahili", isRTL: false },
+  { code: "fr", label: "French", nativeLabel: "Français", isRTL: false },
+  { code: "es", label: "Spanish", nativeLabel: "Español", isRTL: false },
+  { code: "ar", label: "Arabic", nativeLabel: "العربية", isRTL: true },
+  { code: "zh", label: "Chinese", nativeLabel: "中文", isRTL: false },
+  { code: "am", label: "Amharic", nativeLabel: "አማርኛ", isRTL: false },
+  { code: "rw", label: "Kinyarwanda", nativeLabel: "Kinyarwanda", isRTL: false },
 ];
+
+export const BUNDLED_UI_LANGUAGES: readonly UiLanguage[] =
+  UI_LANGUAGE_REGISTRY.map(({ code }) => code);
+
+export function getUiLanguageDefinition(language: string | null | undefined): UiLanguageDefinition | null {
+  const code = (language ?? "").trim().toLowerCase().replace("_", "-").split("-")[0];
+  return UI_LANGUAGE_REGISTRY.find((item) => item.code === code) ?? null;
+}
+
+export function isRtlUiLanguage(language: string | null | undefined): boolean {
+  return getUiLanguageDefinition(language)?.isRTL ?? false;
+}
 
 export function isBundledUiLanguage(language: string | null | undefined): language is UiLanguage {
   return BUNDLED_UI_LANGUAGES.includes((language ?? "") as UiLanguage);
@@ -1831,6 +1855,9 @@ const COMMON_PLATFORM_PHRASES: Record<UiLanguage, TranslationTable> = {
 // incrementally without a risky all-at-once rewrite.
 const SEMANTIC_UI_TABLES: Record<UiLanguage, TranslationTable> = {
   en: {
+    "navigation.chat": "Chat", "navigation.discover": "Discover", "navigation.shorts": "Shorts", "navigation.apps": "Apps", "navigation.me": "ME",
+    "navigation.story": "Story", "navigation.post": "Post", "navigation.video": "Video", "navigation.article": "Article",
+    "navigation.create": "Create", "navigation.close_create_options": "Close create options",
     "profile.photo": "Photo",
     "profile.bio": "Bio",
     "profile.country": "Country",
@@ -1875,8 +1902,24 @@ const SEMANTIC_UI_TABLES: Record<UiLanguage, TranslationTable> = {
     "common.not_available": "N/A",
     "common.username_details_offline": "Username details are unavailable offline",
     "common.username_details_unavailable": "Username details are unavailable right now",
+    "common.user": "User", "common.handle": "handle", "common.afuchat_user": "AfuChat User",
+    "profile.plan_premium": "Premium", "profile.plan_platinum": "Platinum", "profile.plan_free": "Free",
+    "qr.title": "Your AfuChat QR Poster", "qr.subtitle": "Long-press or share with anyone. They can scan it to find you instantly.",
+    "qr.scan_to_connect": "Scan to connect on AfuChat", "qr.share": "Share", "qr.save_image": "Save Image",
+    "qr.generate_failed": "Could not generate image", "qr.sharing_unavailable": "Sharing not available on this device",
+    "qr.share_failed": "Share failed", "qr.media_library_unavailable": "Media library not available",
+    "qr.camera_roll_denied": "Camera roll access denied", "qr.saved": "Saved to camera roll!", "qr.save_failed": "Save failed",
+    "verified.organization": "Verified organization", "verified.account": "Verified account",
+    "verified.organization_subtitle": "AfuChat confirmed this organization is authentic.",
+    "verified.account_subtitle": "AfuChat confirmed this person is authentic.", "verified.why_badge": "WHY THIS BADGE",
+    "verified.business_confirmed": "Business details confirmed", "verified.recognized_field": "Recognized in its field",
+    "verified.identity_confirmed": "Identity confirmed", "verified.public_presence": "Recognized public presence",
+    "verified.follows_guidelines": "Follows AfuChat's guidelines", "verified.apply": "Apply for Verification", "verified.get": "Get Verified",
   },
   sw: {
+    "navigation.chat": "Ujumbe", "navigation.discover": "Vumbua", "navigation.shorts": "Fupi", "navigation.apps": "Programu", "navigation.me": "MIMI",
+    "navigation.story": "Hadithi", "navigation.post": "Chapisho", "navigation.video": "Video", "navigation.article": "Makala",
+    "navigation.create": "Unda", "navigation.close_create_options": "Funga chaguo za kuunda",
     "profile.photo": "Picha", "profile.bio": "Wasifu", "profile.country": "Nchi", "profile.website": "Tovuti",
     "profile.premium": "Premium", "profile.title": "Wasifu", "profile.followers": "Wafuasi", "profile.following": "Unaowafuata",
     "profile.posts": "Machapisho", "profile.edit_profile": "Hariri Wasifu", "profile.my_profile": "Wasifu Wangu",
@@ -1893,8 +1936,24 @@ const SEMANTIC_UI_TABLES: Record<UiLanguage, TranslationTable> = {
     "common.price_paid": "Bei Iliyolipwa", "common.purchased_on": "Tarehe ya Ununuzi", "common.sold_by": "Imeuzwa na", "common.done": "Imekamilika",
     "common.not_available": "Haipatikani", "common.username_details_offline": "Maelezo ya jina la mtumiaji hayapatikani nje ya mtandao",
     "common.username_details_unavailable": "Maelezo ya jina la mtumiaji hayapatikani kwa sasa",
+    "common.user": "Mtumiaji", "common.handle": "jina la mtumiaji", "common.afuchat_user": "Mtumiaji wa AfuChat",
+    "profile.plan_premium": "Premium", "profile.plan_platinum": "Platinum", "profile.plan_free": "Bure",
+    "qr.title": "Bango lako la QR la AfuChat", "qr.subtitle": "Bonyeza kwa muda mrefu au shiriki na mtu yeyote. Anaweza kulichanganua ili akupate mara moja.",
+    "qr.scan_to_connect": "Changanua ili kuungana kwenye AfuChat", "qr.share": "Shiriki", "qr.save_image": "Hifadhi picha",
+    "qr.generate_failed": "Haikuweza kuunda picha", "qr.sharing_unavailable": "Kushiriki hakupatikani kwenye kifaa hiki",
+    "qr.share_failed": "Kushiriki kumeshindikana", "qr.media_library_unavailable": "Maktaba ya midia haipatikani",
+    "qr.camera_roll_denied": "Ruhusa ya kamera imekataliwa", "qr.saved": "Imehifadhiwa kwenye kamera!", "qr.save_failed": "Kuhifadhi kumeshindikana",
+    "verified.organization": "Shirika lililothibitishwa", "verified.account": "Akaunti iliyothibitishwa",
+    "verified.organization_subtitle": "AfuChat imethibitisha kuwa shirika hili ni halisi.",
+    "verified.account_subtitle": "AfuChat imethibitisha kuwa mtu huyu ni halisi.", "verified.why_badge": "KWA NINI BEJI HII",
+    "verified.business_confirmed": "Maelezo ya biashara yamethibitishwa", "verified.recognized_field": "Inatambulika katika uwanja wake",
+    "verified.identity_confirmed": "Utambulisho umethibitishwa", "verified.public_presence": "Uwepo wa umma unatambulika",
+    "verified.follows_guidelines": "Inafuata miongozo ya AfuChat", "verified.apply": "Omba uthibitisho", "verified.get": "Pata uthibitisho",
   },
   fr: {
+    "navigation.chat": "Discussions", "navigation.discover": "Découvrir", "navigation.shorts": "Shorts", "navigation.apps": "Applis", "navigation.me": "MOI",
+    "navigation.story": "Story", "navigation.post": "Publication", "navigation.video": "Vidéo", "navigation.article": "Article",
+    "navigation.create": "Créer", "navigation.close_create_options": "Fermer les options de création",
     "profile.photo": "Photo", "profile.bio": "Biographie", "profile.country": "Pays", "profile.website": "Site web",
     "profile.premium": "Premium", "profile.title": "Profil", "profile.followers": "Abonnés", "profile.following": "Abonnements",
     "profile.posts": "Publications", "profile.edit_profile": "Modifier le profil", "profile.my_profile": "Mon profil",
@@ -1911,8 +1970,24 @@ const SEMANTIC_UI_TABLES: Record<UiLanguage, TranslationTable> = {
     "common.price_paid": "Prix payé", "common.purchased_on": "Date d'achat", "common.sold_by": "Vendu par", "common.done": "Terminé",
     "common.not_available": "N/D", "common.username_details_offline": "Les détails du nom d'utilisateur sont indisponibles hors ligne",
     "common.username_details_unavailable": "Les détails du nom d'utilisateur sont indisponibles pour le moment",
+    "common.user": "Utilisateur", "common.handle": "identifiant", "common.afuchat_user": "Utilisateur AfuChat",
+    "profile.plan_premium": "Premium", "profile.plan_platinum": "Platinum", "profile.plan_free": "Gratuit",
+    "qr.title": "Votre affiche QR AfuChat", "qr.subtitle": "Appuyez longuement ou partagez-la avec n'importe qui. Elle peut être scannée pour vous trouver instantanément.",
+    "qr.scan_to_connect": "Scannez pour vous connecter sur AfuChat", "qr.share": "Partager", "qr.save_image": "Enregistrer l'image",
+    "qr.generate_failed": "Impossible de créer l'image", "qr.sharing_unavailable": "Partage indisponible sur cet appareil",
+    "qr.share_failed": "Échec du partage", "qr.media_library_unavailable": "Bibliothèque multimédia indisponible",
+    "qr.camera_roll_denied": "Accès à la pellicule refusé", "qr.saved": "Enregistrée dans la pellicule !", "qr.save_failed": "Échec de l'enregistrement",
+    "verified.organization": "Organisation vérifiée", "verified.account": "Compte vérifié",
+    "verified.organization_subtitle": "AfuChat a confirmé que cette organisation est authentique.",
+    "verified.account_subtitle": "AfuChat a confirmé que cette personne est authentique.", "verified.why_badge": "POURQUOI CE BADGE",
+    "verified.business_confirmed": "Informations commerciales confirmées", "verified.recognized_field": "Reconnue dans son domaine",
+    "verified.identity_confirmed": "Identité confirmée", "verified.public_presence": "Présence publique reconnue",
+    "verified.follows_guidelines": "Respecte les règles d'AfuChat", "verified.apply": "Demander la vérification", "verified.get": "Être vérifié",
   },
   es: {
+    "navigation.chat": "Chat", "navigation.discover": "Descubrir", "navigation.shorts": "Shorts", "navigation.apps": "Apps", "navigation.me": "YO",
+    "navigation.story": "Historia", "navigation.post": "Publicación", "navigation.video": "Vídeo", "navigation.article": "Artículo",
+    "navigation.create": "Crear", "navigation.close_create_options": "Cerrar opciones de creación",
     "profile.photo": "Foto", "profile.bio": "Biografía", "profile.country": "País", "profile.website": "Sitio web",
     "profile.premium": "Premium", "profile.title": "Perfil", "profile.followers": "Seguidores", "profile.following": "Siguiendo",
     "profile.posts": "Publicaciones", "profile.edit_profile": "Editar perfil", "profile.my_profile": "Mi perfil",
@@ -1929,8 +2004,24 @@ const SEMANTIC_UI_TABLES: Record<UiLanguage, TranslationTable> = {
     "common.price_paid": "Precio pagado", "common.purchased_on": "Fecha de compra", "common.sold_by": "Vendido por", "common.done": "Listo",
     "common.not_available": "N/D", "common.username_details_offline": "Los detalles del nombre de usuario no están disponibles sin conexión",
     "common.username_details_unavailable": "Los detalles del nombre de usuario no están disponibles ahora",
+    "common.user": "Usuario", "common.handle": "nombre de usuario", "common.afuchat_user": "Usuario de AfuChat",
+    "profile.plan_premium": "Premium", "profile.plan_platinum": "Platinum", "profile.plan_free": "Gratis",
+    "qr.title": "Tu póster QR de AfuChat", "qr.subtitle": "Mantén pulsado o compártelo con cualquiera. Pueden escanearlo para encontrarte al instante.",
+    "qr.scan_to_connect": "Escanea para conectar en AfuChat", "qr.share": "Compartir", "qr.save_image": "Guardar imagen",
+    "qr.generate_failed": "No se pudo generar la imagen", "qr.sharing_unavailable": "Compartir no está disponible en este dispositivo",
+    "qr.share_failed": "Error al compartir", "qr.media_library_unavailable": "Biblioteca multimedia no disponible",
+    "qr.camera_roll_denied": "Acceso al carrete denegado", "qr.saved": "Guardado en el carrete", "qr.save_failed": "Error al guardar",
+    "verified.organization": "Organización verificada", "verified.account": "Cuenta verificada",
+    "verified.organization_subtitle": "AfuChat confirmó que esta organización es auténtica.",
+    "verified.account_subtitle": "AfuChat confirmó que esta persona es auténtica.", "verified.why_badge": "POR QUÉ ESTA INSIGNIA",
+    "verified.business_confirmed": "Datos comerciales confirmados", "verified.recognized_field": "Reconocida en su sector",
+    "verified.identity_confirmed": "Identidad confirmada", "verified.public_presence": "Presencia pública reconocida",
+    "verified.follows_guidelines": "Sigue las normas de AfuChat", "verified.apply": "Solicitar verificación", "verified.get": "Verificarme",
   },
   ar: {
+    "navigation.chat": "الدردشة", "navigation.discover": "استكشف", "navigation.shorts": "مقاطع", "navigation.apps": "التطبيقات", "navigation.me": "أنا",
+    "navigation.story": "قصة", "navigation.post": "منشور", "navigation.video": "فيديو", "navigation.article": "مقالة",
+    "navigation.create": "إنشاء", "navigation.close_create_options": "إغلاق خيارات الإنشاء",
     "profile.photo": "الصورة", "profile.bio": "نبذة", "profile.country": "البلد", "profile.website": "الموقع الإلكتروني",
     "profile.premium": "بريميوم", "profile.title": "الملف الشخصي", "profile.followers": "المتابعون", "profile.following": "أتابعهم",
     "profile.posts": "المنشورات", "profile.edit_profile": "تعديل الملف الشخصي", "profile.my_profile": "ملفي الشخصي",
@@ -1947,8 +2038,24 @@ const SEMANTIC_UI_TABLES: Record<UiLanguage, TranslationTable> = {
     "common.price_paid": "السعر المدفوع", "common.purchased_on": "تاريخ الشراء", "common.sold_by": "البائع", "common.done": "تم",
     "common.not_available": "غير متاح", "common.username_details_offline": "تفاصيل اسم المستخدم غير متاحة دون اتصال",
     "common.username_details_unavailable": "تفاصيل اسم المستخدم غير متاحة الآن",
+    "common.user": "مستخدم", "common.handle": "اسم المستخدم", "common.afuchat_user": "مستخدم AfuChat",
+    "profile.plan_premium": "بريميوم", "profile.plan_platinum": "بلاتيني", "profile.plan_free": "مجاني",
+    "qr.title": "ملصق QR الخاص بك على AfuChat", "qr.subtitle": "اضغط مطولاً أو شاركه مع أي شخص. يمكنهم مسحه للعثور عليك فوراً.",
+    "qr.scan_to_connect": "امسح للاتصال على AfuChat", "qr.share": "مشاركة", "qr.save_image": "حفظ الصورة",
+    "qr.generate_failed": "تعذر إنشاء الصورة", "qr.sharing_unavailable": "المشاركة غير متاحة على هذا الجهاز",
+    "qr.share_failed": "فشلت المشاركة", "qr.media_library_unavailable": "مكتبة الوسائط غير متاحة",
+    "qr.camera_roll_denied": "تم رفض الوصول إلى ألبوم الكاميرا", "qr.saved": "تم الحفظ في ألبوم الكاميرا", "qr.save_failed": "فشل الحفظ",
+    "verified.organization": "مؤسسة موثقة", "verified.account": "حساب موثق",
+    "verified.organization_subtitle": "أكد AfuChat أن هذه المؤسسة أصلية.",
+    "verified.account_subtitle": "أكد AfuChat أن هذا الشخص أصلي.", "verified.why_badge": "لماذا هذه الشارة",
+    "verified.business_confirmed": "تم تأكيد بيانات النشاط التجاري", "verified.recognized_field": "معروفة في مجالها",
+    "verified.identity_confirmed": "تم تأكيد الهوية", "verified.public_presence": "حضور عام معروف",
+    "verified.follows_guidelines": "تتبع إرشادات AfuChat", "verified.apply": "التقدم للتحقق", "verified.get": "الحصول على التحقق",
   },
   zh: {
+    "navigation.chat": "聊天", "navigation.discover": "发现", "navigation.shorts": "短视频", "navigation.apps": "应用", "navigation.me": "我的",
+    "navigation.story": "故事", "navigation.post": "帖子", "navigation.video": "视频", "navigation.article": "文章",
+    "navigation.create": "创建", "navigation.close_create_options": "关闭创建选项",
     "profile.photo": "照片", "profile.bio": "简介", "profile.country": "国家", "profile.website": "网站",
     "profile.premium": "高级版", "profile.title": "个人资料", "profile.followers": "粉丝", "profile.following": "关注",
     "profile.posts": "帖子", "profile.edit_profile": "编辑资料", "profile.my_profile": "我的资料",
@@ -1965,8 +2072,24 @@ const SEMANTIC_UI_TABLES: Record<UiLanguage, TranslationTable> = {
     "common.price_paid": "支付价格", "common.purchased_on": "购买日期", "common.sold_by": "卖家", "common.done": "完成",
     "common.not_available": "不可用", "common.username_details_offline": "离线时无法查看用户名详情",
     "common.username_details_unavailable": "用户名详情暂时不可用",
+    "common.user": "用户", "common.handle": "用户名", "common.afuchat_user": "AfuChat 用户",
+    "profile.plan_premium": "高级版", "profile.plan_platinum": "铂金版", "profile.plan_free": "免费",
+    "qr.title": "你的 AfuChat 二维码海报", "qr.subtitle": "长按或分享给任何人。他们可以扫描二维码立即找到你。",
+    "qr.scan_to_connect": "扫描二维码连接 AfuChat", "qr.share": "分享", "qr.save_image": "保存图片",
+    "qr.generate_failed": "无法生成图片", "qr.sharing_unavailable": "此设备不支持分享",
+    "qr.share_failed": "分享失败", "qr.media_library_unavailable": "媒体库不可用",
+    "qr.camera_roll_denied": "相册访问被拒绝", "qr.saved": "已保存到相册", "qr.save_failed": "保存失败",
+    "verified.organization": "已认证组织", "verified.account": "已认证账户",
+    "verified.organization_subtitle": "AfuChat 已确认此组织真实可靠。",
+    "verified.account_subtitle": "AfuChat 已确认此人真实可靠。", "verified.why_badge": "为什么有此徽章",
+    "verified.business_confirmed": "企业信息已确认", "verified.recognized_field": "在其领域获得认可",
+    "verified.identity_confirmed": "身份已确认", "verified.public_presence": "公众身份获得认可",
+    "verified.follows_guidelines": "遵守 AfuChat 指南", "verified.apply": "申请认证", "verified.get": "获取认证",
   },
   am: {
+    "navigation.chat": "ውይይት", "navigation.discover": "ያግኙ", "navigation.shorts": "አጭር ቪዲዮ", "navigation.apps": "መተግበሪያዎች", "navigation.me": "እኔ",
+    "navigation.story": "ታሪክ", "navigation.post": "ልጥፍ", "navigation.video": "ቪዲዮ", "navigation.article": "ጽሑፍ",
+    "navigation.create": "ፍጠር", "navigation.close_create_options": "የመፍጠሪያ አማራጮችን ዝጋ",
     "profile.photo": "ፎቶ", "profile.bio": "ስለ እኔ", "profile.country": "አገር", "profile.website": "ድረ-ገጽ",
     "profile.premium": "ፕሪሚየም", "profile.title": "መገለጫ", "profile.followers": "ተከታዮች", "profile.following": "የምከተላቸው",
     "profile.posts": "ልጥፎች", "profile.edit_profile": "መገለጫ አርትዕ", "profile.my_profile": "የእኔ መገለጫ",
@@ -1983,8 +2106,24 @@ const SEMANTIC_UI_TABLES: Record<UiLanguage, TranslationTable> = {
     "common.price_paid": "የተከፈለ ዋጋ", "common.purchased_on": "የተገዛበት ቀን", "common.sold_by": "የሸጠው", "common.done": "ተከናውኗል",
     "common.not_available": "አይገኝም", "common.username_details_offline": "የተጠቃሚ ስም ዝርዝሮች ከመስመር ውጭ አይገኙም",
     "common.username_details_unavailable": "የተጠቃሚ ስም ዝርዝሮች አሁን አይገኙም",
+    "common.user": "ተጠቃሚ", "common.handle": "የተጠቃሚ ስም", "common.afuchat_user": "የAfuChat ተጠቃሚ",
+    "profile.plan_premium": "ፕሪሚየም", "profile.plan_platinum": "ፕላቲነም", "profile.plan_free": "ነፃ",
+    "qr.title": "የእርስዎ AfuChat QR ፖስተር", "qr.subtitle": "በረጅም ይጫኑ ወይም ለማንም ያጋሩ። ወዲያውኑ እንዲያገኙዎት መቃኘት ይችላሉ።",
+    "qr.scan_to_connect": "በAfuChat ለመገናኘት ይቃኙ", "qr.share": "አጋራ", "qr.save_image": "ምስል አስቀምጥ",
+    "qr.generate_failed": "ምስል መፍጠር አልተቻለም", "qr.sharing_unavailable": "በዚህ መሣሪያ ማጋራት አይቻልም",
+    "qr.share_failed": "ማጋራት አልተሳካም", "qr.media_library_unavailable": "የሚዲያ ቤተ-መጽሐፍት አይገኝም",
+    "qr.camera_roll_denied": "የካሜራ ማዕከል መዳረሻ ተከልክሏል", "qr.saved": "ወደ ካሜራ ማዕከል ተቀምጧል", "qr.save_failed": "ማስቀመጥ አልተሳካም",
+    "verified.organization": "የተረጋገጠ ድርጅት", "verified.account": "የተረጋገጠ መለያ",
+    "verified.organization_subtitle": "AfuChat ይህ ድርጅት እውነተኛ መሆኑን አረጋግጧል።",
+    "verified.account_subtitle": "AfuChat ይህ ሰው እውነተኛ መሆኑን አረጋግጧል።", "verified.why_badge": "ይህ ባጅ ለምን",
+    "verified.business_confirmed": "የንግድ ዝርዝሮች ተረጋግጠዋል", "verified.recognized_field": "በመስኩ የታወቀ",
+    "verified.identity_confirmed": "ማንነት ተረጋግጧል", "verified.public_presence": "የህዝብ ተሳትፎ የታወቀ",
+    "verified.follows_guidelines": "የAfuChat መመሪያዎችን ይከተላል", "verified.apply": "ለማረጋገጫ ያመልክቱ", "verified.get": "የተረጋገጠ ይሁኑ",
   },
   rw: {
+    "navigation.chat": "Kuganira", "navigation.discover": "Menya", "navigation.shorts": "Ngufi", "navigation.apps": "Porogaramu", "navigation.me": "JYE",
+    "navigation.story": "Inkuru", "navigation.post": "Nyandiko", "navigation.video": "Videwo", "navigation.article": "Inyandiko",
+    "navigation.create": "Kora", "navigation.close_create_options": "Funga amahitamo yo gukora",
     "profile.photo": "Ifoto", "profile.bio": "Umwirondoro", "profile.country": "Igihugu", "profile.website": "Urubuga",
     "profile.premium": "Premium", "profile.title": "Umwirondoro", "profile.followers": "Abagukurikira", "profile.following": "Ukurikira",
     "profile.posts": "Inyandiko", "profile.edit_profile": "Hindura umwirondoro", "profile.my_profile": "Umwirondoro wanjye",
@@ -2001,6 +2140,19 @@ const SEMANTIC_UI_TABLES: Record<UiLanguage, TranslationTable> = {
     "common.price_paid": "Igiciro cyishyuwe", "common.purchased_on": "Itariki yo kugura", "common.sold_by": "Byagurishijwe na", "common.done": "Byarangiye",
     "common.not_available": "Ntabwo biboneka", "common.username_details_offline": "Ibisobanuro by’izina ry’ukoresha ntibiboneka nta murongo",
     "common.username_details_unavailable": "Ibisobanuro by’izina ry’ukoresha ntibiboneka ubu",
+    "common.user": "Umukoresha", "common.handle": "izina ry’ukoresha", "common.afuchat_user": "Umukoresha wa AfuChat",
+    "profile.plan_premium": "Premium", "profile.plan_platinum": "Platinum", "profile.plan_free": "Ubuntu",
+    "qr.title": "Poster ya QR yawe ya AfuChat", "qr.subtitle": "Kanda igihe kirekire cyangwa uyisangize uwo ari we wese. Bashobora kuyisikana bakakubona ako kanya.",
+    "qr.scan_to_connect": "Sikana kugira ngo uhuze kuri AfuChat", "qr.share": "Sangira", "qr.save_image": "Bika ishusho",
+    "qr.generate_failed": "Ntibyashobotse gukora ishusho", "qr.sharing_unavailable": "Gusangira ntibiboneka kuri iki gikoresho",
+    "qr.share_failed": "Gusangira byanze", "qr.media_library_unavailable": "Ububiko bw’amafoto ntibuboneka",
+    "qr.camera_roll_denied": "Uburenganzira bwo kugera ku mafoto bwanze", "qr.saved": "Byabitswe mu mafoto", "qr.save_failed": "Kubika byanze",
+    "verified.organization": "Umuryango wemejwe", "verified.account": "Konti yemejwe",
+    "verified.organization_subtitle": "AfuChat yemeje ko uyu muryango ari uw’ukuri.",
+    "verified.account_subtitle": "AfuChat yemeje ko uyu muntu ari uw’ukuri.", "verified.why_badge": "KUKI AKA KIMENYETSO",
+    "verified.business_confirmed": "Amakuru y’ubucuruzi yemejwe", "verified.recognized_field": "Azwi mu mwuga we",
+    "verified.identity_confirmed": "Indangamuntu yemejwe", "verified.public_presence": "Azwi mu ruhame",
+    "verified.follows_guidelines": "Ak следa amabwiriza ya AfuChat", "verified.apply": "Saba kwemezwa", "verified.get": "Emeza konti",
   },
 };
 

@@ -17,9 +17,12 @@ const sourceRoots = ["app", "components", "context", "lib"].map((dir) =>
   path.join(mobileRoot, dir),
 );
 const catalogPath = path.join(mobileRoot, "lib", "uiTranslations.ts");
+const registrySource = fs.readFileSync(catalogPath, "utf8");
 const semanticStart = "const SEMANTIC_UI_TABLES";
 const semanticEnd = "const REGISTERED_UI_TEXTS";
-const supportedLanguages = ["en", "sw", "fr", "es", "ar", "zh", "am", "rw"];
+const supportedLanguages = [
+  ...registrySource.matchAll(/\{\s*code:\s*"([a-z-]+)"/g),
+].map((match) => match[1]);
 
 function walk(dir) {
   if (!fs.existsSync(dir)) return [];
@@ -202,13 +205,15 @@ if (literalBacklog.length) {
   if (literalBacklog.length > 25) console.log(`  … ${literalBacklog.length - 25} more`);
 }
 
+const strictLiterals = process.argv.includes("--strict-literals");
 if (
   missing.length ||
   Object.keys(duplicateKeys).length ||
   Object.keys(emptyTranslations).length ||
   Object.keys(extraByLanguage).length ||
   placeholderIssues.length ||
-  Object.values(missingByLanguage).some((keys) => keys.length)
+  Object.values(missingByLanguage).some((keys) => keys.length) ||
+  (strictLiterals && literalBacklog.length)
 ) {
   process.exitCode = 1;
 }
