@@ -159,7 +159,7 @@ export function CompactTabBar({
   const pathname           = usePathname();
   const insets             = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
-  const { t, isRTL } = useLanguage();
+  const { t } = useLanguage();
   const totalUnread        = useTotalUnread(userId);
   const active             = normalizeTabPath(pathname);
   const [showCreateActions, setShowCreateActions] = useState(false);
@@ -294,8 +294,7 @@ export function CompactTabBar({
                 pill.actionFab,
                 {
                   bottom: PILL_BOTTOM + PILL_H + 72 + (CREATE_OPTIONS.length - index - 1) * 58,
-                  right: isRTL ? undefined : 28,
-                  left: isRTL ? 28 : undefined,
+                  right: 28,
                   backgroundColor: isDark ? colors.surface : colors.card,
                   borderColor: accentColor,
                 },
@@ -308,7 +307,7 @@ export function CompactTabBar({
                 <Text
                   style={[
                     pill.actionLabelText,
-                    { color: accentColor, textAlign: isRTL ? "right" : "left" },
+                    { color: accentColor, textAlign: "left" },
                   ]}
                 >
                   {t(opt.label)}
@@ -328,8 +327,7 @@ export function CompactTabBar({
               pill.fab,
               {
                 bottom: PILL_BOTTOM + PILL_H + 12,
-                right: isRTL ? undefined : 24,
-                left: isRTL ? 24 : undefined,
+                right: 24,
                 backgroundColor: accentColor,
               },
             ]}

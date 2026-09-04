@@ -21,7 +21,7 @@ let screensEnabled = false;
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { AppState, BackHandler, InteractionManager, Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
+import { AppState, BackHandler, I18nManager, InteractionManager, Linking, LogBox, Platform, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router, Stack, usePathname, useRootNavigationState } from "expo-router";
 import { setCurrentPage, resolvePageInfo } from "@/lib/pageTracker";
@@ -55,7 +55,7 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { CallProvider } from "@/context/CallContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AppAccentProvider } from "@/context/AppAccentContext";
-import { LanguageProvider, useLanguage } from "@/context/LanguageContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 import { AdvancedFeaturesProvider } from "@/context/AdvancedFeaturesContext";
 import { ChatPreferencesProvider } from "@/context/ChatPreferencesContext";
 import { DataModeProvider } from "@/context/DataModeContext";
@@ -100,6 +100,12 @@ import { getNativeShareChatId } from "@/lib/nativeShareShortcuts";
   allowFontScaling: false,
   includeFontPadding: false,
 };
+
+// AfuChat uses one consistent left-to-right interface. The selected language
+// changes translated copy only; Arabic must not mirror navigation, spacing, or
+// the placement of controls across the app.
+I18nManager.allowRTL(false);
+I18nManager.forceRTL(false);
 
 function ActivityTrackerSync() {
   const { user } = useAuth();
@@ -290,9 +296,12 @@ function WebGlobalStyles() {
       body {
         overflow: hidden;
         font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        direction: ltr;
+        text-align: left;
       }
       *, *::before, *::after {
         box-sizing: border-box;
+        direction: ltr;
       }
       button, input, textarea, select {
         font-family: inherit;
@@ -320,8 +329,7 @@ function WebFontGate({
 }
 
 function LanguageDirectionShell({ children }: { children: React.ReactNode }) {
-  const { isRTL } = useLanguage();
-  return <View style={[styles.directionShell, { direction: isRTL ? "rtl" : "ltr" }]}>{children}</View>;
+  return <View style={styles.directionShell}>{children}</View>;
 }
 
 function IncomingShareGate({ navigationReady }: { navigationReady: boolean }) {

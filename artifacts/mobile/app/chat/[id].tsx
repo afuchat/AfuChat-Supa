@@ -2234,7 +2234,7 @@ function ChatScreen() {
   const { colors, isDark } = useTheme();
   const { appearance: chatAppearance, updateAppearance: updateChatAppearance } = useChatAppearance(id as string | undefined);
   const BRAND = colors.accent;
-  const { preferredLang, textToSpeech: ttsEnabled, isRTL } = useLanguage();
+  const { preferredLang, textToSpeech: ttsEnabled } = useLanguage();
   const { prefs: chatPrefs, themeColors: chatThemeColors, bubbleRadius: chatBubbleRadius } = useChatPreferences();
   const effectiveChatFontSize = chatAppearance?.fontSize ?? chatPrefs?.font_size ?? 14;
   const { features: advancedFeatures } = useAdvancedFeatures();
@@ -8708,8 +8708,8 @@ STRICT RULES:
                 color: colors.textMuted,
                 fontFamily: "Inter_400Regular",
                 lineHeight: 18,
-                textAlign: isRTL ? "right" : "left",
-                writingDirection: isRTL ? "rtl" : "ltr",
+                textAlign: "left",
+                writingDirection: "ltr",
                 flexShrink: 1,
               }}
               numberOfLines={3}
@@ -8730,8 +8730,8 @@ STRICT RULES:
                 color: colors.text,
                 fontFamily: "Inter_400Regular",
                 lineHeight: 21,
-                textAlign: isRTL ? "right" : "left",
-                writingDirection: isRTL ? "rtl" : "ltr",
+                textAlign: "left",
+                writingDirection: "ltr",
                 flexShrink: 1,
               }}
             >
