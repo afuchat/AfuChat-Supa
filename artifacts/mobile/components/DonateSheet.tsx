@@ -9,10 +9,7 @@ import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
-  KeyboardAvoidingView,
   Modal,
-  Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -26,6 +23,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { SUPABASE_EDGE_URL } from "@/lib/env";
 import { supabase } from "@/lib/supabase";
 import Colors from "@/constants/colors";
+import SwipeableBottomSheet from "@/components/SwipeableBottomSheet";
 
 const ACCENT = Colors.brand;
 
@@ -207,202 +205,162 @@ export function DonateSheet({ visible, onClose }: DonateSheetProps) {
   // ── Thank-you state ───────────────────────────────────────────────────────
   if (done) {
     return (
-      <Modal
+      <SwipeableBottomSheet
         visible={visible}
-        transparent
-        animationType="fade"
-        onRequestClose={handleClose}
+        onClose={handleClose}
+        backgroundColor={colors.card}
+        maxHeight="92%"
       >
-        <View style={s.overlay}>
-          <View style={[s.sheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + 28 }]}>
-            <View style={s.thankYouContent}>
-              <View style={[s.thankYouIcon, { backgroundColor: "#34C75918" }]}>
-                <Ionicons name="heart" size={38} color="#34C759" />
-              </View>
-              <Text style={[s.thankYouTitle, { color: colors.text }]}>
-                Thank you! 🎉
-              </Text>
-              <Text style={[s.thankYouSub, { color: colors.textMuted }]}>
-                Your donation helps us keep AfuChat growing and accessible for everyone.
-              </Text>
-              <TouchableOpacity
-                style={[s.donateBtn, { backgroundColor: ACCENT, marginTop: 8 }]}
-                onPress={handleClose}
-                activeOpacity={0.85}
-              >
-                <Text style={s.donateBtnText}>Close</Text>
-              </TouchableOpacity>
+        <View style={s.sheetContent}>
+          <View style={s.thankYouContent}>
+            <View style={[s.thankYouIcon, { backgroundColor: "#34C75918" }]}>
+              <Ionicons name="heart" size={38} color="#34C759" />
             </View>
+            <Text style={[s.thankYouTitle, { color: colors.text }]}>
+              Thank you! 🎉
+            </Text>
+            <Text style={[s.thankYouSub, { color: colors.textMuted }]}>
+              Your donation helps us keep AfuChat growing and accessible for everyone.
+            </Text>
+            <TouchableOpacity
+              style={[s.donateBtn, { backgroundColor: ACCENT, marginTop: 8 }]}
+              onPress={handleClose}
+              activeOpacity={0.85}
+            >
+              <Text style={s.donateBtnText}>Close</Text>
+            </TouchableOpacity>
           </View>
         </View>
-      </Modal>
+      </SwipeableBottomSheet>
     );
   }
 
   // ── Picker sheet ──────────────────────────────────────────────────────────
   return (
-    <Modal
+    <SwipeableBottomSheet
       visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={handleClose}
+      onClose={handleClose}
+      backgroundColor={colors.card}
+      maxHeight="92%"
     >
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={handleClose}>
-          {/* Sheet */}
-          <TouchableOpacity
-            activeOpacity={1}
-            style={[s.sheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + 16 }]}
-            onPress={() => {}}
-          >
-            {/* Drag handle */}
-            <View style={[s.handle, { backgroundColor: colors.border }]} />
-
-            {/* Title row */}
-            <View style={s.titleRow}>
-              <View style={[s.heartBadge, { backgroundColor: "#FF3B3018" }]}>
-                <Ionicons name="heart" size={18} color="#FF3B30" />
-              </View>
-              <View style={s.titleCopy}>
-                <Text style={[s.sheetTitle, { color: colors.text }]}>Support AfuChat</Text>
-                <Text style={[s.sheetSub, { color: colors.textMuted }]}>
-                  Help keep the app free for everyone
-                </Text>
-              </View>
-              <TouchableOpacity onPress={handleClose} hitSlop={12} style={s.closeBtn}>
-                <Ionicons name="close-circle" size={26} color={colors.textMuted} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              style={s.formScroll}
-              contentContainerStyle={s.formContent}
-            >
-              {/* Preset grid */}
-              <View style={s.presetGrid}>
-                {PRESETS.map((p, i) => {
-                  const isSelected = customAmt === "" && selectedPreset === i;
-                  return (
-                    <TouchableOpacity
-                      key={i}
-                      style={[
-                        s.presetCard,
-                        { backgroundColor: colors.backgroundSecondary, borderColor: colors.border },
-                        isSelected && { backgroundColor: ACCENT + "15", borderColor: ACCENT },
-                      ]}
-                      onPress={() => { setSelectedPreset(i); setCustomAmt(""); setError(null); }}
-                      activeOpacity={0.75}
-                    >
-                      <Text style={[s.presetAmt, { color: isSelected ? ACCENT : colors.text }]}>
-                        ${p.usd}
-                      </Text>
-                      <Text style={[s.presetLabel, { color: isSelected ? ACCENT : colors.textMuted }]}>
-                        {p.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              {/* Custom amount */}
-              <View style={s.customRow}>
-                <Text style={[s.customLabel, { color: colors.textMuted }]}>Custom amount</Text>
-                <View style={[
-                  s.customInput,
-                  { backgroundColor: colors.backgroundSecondary, borderColor: customAmt !== "" ? ACCENT : colors.border },
-                ]}>
-                  <Text style={[s.customCurrency, { color: colors.textMuted }]}>$</Text>
-                  <TextInput
-                    style={[s.customInputText, { color: colors.text }]}
-                    value={customAmt}
-                    onChangeText={(t) => { setCustomAmt(t.replace(/[^0-9.]/g, "")); setError(null); }}
-                    keyboardType="decimal-pad"
-                    placeholder="0.00"
-                    placeholderTextColor={colors.textMuted}
-                    returnKeyType="done"
-                  />
-                </View>
-              </View>
-
-              {/* Info blurb */}
-              <View style={[s.infoBox, { backgroundColor: colors.backgroundSecondary }]}>
-                <View style={s.infoIcon}>
-                  <Ionicons name="shield-checkmark" size={14} color="#34C759" />
-                </View>
-                <Text style={[s.infoText, { color: colors.textMuted }]}>
-                  Secure checkout via Pesapal · Card, mobile money & bank supported
-                </Text>
-              </View>
-
-              {/* Error */}
-              {error && (
-                <Animated.View
-                  style={[s.errorBox, { transform: [{ translateX: shakeAnim }] }]}
-                >
-                  <Ionicons name="warning" size={14} color="#FF3B30" />
-                  <Text style={s.errorText}>{error}</Text>
-                </Animated.View>
-              )}
-
-              {/* Donate button */}
-              <TouchableOpacity
-                style={[
-                  s.donateBtn,
-                  { backgroundColor: loading ? ACCENT + "80" : ACCENT, marginHorizontal: 0 },
-                ]}
-                onPress={handleDonate}
-                disabled={loading}
-                activeOpacity={0.85}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <View style={s.donateContent}>
-                    <View style={s.donateIcon}>
-                      <Ionicons name="heart" size={17} color="#fff" />
-                    </View>
-                    <Text style={s.donateBtnText}>
-            Donate ${usdAmount >= 1 ? usdAmount.toFixed(usdAmount % 1 === 0 ? 0 : 2) : "N/A"}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            </ScrollView>
+      <View style={s.sheetContent}>
+        {/* Title row */}
+        <View style={s.titleRow}>
+          <View style={[s.heartBadge, { backgroundColor: "#FF3B3018" }]}>
+            <Ionicons name="heart" size={18} color="#FF3B30" />
+          </View>
+          <View style={s.titleCopy}>
+            <Text style={[s.sheetTitle, { color: colors.text }]}>Support AfuChat</Text>
+            <Text style={[s.sheetSub, { color: colors.textMuted }]}>
+              Help keep the app free for everyone
+            </Text>
+          </View>
+          <TouchableOpacity onPress={handleClose} hitSlop={12} style={s.closeBtn}>
+            <Ionicons name="close-circle" size={26} color={colors.textMuted} />
           </TouchableOpacity>
+        </View>
+
+        {/* Preset grid */}
+        <View style={s.presetGrid}>
+          {PRESETS.map((p, i) => {
+            const isSelected = customAmt === "" && selectedPreset === i;
+            return (
+              <TouchableOpacity
+                key={i}
+                style={[
+                  s.presetCard,
+                  { backgroundColor: colors.backgroundSecondary, borderColor: colors.border },
+                  isSelected && { backgroundColor: ACCENT + "15", borderColor: ACCENT },
+                ]}
+                onPress={() => { setSelectedPreset(i); setCustomAmt(""); setError(null); }}
+                activeOpacity={0.75}
+              >
+                <Text style={[s.presetAmt, { color: isSelected ? ACCENT : colors.text }]}>
+                  ${p.usd}
+                </Text>
+                <Text style={[s.presetLabel, { color: isSelected ? ACCENT : colors.textMuted }]}>
+                  {p.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Custom amount */}
+        <View style={s.customRow}>
+          <Text style={[s.customLabel, { color: colors.textMuted }]}>Custom amount</Text>
+          <View style={[
+            s.customInput,
+            { backgroundColor: colors.backgroundSecondary, borderColor: customAmt !== "" ? ACCENT : colors.border },
+          ]}>
+            <Text style={[s.customCurrency, { color: colors.textMuted }]}>$</Text>
+            <TextInput
+              style={[s.customInputText, { color: colors.text }]}
+              value={customAmt}
+              onChangeText={(t) => { setCustomAmt(t.replace(/[^0-9.]/g, "")); setError(null); }}
+              keyboardType="decimal-pad"
+              placeholder="0.00"
+              placeholderTextColor={colors.textMuted}
+              returnKeyType="done"
+            />
+          </View>
+        </View>
+
+        {/* Info blurb */}
+        <View style={[s.infoBox, { backgroundColor: colors.backgroundSecondary }]}>
+          <View style={s.infoIcon}>
+            <Ionicons name="shield-checkmark" size={14} color="#34C759" />
+          </View>
+          <Text style={[s.infoText, { color: colors.textMuted }]}>
+            Secure checkout via Pesapal · Card, mobile money & bank supported
+          </Text>
+        </View>
+
+        {/* Error */}
+        {error && (
+          <Animated.View
+            style={[s.errorBox, { transform: [{ translateX: shakeAnim }] }]}
+          >
+            <Ionicons name="warning" size={14} color="#FF3B30" />
+            <Text style={s.errorText}>{error}</Text>
+          </Animated.View>
+        )}
+
+        {/* Donate button */}
+        <TouchableOpacity
+          style={[
+            s.donateBtn,
+            { backgroundColor: loading ? ACCENT + "80" : ACCENT, marginHorizontal: 0 },
+          ]}
+          onPress={handleDonate}
+          disabled={loading}
+          activeOpacity={0.85}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <View style={s.donateContent}>
+              <View style={s.donateIcon}>
+                <Ionicons name="heart" size={17} color="#fff" />
+              </View>
+              <Text style={s.donateBtnText}>
+            Donate ${usdAmount >= 1 ? usdAmount.toFixed(usdAmount % 1 === 0 ? 0 : 2) : "N/A"}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
-      </KeyboardAvoidingView>
-    </Modal>
+      </View>
+    </SwipeableBottomSheet>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.45)",
-  },
-  sheet: {
+  sheetContent: {
     width: "100%",
-    maxWidth: 520,
-    alignSelf: "center",
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
     paddingHorizontal: 20,
-    paddingTop: 12,
-    gap: 16,
-  },
-  handle: {
-    width: 38,
-    height: 4,
-    borderRadius: 2,
-    alignSelf: "center",
-    marginBottom: 4,
+    paddingBottom: 16,
   },
   titleRow: {
     flexDirection: "row",
@@ -437,13 +395,6 @@ const s = StyleSheet.create({
     lineHeight: 16,
     fontFamily: "Inter_400Regular",
     marginTop: 1,
-  },
-  formScroll: {
-    width: "100%",
-    flexGrow: 0,
-  },
-  formContent: {
-    width: "100%",
   },
   presetGrid: {
     width: "100%",
