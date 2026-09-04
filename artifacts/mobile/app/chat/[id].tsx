@@ -87,6 +87,7 @@ import {
 } from "@/lib/offlineStore";
 import { getLocalMessages, saveMessages, savePendingMessage, getNewestMessageDate, deleteAllLocalMessages, markMessageRead } from "@/lib/storage/localMessages";
 import { enqueue } from "@/lib/storage/syncQueue";
+import { storage } from "@/lib/storage/mmkv";
 import {
   getLocalNotesConversation,
   getLocalNotesMessages,
@@ -383,6 +384,22 @@ type ChatInfo = {
   channel_subscriber_count?: number | null;
   channel_role?: "owner" | "member";
 };
+
+type MessageGateStatus = "unknown" | "limited" | "unlocked";
+type MessageGateSnapshot = {
+  contextKey: string;
+  status: MessageGateStatus;
+};
+
+function messageGateStorageKey(userId: string, chatId: string): string {
+  return `chat_message_gate_v2_${userId}_${chatId}`;
+}
+
+function readCachedMessageGate(userId: string | undefined, chatId: string | null): MessageGateStatus {
+  if (!userId || !chatId) return "unknown";
+  const cached = storage.getString(messageGateStorageKey(userId, chatId));
+  return cached === "limited" || cached === "unlocked" ? cached : "unknown";
+}
 
 function NativeAttachmentIcon({
   name,
@@ -2397,17 +2414,11 @@ function ChatScreen() {
     .some((value) => value?.trim().toLowerCase() === "notifications");
   const isSelfChat = !chatInfo?.is_group && !chatInfo?.is_channel && !!chatInfo?.other_id && chatInfo?.other_id === user?.id;
   const isLocalNotes = isLocalNotesId(id);
-  // Direct message requests fail closed while relationship state is loading.
-  // This prevents the composer from flashing open before the follow/reply
-  // check completes, including on an offline cold start.
-  const startsMessageGateLocked =
-    !isDraft &&
-    !isLocalNotes &&
-    !isNotificationsChat &&
-    !isAfuAiDirectChat &&
-    !isSelfChat &&
-    isGroup !== "true" &&
-    isChannel !== "true";
+  const messageGateContextKey = `${user?.id ?? "anonymous"}:${isDraft ? `draft:${id}` : id}`;
+  const initialMessageGateStatus: MessageGateStatus =
+    isDraft || isLocalNotes || isNotificationsChat || isAfuAiDirectChat || isSelfChat || isGroup === "true" || isChannel === "true"
+      ? "unlocked"
+      : readCachedMessageGate(user?.id, id);
   const [phonebookName, setPhonebookName] = useState<string | null>(null);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const typingMapRef = useRef<Map<string, string>>(new Map());
@@ -2781,7 +2792,15 @@ function ChatScreen() {
   const [showVideoTrimmer, setShowVideoTrimmer] = useState(false);
   const [pendingVideoUri, setPendingVideoUri] = useState<{ uri: string; mimeType: string } | null>(null);
   const [networkOnline, setNetworkOnline] = useState(isOnline());
-  const [messageLimited, setMessageLimited] = useState(startsMessageGateLocked);
+  const [messageGateSnapshot, setMessageGateSnapshot] = useState<MessageGateSnapshot>({
+    contextKey: messageGateContextKey,
+    status: initialMessageGateStatus,
+  });
+  const messageGateStatus = messageGateSnapshot.contextKey === messageGateContextKey
+    ? messageGateSnapshot.status
+    : "unknown";
+  const messageLimited = messageGateStatus === "limited";
+  const messageGateBlocked = messageGateStatus !== "unlocked";
   const [isStranger, setIsStranger] = useState(false);
   const [strangerCountry, setStrangerCountry] = useState<string | null>(null);
   const [forwardMsg, setForwardMsg] = useState<Message | null>(null);
@@ -2802,6 +2821,8 @@ function ChatScreen() {
   const selectionClearTimer = useRef<any>(null);
   const chatLoadGenerationRef = useRef(0);
   const messageGateCheckRef = useRef(0);
+  const messageGateContextRef = useRef(messageGateContextKey);
+  messageGateContextRef.current = messageGateContextKey;
 
   const effectiveChatId = isDraft ? realChatId : id;
 
@@ -3340,53 +3361,87 @@ function ChatScreen() {
   const checkMessageGating = useCallback(async () => {
     if (!user) return;
     const checkId = ++messageGateCheckRef.current;
-    const applyGateState = (locked: boolean) => {
-      if (messageGateCheckRef.current === checkId) setMessageLimited(locked);
+    const checkContextKey = messageGateContextKey;
+    const applyGateState = (status: MessageGateStatus) => {
+      if (
+        messageGateCheckRef.current === checkId &&
+        messageGateContextRef.current === checkContextKey
+      ) {
+        setMessageGateSnapshot({ contextKey: checkContextKey, status });
+      }
     };
+    const persistGateState = (chatId: string, status: Exclude<MessageGateStatus, "unknown">) => {
+      storage.setString(messageGateStorageKey(user.id, chatId), status);
+    };
+    const fallbackStatus = (
+      cachedStatus: MessageGateStatus,
+      hasLocalOutgoingMessage: boolean,
+    ): MessageGateStatus => {
+      if (cachedStatus !== "unknown") return cachedStatus;
+      return hasLocalOutgoingMessage ? "limited" : "unknown";
+    };
+
     if (isNotificationsChat) {
-      applyGateState(false);
+      applyGateState("unlocked");
       return;
     }
     if (isLocalNotesId(id)) {
-      applyGateState(false);
+      applyGateState("unlocked");
       return;
     }
     const info = chatInfo;
-    // Keep the optimistic lock while chat metadata is still loading. A
-    // missing/failed request must never turn the composer back on.
+    // Keep the gate unresolved while chat metadata is loading. This blocks
+    // sending without showing a false limit notice for an unrelated chat.
     if (!info) return;
     if (info.is_group || info.is_channel || !info.other_id || info.other_id === AFUAI_BOT_ID || info.other_id === user.id) {
-      applyGateState(false);
+      applyGateState("unlocked");
       return;
     }
     const otherId = info.other_id;
-    const gateCacheKey = `chat_message_gate_unlocked_${user.id}_${otherId}`;
-    const cachedUnlock = await AsyncStorage.getItem(gateCacheKey).catch(() => null);
-    if (cachedUnlock === "1") {
-      applyGateState(false);
-      return;
-    }
-
-    // A locally cached reply is authoritative while offline. This also
-    // prevents a cached conversation from relocking during a network outage.
-    const localReply = messages.some((message) => message.sender_id === otherId && !message._pending);
-    if (localReply) {
-      applyGateState(false);
-      AsyncStorage.setItem(gateCacheKey, "1").catch(() => {});
-      return;
-    }
-
     const chatId = isDraft ? realChatId : id;
     if (!chatId) {
-      if (isDraft) applyGateState(false);
+      applyGateState(isDraft ? "unlocked" : "unknown");
+      return;
+    }
+    const cachedStatus = readCachedMessageGate(user.id, chatId);
+    const localReply = messages.some(
+      (message) => message.chat_id === chatId && message.sender_id === otherId && !message._pending,
+    );
+    const localOutgoingMessage = messages.some(
+      (message) => message.chat_id === chatId && message.sender_id === user.id,
+    );
+
+    // A locally cached reply is authoritative while offline and is scoped to
+    // this exact conversation, not merely this other user.
+    if (localReply) {
+      persistGateState(chatId, "unlocked");
+      applyGateState("unlocked");
       return;
     }
 
-    // No network means no relationship proof. Stay locked until a cached
-    // unlock marker or a cached reply proves that the recipient accepted.
+    // Known state is applied synchronously on the first render from MMKV.
+    // This branch preserves it if the app is offline.
     if (!isOnline()) {
-      applyGateState(true);
+      if (cachedStatus !== "unknown") {
+        applyGateState(cachedStatus);
+      } else if (localOutgoingMessage) {
+        persistGateState(chatId, "limited");
+        applyGateState("limited");
+      } else {
+        applyGateState("unknown");
+      }
       return;
+    }
+
+    // Migrate the old pair-based unlock marker once, but write the result
+    // under this exact chat ID so future chats cannot inherit its status.
+    if (cachedStatus === "unknown") {
+      const legacyUnlock = await AsyncStorage.getItem(`chat_message_gate_unlocked_${user.id}_${otherId}`).catch(() => null);
+      if (legacyUnlock === "1") {
+        persistGateState(chatId, "unlocked");
+        applyGateState("unlocked");
+        return;
+      }
     }
 
     const { data: theyFollowMe, error: followError } = await supabase
@@ -3396,14 +3451,15 @@ function ChatScreen() {
       .eq("following_id", user.id)
       .maybeSingle();
     if (followError) {
-      applyGateState(true);
+      applyGateState(fallbackStatus(cachedStatus, localOutgoingMessage));
       return;
     }
     if (theyFollowMe) {
-      applyGateState(false);
-      AsyncStorage.setItem(gateCacheKey, "1").catch(() => {});
+      persistGateState(chatId, "unlocked");
+      applyGateState("unlocked");
       return;
     }
+
     const { data: theirReplies, error: replyError } = await supabase
       .from("messages")
       .select("id")
@@ -3411,18 +3467,31 @@ function ChatScreen() {
       .eq("sender_id", otherId)
       .limit(1);
     if (replyError) {
-      applyGateState(true);
+      applyGateState(fallbackStatus(cachedStatus, localOutgoingMessage));
       return;
     }
     if (theirReplies && theirReplies.length > 0) {
-      applyGateState(false);
-      AsyncStorage.setItem(gateCacheKey, "1").catch(() => {});
+      persistGateState(chatId, "unlocked");
+      applyGateState("unlocked");
       return;
     }
-    // The recipient has not accepted this request. Keep the composer hidden,
-    // regardless of whether the sender has already sent zero or one message.
-    applyGateState(true);
-  }, [user, chatInfo, isDraft, realChatId, id, isNotificationsChat, messages]);
+
+    // The existing product limit is one outgoing message until the recipient
+    // replies or follows. A chat with no outgoing message has no limit.
+    const { count: outgoingCount, error: outgoingError } = await supabase
+      .from("messages")
+      .select("id", { count: "exact", head: true })
+      .eq("chat_id", chatId)
+      .eq("sender_id", user.id);
+    if (outgoingError) {
+      applyGateState(fallbackStatus(cachedStatus, localOutgoingMessage));
+      return;
+    }
+    const hasLimit = localOutgoingMessage || (outgoingCount ?? 0) > 0;
+    const nextStatus: Exclude<MessageGateStatus, "unknown"> = hasLimit ? "limited" : "unlocked";
+    persistGateState(chatId, nextStatus);
+    applyGateState(nextStatus);
+  }, [user, chatInfo, isDraft, realChatId, id, isNotificationsChat, messages, messageGateContextKey]);
 
   const checkIfStranger = useCallback(async () => {
     if (!user) return;
@@ -3472,12 +3541,23 @@ function ChatScreen() {
   // screen is open. Poll only while locked; failed/offline checks remain
   // fail-closed and are retried after connectivity returns.
   useEffect(() => {
-    if (!messageLimited || !user || !networkOnline) return;
+    if (!messageGateBlocked || !user || !networkOnline) return;
     const timer = setInterval(() => {
       void checkMessageGating();
     }, 5000);
     return () => clearInterval(timer);
-  }, [messageLimited, user, networkOnline, checkMessageGating]);
+  }, [messageGateBlocked, user, networkOnline, checkMessageGating]);
+
+  const blockMessageAction = useCallback(() => {
+    if (!messageGateBlocked) return false;
+    // Do not show a limit alert while the exact chat's gate is unresolved.
+    // Unknown state is still blocked, but it must not borrow another chat's
+    // limit text while metadata/network state is loading.
+    if (messageLimited) {
+      showAlert(messageLimitTitle, messageLimitAlert);
+    }
+    return true;
+  }, [messageGateBlocked, messageLimited, messageLimitTitle, messageLimitAlert]);
 
 
   useEffect(() => {
@@ -5551,10 +5631,7 @@ STRICT RULES:
   async function sendMessage(directText?: string) {
     const text = (directText ?? input).trim();
     if (!text || !user || sending || (!session && !isLocalNotesId(id))) return;
-    if (messageLimited) {
-      showAlert(messageLimitTitle, messageLimitAlert);
-      return;
-    }
+    if (blockMessageAction()) return;
     setSending(true);
     if (draftSaveTimer.current) { clearTimeout(draftSaveTimer.current); draftSaveTimer.current = null; }
     if (!directText) setInput("");
@@ -5723,10 +5800,7 @@ STRICT RULES:
       showAlert("My Notes", "Notes stay text-only and fully offline.");
       return;
     }
-    if (messageLimited) {
-      showAlert(messageLimitTitle, messageLimitAlert);
-      return;
-    }
+    if (blockMessageAction()) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     const activeChatId = await getOrCreateChatId();
@@ -5771,10 +5845,7 @@ STRICT RULES:
       showAlert("My Notes", "Notes stay text-only and fully offline.");
       return;
     }
-    if (messageLimited) {
-      showAlert(messageLimitTitle, messageLimitAlert);
-      return;
-    }
+    if (blockMessageAction()) return;
 
     const { data: senderProfile } = await supabase.from("profiles").select("acoin").eq("id", user.id).single();
     if (!senderProfile || (senderProfile.acoin || 0) < price) {
@@ -5951,10 +6022,7 @@ STRICT RULES:
       setSelectedImages([]);
       return;
     }
-    if (messageLimited) {
-      showAlert(messageLimitTitle, messageLimitAlert);
-      return;
-    }
+    if (blockMessageAction()) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     const activeChatId = await getOrCreateChatId();
@@ -6174,10 +6242,7 @@ STRICT RULES:
       await sendMessage(emoji);
       return;
     }
-    if (messageLimited) {
-      showAlert(messageLimitTitle, messageLimitAlert);
-      return;
-    }
+    if (blockMessageAction()) return;
     setShowEmojiStickerPicker(false);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
@@ -7685,7 +7750,7 @@ STRICT RULES:
           </View>
         </Modal>
 
-        {messageLimited ? (
+        {messageGateStatus === "limited" ? (
           <View style={[st.inputFloatOuter, st.limitedFloatOuter, { paddingBottom: Math.max(insets.bottom + 6, 14) }]}>
             <View style={[st.limitedGlass, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Ionicons name="lock-closed" size={15} color={colors.textMuted} style={{ marginRight: 8 }} />
@@ -7696,6 +7761,12 @@ STRICT RULES:
               >
                 {messageLimitNotice}
               </Text>
+            </View>
+          </View>
+        ) : messageGateStatus === "unknown" ? (
+          <View style={[st.inputFloatOuter, st.limitedFloatOuter, { paddingBottom: Math.max(insets.bottom + 6, 14) }]}>
+            <View style={[st.limitedGlass, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <ActivityIndicator size="small" color={colors.textMuted} />
             </View>
           </View>
         ) : isRecording && recLocked ? (
@@ -7983,7 +8054,7 @@ STRICT RULES:
                 showAlert("My Notes", "GIFs are available only in online chats.");
                 return;
               }
-              if (messageLimited) { showAlert(messageLimitTitle, messageLimitAlert); return; }
+              if (blockMessageAction()) return;
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               const activeChatId = await getOrCreateChatId();
               if (!activeChatId) return;
