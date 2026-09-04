@@ -114,6 +114,7 @@ import Colors from "@/constants/colors";
 export default function SecuritySettingsScreen() {
   const { colors, isDark } = useTheme();
   const { user, signOut } = useAuth();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
 
   // ── 2FA status ──────────────────────────────────────────────────────────────
@@ -210,7 +211,7 @@ export default function SecuritySettingsScreen() {
   // ─── Render ───────────────────────────────────────────────────────────────────
   return (
     <View style={[styles.root, { backgroundColor: colors.backgroundSecondary }]}>
-      <GlassHeader title="Security & Data" />
+      <GlassHeader title="security.title" />
 
       <ScrollView
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 48 }]}
@@ -237,12 +238,12 @@ export default function SecuritySettingsScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.mfaTitle, { color: colors.text }]}>
-                Two-Factor Authentication
+                {t("security.two_factor")}
               </Text>
               <Text style={[styles.mfaSub, { color: mfaStatus === "enabled" ? "#30D158" : colors.textMuted }]}>
-                {mfaStatus === "loading" ? "Checking status…"
-                : mfaStatus === "enabled" ? "Active. Your account is protected"
-                : "Disabled. Add extra security"}
+                {mfaStatus === "loading" ? t("Checking status…")
+                : mfaStatus === "enabled" ? t("security.two_factor_enabled")
+                : t("security.two_factor_disabled")}
               </Text>
             </View>
             {mfaStatus === "loading"
@@ -256,27 +257,27 @@ export default function SecuritySettingsScreen() {
             activeOpacity={0.7}
           >
             <Text style={[styles.mfaBtnText, { color: mfaStatus === "enabled" ? "#30D158" : colors.accent }]}>
-              {mfaStatus === "enabled" ? "Manage 2FA" : "Enable 2FA"}
+              {mfaStatus === "enabled" ? t("Manage 2FA") : t("Enable 2FA")}
             </Text>
             <Ionicons name="chevron-forward" size={14} color={mfaStatus === "enabled" ? "#30D158" : colors.accent} />
           </TouchableOpacity>
         </GlassCard>
 
         {/* ── SECURITY ─────────────────────────────────────────────────── */}
-        <Section title="SECURITY" colors={colors}>
+        <Section title="security.security" colors={colors}>
           <Row
             icon="key"
             iconColor="#0A84FF"
-            label="Change Password"
-            sublabel="Update your account password"
+            label="security.change_password"
+            sublabel="security.change_password_description"
             onPress={() => setShowPwdGate(true)}
             colors={colors}
           />
           <Row
             icon="phone-portrait"
             iconColor="#30D158"
-            label="Device Security"
-            sublabel="PIN lock, biometrics, trusted devices"
+            label="security.device_security"
+            sublabel="security.device_security_description"
             onPress={() => router.push("/device-security" as any)}
             last
             colors={colors}
@@ -284,12 +285,12 @@ export default function SecuritySettingsScreen() {
         </Section>
 
         {/* ── YOUR DATA ────────────────────────────────────────────────── */}
-        <Section title="YOUR DATA" colors={colors}>
+        <Section title="security.your_data" colors={colors}>
           <Row
             icon="cloud-download"
             iconColor="#0A84FF"
-            label="Download My Data"
-            sublabel="Export profile, posts, contacts & transactions"
+            label="settings.download_data"
+            sublabel="security.export_data_description"
             loading={downloading}
             onPress={() => setShowDownloadGate(true)}
             last
@@ -298,12 +299,12 @@ export default function SecuritySettingsScreen() {
         </Section>
 
         {/* ── SIGN OUT ──────────────────────────────────────────────────── */}
-        <Section title="SESSION" colors={colors}>
+        <Section title="security.session" colors={colors}>
           <Row
             icon="exit"
             iconColor="#FF9500"
-            label="Sign Out of This Device"
-            sublabel="Removes all local data from this device"
+            label="security.sign_out_device"
+            sublabel="security.sign_out_device_description"
             onPress={() => { setLogoutText(""); setShowLogoutStep1(true); }}
             last
             colors={colors}
@@ -321,7 +322,7 @@ export default function SecuritySettingsScreen() {
           activeOpacity={0.5}
         >
           <Text style={[styles.closureLinkText, { color: colors.textMuted }]}>
-            Account closure
+            {t("Account closure")}
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -329,15 +330,15 @@ export default function SecuritySettingsScreen() {
       {/* ── 2FA gates ───────────────────────────────────────────────────── */}
       <TwoFactorGate
         visible={showPwdGate}
-        title="Verify Your Identity"
-        subtitle="2FA is required before changing your password."
+        title={t("security.verify_identity")}
+        subtitle={t("security.two_factor_password")}
         onSuccess={() => { setShowPwdGate(false); setNewPwd(""); setConfirmPwd(""); setShowChangePwd(true); }}
         onDismiss={() => setShowPwdGate(false)}
       />
       <TwoFactorGate
         visible={showDownloadGate}
-        title="Verify Your Identity"
-        subtitle="Confirm your identity before exporting your data."
+        title={t("security.verify_identity")}
+        subtitle={t("security.confirm_export")}
         onSuccess={() => { setShowDownloadGate(false); handleDownloadData(); }}
         onDismiss={() => setShowDownloadGate(false)}
       />
@@ -349,18 +350,18 @@ export default function SecuritySettingsScreen() {
           <GlassCard style={[styles.modalSheet, { paddingBottom: insets.bottom + 16 }]} variant="strong">
             <View style={styles.dragHandle} />
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Change Password</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{t("security.change_password")}</Text>
               <TouchableOpacity onPress={() => setShowChangePwd(false)}>
                 <Ionicons name="close" size={22} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
             <TextInput style={[styles.input, { color: colors.text, backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)", borderColor: colors.border }]}
-              placeholder="New password" placeholderTextColor={colors.textMuted} value={newPwd} onChangeText={setNewPwd} secureTextEntry />
+              placeholder={t("security.new_password")} placeholderTextColor={colors.textMuted} value={newPwd} onChangeText={setNewPwd} secureTextEntry />
             <TextInput style={[styles.input, { color: colors.text, backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)", borderColor: colors.border }]}
-              placeholder="Confirm new password" placeholderTextColor={colors.textMuted} value={confirmPwd} onChangeText={setConfirmPwd} secureTextEntry />
+              placeholder={t("Confirm new password")} placeholderTextColor={colors.textMuted} value={confirmPwd} onChangeText={setConfirmPwd} secureTextEntry />
             <TouchableOpacity style={[styles.modalBtn, changingPwd && { opacity: 0.6 }]} onPress={handleChangePassword} disabled={changingPwd} activeOpacity={0.8}>
               <LinearGradient colors={["#1018D8", "#0B10A8"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.modalBtnGradient}>
-                {changingPwd ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalBtnText}>Update Password</Text>}
+                {changingPwd ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalBtnText}>{t("Update Password")}</Text>}
               </LinearGradient>
             </TouchableOpacity>
           </GlassCard>

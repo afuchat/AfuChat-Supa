@@ -30,15 +30,20 @@ function walk(dir) {
   });
 }
 
-function sectionFor(catalog, language) {
-  const start = catalog.indexOf(`  ${language}: {`);
-  if (start < 0) return "";
-  const end = catalog.indexOf("\n  },", start);
-  return catalog.slice(start, end < 0 ? catalog.length : end);
-}
-
 function quotedKeys(section) {
   return [...section.matchAll(/"([^"]+)":\s*"/g)].map((match) => match[1]);
+}
+
+function catalogSections(catalog) {
+  const start = catalog.indexOf(semanticStart);
+  const end = catalog.indexOf(semanticEnd);
+  const semanticSource = catalog.slice(start, end < 0 ? catalog.length : end);
+  const sections = [];
+  const sectionPattern = /^\s{2}(en|sw|fr|es|ar|zh|am|rw): \{([\s\S]*?)^\s{2}\},/gm;
+  for (const match of semanticSource.matchAll(sectionPattern)) {
+    sections.push({ language: match[1], body: match[2] });
+  }
+  return sections;
 }
 
 function collectSourceKeys(files) {
@@ -48,7 +53,9 @@ function collectSourceKeys(files) {
     for (const match of source.matchAll(/\bt\(\s*["']([^"']+)["']/g)) {
       if (/^[a-z][\w-]*\.[a-z][\w-]*$/.test(match[1])) keys.add(match[1]);
     }
-    for (const match of source.matchAll(/\b(?:label|badge)=["']([a-z][\w-]*\.[^"']+)["']/g)) {
+    for (const match of source.matchAll(
+      /\b(?:label|badge|title|subtitle|description|message|placeholder|accessibilityLabel|accessibilityHint)=["']([a-z][\w-]*\.[a-z][\w-]*)["']/g,
+    )) {
       keys.add(match[1]);
     }
   }
@@ -76,12 +83,14 @@ function collectLiteralBacklog(files) {
 }
 
 const catalog = fs.readFileSync(catalogPath, "utf8");
-const semanticCatalog = catalog.slice(
-  catalog.indexOf(semanticStart),
-  catalog.indexOf(semanticEnd),
-);
+const sections = catalogSections(catalog);
 const languageKeys = Object.fromEntries(
-  supportedLanguages.map((language) => [language, quotedKeys(sectionFor(semanticCatalog, language))]),
+  supportedLanguages.map((language) => [
+    language,
+    sections
+      .filter((section) => section.language === language)
+      .flatMap((section) => quotedKeys(section.body)),
+  ]),
 );
 const englishKeys = new Set(languageKeys.en);
 const files = sourceRoots.flatMap(walk);
@@ -95,11 +104,53 @@ const missingByLanguage = Object.fromEntries(
 const duplicateKeys = Object.fromEntries(
   supportedLanguages
     .map((language) => {
-      const keys = languageKeys[language];
+      const keys = sections
+        .filter((section) => section.language === language)
+        .flatMap((section) => quotedKeys(section.body));
       return [language, [...new Set(keys.filter((key, index) => keys.indexOf(key) !== index))]];
     })
     .filter(([, keys]) => keys.length > 0),
 );
+const emptyTranslations = Object.fromEntries(
+  supportedLanguages
+    .map((language) => [
+      language,
+      sections
+        .filter((section) => section.language === language)
+        .flatMap((section) => [...section.body.matchAll(/"([^"]+)":\s*""/g)].map((match) => match[1])),
+    ])
+    .filter(([, keys]) => keys.length > 0),
+);
+const extraByLanguage = Object.fromEntries(
+  supportedLanguages
+    .filter((language) => language !== "en")
+    .map((language) => [language, [...new Set(languageKeys[language])].filter((key) => !englishKeys.has(key))])
+    .filter(([, keys]) => keys.length > 0),
+);
+const placeholderPattern = /\{\{(\w+)\}\}/g;
+function placeholders(value) {
+  return [...value.matchAll(placeholderPattern)].map((match) => match[1]).sort();
+}
+const placeholderIssues = [];
+const englishValues = new Map();
+const catalogEntryPattern = /"([^"]+)":\s*"((?:\\.|[^"\\])*)"/g;
+function unescapeCatalogValue(value) {
+  return value.replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+}
+for (const section of sections.filter((item) => item.language === "en")) {
+  for (const match of section.body.matchAll(catalogEntryPattern)) {
+    englishValues.set(match[1], unescapeCatalogValue(match[2]));
+  }
+}
+for (const section of sections.filter((item) => item.language !== "en")) {
+  for (const match of section.body.matchAll(catalogEntryPattern)) {
+    const expected = placeholders(englishValues.get(match[1]) ?? "");
+    const actual = placeholders(unescapeCatalogValue(match[2]));
+    if (expected.join("|") !== actual.join("|")) {
+      placeholderIssues.push(`${section.language}:${match[1]} expected [${expected.join(", ")}] got [${actual.join(", ")}]`);
+    }
+  }
+}
 const literalBacklog = collectLiteralBacklog(files);
 
 console.log(`Localization audit: ${files.length} source files`);
@@ -126,13 +177,38 @@ if (Object.keys(duplicateKeys).length) {
   }
 }
 
+if (Object.keys(emptyTranslations).length) {
+  console.error("\nEmpty semantic translations:");
+  for (const [language, keys] of Object.entries(emptyTranslations)) {
+    console.error(`  ${language}: ${keys.join(", ")}`);
+  }
+}
+
+if (Object.keys(extraByLanguage).length) {
+  console.error("\nExtra semantic keys not present in English:");
+  for (const [language, keys] of Object.entries(extraByLanguage)) {
+    console.error(`  ${language}: ${keys.join(", ")}`);
+  }
+}
+
+if (placeholderIssues.length) {
+  console.error("\nInterpolation placeholder mismatches:");
+  placeholderIssues.forEach((issue) => console.error(`  - ${issue}`));
+}
+
 if (literalBacklog.length) {
   console.log("\nRemaining literal UI copy (migration backlog, not a failure):");
   literalBacklog.slice(0, 25).forEach((finding) => console.log(`  - ${finding}`));
   if (literalBacklog.length > 25) console.log(`  … ${literalBacklog.length - 25} more`);
 }
 
-if (missing.length || Object.keys(duplicateKeys).length ||
-    Object.values(missingByLanguage).some((keys) => keys.length)) {
+if (
+  missing.length ||
+  Object.keys(duplicateKeys).length ||
+  Object.keys(emptyTranslations).length ||
+  Object.keys(extraByLanguage).length ||
+  placeholderIssues.length ||
+  Object.values(missingByLanguage).some((keys) => keys.length)
+) {
   process.exitCode = 1;
 }

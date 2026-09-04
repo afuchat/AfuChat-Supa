@@ -58,6 +58,7 @@ export default function PrivacyDataScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
   const [settings, setSettings] = useState<Settings>({ data_personalization: true, data_analytics: true });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<keyof Settings | null>(null);
@@ -88,7 +89,7 @@ export default function PrivacyDataScreen() {
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}>
 
-          <Text style={[s.sectionTitle, { color: colors.textMuted }]}>DATA USAGE</Text>
+          <Text style={[s.sectionTitle, { color: colors.textMuted }]}>{t("privacy.data_usage")}</Text>
           <GlassCard style={s.group} variant="medium">
             <ToggleRow
               icon="lock-closed-outline"
@@ -111,13 +112,13 @@ export default function PrivacyDataScreen() {
             />
           </GlassCard>
 
-          <Text style={[s.sectionTitle, { color: colors.textMuted }]}>ACCOUNT DATA</Text>
+          <Text style={[s.sectionTitle, { color: colors.textMuted }]}>{t("ACCOUNT DATA")}</Text>
           <GlassCard style={s.group} variant="medium">
             <TouchableOpacity
               style={[s.row, { backgroundColor: colors.surface }]}
-              onPress={() => showAlert("Clear History", "This will clear your search history and browsing activity. Continue?", [
-                { text: "Cancel", style: "cancel" },
-                { text: "Clear", style: "destructive", onPress: () => showAlert("Done", "Activity history cleared.") },
+              onPress={() => showAlert(t("Clear History"), t("This will clear your search history and browsing activity. Continue?"), [
+                { text: t("Cancel"), style: "cancel" },
+                { text: t("Clear"), style: "destructive", onPress: () => showAlert(t("Done"), t("Activity history cleared.")) },
               ])}
               activeOpacity={0.7}
             >
@@ -125,15 +126,15 @@ export default function PrivacyDataScreen() {
                 <Ionicons name="trash-outline" size={22} color="#FF3B30" />
               </View>
               <View style={s.rowText}>
-                <Text style={[s.rowLabel, { color: "#FF3B30" }]}>Clear Activity History</Text>
-                <Text style={[s.rowDesc, { color: colors.textMuted }]}>Delete your search and browsing history</Text>
+                <Text style={[s.rowLabel, { color: "#FF3B30" }]}>{t("Clear Activity History")}</Text>
+                <Text style={[s.rowDesc, { color: colors.textMuted }]}>{t("Delete your search and browsing history")}</Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
             </TouchableOpacity>
           </GlassCard>
 
           <Text style={[s.hint, { color: colors.textMuted }]}>
-            AfuChat Technologies Ltd. never sells your personal data to third parties. Turning off personalisation may make your experience less relevant.
+            {t("AfuChat Technologies Ltd. never sells your personal data to third parties. Turning off personalisation may make your experience less relevant.")}
           </Text>
         </ScrollView>
       )}

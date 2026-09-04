@@ -95,7 +95,7 @@ export default function BlockedUsersScreen() {
   return (
     <View style={[s.root, { backgroundColor: colors.backgroundSecondary }]}>
       <GlassHeader
-        title="Blocked Users"
+        title="blocked.title"
          subtitle={!loading && items.length > 0 ? `${items.length} ${t(items.length === 1 ? "person" : "people")} ${t("blocked")}` : undefined}
       />
 
@@ -133,17 +133,17 @@ export default function BlockedUsersScreen() {
               !loading && items.length === 0 ? (
                 <View style={{ alignItems: "center", paddingTop: 64, gap: 12 }}>
                   <Ionicons name="shield-checkmark-outline" size={48} color={colors.textMuted} />
-                  <Text style={{ color: colors.textMuted, fontSize: 15 }}>No blocked accounts</Text>
+                  <Text style={{ color: colors.textMuted, fontSize: 15 }}>{t("blocked.none")}</Text>
                 </View>
               ) : search.trim() && filtered.length === 0 ? (
                 <View style={{ alignItems: "center", paddingTop: 32 }}>
-                  <Text style={{ color: colors.textMuted, fontSize: 14 }}>No results for "{search}"</Text>
+                  <Text style={{ color: colors.textMuted, fontSize: 14 }}>{t("blocked.no_results", { query: search })}</Text>
                 </View>
               ) : null
             }
             ListHeaderComponent={
               filtered.length > 0 ? (
-                <Text style={[s.listHeader, { color: colors.textMuted }]}>BLOCKED ACCOUNTS</Text>
+                <Text style={[s.listHeader, { color: colors.textMuted }]}>{t("blocked.accounts")}</Text>
               ) : null
             }
             renderItem={({ item, index }) => {
@@ -158,7 +158,7 @@ export default function BlockedUsersScreen() {
                         <VerifiedBadge isVerified={item.profile.is_verified} isOrganizationVerified={item.profile.is_organization_verified} size={13} />
                       </View>
                       <Text style={[s.handle, { color: colors.textMuted }]}>@{item.profile.handle}</Text>
-                       <Text style={[s.blockedAt, { color: colors.textMuted }]}>Blocked {timeAgo(item.blocked_at, t)}</Text>
+                       <Text style={[s.blockedAt, { color: colors.textMuted }]}>{t("Blocked")} {timeAgo(item.blocked_at, t)}</Text>
                     </View>
                     <TouchableOpacity
                       style={[s.unblockBtn, { borderColor: colors.border }]}
@@ -169,7 +169,7 @@ export default function BlockedUsersScreen() {
                       {unblocking === item.id ? (
                         <ActivityIndicator size="small" color="#FF3B30" />
                       ) : (
-                        <Text style={s.unblockText}>Unblock</Text>
+                        <Text style={s.unblockText}>{t("blocked.action")}</Text>
                       )}
                     </TouchableOpacity>
                   </View>

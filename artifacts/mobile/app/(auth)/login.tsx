@@ -125,6 +125,7 @@ const gm = StyleSheet.create({
 
 // ─── Forgot password modal ─────────────────────────────────────────────────────
 function ForgotPasswordModal({ visible, onClose, accent }: { visible: boolean; onClose: () => void; isDark: boolean; accent: string }) {
+  const { t } = useLanguage();
   const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -141,25 +142,25 @@ function ForgotPasswordModal({ visible, onClose, accent }: { visible: boolean; o
   }, [visible]);
 
   async function sendCode() {
-    if (!email.trim()) return showAlert("Enter email", "Please enter your email address.");
+    if (!email.trim()) return showAlert(t("Enter email"), t("Please enter your email address."));
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: "https://afuchat.com/" });
     setLoading(false);
-    if (error) showAlert("Error", error.message);
+    if (error) showAlert(t("Error"), error.message);
     else setStep("code");
   }
 
   async function doReset() {
-    if (!code.trim()) return showAlert("Enter code", "Check your email for the 6-digit code.");
-    if (newPwd.length < 6) return showAlert("Too short", "Password must be at least 6 characters.");
-    if (newPwd !== confirmPwd) return showAlert("Mismatch", "Passwords don't match.");
+    if (!code.trim()) return showAlert(t("Enter code"), t("Check your email for the 6-digit code."));
+    if (newPwd.length < 6) return showAlert(t("Too short"), t("Password must be at least 6 characters."));
+    if (newPwd !== confirmPwd) return showAlert(t("Mismatch"), t("Passwords don't match."));
     setLoading(true);
     const { error: e1 } = await supabase.auth.verifyOtp({ email: email.trim(), token: code.trim(), type: "recovery" });
-    if (e1) { setLoading(false); return showAlert("Invalid code", "The code is invalid or expired."); }
+    if (e1) { setLoading(false); return showAlert(t("Invalid code"), t("The code is invalid or expired.")); }
     const { error: e2 } = await supabase.auth.updateUser({ password: newPwd });
     setLoading(false);
-    if (e2) showAlert("Error", e2.message);
-    else { showAlert("Password updated", "Your password has been changed. Please sign in."); await supabase.auth.signOut(); onClose(); }
+    if (e2) showAlert(t("Error"), e2.message);
+    else { showAlert(t("Password updated"), t("Your password has been changed. Please sign in.")); await supabase.auth.signOut(); onClose(); }
   }
 
   return (

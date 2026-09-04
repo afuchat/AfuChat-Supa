@@ -72,6 +72,7 @@ export default function PrivacyAccountScreen() {
   const { colors } = useTheme();
   const { user, refreshProfile } = useAuth();
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
 
   const [settings, setSettings] = useState<Settings>({
     is_private: false,
@@ -125,7 +126,7 @@ export default function PrivacyAccountScreen() {
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}>
 
-          <Text style={[s.sectionTitle, { color: colors.textMuted }]}>PROFILE</Text>
+          <Text style={[s.sectionTitle, { color: colors.textMuted }]}>{t("PROFILE")}</Text>
           <GlassCard style={s.group} variant="medium">
             <ToggleRow
               icon="lock-closed"
@@ -148,7 +149,7 @@ export default function PrivacyAccountScreen() {
             />
           </GlassCard>
 
-          <Text style={[s.sectionTitle, { color: colors.textMuted }]}>ACTIVITY</Text>
+          <Text style={[s.sectionTitle, { color: colors.textMuted }]}>{t("ACTIVITY")}</Text>
           <GlassCard style={s.group} variant="medium">
             <ToggleRow
               icon="radio-button-on"
@@ -172,7 +173,7 @@ export default function PrivacyAccountScreen() {
           </GlassCard>
 
           <Text style={[s.hint, { color: colors.textMuted }]}>
-            When your account is private, only people you approve can follow you and see your content. Changes take effect immediately.
+            {t("privacy.account_note")}
           </Text>
         </ScrollView>
       )}

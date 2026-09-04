@@ -78,6 +78,50 @@ export function t(
   return translateUi(text, language, params);
 }
 
+function formatLocale(language: string | null | undefined): string {
+  const normalized = language?.trim().toLowerCase().replace("_", "-") ?? "en";
+  return normalized || "en";
+}
+
+/** Format counts using the active UI locale instead of device defaults. */
+export function formatNumber(value: number, language?: string | null): string {
+  return new Intl.NumberFormat(formatLocale(language)).format(value);
+}
+
+/** Format a date/time using the active UI locale. */
+export function formatDate(
+  value: Date | number | string,
+  language?: string | null,
+  options?: Intl.DateTimeFormatOptions,
+): string {
+  const date = value instanceof Date ? value : new Date(value);
+  return new Intl.DateTimeFormat(formatLocale(language), options).format(date);
+}
+
+/** Format money with a currency code using the active UI locale. */
+export function formatCurrency(
+  value: number,
+  currency: string,
+  language?: string | null,
+): string {
+  return new Intl.NumberFormat(formatLocale(language), {
+    style: "currency",
+    currency,
+  }).format(value);
+}
+
+/** Choose a singular/plural UI key with the locale's plural rules. */
+export function tp(
+  singular: string,
+  plural: string,
+  count: number,
+  language: string | null | undefined,
+  params: Record<string, string | number> = {},
+): string {
+  const category = new Intl.PluralRules(formatLocale(language)).select(count);
+  return t(category === "one" ? singular : plural, language, { ...params, count });
+}
+
 /** Update the locale used by non-hook callers, such as transformed JSX. */
 export function setLocale(language: string | null): void {
   setCurrentUiLanguage(language);

@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { translateUserContent as translateUserContentWithGoogle } from "@/lib/translate";
-import { LANG_LABELS, isBundledUiLanguage, setLocale, subscribeUiTranslations, t as translateUi } from "@/lib/i18n";
+import { LANG_LABELS, isBundledUiLanguage, setLocale, subscribeUiTranslations, t as translateUi, tp as translatePlural } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { storage, KEYS } from "@/lib/storage/mmkv";
@@ -38,6 +38,7 @@ type LanguageContextType = {
   voiceToText: boolean;
   textToSpeech: boolean;
   t: (text: string, params?: Record<string, string | number>) => string;
+  tp: (singular: string, plural: string, count: number, params?: Record<string, string | number>) => string;
 };
 
 const LanguageContext = createContext<LanguageContextType>({
@@ -49,6 +50,7 @@ const LanguageContext = createContext<LanguageContextType>({
   voiceToText: false,
   textToSpeech: false,
   t: (text) => text,
+  tp: (singular, plural, count) => count === 1 ? singular : plural,
 });
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
@@ -224,10 +226,15 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     (text: string, params?: Record<string, string | number>) => translateUi(text, preferredLang, params),
     [preferredLang, uiTranslationVersion],
   );
+  const tp = useCallback(
+    (singular: string, plural: string, count: number, params?: Record<string, string | number>) =>
+      translatePlural(singular, plural, count, preferredLang, params),
+    [preferredLang, uiTranslationVersion],
+  );
 
   return (
     <LanguageContext.Provider
-      value={{ preferredLang, langLabel, isRTL, setPreferredLang, translateUserContent, voiceToText, textToSpeech, t }}
+      value={{ preferredLang, langLabel, isRTL, setPreferredLang, translateUserContent, voiceToText, textToSpeech, t, tp }}
     >
       {children}
     </LanguageContext.Provider>

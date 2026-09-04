@@ -79,6 +79,7 @@ export default function PrivacySettingsScreen() {
   const { colors, accent } = useTheme();
   const insets = useSafeAreaInsets();
   const { features: adv, setFeature } = useAdvancedFeatures();
+  const { t } = useLanguage();
 
   return (
     <View style={[s.root, { backgroundColor: colors.backgroundSecondary }]}>
@@ -89,20 +90,20 @@ export default function PrivacySettingsScreen() {
         contentContainerStyle={[s.body, { paddingBottom: insets.bottom + 48 }]}
       >
         {/* ── ACCOUNT ──────────────────────────────────────────────────── */}
-        <Section title="ACCOUNT" colors={colors}>
+        <Section title="privacy.account" colors={colors}>
           <Row
             icon="lock-closed"
             iconColor="#0A84FF"
-            label="Account Privacy"
-            sublabel="Private account, online status, profile visibility"
+            label="privacy.account_privacy"
+            sublabel="privacy.account_privacy_description"
             onPress={() => router.push("/settings/privacy-account" as any)}
             colors={colors}
           />
           <Row
             icon="eye-off"
             iconColor="#AF52DE"
-            label="Visibility"
-            sublabel="Who can see your followers and following list"
+            label="privacy.visibility"
+            sublabel="privacy.visibility_description"
             onPress={() => router.push("/settings/privacy-visibility" as any)}
             last
             colors={colors}
@@ -110,20 +111,20 @@ export default function PrivacySettingsScreen() {
         </Section>
 
         {/* ── INTERACTIONS ─────────────────────────────────────────────── */}
-        <Section title="INTERACTIONS" colors={colors}>
+        <Section title="privacy.interactions" colors={colors}>
           <Row
             icon="chatbubble-ellipses"
             iconColor="#30D158"
-            label="Messages"
-            sublabel="Who can send you messages and calls"
+            label="privacy.messages"
+            sublabel="privacy.messages_description"
             onPress={() => router.push("/settings/privacy-messages" as any)}
             colors={colors}
           />
           <Row
             icon="heart"
             iconColor="#FF2D55"
-            label="Reactions & Tags"
-            sublabel="Who can like, comment and tag you"
+            label="privacy.reactions"
+            sublabel="privacy.reactions_description"
             onPress={() => router.push("/settings/privacy-interactions" as any)}
             last
             colors={colors}
@@ -153,12 +154,12 @@ export default function PrivacySettingsScreen() {
         </Section>
 
         {/* ── DATA ─────────────────────────────────────────────────────── */}
-        <Section title="DATA" colors={colors}>
+        <Section title="privacy.data" colors={colors}>
           <Row
             icon="analytics"
             iconColor="#0A84FF"
-            label="Activity Data"
-            sublabel="Manage how your activity is used"
+            label="privacy.data_usage"
+            sublabel="privacy.personalization_description"
             onPress={() => router.push("/settings/privacy-data" as any)}
             last
             colors={colors}
@@ -172,9 +173,9 @@ export default function PrivacySettingsScreen() {
               <Ionicons name="chatbox-ellipses-outline" size={22} color={colors.text} />
             </View>
             <View style={s.rowText}>
-              <Text style={[s.rowLabel, { color: colors.text }]}>Auto-Reply</Text>
+              <Text style={[s.rowLabel, { color: colors.text }]}>{t("Auto-Reply")}</Text>
               <Text style={[s.rowSub, { color: colors.textMuted }]}>
-                Automatically reply when you're away or in focus mode
+                {t("Automatically reply when you're away or in focus mode")}
               </Text>
             </View>
             <Switch
@@ -190,9 +191,9 @@ export default function PrivacySettingsScreen() {
               <Ionicons name="timer-outline" size={22} color={colors.text} />
             </View>
             <View style={s.rowText}>
-              <Text style={[s.rowLabel, { color: colors.text }]}>Temporary Chats</Text>
+              <Text style={[s.rowLabel, { color: colors.text }]}>{t("Temporary Chats")}</Text>
               <Text style={[s.rowSub, { color: colors.textMuted }]}>
-                Start chats that auto-delete after a set time (disappearing messages)
+                {t("Start chats that auto-delete after a set time (disappearing messages)")}
               </Text>
             </View>
             <Switch

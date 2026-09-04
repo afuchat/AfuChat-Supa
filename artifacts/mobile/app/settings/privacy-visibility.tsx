@@ -59,6 +59,7 @@ function ToggleRow({ icon, iconColor, label, description, value, onToggle, savin
 export default function PrivacyVisibilityScreen() {
   const { colors } = useTheme();
   const { user, refreshProfile } = useAuth();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const [settings, setSettings] = useState<Settings>({
     hide_followers_list: false,
@@ -119,7 +120,7 @@ export default function PrivacyVisibilityScreen() {
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}>
 
-          <Text style={[s.sectionTitle, { color: colors.textMuted }]}>CONNECTIONS</Text>
+          <Text style={[s.sectionTitle, { color: colors.textMuted }]}>{t("privacy.connections")}</Text>
           <GlassCard style={s.group} variant="medium">
             <ToggleRow
               icon="people"
@@ -142,13 +143,13 @@ export default function PrivacyVisibilityScreen() {
             />
           </GlassCard>
 
-          <Text style={[s.sectionTitle, { color: colors.textMuted }]}>DISCOVERABILITY</Text>
+          <Text style={[s.sectionTitle, { color: colors.textMuted }]}>{t("privacy.discoverability")}</Text>
           <GlassCard style={s.group} variant="medium">
             <ToggleRow
               icon="eye-off"
               iconColor="#FF9500"
-              label="Limit Post Visibility"
-              description="Only followers can see your posts in Discover"
+              label="privacy.limit_post_visibility"
+              description="privacy.limit_post_visibility_description"
               value={settings.hide_posts_non_followers}
               onToggle={(v) => toggle("hide_posts_non_followers", v)}
               saving={saving === "hide_posts_non_followers"}
@@ -157,21 +158,21 @@ export default function PrivacyVisibilityScreen() {
             <ToggleRow
               icon="search"
               iconColor="#FF3B30"
-              label="Hide From Search"
-              description="Your profile won't appear in search results"
+              label="privacy.hide_from_search"
+              description="privacy.hide_from_search_description"
               value={settings.hide_from_search}
               onToggle={(v) => toggle("hide_from_search", v)}
               saving={saving === "hide_from_search"}
             />
           </GlassCard>
 
-          <Text style={[s.sectionTitle, { color: colors.textMuted }]}>LOCATION</Text>
+          <Text style={[s.sectionTitle, { color: colors.textMuted }]}>{t("privacy.location")}</Text>
           <GlassCard style={s.group} variant="medium">
             <ToggleRow
               icon="navigate"
               iconColor="#34C759"
-              label="Share My Location"
-              description="Appear in other users' Nearby Friends tab. Turning this off removes you instantly."
+              label="privacy.share_location"
+              description="privacy.share_location_description"
               value={settings.location_sharing_enabled}
               onToggle={(v) => toggle("location_sharing_enabled", v)}
               saving={saving === "location_sharing_enabled"}
@@ -179,7 +180,7 @@ export default function PrivacyVisibilityScreen() {
           </GlassCard>
 
           <Text style={[s.hint, { color: colors.textMuted }]}>
-            Your exact location is never visible to other users — only your approximate distance is shown. Disabling this removes you from Nearby results immediately.
+            {t("privacy.location_note")}
           </Text>
         </ScrollView>
       )}

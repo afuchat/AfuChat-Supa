@@ -190,7 +190,7 @@ export default function SettingsScreen() {
             })}
           </View>
           <Text style={[s.appearanceNote, { color: colors.textMuted }]}>
-            Choose how AfuChat looks across the app.
+            {t("settings.appearance_note")}
           </Text>
           <View style={[s.divider, { backgroundColor: colors.separator }]} />
           <Row
@@ -205,17 +205,17 @@ export default function SettingsScreen() {
         </Section>
 
         {Platform.OS === "android" && (
-          <Section title="HOME SCREEN" colors={colors}>
+          <Section title="settings.home_screen" colors={colors}>
             <Row
               icon="grid-outline"
-              label="Add AfuChat widget"
-              sublabel="Show your recent chats on the home screen"
+              label="settings.add_widget"
+              sublabel="settings.widget_description"
               onPress={async () => {
                 const pinned = await requestNativeWidgetPin();
                 if (!pinned) {
                   showAlert(
-                    "Add AfuChat to your home screen",
-                    "On your Android home screen, touch and hold an empty space, tap Widgets, find AfuChat, then drag the Recent chats widget onto your home screen.",
+                    t("settings.widget_help_title"),
+                    t("settings.widget_help_body"),
                   );
                 }
               }}
@@ -227,19 +227,19 @@ export default function SettingsScreen() {
         )}
 
         {/* ── Messaging ─────────────────────────────────────────────────── */}
-        <Section title={t("MESSAGING")} colors={colors}>
+        <Section title="MESSAGING" colors={colors}>
           <Row
             icon="chatbubble-ellipses"
-            label="Chat Settings"
-            sublabel="Bubbles, themes, media quality"
+            label="settings.chat_settings"
+            sublabel="settings.chat_settings_description"
             onPress={() => router.push("/settings/chat")}
             colors={colors}
             accent={accent}
           />
           <Row
             icon="person-remove"
-            label="Blocked Users"
-            sublabel="Manage people you've blocked"
+            label="settings.blocked_users"
+            sublabel="settings.blocked_users_description"
             onPress={() => router.push("/settings/blocked")}
             last
             colors={colors}
@@ -248,35 +248,35 @@ export default function SettingsScreen() {
         </Section>
 
         {/* ── Privacy & Security ────────────────────────────────────────── */}
-        <Section title="PRIVACY & SECURITY" colors={colors}>
+        <Section title="settings.privacy_security" colors={colors}>
           <Row
             icon="eye-off"
             label="Privacy"
-            sublabel="Visibility, messages, interactions"
+            sublabel="settings.privacy_description"
             onPress={() => router.push("/settings/privacy")}
             colors={colors}
             accent={accent}
           />
           <Row
             icon="lock-closed"
-            label="Security & Password"
-            sublabel="Password, 2FA, device lock"
+            label="settings.security_password"
+            sublabel="settings.security_description"
             onPress={() => router.push("/settings/security")}
             colors={colors}
             accent={accent}
           />
           <Row
             icon="key"
-            label="Login Methods"
-            sublabel="Other sign-in options"
+            label="settings.login_methods"
+            sublabel="settings.login_methods_description"
             onPress={() => router.push("/settings/oauth-providers")}
             colors={colors}
             accent={accent}
           />
           <Row
             icon="cloud-download"
-            label="Download My Data"
-            sublabel="Export a copy of your account data"
+            label="settings.download_data"
+            sublabel="settings.download_data_description"
             onPress={() => router.push("/settings/privacy-download" as any)}
             last
             colors={colors}
@@ -285,12 +285,12 @@ export default function SettingsScreen() {
         </Section>
 
         {/* ── Content & Cache ───────────────────────────────────────────── */}
-        <Section title="CONTENT & CACHE" colors={colors}>
+        <Section title="settings.content_cache" colors={colors}>
           {(
             <Row
               icon="download"
-              label="Offline Videos"
-              sublabel="Videos saved for offline playback"
+              label="settings.offline_videos"
+              sublabel="settings.offline_videos_description"
               onPress={() => router.push("/settings/offline-videos" as any)}
               colors={colors}
               accent={accent}
@@ -299,8 +299,8 @@ export default function SettingsScreen() {
           {(
             <Row
               icon="eye-off"
-              label="Not Interested"
-              sublabel="Muted authors and suppressed topics"
+              label="settings.not_interested"
+              sublabel="settings.not_interested_description"
               onPress={() => router.push("/settings/not-interested" as any)}
               last
               colors={colors}
@@ -310,27 +310,27 @@ export default function SettingsScreen() {
         </Section>
 
         {/* ── Support & About ───────────────────────────────────────────── */}
-        <Section title="SUPPORT & ABOUT" colors={colors}>
+        <Section title="settings.support_about" colors={colors}>
           <Row
             icon="help-buoy"
-            label="Help & Support"
-            sublabel="FAQs, contact and tickets"
+            label="settings.help_support"
+            sublabel="settings.help_support_description"
             onPress={() => router.push("/support" as any)}
             colors={colors}
             accent={accent}
           />
           <Row
             icon="star"
-            label="Rate AfuChat"
-            sublabel="Enjoying AfuChat? Leave us a review on Google Play"
-            onPress={() => { openAppReview().catch(() => showAlert("Unable to open Google Play", "Please try again later.")); }}
+            label="settings.rate_afuchat"
+            sublabel="settings.rate_afuchat_description"
+            onPress={() => { openAppReview().catch(() => showAlert(t("Unable to open Google Play"), t("Please try again later."))); }}
             colors={colors}
             accent={accent}
           />
           <Row
             icon="information-circle"
-            label="About AfuChat"
-            sublabel="Version, terms, privacy and company info"
+            label="settings.about_afuchat"
+            sublabel="settings.about_afuchat_description"
             onPress={() => router.push("/about" as any)}
             last
             colors={colors}
@@ -346,7 +346,7 @@ export default function SettingsScreen() {
             <Text style={[s.footerChat, { color: BRAND }]}>Chat</Text>
           </View>
           <Text style={[s.footerTagline, { color: colors.textMuted }]}>
-            Connect · Discover · Create
+            {t("settings.footer_tagline")}
           </Text>
         </View>
 

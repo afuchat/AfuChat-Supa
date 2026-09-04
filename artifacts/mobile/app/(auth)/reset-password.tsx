@@ -14,6 +14,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/hooks/useTheme";
+import { useLanguage } from "@/context/LanguageContext";
 import { showAlert } from "@/lib/alert";
 import Colors from "@/constants/colors";
 
@@ -21,6 +22,7 @@ type Step = "email" | "code";
 
 export default function ResetPasswordNative() {
   const { colors } = useTheme();
+  const { t } = useLanguage();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -32,7 +34,7 @@ export default function ResetPasswordNative() {
 
   async function sendCode() {
     const trimmed = email.trim();
-    if (!trimmed) { setError("Please enter your email address."); return; }
+    if (!trimmed) { setError(t("Please enter your email address.")); return; }
     setError("");
     setLoading(true);
     try {
@@ -42,16 +44,16 @@ export default function ResetPasswordNative() {
       if (sbErr) throw sbErr;
       setStep("code");
     } catch (e: any) {
-      setError(e.message || "Failed to send reset code.");
+      setError(e.message || t("Failed to send reset code."));
     } finally {
       setLoading(false);
     }
   }
 
   async function doReset() {
-    if (!code.trim()) { setError("Please enter the code from your email."); return; }
-    if (newPwd.length < 6) { setError("Password must be at least 6 characters."); return; }
-    if (newPwd !== confirmPwd) { setError("Passwords don't match."); return; }
+    if (!code.trim()) { setError(t("Please enter the code from your email.")); return; }
+    if (newPwd.length < 6) { setError(t("Password must be at least 6 characters.")); return; }
+    if (newPwd !== confirmPwd) { setError(t("Passwords don't match.")); return; }
     setError("");
     setLoading(true);
     try {
@@ -60,14 +62,14 @@ export default function ResetPasswordNative() {
         token: code.trim(),
         type: "recovery",
       });
-      if (e1) throw new Error("The code is invalid or expired.");
+      if (e1) throw new Error(t("The code is invalid or expired."));
       const { error: e2 } = await supabase.auth.updateUser({ password: newPwd });
       if (e2) throw e2;
       await supabase.auth.signOut();
-      showAlert("Password updated", "Your password has been changed. Please sign in.");
+      showAlert(t("Password updated"), t("Your password has been changed. Please sign in."));
       router.replace("/(auth)/login");
     } catch (e: any) {
-      setError(e.message || "Failed to reset password.");
+      setError(e.message || t("Failed to reset password."));
     } finally {
       setLoading(false);
     }
@@ -124,7 +126,7 @@ export default function ResetPasswordNative() {
               <Ionicons name="mail" size={17} color={colors.textMuted} style={{ marginRight: 8 }} />
               <TextInput
                 style={[s.input, { color: colors.text }]}
-                placeholder="you@example.com"
+                placeholder={t("you@example.com")}
                 placeholderTextColor={colors.textMuted}
                 value={email}
                 onChangeText={setEmail}
@@ -144,7 +146,7 @@ export default function ResetPasswordNative() {
             >
               {loading
                 ? <ActivityIndicator color="#000" size="small" />
-                : <Text style={s.btnTxt}>Send Reset Code</Text>}
+                : <Text style={s.btnTxt}>{t("Send Reset Code")}</Text>}
             </TouchableOpacity>
           </>
         ) : (
@@ -154,7 +156,7 @@ export default function ResetPasswordNative() {
               <Ionicons name="keypad" size={17} color={colors.textMuted} style={{ marginRight: 8 }} />
               <TextInput
                 style={[s.input, { color: colors.text }]}
-                placeholder="6-digit code from email"
+                placeholder={t("6-digit code from email")}
                 placeholderTextColor={colors.textMuted}
                 value={code}
                 onChangeText={setCode}
@@ -167,7 +169,7 @@ export default function ResetPasswordNative() {
               <Ionicons name="lock-closed" size={17} color={colors.textMuted} style={{ marginRight: 8 }} />
               <TextInput
                 style={[s.input, { color: colors.text }]}
-                placeholder="New password"
+                placeholder={t("New password")}
                 placeholderTextColor={colors.textMuted}
                 value={newPwd}
                 onChangeText={setNewPwd}
@@ -182,7 +184,7 @@ export default function ResetPasswordNative() {
               <Ionicons name="lock-closed" size={17} color={colors.textMuted} style={{ marginRight: 8 }} />
               <TextInput
                 style={[s.input, { color: colors.text }]}
-                placeholder="Confirm new password"
+                placeholder={t("Confirm new password")}
                 placeholderTextColor={colors.textMuted}
                 value={confirmPwd}
                 onChangeText={setConfirmPwd}
@@ -200,12 +202,12 @@ export default function ResetPasswordNative() {
             >
               {loading
                 ? <ActivityIndicator color="#000" size="small" />
-                : <Text style={s.btnTxt}>Update Password</Text>}
+                : <Text style={s.btnTxt}>{t("Update Password")}</Text>}
             </TouchableOpacity>
 
             <TouchableOpacity onPress={sendCode} style={{ alignSelf: "center", paddingVertical: 8 }}>
               <Text style={{ fontSize: 13, fontFamily: "Inter_500Medium", color: accent }}>
-                ← Resend code
+                {t("← Resend code")}
               </Text>
             </TouchableOpacity>
           </>

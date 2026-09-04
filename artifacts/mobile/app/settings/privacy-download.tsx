@@ -15,6 +15,7 @@ import { showAlert } from "@/lib/alert";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { supabase, supabaseUrl, supabaseAnonKey } from "@/lib/supabase";
+import { useLanguage } from "@/context/LanguageContext";
 
 const DATA_TYPES: {
   id: string;
@@ -23,15 +24,16 @@ const DATA_TYPES: {
   label: string;
   description: string;
 }[] = [
-  { id: "profile",      icon: "person-circle",  iconColor: "#007AFF", label: "Profile Data",     description: "Your display name, bio, settings, and account info" },
-  { id: "messages",     icon: "chatbubble",      iconColor: "#34C759", label: "Messages",         description: "All your chat conversations and media" },
-  { id: "posts",        icon: "document-text",   iconColor: "#FF9500", label: "Posts & Moments",  description: "Everything you've posted on Discover" },
-  { id: "activity",     icon: "analytics",       iconColor: "#AF52DE", label: "Activity History", description: "Follows and app activity" },
-  { id: "transactions", icon: "card",            iconColor: "#FFD60A", label: "Transactions",     description: "ACoin and XP transaction history" },
+  { id: "profile",      icon: "person-circle",  iconColor: "#007AFF", label: "download.profile_data",     description: "download.profile_data_description" },
+  { id: "messages",     icon: "chatbubble",      iconColor: "#34C759", label: "download.messages",         description: "download.messages_description" },
+  { id: "posts",        icon: "document-text",   iconColor: "#FF9500", label: "download.posts",           description: "download.posts_description" },
+  { id: "activity",     icon: "analytics",       iconColor: "#AF52DE", label: "download.activity",        description: "download.activity_description" },
+  { id: "transactions", icon: "card",            iconColor: "#FFD60A", label: "download.transactions",    description: "download.transactions_description" },
 ];
 
 export default function PrivacyDownloadScreen() {
   const { colors, accent } = useTheme();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const [selected, setSelected] = useState<Set<string>>(new Set(["profile"]));
   const [loading, setLoading] = useState(false);
@@ -49,14 +51,14 @@ export default function PrivacyDownloadScreen() {
 
   async function requestDownload() {
     if (selected.size === 0) {
-      showAlert("Select Data", "Please select at least one data type to download.");
+      showAlert(t("download.select_data"), t("download.select_data_description"));
       return;
     }
     setLoading(true);
     try {
       const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
       if (sessionErr || !sessionData?.session) {
-        showAlert("Not Signed In", "You must be signed in to export your data.");
+        showAlert(t("download.not_signed_in"), t("download.not_signed_in_description"));
         return;
       }
       const accessToken = sessionData.session.access_token;
@@ -72,13 +74,13 @@ export default function PrivacyDownloadScreen() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data?.error) {
-        showAlert("Export Failed", data?.error || `Server error (${res.status}). Please try again.`);
+        showAlert(t("download.export_failed"), data?.error || `${t("Server error")} (${res.status}). ${t("Please try again.")}`);
         return;
       }
       setSentToEmail(data?.email ?? "");
       setRequested(true);
     } catch {
-      showAlert("Network Error", "Could not reach the server. Please check your connection and try again.");
+      showAlert(t("download.network_error"), t("Could not reach the server. Please check your connection and try again."));
     } finally {
       setLoading(false);
     }
@@ -86,7 +88,7 @@ export default function PrivacyDownloadScreen() {
 
   return (
     <View style={[s.root, { backgroundColor: colors.backgroundSecondary }]}>
-      <GlassHeader title="Download My Data" />
+      <GlassHeader title="download.download_data" />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}>
         {requested ? (
@@ -94,14 +96,14 @@ export default function PrivacyDownloadScreen() {
             <View style={[s.successIcon, { backgroundColor: "#34C75922" }]}>
               <Ionicons name="checkmark-circle" size={56} color="#34C759" />
             </View>
-            <Text style={[s.successTitle, { color: colors.text }]}>Export Sent!</Text>
+            <Text style={[s.successTitle, { color: colors.text }]}>{t("Export Sent!")}</Text>
             <Text style={[s.successDesc, { color: colors.textMuted }]}>
-              Your data export has been sent to{"\n"}
+              {t("Your data export has been sent to")}{"\n"}
               <Text style={{ fontFamily: "Inter_600SemiBold", color: colors.text }}>{sentToEmail}</Text>
-              {"\n\n"}Open the email and download the attached JSON file. It contains all the data you selected.
+              {"\n\n"}{t("Open the email and download the attached JSON file. It contains all the data you selected.")}
             </Text>
             <TouchableOpacity style={[s.doneBtn, { backgroundColor: accent }]} onPress={() => router.back()}>
-              <Text style={s.doneBtnText}>Done</Text>
+              <Text style={s.doneBtnText}>{t("Done")}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -112,15 +114,15 @@ export default function PrivacyDownloadScreen() {
                   <Ionicons name="shield-checkmark" size={20} color={accent} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[s.infoTitle, { color: colors.text }]}>Your data is yours</Text>
+                  <Text style={[s.infoTitle, { color: colors.text }]}>{t("Your data is yours")}</Text>
                   <Text style={[s.infoText, { color: colors.textMuted }]}>
-                    AfuChat gives you full access to a copy of your personal data. Select what you'd like to include and we'll email it to you instantly.
+                    {t("AfuChat gives you full access to a copy of your personal data. Select what you'd like to include and we'll email it to you instantly.")}
                   </Text>
                 </View>
               </View>
             </GlassCard>
 
-            <Text style={[s.sectionTitle, { color: colors.textMuted }]}>SELECT DATA TO INCLUDE</Text>
+            <Text style={[s.sectionTitle, { color: colors.textMuted }]}>{t("SELECT DATA TO INCLUDE")}</Text>
             <GlassCard style={s.group} variant="medium">
               {DATA_TYPES.map((item, i) => {
                 const isSelected = selected.has(item.id);
@@ -136,8 +138,8 @@ export default function PrivacyDownloadScreen() {
                         <Ionicons name={item.icon} size={22} color={colors.text} />
                       </View>
                       <View style={s.rowText}>
-                        <Text style={[s.rowLabel, { color: colors.text }]}>{item.label}</Text>
-                        <Text style={[s.rowDesc, { color: colors.textMuted }]}>{item.description}</Text>
+                        <Text style={[s.rowLabel, { color: colors.text }]}>{t(item.label)}</Text>
+                        <Text style={[s.rowDesc, { color: colors.textMuted }]}>{t(item.description)}</Text>
                       </View>
                       <View style={[s.checkbox, {
                         borderColor: isSelected ? accent : colors.border,

@@ -18,6 +18,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { showAlert } from "@/lib/alert";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
+import { useLanguage } from "@/context/LanguageContext";
 
 type RestrictedUser = {
   id: string;
@@ -28,6 +29,7 @@ type RestrictedUser = {
 export default function PrivacyRestrictedScreen() {
   const { colors, accent } = useTheme();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<RestrictedUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,8 +77,8 @@ export default function PrivacyRestrictedScreen() {
   return (
     <View style={[s.root, { backgroundColor: colors.backgroundSecondary }]}>
       <GlassHeader
-        title="Restricted Accounts"
-        subtitle={!loading && items.length > 0 ? `${items.length} restricted` : undefined}
+        title="restricted.title"
+        subtitle={!loading && items.length > 0 ? `${items.length} ${t("restricted")}` : undefined}
       />
 
       <GlassCard style={{ marginHorizontal: 16, marginTop: 16, borderRadius: 16, overflow: "hidden" }} variant="subtle" noShadow>
@@ -85,7 +87,7 @@ export default function PrivacyRestrictedScreen() {
             <Ionicons name="information-circle-outline" size={22} color={colors.text} />
           </View>
           <Text style={[s.infoText, { color: colors.textSecondary }]}>
-            Restricted accounts can still see your posts but their comments are only visible to them. They can't see when you're online or when you've read their messages.
+            {t("Restricted accounts can still see your posts but their comments are only visible to them. They can't see when you're online or when you've read their messages.")}
           </Text>
         </View>
       </GlassCard>
@@ -96,7 +98,7 @@ export default function PrivacyRestrictedScreen() {
             <Ionicons name="search" size={16} color={colors.textMuted} />
             <TextInput
               style={[s.searchInput, { color: colors.text }]}
-              placeholder="Search restricted…"
+              placeholder={t("restricted.search")}
               placeholderTextColor={colors.textMuted}
               value={search}
               onChangeText={setSearch}
@@ -121,7 +123,7 @@ export default function PrivacyRestrictedScreen() {
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
             filtered.length > 0 ? (
-              <Text style={[s.listHeader, { color: colors.textMuted }]}>RESTRICTED ACCOUNTS</Text>
+              <Text style={[s.listHeader, { color: colors.textMuted }]}>{t("restricted.accounts")}</Text>
             ) : null
           }
           renderItem={({ item, index }) => {
@@ -143,7 +145,7 @@ export default function PrivacyRestrictedScreen() {
                     {removing === item.id ? (
                       <ActivityIndicator size="small" color={accent} />
                     ) : (
-                      <Text style={[s.unrestrictText, { color: accent }]}>Unrestrict</Text>
+                      <Text style={[s.unrestrictText, { color: accent }]}>{t("restricted.action")}</Text>
                     )}
                   </TouchableOpacity>
                 </View>
@@ -157,12 +159,12 @@ export default function PrivacyRestrictedScreen() {
                 <Ionicons name="shield-checkmark" size={40} color="#34C759" />
               </View>
               <Text style={[s.emptyTitle, { color: colors.text }]}>
-                {search.trim() ? "No results" : "No restricted accounts"}
+                {search.trim() ? t("restricted.no_results") : t("restricted.none")}
               </Text>
               <Text style={[s.emptyDesc, { color: colors.textMuted }]}>
                 {search.trim()
-                  ? "Try a different name or handle."
-                  : "Restricting someone limits their ability to interact with you without blocking them."}
+                  ? t("restricted.try_different")
+                  : t("Restricting someone limits their ability to interact with you without blocking them.")}
               </Text>
             </View>
           }
