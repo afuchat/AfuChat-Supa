@@ -8,6 +8,7 @@ const {
   withProjectBuildGradle,
   withSettingsGradle,
   withGradleProperties,
+  withAppBuildGradle,
   withDangerousMod,
 } = require("@expo/config-plugins");
 const fs = require("fs");
@@ -112,5 +113,40 @@ function withReleaseOptimizations(config) {
   });
 }
 
+/**
+ * AGP 9 rejects the legacy proguard-android.txt template because it contains
+ * -dontoptimize. Expo's release template still emits that filename when R8
+ * minification is enabled, so normalize it after expo-build-properties has
+ * generated the app build file. This runs on every CNG/EAS prebuild.
+ */
+function withOptimizedProguardTemplate(config) {
+  return withAppBuildGradle(config, (config) => {
+    const contents = config.modResults.contents;
+    const updated = contents.replace(
+      /getDefaultProguardFile\(\s*(['"])proguard-android\.txt\1\s*\)/g,
+      "getDefaultProguardFile('proguard-android-optimize.txt')",
+    );
+
+    if (updated !== contents) {
+      console.log(
+        "[withAndroidBuildOptimization] Replaced legacy proguard-android.txt with proguard-android-optimize.txt",
+      );
+      config.modResults.contents = updated;
+    }
+
+    if (/getDefaultProguardFile\(\s*(['"])proguard-android\.txt\1\s*\)/.test(
+      config.modResults.contents,
+    )) {
+      throw new Error(
+        "[withAndroidBuildOptimization] Legacy proguard-android.txt reference remains in android/app/build.gradle.",
+      );
+    }
+
+    return config;
+  });
+}
+
 module.exports = (config) =>
-  withReleaseOptimizations(withGradleWrapper(withAgp(config)));
+  withOptimizedProguardTemplate(
+    withReleaseOptimizations(withGradleWrapper(withAgp(config))),
+  );
