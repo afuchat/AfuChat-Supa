@@ -2634,6 +2634,61 @@ for (const language of BUNDLED_UI_LANGUAGES) {
   Object.assign(SEMANTIC_UI_TABLES[language], SETTINGS_SEMANTIC_TABLES[language]);
 }
 
+const CHAT_MESSAGE_LIMIT_TRANSLATIONS: Record<UiLanguage, TranslationTable> = {
+  en: {
+    "chat.message_limit_title": "Message limit",
+    "chat.message_limit_notice": "You can send more messages once {{name}} replies or follows you",
+    "chat.message_limit_alert": "You can only send one message until {{name}} replies or follows you.",
+    "this user": "this user",
+  },
+  sw: {
+    "chat.message_limit_title": "Kikomo cha ujumbe",
+    "chat.message_limit_notice": "Unaweza kutuma ujumbe zaidi baada ya {{name}} kujibu au kukufuata",
+    "chat.message_limit_alert": "Unaweza kutuma ujumbe mmoja tu hadi {{name}} ajibu au akufuate.",
+    "this user": "mtumiaji huyu",
+  },
+  fr: {
+    "chat.message_limit_title": "Limite de messages",
+    "chat.message_limit_notice": "Vous pourrez envoyer plus de messages lorsque {{name}} répondra ou vous suivra",
+    "chat.message_limit_alert": "Vous ne pouvez envoyer qu’un seul message jusqu’à ce que {{name}} réponde ou vous suive.",
+    "this user": "cet utilisateur",
+  },
+  es: {
+    "chat.message_limit_title": "Límite de mensajes",
+    "chat.message_limit_notice": "Podrás enviar más mensajes cuando {{name}} responda o te siga",
+    "chat.message_limit_alert": "Solo puedes enviar un mensaje hasta que {{name}} responda o te siga.",
+    "this user": "este usuario",
+  },
+  ar: {
+    "chat.message_limit_title": "حد الرسائل",
+    "chat.message_limit_notice": "يمكنك إرسال المزيد من الرسائل بعد أن يرد {{name}} عليك أو يتابعك",
+    "chat.message_limit_alert": "يمكنك إرسال رسالة واحدة فقط حتى يرد {{name}} عليك أو يتابعك.",
+    "this user": "هذا المستخدم",
+  },
+  zh: {
+    "chat.message_limit_title": "消息限制",
+    "chat.message_limit_notice": "当{{name}}回复你或关注你后，你就可以发送更多消息",
+    "chat.message_limit_alert": "在{{name}}回复你或关注你之前，你只能发送一条消息。",
+    "this user": "该用户",
+  },
+  am: {
+    "chat.message_limit_title": "የመልዕክት ገደብ",
+    "chat.message_limit_notice": "{{name}} መልስ ከሰጠዎት ወይም ከተከተለዎት በኋላ ተጨማሪ መልዕክቶችን መላክ ይችላሉ",
+    "chat.message_limit_alert": "{{name}} መልስ እስኪሰጥዎት ወይም እስኪከተልዎት ድረስ አንድ መልዕክት ብቻ መላክ ይችላሉ።",
+    "this user": "ይህ ተጠቃሚ",
+  },
+  rw: {
+    "chat.message_limit_title": "Imipaka y’ubutumwa",
+    "chat.message_limit_notice": "Ushobora kohereza ubutumwa bwinshi {{name}} namara kugusubiza cyangwa kugukurikira",
+    "chat.message_limit_alert": "Ushobora kohereza ubutumwa bumwe gusa kugeza {{name}} agusubije cyangwa agukurikire.",
+    "this user": "uyu mukoresha",
+  },
+};
+
+for (const language of BUNDLED_UI_LANGUAGES) {
+  Object.assign(SEMANTIC_UI_TABLES[language], CHAT_MESSAGE_LIMIT_TRANSLATIONS[language]);
+}
+
 const REGISTERED_UI_TEXTS = new Set<string>();
 const UI_TRANSLATION_LISTENERS = new Set<() => void>();
 

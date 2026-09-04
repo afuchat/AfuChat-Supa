@@ -2234,7 +2234,7 @@ function ChatScreen() {
   const { colors, isDark } = useTheme();
   const { appearance: chatAppearance, updateAppearance: updateChatAppearance } = useChatAppearance(id as string | undefined);
   const BRAND = colors.accent;
-  const { preferredLang, textToSpeech: ttsEnabled } = useLanguage();
+  const { preferredLang, textToSpeech: ttsEnabled, t } = useLanguage();
   const { prefs: chatPrefs, themeColors: chatThemeColors, bubbleRadius: chatBubbleRadius } = useChatPreferences();
   const effectiveChatFontSize = chatAppearance?.fontSize ?? chatPrefs?.font_size ?? 14;
   const { features: advancedFeatures } = useAdvancedFeatures();
@@ -2388,6 +2388,10 @@ function ChatScreen() {
   const [chatInfo, setChatInfo] = useState<ChatInfo | null>(buildInitialChatInfo);
   const chatInfoStateRef = useRef(chatInfo);
   chatInfoStateRef.current = chatInfo;
+  const messageLimitName = chatInfo?.other_name || t("this user");
+  const messageLimitNotice = t("chat.message_limit_notice", { name: messageLimitName });
+  const messageLimitAlert = t("chat.message_limit_alert", { name: messageLimitName });
+  const messageLimitTitle = t("chat.message_limit_title");
   const isAfuAiDirectChat = chatInfo?.other_id === AFUAI_BOT_ID;
   const isNotificationsChat = [chatInfo?.other_handle, otherHandle, chatInfo?.other_name, chatInfo?.name]
     .some((value) => value?.trim().toLowerCase() === "notifications");
@@ -5487,7 +5491,7 @@ STRICT RULES:
     const text = (directText ?? input).trim();
     if (!text || !user || sending || (!session && !isLocalNotesId(id))) return;
     if (messageLimited) {
-      showAlert("Message limit", `You can only send one message until ${chatInfo?.other_name || "this user"} replies or follows you.`);
+      showAlert(messageLimitTitle, messageLimitAlert);
       return;
     }
     setSending(true);
@@ -5659,7 +5663,7 @@ STRICT RULES:
       return;
     }
     if (messageLimited) {
-      showAlert("Message limit", `You can only send one message until ${chatInfo?.other_name || "this user"} replies or follows you.`);
+      showAlert(messageLimitTitle, messageLimitAlert);
       return;
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -5707,7 +5711,7 @@ STRICT RULES:
       return;
     }
     if (messageLimited) {
-      showAlert("Message limit", `You can only send one message until ${chatInfo?.other_name || "this user"} replies or follows you.`);
+      showAlert(messageLimitTitle, messageLimitAlert);
       return;
     }
 
@@ -5887,7 +5891,7 @@ STRICT RULES:
       return;
     }
     if (messageLimited) {
-      showAlert("Message limit", `You can only send one message until ${chatInfo?.other_name || "this user"} replies or follows you.`);
+      showAlert(messageLimitTitle, messageLimitAlert);
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -6110,7 +6114,7 @@ STRICT RULES:
       return;
     }
     if (messageLimited) {
-      showAlert("Message limit", `You can only send one message until ${chatInfo?.other_name || "this user"} replies or follows you.`);
+      showAlert(messageLimitTitle, messageLimitAlert);
       return;
     }
     setShowEmojiStickerPicker(false);
@@ -7624,8 +7628,12 @@ STRICT RULES:
           <View style={[st.inputFloatOuter, st.limitedFloatOuter, { paddingBottom: Math.max(insets.bottom + 6, 14) }]}>
             <View style={[st.limitedGlass, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Ionicons name="lock-closed" size={15} color={colors.textMuted} style={{ marginRight: 8 }} />
-              <Text style={[st.limitedText, { color: colors.textSecondary }]}>
-                You can send more messages once {chatInfo?.other_name || "this user"} replies or follows you
+              <Text
+                style={[st.limitedText, { color: colors.textSecondary }]}
+                numberOfLines={3}
+                ellipsizeMode="tail"
+              >
+                {messageLimitNotice}
               </Text>
             </View>
           </View>
@@ -7914,7 +7922,7 @@ STRICT RULES:
                 showAlert("My Notes", "GIFs are available only in online chats.");
                 return;
               }
-              if (messageLimited) { showAlert("Message limit", `You can only send one message until ${chatInfo?.other_name || "this user"} replies or follows you.`); return; }
+              if (messageLimited) { showAlert(messageLimitTitle, messageLimitAlert); return; }
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               const activeChatId = await getOrCreateChatId();
               if (!activeChatId) return;
@@ -9782,25 +9790,26 @@ const st = StyleSheet.create({
   limitedText: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
-    flex: 0,
-    width: 240,
+    flex: 1,
+    width: undefined,
     minWidth: 0,
-    lineHeight: 16,
+    lineHeight: 18,
     textAlign: "center",
+    includeFontPadding: false,
   },
   limitedFloatOuter: {
     paddingTop: 0,
-    paddingHorizontal: 0,
+    paddingHorizontal: 12,
     alignItems: "center",
   },
   limitedGlass: {
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "center",
-    width: "auto",
-    maxWidth: "100%",
-    paddingHorizontal: 0,
-    paddingVertical: 0,
+    width: "100%",
+    maxWidth: 360,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 0,
     marginHorizontal: 0,
