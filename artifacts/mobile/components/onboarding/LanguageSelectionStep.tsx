@@ -166,7 +166,14 @@ export default function LanguageSelectionStep({ onComplete }: LanguageSelectionS
               <View style={styles.globeBadge}>
                 <PlanetIcon />
               </View>
-              <Text style={styles.title}>{t("Choose your language")}</Text>
+              <Text
+                style={styles.title}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.72}
+              >
+                {t("Choose your language")}
+              </Text>
               <Text style={styles.subtitle}>
                 {t("Select the language you understand best. We will use it to make your AfuChat experience easier to follow.")}
               </Text>
@@ -304,14 +311,28 @@ const styles = StyleSheet.create({
   },
   brandText: { color: "#FFFFFF", fontSize: 22, lineHeight: 28, fontFamily: "Inter_700Bold", fontWeight: "700", letterSpacing: -0.5, includeFontPadding: false, paddingRight: 4 },
   brandCaption: { color: "rgba(188,215,255,0.58)", fontSize: 8, lineHeight: 10, letterSpacing: 1.8, fontFamily: "Inter_700Bold", marginTop: 1 },
-  hero: { alignItems: "center", marginTop: 26, marginBottom: 16 },
+  hero: { width: "100%", alignItems: "center", marginTop: 26, marginBottom: 16 },
   heroMobile: { marginTop: 20, marginBottom: 14 },
   globeBadge: {
     width: 60, height: 60, borderRadius: 30, backgroundColor: "rgba(52,125,255,0.18)",
     borderWidth: 1, borderColor: "rgba(145,194,255,0.42)", alignItems: "center",
     justifyContent: "center", marginBottom: 18,
   },
-  title: { color: "#FFFFFF", fontSize: 28, lineHeight: 34, textAlign: "center", fontFamily: "Inter_700Bold", letterSpacing: -0.7 },
+  title: {
+    width: "100%",
+    color: "#FFFFFF",
+    fontSize: 28,
+    lineHeight: 34,
+    textAlign: "center",
+    fontFamily: "Inter_700Bold",
+    letterSpacing: -0.7,
+    includeFontPadding: false,
+    flexShrink: 1,
+    minWidth: 0,
+    ...Platform.select({
+      web: { whiteSpace: "nowrap" } as any,
+    }),
+  },
   subtitle: { maxWidth: 440, color: "rgba(255,255,255,0.62)", fontSize: 14, lineHeight: 21, textAlign: "center", fontFamily: "Inter_400Regular", marginTop: 11 },
   languageList: { width: "100%", maxWidth: 560, alignSelf: "center", gap: 6 },
   languageRow: {
