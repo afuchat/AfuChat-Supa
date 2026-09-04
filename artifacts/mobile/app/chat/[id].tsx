@@ -1784,30 +1784,89 @@ function MessageBubble({ msg, isMe, isChannel, showTail, showName, onLongPress, 
                    // real metadata row, including Speak when it is available.
                    const _speakWidth = canSpeak ? 56 : 0;
                    const _tsWidth = (msg.edited_at ? 34 : 0) + (isMe ? 56 : 40) + _speakWidth;
+                  const _compactInlineMeta =
+                    !canSpeak &&
+                    !msg.edited_at &&
+                    !displayText.includes("\n") &&
+                    displayText.trim().length <= 18;
                   // Ghost: same color as bubble background → visually invisible on all platforms.
                   // Content mirrors the real timestamp exactly plus a leading gap ("   ")
                   // so the last line of text never crowds or overlaps the timestamp.
                    const _iconPad = isMe ? "   " : " "; // space for checkmark icon + margins
                    const _speakPad = canSpeak ? " ".repeat(18) : "";
-                  const ghost = Platform.OS === "web" ? null : (
+                  const ghost = _compactInlineMeta || Platform.OS === "web" ? null : (
                     <Text style={{ color: bubbleColor, fontSize: 11, fontFamily: "Inter_400Regular", includeFontPadding: false }}>
                        {"   "}{_speakPad}{msg.edited_at ? "edited  " : ""}{_timeStr}{_iconPad}
                     </Text>
                   );
+                  const renderMeta = (metaStyle: any) => (
+                    <View style={[st.metaRow, metaStyle]}>
+                      {speakButton}
+                      {msg.edited_at && (
+                        <Text style={[st.msgTime, { color: isMe ? myTimeColor : colors.textMuted, marginRight: 3 }]}>edited</Text>
+                      )}
+                      <Text style={[st.msgTime, { color: isMe ? myTimeColor : colors.textMuted }]}>
+                        {_timeStr}
+                      </Text>
+                      {isMe && (
+                        <TouchableOpacity onPress={() => onStatusPress?.(msg)} hitSlop={8} activeOpacity={0.65} disabled={!onStatusPress}>
+                          <Ionicons
+                            name={
+                              msg.status === "failed" ? "alert-circle" :
+                              isPending ? "time" :
+                              msg.status === "read" ? "checkmark-done" :
+                              msg.status === "delivered" ? "checkmark-done" : "checkmark"
+                            }
+                            size={14}
+                            color={
+                              msg.status === "failed" ? "#FF4444" :
+                              isPending ? rcptSent :
+                              msg.status === "read" ? rcptRead :
+                              msg.status === "delivered" ? rcptDelivered :
+                              rcptSent
+                            }
+                            style={{ marginLeft: 2 }}
+                          />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  );
                   return (
                     <>
-                      <TouchableOpacity onLongPress={messageLongPress} delayLongPress={500} activeOpacity={0.9} style={{ minWidth: _tsWidth + 16 }}>
+                      <TouchableOpacity
+                        onLongPress={messageLongPress}
+                        delayLongPress={500}
+                        activeOpacity={0.9}
+                        style={[
+                          _compactInlineMeta
+                            ? { flexDirection: "row", alignItems: "flex-end" }
+                            : { minWidth: _tsWidth + 16 },
+                        ]}
+                      >
                          {isTextSelectionEnabled ? (
                            <AutoSelectMessageText
                              value={displayText}
-                             style={[st.bubbleText, { color: textColor, fontSize: _fontSize, lineHeight: _lineH, paddingRight: _tsWidth }]}
+                             style={[
+                               st.bubbleText,
+                               {
+                                 color: textColor,
+                                 fontSize: _fontSize,
+                                 lineHeight: _lineH,
+                                 flexShrink: _compactInlineMeta ? 1 : undefined,
+                                 paddingRight: _compactInlineMeta ? 0 : _tsWidth,
+                               },
+                             ]}
                            />
                          ) : (
                            <RichText
                              style={[
                                st.bubbleText,
                                { color: textColor, fontSize: _fontSize, lineHeight: _lineH },
-                               Platform.OS === "web" ? { paddingRight: _tsWidth } : null,
+                               _compactInlineMeta
+                                 ? { flexShrink: 1 }
+                                 : Platform.OS === "web"
+                                 ? { paddingRight: _tsWidth }
+                                 : null,
                              ]}
                              linkColor={isMe ? "#FFFFFF" : BRAND}
                               showMentionAvatars={!isChannel}
@@ -1816,38 +1875,9 @@ function MessageBubble({ msg, isMe, isChannel, showTail, showName, onLongPress, 
                              {displayText}
                            </RichText>
                          )}
+                          {_compactInlineMeta && renderMeta({ position: "relative", marginLeft: 5, flexShrink: 0 })}
                       </TouchableOpacity>
-                      {/* Real timestamp floats at bottom-right, over the invisible ghost */}
-                        <View style={[st.metaRow, { position: "absolute", bottom: 3, right: 8 }]}>
-                         {speakButton}
-                        {msg.edited_at && (
-                          <Text style={[st.msgTime, { color: isMe ? myTimeColor : colors.textMuted, marginRight: 3 }]}>edited</Text>
-                        )}
-                        <Text style={[st.msgTime, { color: isMe ? myTimeColor : colors.textMuted }]}>
-                          {_timeStr}
-                        </Text>
-                        {isMe && (
-                          <TouchableOpacity onPress={() => onStatusPress?.(msg)} hitSlop={8} activeOpacity={0.65} disabled={!onStatusPress}>
-                            <Ionicons
-                              name={
-                                msg.status === "failed" ? "alert-circle" :
-                                isPending ? "time" :
-                                msg.status === "read" ? "checkmark-done" :
-                                msg.status === "delivered" ? "checkmark-done" : "checkmark"
-                              }
-                              size={14}
-                              color={
-                                msg.status === "failed" ? "#FF4444" :
-                                isPending ? rcptSent :
-                                msg.status === "read" ? rcptRead :
-                                msg.status === "delivered" ? rcptDelivered :
-                                rcptSent
-                              }
-                              style={{ marginLeft: 2 }}
-                            />
-                          </TouchableOpacity>
-                        )}
-                      </View>
+                       {!_compactInlineMeta && renderMeta({ position: "absolute", bottom: 3, right: 8 })}
                     </>
                   );
                 })()
@@ -9770,7 +9800,7 @@ const st = StyleSheet.create({
     maxWidth: 380,
     paddingHorizontal: 16,
     paddingVertical: 11,
-    borderRadius: 26,
+    borderRadius: 999,
     borderWidth: 0.5,
     marginHorizontal: 0,
     marginBottom: 6,
