@@ -30,44 +30,6 @@ import { showAlert } from "@/lib/alert";
 import { getCachedProfileSync, isOnline, onConnectivityChange } from "@/lib/offlineStore";
 import { getLocalProfile } from "@/lib/storage/localProfile";
 import { showToast } from "@/lib/toast";
-import { registerUiTexts } from "@/lib/i18n";
-
-const ME_UI_TEXTS = [
-  "Photo",
-  "Bio",
-  "Country",
-  "Website",
-  "Premium",
-  "Profile",
-  "Followers",
-  "Following",
-  "Posts",
-  "Edit Profile",
-  "My Profile",
-  "QR Code",
-  "Digital ID",
-  "ACoin balance",
-  "Your activity unlocks status and perks",
-  "Upgrade to Premium",
-  "Verified badge, exclusive perks & more",
-  "Upgrade",
-  "Subscription",
-  "Premium Active",
-  "Active",
-  "My Content",
-  "My Posts",
-  "Saved Posts",
-  "Watch History",
-  "Social & Growth",
-  "Prestige & Rewards",
-  "Achievements",
-  "App",
-  "Settings",
-  "NEW",
-  "posts",
-];
-
-registerUiTexts(ME_UI_TEXTS);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -171,11 +133,11 @@ function ProfileCompletionBar({ profile, isPremium, colors, accent }: { profile:
   const fillAnim = useRef(new Animated.Value(0)).current;
   const { t } = useLanguage();
   const checks = [
-    { label: "Photo",   done: !!profile?.avatar_url },
-    { label: "Bio",     done: !!profile?.bio },
-    { label: "Country", done: !!profile?.country },
-    { label: "Website", done: !!profile?.website_url },
-    { label: "Premium", done: isPremium },
+    { label: "profile.photo",   done: !!profile?.avatar_url },
+    { label: "profile.bio",     done: !!profile?.bio },
+    { label: "profile.country", done: !!profile?.country },
+    { label: "profile.website", done: !!profile?.website_url },
+    { label: "profile.premium", done: isPremium },
   ];
   const score = checks.filter((c) => c.done).length;
   const pct = score / checks.length;
@@ -185,13 +147,13 @@ function ProfileCompletionBar({ profile, isPremium, colors, accent }: { profile:
   if (score === checks.length) return null;
   return (
     <View>
-      <SectionLabel label="Profile" colors={colors} />
+      <SectionLabel label="profile.title" colors={colors} />
       <MenuCard colors={colors}>
         <TouchableOpacity style={pc.wrap} onPress={() => router.push("/profile/edit")} activeOpacity={0.8}>
           <View style={pc.topRow}>
             <View style={{ flex: 1 }}>
-              <Text style={[pc.title, { color: colors.text }]}>Complete your profile</Text>
-              <Text style={[pc.sub, { color: colors.textMuted }]}>{score} of {checks.length} steps done</Text>
+              <Text style={[pc.title, { color: colors.text }]}>{t("profile.complete")}</Text>
+              <Text style={[pc.sub, { color: colors.textMuted }]}>{t("common.completion_steps", { done: score, total: checks.length })}</Text>
             </View>
             <View style={[pc.pctBubble, { backgroundColor: accent + "18" }]}>
               <Text style={[pc.pctText, { color: accent }]}>{Math.round(pct * 100)}%</Text>
@@ -206,7 +168,7 @@ function ProfileCompletionBar({ profile, isPremium, colors, accent }: { profile:
             {checks.map((c) => (
               <View key={c.label} style={pc.checkItem}>
                 <Ionicons name={c.done ? "checkmark-circle" : "ellipse"} size={14} color={c.done ? "#34C759" : colors.border} />
-                <Text style={[pc.checkLabel, { color: c.done ? colors.textSecondary : colors.textMuted }]}>{t(c.label)}</Text>
+                 <Text style={[pc.checkLabel, { color: c.done ? colors.textSecondary : colors.textMuted }]}>{t(c.label)}</Text>
               </View>
             ))}
           </View>
@@ -282,7 +244,7 @@ export default function MeScreen() {
   async function showHandlePurchase(handle: string) {
     void Haptics.selectionAsync();
     if (!isOnline()) {
-      showToast("Username details are unavailable offline");
+      showToast(t("common.username_details_offline"));
       return;
     }
     setPurchaseLoading(true);
@@ -301,14 +263,14 @@ export default function MeScreen() {
         sellerHandle: (data as any).profiles?.handle ?? null,
       });
     } catch {
-      showToast("Username details are unavailable right now");
+      showToast(t("common.username_details_unavailable"));
     } finally {
       setPurchaseLoading(false);
     }
   }
 
   function fmtDate(iso: string) {
-  if (!iso) return "N/A";
+    if (!iso) return t("common.not_available");
     return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
   }
 
@@ -491,7 +453,7 @@ export default function MeScreen() {
               {profile?.is_organization_verified && (
                 <View style={[s.businessChip, { backgroundColor: Colors.gold + "20" }]}>
                   <Ionicons name="briefcase" size={10} color={Colors.gold} />
-                  <Text style={[s.businessChipText, { color: Colors.gold }]}>Business</Text>
+                <Text style={[s.businessChipText, { color: Colors.gold }]}>{t("common.business")}</Text>
                 </View>
               )}
             </View>
@@ -514,8 +476,8 @@ export default function MeScreen() {
               <Text style={s.acoinEmoji}>🪙</Text>
             </View>
             <View style={{ flex: 1 }}>
-               <Text style={[s.acoinBalance, { color: Colors.gold }]}>{fmtCount(acoin)} ACoin balance</Text>
-               <Text style={[s.acoinSub, { color: colors.textMuted }]}>Your activity unlocks status and perks</Text>
+               <Text style={[s.acoinBalance, { color: Colors.gold }]}>{fmtCount(acoin)} {t("profile.acoin_balance")}</Text>
+               <Text style={[s.acoinSub, { color: colors.textMuted }]}>{t("profile.activity_unlocks")}</Text>
             </View>
             <Ionicons name="chevron-forward" size={15} color={Colors.gold + "80"} />
           </TouchableOpacity>
@@ -525,15 +487,15 @@ export default function MeScreen() {
         <View style={[s.statsRow, { backgroundColor: colors.surface }]}>
           {[
             {
-              label: "Followers", count: followerCount,
+               label: "profile.followers", count: followerCount,
               onPress: () => profile?.id && router.push({ pathname: "/followers", params: { userId: profile.id, type: "followers", ownerHandle: profile.handle } } as any),
             },
             {
-              label: "Following", count: followingCount,
+               label: "profile.following", count: followingCount,
               onPress: () => profile?.id && router.push({ pathname: "/followers", params: { userId: profile.id, type: "following", ownerHandle: profile.handle } } as any),
             },
             {
-              label: "Posts", count: postCount,
+               label: "profile.posts", count: postCount,
               onPress: () => router.push("/my-posts"),
             },
           ].map((stat, i) => (
@@ -550,10 +512,10 @@ export default function MeScreen() {
         {/* ── Quick Actions ───────────────────────────────────────────────── */}
         <View style={[s.quickRow, { backgroundColor: colors.surface }]}>
           {[
-            { icon: "create",    label: "Edit Profile", color: accent, onPress: () => router.push("/profile/edit") },
-            { icon: "person",    label: "My Profile",   color: accent, onPress: () => profile?.handle && navigateToProfile(profile.handle, true).catch(() => {}) },
-            { icon: "qr-code",   label: "QR Code",      color: accent, onPress: () => router.push("/app/afuqr" as any) },
-            { icon: "card",      label: "Digital ID",   color: accent, onPress: () => router.push("/digital-id" as any) },
+             { icon: "create",    label: "profile.edit_profile", color: accent, onPress: () => router.push("/profile/edit") },
+             { icon: "person",    label: "profile.my_profile",   color: accent, onPress: () => profile?.handle && navigateToProfile(profile.handle, true).catch(() => {}) },
+             { icon: "qr-code",   label: "profile.qr_code",      color: accent, onPress: () => router.push("/app/afuqr" as any) },
+             { icon: "card",      label: "profile.digital_id",   color: accent, onPress: () => router.push("/digital-id" as any) },
           ].map((a) => (
             <TouchableOpacity key={a.label} style={s.quickBtn} onPress={a.onPress} activeOpacity={0.75}>
               <View style={[s.quickIconWrap, { backgroundColor: a.color + "15" }]}>
@@ -575,22 +537,22 @@ export default function MeScreen() {
               <Ionicons name="diamond" size={22} color="#FFD60A" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={s.premiumTitle}>Upgrade to Premium</Text>
-              <Text style={s.premiumSub}>Verified badge, exclusive perks & more</Text>
+               <Text style={s.premiumTitle}>{t("profile.upgrade_to_premium")}</Text>
+               <Text style={s.premiumSub}>{t("profile.verified_perks")}</Text>
             </View>
             <View style={[s.premiumChip, { backgroundColor: "#FFD60A22" }]}>
-              <Text style={s.premiumChipText}>Upgrade</Text>
+               <Text style={s.premiumChipText}>{t("profile.upgrade")}</Text>
             </View>
           </TouchableOpacity>
         ) : (
           <View>
-            <SectionLabel label="Subscription" colors={colors} />
+             <SectionLabel label="profile.subscription" colors={colors} />
             <MenuCard colors={colors}>
               <MenuItem
                 icon="diamond"
                 iconColor={accent}
-                label="Premium Active"
-                value={subscription?.plan_tier ? `${subscription.plan_tier}` : "Active"}
+                 label="profile.premium_active"
+                 value={subscription?.plan_tier ? `${subscription.plan_tier}` : t("profile.active")}
                 onPress={() => router.push("/premium")}
                 colors={colors}
               />
@@ -603,13 +565,13 @@ export default function MeScreen() {
 
         {/* ── My Content ─────────────────────────────────────────────────── */}
         <View>
-          <SectionLabel label="My Content" colors={colors} />
+           <SectionLabel label="profile.my_content" colors={colors} />
           <MenuCard colors={colors}>
             <MenuItem
               icon="grid"
               iconColor={accent}
-              label="My Posts"
-               value={`${fmtCount(postCount)} ${t("posts")}`}
+               label="profile.my_posts"
+                value={t("common.posts_count", { count: fmtCount(postCount) })}
               onPress={() => router.push("/my-posts")}
               showSeparator
               colors={colors}
@@ -617,7 +579,7 @@ export default function MeScreen() {
             <MenuItem
               icon="bookmark"
               iconColor={accent}
-              label="Saved Posts"
+               label="profile.saved_posts"
               onPress={() => router.push("/app/afusaved" as any)}
               showSeparator
               colors={colors}
@@ -625,7 +587,7 @@ export default function MeScreen() {
             <MenuItem
               icon="time"
               iconColor={accent}
-              label="Watch History"
+               label="profile.watch_history"
               onPress={() => router.push("/watch-history" as any)}
               showSeparator
               colors={colors}
@@ -635,13 +597,13 @@ export default function MeScreen() {
 
         {/* ── Social & Growth ─────────────────────────────────────────────── */}
         <View>
-          <SectionLabel label="Social & Growth" colors={colors} />
+           <SectionLabel label="profile.social_growth" colors={colors} />
           <MenuCard colors={colors}>
             <MenuItem
               icon="trophy"
               iconColor={accent}
-              label="Prestige & Rewards"
-              badge="NEW"
+               label="profile.prestige_rewards"
+               badge="common.new"
               onPress={() => router.push("/prestige")}
               showSeparator
               colors={colors}
@@ -649,7 +611,7 @@ export default function MeScreen() {
             <MenuItem
               icon="ribbon"
               iconColor={accent}
-              label="Achievements"
+               label="profile.achievements"
               onPress={() => router.push("/achievements" as any)}
               colors={colors}
             />
@@ -658,12 +620,12 @@ export default function MeScreen() {
 
         {/* ── Settings ────────────────────────────────────────────────────── */}
         <View>
-          <SectionLabel label="App" colors={colors} />
+           <SectionLabel label="profile.app" colors={colors} />
           <MenuCard colors={colors}>
             <MenuItem
               icon="settings"
               iconColor={colors.textMuted}
-              label="Settings"
+               label="profile.settings"
               onPress={() => router.push("/settings" as any)}
               colors={colors}
             />
@@ -702,7 +664,7 @@ export default function MeScreen() {
             style={{ width: "82%", backgroundColor: colors.surface, borderRadius: 22, padding: 24, borderWidth: 0.5, borderColor: colors.border, gap: 16 }}
           >
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <Text style={{ fontSize: 17, fontFamily: "Inter_700Bold", color: colors.text }}>Username Details</Text>
+              <Text style={{ fontSize: 17, fontFamily: "Inter_700Bold", color: colors.text }}>{t("common.username_details")}</Text>
               <TouchableOpacity onPress={() => setPurchasePopup(null)} hitSlop={10}>
                 <Ionicons name="close" size={22} color={colors.textMuted} />
               </TouchableOpacity>
@@ -713,14 +675,14 @@ export default function MeScreen() {
               </View>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 8 }}>
                 <Ionicons name="storefront" size={13} color="#34C759" />
-                <Text style={{ fontSize: 12, fontFamily: "Inter_500Medium", color: "#34C759" }}>Purchased from Marketplace</Text>
+                <Text style={{ fontSize: 12, fontFamily: "Inter_500Medium", color: "#34C759" }}>{t("common.purchased_from_marketplace")}</Text>
               </View>
             </View>
             <View style={{ gap: 12, backgroundColor: colors.backgroundSecondary, borderRadius: 14, padding: 14 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
                   <Ionicons name="cash" size={16} color={colors.icon} />
-                  <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: colors.textSecondary }}>Price Paid</Text>
+                  <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: colors.textSecondary }}>{t("common.price_paid")}</Text>
                 </View>
                 <Text style={{ fontSize: 15, fontFamily: "Inter_700Bold", color: "#FFD60A" }}>🪙 {purchasePopup?.price.toLocaleString()} ACoin</Text>
               </View>
@@ -728,7 +690,7 @@ export default function MeScreen() {
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
                   <Ionicons name="calendar" size={16} color={colors.icon} />
-                  <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: colors.textSecondary }}>Purchased On</Text>
+                  <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: colors.textSecondary }}>{t("common.purchased_on")}</Text>
                 </View>
                 <Text style={{ fontSize: 14, fontFamily: "Inter_600SemiBold", color: colors.text }}>{purchasePopup ? fmtDate(purchasePopup.purchasedAt) : "N/A"}</Text>
               </View>
@@ -738,7 +700,7 @@ export default function MeScreen() {
                   <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
                       <Ionicons name="person" size={16} color={colors.icon} />
-                      <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: colors.textSecondary }}>Sold By</Text>
+                      <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: colors.textSecondary }}>{t("common.sold_by")}</Text>
                     </View>
                     <Text style={{ fontSize: 14, fontFamily: "Inter_600SemiBold", color: colors.text }}>@{purchasePopup.sellerHandle}</Text>
                   </View>
@@ -749,7 +711,7 @@ export default function MeScreen() {
               onPress={() => setPurchasePopup(null)}
               style={{ backgroundColor: accent, borderRadius: 16, paddingVertical: 12, alignItems: "center" }}
             >
-              <Text style={{ color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 15 }}>Done</Text>
+              <Text style={{ color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 15 }}>{t("common.done")}</Text>
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>

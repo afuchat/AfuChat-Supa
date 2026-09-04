@@ -14,3 +14,9 @@ Language changes must update the context immediately but serialize persistence w
 **Why:** The onboarding selector can write on selection and again on Continue, and remote/device writes can otherwise resolve out of order.
 
 **How to apply:** Keep a monotonically increasing change id and a persistence queue around AsyncStorage, local storage, and profile synchronization.
+
+New UI work should use semantic namespaced keys (for example, `profile.edit_profile`) while legacy English-phrase keys remain temporarily supported during migration.
+
+**Why:** Semantic keys make catalog coverage auditable and prevent copy changes from silently breaking translations, without requiring a risky all-screen rewrite.
+
+**How to apply:** Add every new key to all bundled UI locales, use interpolation parameters for dynamic copy, and run `pnpm audit:i18n` before shipping.

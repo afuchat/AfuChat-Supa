@@ -1826,6 +1826,184 @@ const COMMON_PLATFORM_PHRASES: Record<UiLanguage, TranslationTable> = {
   },
 };
 
+// Semantic keys are the canonical API for newly migrated UI. The legacy
+// English-phrase tables above remain supported so existing screens can migrate
+// incrementally without a risky all-at-once rewrite.
+const SEMANTIC_UI_TABLES: Record<UiLanguage, TranslationTable> = {
+  en: {
+    "profile.photo": "Photo",
+    "profile.bio": "Bio",
+    "profile.country": "Country",
+    "profile.website": "Website",
+    "profile.premium": "Premium",
+    "profile.title": "Profile",
+    "profile.followers": "Followers",
+    "profile.following": "Following",
+    "profile.posts": "Posts",
+    "profile.edit_profile": "Edit Profile",
+    "profile.my_profile": "My Profile",
+    "profile.qr_code": "QR Code",
+    "profile.digital_id": "Digital ID",
+    "profile.acoin_balance": "ACoin balance",
+    "profile.activity_unlocks": "Your activity unlocks status and perks",
+    "profile.upgrade_to_premium": "Upgrade to Premium",
+    "profile.verified_perks": "Verified badge, exclusive perks & more",
+    "profile.upgrade": "Upgrade",
+    "profile.subscription": "Subscription",
+    "profile.premium_active": "Premium Active",
+    "profile.active": "Active",
+    "profile.my_content": "My Content",
+    "profile.my_posts": "My Posts",
+    "profile.saved_posts": "Saved Posts",
+    "profile.watch_history": "Watch History",
+    "profile.social_growth": "Social & Growth",
+    "profile.prestige_rewards": "Prestige & Rewards",
+    "profile.achievements": "Achievements",
+    "profile.app": "App",
+    "profile.settings": "Settings",
+    "profile.complete": "Complete your profile",
+    "common.new": "NEW",
+    "common.posts_count": "{{count}} posts",
+    "common.completion_steps": "{{done}} of {{total}} steps done",
+    "common.business": "Business",
+    "common.username_details": "Username Details",
+    "common.purchased_from_marketplace": "Purchased from Marketplace",
+    "common.price_paid": "Price Paid",
+    "common.purchased_on": "Purchased On",
+    "common.sold_by": "Sold By",
+    "common.done": "Done",
+    "common.not_available": "N/A",
+    "common.username_details_offline": "Username details are unavailable offline",
+    "common.username_details_unavailable": "Username details are unavailable right now",
+  },
+  sw: {
+    "profile.photo": "Picha", "profile.bio": "Wasifu", "profile.country": "Nchi", "profile.website": "Tovuti",
+    "profile.premium": "Premium", "profile.title": "Wasifu", "profile.followers": "Wafuasi", "profile.following": "Unaowafuata",
+    "profile.posts": "Machapisho", "profile.edit_profile": "Hariri Wasifu", "profile.my_profile": "Wasifu Wangu",
+    "profile.qr_code": "Msimbo wa QR", "profile.digital_id": "Kitambulisho cha Kidijitali", "profile.acoin_balance": "Salio la ACoin",
+    "profile.activity_unlocks": "Shughuli zako hufungua hadhi na manufaa", "profile.upgrade_to_premium": "Pata Premium",
+    "profile.verified_perks": "Alama ya uthibitisho, manufaa ya kipekee na zaidi", "profile.upgrade": "Boresha",
+    "profile.subscription": "Usajili", "profile.premium_active": "Premium Inatumika", "profile.active": "Inatumika",
+    "profile.my_content": "Maudhui Yangu", "profile.my_posts": "Machapisho Yangu", "profile.saved_posts": "Machapisho Yaliyohifadhiwa",
+    "profile.watch_history": "Historia ya Kutazama", "profile.social_growth": "Kijamii na Ukuaji", "profile.prestige_rewards": "Heshima na Zawadi",
+    "profile.achievements": "Mafanikio", "profile.app": "Programu", "profile.settings": "Mipangilio", "common.new": "MPYA",
+    "profile.complete": "Kamilisha wasifu wako",
+    "common.posts_count": "Machapisho {{count}}", "common.completion_steps": "Hatua {{done}} kati ya {{total}} zimekamilika",
+    "common.business": "Biashara", "common.username_details": "Maelezo ya Jina la Mtumiaji", "common.purchased_from_marketplace": "Imenunuliwa kwenye Soko",
+    "common.price_paid": "Bei Iliyolipwa", "common.purchased_on": "Tarehe ya Ununuzi", "common.sold_by": "Imeuzwa na", "common.done": "Imekamilika",
+    "common.not_available": "Haipatikani", "common.username_details_offline": "Maelezo ya jina la mtumiaji hayapatikani nje ya mtandao",
+    "common.username_details_unavailable": "Maelezo ya jina la mtumiaji hayapatikani kwa sasa",
+  },
+  fr: {
+    "profile.photo": "Photo", "profile.bio": "Biographie", "profile.country": "Pays", "profile.website": "Site web",
+    "profile.premium": "Premium", "profile.title": "Profil", "profile.followers": "Abonnés", "profile.following": "Abonnements",
+    "profile.posts": "Publications", "profile.edit_profile": "Modifier le profil", "profile.my_profile": "Mon profil",
+    "profile.qr_code": "Code QR", "profile.digital_id": "Identité numérique", "profile.acoin_balance": "Solde ACoin",
+    "profile.activity_unlocks": "Votre activité débloque des statuts et des avantages", "profile.upgrade_to_premium": "Passer à Premium",
+    "profile.verified_perks": "Badge vérifié, avantages exclusifs et plus", "profile.upgrade": "Mettre à niveau",
+    "profile.subscription": "Abonnement", "profile.premium_active": "Premium actif", "profile.active": "Actif",
+    "profile.my_content": "Mon contenu", "profile.my_posts": "Mes publications", "profile.saved_posts": "Publications enregistrées",
+    "profile.watch_history": "Historique de visionnage", "profile.social_growth": "Social et croissance", "profile.prestige_rewards": "Prestige et récompenses",
+    "profile.achievements": "Réalisations", "profile.app": "Application", "profile.settings": "Paramètres", "common.new": "NOUVEAU",
+    "profile.complete": "Complétez votre profil",
+    "common.posts_count": "{{count}} publications", "common.completion_steps": "{{done}} étapes sur {{total}} terminées",
+    "common.business": "Entreprise", "common.username_details": "Détails du nom d'utilisateur", "common.purchased_from_marketplace": "Acheté sur la Marketplace",
+    "common.price_paid": "Prix payé", "common.purchased_on": "Date d'achat", "common.sold_by": "Vendu par", "common.done": "Terminé",
+    "common.not_available": "N/D", "common.username_details_offline": "Les détails du nom d'utilisateur sont indisponibles hors ligne",
+    "common.username_details_unavailable": "Les détails du nom d'utilisateur sont indisponibles pour le moment",
+  },
+  es: {
+    "profile.photo": "Foto", "profile.bio": "Biografía", "profile.country": "País", "profile.website": "Sitio web",
+    "profile.premium": "Premium", "profile.title": "Perfil", "profile.followers": "Seguidores", "profile.following": "Siguiendo",
+    "profile.posts": "Publicaciones", "profile.edit_profile": "Editar perfil", "profile.my_profile": "Mi perfil",
+    "profile.qr_code": "Código QR", "profile.digital_id": "ID digital", "profile.acoin_balance": "Saldo de ACoin",
+    "profile.activity_unlocks": "Tu actividad desbloquea estatus y beneficios", "profile.upgrade_to_premium": "Pasar a Premium",
+    "profile.verified_perks": "Insignia verificada, beneficios exclusivos y más", "profile.upgrade": "Mejorar",
+    "profile.subscription": "Suscripción", "profile.premium_active": "Premium activo", "profile.active": "Activo",
+    "profile.my_content": "Mi contenido", "profile.my_posts": "Mis publicaciones", "profile.saved_posts": "Publicaciones guardadas",
+    "profile.watch_history": "Historial de reproducción", "profile.social_growth": "Social y crecimiento", "profile.prestige_rewards": "Prestigio y recompensas",
+    "profile.achievements": "Logros", "profile.app": "Aplicación", "profile.settings": "Ajustes", "common.new": "NUEVO",
+    "profile.complete": "Completa tu perfil",
+    "common.posts_count": "{{count}} publicaciones", "common.completion_steps": "{{done}} de {{total}} pasos completados",
+    "common.business": "Empresa", "common.username_details": "Detalles del nombre de usuario", "common.purchased_from_marketplace": "Comprado en Marketplace",
+    "common.price_paid": "Precio pagado", "common.purchased_on": "Fecha de compra", "common.sold_by": "Vendido por", "common.done": "Listo",
+    "common.not_available": "N/D", "common.username_details_offline": "Los detalles del nombre de usuario no están disponibles sin conexión",
+    "common.username_details_unavailable": "Los detalles del nombre de usuario no están disponibles ahora",
+  },
+  ar: {
+    "profile.photo": "الصورة", "profile.bio": "نبذة", "profile.country": "البلد", "profile.website": "الموقع الإلكتروني",
+    "profile.premium": "بريميوم", "profile.title": "الملف الشخصي", "profile.followers": "المتابعون", "profile.following": "أتابعهم",
+    "profile.posts": "المنشورات", "profile.edit_profile": "تعديل الملف الشخصي", "profile.my_profile": "ملفي الشخصي",
+    "profile.qr_code": "رمز QR", "profile.digital_id": "الهوية الرقمية", "profile.acoin_balance": "رصيد ACoin",
+    "profile.activity_unlocks": "نشاطك يفتح المكانة والمزايا", "profile.upgrade_to_premium": "الترقية إلى بريميوم",
+    "profile.verified_perks": "شارة موثقة ومزايا حصرية والمزيد", "profile.upgrade": "ترقية",
+    "profile.subscription": "الاشتراك", "profile.premium_active": "بريميوم نشط", "profile.active": "نشط",
+    "profile.my_content": "محتواي", "profile.my_posts": "منشوراتي", "profile.saved_posts": "المنشورات المحفوظة",
+    "profile.watch_history": "سجل المشاهدة", "profile.social_growth": "التواصل والنمو", "profile.prestige_rewards": "المكانة والمكافآت",
+    "profile.achievements": "الإنجازات", "profile.app": "التطبيق", "profile.settings": "الإعدادات", "common.new": "جديد",
+    "profile.complete": "أكمل ملفك الشخصي",
+    "common.posts_count": "{{count}} منشور", "common.completion_steps": "اكتملت {{done}} من {{total}} خطوات",
+    "common.business": "نشاط تجاري", "common.username_details": "تفاصيل اسم المستخدم", "common.purchased_from_marketplace": "تم الشراء من السوق",
+    "common.price_paid": "السعر المدفوع", "common.purchased_on": "تاريخ الشراء", "common.sold_by": "البائع", "common.done": "تم",
+    "common.not_available": "غير متاح", "common.username_details_offline": "تفاصيل اسم المستخدم غير متاحة دون اتصال",
+    "common.username_details_unavailable": "تفاصيل اسم المستخدم غير متاحة الآن",
+  },
+  zh: {
+    "profile.photo": "照片", "profile.bio": "简介", "profile.country": "国家", "profile.website": "网站",
+    "profile.premium": "高级版", "profile.title": "个人资料", "profile.followers": "粉丝", "profile.following": "关注",
+    "profile.posts": "帖子", "profile.edit_profile": "编辑资料", "profile.my_profile": "我的资料",
+    "profile.qr_code": "二维码", "profile.digital_id": "数字身份", "profile.acoin_balance": "ACoin 余额",
+    "profile.activity_unlocks": "你的活动可解锁身份和权益", "profile.upgrade_to_premium": "升级到高级版",
+    "profile.verified_perks": "认证徽章、专属权益等", "profile.upgrade": "升级",
+    "profile.subscription": "订阅", "profile.premium_active": "高级版已启用", "profile.active": "已启用",
+    "profile.my_content": "我的内容", "profile.my_posts": "我的帖子", "profile.saved_posts": "已保存的帖子",
+    "profile.watch_history": "观看记录", "profile.social_growth": "社交与成长", "profile.prestige_rewards": "身份与奖励",
+    "profile.achievements": "成就", "profile.app": "应用", "profile.settings": "设置", "common.new": "新",
+    "profile.complete": "完善你的个人资料",
+    "common.posts_count": "{{count}} 个帖子", "common.completion_steps": "已完成 {{total}} 步中的 {{done}} 步",
+    "common.business": "企业", "common.username_details": "用户名详情", "common.purchased_from_marketplace": "从市场购买",
+    "common.price_paid": "支付价格", "common.purchased_on": "购买日期", "common.sold_by": "卖家", "common.done": "完成",
+    "common.not_available": "不可用", "common.username_details_offline": "离线时无法查看用户名详情",
+    "common.username_details_unavailable": "用户名详情暂时不可用",
+  },
+  am: {
+    "profile.photo": "ፎቶ", "profile.bio": "ስለ እኔ", "profile.country": "አገር", "profile.website": "ድረ-ገጽ",
+    "profile.premium": "ፕሪሚየም", "profile.title": "መገለጫ", "profile.followers": "ተከታዮች", "profile.following": "የምከተላቸው",
+    "profile.posts": "ልጥፎች", "profile.edit_profile": "መገለጫ አርትዕ", "profile.my_profile": "የእኔ መገለጫ",
+    "profile.qr_code": "QR ኮድ", "profile.digital_id": "ዲጂታል መታወቂያ", "profile.acoin_balance": "የACoin ቀሪ ሂሳብ",
+    "profile.activity_unlocks": "እንቅስቃሴዎ ደረጃና ጥቅሞችን ይከፍታል", "profile.upgrade_to_premium": "ወደ ፕሪሚየም አሻሽል",
+    "profile.verified_perks": "የተረጋገጠ ባጅ፣ ልዩ ጥቅሞች እና ተጨማሪ", "profile.upgrade": "አሻሽል",
+    "profile.subscription": "ምዝገባ", "profile.premium_active": "ፕሪሚየም ንቁ ነው", "profile.active": "ንቁ",
+    "profile.my_content": "የእኔ ይዘት", "profile.my_posts": "የእኔ ልጥፎች", "profile.saved_posts": "የተቀመጡ ልጥፎች",
+    "profile.watch_history": "የእይታ ታሪክ", "profile.social_growth": "ማህበራዊ እና እድገት", "profile.prestige_rewards": "ክብር እና ሽልማቶች",
+    "profile.achievements": "ስኬቶች", "profile.app": "መተግበሪያ", "profile.settings": "ቅንብሮች", "common.new": "አዲስ",
+    "profile.complete": "መገለጫዎን ያጠናቅቁ",
+    "common.posts_count": "{{count}} ልጥፎች", "common.completion_steps": "ከ{{total}} ደረጃዎች {{done}} ተጠናቀዋል",
+    "common.business": "ንግድ", "common.username_details": "የተጠቃሚ ስም ዝርዝሮች", "common.purchased_from_marketplace": "ከገበያ የተገዛ",
+    "common.price_paid": "የተከፈለ ዋጋ", "common.purchased_on": "የተገዛበት ቀን", "common.sold_by": "የሸጠው", "common.done": "ተከናውኗል",
+    "common.not_available": "አይገኝም", "common.username_details_offline": "የተጠቃሚ ስም ዝርዝሮች ከመስመር ውጭ አይገኙም",
+    "common.username_details_unavailable": "የተጠቃሚ ስም ዝርዝሮች አሁን አይገኙም",
+  },
+  rw: {
+    "profile.photo": "Ifoto", "profile.bio": "Umwirondoro", "profile.country": "Igihugu", "profile.website": "Urubuga",
+    "profile.premium": "Premium", "profile.title": "Umwirondoro", "profile.followers": "Abagukurikira", "profile.following": "Ukurikira",
+    "profile.posts": "Inyandiko", "profile.edit_profile": "Hindura umwirondoro", "profile.my_profile": "Umwirondoro wanjye",
+    "profile.qr_code": "Kode ya QR", "profile.digital_id": "Indangamuntu ya digitale", "profile.acoin_balance": "Amafaranga ya ACoin",
+    "profile.activity_unlocks": "Ibikorwa byawe bifungura icyubahiro n’inyungu", "profile.upgrade_to_premium": "Jya kuri Premium",
+    "profile.verified_perks": "Ikimenyetso cyemejwe, inyungu zihariye n’ibindi", "profile.upgrade": "Kuzamura",
+    "profile.subscription": "Kwiyandikisha", "profile.premium_active": "Premium irakora", "profile.active": "Bikora",
+    "profile.my_content": "Ibirimo byanjye", "profile.my_posts": "Inyandiko zanjye", "profile.saved_posts": "Inyandiko zabitswe",
+    "profile.watch_history": "Amateka yo kureba", "profile.social_growth": "Imibanire n’iterambere", "profile.prestige_rewards": "Icyubahiro n’ibihembo",
+    "profile.achievements": "Ibyagezweho", "profile.app": "Porogaramu", "profile.settings": "Igenamiterere", "common.new": "BISHYA",
+    "profile.complete": "Uzuza umwirondoro wawe",
+    "common.posts_count": "Inyandiko {{count}}", "common.completion_steps": "Intambwe {{done}} kuri {{total}} zarangiye",
+    "common.business": "Ubucuruzi", "common.username_details": "Ibisobanuro by’izina ry’ukoresha", "common.purchased_from_marketplace": "Byaguzwe ku isoko",
+    "common.price_paid": "Igiciro cyishyuwe", "common.purchased_on": "Itariki yo kugura", "common.sold_by": "Byagurishijwe na", "common.done": "Byarangiye",
+    "common.not_available": "Ntabwo biboneka", "common.username_details_offline": "Ibisobanuro by’izina ry’ukoresha ntibiboneka nta murongo",
+    "common.username_details_unavailable": "Ibisobanuro by’izina ry’ukoresha ntibiboneka ubu",
+  },
+};
+
 const REGISTERED_UI_TEXTS = new Set<string>();
 const UI_TRANSLATION_LISTENERS = new Set<() => void>();
 
@@ -1870,11 +2048,31 @@ export function preloadUiTranslations(_language: string): Promise<void> {
   return Promise.resolve();
 }
 
-export function translateUi(text: string, language: string | null | undefined): string {
-  if (!text || !language) return text;
+export function translateUi(
+  text: string,
+  language: string | null | undefined,
+  params?: Record<string, string | number>,
+): string {
+  if (!text) return text;
   const normalized = languageKey(language) ?? "";
-  const uiLanguage = LANGUAGE_ALIASES[language.trim().toLowerCase()] ?? LANGUAGE_ALIASES[normalized];
-  if (uiLanguage === "en" || normalized === "en") return text;
+  const uiLanguage = LANGUAGE_ALIASES[language?.trim().toLowerCase() ?? ""] ?? LANGUAGE_ALIASES[normalized];
+  const semanticEnglish = SEMANTIC_UI_TABLES.en[text];
+  const interpolate = (value: string): string =>
+    params
+      ? value.replace(/\{\{(\w+)\}\}/g, (_, name: string) => String(params[name] ?? `{{${name}}}`))
+      : value;
+
+  // Semantic keys always resolve to their English source value when the
+  // locale is unset or English, preventing raw key names from leaking during
+  // startup before the language preference has loaded.
+  if (semanticEnglish) {
+    const translatedSemantic = uiLanguage && uiLanguage !== "en"
+      ? SEMANTIC_UI_TABLES[uiLanguage]?.[text] ?? semanticEnglish
+      : semanticEnglish;
+    return interpolate(translatedSemantic);
+  }
+
+  if (!language || uiLanguage === "en" || normalized === "en") return text;
   const languageTable = uiLanguage as UiLanguage;
   const leading = text.match(/^\s*/)?.[0] ?? "";
   const trailing = text.match(/\s*$/)?.[0] ?? "";
@@ -1884,7 +2082,7 @@ export function translateUi(text: string, language: string | null | undefined): 
     ?? OFFLINE_PHRASES[languageTable]?.[trimmed]
     ?? TABLES[languageTable]?.[trimmed]
     ?? CORE_TABLES[languageTable]?.[trimmed];
-  if (translated) return `${leading}${translated}${trailing}`;
+  if (translated) return `${leading}${interpolate(translated)}${trailing}`;
 
   // Translate a literal UI phrase word-by-word as a local fallback. Keep
   // URLs, handles, product names, numbers, and interpolation-like tokens
@@ -1898,7 +2096,7 @@ export function translateUi(text: string, language: string | null | undefined): 
     }
     return replacement;
   });
-  return `${leading}${localized}${trailing}`;
+  return `${leading}${interpolate(localized)}${trailing}`;
 }
 
 export function setCurrentUiLanguage(language: string | null): void {

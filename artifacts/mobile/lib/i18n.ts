@@ -70,8 +70,12 @@ export const LANG_LABELS: Record<string, string> = {
 };
 
 /** Translate a bundled UI key synchronously from the local catalog. */
-export function t(text: string, language: string | null | undefined): string {
-  return translateUi(text, language);
+export function t(
+  text: string,
+  language: string | null | undefined,
+  params?: Record<string, string | number>,
+): string {
+  return translateUi(text, language, params);
 }
 
 /** Update the locale used by non-hook callers, such as transformed JSX. */

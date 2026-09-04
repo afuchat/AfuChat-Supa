@@ -37,7 +37,7 @@ type LanguageContextType = {
   translateUserContent: (text: string) => Promise<string>;
   voiceToText: boolean;
   textToSpeech: boolean;
-  t: (text: string) => string;
+  t: (text: string, params?: Record<string, string | number>) => string;
 };
 
 const LanguageContext = createContext<LanguageContextType>({
@@ -221,7 +221,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   // render that observes a language change, not one render later.
   setLocale(preferredLang);
   const t = useCallback(
-    (text: string) => translateUi(text, preferredLang),
+    (text: string, params?: Record<string, string | number>) => translateUi(text, preferredLang, params),
     [preferredLang, uiTranslationVersion],
   );
 
