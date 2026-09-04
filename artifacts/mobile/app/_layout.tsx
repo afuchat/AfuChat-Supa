@@ -87,8 +87,19 @@ import { getNativeShareChatId } from "@/lib/nativeShareShortcuts";
 
 // Lock out system-level font scaling so the app always renders at its
 // intended sizes regardless of the device's accessibility font-size setting.
-(Text as any).defaultProps = { ...((Text as any).defaultProps ?? {}), allowFontScaling: false };
-(TextInput as any).defaultProps = { ...((TextInput as any).defaultProps ?? {}), allowFontScaling: false };
+(Text as any).defaultProps = {
+  ...((Text as any).defaultProps ?? {}),
+  allowFontScaling: false,
+  // Android reserves extra top/bottom font space by default. That space is
+  // useful for some native text editing scenarios, but it makes icon/text
+  // rows appear to have gaps behind their visible glyphs throughout the app.
+  includeFontPadding: false,
+};
+(TextInput as any).defaultProps = {
+  ...((TextInput as any).defaultProps ?? {}),
+  allowFontScaling: false,
+  includeFontPadding: false,
+};
 
 function ActivityTrackerSync() {
   const { user } = useAuth();

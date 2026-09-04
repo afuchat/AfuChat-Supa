@@ -272,7 +272,7 @@ export function DonateSheet({ visible, onClose }: DonateSheetProps) {
                   Help keep the app free for everyone
                 </Text>
               </View>
-              <TouchableOpacity onPress={handleClose} hitSlop={12}>
+              <TouchableOpacity onPress={handleClose} hitSlop={12} style={s.closeBtn}>
                 <Ionicons name="close-circle" size={26} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
@@ -330,7 +330,9 @@ export function DonateSheet({ visible, onClose }: DonateSheetProps) {
 
               {/* Info blurb */}
               <View style={[s.infoBox, { backgroundColor: colors.backgroundSecondary }]}>
-                <Ionicons name="shield-checkmark" size={14} color="#34C759" />
+                <View style={s.infoIcon}>
+                  <Ionicons name="shield-checkmark" size={14} color="#34C759" />
+                </View>
                 <Text style={[s.infoText, { color: colors.textMuted }]}>
                   Secure checkout via Pesapal · Card, mobile money & bank supported
                 </Text>
@@ -359,12 +361,14 @@ export function DonateSheet({ visible, onClose }: DonateSheetProps) {
                 {loading ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
-                  <>
-                    <Ionicons name="heart" size={17} color="#fff" />
+                  <View style={s.donateContent}>
+                    <View style={s.donateIcon}>
+                      <Ionicons name="heart" size={17} color="#fff" />
+                    </View>
                     <Text style={s.donateBtnText}>
             Donate ${usdAmount >= 1 ? usdAmount.toFixed(usdAmount % 1 === 0 ? 0 : 2) : "N/A"}
                     </Text>
-                  </>
+                  </View>
                 )}
               </TouchableOpacity>
             </ScrollView>
@@ -403,7 +407,7 @@ const s = StyleSheet.create({
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
   },
   titleCopy: {
     flex: 1,
@@ -415,6 +419,13 @@ const s = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+  },
+  closeBtn: {
+    width: 26,
+    height: 26,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
   },
   sheetTitle: {
     fontSize: 17,
@@ -494,11 +505,19 @@ const s = StyleSheet.create({
     paddingVertical: 10,
     marginBottom: 4,
   },
+  infoIcon: {
+    width: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
   infoText: {
     flex: 1,
+    minWidth: 0,
     fontSize: 11,
     fontFamily: "Inter_400Regular",
     lineHeight: 16,
+    includeFontPadding: false,
   },
   errorBox: {
     flexDirection: "row",
@@ -527,6 +546,19 @@ const s = StyleSheet.create({
     lineHeight: 20,
     textAlign: "center",
     fontFamily: "Inter_700Bold",
+    includeFontPadding: false,
+  },
+  donateContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  donateIcon: {
+    width: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
   },
 
   // WebView header
