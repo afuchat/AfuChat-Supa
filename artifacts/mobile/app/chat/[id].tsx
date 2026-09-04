@@ -8934,17 +8934,19 @@ STRICT RULES:
                 <DdRow colors={colors} icon="bulb-outline" label="Summarize Chat"
                   onPress={() => { setShowChatOptions(false); handleChatSummaryFull(); }} />
               )}
-              {/* Per-chat appearance */}
-              <DdRow
-                colors={colors}
-                icon="color-palette"
-                label="Chat Appearance"
-                sub="Wallpaper & bubble colour"
-                onPress={() => {
-                  setShowChatOptions(false);
-                  router.push({ pathname: "/chat-info/appearance/[id]", params: { id: id as string, displayName: headerTitle } } as any);
-                }}
-              />
+              {/* Per-chat appearance — channel owners only */}
+              {(!chatInfo?.is_channel || isChannelOwner) && (
+                <DdRow
+                  colors={colors}
+                  icon="color-palette"
+                  label="Chat Appearance"
+                  sub="Wallpaper & bubble colour"
+                  onPress={() => {
+                    setShowChatOptions(false);
+                    router.push({ pathname: "/chat-info/appearance/[id]", params: { id: id as string, displayName: headerTitle } } as any);
+                  }}
+                />
+              )}
               <DdDivider colors={colors} />
               {/* Single entry → dedicated per-chat settings page */}
               <DdRow colors={colors} icon="information-circle" label="Chat Info & Settings"

@@ -483,13 +483,19 @@ export default function ChatInfoScreen() {
   // ── Action buttons ───────────────────────────────────────────────────────────
 
   const actionBtns = React.useMemo(() => {
-    if (isChannel) return [
-      { icon: "radio",            label: "Live Stream", action: () => {} },
-      { icon: isMuted ? "notifications" : "notifications-off", label: isMuted ? "Unmute" : "Mute",
-        action: () => { if (isMuted) handleUnmute(); else setShowMutePicker(v => !v); } },
-      { icon: "chatbubbles",      label: "Discuss",    action: () => router.back() },
-      { icon: "add-circle",       label: "Add Story",  action: () => router.push("/stories/camera" as any) },
-    ];
+    if (isChannel) {
+      const channelActions = [
+        { icon: "radio",            label: "Live Stream", action: () => {} },
+        { icon: isMuted ? "notifications" : "notifications-off", label: isMuted ? "Unmute" : "Mute",
+          action: () => { if (isMuted) handleUnmute(); else setShowMutePicker(v => !v); } },
+        { icon: "chatbubbles",      label: "Discuss",    action: () => router.back() },
+        { icon: "add-circle",       label: "Add Story",  action: () => router.push("/stories/camera" as any) },
+      ];
+      if (!isChannelOwner) {
+        channelActions.push({ icon: "exit", label: "Leave", action: handleLeaveGroup });
+      }
+      return channelActions;
+    }
     if (isGroup) return [
       { icon: "chatbubble",       label: "Message",  action: openChat },
       { icon: isMuted ? "notifications" : "notifications-off", label: isMuted ? "Unmute" : "Mute",
@@ -504,7 +510,7 @@ export default function ChatInfoScreen() {
       { icon: "call",             label: "Call",     action: showCallsComingSoon },
       { icon: "videocam",         label: "Video",    action: showCallsComingSoon },
     ];
-  }, [isChannel, isGroup, isMuted, showCallsComingSoon, handleLeaveGroup]);
+  }, [isChannel, isChannelOwner, isGroup, isMuted, showCallsComingSoon, handleLeaveGroup]);
 
   // ── List data (members or posts for FlatList) ────────────────────────────────
 
@@ -648,20 +654,25 @@ export default function ChatInfoScreen() {
             </InfoCard>
           ) : null}
 
-          {/* Chat settings row */}
-          {(!isChannel || channelCanViewMembers) && <InfoCard colors={colors}>
-            <TouchableOpacity
-              style={s.settingsRow}
-              onPress={() => router.push({ pathname: "/chat-info/appearance/[id]", params: { id, displayName } } as any)}
-              activeOpacity={0.65}
-            >
-              <Ionicons name="color-palette-outline" size={20} color={BRAND} />
-              <Text style={[s.settingsLabel, { color: colors.text }]}>Chat Appearance</Text>
-              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-            </TouchableOpacity>
-          </InfoCard>}
         </View>
       )}
+
+       {/* ── Per-chat appearance ── */}
+       {(!isChannel || isChannelOwner) && (
+         <View style={s.cardsSection}>
+           <InfoCard colors={colors}>
+             <TouchableOpacity
+               style={s.settingsRow}
+               onPress={() => router.push({ pathname: "/chat-info/appearance/[id]", params: { id, displayName } } as any)}
+               activeOpacity={0.65}
+             >
+               <Ionicons name="color-palette-outline" size={20} color={BRAND} />
+               <Text style={[s.settingsLabel, { color: colors.text }]}>Chat Appearance</Text>
+               <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+             </TouchableOpacity>
+           </InfoCard>
+         </View>
+       )}
 
       {/* ── Group info cards ── */}
       {isGroup && (

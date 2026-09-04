@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Platform,
   ScrollView,
   StyleSheet,
@@ -7,10 +8,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { Redirect, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { GlassHeader } from "@/components/ui/GlassHeader";
 import {
@@ -161,11 +164,47 @@ const lp = StyleSheet.create({
 export default function ChatAppearanceScreen() {
   const { id, displayName } = useLocalSearchParams<{ id: string; displayName?: string }>();
   const { colors, accent, isDark } = useTheme();
+  const { user } = useAuth();
   const insets = useSafeAreaInsets();
 
+  const [routeAllowed, setRouteAllowed] = useState<boolean | null>(null);
   const [appearance, setAppearance] = useState<ChatAppearance>({});
   const [saving, setSaving] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!id || !user) return;
+
+    setRouteAllowed(null);
+    (async () => {
+      const { data: chat, error: chatError } = await supabase
+        .from("chats")
+        .select("is_channel")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (cancelled) return;
+      if (chatError || !chat) {
+        setRouteAllowed(false);
+        return;
+      }
+      if (!chat.is_channel) {
+        setRouteAllowed(true);
+        return;
+      }
+
+      const { data: access, error: accessError } = await supabase
+        .rpc("get_channel_access_context", { p_channel_id: id });
+      if (!cancelled) {
+        setRouteAllowed(!accessError && access?.[0]?.is_owner === true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, user?.id]);
 
   useEffect(() => {
     if (!id) return;
@@ -213,6 +252,16 @@ export default function ChatAppearanceScreen() {
 
   const hasCustom = Object.keys(appearance).length > 0;
   const effectiveFontSize = appearance.fontSize ?? 15;
+
+  if (!user) return <Redirect href="/welcome" />;
+  if (routeAllowed === false) return <Redirect href="/(tabs)/chats" />;
+  if (routeAllowed === null) {
+    return (
+      <View style={[s.root, { backgroundColor: colors.backgroundSecondary, alignItems: "center", justifyContent: "center" }]}>
+        <ActivityIndicator color={accent} />
+      </View>
+    );
+  }
 
   return (
     <View style={[s.root, { backgroundColor: colors.backgroundSecondary }]}>
