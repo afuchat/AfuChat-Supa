@@ -7475,10 +7475,10 @@ STRICT RULES:
           </View>
         ) : chatInfo?.is_channel && !canPostToChannel ? (
           !channelMembershipKnown ? (
-            <View style={[st.channelReadOnlyBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-              <ActivityIndicator size="small" color={colors.textMuted} />
-              <Text style={[st.channelReadOnlyText, { color: colors.textMuted }]}>Checking channel access…</Text>
-            </View>
+            // Keep membership resolution invisible. The chat remains usable
+            // while access is checked, then the correct bottom action appears
+            // once the result is known.
+            null
           ) : !isChannelMember ? (
             <View style={[st.channelJoinBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
               <View style={{ flex: 1 }}>
