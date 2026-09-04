@@ -13,7 +13,6 @@ import {
   useWindowDimensions,
 } from "react-native";
 import Image from "@/components/ui/OptimizedImage";
-import LocalizedText from "@/components/ui/LocalizedText";
 import AfuLogo from "@/components/ui/AfuLogo";
 
 const IL_MESSAGING  = require("@/assets/illustrations/messaging.webp");
@@ -26,6 +25,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "@/components/ui/SafeGradient";
 import { useAuth } from "@/context/AuthContext";
 import { LANGUAGE_PREFERENCE_KEY } from "@/context/LanguageContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { storage, KEYS } from "@/lib/storage/mmkv";
 import * as Haptics from "@/lib/haptics";
 import Colors from "@/constants/colors";
@@ -37,10 +37,9 @@ const SLIDES = [
   {
     accent: Colors.brand,
     accentAlt: "#7B5EA7",
-    title: "Connect with\npurpose",
-    subtitle:
-      "Build real connections, share what matters and make every interaction count.",
-    action: "See how it works",
+    title: "welcome.slide_connect_title",
+    subtitle: "welcome.slide_connect_subtitle",
+    action: "welcome.slide_connect_action",
     illustration: "messaging",
     orb1: { x: 0.15, y: 0.12, size: 280, color: Colors.brand, opacity: 0.18 },
     orb2: { x: 0.85, y: 0.35, size: 220, color: "#7B5EA7", opacity: 0.14 },
@@ -49,10 +48,9 @@ const SLIDES = [
   {
     accent: "#AF52DE",
     accentAlt: "#FF6B9D",
-    title: "Find your\npeople",
-    subtitle:
-      "Follow your interests, join communities and discover conversations worth returning to.",
-    action: "Explore communities",
+    title: "welcome.slide_people_title",
+    subtitle: "welcome.slide_people_subtitle",
+    action: "welcome.slide_people_action",
     illustration: "community",
     orb1: { x: 0.8, y: 0.08, size: 260, color: "#AF52DE", opacity: 0.18 },
     orb2: { x: 0.1, y: 0.42, size: 200, color: "#FF6B9D", opacity: 0.12 },
@@ -61,10 +59,9 @@ const SLIDES = [
   {
     accent: "#FF9500",
     accentAlt: "#FF6B35",
-    title: "Create. Share.\nBe seen.",
-    subtitle:
-      "Post ideas, stories and moments that bring people together. AfuAI helps when you need it.",
-    action: "Create your profile",
+    title: "welcome.slide_create_title",
+    subtitle: "welcome.slide_create_subtitle",
+    action: "welcome.slide_create_action",
     illustration: "ai",
     orb1: { x: 0.5, y: 0.05, size: 300, color: "#FF6B35", opacity: 0.16 },
     orb2: { x: 0.15, y: 0.45, size: 200, color: "#FF9500", opacity: 0.12 },
@@ -73,10 +70,9 @@ const SLIDES = [
   {
     accent: "#34C759",
     accentAlt: "#00D4AA",
-    title: "Your activity\nhas value",
-    subtitle:
-      "Earn ACoin through participation, then use it for status, perks and a presence that feels like yours.",
-    action: "Get started free",
+    title: "welcome.slide_value_title",
+    subtitle: "welcome.slide_value_subtitle",
+    action: "welcome.slide_value_action",
     illustration: "wallet",
     orb1: { x: 0.2, y: 0.10, size: 240, color: "#00D4AA", opacity: 0.16 },
     orb2: { x: 0.82, y: 0.38, size: 220, color: "#34C759", opacity: 0.14 },
@@ -125,6 +121,7 @@ function OnboardingPage({
   onSelect,
 }: OnboardingPageProps) {
   const isLast = pageIndex === totalPages - 1;
+  const { t } = useLanguage();
 
   return (
     <View style={[s.page, { width, height, backgroundColor: BG }]}>
@@ -146,7 +143,7 @@ function OnboardingPage({
         </View>
         <TouchableOpacity onPress={onSkip} hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}>
           <View style={s.skipPill}>
-            <Text style={s.skipText}>Skip</Text>
+            <Text style={s.skipText}>{t("welcome.skip")}</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -159,8 +156,8 @@ function OnboardingPage({
         />
 
         <View>
-          <LocalizedText style={s.title} __afuchatStaticText __afuchatTranslateAllText>{slide.title}</LocalizedText>
-          <LocalizedText style={s.subtitle} __afuchatStaticText __afuchatTranslateAllText>{slide.subtitle}</LocalizedText>
+          <Text style={s.title}>{t(slide.title)}</Text>
+          <Text style={s.subtitle}>{t(slide.subtitle)}</Text>
         </View>
 
         <View style={s.progressRow}>
@@ -190,7 +187,7 @@ function OnboardingPage({
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={s.cta}
           >
-            <LocalizedText style={s.ctaText} __afuchatStaticText __afuchatTranslateAllText>{slide.action}</LocalizedText>
+            <Text style={s.ctaText}>{t(slide.action)}</Text>
             <View style={s.ctaArrowCircle}>
               <Ionicons name={isLast ? "checkmark" : "arrow-forward"} size={22} color="#111827" />
             </View>
@@ -198,9 +195,9 @@ function OnboardingPage({
         </TouchableOpacity>
 
         <View style={s.hintRow}>
-          <Text style={s.hintText}>Already have an account? </Text>
+          <Text style={s.hintText}>{t("welcome.already_have_account")} </Text>
         <TouchableOpacity onPress={onSkip} hitSlop={8}>
-            <Text style={[s.hintLink, { color: slide.accent }]}>Sign in</Text>
+            <Text style={[s.hintLink, { color: slide.accent }]}>{t("welcome.sign_in")}</Text>
           </TouchableOpacity>
         </View>
       </View>

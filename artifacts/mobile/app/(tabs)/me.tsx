@@ -20,6 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "@/lib/haptics";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { formatCompactNumber, formatDate } from "@/lib/i18n";
 import { useTheme } from "@/hooks/useTheme";
 import { Avatar } from "@/components/ui/Avatar";
 import { AvatarViewer } from "@/components/ui/AvatarViewer";
@@ -32,12 +33,6 @@ import { getLocalProfile } from "@/lib/storage/localProfile";
 import { showToast } from "@/lib/toast";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function fmtCount(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return String(n);
-}
 
 // ─── MenuItem ─────────────────────────────────────────────────────────────────
 
@@ -195,7 +190,7 @@ const pc = StyleSheet.create({
 
 export default function MeScreen() {
   const { colors, accent, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { t, preferredLang } = useLanguage();
   const { profile: authProfile, isPremium, subscription, loading, user, equippedGoods } = useAuth();
   const planLabel = useMemo(() => {
     const tier = subscription?.plan_tier?.toLowerCase();
@@ -278,7 +273,7 @@ export default function MeScreen() {
 
   function fmtDate(iso: string) {
     if (!iso) return t("common.not_available");
-    return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    return formatDate(iso, preferredLang, { year: "numeric", month: "short", day: "numeric" });
   }
 
   // ── Load stats ──────────────────────────────────────────────────────────────
@@ -483,7 +478,7 @@ export default function MeScreen() {
               <Text style={s.acoinEmoji}>🪙</Text>
             </View>
             <View style={{ flex: 1 }}>
-               <Text style={[s.acoinBalance, { color: Colors.gold }]}>{fmtCount(acoin)} {t("profile.acoin_balance")}</Text>
+                <Text style={[s.acoinBalance, { color: Colors.gold }]}>{formatCompactNumber(acoin, preferredLang)} {t("profile.acoin_balance")}</Text>
                <Text style={[s.acoinSub, { color: colors.textMuted }]}>{t("profile.activity_unlocks")}</Text>
             </View>
             <Ionicons name="chevron-forward" size={15} color={Colors.gold + "80"} />
@@ -509,7 +504,7 @@ export default function MeScreen() {
             <React.Fragment key={stat.label}>
               {i > 0 && <View style={[s.statDivider, { backgroundColor: colors.border }]} />}
               <TouchableOpacity style={s.statCell} onPress={stat.onPress} activeOpacity={0.7}>
-                <Text style={[s.statValue, { color: colors.text }]}>{fmtCount(stat.count)}</Text>
+                <Text style={[s.statValue, { color: colors.text }]}>{formatCompactNumber(stat.count, preferredLang)}</Text>
                <Text style={[s.statLabel, { color: colors.textMuted }]}>{t(stat.label)}</Text>
               </TouchableOpacity>
             </React.Fragment>
@@ -578,7 +573,7 @@ export default function MeScreen() {
               icon="grid"
               iconColor={accent}
                label="profile.my_posts"
-                value={t("common.posts_count", { count: fmtCount(postCount) })}
+                value={t("common.posts_count", { count: formatCompactNumber(postCount, preferredLang) })}
               onPress={() => router.push("/my-posts")}
               showSeparator
               colors={colors}

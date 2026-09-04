@@ -55,6 +55,14 @@ export function formatNumber(value: number, language?: string | null): string {
   return new Intl.NumberFormat(formatLocale(language)).format(value);
 }
 
+/** Format large counts compactly while respecting the active UI locale. */
+export function formatCompactNumber(value: number, language?: string | null): string {
+  return new Intl.NumberFormat(formatLocale(language), {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
 /** Format a date/time using the active UI locale. */
 export function formatDate(
   value: Date | number | string,

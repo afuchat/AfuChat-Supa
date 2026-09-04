@@ -250,7 +250,7 @@ export function CompactTabBar({
                   {tab.route === "/(tabs)/me" ? (
                     <Avatar
                       uri={avatarUrl}
-                      name={displayName || "Me"}
+                       name={displayName || t("navigation.me")}
                       size={24}
                       userId={userId}
                     />
