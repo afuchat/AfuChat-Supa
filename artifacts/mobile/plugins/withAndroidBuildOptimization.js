@@ -14,11 +14,10 @@ const {
 const fs = require("fs");
 const path = require("path");
 
-const AGP_VERSION = "9.0.0";
-// AGP 9.0.0 requires Gradle 9.1.0 or newer.
-// "9.1" is not a published distribution name; Gradle 9.1 is published as 9.1.0.
-const GRADLE_VERSION = "9.1.0";
-const AGP_MARKER = "// AfuChat Android Gradle Plugin 9 optimization";
+const AGP_VERSION = "8.10.1";
+// AGP 8.10.1 requires Gradle 8.13 or newer.
+const GRADLE_VERSION = "8.13";
+const AGP_MARKER = "// AfuChat Android Gradle Plugin 8.10 optimization";
 
 function updateAgpDeclaration(contents) {
   if (contents.includes(AGP_MARKER)) return contents;
@@ -109,18 +108,15 @@ function withReleaseOptimizations(config) {
 
     ensureProperty("android.enableMinifyInReleaseBuilds", "true");
     ensureProperty("android.enableShrinkResourcesInReleaseBuilds", "true");
-    // AGP 9 enables built-in Kotlin by default, but Expo and its native
-    // modules still apply the external Kotlin Gradle plugin.
-    ensureProperty("android.builtInKotlin", "false");
     return config;
   });
 }
 
 /**
- * AGP 9 rejects the legacy proguard-android.txt template because it contains
- * -dontoptimize. Expo's release template still emits that filename when R8
- * minification is enabled, so normalize it after expo-build-properties has
- * generated the app build file. This runs on every CNG/EAS prebuild.
+ * Use the optimized ProGuard template whenever R8 minification is enabled.
+ * Expo's release template can emit the legacy filename, so normalize it after
+ * expo-build-properties has generated the app build file. This runs on every
+ * CNG/EAS prebuild.
  */
 function withOptimizedProguardTemplate(config) {
   return withAppBuildGradle(config, (config) => {

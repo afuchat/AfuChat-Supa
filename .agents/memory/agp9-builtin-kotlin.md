@@ -5,8 +5,8 @@ description: The AGP 9 Android toolchain conflicts with the legacy external Kotl
 
 ## Rule
 
-When overriding an Expo Android project to AGP 9, set `android.builtInKotlin=false` in generated `gradle.properties` and keep Expo's external Kotlin plugin application/classpath intact. Keep Expo's `kotlinVersion` setting for SDK/KSP compatibility.
+For Expo SDK 55 projects that still apply the external Kotlin Gradle plugin, use AGP 8.10.x with Gradle 8.13 when compile SDK 36 is required. Keep the external Kotlin plugin and the configured Kotlin 2.x version; do not enable the AGP 9 built-in-Kotlin migration path.
 
-**Why:** AGP 9 includes Kotlin support, but Expo and its native modules apply the external Kotlin plugin in multiple modules. Removing it only from the app module lets the Expo library plugin fail later with the same duplicate `kotlin` extension error.
+**Why:** AGP 9 first causes duplicate Kotlin-extension errors when built-in Kotlin and Expo's external plugin overlap, then fails with an `ApplicationExtension`/`BaseExtension` cast when the overlap is disabled. The external plugin is not compatible with AGP 9's changed Android extension model.
 
-**How to apply:** Add the opt-out in the CNG/EAS config plugin, not only in the ignored `android/` output. Verify generated `gradle.properties` contains `android.builtInKotlin=false`, the external Kotlin plugin remains available, and ProGuard uses the optimized template.
+**How to apply:** Enforce the compatible AGP and Gradle versions through the CNG/EAS config plugin. Keep the optimized ProGuard template and verify generated Gradle files before spending an EAS build.
