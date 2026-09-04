@@ -18,6 +18,7 @@ import { DonateSheet } from "@/components/DonateSheet";
 import Colors from "@/constants/colors";
 import Constants from "expo-constants";
 import { openAppReview } from "@/lib/appReview";
+import { useLanguage } from "@/context/LanguageContext";
 
 const VERSION = Constants.expoConfig?.version ?? "2.2.5";
 const BUILD   = (Constants.expoConfig?.android as any)?.versionCode
@@ -32,63 +33,63 @@ const ACCENT = Colors.brand;
 const FEATURES = [
   {
     icon: "chatbubbles",
-    label: "Messaging",
-    desc: "DMs, group chats, voice messages, media sharing, chat folders & reactions",
+    label: "about.feature_messaging",
+    desc: "about.feature_messaging_desc",
   },
   {
     icon: "call",
-    label: "Voice Calls",
-    desc: "P2P audio calls via WebRTC. Crystal-clear Opus audio with zero relay cost",
+    label: "about.feature_voice_calls",
+    desc: "about.feature_voice_calls_desc",
   },
   {
     icon: "play-circle",
-    label: "Video Feed",
-    desc: "Algorithmic For You & Following feeds, Shorts, watch history & bookmarks",
+    label: "about.feature_video_feed",
+    desc: "about.feature_video_feed_desc",
   },
   {
     icon: "information-circle-outline",
-    label: "AfuAI",
-    desc: "AI chat assistant, smart reply suggestions & auto-responder for your inbox",
+    label: "about.feature_afuai",
+    desc: "about.feature_afuai_desc",
   },
   {
     icon: "wallet",
-    label: "ACoins Wallet",
-    desc: "Digital currency, peer transfers, Red Envelopes, tipping & in-app gifts",
+    label: "about.feature_acoin_wallet",
+    desc: "about.feature_acoin_wallet_desc",
   },
   {
     icon: "storefront",
-    label: "Marketplace",
-    desc: "Buy & sell goods, services, freelance work and premium @usernames",
+    label: "about.feature_marketplace",
+    desc: "about.feature_marketplace_desc",
   },
   {
     icon: "trophy",
-    label: "Prestige",
-    desc: "Status goods, avatar rings, achievements, XP levels & Platinum membership",
+    label: "about.feature_prestige",
+    desc: "about.feature_prestige_desc",
   },
   {
     icon: "grid",
-    label: "Super App",
-    desc: "Mini apps platform, OAuth provider & developer API for third-party apps",
+    label: "about.feature_super_app",
+    desc: "about.feature_super_app_desc",
   },
 ] as const;
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
 
 const STATS = [
-  { value: "2M+",  label: "Users"       },
-  { value: "190+", label: "Countries"   },
-  { value: "50M+", label: "Messages/day" },
+  { value: "2M+",  label: "about.stats_users"       },
+  { value: "190+", label: "about.stats_countries"   },
+  { value: "50M+", label: "about.stats_messages_day" },
 ] as const;
 
 // ─── Links ────────────────────────────────────────────────────────────────────
 
 const LINKS = [
-  { icon: "document-text",   label: "Terms of Service",  onPress: () => Linking.openURL("https://afuchat.com/terms").catch(() => {}) },
-  { icon: "shield-checkmark",label: "Privacy Policy",    onPress: () => Linking.openURL("https://afuchat.com/privacy").catch(() => {}) },
-  { icon: "help-buoy",       label: "Help & Support",    onPress: () => router.push("/support" as any) },
-  { icon: "star",            label: "Rate AfuChat on Google Play", onPress: () => openAppReview().catch(() => {}) },
-  { icon: "globe",           label: "Visit afuchat.com", onPress: () => Linking.openURL("https://afuchat.com").catch(() => {}) },
-  { icon: "mail",            label: "Contact Us",        onPress: () => Linking.openURL("mailto:hello@afuchat.com").catch(() => {}) },
+  { icon: "document-text",   label: "about.terms",  onPress: () => Linking.openURL("https://afuchat.com/terms").catch(() => {}) },
+  { icon: "shield-checkmark",label: "about.privacy",    onPress: () => Linking.openURL("https://afuchat.com/privacy").catch(() => {}) },
+  { icon: "help-buoy",       label: "about.help_support",    onPress: () => router.push("/support" as any) },
+  { icon: "star",            label: "about.rate_on_google_play", onPress: () => openAppReview().catch(() => {}) },
+  { icon: "globe",           label: "about.visit_website", onPress: () => Linking.openURL("https://afuchat.com").catch(() => {}) },
+  { icon: "mail",            label: "about.contact_us",        onPress: () => Linking.openURL("mailto:hello@afuchat.com").catch(() => {}) },
 ] as const;
 
 const GITHUB_URL = "https://github.com/afuchat1/AfuChat-Supa";
@@ -97,13 +98,14 @@ const GITHUB_URL = "https://github.com/afuchat1/AfuChat-Supa";
 
 export default function AboutScreen() {
   const { colors, isDark } = useTheme();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const [donateOpen, setDonateOpen] = useState(false);
 
   return (
     <View style={[s.root, { backgroundColor: colors.backgroundSecondary }]}>
       <GlassHeader
-        title="About"
+        title={t("about.title")}
         onBack={() => (router.canGoBack() ? router.back() : router.replace("/settings" as any))}
       />
 
@@ -136,11 +138,11 @@ export default function AboutScreen() {
           </View>
 
           <Text style={[s.tagline, { color: colors.textMuted }]}>
-            Connect · Discover · Create
+            {t("about.tagline")}
           </Text>
 
           <Text style={[s.missionText, { color: colors.textSecondary }]}>
-            AfuChat is a super-app built for Africa and the world — real-time messaging, P2P voice calls, an AI assistant, a digital wallet, short-form video, and a developer platform, all in a single app.
+            {t("about.mission")}
           </Text>
         </View>
 
@@ -149,37 +151,37 @@ export default function AboutScreen() {
           {STATS.map(({ value, label }) => (
             <View key={label} style={[s.statBox, { backgroundColor: colors.card }]}>
               <Text style={[s.statValue, { color: ACCENT }]}>{value}</Text>
-              <Text style={[s.statLabel, { color: colors.textMuted }]}>{label}</Text>
+              <Text style={[s.statLabel, { color: colors.textMuted }]}>{t(label)}</Text>
             </View>
           ))}
         </View>
 
         {/* ── Features ──────────────────────────────────────────────────── */}
-        <Text style={[s.sectionTitle, { color: colors.textMuted }]}>FEATURES</Text>
+        <Text style={[s.sectionTitle, { color: colors.textMuted }]}>{t("about.features_section")}</Text>
         <View style={s.featuresGrid}>
           {FEATURES.map(({ icon, label, desc }) => (
             <View key={label} style={[s.featureCard, { backgroundColor: colors.card }]}>
               <View style={[s.featureIconBox, { backgroundColor: ACCENT + "15" }]}>
                 <Ionicons name={icon as any} size={22} color={ACCENT} />
               </View>
-              <Text style={[s.featureLabel, { color: colors.text }]}>{label}</Text>
-              <Text style={[s.featureDesc,  { color: colors.textMuted }]}>{desc}</Text>
+              <Text style={[s.featureLabel, { color: colors.text }]}>{t(label)}</Text>
+              <Text style={[s.featureDesc,  { color: colors.textMuted }]}>{t(desc)}</Text>
             </View>
           ))}
         </View>
 
         {/* ── Company ───────────────────────────────────────────────────── */}
-        <Text style={[s.sectionTitle, { color: colors.textMuted }]}>COMPANY</Text>
+        <Text style={[s.sectionTitle, { color: colors.textMuted }]}>{t("about.company_section")}</Text>
         <View style={[s.companyCard, { backgroundColor: colors.card }]}>
           {[
-            { label: "Legal name",   value: "AfuChat Technologies Limited" },
-            { label: "Founded",      value: "2023" },
-            { label: "Headquarters", value: "Entebbe, Uganda" },
-            { label: "Website",      value: "afuchat.com" },
+            { label: "about.legal_name",   value: "AfuChat Technologies Limited" },
+            { label: "about.founded",      value: "2023" },
+            { label: "about.headquarters", value: "Entebbe, Uganda" },
+            { label: "about.website",      value: "afuchat.com" },
           ].map(({ label, value }, i, arr) => (
             <React.Fragment key={label}>
               <View style={s.companyRow}>
-                <Text style={[s.companyLabel, { color: colors.textMuted }]}>{label}</Text>
+                <Text style={[s.companyLabel, { color: colors.textMuted }]}>{t(label)}</Text>
                 <Text style={[s.companyValue, { color: colors.text }]}>{value}</Text>
               </View>
               {i < arr.length - 1 && (
@@ -190,7 +192,7 @@ export default function AboutScreen() {
         </View>
 
         {/* ── Support & GitHub ──────────────────────────────────────────── */}
-        <Text style={[s.sectionTitle, { color: colors.textMuted }]}>SUPPORT THE PROJECT</Text>
+        <Text style={[s.sectionTitle, { color: colors.textMuted }]}>{t("about.support_project_section")}</Text>
 
         {/* Donate CTA */}
         <TouchableOpacity
@@ -207,13 +209,13 @@ export default function AboutScreen() {
             <Ionicons name="heart" size={22} color="#FF3B30" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[s.donateTitle, { color: colors.text }]}>Donate</Text>
+            <Text style={[s.donateTitle, { color: colors.text }]}>{t("about.donate")}</Text>
             <Text style={[s.donateSub, { color: colors.textMuted }]}>
-              Help keep AfuChat free · Powered by Pesapal
+              {t("about.donate_description")}
             </Text>
           </View>
           <View style={s.donateBadge}>
-            <Text style={s.donateBadgeText}>Give</Text>
+            <Text style={s.donateBadgeText}>{t("about.give")}</Text>
           </View>
         </TouchableOpacity>
 
@@ -230,14 +232,14 @@ export default function AboutScreen() {
           <View style={{ flex: 1 }}>
             <Text style={[s.githubTitle, { color: colors.text }]}>GitHub</Text>
             <Text style={[s.githubSub, { color: colors.textMuted }]}>
-              github.com/afuchat · Star us
+              {t("about.github_description")}
             </Text>
           </View>
           <Ionicons name="open-outline" size={16} color={colors.textMuted} />
         </TouchableOpacity>
 
         {/* ── Links ─────────────────────────────────────────────────────── */}
-        <Text style={[s.sectionTitle, { color: colors.textMuted }]}>LEGAL & SUPPORT</Text>
+        <Text style={[s.sectionTitle, { color: colors.textMuted }]}>{t("about.legal_support_section")}</Text>
         <View style={[s.linksCard, { backgroundColor: colors.card }]}>
           {LINKS.map(({ icon, label, onPress }, i) => (
             <React.Fragment key={label}>
@@ -264,7 +266,7 @@ export default function AboutScreen() {
             © {new Date().getFullYear()} AfuChat Technologies Limited
           </Text>
           <Text style={[s.copyright, { color: colors.textMuted }]}>
-            All rights reserved. Made with ♥ in Uganda.
+             {t("about.footer")}
           </Text>
         </View>
 
