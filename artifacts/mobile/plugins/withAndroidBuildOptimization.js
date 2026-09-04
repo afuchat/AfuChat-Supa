@@ -54,18 +54,7 @@ function updateAgpDeclaration(contents) {
 
 function withAgp(config) {
   config = withProjectBuildGradle(config, (config) => {
-    let contents = updateAgpDeclaration(config.modResults.contents);
-
-    // AGP 9 has built-in Kotlin support. Keeping the legacy external Kotlin
-    // Gradle plugin on the buildscript classpath makes the app's generated
-    // `apply plugin: "org.jetbrains.kotlin.android"` register the `kotlin`
-    // extension a second time.
-    contents = contents.replace(
-      /^\s*classpath\s*\(?['"]org\.jetbrains\.kotlin:kotlin-gradle-plugin[^'"]*['"]\)?\s*\n?/gm,
-      "",
-    );
-
-    config.modResults.contents = contents;
+    config.modResults.contents = updateAgpDeclaration(config.modResults.contents);
     return config;
   });
   return withSettingsGradle(config, (config) => {
@@ -120,6 +109,9 @@ function withReleaseOptimizations(config) {
 
     ensureProperty("android.enableMinifyInReleaseBuilds", "true");
     ensureProperty("android.enableShrinkResourcesInReleaseBuilds", "true");
+    // AGP 9 enables built-in Kotlin by default, but Expo and its native
+    // modules still apply the external Kotlin Gradle plugin.
+    ensureProperty("android.builtInKotlin", "false");
     return config;
   });
 }
@@ -133,18 +125,14 @@ function withReleaseOptimizations(config) {
 function withOptimizedProguardTemplate(config) {
   return withAppBuildGradle(config, (config) => {
     const contents = config.modResults.contents;
-    let updated = contents.replace(
-      /^\s*apply plugin:\s*['"]org\.jetbrains\.kotlin\.android['"]\s*\n?/gm,
-      "",
-    );
-    updated = updated.replace(
+    const updated = contents.replace(
       /getDefaultProguardFile\(\s*(['"])proguard-android\.txt\1\s*\)/g,
       "getDefaultProguardFile('proguard-android-optimize.txt')",
     );
 
     if (updated !== contents) {
       console.log(
-        "[withAndroidBuildOptimization] Applied AGP 9 Kotlin compatibility and optimized ProGuard template",
+        "[withAndroidBuildOptimization] Replaced legacy proguard-android.txt with proguard-android-optimize.txt",
       );
       config.modResults.contents = updated;
     }
