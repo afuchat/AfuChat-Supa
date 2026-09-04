@@ -1764,6 +1764,68 @@ const APP_UI_TABLES: Record<UiLanguage, TranslationTable> = {
   },
 };
 
+// High-frequency platform actions. These are kept as complete phrases so
+// channel/group actions never fall back to a mixed English translation.
+const COMMON_PLATFORM_PHRASES: Record<UiLanguage, TranslationTable> = {
+  en: {},
+  sw: {
+    Leave: "Ondoka",
+    "Leave Channel": "Ondoka kwenye kituo",
+    "Leave Group": "Ondoka kwenye kikundi",
+    "Leave chat": "Ondoka kwenye gumzo",
+    "Leave channel?": "Uondoke kwenye kituo?",
+    "Leave group?": "Uondoke kwenye kikundi?",
+  },
+  fr: {
+    Leave: "Quitter",
+    "Leave Channel": "Quitter le canal",
+    "Leave Group": "Quitter le groupe",
+    "Leave chat": "Quitter la discussion",
+    "Leave channel?": "Quitter le canal ?",
+    "Leave group?": "Quitter le groupe ?",
+  },
+  es: {
+    Leave: "Salir",
+    "Leave Channel": "Salir del canal",
+    "Leave Group": "Salir del grupo",
+    "Leave chat": "Salir del chat",
+    "Leave channel?": "¿Salir del canal?",
+    "Leave group?": "¿Salir del grupo?",
+  },
+  ar: {
+    Leave: "مغادرة",
+    "Leave Channel": "مغادرة القناة",
+    "Leave Group": "مغادرة المجموعة",
+    "Leave chat": "مغادرة الدردشة",
+    "Leave channel?": "هل تريد مغادرة القناة؟",
+    "Leave group?": "هل تريد مغادرة المجموعة؟",
+  },
+  zh: {
+    Leave: "离开",
+    "Leave Channel": "离开频道",
+    "Leave Group": "离开群组",
+    "Leave chat": "离开聊天",
+    "Leave channel?": "要离开频道吗？",
+    "Leave group?": "要离开群组吗？",
+  },
+  am: {
+    Leave: "ውጣ",
+    "Leave Channel": "ከቻናሉ ውጣ",
+    "Leave Group": "ከቡድኑ ውጣ",
+    "Leave chat": "ከውይይቱ ውጣ",
+    "Leave channel?": "ከቻናሉ መውጣት ይፈልጋሉ?",
+    "Leave group?": "ከቡድኑ መውጣት ይፈልጋሉ?",
+  },
+  rw: {
+    Leave: "Sohoka",
+    "Leave Channel": "Sohoka mu muyoboro",
+    "Leave Group": "Sohoka mu itsinda",
+    "Leave chat": "Sohoka mu kiganiro",
+    "Leave channel?": "Ushaka kuva mu muyoboro?",
+    "Leave group?": "Ushaka kuva mu itsinda?",
+  },
+};
+
 const REGISTERED_UI_TEXTS = new Set<string>();
 const UI_TRANSLATION_LISTENERS = new Set<() => void>();
 
@@ -1817,7 +1879,8 @@ export function translateUi(text: string, language: string | null | undefined): 
   const leading = text.match(/^\s*/)?.[0] ?? "";
   const trailing = text.match(/\s*$/)?.[0] ?? "";
   const trimmed = text.slice(leading.length, text.length - trailing.length || undefined);
-  const translated = APP_UI_TABLES[languageTable]?.[trimmed]
+  const translated = COMMON_PLATFORM_PHRASES[languageTable]?.[trimmed]
+    ?? APP_UI_TABLES[languageTable]?.[trimmed]
     ?? OFFLINE_PHRASES[languageTable]?.[trimmed]
     ?? TABLES[languageTable]?.[trimmed]
     ?? CORE_TABLES[languageTable]?.[trimmed];
