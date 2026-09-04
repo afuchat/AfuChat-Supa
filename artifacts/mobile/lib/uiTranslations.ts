@@ -2689,6 +2689,37 @@ for (const language of BUNDLED_UI_LANGUAGES) {
   Object.assign(SEMANTIC_UI_TABLES[language], CHAT_MESSAGE_LIMIT_TRANSLATIONS[language]);
 }
 
+const AUTH_LOGIN_TRANSLATIONS: Record<UiLanguage, TranslationTable> = {
+  en: {
+    "Enter your credentials to continue": "Enter your credentials to continue",
+  },
+  sw: {
+    "Enter your credentials to continue": "Weka taarifa zako ili kuendelea",
+  },
+  fr: {
+    "Enter your credentials to continue": "Saisissez vos identifiants pour continuer",
+  },
+  es: {
+    "Enter your credentials to continue": "Introduce tus credenciales para continuar",
+  },
+  ar: {
+    "Enter your credentials to continue": "أدخل بيانات تسجيل الدخول للمتابعة",
+  },
+  zh: {
+    "Enter your credentials to continue": "输入你的登录信息以继续",
+  },
+  am: {
+    "Enter your credentials to continue": "ለመቀጠል የመግቢያ መረጃዎን ያስገቡ",
+  },
+  rw: {
+    "Enter your credentials to continue": "Shyiramo amakuru yawe yo kwinjira kugira ngo ukomeze",
+  },
+};
+
+for (const language of BUNDLED_UI_LANGUAGES) {
+  Object.assign(SEMANTIC_UI_TABLES[language], AUTH_LOGIN_TRANSLATIONS[language]);
+}
+
 const REGISTERED_UI_TEXTS = new Set<string>();
 const UI_TRANSLATION_LISTENERS = new Set<() => void>();
 
