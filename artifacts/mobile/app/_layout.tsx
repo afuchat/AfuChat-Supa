@@ -25,7 +25,7 @@ import { AppState, BackHandler, I18nManager, InteractionManager, Linking, LogBox
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router, Stack, usePathname, useRootNavigationState } from "expo-router";
 import { setCurrentPage, resolvePageInfo } from "@/lib/pageTracker";
-import { StatusBar } from "expo-status-bar";
+import { StatusBar, setStatusBarHidden, setStatusBarStyle } from "expo-status-bar";
 import * as Font from "expo-font";
 import { useTheme } from "@/hooks/useTheme";
 import {
@@ -260,9 +260,24 @@ function AppNavigationStack() {
 
 function ThemedStatusBar() {
   const { isDark } = useTheme();
+  const pathname = usePathname();
+  const statusBarStyle = isDark ? "light" : "dark";
+  // The camera composer is intentionally immersive. Every other route owns a
+  // visible status bar, so theme changes cannot leave it hidden after a
+  // screen-level status bar override.
+  const isImmersiveRoute = pathname === "/moments/create-video";
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    setStatusBarStyle(statusBarStyle, false);
+    setStatusBarHidden(isImmersiveRoute, "none");
+  }, [isImmersiveRoute, statusBarStyle]);
+
   return (
     <StatusBar
-      style={isDark ? "light" : "dark"}
+      style={statusBarStyle}
+      hidden={isImmersiveRoute}
+      hideTransitionAnimation="none"
       translucent
       backgroundColor="transparent"
       animated
