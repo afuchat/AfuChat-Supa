@@ -4523,15 +4523,16 @@ function ChatScreen() {
     const chatId = isDraft ? realChatId : id;
     if (!chatId || !user) return;
     const isGroup = chatInfo?.is_group || chatInfo?.is_channel;
+    const isChannelChat = !!chatInfo?.is_channel;
     showAlert(
-      isGroup ? "Leave Group" : "Delete Chat",
+      isChannelChat ? "Leave Channel" : isGroup ? "Leave Group" : "Delete Chat",
       isGroup
         ? `Leave this ${chatInfo?.is_channel ? "channel" : "group"}? You won't receive messages anymore.`
         : "Delete this conversation? All messages will be removed for you.",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: isGroup ? "Leave" : "Delete",
+          text: isChannelChat ? "Leave Channel" : isGroup ? "Leave" : "Delete",
           style: "destructive",
           onPress: async () => {
             setShowChatOptions(false);
@@ -4539,7 +4540,20 @@ function ChatScreen() {
               if (isLocalNotes) {
                 await removeLocalNotesConversation(user.id);
               } else if (isGroup) {
-                await supabase.from("chat_members").delete().eq("chat_id", chatId).eq("user_id", user.id);
+                const { error: memberError } = await supabase
+                  .from("chat_members")
+                  .delete()
+                  .eq("chat_id", chatId)
+                  .eq("user_id", user.id);
+                if (memberError) throw memberError;
+                if (isChannelChat) {
+                  const { error: subscriptionError } = await supabase
+                    .from("channel_subscriptions")
+                    .delete()
+                    .eq("channel_id", chatId)
+                    .eq("user_id", user.id);
+                  if (subscriptionError) throw subscriptionError;
+                }
               } else {
                 await supabase.from("messages").delete().eq("chat_id", chatId);
                 await supabase.from("chats").delete().eq("id", chatId);
@@ -6907,6 +6921,7 @@ STRICT RULES:
   const headerSubtitle = chatInfo?.is_channel
     ? (chatInfo.channel_is_public === false ? "Private" : "Public")
     : null;
+  const isNonOwnerChannel = !!chatInfo?.is_channel && !isChannelOwner;
   const canOpenDirectProfile = !!chatInfo?.other_id && !chatInfo.is_group && !chatInfo.is_channel && !isSelfChat && !isNotificationsChat;
   const canOpenChatInfo = !!chatInfo?.is_group || !!chatInfo?.is_channel;
   const handleOpenDirectProfile = useCallback(() => {
@@ -8902,40 +8917,34 @@ STRICT RULES:
                   setTimeout(() => searchInputRef.current?.focus(), 250);
                 }} />
               <DdDivider colors={colors} />
-              {/* Group / Channel Info */}
-              {(chatInfo?.is_group || chatInfo?.is_channel) && (
+              {/* Group info; channel members only need Search and Leave Channel */}
+              {chatInfo?.is_group && !chatInfo?.is_channel && (
                 <DdRow colors={colors} icon="people"
-                  label={chatInfo?.is_channel ? "Channel Info" : "Group Info & Members"}
+                  label="Group Info & Members"
                   onPress={() => {
                     setShowChatOptions(false);
-                    if (chatInfo?.is_channel) {
-                      router.push({
-                        pathname: "/chat-info/[id]",
-                        params: {
-                          id: id as string,
-                          name: headerTitle,
-                          avatar: headerAvatar ?? "",
-                          isGroup: "0",
-                          isChannel: "1",
-                        },
-                      } as any);
-                    } else {
-                      router.push({ pathname: "/group/[id]", params: { id: id as string } });
-                    }
+                    router.push({ pathname: "/group/[id]", params: { id: id as string } });
                   }} />
               )}
+              {isNonOwnerChannel && (
+                <>
+                  <DdDivider colors={colors} />
+                  <DdRow colors={colors} icon="exit" label="Leave Channel"
+                    onPress={() => handleDeleteChat()} />
+                </>
+              )}
               {/* Invite via link — group admins only */}
-              {chatInfo?.is_group && iAmChatAdmin && (
+              {!isNonOwnerChannel && chatInfo?.is_group && iAmChatAdmin && (
                 <DdRow colors={colors} icon="link"
                   label="Invite via Link"
                   onPress={() => { setShowChatOptions(false); setShowInviteLink(true); }} />
               )}
-               {advancedFeatures.chat_summary && !isLocalNotes && (chatInfo?.is_group || chatInfo?.is_channel) && (
+                {!isNonOwnerChannel && advancedFeatures.chat_summary && !isLocalNotes && (chatInfo?.is_group || chatInfo?.is_channel) && (
                 <DdRow colors={colors} icon="bulb-outline" label="Summarize Chat"
                   onPress={() => { setShowChatOptions(false); handleChatSummaryFull(); }} />
               )}
               {/* Per-chat appearance — channel owners only */}
-              {(!chatInfo?.is_channel || isChannelOwner) && (
+              {!isNonOwnerChannel && (!chatInfo?.is_channel || isChannelOwner) && (
                 <DdRow
                   colors={colors}
                   icon="color-palette"
@@ -8949,7 +8958,7 @@ STRICT RULES:
               )}
               <DdDivider colors={colors} />
               {/* Single entry → dedicated per-chat settings page */}
-              <DdRow colors={colors} icon="information-circle" label="Chat Info & Settings"
+              {!isNonOwnerChannel && <DdRow colors={colors} icon="information-circle" label="Chat Info & Settings"
                 onPress={() => {
                   setShowChatOptions(false);
                   router.push({
@@ -8963,7 +8972,7 @@ STRICT RULES:
                       isChannel: chatInfo?.is_channel ? "1" : "0",
                     },
                   });
-                }} />
+                }} />}
             </ScrollView>
           </View>
         </Modal>
