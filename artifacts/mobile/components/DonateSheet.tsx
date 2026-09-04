@@ -24,16 +24,17 @@ import { SUPABASE_EDGE_URL } from "@/lib/env";
 import { supabase } from "@/lib/supabase";
 import Colors from "@/constants/colors";
 import SwipeableBottomSheet from "@/components/SwipeableBottomSheet";
+import { useLanguage } from "@/context/LanguageContext";
 
 const ACCENT = Colors.brand;
 
 // ─── Preset donation tiers ────────────────────────────────────────────────────
 
 const PRESETS = [
-  { label: "Coffee ☕",   usd: 1,  tagline: "Buy the team a coffee" },
-  { label: "$5",          usd: 5,  tagline: "Keep the servers running" },
-  { label: "$10",         usd: 10, tagline: "Support new features" },
-  { label: "$25",         usd: 25, tagline: "Champion supporter 🏆" },
+  { labelKey: "donate.preset_coffee",   usd: 1 },
+  { labelKey: "donate.preset_servers",  usd: 5 },
+  { labelKey: "donate.preset_features", usd: 10 },
+  { labelKey: "donate.preset_champion", usd: 25 },
 ] as const;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -54,6 +55,7 @@ interface DonateSheetProps {
 
 export function DonateSheet({ visible, onClose }: DonateSheetProps) {
   const { colors, isDark } = useTheme();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
 
   const [selectedPreset, setSelectedPreset] = useState<number>(1); // default $5
@@ -83,7 +85,7 @@ export function DonateSheet({ visible, onClose }: DonateSheetProps) {
   async function handleDonate() {
     setError(null);
     if (usdAmount < 1) {
-      setError("Minimum donation is $1.");
+      setError(t("donate.error_minimum", { amount: 1 }));
       shake();
       return;
     }
@@ -108,11 +110,11 @@ export function DonateSheet({ visible, onClose }: DonateSheetProps) {
       if (data.redirect_url) {
         setCheckoutUrl(data.redirect_url);
       } else {
-        setError(data.error || "Could not start checkout. Please try again.");
+        setError(data.error || t("donate.error_checkout"));
         shake();
       }
     } catch {
-      setError("Network error. Please check your connection.");
+      setError(t("donate.error_network"));
       shake();
     }
     setLoading(false);
@@ -161,7 +163,7 @@ export function DonateSheet({ visible, onClose }: DonateSheetProps) {
           }]}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <Ionicons name="lock-closed" size={13} color="#34C759" />
-              <Text style={[s.webviewTitle, { color: colors.text }]}>Secure Checkout</Text>
+              <Text style={[s.webviewTitle, { color: colors.text }]}>{t("donate.checkout_title")}</Text>
               <View style={s.pesapalBadge}>
                 <Text style={s.pesapalBadgeText}>Pesapal</Text>
               </View>
@@ -191,7 +193,7 @@ export function DonateSheet({ visible, onClose }: DonateSheetProps) {
               <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
                 <ActivityIndicator size="large" color={ACCENT} />
                 <Text style={{ marginTop: 12, color: colors.textMuted, fontFamily: "Inter_400Regular", fontSize: 14 }}>
-                  Loading secure payment…
+                  {t("donate.loading_payment")}
                 </Text>
               </View>
             )}
@@ -217,17 +219,17 @@ export function DonateSheet({ visible, onClose }: DonateSheetProps) {
               <Ionicons name="heart" size={38} color="#34C759" />
             </View>
             <Text style={[s.thankYouTitle, { color: colors.text }]}>
-              Thank you! 🎉
+              {t("donate.thank_you_title")}
             </Text>
             <Text style={[s.thankYouSub, { color: colors.textMuted }]}>
-              Your donation helps us keep AfuChat growing and accessible for everyone.
+              {t("donate.thank_you_sub")}
             </Text>
             <TouchableOpacity
               style={[s.donateBtn, { backgroundColor: ACCENT, marginTop: 8 }]}
               onPress={handleClose}
               activeOpacity={0.85}
             >
-              <Text style={s.donateBtnText}>Close</Text>
+              <Text style={s.donateBtnText}>{t("donate.close")}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -250,9 +252,9 @@ export function DonateSheet({ visible, onClose }: DonateSheetProps) {
             <Ionicons name="heart" size={18} color="#FF3B30" />
           </View>
           <View style={s.titleCopy}>
-            <Text style={[s.sheetTitle, { color: colors.text }]}>Support AfuChat</Text>
+            <Text style={[s.sheetTitle, { color: colors.text }]}>{t("donate.support_title")}</Text>
             <Text style={[s.sheetSub, { color: colors.textMuted }]}>
-              Help keep the app free for everyone
+              {t("donate.support_subtitle")}
             </Text>
           </View>
           <TouchableOpacity onPress={handleClose} hitSlop={12} style={s.closeBtn}>
@@ -279,7 +281,7 @@ export function DonateSheet({ visible, onClose }: DonateSheetProps) {
                   ${p.usd}
                 </Text>
                 <Text style={[s.presetLabel, { color: isSelected ? ACCENT : colors.textMuted }]}>
-                  {p.label}
+                  {t(p.labelKey)}
                 </Text>
               </TouchableOpacity>
             );
@@ -288,7 +290,7 @@ export function DonateSheet({ visible, onClose }: DonateSheetProps) {
 
         {/* Custom amount */}
         <View style={s.customRow}>
-          <Text style={[s.customLabel, { color: colors.textMuted }]}>Custom amount</Text>
+          <Text style={[s.customLabel, { color: colors.textMuted }]}>{t("donate.custom_amount")}</Text>
           <View style={[
             s.customInput,
             { backgroundColor: colors.backgroundSecondary, borderColor: customAmt !== "" ? ACCENT : colors.border },
@@ -312,7 +314,7 @@ export function DonateSheet({ visible, onClose }: DonateSheetProps) {
             <Ionicons name="shield-checkmark" size={14} color="#34C759" />
           </View>
           <Text style={[s.infoText, { color: colors.textMuted }]}>
-            Secure checkout via Pesapal · Card, mobile money & bank supported
+            {t("donate.secure_checkout")}
           </Text>
         </View>
 
@@ -344,7 +346,9 @@ export function DonateSheet({ visible, onClose }: DonateSheetProps) {
                 <Ionicons name="heart" size={17} color="#fff" />
               </View>
               <Text style={s.donateBtnText}>
-            Donate ${usdAmount >= 1 ? usdAmount.toFixed(usdAmount % 1 === 0 ? 0 : 2) : "N/A"}
+                {t("donate.button", {
+                  amount: usdAmount >= 1 ? usdAmount.toFixed(usdAmount % 1 === 0 ? 0 : 2) : "N/A",
+                })}
               </Text>
             </View>
           )}
