@@ -2752,13 +2752,76 @@ function ChatScreen() {
     // SQLite fallback (useEffect above) already hydrates chatInfo when offline —
     // skip the network round-trip so we don't leave a dangling fetch.
     if (!isOnline()) return;
+    const channelRouteHint = isChannel === "true";
+    const chatSelect = channelRouteHint
+      ? "is_group, is_channel, name, description, avatar_url"
+      : "is_group, is_channel, name, description, avatar_url, chat_members(user_id, is_admin, profiles(id, display_name, avatar_url, handle, is_verified, is_organization_verified, last_seen, show_online_status))";
     const { data: chat } = await supabase
       .from("chats")
-      .select(`is_group, is_channel, name, description, avatar_url, chat_members(user_id, is_admin, profiles(id, display_name, avatar_url, handle, is_verified, is_organization_verified, last_seen, show_online_status))`)
+      .select(chatSelect as any)
       .eq("id", id)
-      .single();
+      .single() as { data: any };
 
     if (chat) {
+      if (chat.is_channel) {
+        // A channel opened from Search or an existing chat already has enough
+        // route/cache data to render immediately. Keep the first query small,
+        // then resolve private access and subscription state in the background.
+        if (!isCurrentLoad()) return;
+        setChatInfo((prev) => ({
+          ...(prev ?? {
+            is_group: false,
+            is_channel: true,
+            name: null,
+            other_name: "Channel",
+            other_avatar: null,
+            other_id: "",
+            member_ids: [],
+            avatar_url: null,
+          }),
+          is_group: false,
+          is_channel: true,
+          name: chat.name ?? prev?.name ?? chatName ?? null,
+          other_name: chat.name ?? prev?.other_name ?? chatName ?? "Channel",
+          other_avatar: chat.avatar_url ?? prev?.other_avatar ?? chatAvatar ?? null,
+          avatar_url: chat.avatar_url ?? prev?.avatar_url ?? chatAvatar ?? null,
+          channel_description: prev?.channel_description ?? chat.description ?? channelDescription ?? null,
+        }));
+
+        void Promise.all([
+          supabase.rpc("get_channel_access_context", { p_channel_id: id }),
+          supabase
+            .from("channels")
+            .select("handle, description, is_public, subscriber_count")
+            .eq("id", id)
+            .maybeSingle(),
+          supabase
+            .from("channel_subscriptions")
+            .select("user_id")
+            .eq("channel_id", id)
+            .eq("user_id", user.id)
+            .maybeSingle(),
+        ]).then(([channelAccessResult, channelResult, channelMembershipResult]) => {
+          if (!isCurrentLoad()) return;
+          const channelAccess = channelAccessResult.data?.[0];
+          const channel = channelResult.data;
+          const channelIsMember = channelMembershipResult.error
+            ? undefined
+            : !!channelMembershipResult.data || !!channelAccess?.is_owner || !!channelAccess?.is_admin;
+          setIAmChatAdmin(!!channelAccess?.is_admin);
+          setChatInfo((prev) => prev ? {
+            ...prev,
+            channel_handle: channel?.handle || prev.channel_handle || channelHandle || null,
+            channel_description: channel?.description ?? prev.channel_description ?? channelDescription ?? null,
+            channel_is_public: channel?.is_public ?? prev.channel_is_public,
+            channel_is_member: channelIsMember === undefined ? prev.channel_is_member : channelIsMember,
+            channel_owner_id: channelAccess?.owner_id || prev.channel_owner_id || null,
+            channel_subscriber_count: channel?.subscriber_count ?? prev.channel_subscriber_count ?? null,
+          } : prev);
+        }).catch(() => {});
+        return;
+      }
+
       const channelAccess = chat.is_channel
         ? (await supabase.rpc("get_channel_access_context", { p_channel_id: id })).data?.[0]
         : null;
@@ -2806,7 +2869,7 @@ function ChatScreen() {
          other_handle: isSelf ? null : (other?.handle || null),
       });
     }
-  }, [id, user, isDraft, channelHandle, channelDescription]);
+  }, [id, user, isDraft, isChannel, channelHandle, channelDescription, chatName, chatAvatar]);
 
   const loadMessages = useCallback(async (loadToken = chatLoadGenerationRef.current) => {
     const isCurrentLoad = () => chatLoadGenerationRef.current === loadToken;

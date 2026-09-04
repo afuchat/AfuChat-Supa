@@ -1,9 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import React, { useEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
-import { useTheme } from "@/hooks/useTheme";
-import { supabase } from "@/lib/supabase";
 
 /**
  * Compatibility bridge for old channel links.
@@ -14,61 +11,22 @@ import { supabase } from "@/lib/supabase";
  */
 export default function ChannelRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { user } = useAuth();
-  const { colors } = useTheme();
-  const [message, setMessage] = useState("Opening channel…");
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function openChannel() {
-      if (!id) return;
-      if (!user) {
-        router.replace("/(auth)/login" as any);
-        return;
-      }
-
-      const { data: channel } = await supabase
-        .from("channels")
-        .select("id, name, handle, description, avatar_url, is_public")
-        .eq("id", id)
-        .maybeSingle();
-
-      if (!channel) {
-        if (!cancelled) setMessage("This channel is no longer available.");
-        return;
-      }
-
-      if (!cancelled) {
-        router.replace({
-          pathname: "/chat/[id]",
-          params: {
-            id,
-            isChannel: "true",
-            chatName: channel.name || "Channel",
-            chatAvatar: channel.avatar_url || "",
-            channelHandle: channel.handle || "",
-            channelDescription: channel.description || "",
-          },
-        } as any);
-      }
+    if (loading || !id) return;
+    if (!user) {
+      router.replace("/(auth)/login" as any);
+      return;
     }
 
-    openChannel().catch(() => {
-      if (!cancelled) setMessage("Could not open this channel right now.");
-    });
-    return () => { cancelled = true; };
-  }, [id, user?.id]);
+    // Channels use the same chat screen and cache-first hydration as every
+    // other conversation. Do not fetch channel metadata on this bridge route.
+    router.replace({
+      pathname: "/chat/[id]",
+      params: { id, isChannel: "true", chatName: "Channel" },
+    } as any);
+  }, [id, user?.id, loading]);
 
-  return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ActivityIndicator size="small" color={colors.accent} />
-      <Text style={[styles.message, { color: colors.textMuted }]}>{message}</Text>
-    </View>
-  );
+  return null;
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 24 },
-  message: { textAlign: "center", fontSize: 14 },
-});
