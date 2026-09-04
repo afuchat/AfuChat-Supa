@@ -1,5 +1,5 @@
 /**
- * Keeps the generated Android project on the optimized release toolchain.
+ * Keeps the generated Android project on the compatible release toolchain.
  *
  * Expo uses Continuous Native Generation, so this must be a config plugin
  * instead of an edit to the generated android/ directory.
@@ -106,8 +106,12 @@ function withReleaseOptimizations(config) {
       }
     };
 
-    ensureProperty("android.enableMinifyInReleaseBuilds", "true");
-    ensureProperty("android.enableShrinkResourcesInReleaseBuilds", "true");
+    // Keep R8 out of the startup diagnostic builds. Several native modules in
+    // this app are discovered across the JS/TurboModule boundary, and a
+    // release-only shrinker failure otherwise looks like an instant launch
+    // crash with no JavaScript stack.
+    ensureProperty("android.enableMinifyInReleaseBuilds", "false");
+    ensureProperty("android.enableShrinkResourcesInReleaseBuilds", "false");
     return config;
   });
 }

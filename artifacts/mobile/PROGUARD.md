@@ -4,18 +4,19 @@
 
 | Setting | Value |
 |---|---|
-| R8 enabled | **Yes** (all release builds — APK and AAB) |
-| Resource shrinking | **Yes** (`enableShrinkResourcesInReleaseBuilds: true`) |
-| JS minification | **Yes** (`enableMinifyInReleaseBuilds: true`) |
-| Android Gradle Plugin | **9.0.0** (forced by the CNG config plugin) |
+| R8 enabled | **No** (disabled for startup-compatible release builds) |
+| Resource shrinking | **No** (`enableShrinkResourcesInReleaseBuilds: false`) |
+| JS minification | **No** (`enableMinifyInReleaseBuilds: false`) |
+| Android Gradle Plugin | **8.10.1** (forced by the CNG config plugin) |
 | Mapping file | Generated automatically on every release build |
 | Config mechanism | Expo config plugin (`plugins/withProguardRules.js`) |
 
 ---
 
-## How R8 is enabled
+## Release shrinker status
 
-R8 is activated via `expo-build-properties` in `app.json`:
+R8 is intentionally disabled via `expo-build-properties` in `app.json`
+while Android startup stability is being diagnosed:
 
 ```json
 {
@@ -23,8 +24,8 @@ R8 is activated via `expo-build-properties` in `app.json`:
     "plugins": [
       ["expo-build-properties", {
         "android": {
-          "enableMinifyInReleaseBuilds": true,
-          "enableShrinkResourcesInReleaseBuilds": true
+          "enableMinifyInReleaseBuilds": false,
+          "enableShrinkResourcesInReleaseBuilds": false
         }
       }]
     ]
@@ -32,11 +33,12 @@ R8 is activated via `expo-build-properties` in `app.json`:
 }
 ```
 
-These flags instruct Expo's prebuild step to set `minifyEnabled true` and
-`shrinkResources true` in the `release` buildType inside
+These flags instruct Expo's prebuild step to keep `minifyEnabled false` and
+`shrinkResources false` in the `release` buildType inside
 `android/app/build.gradle`.
 
-**Debug builds are unaffected** — R8 only runs on `release` variants.
+This avoids release-only class/resource removal while native startup is being
+isolated. The custom rules remain available for a later controlled re-enable.
 
 ---
 
