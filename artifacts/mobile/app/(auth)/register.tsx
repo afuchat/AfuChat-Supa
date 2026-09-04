@@ -532,10 +532,10 @@ export default function SignUpScreen() {
 
           <View style={{ marginTop: "auto", paddingTop: 32, alignItems: "center", gap: 6 }}>
             <Text style={{ fontSize: 11, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.25)", textAlign: "center", lineHeight: 17, paddingHorizontal: 8 }}>
-              By continuing, you agree to our{" "}
-              <Text style={{ color: accent }} onPress={() => Linking.openURL("https://afuchat.com/terms").catch(() => {})}>Terms</Text>
-              {" "}and{" "}
-              <Text style={{ color: accent }} onPress={() => Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>Privacy Policy</Text>
+              {t("By continuing, you agree to our")}{" "}
+              <Text style={{ color: accent }} onPress={() => Linking.openURL("https://afuchat.com/terms").catch(() => {})}>{t("Terms")}</Text>
+              {" "}{t("and")}{" "}
+              <Text style={{ color: accent }} onPress={() => Linking.openURL("https://afuchat.com/privacy").catch(() => {})}>{t("Privacy Policy")}</Text>
             </Text>
             <Text style={{ fontSize: 10.5, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.14)" }}>
               © {new Date().getFullYear()} AfuChat Technologies Limited

@@ -2692,27 +2692,43 @@ for (const language of BUNDLED_UI_LANGUAGES) {
 const AUTH_LOGIN_TRANSLATIONS: Record<UiLanguage, TranslationTable> = {
   en: {
     "Enter your credentials to continue": "Enter your credentials to continue",
+    "By continuing, you agree to our": "By continuing, you agree to our",
+    and: "and",
   },
   sw: {
     "Enter your credentials to continue": "Weka taarifa zako ili kuendelea",
+    "By continuing, you agree to our": "Kwa kuendelea, unakubali",
+    and: "na",
   },
   fr: {
     "Enter your credentials to continue": "Saisissez vos identifiants pour continuer",
+    "By continuing, you agree to our": "En continuant, vous acceptez nos",
+    and: "et",
   },
   es: {
     "Enter your credentials to continue": "Introduce tus credenciales para continuar",
+    "By continuing, you agree to our": "Al continuar, aceptas nuestros",
+    and: "y",
   },
   ar: {
     "Enter your credentials to continue": "أدخل بيانات تسجيل الدخول للمتابعة",
+    "By continuing, you agree to our": "بمتابعة الاستخدام، فإنك توافق على",
+    and: "و",
   },
   zh: {
     "Enter your credentials to continue": "输入你的登录信息以继续",
+    "By continuing, you agree to our": "继续即表示你同意",
+    and: "和",
   },
   am: {
     "Enter your credentials to continue": "ለመቀጠል የመግቢያ መረጃዎን ያስገቡ",
+    "By continuing, you agree to our": "በመቀጠል፣ የሚከተሉትን ተቀብለዋል",
+    and: "እና",
   },
   rw: {
     "Enter your credentials to continue": "Shyiramo amakuru yawe yo kwinjira kugira ngo ukomeze",
+    "By continuing, you agree to our": "Mu gukomeza, wemera",
+    and: "na",
   },
 };
 
