@@ -1789,7 +1789,7 @@ function MessageBubble({ msg, isMe, isChannel, showTail, showName, onLongPress, 
                   // so the last line of text never crowds or overlaps the timestamp.
                    const _iconPad = isMe ? "   " : " "; // space for checkmark icon + margins
                    const _speakPad = canSpeak ? " ".repeat(18) : "";
-                  const ghost = (
+                  const ghost = Platform.OS === "web" ? null : (
                     <Text style={{ color: bubbleColor, fontSize: 11, fontFamily: "Inter_400Regular", includeFontPadding: false }}>
                        {"   "}{_speakPad}{msg.edited_at ? "edited  " : ""}{_timeStr}{_iconPad}
                     </Text>
@@ -1804,7 +1804,11 @@ function MessageBubble({ msg, isMe, isChannel, showTail, showName, onLongPress, 
                            />
                          ) : (
                            <RichText
-                             style={[st.bubbleText, { color: textColor, fontSize: _fontSize, lineHeight: _lineH }]}
+                             style={[
+                               st.bubbleText,
+                               { color: textColor, fontSize: _fontSize, lineHeight: _lineH },
+                               Platform.OS === "web" ? { paddingRight: _tsWidth } : null,
+                             ]}
                              linkColor={isMe ? "#FFFFFF" : BRAND}
                               showMentionAvatars={!isChannel}
                              tail={ghost}
@@ -2200,7 +2204,7 @@ function ChatScreen() {
   const { colors, isDark } = useTheme();
   const { appearance: chatAppearance, updateAppearance: updateChatAppearance } = useChatAppearance(id as string | undefined);
   const BRAND = colors.accent;
-  const { preferredLang, textToSpeech: ttsEnabled } = useLanguage();
+  const { preferredLang, textToSpeech: ttsEnabled, isRTL } = useLanguage();
   const { prefs: chatPrefs, themeColors: chatThemeColors, bubbleRadius: chatBubbleRadius } = useChatPreferences();
   const effectiveChatFontSize = chatAppearance?.fontSize ?? chatPrefs?.font_size ?? 14;
   const { features: advancedFeatures } = useAdvancedFeatures();
@@ -7587,7 +7591,7 @@ STRICT RULES:
         </Modal>
 
         {messageLimited ? (
-          <View style={[st.inputFloatOuter, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+          <View style={[st.inputFloatOuter, st.limitedFloatOuter, { paddingBottom: Math.max(insets.bottom + 6, 14) }]}>
             <View style={[st.limitedGlass, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Ionicons name="lock-closed" size={15} color={colors.textMuted} style={{ marginRight: 8 }} />
               <Text style={[st.limitedText, { color: colors.textSecondary }]}>
@@ -8668,7 +8672,20 @@ STRICT RULES:
         </View>
         {translateMsg && (
           <View style={{ marginHorizontal: 16, marginTop: 10, marginBottom: 6, backgroundColor: colors.inputBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 13, color: colors.textMuted, fontFamily: "Inter_400Regular" }} numberOfLines={2}>{translateMsg.encrypted_content}</Text>
+            <Text
+              style={{
+                fontSize: 13,
+                color: colors.textMuted,
+                fontFamily: "Inter_400Regular",
+                lineHeight: 18,
+                textAlign: isRTL ? "right" : "left",
+                writingDirection: isRTL ? "rtl" : "ltr",
+                flexShrink: 1,
+              }}
+              numberOfLines={3}
+            >
+              {translateMsg.encrypted_content}
+            </Text>
           </View>
         )}
         {aiResult && aiResultType === "translate" && (
@@ -8677,7 +8694,19 @@ STRICT RULES:
               <Ionicons name="checkmark-circle" size={14} color={colors.accent} />
               <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: colors.accent, textTransform: "uppercase", letterSpacing: 0.4 }}>Translation</Text>
             </View>
-            <Text style={{ fontSize: 14, color: colors.text, fontFamily: "Inter_400Regular", lineHeight: 20 }}>{aiResult}</Text>
+            <Text
+              style={{
+                fontSize: 14,
+                color: colors.text,
+                fontFamily: "Inter_400Regular",
+                lineHeight: 21,
+                textAlign: isRTL ? "right" : "left",
+                writingDirection: isRTL ? "rtl" : "ltr",
+                flexShrink: 1,
+              }}
+            >
+              {aiResult}
+            </Text>
           </View>
         )}
         <ScrollView style={{ maxHeight: 320, marginTop: 4 }} showsVerticalScrollIndicator={false} bounces={false}>
@@ -9724,16 +9753,31 @@ const st = StyleSheet.create({
     fontSize: 13,
     fontFamily: "Inter_400Regular",
     flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
     lineHeight: 18,
+    textAlign: "center",
+  },
+  limitedFloatOuter: {
+    paddingTop: 8,
+    paddingHorizontal: 8,
   },
   limitedGlass: {
     flexDirection: "row",
     alignItems: "center",
+    alignSelf: "center",
+    width: "100%",
+    maxWidth: 380,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 11,
     borderRadius: 26,
     borderWidth: 0.5,
-    marginHorizontal: 8,
+    marginHorizontal: 0,
+    marginBottom: 6,
+    ...Platform.select({
+      web: { boxShadow: "0 4px 14px rgba(0,0,0,0.14)" } as any,
+      default: { elevation: 5, shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.14, shadowRadius: 8 },
+    }),
   },
   strangerBanner: {
     paddingHorizontal: 16,
