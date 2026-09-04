@@ -143,7 +143,14 @@ function OnboardingPage({
         </View>
         <TouchableOpacity onPress={onSkip} hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}>
           <View style={s.skipPill}>
-            <Text style={s.skipText}>{t("welcome.skip")}</Text>
+            <Text
+              style={s.skipText}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.82}
+            >
+              {t("welcome.skip")}
+            </Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -187,7 +194,14 @@ function OnboardingPage({
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={s.cta}
           >
-            <Text style={s.ctaText}>{t(slide.action)}</Text>
+            <Text
+              style={s.ctaText}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.72}
+            >
+              {t(slide.action)}
+            </Text>
             <View style={s.ctaArrowCircle}>
               <Ionicons name={isLast ? "checkmark" : "arrow-forward"} size={22} color="#111827" />
             </View>
@@ -195,9 +209,23 @@ function OnboardingPage({
         </TouchableOpacity>
 
         <View style={s.hintRow}>
-          <Text style={s.hintText}>{t("welcome.already_have_account")} </Text>
-        <TouchableOpacity onPress={onSkip} hitSlop={8}>
-            <Text style={[s.hintLink, { color: slide.accent }]}>{t("welcome.sign_in")}</Text>
+          <Text
+            style={s.hintText}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.78}
+          >
+            {t("welcome.already_have_account")}{" "}
+          </Text>
+          <TouchableOpacity onPress={onSkip} hitSlop={8}>
+            <Text
+              style={[s.hintLink, { color: slide.accent }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.78}
+            >
+              {t("welcome.sign_in")}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -537,12 +565,19 @@ const s = StyleSheet.create({
     justifyContent: "center",
     height: 62,
     gap: 12,
+    paddingHorizontal: 16,
   },
   ctaText: {
     color: "#fff",
     fontSize: 17,
     fontFamily: "Inter_700Bold",
     letterSpacing: -0.2,
+    flexShrink: 1,
+    minWidth: 0,
+    textAlign: "center",
+    ...Platform.select({
+      web: { whiteSpace: "nowrap" } as any,
+    }),
   },
   ctaTextDisabled: {
     color: "rgba(255,255,255,0.45)",
@@ -554,6 +589,7 @@ const s = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
   ctaArrowCircleDisabled: {
     backgroundColor: "rgba(255,255,255,0.12)",
@@ -572,9 +608,19 @@ const s = StyleSheet.create({
     fontSize: 13.5,
     fontFamily: "Inter_400Regular",
     color: "rgba(255,255,255,0.30)",
+    flexShrink: 1,
+    minWidth: 0,
+    ...Platform.select({
+      web: { whiteSpace: "nowrap" } as any,
+    }),
   },
   hintLink: {
     fontSize: 13.5,
     fontFamily: "Inter_700Bold",
+    flexShrink: 1,
+    minWidth: 0,
+    ...Platform.select({
+      web: { whiteSpace: "nowrap" } as any,
+    }),
   },
 });
