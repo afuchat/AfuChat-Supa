@@ -266,7 +266,7 @@ export function DonateSheet({ visible, onClose }: DonateSheetProps) {
               <View style={[s.heartBadge, { backgroundColor: "#FF3B3018" }]}>
                 <Ionicons name="heart" size={18} color="#FF3B30" />
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={s.titleCopy}>
                 <Text style={[s.sheetTitle, { color: colors.text }]}>Support AfuChat</Text>
                 <Text style={[s.sheetSub, { color: colors.textMuted }]}>
                   Help keep the app free for everyone
@@ -277,7 +277,11 @@ export function DonateSheet({ visible, onClose }: DonateSheetProps) {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} style={{ flexGrow: 0 }}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              style={s.formScroll}
+              contentContainerStyle={s.formContent}
+            >
               {/* Preset grid */}
               <View style={s.presetGrid}>
                 {PRESETS.map((p, i) => {
@@ -380,6 +384,9 @@ const s = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.45)",
   },
   sheet: {
+    width: "100%",
+    maxWidth: 520,
+    alignSelf: "center",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 20,
@@ -398,6 +405,10 @@ const s = StyleSheet.create({
     alignItems: "center",
     gap: 12,
   },
+  titleCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
   heartBadge: {
     width: 42,
     height: 42,
@@ -407,20 +418,31 @@ const s = StyleSheet.create({
   },
   sheetTitle: {
     fontSize: 17,
+    lineHeight: 22,
     fontFamily: "Inter_700Bold",
   },
   sheetSub: {
     fontSize: 12,
+    lineHeight: 16,
     fontFamily: "Inter_400Regular",
     marginTop: 1,
   },
+  formScroll: {
+    width: "100%",
+    flexGrow: 0,
+  },
+  formContent: {
+    width: "100%",
+  },
   presetGrid: {
+    width: "100%",
     flexDirection: "row",
     gap: 10,
     marginBottom: 4,
   },
   presetCard: {
     flex: 1,
+    minWidth: 0,
     borderRadius: 14,
     borderWidth: 1.5,
     alignItems: "center",
@@ -502,6 +524,8 @@ const s = StyleSheet.create({
   donateBtnText: {
     color: "#fff",
     fontSize: 16,
+    lineHeight: 20,
+    textAlign: "center",
     fontFamily: "Inter_700Bold",
   },
 

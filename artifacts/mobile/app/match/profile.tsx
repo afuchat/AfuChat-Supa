@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Dimensions,
   Image as RNImage,
   KeyboardAvoidingView,
   Modal,
@@ -13,6 +12,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
 import Image from "@/components/ui/OptimizedImage";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -32,7 +32,6 @@ import RegionPickerInput from "@/components/RegionPickerInput";
 import { detectGeo } from "@/lib/geoDetect";
 import { getReceivedMatchGifts, ReceivedMatchGift, convertMatchGiftsToAcoins, getConvertedGiftIds, getGiftItem } from "@/lib/matchTransactions";
 
-const { width: SW } = Dimensions.get("window");
 const BRAND = "#FF2D55";
 
 const INTERESTS_LIST = [
@@ -55,6 +54,8 @@ export default function MatchProfileEditScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  const { width: SW } = useWindowDimensions();
+  const photoCellWidth = Math.max(0, (SW - 80) / 3);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -271,7 +272,7 @@ export default function MatchProfileEditScreen() {
                 const photo = photos[i];
                 if (photo) {
                   return (
-                    <View key={i} style={styles.photoCell}>
+                    <View key={i} style={[styles.photoCell, { width: photoCellWidth }]}>
                       <Image source={{ uri: photo.uri }} style={styles.photoThumb} resizeMode="cover" />
                       {photo.uploading && (
                         <View style={styles.photoUploading}><ActivityIndicator color="#fff" /></View>
@@ -284,7 +285,7 @@ export default function MatchProfileEditScreen() {
                   );
                 }
                 return (
-                  <Pressable key={i} style={[styles.photoAdd, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]} onPress={pickPhoto}>
+                  <Pressable key={i} style={[styles.photoAdd, { width: photoCellWidth, borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]} onPress={pickPhoto}>
                     <Ionicons name="add" size={24} color={colors.textMuted} />
                   </Pressable>
                 );
@@ -589,13 +590,13 @@ const styles = StyleSheet.create({
   textarea: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, fontFamily: "Inter_400Regular", minHeight: 100 },
   charCount: { textAlign: "right", fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 4 },
   photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
-  photoCell: { width: (SW - 80) / 3, aspectRatio: 3 / 4, borderRadius: 12, overflow: "hidden", position: "relative" },
+  photoCell: { aspectRatio: 3 / 4, borderRadius: 12, overflow: "hidden", position: "relative" },
   photoThumb: { width: "100%", height: "100%" },
   photoUploading: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.5)", alignItems: "center", justifyContent: "center" },
   primaryBadge: { position: "absolute", bottom: 6, left: 6, backgroundColor: BRAND, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   primaryText: { color: "#fff", fontSize: 10, fontFamily: "Inter_700Bold" },
   photoRemove: { position: "absolute", top: 4, right: 4 },
-  photoAdd: { width: (SW - 80) / 3, aspectRatio: 3 / 4, borderRadius: 12, borderWidth: 1.5, borderStyle: "dashed", alignItems: "center", justifyContent: "center" },
+  photoAdd: { aspectRatio: 3 / 4, borderRadius: 12, borderWidth: 1.5, borderStyle: "dashed", alignItems: "center", justifyContent: "center" },
   photoHint: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 16 },
   goalGrid: { gap: 8 },
   goalChip: { flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },

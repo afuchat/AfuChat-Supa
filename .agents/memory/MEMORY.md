@@ -94,3 +94,4 @@
 - [Arabic UI direction](arabic-ltr-ui.md) — Arabic is translated while the existing left-to-right layout, navigation, and icon placement stay unchanged.
 - [Bold logo asset delivery](bold-logo-asset-delivery.md) — shared white logo uses a bold transparent asset and data URI at runtime; bundled local PNG require did not render reliably on RN Web.
 - [Channel privacy boundary](channel-privacy-boundary.md) — channel creator and roster data must be redacted in both client surfaces and Supabase grants/RLS; groups keep their existing visibility.
+- [Responsive layout + webfont fallback](responsive-layout-webfonts.md) — use live window dimensions for resize-sensitive screens; browser text needs a system fallback when a cold webfont load is delayed.

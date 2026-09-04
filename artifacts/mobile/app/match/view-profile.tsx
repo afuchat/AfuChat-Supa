@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import {
-  Dimensions,
   Image as RNImage,
   Modal,
   ScrollView,
@@ -8,6 +7,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
 import Image from "@/components/ui/OptimizedImage";
 import { LinearGradient } from "@/components/ui/SafeGradient";
@@ -21,7 +21,6 @@ import { ProfileSkeleton } from "@/components/ui/Skeleton";
 import { showAlert } from "@/lib/alert";
 import { getPublicProfileGifts, getGiftItem } from "@/lib/matchTransactions";
 
-const { width: SW, height: SH } = Dimensions.get("window");
 const BRAND = "#FF2D55";
 const GOLD = "#FFD60A";
 
@@ -42,6 +41,7 @@ export default function ViewProfileScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
 
   const [profile, setProfile] = useState<any>(null);
   const [photos, setPhotos] = useState<{ url: string; is_primary: boolean }[]>([]);
@@ -95,7 +95,7 @@ export default function ViewProfileScreen() {
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
         {/* Photo header */}
-        <View style={styles.photoSection}>
+        <View style={[styles.photoSection, { height: screenHeight * 0.65 }]}>
           {photos.length > 0 ? (
             <>
               <Image source={{ uri: photos[currentPhoto]?.url ?? photos[0].url }} style={styles.mainPhoto} resizeMode="cover" />
@@ -108,8 +108,8 @@ export default function ViewProfileScreen() {
               )}
               {photos.length > 1 && (
                 <>
-                  <TouchableOpacity style={styles.tapLeft} activeOpacity={1} onPress={() => setCurrentPhoto((p) => Math.max(0, p - 1))} />
-                  <TouchableOpacity style={styles.tapRight} activeOpacity={1} onPress={() => setCurrentPhoto((p) => Math.min(photos.length - 1, p + 1))} />
+                  <TouchableOpacity style={[styles.tapLeft, { width: screenWidth / 2 }]} activeOpacity={1} onPress={() => setCurrentPhoto((p) => Math.max(0, p - 1))} />
+                  <TouchableOpacity style={[styles.tapRight, { width: screenWidth / 2 }]} activeOpacity={1} onPress={() => setCurrentPhoto((p) => Math.min(photos.length - 1, p + 1))} />
                 </>
               )}
             </>
@@ -166,7 +166,7 @@ export default function ViewProfileScreen() {
                 {gifts.map((g) => {
                   const item = getGiftItem(g.gift_emoji);
                   return (
-                    <View key={g.id} style={[styles.giftTile, { backgroundColor: colors.backgroundSecondary }]}>
+                    <View key={g.id} style={[styles.giftTile, { width: Math.max(0, (screenWidth - 80) / 4), backgroundColor: colors.backgroundSecondary }]}>
                       <Text style={styles.giftTileEmoji}>{g.gift_emoji}</Text>
                       <Text style={[styles.giftTileName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
                       <View style={styles.giftTilePrice}>
@@ -260,12 +260,12 @@ export default function ViewProfileScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  photoSection: { position: "relative", height: SH * 0.65 },
+  photoSection: { position: "relative" },
   mainPhoto: { width: "100%", height: "100%" },
   photoDots: { position: "absolute", top: 12, left: 16, right: 16, flexDirection: "row", gap: 4 },
   dot: { flex: 1, height: 3, borderRadius: 2 },
-  tapLeft: { position: "absolute", left: 0, top: 0, width: SW / 2, height: "100%" },
-  tapRight: { position: "absolute", right: 0, top: 0, width: SW / 2, height: "100%" },
+  tapLeft: { position: "absolute", left: 0, top: 0, height: "100%" },
+  tapRight: { position: "absolute", right: 0, top: 0, height: "100%" },
   backBtn: { position: "absolute", left: 16 },
   reportBtn: { position: "absolute", right: 16 },
   backBtnInner: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center" },
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   giftCountBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 12 },
   giftCountText: { fontSize: 13, fontFamily: "Inter_700Bold" },
   giftGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  giftTile: { width: (SW - 80) / 4, borderRadius: 12, padding: 8, alignItems: "center", gap: 3 },
+  giftTile: { borderRadius: 12, padding: 8, alignItems: "center", gap: 3 },
   giftTileEmoji: { fontSize: 28 },
   giftTileName: { fontSize: 10, fontFamily: "Inter_600SemiBold", textAlign: "center" },
   giftTilePrice: { flexDirection: "row", alignItems: "center", gap: 2 },

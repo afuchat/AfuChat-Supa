@@ -903,11 +903,11 @@ const st = StyleSheet.create({
   priorityBtn: {
     flexDirection: "row", alignItems: "center", gap: 8,
     borderRadius: 12, borderWidth: 1,
-    padding: 10, width: "47%",
+    padding: 10, flexGrow: 1, flexBasis: "47%", minWidth: 0,
   },
   priorityDot: { width: 8, height: 8, borderRadius: 4 },
-  priorityLabel: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
-  priorityDesc: { fontSize: 10, fontFamily: "Inter_400Regular", marginTop: 1 },
+  priorityLabel: { flexShrink: 1, fontSize: 13, lineHeight: 18, fontFamily: "Inter_600SemiBold" },
+  priorityDesc: { flexShrink: 1, fontSize: 10, lineHeight: 14, fontFamily: "Inter_400Regular", marginTop: 1 },
 
   input: {
     borderRadius: 12, borderWidth: 1,
@@ -951,8 +951,8 @@ const st = StyleSheet.create({
     padding: 12, marginBottom: 12, gap: 4,
   },
   deviceInfoRow: { flexDirection: "row", gap: 8 },
-  deviceInfoKey: { fontSize: 11, fontFamily: "Inter_500Medium", width: 110 },
-  deviceInfoVal: { fontSize: 11, fontFamily: "Inter_400Regular", flex: 1 },
+  deviceInfoKey: { flexShrink: 1, fontSize: 11, lineHeight: 15, fontFamily: "Inter_500Medium", width: 110 },
+  deviceInfoVal: { flex: 1, minWidth: 0, fontSize: 11, lineHeight: 15, fontFamily: "Inter_400Regular" },
 
   submitBar: {
     padding: 14, paddingTop: 12,

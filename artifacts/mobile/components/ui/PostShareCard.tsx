@@ -88,7 +88,7 @@ export const ShareCard = React.forwardRef<View, ShareCardProps>(function ShareCa
             </View>
           )}
         </View>
-        <View style={{ flex: 1, gap: 3 }}>
+        <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
             <Text style={s.authorName} numberOfLines={1}>
               {post.author_name}
@@ -182,7 +182,9 @@ export const ShareCard = React.forwardRef<View, ShareCardProps>(function ShareCa
 
 const s = StyleSheet.create({
   card: {
-    width: 390,
+    width: "100%",
+    maxWidth: 390,
+    alignSelf: "center",
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
     overflow: "hidden",
@@ -209,8 +211,8 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   avatarLetter: { fontSize: 19, fontWeight: "700" },
-  authorName: { fontSize: 15, fontWeight: "700", color: "#111827", maxWidth: 200 },
-  authorSub: { fontSize: 12, color: "#6B7280" },
+  authorName: { flexShrink: 1, fontSize: 15, lineHeight: 19, fontWeight: "700", color: "#111827" },
+  authorSub: { flexShrink: 1, fontSize: 12, lineHeight: 16, color: "#6B7280" },
   badgeRow: { paddingHorizontal: 18, paddingBottom: 10 },
   badge: {
     flexDirection: "row",

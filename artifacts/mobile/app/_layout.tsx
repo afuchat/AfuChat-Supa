@@ -256,19 +256,70 @@ function ThemedStatusBar() {
 function ThemedRoot({ children }: { children: React.ReactNode }) {
   const { colors } = useTheme();
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, minHeight: 0, backgroundColor: colors.background }}>
       {children}
     </View>
   );
 }
 
+function WebGlobalStyles() {
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+    const styleId = "afuchat-web-global-layout";
+    if (document.getElementById(styleId)) return;
+
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.textContent = `
+      html, body, #root {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+      }
+      body {
+        overflow: hidden;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+      /*
+       * React Native Web emits a generated font-family rule for each Text
+       * weight. Keep a browser-native fallback at the document boundary so a
+       * delayed/failed webfont request cannot make text glyphs disappear.
+       * Native platforms continue to use the explicit Inter font families.
+       */
+      body * {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+      }
+      button, input, textarea, select {
+        font-family: inherit;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => style.remove();
+  }, []);
+
+  return null;
+}
+
+function WebFontGate({
+  ready,
+  children,
+}: {
+  ready: boolean;
+  children: React.ReactNode;
+}) {
+  const { colors } = useTheme();
+  if (Platform.OS === "web" && !ready) {
+    return <View style={{ flex: 1, minHeight: 0, backgroundColor: colors.background }} />;
+  }
+  return <>{children}</>;
+}
+
 function LanguageDirectionShell({ children }: { children: React.ReactNode }) {
   const { isRTL } = useLanguage();
-  return (
-    <View style={[styles.directionShell, { direction: isRTL ? "rtl" : "ltr" }]}>
-      {children}
-    </View>
-  );
+  return <View style={[styles.directionShell, { direction: isRTL ? "rtl" : "ltr" }]}>{children}</View>;
 }
 
 function IncomingShareGate({ navigationReady }: { navigationReady: boolean }) {
@@ -503,14 +554,16 @@ export default function RootLayout() {
     <ShareIntentProvider options={{ scheme: "afuchat" }}>
       <ErrorBoundary>
         <GestureHandlerRootView style={styles.root}>
-        {/* JS splash overlay — visible until fonts load, then fades out */}
-        {!splashDone && Platform.OS !== "web" && (
-          <SplashScreenView ready={fontsLoaded || !!fontError} onDone={handleSplashDone} />
-        )}
-        <SafeAreaProvider>
-          <ThemeProvider>
-            <ThemedRoot>
-              <AppAccentProvider>
+          {/* JS splash overlay — visible until fonts load, then fades out */}
+          {!splashDone && Platform.OS !== "web" && (
+            <SplashScreenView ready={fontsLoaded || !!fontError} onDone={handleSplashDone} />
+          )}
+          <SafeAreaProvider>
+            <ThemeProvider>
+              <ThemedRoot>
+                <WebGlobalStyles />
+                <WebFontGate ready={fontsLoaded || !!fontError}>
+                  <AppAccentProvider>
                 <ThemedStatusBar />
                 {/* OOM guard: cancels all animations on app-background / memory-pressure */}
                 <AnimationGuardInit />
@@ -546,11 +599,11 @@ export default function RootLayout() {
                     </CallProvider>
                   </AuthProvider>
                 </DataModeProvider>
-              </AppAccentProvider>
-            </ThemedRoot>
-          </ThemeProvider>
-        </SafeAreaProvider>
-
+                  </AppAccentProvider>
+                </WebFontGate>
+              </ThemedRoot>
+            </ThemeProvider>
+          </SafeAreaProvider>
         </GestureHandlerRootView>
       </ErrorBoundary>
     </ShareIntentProvider>
@@ -558,6 +611,6 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  directionShell: { flex: 1 },
+  root: { flex: 1, minHeight: 0 },
+  directionShell: { flex: 1, minHeight: 0 },
 });

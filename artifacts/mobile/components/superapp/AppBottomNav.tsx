@@ -22,7 +22,9 @@ export default function AppBottomNav({ items, activeKey }: Props) {
   const { colors, accent, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
-  const bottomInset = Platform.OS === "web" ? Math.max(insets.bottom, 34) : insets.bottom;
+  // The bar is in normal flow, so adding a synthetic browser safe-area inset
+  // pushes every page's bottom content down. Browsers expose no device inset.
+  const bottomInset = Platform.OS === "web" ? 0 : insets.bottom;
 
   return (
     <View style={[styles.rowWrap, { paddingBottom: bottomInset + 8 }]}>
@@ -127,7 +129,7 @@ const styles = StyleSheet.create({
   label: {
     width: "100%",
     fontSize: 9,
-    lineHeight: 10,
+    lineHeight: 12,
     fontFamily: "Inter_700Bold",
     fontWeight: "700",
     letterSpacing: 0.2,

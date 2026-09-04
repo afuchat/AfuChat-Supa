@@ -237,7 +237,13 @@ export default function WelcomeScreen() {
 
   useEffect(() => {
     let mounted = true;
-    AsyncStorage.getItem(LANGUAGE_PREFERENCE_KEY)
+    // Browser storage can be unavailable or leave a promise pending in an
+    // embedded preview. Onboarding must never remain on its background-only
+    // loading state; fall back to the language picker after a short timeout.
+    Promise.race([
+      AsyncStorage.getItem(LANGUAGE_PREFERENCE_KEY),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
+    ])
       .then((stored) => {
         if (mounted) setLanguageStep(!stored || stored === "none");
       })

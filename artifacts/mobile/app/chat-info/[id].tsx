@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Dimensions,
   FlatList,
   Platform,
   Share,
@@ -30,9 +29,6 @@ import { generateGroupInviteLink } from "@/lib/groupInvite";
 import QRCode from "@/components/ui/QRCode";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const { width: SW } = Dimensions.get("window");
-const CELL = Math.floor((SW - 3) / 3);
 
 const MUTE_OPTIONS: { label: string; hours: number | null }[] = [
   { label: "For 1 hour",  hours: 1 },
@@ -190,16 +186,16 @@ function MemberRow({ member, accent, colors, isMe }: { member: Member; accent: s
   );
 }
 
-function PostCell({ post }: { post: GridPost }) {
+function PostCell({ post, cellSize }: { post: GridPost; cellSize: number }) {
   const uri = post.image_url ?? post.video_url;
-  if (!uri) return <View style={[s.postCell, { backgroundColor: "#1C1C1E" }]} />;
+  if (!uri) return <View style={[s.postCell, { width: cellSize, height: cellSize, backgroundColor: "#1C1C1E" }]} />;
   return (
     <TouchableOpacity
-      style={s.postCell}
+      style={[s.postCell, { width: cellSize, height: cellSize }]}
       activeOpacity={0.85}
       onPress={() => router.push({ pathname: "/video/[id]", params: { id: post.id } } as any)}
     >
-      <Image source={{ uri }} style={{ width: CELL, height: CELL }} contentFit="cover" />
+      <Image source={{ uri }} style={{ width: cellSize, height: cellSize }} contentFit="cover" />
       {post.post_type === "video" && (
         <View style={s.videoBadge}>
           <Ionicons name="play" size={11} color="#fff" />
@@ -240,6 +236,7 @@ export default function ChatInfoScreen() {
   const [channelStats, setChannelStats] = useState<ChannelStats | null>(null);
   const [channelCanViewMembers, setChannelCanViewMembers] = useState(false);
   const [gridPosts,    setGridPosts]    = useState<GridPost[]>([]);
+  const [gridWidth,    setGridWidth]    = useState(0);
   const [showChannelQr, setShowChannelQr] = useState(false);
 
   // ── Tab state ────────────────────────────────────────────────────────────────
@@ -522,6 +519,7 @@ export default function ChatInfoScreen() {
   }, [isGroup, isChannel, isDM, activeTab, members, gridPosts, channelCanViewMembers]);
 
   const numColumns = isDM && activeTab === 0 ? 3 : 1;
+  const cellSize = Math.max(0, Math.floor((gridWidth - 3) / 3));
 
   // ── Render list item ─────────────────────────────────────────────────────────
 
@@ -537,7 +535,7 @@ export default function ChatInfoScreen() {
       );
     }
     if (isDM && activeTab === 0) {
-      return <PostCell post={item as GridPost} />;
+      return <PostCell post={item as GridPost} cellSize={cellSize} />;
     }
     return null;
   }
@@ -858,6 +856,10 @@ export default function ChatInfoScreen() {
         numColumns={numColumns}
         ListHeaderComponent={<ListHeader />}
         contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
+        onLayout={(event) => {
+          const nextWidth = Math.round(event.nativeEvent.layout.width);
+          if (nextWidth !== gridWidth) setGridWidth(nextWidth);
+        }}
         showsVerticalScrollIndicator={false}
         columnWrapperStyle={numColumns > 1 ? { gap: 1.5 } : undefined}
         ItemSeparatorComponent={
@@ -1159,8 +1161,6 @@ const s = StyleSheet.create({
 
   // Posts grid
   postCell: {
-    width: CELL,
-    height: CELL,
     position: "relative",
   },
   videoBadge: {

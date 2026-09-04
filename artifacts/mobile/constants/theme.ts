@@ -1,5 +1,3 @@
-import { StyleSheet } from "react-native";
-
 /**
  * AfuChat Design Tokens — ONE source of truth for the entire platform.
  *
@@ -65,7 +63,9 @@ export const T = {
 
   // ── Border widths ────────────────────────────────────────────────────────────
   border: {
-    hairline: StyleSheet.hairlineWidth,  // screen-density-aware (0.33–1px)
+    // RN Web warns for StyleSheet.hairlineWidth and renders fractional
+    // separators inconsistently. Keep the token stable across platforms.
+    hairline: 0.5,
     thin:     1,
     regular:  1.5,
     thick:    2,

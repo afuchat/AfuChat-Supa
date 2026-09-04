@@ -8,7 +8,6 @@ import React, {
 import {
   ActivityIndicator,
   Animated,
-  Dimensions,
   Image as RNImage,
   Modal,
   PanResponder,
@@ -18,6 +17,7 @@ import {
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from "react-native";
 import Image from "@/components/ui/OptimizedImage";
 import { LinearGradient } from "@/components/ui/SafeGradient";
@@ -31,10 +31,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { showAlert } from "@/lib/alert";
 import { chargeMatchSuperLike, chargeProfileBoost, getAcoinBalance, MATCH_PRICES } from "@/lib/matchTransactions";
 
-const { width: SW, height: SH } = Dimensions.get("window");
-const CARD_W = Math.min(SW - 32, 420);
-const CARD_H = Math.min(SH * 0.64, 580);
-const SWIPE_THRESHOLD = CARD_W * 0.28;
 const SWIPE_OUT_DURATION = 320;
 const BRAND = "#FF2D55";
 
@@ -96,6 +92,7 @@ function CardDetailModal({
 }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const [photoIdx, setPhotoIdx] = useState(0);
   const age = calcAge(candidate.date_of_birth);
   const goal = GOAL_INFO[candidate.relationship_goal] ?? GOAL_INFO.open;
@@ -105,7 +102,7 @@ function CardDetailModal({
       <View style={[detailStyles.root, { backgroundColor: colors.background }]}>
         <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
           {/* Photos */}
-          <View style={{ height: SH * 0.62, position: "relative" }}>
+          <View style={{ height: screenHeight * 0.62, position: "relative" }}>
             {candidate.photos.length > 0 ? (
               <Image source={{ uri: candidate.photos[photoIdx]?.url ?? candidate.photos[0].url }} style={StyleSheet.absoluteFill} resizeMode="cover" />
             ) : (
@@ -121,8 +118,8 @@ function CardDetailModal({
             )}
             {candidate.photos.length > 1 && (
               <>
-                <Pressable style={detailStyles.tapL} onPress={() => setPhotoIdx((p) => Math.max(0, p - 1))} />
-                <Pressable style={detailStyles.tapR} onPress={() => setPhotoIdx((p) => Math.min(candidate.photos.length - 1, p + 1))} />
+                <Pressable style={[detailStyles.tapL, { width: screenWidth / 2 }]} onPress={() => setPhotoIdx((p) => Math.max(0, p - 1))} />
+                <Pressable style={[detailStyles.tapR, { width: screenWidth / 2 }]} onPress={() => setPhotoIdx((p) => Math.min(candidate.photos.length - 1, p + 1))} />
               </>
             )}
             {/* Back */}
@@ -212,8 +209,8 @@ const detailStyles = StyleSheet.create({
   root: { flex: 1 },
   dots: { position: "absolute", top: 12, left: 16, right: 16, flexDirection: "row", gap: 4 },
   dot: { flex: 1, height: 3, borderRadius: 2 },
-  tapL: { position: "absolute", left: 0, top: 0, width: SW / 2, height: "100%" },
-  tapR: { position: "absolute", right: 0, top: 0, width: SW / 2, height: "100%" },
+  tapL: { position: "absolute", left: 0, top: 0, height: "100%" },
+  tapR: { position: "absolute", right: 0, top: 0, height: "100%" },
   closeBtn: { position: "absolute", left: 16 },
   closeBtnInner: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center" },
   nameOverlay: { position: "absolute", bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 60, paddingBottom: 20, gap: 5 },
@@ -253,23 +250,27 @@ function SwipeCard({
   onTap: () => void;
 }) {
   const pan = useRef(new Animated.ValueXY()).current;
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const cardWidth = Math.min(screenWidth - 32, 420);
+  const cardHeight = Math.min(screenHeight * 0.64, 580);
+  const swipeThreshold = cardWidth * 0.28;
   const [photoIdx, setPhotoIdx] = useState(0);
   const age = calcAge(candidate.date_of_birth);
   const primaryPhoto = candidate.photos[photoIdx]?.url ?? candidate.photos[0]?.url;
 
-  const rotate = pan.x.interpolate({ inputRange: [-CARD_W / 2, 0, CARD_W / 2], outputRange: ["-12deg", "0deg", "12deg"], extrapolate: "clamp" });
-  const likeOpacity = pan.x.interpolate({ inputRange: [0, SWIPE_THRESHOLD / 2], outputRange: [0, 1], extrapolate: "clamp" });
-  const nopeOpacity = pan.x.interpolate({ inputRange: [-SWIPE_THRESHOLD / 2, 0], outputRange: [1, 0], extrapolate: "clamp" });
-  const superOpacity = pan.y.interpolate({ inputRange: [-SWIPE_THRESHOLD / 2, 0], outputRange: [1, 0], extrapolate: "clamp" });
+  const rotate = pan.x.interpolate({ inputRange: [-cardWidth / 2, 0, cardWidth / 2], outputRange: ["-12deg", "0deg", "12deg"], extrapolate: "clamp" });
+  const likeOpacity = pan.x.interpolate({ inputRange: [0, swipeThreshold / 2], outputRange: [0, 1], extrapolate: "clamp" });
+  const nopeOpacity = pan.x.interpolate({ inputRange: [-swipeThreshold / 2, 0], outputRange: [1, 0], extrapolate: "clamp" });
+  const superOpacity = pan.y.interpolate({ inputRange: [-swipeThreshold / 2, 0], outputRange: [1, 0], extrapolate: "clamp" });
 
   const panResponder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => isTop,
     onMoveShouldSetPanResponder: (_, g) => isTop && (Math.abs(g.dx) > 4 || Math.abs(g.dy) > 4),
     onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], { useNativeDriver: true }),
     onPanResponderRelease: (_, g) => {
-      if (g.dy < -SWIPE_THRESHOLD) flyOut("up");
-      else if (g.dx > SWIPE_THRESHOLD) flyOut("right");
-      else if (g.dx < -SWIPE_THRESHOLD) flyOut("left");
+       if (g.dy < -swipeThreshold) flyOut("up");
+       else if (g.dx > swipeThreshold) flyOut("right");
+       else if (g.dx < -swipeThreshold) flyOut("left");
       else if (Math.abs(g.dx) < 8 && Math.abs(g.dy) < 8) {
         onTap();
         Animated.spring(pan, { toValue: { x: 0, y: 0 }, useNativeDriver: true }).start();
@@ -279,7 +280,7 @@ function SwipeCard({
 
   function flyOut(dir: "left" | "right" | "up") {
     Haptics.impactAsync();
-    const toVal = dir === "right" ? { x: SW * 1.5, y: 0 } : dir === "left" ? { x: -SW * 1.5, y: 0 } : { x: 0, y: -SH * 1.5 };
+    const toVal = dir === "right" ? { x: screenWidth * 1.5, y: 0 } : dir === "left" ? { x: -screenWidth * 1.5, y: 0 } : { x: 0, y: -screenHeight * 1.5 };
     Animated.timing(pan, { toValue: toVal, duration: SWIPE_OUT_DURATION, useNativeDriver: true }).start(() => {
       pan.setValue({ x: 0, y: 0 });
       if (dir === "right") onSwipeRight();
@@ -292,7 +293,7 @@ function SwipeCard({
 
   return (
     <Animated.View
-      style={[styles.card, { width: CARD_W, height: CARD_H, transform: [{ translateX: pan.x }, { translateY: pan.y }, { rotate }] }]}
+      style={[styles.card, { width: cardWidth, height: cardHeight, transform: [{ translateX: pan.x }, { translateY: pan.y }, { rotate }] }]}
       {...panResponder.panHandlers}
     >
       {primaryPhoto ? (
@@ -373,6 +374,7 @@ function SwipeCard({
 // ─── Match Celebration Modal ─────────────────────────────────────────────────
 function MatchModal({ match, onClose, onMessage }: { match: MatchRecord; onClose: () => void; onMessage: () => void }) {
   const { colors } = useTheme();
+  const { width: screenWidth } = useWindowDimensions();
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const age = calcAge(match.other.date_of_birth);
 
@@ -390,7 +392,7 @@ function MatchModal({ match, onClose, onMessage }: { match: MatchRecord; onClose
           </Text>
         ))}
       </View>
-      <Animated.View style={[matchStyles.card, { transform: [{ scale: scaleAnim }] }]}>
+      <Animated.View style={[matchStyles.card, { width: Math.min(screenWidth - 48, 380), transform: [{ scale: scaleAnim }] }]}>
         <LinearGradient colors={[BRAND, "#FF6B6B"]} style={matchStyles.headerGrad}>
           <View style={matchStyles.heartBubble}><Ionicons name="heart" size={44} color="#fff" /></View>
           {match.is_super_match && (
@@ -439,7 +441,7 @@ function MatchModal({ match, onClose, onMessage }: { match: MatchRecord; onClose
 const matchStyles = StyleSheet.create({
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.88)", alignItems: "center", justifyContent: "center", zIndex: 200 },
   floatingHeart: { position: "absolute" },
-  card: { width: Math.min(SW - 48, 380), borderRadius: 28, overflow: "hidden" },
+  card: { borderRadius: 28, overflow: "hidden" },
   headerGrad: { alignItems: "center", paddingTop: 28, paddingBottom: 16, paddingHorizontal: 24, gap: 6 },
   heartBubble: { width: 72, height: 72, borderRadius: 36, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center", marginBottom: 4 },
   superBadge: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "rgba(0,0,0,0.2)", paddingHorizontal: 12, paddingVertical: 4, borderRadius: 16 },
@@ -561,6 +563,9 @@ export default function MatchScreen({ initialTab }: { initialTab?: "discover" | 
   const { colors, isDark } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const cardWidth = Math.min(screenWidth - 32, 420);
+  const cardHeight = Math.min(screenHeight * 0.64, 580);
 
   const [myProfile, setMyProfile] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -854,12 +859,12 @@ export default function MatchScreen({ initialTab }: { initialTab?: "discover" | 
           {/* Card area */}
           <View style={styles.cardArea}>
             {loading ? (
-              <View style={[styles.card, { width: CARD_W, height: CARD_H, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" }]}>
+              <View style={[styles.card, { width: cardWidth, height: cardHeight, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" }]}>
                 <ActivityIndicator color={BRAND} size="large" />
                 <Text style={[styles.loadingText, { color: colors.textMuted }]}>Finding people nearby…</Text>
               </View>
             ) : displayStack.length === 0 ? (
-              <View style={[styles.card, { width: CARD_W, height: CARD_H, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", padding: 32 }]}>
+              <View style={[styles.card, { width: cardWidth, height: cardHeight, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", padding: 32 }]}>
                 <View style={[styles.emptyIcon, { backgroundColor: BRAND }]}><Ionicons name="search" size={40} color="#fff" /></View>
                 <Text style={[styles.emptyTitle, { color: colors.text }]}>You've seen everyone!</Text>
                 <Text style={[styles.emptySub, { color: colors.textMuted }]}>New people join every day. Check back later or adjust your preferences.</Text>
@@ -886,7 +891,7 @@ export default function MatchScreen({ initialTab }: { initialTab?: "discover" | 
                         onTap={() => setDetailCandidate(c)}
                       />
                     ) : (
-                      <View style={[styles.card, { width: CARD_W, height: CARD_H }]}>
+                      <View style={[styles.card, { width: cardWidth, height: cardHeight }]}>
                         {c.photos[0] ? (
                           <Image source={{ uri: c.photos[0].url }} style={StyleSheet.absoluteFill} resizeMode="cover" />
                         ) : (

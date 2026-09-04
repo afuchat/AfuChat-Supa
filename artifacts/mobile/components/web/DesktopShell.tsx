@@ -249,7 +249,7 @@ export default function DesktopShell({ children }: { children: React.ReactNode }
 }
 
 const styles = StyleSheet.create({
-  shell: { flex: 1, flexDirection: "row", minWidth: 980 },
+  shell: { flex: 1, minHeight: 0, flexDirection: "row", minWidth: 980 },
   sidebar: {
     width: 232,
     flexShrink: 0,
@@ -270,8 +270,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  brandName: { fontSize: 21, fontFamily: "Inter_700Bold", letterSpacing: -0.5 },
-  navScroll: { flex: 1, marginTop: 30 },
+  brandName: { fontSize: 21, lineHeight: 26, fontFamily: "Inter_700Bold", letterSpacing: -0.5 },
+  navScroll: { flex: 1, minHeight: 0, marginTop: 30 },
   navContent: { paddingHorizontal: 14, paddingBottom: 20 },
   navEyebrow: {
     fontSize: 10,
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  navLabel: { flex: 1, fontSize: 14, fontFamily: "Inter_500Medium" },
+  navLabel: { flex: 1, minWidth: 0, fontSize: 14, lineHeight: 20, fontFamily: "Inter_500Medium" },
   navLabelActive: { fontFamily: "Inter_700Bold" },
   liveDot: { width: 6, height: 6, borderRadius: 3, marginRight: 3 },
   sidebarFooter: { borderTopWidth: 0.5, padding: 16 },
@@ -310,12 +310,12 @@ const styles = StyleSheet.create({
     cursor: "pointer" as any,
   },
   profileCopy: { flex: 1, minWidth: 0 },
-  profileName: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
-  profileStatus: { fontSize: 11, marginTop: 2 },
+  profileName: { fontSize: 13, lineHeight: 18, fontFamily: "Inter_600SemiBold" },
+  profileStatus: { fontSize: 11, lineHeight: 15, marginTop: 2 },
   connectionRow: { flexDirection: "row", alignItems: "center", gap: 7, padding: 8, paddingBottom: 2 },
   connectionDot: { width: 7, height: 7, borderRadius: 4 },
-  connectionText: { fontSize: 10, flex: 1 },
-  workspace: { flex: 1, minWidth: 0 },
+  connectionText: { fontSize: 10, lineHeight: 14, flex: 1, minWidth: 0 },
+  workspace: { flex: 1, minWidth: 0, minHeight: 0 },
   topBar: {
     minHeight: 76,
     paddingHorizontal: 30,
@@ -324,8 +324,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderBottomWidth: 0.5,
   },
-  topBarTitle: { fontSize: 22, fontFamily: "Inter_700Bold" },
-  topBarSubtitle: { fontSize: 12, marginTop: 3 },
+  topBarTitle: { fontSize: 22, lineHeight: 28, fontFamily: "Inter_700Bold" },
+  topBarSubtitle: { fontSize: 12, lineHeight: 17, marginTop: 3 },
   topBarActions: { flexDirection: "row", gap: 8 },
   topBarButton: {
     width: 38,

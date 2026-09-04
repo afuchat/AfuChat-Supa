@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
-  Dimensions,
   Image as RNImage,
   KeyboardAvoidingView,
   Platform,
@@ -13,6 +12,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
 import Image from "@/components/ui/OptimizedImage";
 import { LinearGradient } from "@/components/ui/SafeGradient";
@@ -29,10 +29,7 @@ import SchoolPickerInput from "@/components/SchoolPickerInput";
 import RegionPickerInput from "@/components/RegionPickerInput";
 import { detectGeo, clearGeoCache } from "@/lib/geoDetect";
 
-const { width: SW } = Dimensions.get("window");
-const CONTENT_W = SW - 48; // scrollContent has paddingHorizontal: 24 each side
 const DOB_GAP = 10;
-const DOB_UNIT = (CONTENT_W - DOB_GAP * 2) / 4; // day=1u, month=1u, year=2u
 const BRAND = "#FF2D55";
 const TOTAL_STEPS = 6;
 
@@ -78,6 +75,9 @@ export default function MatchOnboarding() {
   const { colors, isDark } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  const { width: SW } = useWindowDimensions();
+  const contentWidth = Math.max(0, SW - 48);
+  const dobUnit = Math.max(0, (contentWidth - DOB_GAP * 2) / 4);
   const progress = useRef(new Animated.Value(0)).current;
 
   const [step, setStep] = useState(1);
@@ -312,9 +312,9 @@ export default function MatchOnboarding() {
                 <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>DATE OF BIRTH</Text>
                 <View style={styles.dobRow}>
                   {([
-                    { field: "day" as const, ph: "DD", ml: 2, w: DOB_UNIT, label: "Day" },
-                    { field: "month" as const, ph: "MM", ml: 2, w: DOB_UNIT, label: "Month" },
-                    { field: "year" as const, ph: "YYYY", ml: 4, w: DOB_UNIT * 2, label: "Year" },
+                    { field: "day" as const, ph: "DD", ml: 2, w: dobUnit, label: "Day" },
+                    { field: "month" as const, ph: "MM", ml: 2, w: dobUnit, label: "Month" },
+                    { field: "year" as const, ph: "YYYY", ml: 4, w: dobUnit * 2, label: "Year" },
                   ]).map(({ field, ph, ml, w, label }) => (
                     <View key={field} style={{ width: w }}>
                       <Text style={[styles.dobLabel, { color: colors.textMuted }]}>{label}</Text>
@@ -363,7 +363,7 @@ export default function MatchOnboarding() {
                   const photo = photos[i];
                   if (photo) {
                     return (
-                      <View key={i} style={styles.photoCell}>
+                      <View key={i} style={[styles.photoCell, { width: Math.max(0, (contentWidth - 20) / 3) }]}>
                         <Image source={{ uri: photo.uri }} style={styles.photoThumb} resizeMode="cover" />
                         {!photo.uploaded && (
                           <View style={styles.photoUploading}>
@@ -382,7 +382,7 @@ export default function MatchOnboarding() {
                     );
                   }
                   return (
-                    <Pressable key={i} style={[styles.photoAdd, { backgroundColor: colors.surface, borderColor: i === 0 ? BRAND : colors.border }]} onPress={pickPhoto}>
+                    <Pressable key={i} style={[styles.photoAdd, { width: Math.max(0, (contentWidth - 20) / 3), backgroundColor: colors.surface, borderColor: i === 0 ? BRAND : colors.border }]} onPress={pickPhoto}>
                       <Ionicons name="add" size={28} color={i === 0 ? BRAND : colors.textMuted} />
                       {i === 0 && <Text style={[styles.photoAddLabel, { color: BRAND }]}>Required</Text>}
                     </Pressable>
@@ -671,16 +671,16 @@ const styles = StyleSheet.create({
   dobLabel: { fontSize: 11, fontFamily: "Inter_500Medium", marginBottom: 6, textAlign: "center" },
   dobInput: { borderWidth: 0.5, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 14, fontSize: 16, fontFamily: "Inter_400Regular", textAlign: "center" },
   genderGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  genderTile: { flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1.5, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, minWidth: (SW - 68) / 2 },
+  genderTile: { flexGrow: 1, flexBasis: "46%", minWidth: 0, flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1.5, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12 },
   genderLabel: { fontSize: 15, fontFamily: "Inter_500Medium" },
   photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 20 },
-  photoCell: { width: (SW - 68) / 3, aspectRatio: 3 / 4, borderRadius: 16, overflow: "hidden", position: "relative" },
+  photoCell: { aspectRatio: 3 / 4, borderRadius: 16, overflow: "hidden", position: "relative" },
   photoThumb: { width: "100%", height: "100%" },
   photoUploading: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.5)", alignItems: "center", justifyContent: "center" },
   primaryBadge: { position: "absolute", bottom: 6, left: 6, backgroundColor: BRAND, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 },
   primaryBadgeText: { color: "#fff", fontSize: 10, fontFamily: "Inter_700Bold" },
   photoRemove: { position: "absolute", top: 4, right: 4 },
-  photoAdd: { width: (SW - 68) / 3, aspectRatio: 3 / 4, borderRadius: 16, borderWidth: 2, borderStyle: "dashed", alignItems: "center", justifyContent: "center", gap: 4 },
+  photoAdd: { aspectRatio: 3 / 4, borderRadius: 16, borderWidth: 2, borderStyle: "dashed", alignItems: "center", justifyContent: "center", gap: 4 },
   photoAddLabel: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
   photoTip: { flexDirection: "row", alignItems: "flex-start", gap: 10, borderRadius: 14, padding: 14 },
   photoTipText: { flex: 1, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },

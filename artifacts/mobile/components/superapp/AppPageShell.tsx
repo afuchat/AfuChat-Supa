@@ -122,7 +122,7 @@ export default function AppPageShell({ appId, activeKey, showNav = true, childre
   );
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={{ flex: 1, position: "relative" }}>{children}</View>
+      <View style={{ flex: 1, minHeight: 0, position: "relative" }}>{children}</View>
       {shouldShowNav && <AppBottomNav items={items} activeKey={activeKey} />}
     </View>
   );
