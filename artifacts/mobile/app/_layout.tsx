@@ -283,15 +283,6 @@ function WebGlobalStyles() {
       *, *::before, *::after {
         box-sizing: border-box;
       }
-      /*
-       * React Native Web emits a generated font-family rule for each Text
-       * weight. Keep a browser-native fallback at the document boundary so a
-       * delayed/failed webfont request cannot make text glyphs disappear.
-       * Native platforms continue to use the explicit Inter font families.
-       */
-      body * {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-      }
       button, input, textarea, select {
         font-family: inherit;
       }
@@ -440,6 +431,7 @@ export default function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
+  const [webFontTimeout, setWebFontTimeout] = useState(false);
   const [splashDone, setSplashDone] = useState(false);
 
   const handleSplashDone = useCallback(() => {
@@ -464,6 +456,15 @@ export default function RootLayout() {
       setSplashDone(true);
     }
   }, [fontError]);
+
+  // Expo's offline web asset resolver can leave useFonts pending without
+  // returning an error. Do not block the entire app in that state; the browser
+  // can render the layout with its normal font fallback.
+  useEffect(() => {
+    if (Platform.OS !== "web" || fontsLoaded || fontError) return;
+    const timeout = setTimeout(() => setWebFontTimeout(true), 1500);
+    return () => clearTimeout(timeout);
+  }, [fontsLoaded, fontError]);
 
   // A broken or unusually slow font/asset load must never leave users behind
   // the native splash forever in a production build. The normal path still
@@ -562,7 +563,7 @@ export default function RootLayout() {
             <ThemeProvider>
               <ThemedRoot>
                 <WebGlobalStyles />
-                <WebFontGate ready={fontsLoaded || !!fontError}>
+                <WebFontGate ready={fontsLoaded || !!fontError || webFontTimeout}>
                   <AppAccentProvider>
                 <ThemedStatusBar />
                 {/* OOM guard: cancels all animations on app-background / memory-pressure */}
