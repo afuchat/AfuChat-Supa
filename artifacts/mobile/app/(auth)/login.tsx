@@ -183,7 +183,11 @@ function ForgotPasswordModal({ visible, onClose, accent }: { visible: boolean; o
               <AuthInput icon="mail" placeholder="Email address" value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" returnKeyType="go" onSubmitEditing={sendCode} accent={accent} />
               <TouchableOpacity style={[sc.primaryBtn, loading && { opacity: 0.6 }]} onPress={sendCode} disabled={loading} activeOpacity={0.85}>
                 <LinearGradient colors={[accent, Colors.brandDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
-                  {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={sc.primaryText}>Send reset code</Text>}
+                  {loading ? <ActivityIndicator color="#fff" size="small" /> : (
+                    <Text style={sc.primaryText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>
+                      Send reset code
+                    </Text>
+                  )}
                 </LinearGradient>
               </TouchableOpacity>
             </>
@@ -196,7 +200,11 @@ function ForgotPasswordModal({ visible, onClose, accent }: { visible: boolean; o
               <AuthInput icon="lock-closed" placeholder="Confirm password" value={confirmPwd} onChangeText={setConfirmPwd} secureTextEntry={!showPwd} returnKeyType="go" onSubmitEditing={doReset} accent={accent} />
               <TouchableOpacity style={[sc.primaryBtn, loading && { opacity: 0.6 }]} onPress={doReset} disabled={loading} activeOpacity={0.85}>
                 <LinearGradient colors={[accent, Colors.brandDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
-                  {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={sc.primaryText}>Update password</Text>}
+                  {loading ? <ActivityIndicator color="#fff" size="small" /> : (
+                    <Text style={sc.primaryText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>
+                      Update password
+                    </Text>
+                  )}
                 </LinearGradient>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setStep("email")} style={{ alignSelf: "center", paddingVertical: 4 }}>
@@ -251,7 +259,11 @@ function EmailVerifyModal({ visible, email, onClose, onVerified, isDark, accent 
           <AuthInput icon="keypad" placeholder="6-digit code" value={code} onChangeText={setCode} keyboardType="number-pad" returnKeyType="go" onSubmitEditing={verify} accent={accent} />
           <TouchableOpacity style={[sc.primaryBtn, (loading || sending) && { opacity: 0.6 }]} onPress={verify} disabled={loading || sending} activeOpacity={0.85}>
             <LinearGradient colors={[accent, Colors.brandDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
-              {(loading || sending) ? <ActivityIndicator color="#fff" size="small" /> : <Text style={sc.primaryText}>Verify email</Text>}
+              {(loading || sending) ? <ActivityIndicator color="#fff" size="small" /> : (
+                <Text style={sc.primaryText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>
+                  Verify email
+                </Text>
+              )}
             </LinearGradient>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => { setCode(""); sentRef.current = false; sendCode(); }} disabled={sending} style={{ alignSelf: "center", paddingVertical: 4 }}>
@@ -826,7 +838,11 @@ export default function SignInScreen() {
               activeOpacity={0.85}
             >
               <LinearGradient colors={[accent, Colors.brandDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={sc.primaryGrad}>
-                {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={sc.primaryText}>{t("Sign in")}</Text>}
+                {loading ? <ActivityIndicator color="#fff" size="small" /> : (
+                  <Text style={sc.primaryText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>
+                    {t("Sign in")}
+                  </Text>
+                )}
               </LinearGradient>
             </TouchableOpacity>
 
@@ -937,7 +953,18 @@ const sc = StyleSheet.create({
 
   primaryBtn: { borderRadius: 999, overflow: "hidden", marginTop: 4 },
   primaryGrad: { height: 58, alignItems: "center", justifyContent: "center" },
-  primaryText: { color: "#fff", fontSize: 16, fontFamily: "Inter_700Bold", letterSpacing: -0.1 },
+  primaryText: {
+    color: "#fff",
+    fontSize: 16,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: -0.1,
+    flexShrink: 1,
+    minWidth: 0,
+    textAlign: "center",
+    ...Platform.select({
+      web: { whiteSpace: "nowrap" } as any,
+    }),
+  },
 
   footerLink: { fontSize: 12.5, fontFamily: "Inter_500Medium" },
 });
