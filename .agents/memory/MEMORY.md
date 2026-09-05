@@ -99,3 +99,4 @@
 - [Responsive layout + webfont fallback](responsive-layout-webfonts.md) — use live window dimensions for resize-sensitive screens; browser text needs a system fallback when a cold webfont load is delayed.
 - [Message request gating](message-request-gating.md) — store unknown/limited/unlocked state by account and exact chat ID so offline limits never leak across chats.
 - [Native-only Google auth](native-only-google-auth.md) — keep Supabase Google enabled; mobile sends native Google ID tokens, with no web One Tap or Google redirects.
+- [Username marketplace schema drift](username-marketplace-schema-drift.md) — production owned_usernames uses acquired_at; marketplace RPCs must match it instead of assuming created_at.
