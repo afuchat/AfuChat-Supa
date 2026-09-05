@@ -69,7 +69,7 @@ const WIDGET_LAYOUT_XML = `<?xml version="1.0" encoding="utf-8"?>
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/widget_title"
-        android:textColor="#FFFFFFFF"
+         android:textColor="@color/afuchat_widget_text"
         android:textSize="16sp"
         android:textStyle="bold"
         android:maxLines="1" />
@@ -79,7 +79,7 @@ const WIDGET_LAYOUT_XML = `<?xml version="1.0" encoding="utf-8"?>
         android:layout_height="wrap_content"
         android:layout_marginTop="14dp"
         android:text="@string/widget_empty"
-        android:textColor="#CCFFFFFF"
+         android:textColor="@color/afuchat_widget_text_muted"
         android:textSize="13sp"
         android:visibility="gone" />
     <LinearLayout
@@ -95,7 +95,7 @@ const WIDGET_LAYOUT_XML = `<?xml version="1.0" encoding="utf-8"?>
             android:layout_width="28dp"
             android:layout_height="28dp"
             android:gravity="center"
-            android:textColor="#FFFFFFFF"
+         android:textColor="@color/afuchat_widget_text"
             android:textSize="13sp"
             android:textStyle="bold"
             android:background="@drawable/afuchat_widget_avatar" />
@@ -105,7 +105,7 @@ const WIDGET_LAYOUT_XML = `<?xml version="1.0" encoding="utf-8"?>
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="10dp"
-            android:textColor="#FFFFFFFF"
+         android:textColor="@color/afuchat_widget_text"
             android:textSize="14sp"
             android:maxLines="1"
             android:ellipsize="end" />
@@ -123,7 +123,7 @@ const WIDGET_LAYOUT_XML = `<?xml version="1.0" encoding="utf-8"?>
             android:layout_width="28dp"
             android:layout_height="28dp"
             android:gravity="center"
-            android:textColor="#FFFFFFFF"
+         android:textColor="@color/afuchat_widget_text"
             android:textSize="13sp"
             android:textStyle="bold"
             android:background="@drawable/afuchat_widget_avatar" />
@@ -133,7 +133,7 @@ const WIDGET_LAYOUT_XML = `<?xml version="1.0" encoding="utf-8"?>
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="10dp"
-            android:textColor="#FFFFFFFF"
+         android:textColor="@color/afuchat_widget_text"
             android:textSize="14sp"
             android:maxLines="1"
             android:ellipsize="end" />
@@ -151,7 +151,7 @@ const WIDGET_LAYOUT_XML = `<?xml version="1.0" encoding="utf-8"?>
             android:layout_width="28dp"
             android:layout_height="28dp"
             android:gravity="center"
-            android:textColor="#FFFFFFFF"
+         android:textColor="@color/afuchat_widget_text"
             android:textSize="13sp"
             android:textStyle="bold"
             android:background="@drawable/afuchat_widget_avatar" />
@@ -161,7 +161,7 @@ const WIDGET_LAYOUT_XML = `<?xml version="1.0" encoding="utf-8"?>
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="10dp"
-            android:textColor="#FFFFFFFF"
+         android:textColor="@color/afuchat_widget_text"
             android:textSize="14sp"
             android:maxLines="1"
             android:ellipsize="end" />
@@ -171,15 +171,33 @@ const WIDGET_LAYOUT_XML = `<?xml version="1.0" encoding="utf-8"?>
 
 const WIDGET_BACKGROUND_XML = `<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#1018D8" />
+    <solid android:color="@color/afuchat_widget_background" />
     <corners android:radius="24dp" />
 </shape>
 `;
 
 const WIDGET_AVATAR_XML = `<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
-    <solid android:color="#35FFFFFF" />
+    <solid android:color="@color/afuchat_widget_avatar" />
 </shape>
+`;
+
+const WIDGET_COLORS_XML = `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="afuchat_widget_background">#F5F0E8</color>
+    <color name="afuchat_widget_text">#000000</color>
+    <color name="afuchat_widget_text_muted">#8C7F6A</color>
+    <color name="afuchat_widget_avatar">#EDE8DC</color>
+</resources>
+`;
+
+const WIDGET_COLORS_NIGHT_XML = `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="afuchat_widget_background">#000000</color>
+    <color name="afuchat_widget_text">#FFF8F0</color>
+    <color name="afuchat_widget_text_muted">#717171</color>
+    <color name="afuchat_widget_avatar">#111111</color>
+</resources>
 `;
 
 function withShortcutManifest(config) {
@@ -267,10 +285,12 @@ function withShortcutResources(config) {
       const layoutDir = path.join(resDir, "layout");
       const drawableDir = path.join(resDir, "drawable");
       const valuesDir = path.join(resDir, "values");
+      const valuesNightDir = path.join(resDir, "values-night");
       fs.mkdirSync(xmlDir, { recursive: true });
       fs.mkdirSync(layoutDir, { recursive: true });
       fs.mkdirSync(drawableDir, { recursive: true });
       fs.mkdirSync(valuesDir, { recursive: true });
+      fs.mkdirSync(valuesNightDir, { recursive: true });
 
       fs.writeFileSync(
         path.join(xmlDir, `${SHORTCUTS_RESOURCE}.xml`),
@@ -285,6 +305,11 @@ function withShortcutResources(config) {
       fs.writeFileSync(
         path.join(drawableDir, "afuchat_widget_avatar.xml"),
         WIDGET_AVATAR_XML,
+      );
+      fs.writeFileSync(path.join(valuesDir, "afuchat_widget_colors.xml"), WIDGET_COLORS_XML);
+      fs.writeFileSync(
+        path.join(valuesNightDir, "afuchat_widget_colors.xml"),
+        WIDGET_COLORS_NIGHT_XML,
       );
 
       const stringsPath = path.join(valuesDir, "strings.xml");
